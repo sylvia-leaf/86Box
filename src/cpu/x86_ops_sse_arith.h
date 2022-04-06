@@ -1233,11 +1233,10 @@ static int opCMPPS_xmm_xmm_a16(uint32_t fetchdat)
             }
             case 3:
             {
-                //TODO: NaNs
-                cmp[0] = 0;
-                cmp[1] = 0;
-                cmp[2] = 0;
-                cmp[3] = 0;
+                cmp[0] = isunordered(XMM[cpu_reg].f[0], XMM[cpu_rm].f[0]) ? ~0 : 0;
+                cmp[1] = isunordered(XMM[cpu_reg].f[1], XMM[cpu_rm].f[1]) ? ~0 : 0;
+                cmp[2] = isunordered(XMM[cpu_reg].f[2], XMM[cpu_rm].f[2]) ? ~0 : 0;
+                cmp[3] = isunordered(XMM[cpu_reg].f[3], XMM[cpu_rm].f[3]) ? ~0 : 0;
                 break;
             }
             case 4:
@@ -1266,11 +1265,10 @@ static int opCMPPS_xmm_xmm_a16(uint32_t fetchdat)
             }
             case 7:
             {
-                //TODO: NaNs
-                cmp[0] = ~0;
-                cmp[1] = ~0;
-                cmp[2] = ~0;
-                cmp[3] = ~0;
+                cmp[0] = isunordered(XMM[cpu_reg].f[0], XMM[cpu_rm].f[0]) ? 0 : ~0;
+                cmp[1] = isunordered(XMM[cpu_reg].f[1], XMM[cpu_rm].f[1]) ? 0 : ~0;
+                cmp[2] = isunordered(XMM[cpu_reg].f[2], XMM[cpu_rm].f[2]) ? 0 : ~0;
+                cmp[3] = isunordered(XMM[cpu_reg].f[3], XMM[cpu_rm].f[3]) ? 0 : ~0;
                 break;
             }
         }
@@ -1328,11 +1326,10 @@ static int opCMPPS_xmm_xmm_a16(uint32_t fetchdat)
             }
             case 3:
             {
-                //TODO: NaNs
-                cmp[0] = 0;
-                cmp[1] = 0;
-                cmp[2] = 0;
-                cmp[3] = 0;
+                cmp[0] = isunordered(XMM[cpu_reg].f[0], src_real[0]) ? ~0 : 0;
+                cmp[1] = isunordered(XMM[cpu_reg].f[1], src_real[1]) ? ~0 : 0;
+                cmp[2] = isunordered(XMM[cpu_reg].f[2], src_real[2]) ? ~0 : 0;
+                cmp[3] = isunordered(XMM[cpu_reg].f[3], src_real[3]) ? ~0 : 0;
                 break;
             }
             case 4:
@@ -1361,11 +1358,10 @@ static int opCMPPS_xmm_xmm_a16(uint32_t fetchdat)
             }
             case 7:
             {
-                //TODO: NaNs
-                cmp[0] = ~0;
-                cmp[1] = ~0;
-                cmp[2] = ~0;
-                cmp[3] = ~0;
+                cmp[0] = isunordered(XMM[cpu_reg].f[0], src_real[0]) ? 0 : ~0;
+                cmp[1] = isunordered(XMM[cpu_reg].f[1], src_real[1]) ? 0 : ~0;
+                cmp[2] = isunordered(XMM[cpu_reg].f[2], src_real[2]) ? 0 : ~0;
+                cmp[3] = isunordered(XMM[cpu_reg].f[3], src_real[3]) ? 0 : ~0;
                 break;
             }
         }
@@ -1413,11 +1409,10 @@ static int opCMPPS_xmm_xmm_a32(uint32_t fetchdat)
             }
             case 3:
             {
-                //TODO: NaNs
-                cmp[0] = 0;
-                cmp[1] = 0;
-                cmp[2] = 0;
-                cmp[3] = 0;
+                cmp[0] = isunordered(XMM[cpu_reg].f[0], XMM[cpu_rm].f[0]) ? ~0 : 0;
+                cmp[1] = isunordered(XMM[cpu_reg].f[1], XMM[cpu_rm].f[1]) ? ~0 : 0;
+                cmp[2] = isunordered(XMM[cpu_reg].f[2], XMM[cpu_rm].f[2]) ? ~0 : 0;
+                cmp[3] = isunordered(XMM[cpu_reg].f[3], XMM[cpu_rm].f[3]) ? ~0 : 0;
                 break;
             }
             case 4:
@@ -1446,11 +1441,10 @@ static int opCMPPS_xmm_xmm_a32(uint32_t fetchdat)
             }
             case 7:
             {
-                //TODO: NaNs
-                cmp[0] = ~0;
-                cmp[1] = ~0;
-                cmp[2] = ~0;
-                cmp[3] = ~0;
+                cmp[0] = isunordered(XMM[cpu_reg].f[0], XMM[cpu_rm].f[0]) ? 0 : ~0;
+                cmp[1] = isunordered(XMM[cpu_reg].f[1], XMM[cpu_rm].f[1]) ? 0 : ~0;
+                cmp[2] = isunordered(XMM[cpu_reg].f[2], XMM[cpu_rm].f[2]) ? 0 : ~0;
+                cmp[3] = isunordered(XMM[cpu_reg].f[3], XMM[cpu_rm].f[3]) ? 0 : ~0;
                 break;
             }
         }
@@ -1508,11 +1502,10 @@ static int opCMPPS_xmm_xmm_a32(uint32_t fetchdat)
             }
             case 3:
             {
-                //TODO: NaNs
-                cmp[0] = 0;
-                cmp[1] = 0;
-                cmp[2] = 0;
-                cmp[3] = 0;
+                cmp[0] = isunordered(XMM[cpu_reg].f[0], src_real[0]) ? ~0 : 0;
+                cmp[1] = isunordered(XMM[cpu_reg].f[1], src_real[1]) ? ~0 : 0;
+                cmp[2] = isunordered(XMM[cpu_reg].f[2], src_real[2]) ? ~0 : 0;
+                cmp[3] = isunordered(XMM[cpu_reg].f[3], src_real[3]) ? ~0 : 0;
                 break;
             }
             case 4:
@@ -1541,11 +1534,10 @@ static int opCMPPS_xmm_xmm_a32(uint32_t fetchdat)
             }
             case 7:
             {
-                //TODO: NaNs
-                cmp[0] = ~0;
-                cmp[1] = ~0;
-                cmp[2] = ~0;
-                cmp[3] = ~0;
+                cmp[0] = isunordered(XMM[cpu_reg].f[0], src_real[0]) ? 0 : ~0;
+                cmp[1] = isunordered(XMM[cpu_reg].f[1], src_real[1]) ? 0 : ~0;
+                cmp[2] = isunordered(XMM[cpu_reg].f[2], src_real[2]) ? 0 : ~0;
+                cmp[3] = isunordered(XMM[cpu_reg].f[3], src_real[3]) ? 0 : ~0;
                 break;
             }
         }
@@ -1584,8 +1576,7 @@ static int opCMPSS_xmm_xmm_a16(uint32_t fetchdat)
             }
             case 3:
             {
-                //TODO: NaNs
-                cmp = 0;
+                cmp = isunordered(XMM[cpu_reg].f[0], XMM[cpu_rm].f[0]) ? ~0 : 0;
                 break;
             }
             case 4:
@@ -1605,8 +1596,7 @@ static int opCMPSS_xmm_xmm_a16(uint32_t fetchdat)
             }
             case 7:
             {
-                //TODO: NaNs
-                cmp = ~0;
+                cmp = isunordered(XMM[cpu_reg].f[0], XMM[cpu_rm].f[0]) ? 0 : ~0;
                 break;
             }
         }
@@ -1646,8 +1636,7 @@ static int opCMPSS_xmm_xmm_a16(uint32_t fetchdat)
             }
             case 3:
             {
-                //TODO: NaNs
-                cmp = 0;
+                cmp = isunordered(XMM[cpu_reg].f[0], src_real) ? ~0 : 0;
                 break;
             }
             case 4:
@@ -1667,8 +1656,7 @@ static int opCMPSS_xmm_xmm_a16(uint32_t fetchdat)
             }
             case 7:
             {
-                //TODO: NaNs
-                cmp = ~0;
+                cmp = isunordered(XMM[cpu_reg].f[0], src_real) ? 0 : ~0;
                 break;
             }
         }
@@ -1704,8 +1692,7 @@ static int opCMPSS_xmm_xmm_a32(uint32_t fetchdat)
             }
             case 3:
             {
-                //TODO: NaNs
-                cmp = 0;
+                cmp = isunordered(XMM[cpu_reg].f[0], XMM[cpu_rm].f[0]) ? ~0 : 0;
                 break;
             }
             case 4:
@@ -1725,8 +1712,7 @@ static int opCMPSS_xmm_xmm_a32(uint32_t fetchdat)
             }
             case 7:
             {
-                //TODO: NaNs
-                cmp = ~0;
+                cmp = isunordered(XMM[cpu_reg].f[0], XMM[cpu_rm].f[0]) ? 0 : ~0;
                 break;
             }
         }
@@ -1766,8 +1752,7 @@ static int opCMPSS_xmm_xmm_a32(uint32_t fetchdat)
             }
             case 3:
             {
-                //TODO: NaNs
-                cmp = 0;
+                cmp = isunordered(XMM[cpu_reg].f[0], src_real) ? ~0 : 0;
                 break;
             }
             case 4:
@@ -1787,8 +1772,7 @@ static int opCMPSS_xmm_xmm_a32(uint32_t fetchdat)
             }
             case 7:
             {
-                //TODO: NaNs
-                cmp = ~0;
+                cmp = isunordered(XMM[cpu_reg].f[0], src_real) ? 0 : ~0;
                 break;
             }
         }
