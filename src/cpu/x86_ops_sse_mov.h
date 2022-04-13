@@ -859,12 +859,6 @@ static int opSHUFPS_xmm_w_a16(uint32_t fetchdat)
     else
     {
         uint32_t src[4];
-
-        if(cpu_state.eaaddr & 0xf)
-        {
-            x86gpf(NULL, 0);
-            if(cpu_state.abrt) return 1;
-        }
         
         SEG_CHECK_READ(cpu_state.ea_seg);
         src[0] = readmeml(easeg, cpu_state.eaaddr); if (cpu_state.abrt) return 1;
@@ -895,12 +889,6 @@ static int opSHUFPS_xmm_w_a32(uint32_t fetchdat)
     else
     {
         uint32_t src[4];
-
-        if(cpu_state.eaaddr & 0xf)
-        {
-            x86gpf(NULL, 0);
-            if(cpu_state.abrt) return 1;
-        }
         
         SEG_CHECK_READ(cpu_state.ea_seg);
         src[0] = readmeml(easeg, cpu_state.eaaddr); if (cpu_state.abrt) return 1;
