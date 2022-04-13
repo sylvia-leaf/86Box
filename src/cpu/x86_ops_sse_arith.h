@@ -1057,7 +1057,7 @@ static int opMAXSS_xmm_xmm_a32(uint32_t fetchdat)
 static int opCMPPS_xmm_xmm_a16(uint32_t fetchdat)
 {
     fetch_ea_16(fetchdat);
-    uint8_t imm = getbyte(); if (cpu_state.abrt) return 1;
+    uint8_t imm = getbyte();
     uint32_t cmp[4];
     if (cpu_mod == 3)
     {
@@ -1137,8 +1137,6 @@ static int opCMPPS_xmm_xmm_a16(uint32_t fetchdat)
     else
     {
         uint32_t src[4];
-
-        
         
         SEG_CHECK_READ(cpu_state.ea_seg);
         src[0] = readmeml(easeg, cpu_state.eaaddr); if (cpu_state.abrt) return 1;
@@ -1229,7 +1227,7 @@ static int opCMPPS_xmm_xmm_a16(uint32_t fetchdat)
 static int opCMPPS_xmm_xmm_a32(uint32_t fetchdat)
 {
     fetch_ea_32(fetchdat);
-    uint8_t imm = getbyte(); if (cpu_state.abrt) return 1;
+    uint8_t imm = getbyte();
     uint32_t cmp[4];
     if (cpu_mod == 3)
     {
@@ -1309,8 +1307,6 @@ static int opCMPPS_xmm_xmm_a32(uint32_t fetchdat)
     else
     {
         uint32_t src[4];
-
-        
         
         SEG_CHECK_READ(cpu_state.ea_seg);
         src[0] = readmeml(easeg, cpu_state.eaaddr); if (cpu_state.abrt) return 1;
@@ -1401,7 +1397,7 @@ static int opCMPPS_xmm_xmm_a32(uint32_t fetchdat)
 static int opCMPSS_xmm_xmm_a16(uint32_t fetchdat)
 {
     fetch_ea_16(fetchdat);
-    uint8_t imm = getbyte(); if (cpu_state.abrt) return 1;
+    uint8_t imm = getbyte();
     uint32_t cmp;
     if (cpu_mod == 3)
     {
@@ -1513,7 +1509,7 @@ static int opCMPSS_xmm_xmm_a16(uint32_t fetchdat)
 static int opCMPSS_xmm_xmm_a32(uint32_t fetchdat)
 {
     fetch_ea_32(fetchdat);
-    uint8_t imm = getbyte(); if (cpu_state.abrt) return 1;
+    uint8_t imm = getbyte();
     uint32_t cmp;
     if (cpu_mod == 3)
     {
