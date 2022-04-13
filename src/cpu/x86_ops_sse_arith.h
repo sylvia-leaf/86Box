@@ -16,11 +16,7 @@ static int opSQRTPS_xmm_xmm_a16(uint32_t fetchdat)
     {
         uint32_t src[4];
 
-        if(cpu_state.eaaddr & 0xf)
-        {
-            x86gpf(NULL, 0);
-            if(cpu_state.abrt) return 1;
-        }
+        
         
         SEG_CHECK_READ(cpu_state.ea_seg);
         src[0] = readmeml(easeg, cpu_state.eaaddr); if (cpu_state.abrt) return 1;
@@ -56,11 +52,7 @@ static int opSQRTPS_xmm_xmm_a32(uint32_t fetchdat)
     {
         uint32_t src[4];
 
-        if(cpu_state.eaaddr & 0xf)
-        {
-            x86gpf(NULL, 0);
-            if(cpu_state.abrt) return 1;
-        }
+        
         
         SEG_CHECK_READ(cpu_state.ea_seg);
         src[0] = readmeml(easeg, cpu_state.eaaddr); if (cpu_state.abrt) return 1;
@@ -93,11 +85,7 @@ static int opSQRTSS_xmm_xmm_a16(uint32_t fetchdat)
     {
         uint32_t src;
 
-        if(cpu_state.eaaddr & 0xf)
-        {
-            x86gpf(NULL, 0);
-            if(cpu_state.abrt) return 1;
-        }
+        
         
         SEG_CHECK_READ(cpu_state.ea_seg);
         src = readmeml(easeg, cpu_state.eaaddr); if (cpu_state.abrt) return 1;
@@ -121,11 +109,7 @@ static int opSQRTSS_xmm_xmm_a32(uint32_t fetchdat)
     {
         uint32_t src;
 
-        if(cpu_state.eaaddr & 0xf)
-        {
-            x86gpf(NULL, 0);
-            if(cpu_state.abrt) return 1;
-        }
+        
         
         SEG_CHECK_READ(cpu_state.ea_seg);
         src = readmeml(easeg, cpu_state.eaaddr); if (cpu_state.abrt) return 1;
@@ -152,11 +136,7 @@ static int opRSQRTPS_xmm_xmm_a16(uint32_t fetchdat)
     {
         uint32_t src[4];
 
-        if(cpu_state.eaaddr & 0xf)
-        {
-            x86gpf(NULL, 0);
-            if(cpu_state.abrt) return 1;
-        }
+        
         
         SEG_CHECK_READ(cpu_state.ea_seg);
         src[0] = readmeml(easeg, cpu_state.eaaddr); if (cpu_state.abrt) return 1;
@@ -191,11 +171,7 @@ static int opRSQRTPS_xmm_xmm_a32(uint32_t fetchdat)
     {
         uint32_t src[4];
 
-        if(cpu_state.eaaddr & 0xf)
-        {
-            x86gpf(NULL, 0);
-            if(cpu_state.abrt) return 1;
-        }
+        
         
         SEG_CHECK_READ(cpu_state.ea_seg);
         src[0] = readmeml(easeg, cpu_state.eaaddr); if (cpu_state.abrt) return 1;
@@ -228,11 +204,7 @@ static int opRSQRTSS_xmm_xmm_a16(uint32_t fetchdat)
     {
         uint32_t src;
 
-        if(cpu_state.eaaddr & 0xf)
-        {
-            x86gpf(NULL, 0);
-            if(cpu_state.abrt) return 1;
-        }
+        
         
         SEG_CHECK_READ(cpu_state.ea_seg);
         src = readmeml(easeg, cpu_state.eaaddr); if (cpu_state.abrt) return 1;
@@ -256,11 +228,7 @@ static int opRSQRTSS_xmm_xmm_a32(uint32_t fetchdat)
     {
         uint32_t src;
 
-        if(cpu_state.eaaddr & 0xf)
-        {
-            x86gpf(NULL, 0);
-            if(cpu_state.abrt) return 1;
-        }
+        
         
         SEG_CHECK_READ(cpu_state.ea_seg);
         src = readmeml(easeg, cpu_state.eaaddr); if (cpu_state.abrt) return 1;
@@ -284,11 +252,7 @@ static int opRCPSS_xmm_xmm_a16(uint32_t fetchdat)
     {
         uint32_t src;
 
-        if(cpu_state.eaaddr & 0xf)
-        {
-            x86gpf(NULL, 0);
-            if(cpu_state.abrt) return 1;
-        }
+        
         
         SEG_CHECK_READ(cpu_state.ea_seg);
         src = readmeml(easeg, cpu_state.eaaddr); if (cpu_state.abrt) return 1;
@@ -312,11 +276,7 @@ static int opRCPSS_xmm_xmm_a32(uint32_t fetchdat)
     {
         uint32_t src;
 
-        if(cpu_state.eaaddr & 0xf)
-        {
-            x86gpf(NULL, 0);
-            if(cpu_state.abrt) return 1;
-        }
+        
         
         SEG_CHECK_READ(cpu_state.ea_seg);
         src = readmeml(easeg, cpu_state.eaaddr); if (cpu_state.abrt) return 1;
@@ -343,11 +303,7 @@ static int opRCPPS_xmm_xmm_a16(uint32_t fetchdat)
     {
         uint32_t src[4];
 
-        if(cpu_state.eaaddr & 0xf)
-        {
-            x86gpf(NULL, 0);
-            if(cpu_state.abrt) return 1;
-        }
+        
         
         SEG_CHECK_READ(cpu_state.ea_seg);
         src[0] = readmeml(easeg, cpu_state.eaaddr); if (cpu_state.abrt) return 1;
@@ -382,11 +338,7 @@ static int opRCPPS_xmm_xmm_a32(uint32_t fetchdat)
     {
         uint32_t src[4];
 
-        if(cpu_state.eaaddr & 0xf)
-        {
-            x86gpf(NULL, 0);
-            if(cpu_state.abrt) return 1;
-        }
+        
         
         SEG_CHECK_READ(cpu_state.ea_seg);
         src[0] = readmeml(easeg, cpu_state.eaaddr); if (cpu_state.abrt) return 1;
@@ -421,11 +373,7 @@ static int opADDPS_xmm_xmm_a16(uint32_t fetchdat)
     {
         uint32_t src[4];
 
-        if(cpu_state.eaaddr & 0xf)
-        {
-            x86gpf(NULL, 0);
-            if(cpu_state.abrt) return 1;
-        }
+        
         
         SEG_CHECK_READ(cpu_state.ea_seg);
         src[0] = readmeml(easeg, cpu_state.eaaddr); if (cpu_state.abrt) return 1;
@@ -460,11 +408,7 @@ static int opADDPS_xmm_xmm_a32(uint32_t fetchdat)
     {
         uint32_t src[4];
 
-        if(cpu_state.eaaddr & 0xf)
-        {
-            x86gpf(NULL, 0);
-            if(cpu_state.abrt) return 1;
-        }
+        
         
         SEG_CHECK_READ(cpu_state.ea_seg);
         src[0] = readmeml(easeg, cpu_state.eaaddr); if (cpu_state.abrt) return 1;
@@ -496,11 +440,7 @@ static int opADDSS_xmm_xmm_a16(uint32_t fetchdat)
     {
         uint32_t src;
 
-        if(cpu_state.eaaddr & 0xf)
-        {
-            x86gpf(NULL, 0);
-            if(cpu_state.abrt) return 1;
-        }
+        
         
         SEG_CHECK_READ(cpu_state.ea_seg);
         src = readmeml(easeg, cpu_state.eaaddr); if (cpu_state.abrt) return 1;
@@ -523,11 +463,7 @@ static int opADDSS_xmm_xmm_a32(uint32_t fetchdat)
     {
         uint32_t src;
 
-        if(cpu_state.eaaddr & 0xf)
-        {
-            x86gpf(NULL, 0);
-            if(cpu_state.abrt) return 1;
-        }
+        
         
         SEG_CHECK_READ(cpu_state.ea_seg);
         src = readmeml(easeg, cpu_state.eaaddr); if (cpu_state.abrt) return 1;
@@ -553,11 +489,7 @@ static int opMULPS_xmm_xmm_a16(uint32_t fetchdat)
     {
         uint32_t src[4];
 
-        if(cpu_state.eaaddr & 0xf)
-        {
-            x86gpf(NULL, 0);
-            if(cpu_state.abrt) return 1;
-        }
+        
         
         SEG_CHECK_READ(cpu_state.ea_seg);
         src[0] = readmeml(easeg, cpu_state.eaaddr); if (cpu_state.abrt) return 1;
@@ -592,11 +524,7 @@ static int opMULPS_xmm_xmm_a32(uint32_t fetchdat)
     {
         uint32_t src[4];
 
-        if(cpu_state.eaaddr & 0xf)
-        {
-            x86gpf(NULL, 0);
-            if(cpu_state.abrt) return 1;
-        }
+        
         
         SEG_CHECK_READ(cpu_state.ea_seg);
         src[0] = readmeml(easeg, cpu_state.eaaddr); if (cpu_state.abrt) return 1;
@@ -628,11 +556,7 @@ static int opMULSS_xmm_xmm_a16(uint32_t fetchdat)
     {
         uint32_t src;
 
-        if(cpu_state.eaaddr & 0xf)
-        {
-            x86gpf(NULL, 0);
-            if(cpu_state.abrt) return 1;
-        }
+        
         
         SEG_CHECK_READ(cpu_state.ea_seg);
         src = readmeml(easeg, cpu_state.eaaddr); if (cpu_state.abrt) return 1;
@@ -655,11 +579,7 @@ static int opMULSS_xmm_xmm_a32(uint32_t fetchdat)
     {
         uint32_t src;
 
-        if(cpu_state.eaaddr & 0xf)
-        {
-            x86gpf(NULL, 0);
-            if(cpu_state.abrt) return 1;
-        }
+        
         
         SEG_CHECK_READ(cpu_state.ea_seg);
         src = readmeml(easeg, cpu_state.eaaddr); if (cpu_state.abrt) return 1;
@@ -685,11 +605,7 @@ static int opSUBPS_xmm_xmm_a16(uint32_t fetchdat)
     {
         uint32_t src[4];
 
-        if(cpu_state.eaaddr & 0xf)
-        {
-            x86gpf(NULL, 0);
-            if(cpu_state.abrt) return 1;
-        }
+        
         
         SEG_CHECK_READ(cpu_state.ea_seg);
         src[0] = readmeml(easeg, cpu_state.eaaddr); if (cpu_state.abrt) return 1;
@@ -724,11 +640,7 @@ static int opSUBPS_xmm_xmm_a32(uint32_t fetchdat)
     {
         uint32_t src[4];
 
-        if(cpu_state.eaaddr & 0xf)
-        {
-            x86gpf(NULL, 0);
-            if(cpu_state.abrt) return 1;
-        }
+        
         
         SEG_CHECK_READ(cpu_state.ea_seg);
         src[0] = readmeml(easeg, cpu_state.eaaddr); if (cpu_state.abrt) return 1;
@@ -760,11 +672,7 @@ static int opSUBSS_xmm_xmm_a16(uint32_t fetchdat)
     {
         uint32_t src;
 
-        if(cpu_state.eaaddr & 0xf)
-        {
-            x86gpf(NULL, 0);
-            if(cpu_state.abrt) return 1;
-        }
+        
         
         SEG_CHECK_READ(cpu_state.ea_seg);
         src = readmeml(easeg, cpu_state.eaaddr); if (cpu_state.abrt) return 1;
@@ -787,11 +695,7 @@ static int opSUBSS_xmm_xmm_a32(uint32_t fetchdat)
     {
         uint32_t src;
 
-        if(cpu_state.eaaddr & 0xf)
-        {
-            x86gpf(NULL, 0);
-            if(cpu_state.abrt) return 1;
-        }
+        
         
         SEG_CHECK_READ(cpu_state.ea_seg);
         src = readmeml(easeg, cpu_state.eaaddr); if (cpu_state.abrt) return 1;
@@ -817,11 +721,7 @@ static int opMINPS_xmm_xmm_a16(uint32_t fetchdat)
     {
         uint32_t src[4];
 
-        if(cpu_state.eaaddr & 0xf)
-        {
-            x86gpf(NULL, 0);
-            if(cpu_state.abrt) return 1;
-        }
+        
         
         SEG_CHECK_READ(cpu_state.ea_seg);
         src[0] = readmeml(easeg, cpu_state.eaaddr); if (cpu_state.abrt) return 1;
@@ -856,11 +756,7 @@ static int opMINPS_xmm_xmm_a32(uint32_t fetchdat)
     {
         uint32_t src[4];
 
-        if(cpu_state.eaaddr & 0xf)
-        {
-            x86gpf(NULL, 0);
-            if(cpu_state.abrt) return 1;
-        }
+        
         
         SEG_CHECK_READ(cpu_state.ea_seg);
         src[0] = readmeml(easeg, cpu_state.eaaddr); if (cpu_state.abrt) return 1;
@@ -892,11 +788,7 @@ static int opMINSS_xmm_xmm_a16(uint32_t fetchdat)
     {
         uint32_t src;
 
-        if(cpu_state.eaaddr & 0xf)
-        {
-            x86gpf(NULL, 0);
-            if(cpu_state.abrt) return 1;
-        }
+        
         
         SEG_CHECK_READ(cpu_state.ea_seg);
         src = readmeml(easeg, cpu_state.eaaddr); if (cpu_state.abrt) return 1;
@@ -919,11 +811,7 @@ static int opMINSS_xmm_xmm_a32(uint32_t fetchdat)
     {
         uint32_t src;
 
-        if(cpu_state.eaaddr & 0xf)
-        {
-            x86gpf(NULL, 0);
-            if(cpu_state.abrt) return 1;
-        }
+        
         
         SEG_CHECK_READ(cpu_state.ea_seg);
         src = readmeml(easeg, cpu_state.eaaddr); if (cpu_state.abrt) return 1;
@@ -949,11 +837,7 @@ static int opDIVPS_xmm_xmm_a16(uint32_t fetchdat)
     {
         uint32_t src[4];
 
-        if(cpu_state.eaaddr & 0xf)
-        {
-            x86gpf(NULL, 0);
-            if(cpu_state.abrt) return 1;
-        }
+        
         
         SEG_CHECK_READ(cpu_state.ea_seg);
         src[0] = readmeml(easeg, cpu_state.eaaddr); if (cpu_state.abrt) return 1;
@@ -988,11 +872,7 @@ static int opDIVPS_xmm_xmm_a32(uint32_t fetchdat)
     {
         uint32_t src[4];
 
-        if(cpu_state.eaaddr & 0xf)
-        {
-            x86gpf(NULL, 0);
-            if(cpu_state.abrt) return 1;
-        }
+        
         
         SEG_CHECK_READ(cpu_state.ea_seg);
         src[0] = readmeml(easeg, cpu_state.eaaddr); if (cpu_state.abrt) return 1;
@@ -1024,11 +904,7 @@ static int opDIVSS_xmm_xmm_a16(uint32_t fetchdat)
     {
         uint32_t src;
 
-        if(cpu_state.eaaddr & 0xf)
-        {
-            x86gpf(NULL, 0);
-            if(cpu_state.abrt) return 1;
-        }
+        
         
         SEG_CHECK_READ(cpu_state.ea_seg);
         src = readmeml(easeg, cpu_state.eaaddr); if (cpu_state.abrt) return 1;
@@ -1051,11 +927,7 @@ static int opDIVSS_xmm_xmm_a32(uint32_t fetchdat)
     {
         uint32_t src;
 
-        if(cpu_state.eaaddr & 0xf)
-        {
-            x86gpf(NULL, 0);
-            if(cpu_state.abrt) return 1;
-        }
+        
         
         SEG_CHECK_READ(cpu_state.ea_seg);
         src = readmeml(easeg, cpu_state.eaaddr); if (cpu_state.abrt) return 1;
@@ -1081,11 +953,7 @@ static int opMAXPS_xmm_xmm_a16(uint32_t fetchdat)
     {
         uint32_t src[4];
 
-        if(cpu_state.eaaddr & 0xf)
-        {
-            x86gpf(NULL, 0);
-            if(cpu_state.abrt) return 1;
-        }
+        
         
         SEG_CHECK_READ(cpu_state.ea_seg);
         src[0] = readmeml(easeg, cpu_state.eaaddr); if (cpu_state.abrt) return 1;
@@ -1120,11 +988,7 @@ static int opMAXPS_xmm_xmm_a32(uint32_t fetchdat)
     {
         uint32_t src[4];
 
-        if(cpu_state.eaaddr & 0xf)
-        {
-            x86gpf(NULL, 0);
-            if(cpu_state.abrt) return 1;
-        }
+        
         
         SEG_CHECK_READ(cpu_state.ea_seg);
         src[0] = readmeml(easeg, cpu_state.eaaddr); if (cpu_state.abrt) return 1;
@@ -1156,11 +1020,7 @@ static int opMAXSS_xmm_xmm_a16(uint32_t fetchdat)
     {
         uint32_t src;
 
-        if(cpu_state.eaaddr & 0xf)
-        {
-            x86gpf(NULL, 0);
-            if(cpu_state.abrt) return 1;
-        }
+        
         
         SEG_CHECK_READ(cpu_state.ea_seg);
         src = readmeml(easeg, cpu_state.eaaddr); if (cpu_state.abrt) return 1;
@@ -1183,11 +1043,7 @@ static int opMAXSS_xmm_xmm_a32(uint32_t fetchdat)
     {
         uint32_t src;
 
-        if(cpu_state.eaaddr & 0xf)
-        {
-            x86gpf(NULL, 0);
-            if(cpu_state.abrt) return 1;
-        }
+        
         
         SEG_CHECK_READ(cpu_state.ea_seg);
         src = readmeml(easeg, cpu_state.eaaddr); if (cpu_state.abrt) return 1;
@@ -1282,11 +1138,7 @@ static int opCMPPS_xmm_xmm_a16(uint32_t fetchdat)
     {
         uint32_t src[4];
 
-        if(cpu_state.eaaddr & 0xf)
-        {
-            x86gpf(NULL, 0);
-            if(cpu_state.abrt) return 1;
-        }
+        
         
         SEG_CHECK_READ(cpu_state.ea_seg);
         src[0] = readmeml(easeg, cpu_state.eaaddr); if (cpu_state.abrt) return 1;
@@ -1458,11 +1310,7 @@ static int opCMPPS_xmm_xmm_a32(uint32_t fetchdat)
     {
         uint32_t src[4];
 
-        if(cpu_state.eaaddr & 0xf)
-        {
-            x86gpf(NULL, 0);
-            if(cpu_state.abrt) return 1;
-        }
+        
         
         SEG_CHECK_READ(cpu_state.ea_seg);
         src[0] = readmeml(easeg, cpu_state.eaaddr); if (cpu_state.abrt) return 1;
@@ -1607,11 +1455,7 @@ static int opCMPSS_xmm_xmm_a16(uint32_t fetchdat)
     {
         uint32_t src;
 
-        if(cpu_state.eaaddr & 0xf)
-        {
-            x86gpf(NULL, 0);
-            if(cpu_state.abrt) return 1;
-        }
+        
         
         SEG_CHECK_READ(cpu_state.ea_seg);
         src = readmeml(easeg, cpu_state.eaaddr); if (cpu_state.abrt) return 1;
@@ -1723,11 +1567,7 @@ static int opCMPSS_xmm_xmm_a32(uint32_t fetchdat)
     {
         uint32_t src;
 
-        if(cpu_state.eaaddr & 0xf)
-        {
-            x86gpf(NULL, 0);
-            if(cpu_state.abrt) return 1;
-        }
+        
         
         SEG_CHECK_READ(cpu_state.ea_seg);
         src = readmeml(easeg, cpu_state.eaaddr); if (cpu_state.abrt) return 1;
