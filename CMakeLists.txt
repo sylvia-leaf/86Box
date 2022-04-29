@@ -35,7 +35,7 @@ if(MUNT_EXTERNAL)
 endif()
 
 project(PCBox
-    VERSION 3.4.1
+    VERSION 3.5
     DESCRIPTION "Emulator of x86-based systems"
     HOMEPAGE_URL "https://pcbox.github.io/"
     LANGUAGES C CXX)
@@ -190,6 +190,7 @@ endif()
 if(NOT CMAKE_PROJECT_VERSION_PATCH)
     set(CMAKE_PROJECT_VERSION_PATCH 0)
 endif()
+set(EMU_VERSION_EX "3.50")
 if(NOT EMU_BUILD_NUM)
     set(EMU_BUILD_NUM 0)
 endif()
