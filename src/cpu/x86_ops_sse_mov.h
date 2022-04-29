@@ -847,7 +847,7 @@ static int opPEXTRW_xmm_w_a32(uint32_t fetchdat)
 static int opSHUFPS_xmm_w_a16(uint32_t fetchdat)
 {
     fetch_ea_16(fetchdat);
-    uint8_t imm = getbyte(); if (cpu_state.abrt) return 1;
+    uint8_t imm = getbyte();
     if (cpu_mod == 3)
     {
         XMM[cpu_reg].f[0] = XMM[cpu_rm].f[imm & 3];
@@ -877,7 +877,7 @@ static int opSHUFPS_xmm_w_a16(uint32_t fetchdat)
 static int opSHUFPS_xmm_w_a32(uint32_t fetchdat)
 {
     fetch_ea_32(fetchdat);
-    uint8_t imm = getbyte(); if (cpu_state.abrt) return 1;
+    uint8_t imm = getbyte();
     if (cpu_mod == 3)
     {
         XMM[cpu_reg].f[0] = XMM[cpu_rm].f[imm & 3];
