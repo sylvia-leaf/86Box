@@ -82,3 +82,24 @@ static float sse_round_to_int(float in)
                 }
         }
 }
+
+static double sse_round_double_to_int(double in)
+{
+        switch(mxcsr & 0x6000)
+        {
+                case 0:
+                {
+                        if(fmod(in,1.0f) >= 0.5) return ceil(in);
+                        else if(fmod(in, 1.0f) < 0.5) return floor(in);
+                        break;
+                }
+                case 0x2000: return floor(in);
+                case 0x4000: return ceil(in);
+                case 0x6000:
+                {
+                        if(in >= 0.0f) return floor(in);
+                        else if(in <= -0.0f) return ceil(in);
+                        break;
+                }
+        }
+}
