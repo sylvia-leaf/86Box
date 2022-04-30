@@ -324,7 +324,7 @@ static int opPACKUSWB_xmm_a32(uint32_t fetchdat)
 
 static int opPUNPCKHBW_xmm_a16(uint32_t fetchdat)
 {
-        XMM_REG src;
+        SSE_REG src;
 
         fetch_ea_16(fetchdat);
         SSE_GETSRC();
@@ -351,7 +351,7 @@ static int opPUNPCKHBW_xmm_a16(uint32_t fetchdat)
 
 static int opPUNPCKHBW_xmm_a32(uint32_t fetchdat)
 {
-        XMM_REG src;
+        SSE_REG src;
 
         fetch_ea_32(fetchdat);
         SSE_GETSRC();
@@ -378,7 +378,7 @@ static int opPUNPCKHBW_xmm_a32(uint32_t fetchdat)
 
 static int opPUNPCKHWD_xmm_a16(uint32_t fetchdat)
 {
-        XMM_REG src;
+        SSE_REG src;
 
         fetch_ea_16(fetchdat);
         SSE_GETSRC();
@@ -397,7 +397,7 @@ static int opPUNPCKHWD_xmm_a16(uint32_t fetchdat)
 
 static int opPUNPCKHWD_xmm_a32(uint32_t fetchdat)
 {
-        XMM_REG src;
+        SSE_REG src;
 
         fetch_ea_32(fetchdat);
         SSE_GETSRC();
@@ -416,7 +416,7 @@ static int opPUNPCKHWD_xmm_a32(uint32_t fetchdat)
 
 static int opPUNPCKHDQ_xmm_a16(uint32_t fetchdat)
 {
-        XMM_REG src;
+        SSE_REG src;
 
         fetch_ea_16(fetchdat);
         SSE_GETSRC();
@@ -432,7 +432,7 @@ static int opPUNPCKHDQ_xmm_a16(uint32_t fetchdat)
 
 static int opPACKSSDW_xmm_a16(uint32_t fetchdat)
 {
-        XMM_REG src, dst;
+        SSE_REG src, dst;
 
         fetch_ea_16(fetchdat);
         SSE_GETSRC();
@@ -452,7 +452,7 @@ static int opPACKSSDW_xmm_a16(uint32_t fetchdat)
 
 static int opPACKSSDW_xmm_a32(uint32_t fetchdat)
 {
-        XMM_REG src, dst;
+        SSE_REG src, dst;
 
         fetch_ea_32(fetchdat);
         SSE_GETSRC();
@@ -473,7 +473,7 @@ static int opPACKSSDW_xmm_a32(uint32_t fetchdat)
 static int opPUNPCKLQDQ_a16(uint32_t fetchdat)
 {
         ILLEGAL_ON(!sse_xmm);
-        XMM_REG src;
+        SSE_REG src;
 
         fetch_ea_16(fetchdat);
         SSE_GETSRC();
@@ -487,7 +487,7 @@ static int opPUNPCKLQDQ_a16(uint32_t fetchdat)
 static int opPUNPCKLQDQ_a32(uint32_t fetchdat)
 {
         ILLEGAL_ON(!sse_xmm);
-        XMM_REG src;
+        SSE_REG src;
 
         fetch_ea_32(fetchdat);
         SSE_GETSRC();
@@ -501,7 +501,7 @@ static int opPUNPCKLQDQ_a32(uint32_t fetchdat)
 static int opPUNPCKHQDQ_a16(uint32_t fetchdat)
 {
         ILLEGAL_ON(!sse_xmm);
-        XMM_REG src;
+        SSE_REG src;
 
         fetch_ea_16(fetchdat);
         SSE_GETSRC();
@@ -515,7 +515,7 @@ static int opPUNPCKHQDQ_a16(uint32_t fetchdat)
 static int opPUNPCKHQDQ_a32(uint32_t fetchdat)
 {
         ILLEGAL_ON(!sse_xmm);
-        XMM_REG src;
+        SSE_REG src;
 
         fetch_ea_32(fetchdat);
         SSE_GETSRC();

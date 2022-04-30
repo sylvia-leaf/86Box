@@ -69,11 +69,16 @@ fx_save_stor_common(uint32_t fetchdat, int bits)
 
     fxinst = (rmdat >> 3) & 7;
 
-    if (((fxinst > 1) && !is_pentium3)) {
+    if (((fxinst > 1) && !(cpu_features & CPU_FEATURE_SSE))) {
 	x86illegal();
 	return cpu_state.abrt;
     }
-	if(((fxinst > 3) && (fxinst != 7)) && is_pentium3)
+	if(((fxinst > 3) && (fxinst != 7)) && (cpu_features & CPU_FEATURE_SSE) && !(cpu_features & CPU_FEATURE_SSE2))
+	{
+		x86illegal();
+		return cpu_state.abrt;
+	}
+	else if(fxinst == 4)
 	{
 		x86illegal();
 		return cpu_state.abrt;
@@ -300,7 +305,7 @@ fx_save_stor_common(uint32_t fetchdat, int bits)
 		SEG_CHECK_WRITE(cpu_state.ea_seg);
     	writememl(easeg, cpu_state.eaaddr, mxcsr & 0xffbf); if (cpu_state.abrt) return 1;
 	}
-	//fxinst == 7 is SFENCE which deals with cache stuff.
+	//fxinst == 5 or 6 or 7 is L/M/SFENCE which deals with cache stuff.
 	//We don't emulate the cache so we can safely ignore it.
 
     return cpu_state.abrt;

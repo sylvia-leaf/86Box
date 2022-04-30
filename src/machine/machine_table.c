@@ -100,6 +100,7 @@ const machine_filter_t machine_chipsets[] = {
     { "Intel 440BX",                MACHINE_CHIPSET_INTEL_440BX         },
     { "Intel 440ZX",                MACHINE_CHIPSET_INTEL_440ZX         },
     { "Intel 440GX",                MACHINE_CHIPSET_INTEL_440GX         },
+    { "Intel i815EP",               MACHINE_CHIPSET_INTEL_I815EP        },
     { "OPTi 283",                   MACHINE_CHIPSET_OPTI_283            },
     { "OPTi 291",                   MACHINE_CHIPSET_OPTI_291            },
     { "OPTi 493",                   MACHINE_CHIPSET_OPTI_493            },
@@ -1000,6 +1001,10 @@ const machine_t machines[] = {
     /* Has a Winbond W83977EF Super I/O chip with on-chip KBC with AMIKey-2 KBC
        firmware. */
     { "[VIA Apollo Pro 133A] BCM GT694VA",             "gt694va",          MACHINE_TYPE_SOCKET370,  MACHINE_CHIPSET_VIA_APOLLO_PRO_133A, machine_at_gt694va_init,          0, 0, MACHINE_AVAILABLE, 0 , CPU_PKG_SOCKET370,                 CPU_BLOCK_NONE,                       66666667, 133333333, 1300, 3500, 1.5, 8.0, MACHINE_PS2_AGP,   MACHINE_IDE_DUAL | MACHINE_SOUND, 16384, 3145728, 8192, 255, at_gt694va_get_device, NULL },
+
+     /* Intel i815EP */
+    { "[Intel i815EP] Biostar M6TSL",                  "m6tsl",            MACHINE_TYPE_SOCKET370,       MACHINE_CHIPSET_INTEL_I815EP,        machine_at_m6tsl_init,            0, 0, MACHINE_AVAILABLE, 0 , CPU_PKG_SOCKET370,                 CPU_BLOCK_NONE,        			      66666667, 133333333, 1300, 3500, 1.5, 15.0, MACHINE_PS2_NOISA,   MACHINE_IDE_DUAL, 32768, 524288, 32768, 255, NULL, NULL },
+    { "[Intel i815EP] Tyan Tomcat i815T",              "s2080",            MACHINE_TYPE_SOCKET370,       MACHINE_CHIPSET_INTEL_I815EP,        machine_at_s2080_init,            0, 0, MACHINE_AVAILABLE, 0 , CPU_PKG_SOCKET370,                 CPU_BLOCK_NONE,        			      66666667, 133333333, 1300, 3500, 1.5, 15.0, MACHINE_PS2_NOISA,   MACHINE_IDE_DUAL, 32768, 524288, 32768, 255, NULL, NULL },
 
     /* Miscellaneous/Fake/Hypervisor machines */
     /* Has a Winbond W83977F Super I/O chip with on-chip KBC with AMIKey-2 KBC

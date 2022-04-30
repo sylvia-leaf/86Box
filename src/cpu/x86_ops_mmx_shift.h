@@ -190,6 +190,8 @@ static int opPSRAW_a32(uint32_t fetchdat)
 
 static int opPSxxD_imm(uint32_t fetchdat)
 {
+        if((cpu_features & CPU_FEATURE_SSE2) && sse_xmm) return opPSxxD_xmm_imm(fetchdat);
+
         int reg = fetchdat & 7;
         int op = fetchdat & 0x38;
         int shift = (fetchdat >> 8) & 0xff;
@@ -348,6 +350,7 @@ static int opPSRAD_a32(uint32_t fetchdat)
 
 static int opPSxxQ_imm(uint32_t fetchdat)
 {
+        if((cpu_features & CPU_FEATURE_SSE2) && sse_xmm) return opPSxxQ_xmm_imm(fetchdat);
         int reg = fetchdat & 7;
         int op = fetchdat & 0x38;
         int shift = (fetchdat >> 8) & 0xff;
@@ -357,18 +360,18 @@ static int opPSxxQ_imm(uint32_t fetchdat)
 
         switch (op)
         {
-                case 0x10: /*PSRLW*/
+                case 0x10: /*PSRLQ*/
                 if (shift > 63)
                         cpu_state.MM[reg].q = 0;
                 else
                         cpu_state.MM[reg].q >>= shift;
                 break;
-                case 0x20: /*PSRAW*/
+                case 0x20: /*PSRAQ*/
                 if (shift > 63)
                         shift = 63;
                 cpu_state.MM[reg].sq >>= shift;
                 break;
-                case 0x30: /*PSLLW*/
+                case 0x30: /*PSLLQ*/
                 if (shift > 63)
                         cpu_state.MM[reg].q = 0;
                 else

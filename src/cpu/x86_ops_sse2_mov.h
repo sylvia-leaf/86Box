@@ -901,3 +901,167 @@ static int opPSHUFD_a32(uint32_t fetchdat)
     }
     return 0;
 }
+
+static int opMOVD_xmm_l_a16(uint32_t fetchdat)
+{
+        fetch_ea_16(fetchdat);
+        if (cpu_mod == 3)
+        {
+                cpu_state.regs[cpu_rm].l = XMM[cpu_reg].l[0];
+                CLOCK_CYCLES(1);
+        }
+        else
+        {
+                SEG_CHECK_WRITE(cpu_state.ea_seg);
+                CHECK_WRITE_COMMON(cpu_state.ea_seg, cpu_state.eaaddr, cpu_state.eaaddr + 3);
+                writememl(easeg, cpu_state.eaaddr, XMM[cpu_reg].l[0]); if (cpu_state.abrt) return 1;
+                CLOCK_CYCLES(2);
+        }
+        return 0;
+}
+
+static int opMOVD_xmm_l_a32(uint32_t fetchdat)
+{
+        fetch_ea_32(fetchdat);
+        if (cpu_mod == 3)
+        {
+                cpu_state.regs[cpu_rm].l = XMM[cpu_reg].l[0];
+                CLOCK_CYCLES(1);
+        }
+        else
+        {
+                SEG_CHECK_WRITE(cpu_state.ea_seg);
+                CHECK_WRITE_COMMON(cpu_state.ea_seg, cpu_state.eaaddr, cpu_state.eaaddr + 3);
+                writememl(easeg, cpu_state.eaaddr, XMM[cpu_reg].l[0]); if (cpu_state.abrt) return 1;
+                CLOCK_CYCLES(2);
+        }
+        return 0;
+}
+
+static int opMOVQ_xmm_q_a16(uint32_t fetchdat)
+{
+        fetch_ea_16(fetchdat);
+        if (cpu_mod == 3)
+        {
+                XMM[cpu_rm].q[0] = XMM[cpu_reg].q[0];
+                CLOCK_CYCLES(1);
+        }
+        else
+        {
+                SEG_CHECK_WRITE(cpu_state.ea_seg);
+                CHECK_WRITE_COMMON(cpu_state.ea_seg, cpu_state.eaaddr, cpu_state.eaaddr + 7);
+                writememq(easeg, cpu_state.eaaddr,     XMM[cpu_reg].q[0]); if (cpu_state.abrt) return 1;
+                CLOCK_CYCLES(2);
+        }
+        return 0;
+}
+static int opMOVQ_xmm_q_a32(uint32_t fetchdat)
+{
+        fetch_ea_32(fetchdat);
+        if (cpu_mod == 3)
+        {
+                XMM[cpu_rm].q[0] = XMM[cpu_reg].q[0];
+                CLOCK_CYCLES(1);
+        }
+        else
+        {
+                SEG_CHECK_WRITE(cpu_state.ea_seg);
+                CHECK_WRITE_COMMON(cpu_state.ea_seg, cpu_state.eaaddr, cpu_state.eaaddr + 7);
+                writememq(easeg, cpu_state.eaaddr,     XMM[cpu_reg].q[0]); if (cpu_state.abrt) return 1;
+                CLOCK_CYCLES(2);
+        }
+        return 0;
+}
+
+
+static int opMOVDQA_xmm_q_a16(uint32_t fetchdat)
+{
+        fetch_ea_16(fetchdat);
+        if (cpu_mod == 3)
+        {
+                XMM[cpu_rm].q[0] = XMM[cpu_reg].q[0];
+                XMM[cpu_rm].q[1] = XMM[cpu_reg].q[1];
+                CLOCK_CYCLES(1);
+        }
+        else
+        {
+                if(cpu_state.eaaddr & 0xf)
+                {
+                    x86gpf(NULL, 0);
+                    if(cpu_state.abrt) return 1;
+                }
+
+                SEG_CHECK_WRITE(cpu_state.ea_seg);
+                CHECK_WRITE_COMMON(cpu_state.ea_seg, cpu_state.eaaddr, cpu_state.eaaddr + 15);
+                writememq(easeg, cpu_state.eaaddr,     XMM[cpu_reg].q[0]); if (cpu_state.abrt) return 1;
+                writememq(easeg, cpu_state.eaaddr + 8, XMM[cpu_reg].q[1]); if (cpu_state.abrt) return 1;
+                CLOCK_CYCLES(2);
+        }
+        return 0;
+}
+
+static int opMOVDQA_xmm_q_a32(uint32_t fetchdat)
+{
+        fetch_ea_32(fetchdat);
+        if (cpu_mod == 3)
+        {
+                XMM[cpu_rm].q[0] = XMM[cpu_reg].q[0];
+                XMM[cpu_rm].q[1] = XMM[cpu_reg].q[1];
+                CLOCK_CYCLES(1);
+        }
+        else
+        {
+                if(cpu_state.eaaddr & 0xf)
+                {
+                    x86gpf(NULL, 0);
+                    if(cpu_state.abrt) return 1;
+                }
+
+                SEG_CHECK_WRITE(cpu_state.ea_seg);
+                CHECK_WRITE_COMMON(cpu_state.ea_seg, cpu_state.eaaddr, cpu_state.eaaddr + 15);
+                writememq(easeg, cpu_state.eaaddr,     XMM[cpu_reg].q[0]); if (cpu_state.abrt) return 1;
+                writememq(easeg, cpu_state.eaaddr + 8, XMM[cpu_reg].q[1]); if (cpu_state.abrt) return 1;
+                CLOCK_CYCLES(2);
+        }
+        return 0;
+}
+
+static int opMOVDQU_xmm_q_a16(uint32_t fetchdat)
+{
+        fetch_ea_16(fetchdat);
+        if (cpu_mod == 3)
+        {
+                XMM[cpu_rm].q[0] = XMM[cpu_reg].q[0];
+                XMM[cpu_rm].q[1] = XMM[cpu_reg].q[1];
+                CLOCK_CYCLES(1);
+        }
+        else
+        {
+                SEG_CHECK_WRITE(cpu_state.ea_seg);
+                CHECK_WRITE_COMMON(cpu_state.ea_seg, cpu_state.eaaddr, cpu_state.eaaddr + 15);
+                writememq(easeg, cpu_state.eaaddr,     XMM[cpu_reg].q[0]); if (cpu_state.abrt) return 1;
+                writememq(easeg, cpu_state.eaaddr + 8, XMM[cpu_reg].q[1]); if (cpu_state.abrt) return 1;
+                CLOCK_CYCLES(2);
+        }
+        return 0;
+}
+
+static int opMOVDQU_xmm_q_a32(uint32_t fetchdat)
+{
+        fetch_ea_32(fetchdat);
+        if (cpu_mod == 3)
+        {
+                XMM[cpu_rm].q[0] = XMM[cpu_reg].q[0];
+                XMM[cpu_rm].q[1] = XMM[cpu_reg].q[1];
+                CLOCK_CYCLES(1);
+        }
+        else
+        {
+                SEG_CHECK_WRITE(cpu_state.ea_seg);
+                CHECK_WRITE_COMMON(cpu_state.ea_seg, cpu_state.eaaddr, cpu_state.eaaddr + 15);
+                writememq(easeg, cpu_state.eaaddr,     XMM[cpu_reg].q[0]); if (cpu_state.abrt) return 1;
+                writememq(easeg, cpu_state.eaaddr + 8, XMM[cpu_reg].q[1]); if (cpu_state.abrt) return 1;
+                CLOCK_CYCLES(2);
+        }
+        return 0;
+}

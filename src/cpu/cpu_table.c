@@ -1121,6 +1121,35 @@ const cpu_family_t cpu_families[] = {
 	}
 	}, {
 	.package = CPU_PKG_SOCKET370,
+	.manufacturer = "Intel",
+	.name = "Pentium III (Tualatin)",
+	.internal_name = "pentium3_tualatin",
+	.cpus = (const CPU[]) {
+		{"1000",      CPU_PENTIUM3,  fpus_internal, 1000000000,  7.5, 1475,  0x6B1,  0x6B1, 0, CPU_SUPPORTS_DYNAREC | CPU_REQUIRES_DYNAREC, 41,41,14,14, 72},
+		{"1133",      CPU_PENTIUM3,  fpus_internal, 1133333333,  8.5, 1475,  0x6B1,  0x6B1, 0, CPU_SUPPORTS_DYNAREC | CPU_REQUIRES_DYNAREC, 41,41,14,14, 72},
+		{"1200",      CPU_PENTIUM3,  fpus_internal, 1200000000,  9.0, 1475,  0x6B1,  0x6B1, 0, CPU_SUPPORTS_DYNAREC | CPU_REQUIRES_DYNAREC, 41,41,14,14, 72},
+		{"1266",      CPU_PENTIUM3,  fpus_internal, 1266666666,  9.5, 1450,  0x6B1,  0x6B1, 0, CPU_SUPPORTS_DYNAREC | CPU_REQUIRES_DYNAREC, 41,41,14,14, 72},
+		{"1333",      CPU_PENTIUM3,  fpus_internal, 1333333333, 10.0, 1475,  0x6B1,  0x6B1, 0, CPU_SUPPORTS_DYNAREC | CPU_REQUIRES_DYNAREC, 41,41,14,14, 72},
+		{"1400",      CPU_PENTIUM3,  fpus_internal, 1400000000, 10.5, 1450,  0x6B1,  0x6B1, 0, CPU_SUPPORTS_DYNAREC | CPU_REQUIRES_DYNAREC, 41,41,14,14, 72},
+		{"", 0}
+	}
+	}, {
+	.package = CPU_PKG_SOCKET370,
+	.manufacturer = "Intel",
+	.name = "Celeron (Tualatin)",
+	.internal_name = "celeron_tualatin",
+	.cpus = (const CPU[]) {
+		{"900",      CPU_PENTIUM3,  fpus_internal, 900000000,  9.0, 1475,  0x6B4,  0x6B4, 0, CPU_SUPPORTS_DYNAREC | CPU_REQUIRES_DYNAREC, 41,41,14,14, 72},
+		{"1000",      CPU_PENTIUM3,  fpus_internal, 1000000000, 10.0, 1475,  0x6B4,  0x6B4, 0, CPU_SUPPORTS_DYNAREC | CPU_REQUIRES_DYNAREC, 41,41,14,14, 72},
+		{"1100",      CPU_PENTIUM3,  fpus_internal, 1100000000, 11.0, 1500,  0x6B4,  0x6B4, 0, CPU_SUPPORTS_DYNAREC | CPU_REQUIRES_DYNAREC, 41,41,14,14, 72},
+		{"1200",      CPU_PENTIUM3,  fpus_internal, 1200000000, 12.0, 1500,  0x6B4,  0x6B4, 0, CPU_SUPPORTS_DYNAREC | CPU_REQUIRES_DYNAREC, 41,41,14,14, 72},
+		{"1300",      CPU_PENTIUM3,  fpus_internal, 1300000000, 13.0, 1500,  0x6B4,  0x6B4, 0, CPU_SUPPORTS_DYNAREC | CPU_REQUIRES_DYNAREC, 41,41,14,14, 72},
+		{"1400",      CPU_PENTIUM3,  fpus_internal, 1400000000, 14.0, 1500,  0x6B4,  0x6B4, 0, CPU_SUPPORTS_DYNAREC | CPU_REQUIRES_DYNAREC, 41,41,14,14, 72},
+		{"1500",      CPU_PENTIUM3,  fpus_internal, 1500000000, 15.0, 1500,  0x6B4,  0x6B4, 0, CPU_SUPPORTS_DYNAREC | CPU_REQUIRES_DYNAREC, 41,41,14,14, 72},
+		{"", 0}
+	}
+	}, {
+	.package = CPU_PKG_SOCKET370,
 	.manufacturer = "VIA",
 	.name = "Cyrix III",
 	.internal_name = "c3_samuel",

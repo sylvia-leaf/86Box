@@ -97,6 +97,9 @@ extern const device_t	piix4_device;
 extern const device_t	piix4e_device;
 extern const device_t	slc90e66_device;
 
+extern const device_t	intel_815ep_device;
+extern const device_t   intel_ich2_device;
+
 extern const device_t	ioapic_device;
 
 /* OPTi */

@@ -402,7 +402,7 @@ static int opCVTSD2SS_mm_xmm_a16(uint32_t fetchdat)
     return 0;
 }
 
-static int opCVTSD2SS_mm_xmm_a16(uint32_t fetchdat)
+static int opCVTSD2SS_mm_xmm_a32(uint32_t fetchdat)
 {
     fetch_ea_32(fetchdat);
     if (cpu_mod == 3)

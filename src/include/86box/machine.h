@@ -208,6 +208,7 @@ enum {
     MACHINE_CHIPSET_INTEL_440BX,
     MACHINE_CHIPSET_INTEL_440ZX,
     MACHINE_CHIPSET_INTEL_440GX,
+    MACHINE_CHIPSET_INTEL_I815EP,
     MACHINE_CHIPSET_OPTI_283,
     MACHINE_CHIPSET_OPTI_291,
     MACHINE_CHIPSET_OPTI_493,
@@ -730,6 +731,8 @@ extern const device_t 	*at_cuv4xls_get_device(void);
 extern int	machine_at_6via90ap_init(const machine_t *);
 extern int	machine_at_s1857_init(const machine_t *);
 extern int	machine_at_p6bap_init(const machine_t *);
+extern int	machine_at_m6tsl_init(const machine_t *);
+extern int	machine_at_s2080_init(const machine_t *);
 
 /* m_at_misc.c */
 extern int	machine_at_vpc2007_init(const machine_t *);
