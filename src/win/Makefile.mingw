@@ -556,7 +556,7 @@ CHIPSETOBJ	:= 82c100.o acc2168.o \
 		    cs4031.o cs8230.o \
 		    ali1429.o ali1489.o ali1531.o ali1541.o ali1543.o ali1621.o ali6117.o \
 		    gc100.o headland.o \
-		    ims8848.o intel_82335.o intel_420ex.o intel_4x0.o intel_i450kx.o intel_sio.o intel_piix.o \
+		    ims8848.o intel_82335.o intel_420ex.o intel_4x0.o intel_815ep.o intel_i450kx.o intel_ich2.o intel_sio.o intel_piix.o \
 		    ioapic.o \
 		    neat.o \
 		    opti283.o opti291.o opti391.o opti495.o opti822.o opti895.o opti5x7.o \
@@ -597,7 +597,7 @@ DEVOBJ		:= bugger.o cartridge.o cassette.o hasp.o hwm.o hwm_lm75.o hwm_lm78.o hw
 		    mouse_serial.o mouse_ps2.o \
 			phoenix_486_jumper.o
 else
-DEVOBJ		:= bugger.o cartridge.o cassette.o hasp.o hwm.o hwm_lm75.o hwm_lm78.o hwm_gl518sm.o hwm_vt82c686.o \
+DEVOBJ		:= bugger.o cartridge.o cassette.o hasp.o hwm.o hwm_lm75.o hwm_lm78.o hwm_gl518sm.o hwm_vt82c686.o hwm_nsc366.o \
 			ibm_5161.o isamem.o isartc.o lpt.o pci_bridge.o postcard.o serial.o \
 			clock_ics9xxx.o isapnp.o \
 		    i2c.o i2c_gpio.o smbus_ali7101.o smbus_piix4.o \
@@ -606,14 +606,18 @@ DEVOBJ		:= bugger.o cartridge.o cassette.o hasp.o hwm.o hwm_lm75.o hwm_lm78.o hw
 		   mouse.o \
 			mouse_bus.o \
 		    mouse_serial.o mouse_ps2.o \
-			phoenix_486_jumper.o
+			phoenix_486_jumper.o \
+			intel_ich2_gpio.o \
+			intel_ich2_trap.o \
+			tco.o \
+
 endif
 
 SIOOBJ		:= sio_acc3221.o \
 		    sio_f82c710.o sio_82091aa.o sio_fdc37c6xx.o \
 		    sio_fdc37c67x.o sio_fdc37c669.o sio_fdc37c93x.o sio_fdc37m60x.o \
 			sio_it8661f.o \
-		    sio_pc87306.o sio_pc87307.o sio_pc87309.o sio_pc87310.o sio_pc87311.o sio_pc87332.o \
+		    sio_pc87306.o sio_pc87307.o sio_pc87309.o sio_pc87310.o sio_pc87311.o sio_pc87332.o sio_nsc366.o \
 			sio_prime3b.o sio_prime3c.o \
 		    sio_w83787f.o \
 		    sio_w83877f.o sio_w83977f.o \
