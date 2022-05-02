@@ -219,9 +219,10 @@ then
 			# Call build with the correct MSYSTEM.
 			echo [-] Switching to MSYSTEM [$msys]
 			cd "$cwd"
-			strip_arg=
-			[ $strip -ne 0 ] && strip_arg="-t "
-			CHERE_INVOKING=yes MSYSTEM="$msys" bash -lc 'exec "'"$0"'" -b "'"$package_name"'" "'"$arch"'" '"$strip_arg""$cmake_flags"
+			args=
+			[ $strip -ne 0 ] && args="-t $args"
+			[ $skip_archive -ne 0 ] && args="-n $args"
+			CHERE_INVOKING=yes MSYSTEM="$msys" bash -lc 'exec "'"$0"'" -b "'"$package_name"'" "'"$arch"'" '"$args""$cmake_flags"
 			exit $?
 		fi
 	else
@@ -350,13 +351,13 @@ then
 		for arch_universal in $(echo "$arch" | tr '+' ' ')
 		do
 			# Run build for the architecture.
-			strip_arg=
-			[ $strip -ne 0 ] && strip_arg="-t "
+			args=
+			[ $strip -ne 0 ] && args="-t $args"
 			case $arch_universal in # workaround: force new dynarec on for ARM
 				arm32 | arm64)	cmake_flags_extra="-D NEW_DYNAREC=ON";;
 				*)		cmake_flags_extra=;;
 			esac
-			zsh -lc 'exec "'"$0"'" -n -b "universal part" "'"$arch_universal"'" '"$strip_arg""$cmake_flags"' '"$cmake_flags_extra"
+			zsh -lc 'exec "'"$0"'" -n -b "universal part" "'"$arch_universal"'" '"$args""$cmake_flags"' '"$cmake_flags_extra"
 			status=$?
 
 			if [ $status -eq 0 ]
@@ -380,14 +381,14 @@ then
 					(cd "archive_tmp_universal/$merge_src.app" && find . -type d && cd "../../archive_tmp_universal/$arch_universal.app" && find . -type d && cd ../..) | sort > universal_listing.txt
 					cat universal_listing.txt | uniq | while IFS= read line
 					do
-						echo '> Directory:' "$line"
+						echo "> Directory: $line"
 						mkdir -p "archive_tmp_universal/$merge_dest.app/$line"
 					done
 
 					# Create merged file listing.
 					(cd "archive_tmp_universal/$merge_src.app" && find . -type f && cd "../../archive_tmp_universal/$arch_universal.app" && find . -type f && cd ../..) | sort > universal_listing.txt
 
-					# Move files that only exist on one bundle.
+					# Copy files that only exist on one bundle.
 					cat universal_listing.txt | uniq -u | while IFS= read line
 					do
 						if [ -e "archive_tmp_universal/$merge_src.app/$line" ]
@@ -396,23 +397,22 @@ then
 						else
 							file_src="$arch_universal"
 						fi
-						echo '> Only on' "[$file_src]:" "$line"
+						echo "> Only on [$file_src]: $line"
 						cp -p "archive_tmp_universal/$file_src.app/$line" "archive_tmp_universal/$merge_dest.app/$line"
 					done
 
-					# Move or lipo files that exist on both bundles.
+					# Copy or lipo files that exist on both bundles.
 					cat universal_listing.txt | uniq -d | while IFS= read line
 					do
-						# Merge identical files.
 						if cmp -s "archive_tmp_universal/$merge_src.app/$line" "archive_tmp_universal/$arch_universal.app/$line"
 						then
-							echo '> Identical:' "$line"
+							echo "> Identical: $line"
 							cp -p "archive_tmp_universal/$merge_src.app/$line" "archive_tmp_universal/$merge_dest.app/$line"
 						elif lipo -create -output "archive_tmp_universal/$merge_dest.app/$line" "archive_tmp_universal/$merge_src.app/$line" "archive_tmp_universal/$arch_universal.app/$line" 2> /dev/null
 						then
-							echo '> Merged:' "$line"
+							echo "> Merged: $line"
 						else
-							echo '> Copied from' "[$merge_src]:" "$line"
+							echo "> Copied from [$merge_src]: $line"
 							cp -p "archive_tmp_universal/$merge_src.app/$line" "archive_tmp_universal/$merge_dest.app/$line"
 						fi
 					done
@@ -421,14 +421,33 @@ then
 					(cd "archive_tmp_universal/$merge_src.app" && find . -type l && cd "../../archive_tmp_universal/$arch_universal.app" && find . -type l && cd ../..) | sort > universal_listing.txt
 					cat universal_listing.txt | uniq | while IFS= read line
 					do
+						# Get symlink destinations.
+						other_link_dest=
 						if [ -e "archive_tmp_universal/$merge_src.app/$line" ]
 						then
 							file_src="$merge_src"
+							other_link_path="archive_tmp_universal/$arch_universal.app/$line"
+							if [ -L "$other_link_path" ]
+							then
+								other_link_dest="$(readlink "$other_link_path")"
+							elif [ -e "$other_link_path" ]
+							then
+								other_link_dest='[not a symlink]'
+							fi
 						else
 							file_src="$arch_universal"
 						fi
 						link_dest="$(readlink "archive_tmp_universal/$file_src.app/$line")"
-						echo '> Symlink:' "$line" '=>' "$link_dest"
+
+						# Warn if destinations differ.
+						if [ -n "$other_link_dest" -a "$link_dest" != "$other_link_dest" ]
+						then
+							echo "> Symlink: $line => WARNING: different targets"
+							echo ">> Using: [$merge_src] $link_dest"
+							echo ">> Other: [$arch_universal] $other_link_dest"
+						else
+							echo "> Symlink: $line => $link_dest"
+						fi
 						ln -s "$link_dest" "archive_tmp_universal/$merge_dest.app/$line"
 					done
 
@@ -450,9 +469,10 @@ then
 		mv "archive_tmp_universal/$merge_src.app" "$app_bundle_name"
 
 		# Sign final app bundle.
-		codesign --force --deep -s - "$app_bundle_name"
+		arch -"$(uname -m)" codesign --force --deep -s - "$app_bundle_name"
 
 		# Create zip.
+		echo [-] Creating artifact archive
 		cd archive_tmp
 		zip -r "$cwd/$package_name.zip" .
 		status=$?
@@ -479,9 +499,10 @@ then
 		# Call build with the correct architecture.
 		echo [-] Switching to architecture [$arch]
 		cd "$cwd"
-		strip_arg=
-		[ $strip -ne 0 ] && strip_arg="-t "
-		arch -"$arch" zsh -lc 'exec "'"$0"'" -b "'"$package_name"'" "'"$arch"'" '"$strip_arg""$cmake_flags"
+		args=
+		[ $strip -ne 0 ] && args="-t $args"
+		[ $skip_archive -ne 0 ] && args="-n $args"
+		arch -"$arch" zsh -lc 'exec "'"$0"'" -b "'"$package_name"'" "'"$arch"'" '"$args""$cmake_flags"
 		exit $?
 	fi
 	echo [-] Using architecture [$(arch)]
