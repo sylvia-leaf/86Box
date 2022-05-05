@@ -474,7 +474,7 @@ then
 		# Create zip.
 		echo [-] Creating artifact archive
 		cd archive_tmp
-		zip -r "$cwd/$package_name.zip" .
+		zip --symlinks -r "$cwd/$package_name.zip" .
 		status=$?
 
 		# Check if the archival succeeded.
@@ -520,9 +520,6 @@ then
 
 	# Point CMake to the toolchain file.
 	[ -e "cmake/$toolchain.cmake" ] && cmake_flags_extra="$cmake_flags_extra -D \"CMAKE_TOOLCHAIN_FILE=cmake/$toolchain.cmake\""
-
-	# Use OpenAL as MacPorts doesn't package FAudio.
-	cmake_flags_extra="$cmake_flags_extra -D OPENAL=ON"
 else
 	# Determine Debian architecture.
 	case $arch in
@@ -895,7 +892,7 @@ elif is_mac
 then
 	# Create zip.
 	cd archive_tmp
-	zip -r "$cwd/$package_name.zip" .
+	zip --symlinks -r "$cwd/$package_name.zip" .
 	status=$?
 else
 	# Determine AppImage runtime architecture.
