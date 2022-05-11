@@ -92,8 +92,8 @@ static int opCVTTPS2PI_mm_xmm_a16(uint32_t fetchdat)
     fetch_ea_16(fetchdat);
     if (cpu_mod == 3)
     {
-        cpu_state.MM[cpu_reg].l[0] = floor(XMM[cpu_rm].f[0]);
-        cpu_state.MM[cpu_reg].l[1] = floor(XMM[cpu_rm].f[1]);
+        cpu_state.MM[cpu_reg].l[0] = trunc(XMM[cpu_rm].f[0]);
+        cpu_state.MM[cpu_reg].l[1] = trunc(XMM[cpu_rm].f[1]);
         CLOCK_CYCLES(1);
     }
     else
@@ -106,8 +106,8 @@ static int opCVTTPS2PI_mm_xmm_a16(uint32_t fetchdat)
         float dst_real[2];
         dst_real[0] = *(float*)&dst[0];
         dst_real[1] = *(float*)&dst[1];
-        cpu_state.MM[cpu_reg].l[0] = floor(dst_real[0]);
-        cpu_state.MM[cpu_reg].l[1] = floor(dst_real[1]);
+        cpu_state.MM[cpu_reg].l[0] = trunc(dst_real[0]);
+        cpu_state.MM[cpu_reg].l[1] = trunc(dst_real[1]);
         CLOCK_CYCLES(2);
     }
     return 0;
@@ -119,8 +119,8 @@ static int opCVTTPS2PI_mm_xmm_a32(uint32_t fetchdat)
     fetch_ea_32(fetchdat);
     if (cpu_mod == 3)
     {
-        cpu_state.MM[cpu_reg].l[0] = floor(XMM[cpu_rm].f[0]);
-        cpu_state.MM[cpu_reg].l[1] = floor(XMM[cpu_rm].f[1]);
+        cpu_state.MM[cpu_reg].l[0] = trunc(XMM[cpu_rm].f[0]);
+        cpu_state.MM[cpu_reg].l[1] = trunc(XMM[cpu_rm].f[1]);
         CLOCK_CYCLES(1);
     }
     else
@@ -133,8 +133,8 @@ static int opCVTTPS2PI_mm_xmm_a32(uint32_t fetchdat)
         float dst_real[2];
         dst_real[0] = *(float*)&dst[0];
         dst_real[1] = *(float*)&dst[1];
-        cpu_state.MM[cpu_reg].l[0] = floor(dst_real[0]);
-        cpu_state.MM[cpu_reg].l[1] = floor(dst_real[1]);
+        cpu_state.MM[cpu_reg].l[0] = trunc(dst_real[0]);
+        cpu_state.MM[cpu_reg].l[1] = trunc(dst_real[1]);
         CLOCK_CYCLES(2);
     }
     return 0;
@@ -145,7 +145,7 @@ static int opCVTTSS2SI_l_xmm_a16(uint32_t fetchdat)
     fetch_ea_16(fetchdat);
     if (cpu_mod == 3)
     {
-        setr32(cpu_reg, floor(XMM[cpu_rm].f[0]));
+        setr32(cpu_reg, trunc(XMM[cpu_rm].f[0]));
         CLOCK_CYCLES(1);
     }
     else
@@ -156,7 +156,7 @@ static int opCVTTSS2SI_l_xmm_a16(uint32_t fetchdat)
         dst = readmeml(easeg, cpu_state.eaaddr); if (cpu_state.abrt) return 1;
         float dst_real;
         dst_real = *(float*)&dst;
-        setr32(cpu_reg, floor(dst_real));
+        setr32(cpu_reg, trunc(dst_real));
         CLOCK_CYCLES(2);
     }
     return 0;
@@ -167,7 +167,7 @@ static int opCVTTSS2SI_l_xmm_a32(uint32_t fetchdat)
     fetch_ea_32(fetchdat);
     if (cpu_mod == 3)
     {
-        setr32(cpu_reg, floor(XMM[cpu_rm].f[0]));
+        setr32(cpu_reg, trunc(XMM[cpu_rm].f[0]));
         CLOCK_CYCLES(1);
     }
     else
@@ -178,7 +178,7 @@ static int opCVTTSS2SI_l_xmm_a32(uint32_t fetchdat)
         dst = readmeml(easeg, cpu_state.eaaddr); if (cpu_state.abrt) return 1;
         float dst_real;
         dst_real = *(float*)&dst;
-        setr32(cpu_reg, floor(dst_real));
+        setr32(cpu_reg, trunc(dst_real));
         CLOCK_CYCLES(2);
     }
     return 0;
