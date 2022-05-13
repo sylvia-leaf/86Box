@@ -1065,3 +1065,73 @@ static int opMOVDQU_xmm_q_a32(uint32_t fetchdat)
         }
         return 0;
 }
+
+static int opMOVNTI_a16(uint32_t fetchdat)
+{
+    fetch_ea_16(fetchdat);
+    ILLEGAL_ON(cpu_mod == 3);
+    SEG_CHECK_WRITE(cpu_state.ea_seg);
+    CHECK_WRITE_COMMON(cpu_state.ea_seg, cpu_state.eaaddr, cpu_state.eaaddr + 3);
+    writememl(easeg, cpu_state.eaaddr, getr32(cpu_reg)); if (cpu_state.abrt) return 1;
+    CLOCK_CYCLES(1);
+    return 0;
+}
+
+static int opMOVNTI_a32(uint32_t fetchdat)
+{
+    fetch_ea_32(fetchdat);
+    ILLEGAL_ON(cpu_mod == 3);
+    SEG_CHECK_WRITE(cpu_state.ea_seg);
+    CHECK_WRITE_COMMON(cpu_state.ea_seg, cpu_state.eaaddr, cpu_state.eaaddr + 3);
+    writememl(easeg, cpu_state.eaaddr, getr32(cpu_reg)); if (cpu_state.abrt) return 1;
+    CLOCK_CYCLES(1);
+    return 0;
+}
+
+static int opSHUFPD_xmm_w_a16(uint32_t fetchdat)
+{
+    fetch_ea_16(fetchdat);
+    uint8_t imm = getbyte();
+    if (cpu_mod == 3)
+    {
+        XMM[cpu_reg].d[0] = XMM[cpu_rm].f[imm & 1];
+        XMM[cpu_reg].d[1] = XMM[cpu_rm].f[(imm >> 1) & 1];
+        CLOCK_CYCLES(1);
+    }
+    else
+    {
+        uint64_t src[2];
+        
+        SEG_CHECK_READ(cpu_state.ea_seg);
+        src[0] = readmemq(easeg, cpu_state.eaaddr); if (cpu_state.abrt) return 1;
+        src[1] = readmemq(easeg, cpu_state.eaaddr + 8); if (cpu_state.abrt) return 1;
+        XMM[cpu_reg].q[0] = src[imm & 1];
+        XMM[cpu_reg].q[1] = src[(imm >> 1) & 1];
+        CLOCK_CYCLES(2);
+    }
+    return 0;
+}
+
+static int opSHUFPD_xmm_w_a32(uint32_t fetchdat)
+{
+    fetch_ea_32(fetchdat);
+    uint8_t imm = getbyte();
+    if (cpu_mod == 3)
+    {
+        XMM[cpu_reg].d[0] = XMM[cpu_rm].f[imm & 1];
+        XMM[cpu_reg].d[1] = XMM[cpu_rm].f[(imm >> 1) & 1];
+        CLOCK_CYCLES(1);
+    }
+    else
+    {
+        uint64_t src[2];
+        
+        SEG_CHECK_READ(cpu_state.ea_seg);
+        src[0] = readmemq(easeg, cpu_state.eaaddr); if (cpu_state.abrt) return 1;
+        src[1] = readmemq(easeg, cpu_state.eaaddr + 8); if (cpu_state.abrt) return 1;
+        XMM[cpu_reg].q[0] = src[imm & 1];
+        XMM[cpu_reg].q[1] = src[(imm >> 1) & 1];
+        CLOCK_CYCLES(2);
+    }
+    return 0;
+}
