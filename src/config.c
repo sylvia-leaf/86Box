@@ -609,7 +609,7 @@ load_general(void)
 
     video_framerate = config_get_int(cat, "video_gl_framerate", -1);
     video_vsync = config_get_int(cat, "video_gl_vsync", 0);
-    strncpy(video_shader, config_get_string(cat, "video_gl_shader", ""), sizeof(video_shader));
+    strcpy(video_shader, config_get_string(cat, "video_gl_shader", ""));
 }
 
 
@@ -1025,7 +1025,7 @@ static void
 load_sound(void)
 {
     char *cat = "Sound";
-    char temp[512];
+    char *temp;
     char *p;
 
     p = config_get_string(cat, "sndcard", NULL);
@@ -1055,12 +1055,10 @@ load_sound(void)
     GAMEBLASTER = !!config_get_int(cat, "gameblaster", 0);
     GUS = !!config_get_int(cat, "gus", 0);
 
-    memset(temp, '\0', sizeof(temp));
     p = config_get_string(cat, "sound_type", "float");
-    if (strlen(p) > 511)
-	fatal("load_sound(): strlen(p) > 511\n");
-    else
-	strncpy(temp, p, strlen(p) + 1);
+    temp = (char*)malloc(strlen(p) + 1);
+	memset(temp, '\0', strlen(p) + 1);
+	strcpy(temp, p);
     if (!strcmp(temp, "float") || !strcmp(temp, "1"))
 	sound_is_float = 1;
       else
@@ -1230,12 +1228,12 @@ load_storage_controllers(void)
     if (strlen(p) > 511)
 	fatal("load_storage_controllers(): strlen(p) > 511\n");
     else
-	strncpy(cassette_fname, p, MIN(512, strlen(p) + 1));
+	strcpy(cassette_fname, p);
     p = config_get_string(cat, "cassette_mode", "");
     if (strlen(p) > 511)
 	fatal("load_storage_controllers(): strlen(p) > 511\n");
     else
-	strncpy(cassette_mode, p, MIN(512, strlen(p) + 1));
+	strcpy(cassette_mode, p);
     cassette_pos = config_get_int(cat, "cassette_position", 0);
     cassette_srate = config_get_int(cat, "cassette_srate", 44100);
     cassette_append = !!config_get_int(cat, "cassette_append", 0);
@@ -1266,7 +1264,7 @@ load_storage_controllers(void)
 	if (strlen(p) > 511)
 		fatal("load_storage_controllers(): strlen(p) > 511\n");
 	else
-		strncpy(cart_fns[c], p, strlen(p) + 1);
+		strcpy(cart_fns[c], p);
     }
 }
 
@@ -1503,7 +1501,7 @@ load_floppy_drives(void)
 	if (strlen(p) > 511)
 		fatal("load_floppy_drives(): strlen(p) > 511\n");
 	else
-		strncpy(floppyfns[c], p, strlen(p) + 1);
+		strcpy(floppyfns[c], p);
 
 	/* if (*wp != L'\0')
 		config_log("Floppy%d: %ls\n", c, floppyfns[c]); */
@@ -1566,7 +1564,7 @@ load_floppy_and_cdrom_drives(void)
 	if (strlen(p) > 511)
 		fatal("load_floppy_and_cdrom_drives(): strlen(p) > 511\n");
 	else
-		strncpy(floppyfns[c], p, strlen(p) + 1);
+		strcpy(floppyfns[c], p);
 
 	/* if (*wp != L'\0')
 		config_log("Floppy%d: %ls\n", c, floppyfns[c]); */

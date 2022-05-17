@@ -45,11 +45,11 @@ tco_log(const char *fmt, ...)
 #define tco_log(fmt, ...)
 #endif
 
-void
+/*void
 tco_timer_handler(void *priv)
 {
-    tco_t *dev = (tco_t *) priv;
-}
+    //tco_t *dev = (tco_t *) priv;
+}*/
 
 void
 tco_irq_update(tco_t *dev, uint16_t new_irq)

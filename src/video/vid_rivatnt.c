@@ -509,7 +509,7 @@ rivatnt_pfb_read(uint32_t addr, void *p)
 uint32_t
 rivatnt_pextdev_read(uint32_t addr, void *p)
 {
-    rivatnt_t *rivatnt = (rivatnt_t *)p;
+    //rivatnt_t *rivatnt = (rivatnt_t *)p;
 
     switch(addr)
     {
@@ -593,12 +593,12 @@ rivatnt_ptimer_tick(void *p)
     //pclog("[RIVA TNT] PTIMER tick! mul %04x div %04x\n", rivatnt->ptimer.clock_mul, rivatnt->ptimer.clock_div);
 
     double time = ((double)rivatnt->ptimer.clock_mul * 10.0) / (double)rivatnt->ptimer.clock_div; //Multiply by 10 to avoid timer system limitations.
-    uint32_t tmp;
+    //uint32_t tmp;
     int alarm_check;
 
     //if(cs == 0x0008 && !rivatnt->pgraph.beta) nv_riva_log("RIVA TNT PTIMER time elapsed %f alarm %08x, time_low %08x\n", time, rivatnt->ptimer.alarm, rivatnt->ptimer.time & 0xffffffff);
 
-    tmp = rivatnt->ptimer.time;
+    //tmp = rivatnt->ptimer.time;
     rivatnt->ptimer.time += (uint64_t)time;
 
     alarm_check = (uint32_t)(rivatnt->ptimer.time - rivatnt->ptimer.alarm) & 0x80000000;

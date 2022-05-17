@@ -410,7 +410,7 @@ pc_init(int argc, char *argv[])
 	struct tm *info;
 	time_t now;
 	int c;
-	int ng = 0, lvmp = 0;
+	int lvmp = 0;
 #ifdef _WIN32
 	uint32_t *uid, *shwnd;
 #endif
@@ -497,7 +497,7 @@ usage:
 			/* Currently does nothing, but if/when we implement a built-in manager,
 			   it's going to force the manager not to run, allowing the old usage
 			   without parameter. */
-			ng = 1;
+			//ng = 1;
 		} else if (!strcasecmp(argv[c], "--fullscreen") ||
 			   !strcasecmp(argv[c], "-F")) {
 			start_in_fullscreen = 1;

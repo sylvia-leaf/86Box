@@ -679,7 +679,7 @@ static void
 ibm8514_ramdac_out(uint16_t port, uint8_t val, void *p)
 {
     svga_t *svga = (svga_t *)p;
-    uint8_t index;
+    //uint8_t index;
 
     switch (port) {
         case 0x2ea:
@@ -702,7 +702,7 @@ ibm8514_ramdac_in(uint16_t port, void *p)
 {
     svga_t *svga = (svga_t *)p;
     uint8_t ret = 0xff;
-    uint8_t index;
+    //uint8_t index;
 
     switch (port) {
         case 0x2ea:
@@ -2906,7 +2906,7 @@ ibm8514_poll(ibm8514_t *dev, svga_t *svga)
 {
     uint32_t x;
     int wx, wy;
-    int old_ma, blink_delay;
+    //int old_ma, blink_delay;
 
     if (!dev->linepos) {
     timer_advance_u64(&svga->timer, svga->dispofftime);
@@ -3150,7 +3150,7 @@ static void
 ibm8514_speed_changed(void *p)
 {
     svga_t *svga = (svga_t *)p;
-    ibm8514_t *dev = &svga->dev8514;
+    //ibm8514_t *dev = &svga->dev8514;
 
     svga_recalctimings(svga);
 }

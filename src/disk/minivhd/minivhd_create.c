@@ -365,9 +365,9 @@ static MVHDMeta* mvhd_create_sparse_diff(const char* path, const char* par_path,
      * tp the file. Both absolute and relative paths are written
      * */
     if (par_vhdm != NULL) {
-        uint64_t curr_pos = (uint64_t)mvhd_ftello64(f);
+        //uint64_t curr_pos = (uint64_t)mvhd_ftello64(f);
         /* Double check my sums... */
-        assert(curr_pos == par_loc_offset);
+        //assert(curr_pos == par_loc_offset);
         /* Fill the space required for location data with zero */
         uint8_t empty_sect[MVHD_SECTOR_SIZE] = {0};
         for (int i = 0; i < 2; i++) {

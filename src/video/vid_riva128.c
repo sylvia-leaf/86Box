@@ -1306,7 +1306,7 @@ riva128_pgraph_execute_command(uint16_t method, uint32_t param, uint32_t ctx,
 uint32_t graphobj0, uint32_t graphobj1, uint32_t graphobj2, uint32_t graphobj3, void *p)
 {
     riva128_t *riva128 = (riva128_t *)p;
-    svga_t *svga = &riva128->svga;
+    //svga_t *svga = &riva128->svga;
 
     uint8_t objclass = (ctx >> 16) & 0x1f;
 
@@ -1566,10 +1566,10 @@ uint32_t graphobj0, uint32_t graphobj1, uint32_t graphobj2, uint32_t graphobj3, 
         riva128->pgraph.notify_impending--;
         if(riva128->pgraph.notify_impending == 0)
         {
-            uint64_t *vram_q = (uint64_t *)svga->vram;
+            //uint64_t *vram_q = (uint64_t *)svga->vram;
             uint32_t notify_obj_addr = (graphobj1 >> 16) << 4;
-            uint32_t flags = riva128_ramin_read_l(notify_obj_addr, riva128);
-            uint32_t limit = riva128_ramin_read_l(notify_obj_addr + 4, riva128);
+            //uint32_t flags = riva128_ramin_read_l(notify_obj_addr, riva128);
+            //uint32_t limit = riva128_ramin_read_l(notify_obj_addr + 4, riva128);
             uint32_t pte = riva128_ramin_read_l(notify_obj_addr + 8, riva128);
             uint32_t pte_frame = pte & 0xfffff000;
             uint32_t notifier[4];
@@ -1727,7 +1727,7 @@ void
 riva128_do_gpu_work(void *p)
 {
     riva128_t *riva128 = (riva128_t *)p;
-    svga_t *svga = &riva128->svga;
+    //svga_t *svga = &riva128->svga;
 
     /*if(riva128->pfifo.caches[1].dma_ctrl & 1)
     {
@@ -1836,12 +1836,12 @@ riva128_ptimer_tick(void *p)
     //pclog("[RIVA 128] PTIMER tick! mul %04x div %04x\n", riva128->ptimer.clock_mul, riva128->ptimer.clock_div);
 
     double time = ((double)riva128->ptimer.clock_mul * 10.0) / (double)riva128->ptimer.clock_div; //Multiply by 10 to avoid timer system limitations.
-    uint32_t tmp;
+    //uint32_t tmp;
     int alarm_check;
 
     //if(cs == 0x0008 && !riva128->pgraph.beta) nv_riva_log("RIVA 128 PTIMER time elapsed %f alarm %08x, time_low %08x\n", time, riva128->ptimer.alarm, riva128->ptimer.time & 0xffffffff);
 
-    tmp = riva128->ptimer.time;
+    //tmp = riva128->ptimer.time;
     riva128->ptimer.time += (uint64_t)time;
 
     alarm_check = ((uint32_t)riva128->ptimer.time >= (uint32_t)riva128->ptimer.alarm);
