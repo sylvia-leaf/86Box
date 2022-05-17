@@ -1576,7 +1576,7 @@ uint32_t graphobj0, uint32_t graphobj1, uint32_t graphobj2, uint32_t graphobj3, 
             notifier[0] = riva128->ptimer.time & 0xffffffffull;
             notifier[1] = riva128->ptimer.time >> 32;
             notifier[2] = notifier[3] = 0;
-            dma_bm_write(pte_frame, notifier, 4, 4);
+            dma_bm_write(pte_frame, (uint8_t*)notifier, 4, 4);
             if(riva128->pgraph.notifier_obj == 1) riva128_pgraph_interrupt(28, riva128);
         }
     }

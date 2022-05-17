@@ -665,7 +665,7 @@ SCSIOBJ		:= scsi.o scsi_device.o \
 
 NETOBJ		:= network.o \
 		    net_pcap.o \
-		    net_slirp.o tinyglib.o \
+		    net_slirp.o \
 		     arp_table.o bootp.o cksum.o dnssearch.o if.o ip_icmp.o ip_input.o \
 		     ip_output.o mbuf.o misc.o sbuf.o slirp.o socket.o tcp_input.o \
 		     tcp_output.o tcp_subr.o tcp_timer.o udp.o util.o version.o \
@@ -781,7 +781,7 @@ ifdef EXOBJ
 OBJ		+= $(EXOBJ)
 endif
 
-LIBS		:= -mwindows -lcomctl32 -lSDL2 -limagehlp -ldinput8 -ldxguid -ldxerr8 -luser32 -lgdi32 -lwinmm -limm32 -lole32 -loleaut32 -lshell32 -lversion -luuid
+LIBS		:= -mwindows -lcomctl32 -lSDL2 -limagehlp -ldinput8 -ldxguid -ldxerr8 -luser32 -lgdi32 -lwinmm -limm32 -lole32 -loleaut32 -lshell32 -lversion -luuid -lglib-2.0
 
 ifeq ($(RTMIDI), y)
  SNDOBJ		+= midi_rtmidi.o

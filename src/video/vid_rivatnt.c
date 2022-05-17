@@ -1165,8 +1165,6 @@ rivatnt_close(void *p)
     rivatnt_t *rivatnt = (rivatnt_t *)p;
     
     svga_close(&rivatnt->svga);
-
-    free(rivatnt->ramin);
     
     free(rivatnt);
 }
