@@ -36,6 +36,8 @@
 #include <86box/pci.h>
 #include <86box/ppi.h>
 #include <86box/timer.h>
+#include <86box/video.h>
+#include <86box/vid_svga.h>
 
 /* The opcode of the instruction currently being executed. */
 uint8_t opcode;
@@ -342,6 +344,9 @@ softresetx86(void)
 {
     if (soft_reset_mask)
 	return;
+
+    if (ibm8514_enabled)
+        vga_on = 1;
 
     reset_common(0);
 }
