@@ -46,7 +46,7 @@ intel_ich2_gpio_write(uint16_t addr, uint8_t val, void *priv)
 
     addr -= dev->gpio_addr;
 
-    intel_ich2_gpio_log("Intel ICH2 GPIO: Write 0x%02x on GPIO Register 0x%02x\n", addr, val);
+    intel_ich2_gpio_log("Intel ICH2 GPIO: Write 0x%02x on GPIO Register 0x%02x\n", val, addr);
 
     switch(addr)
     {
@@ -137,8 +137,8 @@ intel_ich2_gpio_reset(void *priv)
     dev->gpio_regs[0x04] = 0xff;
     dev->gpio_regs[0x05] = 0xff;
 
-    dev->gpio_regs[0x0e] = 0x1f;
-    dev->gpio_regs[0x0f] = 0x1f;
+    dev->gpio_regs[0x0e] = 0x3f;
+    dev->gpio_regs[0x0f] = 0x1b;
 
     dev->gpio_regs[0x16] = 0x63;
     dev->gpio_regs[0x17] = 0x06;

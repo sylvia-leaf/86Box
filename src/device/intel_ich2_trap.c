@@ -59,7 +59,7 @@ intel_ich2_trap_kick(int size, uint16_t addr, uint8_t write, uint8_t val, void *
 void
 intel_ich2_device_trap_setup(int enable, uint8_t acpi_reg, uint8_t acpi_reg_val, uint16_t addr, uint16_t size, int is_hdd, intel_ich2_trap_t *trap)
 {
-uint8_t acpi_trap_recieve = ((acpi_reg == 0x49) ? (trap->acpi->regs.devtrap_en >> 8) : (trap->acpi->regs.devtrap_en)) & 0xff; // Check if the decoded range is enabled on ACPIS
+uint8_t acpi_trap_recieve = ((acpi_reg == 0x49) ? (trap->acpi->regs.devtrap_en >> 8) : (trap->acpi->regs.devtrap_en)) & 0xff; // Check if the decoded range is enabled on ACPI
 int acpi_enable = !!(acpi_trap_recieve & acpi_reg_val);
 int trap_enabled = acpi_enable && enable;
 
@@ -76,7 +76,7 @@ static void
 intel_ich2_trap_close(void *priv)
 {
     intel_ich2_trap_t *trap = (intel_ich2_trap_t *) priv;
-    
+
     io_trap_remove(trap->trap); // Remove the I/O Trap
     free(trap);
 }

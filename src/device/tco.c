@@ -28,8 +28,6 @@
 
 #ifdef ENABLE_TCO_LOG
 int tco_do_log = ENABLE_TCO_LOG;
-
-
 static void
 tco_log(const char *fmt, ...)
 {
@@ -44,12 +42,6 @@ tco_log(const char *fmt, ...)
 #else
 #define tco_log(fmt, ...)
 #endif
-
-/*void
-tco_timer_handler(void *priv)
-{
-    //tco_t *dev = (tco_t *) priv;
-}*/
 
 void
 tco_irq_update(tco_t *dev, uint16_t new_irq)
@@ -83,7 +75,7 @@ tco_write(uint16_t addr, uint8_t val, tco_t *dev)
         case 0x03: /* TCO Data out */
             dev->regs[addr] = val;
             dev->regs[0x04] |= 4;
-            picint(dev->tco_irq);
+            picint(1 << dev->tco_irq);
         break;
 
         case 0x04:
@@ -111,7 +103,7 @@ tco_write(uint16_t addr, uint8_t val, tco_t *dev)
         break;
 
         case 0x0a:
-            dev->regs[addr] = val & 0x06; // Intrusion Interrupt or SMI. We never get intruded so we never control it.
+            dev->regs[addr] = val & 0x06; // Intrusion Interrupt or SMI. We never get intruded so we never control it. More chances the emulators owner to intrude you if you block him :b.
         break;
 
         case 0x0c ... 0x0d:

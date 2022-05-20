@@ -6,7 +6,7 @@
  * Copyright 2022 Tiseno100.
  */
 
-/* The conversion algorithms were taken from the pc87360.c driver of the Linux kernel.
+/* The conversion algorithms were taken by the pc87360.c driver of the Linux kernel.
    Respective credits goes to the authors.                                          */
 
 #include <stdarg.h>
@@ -24,17 +24,22 @@
 #include <86box/hwm.h>
 #include <86box/nsc366.h>
 
+/* Fan Algorithms */
 #define FAN_TO_REG(val, div)	((val) <= 100 ? 0 : 480000 / ((val) * (div)))
 #define FAN_DIV_FROM_REG(val)	(1 << (((val) >> 5) & 0x03))
+#define FAN_FROM_REG(val, div)	((val) == 0 ? 0 : 480000 / ((val) * (div)))
 
+/* Voltage Algorithms */
 #define IN_TO_REG(val, ref)		((val) < 0 ? 0 : (val) * 256 >= (ref) * 255 ? 255 : ((val) * 256 + (ref) / 2) / (ref))
+#define IN_FROM_REG(val, ref)	(((val) * (ref) + 128) / 256)
 #define VREF (dev->vlm_config_global[0x08] & 2) ? 3025 : 2966 //VREF taken from pc87360.c
 #define VLM_BANK dev->vlm_config_global[0x09]
 
+/* Temperature Algorithms */
 #define TEMP_TO_REG(val)		((val) < -55000 ? -55 : (val) > 127000 ? 127 : (val) < 0 ? ((val) - 500) / 1000 : ((val) + 500) / 1000)
+#define TEMP_FROM_REG(val)		((val) * 1000)
 #define TMS_BANK dev->tms_config_global[0x09]
 
-#define ENABLE_NSC366_HWM_LOG 1
 #ifdef ENABLE_NSC366_HWM_LOG
 int nsc366_hwm_do_log = ENABLE_NSC366_HWM_LOG;
 void
@@ -57,8 +62,10 @@ static void
 nsc366_fscm_write(uint16_t addr, uint8_t val, void *priv)
 {
     nsc366_hwm_t *dev = (nsc366_hwm_t *)priv;
-    addr -= dev->fscm_addr;
-    nsc366_hwm_log("NSC366-Fan Control: Write 0x%02x to register 0x%02x\n", val, addr);
+
+    addr &= 0x000f;
+
+    nsc366_hwm_log("NSC366 Fan Control: Write 0x%02x to register 0x%02x\n", val, addr);
 
     switch(addr)
     {
@@ -88,13 +95,12 @@ nsc366_fscm_write(uint16_t addr, uint8_t val, void *priv)
     }
 }
 
-
 static uint8_t
 nsc366_fscm_read(uint16_t addr, void *priv)
 {
     nsc366_hwm_t *dev = (nsc366_hwm_t *)priv;
 
-    addr -= dev->fscm_addr;
+    addr &= 0x000f;
 
     switch(addr)
     {
@@ -106,7 +112,11 @@ nsc366_fscm_read(uint16_t addr, void *priv)
         case 0x07:
         case 0x0a:
         case 0x0d:
-            return dev->fscm_config[addr];
+            if(((addr == 0x07) && !!(dev->fscm_enable & 1)) || ((addr == 0x0a) && !!(dev->fscm_enable & 2)) || ((addr == 0x0d) && !!(dev->fscm_enable & 4))) {
+                nsc366_hwm_log("NSC366 Fan Control: Reading %d RPM's from Bank %d\n", FAN_FROM_REG(dev->fscm_config[addr], FAN_DIV_FROM_REG(dev->fscm_config[0x06])), (addr - 7) / 3);
+                return dev->fscm_config[addr];
+            }
+            else return 0;
 
         default:
             return 0;
@@ -130,12 +140,13 @@ static void
 nsc366_vlm_write(uint16_t addr, uint8_t val, void *priv)
 {
     nsc366_hwm_t *dev = (nsc366_hwm_t *)priv;
-    addr -= dev->vlm_addr;
+
+    addr &= 0x000f;
 
     if(addr <= 9)
-        nsc366_hwm_log("NSC366-Voltage Monitor: Write 0x%02x to register 0x%02x\n", val, addr);
+        nsc366_hwm_log("NSC366 Voltage Monitor: Write 0x%02x to register 0x%02x\n", val, addr);
     else
-        nsc366_hwm_log("NSC366-Voltage Monitor: Write 0x%02x to register 0x%02x of bank %d\n", val, addr, VLM_BANK);
+        nsc366_hwm_log("NSC366 Voltage Monitor: Write 0x%02x to register 0x%02x of bank %d\n", val, addr, VLM_BANK);
 
     switch(addr)
     {
@@ -181,7 +192,7 @@ nsc366_vlm_read(uint16_t addr, void *priv)
 {
     nsc366_hwm_t *dev = (nsc366_hwm_t *)priv;
 
-    addr -= dev->vlm_addr;
+    addr &= 0x000f;
 
     switch(addr)
     {
@@ -190,10 +201,22 @@ nsc366_vlm_read(uint16_t addr, void *priv)
         
         case 0x0a:
         case 0x0c ... 0x0e:
-            return dev->vlm_config_bank[VLM_BANK][addr - 0x0a];
+            if(VLM_BANK < 13)
+                return dev->vlm_config_bank[VLM_BANK][addr - 0x0a];
+            else
+                return 0;
         
         case 0x0b:
-            return dev->vlm_config_bank[VLM_BANK][1];
+            if (VLM_BANK < 13) {
+                if (dev->vlm_config_bank[VLM_BANK][0] & 1) {
+                    nsc366_hwm_log("NSC366 Voltage Monitor: Reading %d Volts from Bank %d\n", IN_FROM_REG(dev->vlm_config_bank[VLM_BANK][1], VREF), VLM_BANK);
+                    return dev->vlm_config_bank[VLM_BANK][1];
+                }
+                else
+                    return 0;
+            }
+            else
+                return 0;
 
         default:
             return 0;
@@ -217,12 +240,13 @@ static void
 nsc366_tms_write(uint16_t addr, uint8_t val, void *priv)
 {
     nsc366_hwm_t *dev = (nsc366_hwm_t *)priv;
-    addr -= dev->tms_addr;
+
+    addr &= 0x000f;
 
     if(addr <= 9)
-        nsc366_hwm_log("NSC366-Temperature Monitor: Write 0x%02x to register 0x%02x\n", val, addr);
+        nsc366_hwm_log("NSC366 Temperature Monitor: Write 0x%02x to register 0x%02x\n", val, addr);
     else
-        nsc366_hwm_log("NSC366-Temperature Monitor: Write 0x%02x to register 0x%02x of bank %d\n", val, addr, VLM_BANK);
+        nsc366_hwm_log("NSC366 Temperature Monitor: Write 0x%02x to register 0x%02x of bank %d\n", val, addr, TMS_BANK);
 
     switch(addr)
     {
@@ -248,7 +272,7 @@ nsc366_tms_write(uint16_t addr, uint8_t val, void *priv)
         break;
 
         case 0x0c ... 0x0e:
-            if(TMS_BANK < 13)
+            if(TMS_BANK < 3)
             dev->tms_config_bank[TMS_BANK][addr - 0x0a] = val;
         break;
     }
@@ -260,7 +284,7 @@ nsc366_tms_read(uint16_t addr, void *priv)
 {
     nsc366_hwm_t *dev = (nsc366_hwm_t *)priv;
 
-    addr -= dev->tms_addr;
+    addr &= 0x000f;
 
     switch(addr)
     {
@@ -269,10 +293,18 @@ nsc366_tms_read(uint16_t addr, void *priv)
         
         case 0x0a:
         case 0x0c ... 0x0e:
-            return dev->tms_config_bank[TMS_BANK][addr - 0x0a];
+            if(TMS_BANK < 4)
+                return dev->tms_config_bank[TMS_BANK][addr - 0x0a];
+            else return 0;
         
         case 0x0b:
-            return dev->tms_config_bank[TMS_BANK][1];
+            if(TMS_BANK < 4) {
+                if (dev->vlm_config_bank[VLM_BANK][0] & 1) { 
+                    nsc366_hwm_log("NSC366 Temperature Monitor: Reading %d Degrees Celsius from Bank %d\n", TEMP_FROM_REG(dev->tms_config_bank[TMS_BANK][1]), TMS_BANK);
+                    return dev->tms_config_bank[TMS_BANK][1];
+                }
+                else return 0;
+            }
 
         default:
             return 0;
@@ -298,6 +330,7 @@ nsc366_hwm_reset(void *priv)
 {
     nsc366_hwm_t *dev = (nsc366_hwm_t *)priv;
     memset(dev->fscm_config, 0, sizeof(dev->fscm_config));
+    dev->fscm_enable = 0;
     dev->fscm_addr = 0;
 
     /* Get fan reports from defaults */
@@ -311,9 +344,9 @@ nsc366_hwm_reset(void *priv)
     dev->vlm_config_global[0x08] = 3;
 
     /* Get voltage reports from defaults */
-    for(int i = 0; i < 13; i++) {
+    for(int i = 0; i < 13; i++)
+    {
         dev->vlm_config_bank[i][1] = IN_TO_REG(dev->values->voltages[i], VREF);
-        dev->vlm_config_bank[i][2] = 0xff;
     }
 
     memset(dev->tms_config_global, 0, sizeof(dev->tms_config_global));
@@ -342,7 +375,7 @@ nsc366_hwm_init(const device_t *info)
     nsc366_hwm_t *dev = (nsc366_hwm_t *)malloc(sizeof(nsc366_hwm_t));
     memset(dev, 0, sizeof(nsc366_hwm_t));
 
-    /* Initialize the default values */
+    /* Initialize the default values (HWM is incomplete still) */
     hwm_values_t defaults = {
         {
             3000, /* FAN 0 */
@@ -350,10 +383,24 @@ nsc366_hwm_init(const device_t *info)
             3000  /* FAN 2 */
         },
         {
-            20   /* Temperature 0 */
+            30,   /* Temperatures which are broken */
+            30,
+            30,
+            30
         },
         {
-            hwm_get_vcore()    /* CPU Voltage */
+            0,    /* Voltages which are broken */
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
         }
     };
     hwm_values = defaults;
