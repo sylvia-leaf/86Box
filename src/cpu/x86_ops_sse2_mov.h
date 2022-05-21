@@ -1135,3 +1135,83 @@ static int opSHUFPD_xmm_w_a32(uint32_t fetchdat)
     }
     return 0;
 }
+
+static int opMOVQ_q_xmm_a16(uint32_t fetchdat)
+{
+        fetch_ea_16(fetchdat);
+        if (cpu_mod == 3)
+        {
+                XMM[cpu_reg].q[0] = XMM[cpu_rm].q[0];
+                CLOCK_CYCLES(1);
+        }
+        else
+        {
+                SEG_CHECK_READ(cpu_state.ea_seg);
+                CHECK_WRITE_COMMON(cpu_state.ea_seg, cpu_state.eaaddr, cpu_state.eaaddr + 7);
+                XMM[cpu_reg].q[0] = readmemq(easeg, cpu_state.eaaddr); if (cpu_state.abrt) return 1;
+                CLOCK_CYCLES(2);
+        }
+        return 0;
+}
+
+static int opMOVQ_q_xmm_a32(uint32_t fetchdat)
+{
+        fetch_ea_32(fetchdat);
+        if (cpu_mod == 3)
+        {
+                XMM[cpu_reg].q[0] = XMM[cpu_rm].q[0];
+                CLOCK_CYCLES(1);
+        }
+        else
+        {
+                SEG_CHECK_READ(cpu_state.ea_seg);
+                CHECK_WRITE_COMMON(cpu_state.ea_seg, cpu_state.eaaddr, cpu_state.eaaddr + 7);
+                XMM[cpu_reg].q[0] = readmemq(easeg, cpu_state.eaaddr); if (cpu_state.abrt) return 1;
+                CLOCK_CYCLES(2);
+        }
+        return 0;
+}
+
+static int opMOVQ2DQ_a16(uint32_t fetchdat)
+{
+        MMX_ENTER();
+        fetch_ea_16(fetchdat);
+        ILLEGAL_ON(cpu_mod != 3);
+        
+        XMM[cpu_rm].q[0] = cpu_state.MM[cpu_reg].q;
+        CLOCK_CYCLES(1);
+        return 0;
+}
+
+static int opMOVQ2DQ_a32(uint32_t fetchdat)
+{
+        MMX_ENTER();
+        fetch_ea_32(fetchdat);
+        ILLEGAL_ON(cpu_mod != 3);
+        
+        XMM[cpu_rm].q[0] = cpu_state.MM[cpu_reg].q;
+        CLOCK_CYCLES(1);
+        return 0;
+}
+
+static int opMOVDQ2Q_a16(uint32_t fetchdat)
+{
+        MMX_ENTER();
+        fetch_ea_16(fetchdat);
+        ILLEGAL_ON(cpu_mod != 3);
+        
+        cpu_state.MM[cpu_rm].q = XMM[cpu_reg].q[0];
+        CLOCK_CYCLES(1);
+        return 0;
+}
+
+static int opMOVDQ2Q_a32(uint32_t fetchdat)
+{
+        MMX_ENTER();
+        fetch_ea_32(fetchdat);
+        ILLEGAL_ON(cpu_mod != 3);
+        
+        cpu_state.MM[cpu_rm].q = XMM[cpu_reg].q[0];
+        CLOCK_CYCLES(1);
+        return 0;
+}

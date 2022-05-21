@@ -187,3 +187,272 @@ static int opPSxxQ_xmm_imm(uint32_t fetchdat)
         CLOCK_CYCLES(1);
         return 0;
 }
+
+#define SSE_GETSHIFT()                                                  \
+        if (cpu_mod == 3)                                                   \
+        {                                                               \
+                shift = XMM[cpu_rm].b[0];                                    \
+                CLOCK_CYCLES(1);                                        \
+        }                                                               \
+        else                                                            \
+        {                                                               \
+                SEG_CHECK_READ(cpu_state.ea_seg);                       \
+                shift = readmemb(easeg, cpu_state.eaaddr); if (cpu_state.abrt) return 0;    \
+                CLOCK_CYCLES(2);                                        \
+        }
+
+
+static int opPSRLW_xmm_a16(uint32_t fetchdat)
+{
+        int shift;
+
+        fetch_ea_16(fetchdat);
+        SSE_GETSHIFT();
+
+        if (shift > 15)
+        {
+                XMM[cpu_reg].q[0] = 0;
+                XMM[cpu_reg].q[1] = 0;
+        }
+        else
+        {
+                XMM[cpu_reg].w[0] >>= shift;
+                XMM[cpu_reg].w[1] >>= shift;
+                XMM[cpu_reg].w[2] >>= shift;
+                XMM[cpu_reg].w[3] >>= shift;
+                XMM[cpu_reg].w[4] >>= shift;
+                XMM[cpu_reg].w[5] >>= shift;
+                XMM[cpu_reg].w[6] >>= shift;
+                XMM[cpu_reg].w[7] >>= shift;
+        }
+
+        return 0;
+}
+
+static int opPSRLW_xmm_a32(uint32_t fetchdat)
+{
+        int shift;
+
+        fetch_ea_32(fetchdat);
+        SSE_GETSHIFT();
+
+        if (shift > 15)
+        {
+                XMM[cpu_reg].q[0] = 0;
+                XMM[cpu_reg].q[1] = 0;
+        }
+        else
+        {
+                XMM[cpu_reg].w[0] >>= shift;
+                XMM[cpu_reg].w[1] >>= shift;
+                XMM[cpu_reg].w[2] >>= shift;
+                XMM[cpu_reg].w[3] >>= shift;
+                XMM[cpu_reg].w[4] >>= shift;
+                XMM[cpu_reg].w[5] >>= shift;
+                XMM[cpu_reg].w[6] >>= shift;
+                XMM[cpu_reg].w[7] >>= shift;
+        }
+
+        return 0;
+}
+
+static int opPSRLD_xmm_a16(uint32_t fetchdat)
+{
+        int shift;
+
+        fetch_ea_16(fetchdat);
+        SSE_GETSHIFT();
+
+        if (shift > 31)
+        {
+                XMM[cpu_reg].q[0] = 0;
+                XMM[cpu_reg].q[1] = 0;
+        }
+        else
+        {
+                XMM[cpu_reg].l[0] >>= shift;
+                XMM[cpu_reg].l[1] >>= shift;
+                XMM[cpu_reg].l[2] >>= shift;
+                XMM[cpu_reg].l[3] >>= shift;
+        }
+
+        return 0;
+}
+
+static int opPSRLD_xmm_a32(uint32_t fetchdat)
+{
+        int shift;
+
+        fetch_ea_32(fetchdat);
+        SSE_GETSHIFT();
+
+        if (shift > 31)
+        {
+                XMM[cpu_reg].q[0] = 0;
+                XMM[cpu_reg].q[1] = 0;
+        }
+        else
+        {
+                XMM[cpu_reg].l[0] >>= shift;
+                XMM[cpu_reg].l[1] >>= shift;
+                XMM[cpu_reg].l[2] >>= shift;
+                XMM[cpu_reg].l[3] >>= shift;
+        }
+
+        return 0;
+}
+
+static int opPSRLQ_xmm_a16(uint32_t fetchdat)
+{
+        int shift;
+
+        fetch_ea_16(fetchdat);
+        SSE_GETSHIFT();
+
+        if (shift > 63)
+        {
+                XMM[cpu_reg].q[0] = 0;
+                XMM[cpu_reg].q[1] = 0;
+        }
+        else
+        {
+                XMM[cpu_reg].q[0] >>= shift;
+                XMM[cpu_reg].q[1] >>= shift;
+        }
+
+        return 0;
+}
+
+static int opPSRAW_xmm_a16(uint32_t fetchdat)
+{
+        int shift;
+
+        fetch_ea_16(fetchdat);
+        SSE_GETSHIFT();
+
+        if (shift > 15)
+                shift = 15;
+
+        XMM[cpu_reg].sw[0] >>= shift;
+        XMM[cpu_reg].sw[1] >>= shift;
+        XMM[cpu_reg].sw[2] >>= shift;
+        XMM[cpu_reg].sw[3] >>= shift;
+        XMM[cpu_reg].sw[4] >>= shift;
+        XMM[cpu_reg].sw[5] >>= shift;
+        XMM[cpu_reg].sw[6] >>= shift;
+        XMM[cpu_reg].sw[7] >>= shift;
+
+        return 0;
+}
+
+static int opPSRAW_xmm_a32(uint32_t fetchdat)
+{
+        int shift;
+
+        fetch_ea_32(fetchdat);
+        SSE_GETSHIFT();
+
+        if (shift > 15)
+                shift = 15;
+
+        XMM[cpu_reg].sw[0] >>= shift;
+        XMM[cpu_reg].sw[1] >>= shift;
+        XMM[cpu_reg].sw[2] >>= shift;
+        XMM[cpu_reg].sw[3] >>= shift;
+        XMM[cpu_reg].sw[4] >>= shift;
+        XMM[cpu_reg].sw[5] >>= shift;
+        XMM[cpu_reg].sw[6] >>= shift;
+        XMM[cpu_reg].sw[7] >>= shift;
+
+        return 0;
+}
+
+static int opPSRAD_xmm_a16(uint32_t fetchdat)
+{
+        int shift;
+
+        fetch_ea_16(fetchdat);
+        SSE_GETSHIFT();
+
+        if (shift > 31)
+                shift = 31;
+
+        XMM[cpu_reg].sl[0] >>= shift;
+        XMM[cpu_reg].sl[1] >>= shift;
+        XMM[cpu_reg].sl[2] >>= shift;
+        XMM[cpu_reg].sl[3] >>= shift;
+
+        return 0;
+}
+
+static int opPSRAD_xmm_a32(uint32_t fetchdat)
+{
+        int shift;
+
+        fetch_ea_32(fetchdat);
+        SSE_GETSHIFT();
+
+        if (shift > 31)
+                shift = 31;
+
+        XMM[cpu_reg].sl[0] >>= shift;
+        XMM[cpu_reg].sl[1] >>= shift;
+        XMM[cpu_reg].sl[2] >>= shift;
+        XMM[cpu_reg].sl[3] >>= shift;
+
+        return 0;
+}
+
+static int opPSLLW_xmm_a16(uint32_t fetchdat)
+{
+        int shift;
+
+        fetch_ea_16(fetchdat);
+        SSE_GETSHIFT();
+
+        if (shift > 15)
+        {
+                XMM[cpu_reg].q[0] = 0;
+                XMM[cpu_reg].q[1] = 0;
+        }
+        else
+        {
+                XMM[cpu_reg].w[0] <<= shift;
+                XMM[cpu_reg].w[1] <<= shift;
+                XMM[cpu_reg].w[2] <<= shift;
+                XMM[cpu_reg].w[3] <<= shift;
+                XMM[cpu_reg].w[4] <<= shift;
+                XMM[cpu_reg].w[5] <<= shift;
+                XMM[cpu_reg].w[6] <<= shift;
+                XMM[cpu_reg].w[7] <<= shift;
+        }
+
+        return 0;
+}
+
+static int opPSLLW_xmm_a32(uint32_t fetchdat)
+{
+        int shift;
+
+        fetch_ea_32(fetchdat);
+        SSE_GETSHIFT();
+
+        if (shift > 15)
+        {
+                XMM[cpu_reg].q[0] = 0;
+                XMM[cpu_reg].q[1] = 0;
+        }
+        else
+        {
+                XMM[cpu_reg].w[0] <<= shift;
+                XMM[cpu_reg].w[1] <<= shift;
+                XMM[cpu_reg].w[2] <<= shift;
+                XMM[cpu_reg].w[3] <<= shift;
+                XMM[cpu_reg].w[4] <<= shift;
+                XMM[cpu_reg].w[5] <<= shift;
+                XMM[cpu_reg].w[6] <<= shift;
+                XMM[cpu_reg].w[7] <<= shift;
+        }
+
+        return 0;
+}
