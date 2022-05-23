@@ -48,6 +48,7 @@ static int opPUNPCKLDQ_a32(uint32_t fetchdat)
 
 static int opPUNPCKHDQ_a16(uint32_t fetchdat)
 {
+        if((cpu_features & CPU_FEATURE_SSE2) && sse_xmm) return opPUNPCKHDQ_xmm_a16(fetchdat);
         MMX_REG src;
         MMX_ENTER();
 
@@ -61,6 +62,7 @@ static int opPUNPCKHDQ_a16(uint32_t fetchdat)
 }
 static int opPUNPCKHDQ_a32(uint32_t fetchdat)
 {
+        if((cpu_features & CPU_FEATURE_SSE2) && sse_xmm) return opPUNPCKHDQ_xmm_a32(fetchdat);
         MMX_REG src;
         MMX_ENTER();
 
