@@ -1,29 +1,3 @@
-static int opPADDQ_a16(uint32_t fetchdat)
-{
-        MMX_REG src;
-        MMX_ENTER();
-
-        fetch_ea_16(fetchdat);
-        MMX_GETSRC();
-
-        cpu_state.MM[cpu_reg].q += src.q;
-
-        return 0;
-}
-
-static int opPADDQ_a32(uint32_t fetchdat)
-{
-        MMX_REG src;
-        MMX_ENTER();
-
-        fetch_ea_32(fetchdat);
-        MMX_GETSRC();
-
-        cpu_state.MM[cpu_reg].q += src.q;
-
-        return 0;
-}
-
 static int opPADDQ_xmm_a16(uint32_t fetchdat)
 {
         SSE_REG src;
@@ -46,6 +20,34 @@ static int opPADDQ_xmm_a32(uint32_t fetchdat)
 
         XMM[cpu_reg].q[0] += src.q[0];
         XMM[cpu_reg].q[1] += src.q[1];
+
+        return 0;
+}
+
+static int opPADDQ_a16(uint32_t fetchdat)
+{
+        if(sse_xmm) return opPADDQ_xmm_a16(fetchdat);
+        MMX_REG src;
+        MMX_ENTER();
+
+        fetch_ea_16(fetchdat);
+        MMX_GETSRC();
+
+        cpu_state.MM[cpu_reg].q += src.q;
+
+        return 0;
+}
+
+static int opPADDQ_a32(uint32_t fetchdat)
+{
+        if(sse_xmm) return opPADDQ_xmm_a32(fetchdat);
+        MMX_REG src;
+        MMX_ENTER();
+
+        fetch_ea_32(fetchdat);
+        MMX_GETSRC();
+
+        cpu_state.MM[cpu_reg].q += src.q;
 
         return 0;
 }

@@ -1,5 +1,6 @@
 static int opPSxxW_xmm_imm(uint32_t fetchdat)
 {
+        if((cpu_features & CPU_FEATURE_SSE2) && sse_xmm) return opPSxxW_xmm_imm(fetchdat);
         int reg = fetchdat & 7;
         int op = fetchdat & 0x38;
         int shift = (fetchdat >> 8) & 0xff;

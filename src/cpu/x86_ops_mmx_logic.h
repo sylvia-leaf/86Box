@@ -1,5 +1,6 @@
 static int opPAND_a16(uint32_t fetchdat)
 {
+        if((cpu_features & CPU_FEATURE_SSE2) && sse_xmm) return opPAND_xmm_a16(fetchdat);
         MMX_REG src;
         MMX_ENTER();
 
@@ -11,6 +12,7 @@ static int opPAND_a16(uint32_t fetchdat)
 }
 static int opPAND_a32(uint32_t fetchdat)
 {
+        if((cpu_features & CPU_FEATURE_SSE2) && sse_xmm) return opPAND_xmm_a32(fetchdat);
         MMX_REG src;
         MMX_ENTER();
 
@@ -23,6 +25,7 @@ static int opPAND_a32(uint32_t fetchdat)
 
 static int opPANDN_a16(uint32_t fetchdat)
 {
+        if((cpu_features & CPU_FEATURE_SSE2) && sse_xmm) return opPANDN_xmm_a16(fetchdat);
         MMX_REG src;
         MMX_ENTER();
 
@@ -34,6 +37,7 @@ static int opPANDN_a16(uint32_t fetchdat)
 }
 static int opPANDN_a32(uint32_t fetchdat)
 {
+        if((cpu_features & CPU_FEATURE_SSE2) && sse_xmm) return opPANDN_xmm_a32(fetchdat);
         MMX_REG src;
         MMX_ENTER();
 
@@ -46,6 +50,7 @@ static int opPANDN_a32(uint32_t fetchdat)
 
 static int opPOR_a16(uint32_t fetchdat)
 {
+        if((cpu_features & CPU_FEATURE_SSE2) && sse_xmm) return opPOR_xmm_a16(fetchdat);
         MMX_REG src;
         MMX_ENTER();
 
@@ -57,6 +62,7 @@ static int opPOR_a16(uint32_t fetchdat)
 }
 static int opPOR_a32(uint32_t fetchdat)
 {
+        if((cpu_features & CPU_FEATURE_SSE2) && sse_xmm) return opPOR_xmm_a32(fetchdat);
         MMX_REG src;
         MMX_ENTER();
 
@@ -69,6 +75,7 @@ static int opPOR_a32(uint32_t fetchdat)
 
 static int opPXOR_a16(uint32_t fetchdat)
 {
+        if((cpu_features & CPU_FEATURE_SSE2) && sse_xmm) return opPXOR_xmm_a16(fetchdat);
         MMX_REG src;
         MMX_ENTER();
 
@@ -80,6 +87,7 @@ static int opPXOR_a16(uint32_t fetchdat)
 }
 static int opPXOR_a32(uint32_t fetchdat)
 {
+        if((cpu_features & CPU_FEATURE_SSE2) && sse_xmm) return opPXOR_xmm_a32(fetchdat);
         MMX_REG src;
         MMX_ENTER();
 

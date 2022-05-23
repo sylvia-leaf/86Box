@@ -286,7 +286,7 @@ static int opCVTPD2PS_mm_xmm_a32(uint32_t fetchdat)
 
 static int opCVTPS2PD_mm_xmm_a16(uint32_t fetchdat)
 {
-    if((cpu_features & CPU_FEATURE_SSE2) && sse_xmm) return opCVTPD2PS_mm_xmm_a16(fetchdat);
+    if(sse_xmm) return opCVTPD2PS_mm_xmm_a16(fetchdat);
     fetch_ea_16(fetchdat);
     if (cpu_mod == 3)
     {
@@ -496,7 +496,7 @@ static int opCVTPS2DQ_xmm_xmm_a32(uint32_t fetchdat)
 
 static int opCVTDQ2PS_xmm_xmm_a16(uint32_t fetchdat)
 {
-    if((cpu_features & CPU_FEATURE_SSE2) && sse_xmm) return opCVTPS2DQ_xmm_xmm_a16(fetchdat);
+    if(sse_xmm) return opCVTPS2DQ_xmm_xmm_a16(fetchdat);
     fetch_ea_16(fetchdat);
     if (cpu_mod == 3)
     {
@@ -622,7 +622,7 @@ static int opCVTTPS2DQ_xmm_xmm_a32(uint32_t fetchdat)
     return 0;
 }
 
-static int opCVTPS2DQ_mm_xmm_a16(uint32_t fetchdat)
+static int opCVTPD2DQ_mm_xmm_a16(uint32_t fetchdat)
 {
     fetch_ea_16(fetchdat);
     if (cpu_mod == 3)
@@ -654,7 +654,7 @@ static int opCVTPS2DQ_mm_xmm_a16(uint32_t fetchdat)
     return 0;
 }
 
-static int opCVTPS2DQ_mm_xmm_a32(uint32_t fetchdat)
+static int opCVTPD2DQ_mm_xmm_a32(uint32_t fetchdat)
 {
     fetch_ea_32(fetchdat);
     if (cpu_mod == 3)
@@ -686,7 +686,7 @@ static int opCVTPS2DQ_mm_xmm_a32(uint32_t fetchdat)
     return 0;
 }
 
-static int opCVTTPS2DQ_mm_xmm_a16(uint32_t fetchdat)
+static int opCVTTPD2DQ_mm_xmm_a16(uint32_t fetchdat)
 {
     fetch_ea_16(fetchdat);
     ILLEGAL_ON(!sse_xmm);
@@ -715,7 +715,7 @@ static int opCVTTPS2DQ_mm_xmm_a16(uint32_t fetchdat)
     return 0;
 }
 
-static int opCVTTPS2DQ_mm_xmm_a32(uint32_t fetchdat)
+static int opCVTTPD2DQ_mm_xmm_a32(uint32_t fetchdat)
 {
     fetch_ea_32(fetchdat);
     ILLEGAL_ON(!sse_xmm);

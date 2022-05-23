@@ -91,7 +91,7 @@ const OpFn	*x86_dynarec_opcodes, *x86_dynarec_opcodes_0f,
 		*x86_dynarec_opcodes_de_a16, *x86_dynarec_opcodes_de_a32,
 		*x86_dynarec_opcodes_df_a16, *x86_dynarec_opcodes_df_a32,
 		*x86_dynarec_opcodes_REPE, *x86_dynarec_opcodes_REPNE,
-		*x86_dynarec_opcodes_REPNE_0f,
+		*x86_dynarec_opcodes_REPE_0f,
 		*x86_dynarec_opcodes_3DNOW;
 #endif
 
@@ -452,7 +452,7 @@ cpu_set(void)
 #endif
     x86_opcodes_REPE = ops_REPE;
     x86_opcodes_REPNE = ops_REPNE;
-    x86_opcodes_REPNE_0f = NULL;
+    x86_opcodes_REPE_0f = NULL;
     x86_opcodes_3DNOW = ops_3DNOW;
 #ifdef USE_DYNAREC
     x86_dynarec_opcodes_REPE = dynarec_ops_REPE;
@@ -1321,11 +1321,11 @@ cpu_set(void)
                 x86_dynarec_opcodes_db_a32 = dynarec_ops_fpu_686_db_a32;
                 x86_dynarec_opcodes_df_a16 = dynarec_ops_fpu_686_df_a16;
                 x86_dynarec_opcodes_df_a32 = dynarec_ops_fpu_686_df_a32;
-				x86_dynarec_opcodes_REPNE_0f = dynarec_ops_pentium3_REPNE_0f;
+				x86_dynarec_opcodes_REPE_0f = dynarec_ops_pentium3_REPE_0f;
 #else
 		x86_setopcodes(ops_386, ops_pentium3_0f);
 #endif
-		x86_opcodes_REPNE_0f = ops_pentium3_REPNE_0f;
+		x86_opcodes_REPE_0f = ops_pentium3_REPE_0f;
 		x86_opcodes_da_a16 = ops_fpu_686_da_a16;
 		x86_opcodes_da_a32 = ops_fpu_686_da_a32;
 		x86_opcodes_db_a16 = ops_fpu_686_db_a16;
@@ -1427,12 +1427,12 @@ cpu_set(void)
 #ifdef USE_DYNAREC
 		x86_setopcodes(ops_386, ops_nehemiah_0f, dynarec_ops_386, dynarec_ops_nehemiah_0f);
 
-		x86_dynarec_opcodes_REPNE_0f = dynarec_ops_nehemiah_REPNE_0f;
-		x86_opcodes_REPNE_0f = ops_nehemiah_REPNE_0f;
+		x86_dynarec_opcodes_REPE_0f = dynarec_ops_nehemiah_REPE_0f;
+		x86_opcodes_REPE_0f = ops_nehemiah_REPE_0f;
 #else
 		x86_setopcodes(ops_386, ops_nehemiah_0f);
 
-		x86_opcodes_REPNE_0f = ops_nehemiah_REPNE_0f;
+		x86_opcodes_REPE_0f = ops_nehemiah_REPE_0f;
 #endif
 		timing_rr			=   1;	/* register dest - register src */
 		timing_rm			=   2;	/* register dest - memory src */
