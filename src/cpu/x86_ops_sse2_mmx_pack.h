@@ -429,6 +429,20 @@ static int opPUNPCKHDQ_xmm_a16(uint32_t fetchdat)
         return 0;
 }
 
+static int opPUNPCKHDQ_xmm_a32(uint32_t fetchdat)
+{
+        SSE_REG src;
+
+        fetch_ea_32(fetchdat);
+        SSE_GETSRC();
+
+        XMM[cpu_reg].l[0] = XMM[cpu_reg].l[2];
+        XMM[cpu_reg].l[1] = src.l[2];
+        XMM[cpu_reg].l[2] = XMM[cpu_reg].l[3];
+        XMM[cpu_reg].l[3] = src.l[3];
+
+        return 0;
+}
 
 static int opPACKSSDW_xmm_a16(uint32_t fetchdat)
 {
