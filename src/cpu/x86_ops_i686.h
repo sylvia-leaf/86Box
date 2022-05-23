@@ -244,9 +244,11 @@ fx_save_stor_common(uint32_t fetchdat, int bits)
 	cpu_state.eaaddr = old_eaaddr + 144;
 	cpu_state.ismmx ? x87_stmmx(cpu_state.MM[7]) : x87_st_fsave(7);
 
-	if(is_pentium3)
+	if(cpu_features & CPU_FEATURE_SSE)
 	{
 		writememl(easeg,cpu_state.eaaddr+24,mxcsr);
+		if(!(cpu_features & CPU_FEATURE_SSE2)) writememl(easeg, cpu_state.eaaddr+28,0xffbf);
+		else writememl(easeg, cpu_state.eaaddr+28,0xffff);
 		writememq(easeg,cpu_state.eaaddr+0xa0,XMM[0].q[0]);
 		writememq(easeg,cpu_state.eaaddr+0xa8,XMM[0].q[1]);
 		writememq(easeg,cpu_state.eaaddr+0xb0,XMM[1].q[0]);
@@ -293,7 +295,8 @@ fx_save_stor_common(uint32_t fetchdat, int bits)
     	SEG_CHECK_READ(cpu_state.ea_seg);
     	src = readmeml(easeg, cpu_state.eaaddr); if (cpu_state.abrt) return 1;
 		//if(src & ~0xffbf) x86gpf(NULL, 0);
-    	mxcsr = src & 0xffbf;
+    	if(!(cpu_features & CPU_FEATURE_SSE2)) mxcsr = src & 0xffbf;
+    	else mxcsr = src & 0xffff;
 	}
 	else if(fxinst == 3)
 	{
