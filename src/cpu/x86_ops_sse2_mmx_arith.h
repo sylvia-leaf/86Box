@@ -87,6 +87,41 @@ static int opPMULLW_xmm_a16(uint32_t fetchdat)
         return 0;
 }
 
+static int opPMULLW_xmm_a32(uint32_t fetchdat)
+{
+        fetch_ea_16(fetchdat);
+        if (cpu_mod == 3)
+        {
+                XMM[cpu_reg].w[0] *= XMM[cpu_rm].w[0];
+                XMM[cpu_reg].w[1] *= XMM[cpu_rm].w[1];
+                XMM[cpu_reg].w[2] *= XMM[cpu_rm].w[2];
+                XMM[cpu_reg].w[3] *= XMM[cpu_rm].w[3];
+                XMM[cpu_reg].w[4] *= XMM[cpu_rm].w[4];
+                XMM[cpu_reg].w[5] *= XMM[cpu_rm].w[5];
+                XMM[cpu_reg].w[6] *= XMM[cpu_rm].w[6];
+                XMM[cpu_reg].w[7] *= XMM[cpu_rm].w[7];
+                CLOCK_CYCLES(1);
+        }
+        else
+        {
+                SSE_REG src;
+
+                SEG_CHECK_READ(cpu_state.ea_seg);
+                src.q[0] = readmemq(easeg, cpu_state.eaaddr);
+                src.q[1] = readmemq(easeg, cpu_state.eaaddr + 8); if (cpu_state.abrt) return 0;
+                XMM[cpu_reg].w[0] *= src.w[0];
+                XMM[cpu_reg].w[1] *= src.w[1];
+                XMM[cpu_reg].w[2] *= src.w[2];
+                XMM[cpu_reg].w[3] *= src.w[3];
+                XMM[cpu_reg].w[4] *= src.w[4];
+                XMM[cpu_reg].w[5] *= src.w[5];
+                XMM[cpu_reg].w[6] *= src.w[6];
+                XMM[cpu_reg].w[7] *= src.w[7];
+                CLOCK_CYCLES(2);
+        }
+        return 0;
+}
+
 static int opPSUBUSB_xmm_a16(uint32_t fetchdat)
 {
         SSE_REG src;

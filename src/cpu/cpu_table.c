@@ -1210,6 +1210,21 @@ const cpu_family_t cpu_families[] = {
 		{"", 0}
 	}
     }, {
+	.package = CPU_PKG_SOCKET370,
+	.manufacturer = "Intel",
+	.name = "Generic",
+	.internal_name = "generic_intel",
+	.cpus = (const CPU[]) {
+		{"900",      CPU_GENERICINTEL,  fpus_internal, 900000000,  9.0, 1475,  0x6B4,  0x6B4, 0, CPU_SUPPORTS_DYNAREC | CPU_REQUIRES_DYNAREC, 41,41,14,14, 72},
+		{"1000",      CPU_GENERICINTEL,  fpus_internal, 1000000000, 10.0, 1475,  0x6B4,  0x6B4, 0, CPU_SUPPORTS_DYNAREC | CPU_REQUIRES_DYNAREC, 41,41,14,14, 72},
+		{"1100",      CPU_GENERICINTEL,  fpus_internal, 1100000000, 11.0, 1500,  0x6B4,  0x6B4, 0, CPU_SUPPORTS_DYNAREC | CPU_REQUIRES_DYNAREC, 41,41,14,14, 72},
+		{"1200",      CPU_GENERICINTEL,  fpus_internal, 1200000000, 12.0, 1500,  0x6B4,  0x6B4, 0, CPU_SUPPORTS_DYNAREC | CPU_REQUIRES_DYNAREC, 41,41,14,14, 72},
+		{"1300",      CPU_GENERICINTEL,  fpus_internal, 1300000000, 13.0, 1500,  0x6B4,  0x6B4, 0, CPU_SUPPORTS_DYNAREC | CPU_REQUIRES_DYNAREC, 41,41,14,14, 72},
+		{"1400",      CPU_GENERICINTEL,  fpus_internal, 1400000000, 14.0, 1500,  0x6B4,  0x6B4, 0, CPU_SUPPORTS_DYNAREC | CPU_REQUIRES_DYNAREC, 41,41,14,14, 72},
+		{"1500",      CPU_GENERICINTEL,  fpus_internal, 1500000000, 15.0, 1500,  0x6B4,  0x6B4, 0, CPU_SUPPORTS_DYNAREC | CPU_REQUIRES_DYNAREC, 41,41,14,14, 72},
+		{"", 0}
+	}
+	}, {
 	.package = 0,
     }
 };

@@ -1008,7 +1008,7 @@ static int opPMOVMSKB_l_xmm_a32(uint32_t fetchdat)
 
 static int opMOVNTQ_q_mm_a16(uint32_t fetchdat)
 {
-    if((cpu_features & CPU_FEATURE_SSE2) && sse_xmm) return opPMOVNTDQ_xmm_a16(fetchdat);
+    if((cpu_features & CPU_FEATURE_SSE2) && sse_xmm) return opMOVNTDQ_a16(fetchdat);
     MMX_ENTER();
 
     fetch_ea_16(fetchdat);
@@ -1023,6 +1023,7 @@ static int opMOVNTQ_q_mm_a16(uint32_t fetchdat)
 
 static int opMOVNTQ_q_mm_a32(uint32_t fetchdat)
 {
+    if((cpu_features & CPU_FEATURE_SSE2) && sse_xmm) return opMOVNTDQ_a32(fetchdat);
     MMX_ENTER();
 
     fetch_ea_32(fetchdat);
@@ -1037,7 +1038,7 @@ static int opMOVNTQ_q_mm_a32(uint32_t fetchdat)
 
 static int opMASKMOVQ_l_mm_a16(uint32_t fetchdat)
 {
-    if((cpu_features & CPU_FEATURE_SSE2) && sse_xmm) return opMASKMOVDQ_xmm_a16(fetchdat);
+    if((cpu_features & CPU_FEATURE_SSE2) && sse_xmm) return opMASKMOVDQU_a16(fetchdat);
     MMX_ENTER();
     fetch_ea_16(fetchdat);
     ILLEGAL_ON(cpu_mod != 3);
@@ -1083,6 +1084,7 @@ static int opMASKMOVQ_l_mm_a16(uint32_t fetchdat)
 
 static int opMASKMOVQ_l_mm_a32(uint32_t fetchdat)
 {
+    if((cpu_features & CPU_FEATURE_SSE2) && sse_xmm) return opMASKMOVDQU_a32(fetchdat);
     MMX_ENTER();
     fetch_ea_32(fetchdat);
     ILLEGAL_ON(cpu_mod != 3);
