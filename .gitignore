@@ -44,3 +44,10 @@ Makefile
 /.vscode
 roms/
 src/win/RCa04980
+
+# Windows resource compiler
+RC*
+
+# Qt Creator
+CMakeLists.txt.user
+
