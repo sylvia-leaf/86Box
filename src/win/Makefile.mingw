@@ -31,6 +31,9 @@ ifeq ($(DEV_BUILD), y)
  ifndef DEBUG
   DEBUG		:= y
  endif
+ ifndef GDBSTUB
+  GDBSTUB	:= y
+ endif
  ifndef DEV_BRANCH
   DEV_BRANCH	:= y
  endif
@@ -97,6 +100,9 @@ ifeq ($(DEV_BUILD), y)
 else
  ifndef DEBUG
   DEBUG		:= n
+ endif
+ ifndef GDBSTUB
+  GDBSTUB	:= n
  endif
  ifndef DEV_BRANCH
   DEV_BRANCH	:= n
@@ -519,6 +525,11 @@ endif
 ifeq ($(RIVATNT), y)
 OPTS		+= -DUSE_RIVATNT
 DEVBROBJ	+= vid_rivatnt.o
+endif
+
+ifeq ($(GDBSTUB), y)
+OPTS		+= -DUSE_GDBSTUB
+DEVBROBJ	+= gdbstub.o
 endif
 
 endif
