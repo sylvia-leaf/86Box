@@ -32,7 +32,7 @@ ifeq ($(DEV_BUILD), y)
   DEBUG		:= y
  endif
  ifndef GDBSTUB
-  GDBSTUB	:= y
+  GDBSTUB	:= n
  endif
  ifndef DEV_BRANCH
   DEV_BRANCH	:= y
