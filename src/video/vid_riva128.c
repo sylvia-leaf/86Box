@@ -189,6 +189,9 @@ typedef struct riva128_t
         int fifo_access;
         uint32_t surf_config;
 
+        uint16_t lin_start_x, lin_end_x, lin_start_y, lin_end_y;
+        uint32_t lin_color;
+
         uint16_t gdi_vtx_x[0x40];
         uint16_t gdi_vtx_y[0x40];
         uint16_t gdi_rect_w[0x40];
@@ -1415,6 +1418,43 @@ uint32_t graphobj0, uint32_t graphobj1, uint32_t graphobj2, uint32_t graphobj3, 
             }
             break;
         }
+        case 0x0a:
+        {
+            switch(method)
+            {
+                case 0x304:
+                {
+                    riva128->pgraph.lin_color = param;
+                    break;
+                }
+                case 0x400:
+                {
+                    riva128->pgraph.lin_start_x = (param >> 16) & 0xffff;
+                    riva128->pgraph.lin_start_y = param & 0xffff;
+                }
+                case 0x404:
+                {
+                    riva128->pgraph.lin_end_x = (param >> 16) & 0xffff;
+                    riva128->pgraph.lin_end_y = param & 0xffff;
+                    if(riva128->pgraph.lin_start_x == riva128->pgraph.lin_end_x)
+                    {
+                        for(int y = riva128->pgraph.lin_start_y; y < riva128->pgraph.lin_end_y; y++)
+                        {
+                            riva128_pgraph_write_pixel(riva128->pgraph.lin_start_x, y, riva128->pgraph.lin_color, 0xff, riva128);
+                        }
+                    }
+                    else if(riva128->pgraph.lin_start_y == riva128->pgraph.lin_end_y)
+                    {
+                        for(int x = riva128->pgraph.lin_start_x; x < riva128->pgraph.lin_end_x; x++)
+                        {
+                            riva128_pgraph_write_pixel(x, riva128->pgraph.lin_start_y, riva128->pgraph.lin_color, 0xff, riva128);
+                        }
+                    }
+                    else pclog("RIVA 128 not a vertical or horizontal lin\n");
+                }
+            }
+            break;
+        }
         case 0x0c:
         {
             if(!(method & 4) && (method >= 0x400 && method < 0x600))
@@ -2372,6 +2412,7 @@ static void
           NULL, NULL);
 
     svga->decode_mask = riva128->vram_mask;
+    svga->force_old_addr = 1;
 
     mem_mapping_add(&riva128->mmio_mapping, 0, 0, riva128_mmio_read, riva128_mmio_read_w, riva128_mmio_read_l, riva128_mmio_write, riva128_mmio_write_w, riva128_mmio_write_l,  NULL, MEM_MAPPING_EXTERNAL, riva128);
     mem_mapping_disable(&riva128->mmio_mapping);

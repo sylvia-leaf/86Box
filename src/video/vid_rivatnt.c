@@ -813,7 +813,7 @@ rivatnt_rma_in(uint16_t addr, void *p)
 
     addr &= 0xff;
 
-    // nv_riva_log("RIVA TNT RMA read %04X %04X:%08X\n", addr, CS, cpu_state.pc);
+    pclog("RIVA TNT RMA read %04X %04X:%08X\n", addr, CS, cpu_state.pc);
 
     switch(addr) {
     case 0x00:
@@ -851,7 +851,7 @@ rivatnt_rma_out(uint16_t addr, uint8_t val, void *p)
 
     addr &= 0xff;
 
-    // nv_riva_log("RIVA TNT RMA write %04X %02X %04X:%08X\n", addr, val, CS, cpu_state.pc);
+    pclog("RIVA TNT RMA write %04X %02X %04X:%08X\n", addr, val, CS, cpu_state.pc);
 
     switch(addr) {
     case 0x04:
@@ -962,8 +962,8 @@ rivatnt_out(uint16_t addr, uint8_t val, void *p)
                     break;
             }
         }
-        //if (svga->crtcreg > 0x18)
-            // pclog("RIVA TNT Extended CRTC write %02X %02x\n", svga->crtcreg, val);
+        //if (svga->crtcreg > 0x18 && svga->crtcreg != 0x38 && svga->crtcreg != 0x1d && svga->crtcreg != 0x1e && svga->crtcreg != 0x19 && svga->crtcreg != 0x1a && svga->crtcreg != 0x25 && svga->crtcreg != 0x28)
+             //pclog("RIVA TNT Extended CRTC write %02X %02x\n", svga->crtcreg, val);
         if (old != val) {
             if ((svga->crtcreg < 0xe) || (svga->crtcreg > 0x10)) {
                 svga->fullchange = changeframecount;
@@ -1112,6 +1112,7 @@ static void
           NULL, NULL);
 
     svga->decode_mask = rivatnt->vram_mask;
+    svga->force_old_addr = 1;
 
     rom_init(&rivatnt->bios_rom, romfn, 0xc0000, 0x10000, 0xffff, 0, MEM_MAPPING_EXTERNAL);
     mem_mapping_disable(&rivatnt->bios_rom.mapping);
