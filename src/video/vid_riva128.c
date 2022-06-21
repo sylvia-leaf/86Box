@@ -1431,6 +1431,7 @@ uint32_t graphobj0, uint32_t graphobj1, uint32_t graphobj2, uint32_t graphobj3, 
                 {
                     riva128->pgraph.lin_start_x = (param >> 16) & 0xffff;
                     riva128->pgraph.lin_start_y = param & 0xffff;
+                    break;
                 }
                 case 0x404:
                 {
@@ -1451,6 +1452,7 @@ uint32_t graphobj0, uint32_t graphobj1, uint32_t graphobj2, uint32_t graphobj3, 
                         }
                     }
                     else pclog("RIVA 128 not a vertical or horizontal lin\n");
+                    break;
                 }
             }
             break;
