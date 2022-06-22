@@ -1593,8 +1593,8 @@ static int codegen_PACKUSWB(codeblock_t *block, uop_t *uop)
 
         if (REG_IS_Q(dest_size) && REG_IS_Q(src_size_b) && uop->dest_reg_a_real == uop->src_reg_a_real)
         {
-                host_arm64_UQXTN_V8B_8H(block, REG_V_TEMP, src_reg_b);
-                host_arm64_UQXTN_V8B_8H(block, dest_reg, dest_reg);
+                host_arm64_SQXTUN_V8B_8H(block, REG_V_TEMP, src_reg_b);
+                host_arm64_SQXTUN_V8B_8H(block, dest_reg, dest_reg);
                 host_arm64_ZIP1_V2S(block, dest_reg, dest_reg, REG_V_TEMP);
         }
         else

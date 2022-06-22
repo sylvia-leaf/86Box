@@ -233,7 +233,7 @@ void host_arm64_UQADD_V4H(codeblock_t *block, int dst_reg, int src_n_reg, int sr
 void host_arm64_UQSUB_V8B(codeblock_t *block, int dst_reg, int src_n_reg, int src_m_reg);
 void host_arm64_UQSUB_V4H(codeblock_t *block, int dst_reg, int src_n_reg, int src_m_reg);
 
-void host_arm64_UQXTN_V8B_8H(codeblock_t *block, int dst_reg, int src_reg);
+void host_arm64_SQXTUN_V8B_8H(codeblock_t *block, int dst_reg, int src_reg);
 void host_arm64_UQXTN_V4H_4S(codeblock_t *block, int dst_reg, int src_reg);
 
 void host_arm64_USHR_V4H(codeblock_t *block, int dst_reg, int src_reg, int shift);
