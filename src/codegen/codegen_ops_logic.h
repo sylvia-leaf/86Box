@@ -195,7 +195,7 @@ ROP_LOGIC(XOR, XOR, 1)
 
 static uint32_t ropTEST_b_rm(uint8_t opcode, uint32_t fetchdat, uint32_t op_32, uint32_t op_pc, codeblock_t *block)
 {
-        int src_reg, dst_reg;
+        int src_reg, dst_reg, tmp_reg;
 
         if ((fetchdat & 0xc0) == 0xc0)
         {
@@ -211,8 +211,8 @@ static uint32_t ropTEST_b_rm(uint8_t opcode, uint32_t fetchdat, uint32_t op_32, 
 
         dst_reg = LOAD_REG_B((fetchdat >> 3) & 7);
         STORE_IMM_ADDR_L((uintptr_t)&cpu_state.flags_op, FLAGS_ZN8);
-        dst_reg = TEST_HOST_REG_B(dst_reg, src_reg);
-        STORE_HOST_REG_ADDR_BL((uintptr_t)&cpu_state.flags_res, dst_reg);
+        tmp_reg = TEST_HOST_REG_B(dst_reg, src_reg);
+        STORE_HOST_REG_ADDR_BL((uintptr_t)&cpu_state.flags_res, tmp_reg);
         RELEASE_REG(dst_reg);
         RELEASE_REG(src_reg);
 
@@ -220,7 +220,7 @@ static uint32_t ropTEST_b_rm(uint8_t opcode, uint32_t fetchdat, uint32_t op_32, 
 }
 static uint32_t ropTEST_w_rm(uint8_t opcode, uint32_t fetchdat, uint32_t op_32, uint32_t op_pc, codeblock_t *block)
 {
-        int src_reg, dst_reg;
+        int src_reg, dst_reg, tmp_reg;
 
         if ((fetchdat & 0xc0) == 0xc0)
         {
@@ -236,8 +236,8 @@ static uint32_t ropTEST_w_rm(uint8_t opcode, uint32_t fetchdat, uint32_t op_32, 
 
         dst_reg = LOAD_REG_W((fetchdat >> 3) & 7);
         STORE_IMM_ADDR_L((uintptr_t)&cpu_state.flags_op, FLAGS_ZN16);
-        dst_reg = TEST_HOST_REG_W(dst_reg, src_reg);
-        STORE_HOST_REG_ADDR_WL((uintptr_t)&cpu_state.flags_res, dst_reg);
+        tmp_reg = TEST_HOST_REG_W(dst_reg, src_reg);
+        STORE_HOST_REG_ADDR_WL((uintptr_t)&cpu_state.flags_res, tmp_reg);
         RELEASE_REG(dst_reg);
         RELEASE_REG(src_reg);
 
@@ -245,7 +245,7 @@ static uint32_t ropTEST_w_rm(uint8_t opcode, uint32_t fetchdat, uint32_t op_32, 
 }
 static uint32_t ropTEST_l_rm(uint8_t opcode, uint32_t fetchdat, uint32_t op_32, uint32_t op_pc, codeblock_t *block)
 {
-        int src_reg, dst_reg;
+        int src_reg, dst_reg, tmp_reg;
 
         if ((fetchdat & 0xc0) == 0xc0)
         {
@@ -261,8 +261,8 @@ static uint32_t ropTEST_l_rm(uint8_t opcode, uint32_t fetchdat, uint32_t op_32, 
 
         dst_reg = LOAD_REG_L((fetchdat >> 3) & 7);
         STORE_IMM_ADDR_L((uintptr_t)&cpu_state.flags_op, FLAGS_ZN32);
-        dst_reg = TEST_HOST_REG_L(dst_reg, src_reg);
-        STORE_HOST_REG_ADDR((uintptr_t)&cpu_state.flags_res, dst_reg);
+        tmp_reg = TEST_HOST_REG_L(dst_reg, src_reg);
+        STORE_HOST_REG_ADDR((uintptr_t)&cpu_state.flags_res, tmp_reg);
         RELEASE_REG(dst_reg);
         RELEASE_REG(src_reg);
 
