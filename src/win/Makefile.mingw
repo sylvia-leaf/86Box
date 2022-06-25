@@ -795,7 +795,11 @@ ifdef EXOBJ
 OBJ		+= $(EXOBJ)
 endif
 
+ifeq ($(OPENAL), y)
+LIBS		:= -mwindows -lopenal -lcomctl32 -lSDL2 -limagehlp -ldinput8 -ldxguid -ldxerr8 -luser32 -lgdi32 -lwinmm -limm32 -lole32 -loleaut32 -lshell32 -lversion
+else
 LIBS		:= -mwindows -lcomctl32 -lSDL2 -limagehlp -ldinput8 -ldxguid -ldxerr8 -luser32 -lgdi32 -lwinmm -limm32 -lole32 -loleaut32 -lshell32 -lversion
+endif
 
 ifeq ($(RTMIDI), y)
  SNDOBJ		+= midi_rtmidi.o
