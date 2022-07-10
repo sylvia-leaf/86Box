@@ -36,6 +36,7 @@ extern "C" {
 #include <86box/config.h>
 #include <86box/keyboard.h>
 #include <86box/plat.h>
+#include <86box/ui.h>
 #include <86box/discord.h>
 #include <86box/video.h>
 #include <86box/machine.h>
@@ -578,8 +579,8 @@ void MainWindow::on_actionHard_Reset_triggered() {
     if (confirm_reset)
     {
         QMessageBox questionbox(QMessageBox::Icon::Question, "86Box", tr("Are you sure you want to hard reset the emulated machine?"), QMessageBox::NoButton, this);
-        questionbox.addButton(tr("Don't reset"), QMessageBox::AcceptRole);
         questionbox.addButton(tr("Reset"), QMessageBox::RejectRole);
+        questionbox.addButton(tr("Don't reset"), QMessageBox::AcceptRole);
         QCheckBox *chkbox = new QCheckBox(tr("Don't show this message again"));
         questionbox.setCheckBox(chkbox);
         chkbox->setChecked(!confirm_reset);
@@ -1448,18 +1449,25 @@ void MainWindow::refreshMediaMenu() {
     ui->actionMCA_devices->setVisible(machine_has_bus(machine, MACHINE_BUS_MCA));
 }
 
-void MainWindow::showMessage(const QString& header, const QString& message) {
+void MainWindow::showMessage(int flags, const QString& header, const QString& message) {
     if (QThread::currentThread() == this->thread()) {
-        showMessage_(header, message);
+        showMessage_(flags, header, message);
     } else {
-        emit showMessageForNonQtThread(header, message);
+        emit showMessageForNonQtThread(flags, header, message);
     }
 }
 
-void MainWindow::showMessage_(const QString &header, const QString &message) {
+void MainWindow::showMessage_(int flags, const QString &header, const QString &message) {
     QMessageBox box(QMessageBox::Warning, header, message, QMessageBox::NoButton, this);
+    if (flags & (MBX_FATAL)) {
+        box.setIcon(QMessageBox::Critical);
+    }
+    else if (!(flags & (MBX_ERROR | MBX_WARNING))) {
+        box.setIcon(QMessageBox::Warning);
+    }
     box.setTextFormat(Qt::TextFormat::RichText);
     box.exec();
+    if (cpu_thread_run == 0) QApplication::exit(-1);
 }
 
 void MainWindow::keyPressEvent(QKeyEvent* event)
