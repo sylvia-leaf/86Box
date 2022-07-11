@@ -7,8 +7,10 @@
 #include <QFocusEvent>
 
 #include <memory>
+#include <array>
 
 class MediaMenu;
+class RendererStack;
 
 namespace Ui {
 class MainWindow;
@@ -26,12 +28,13 @@ public:
 
     void showMessage(int flags, const QString& header, const QString& message);
     void getTitle(wchar_t* title);
-    void blitToWidget(int x, int y, int w, int h);
+    void blitToWidget(int x, int y, int w, int h, int monitor_index);
     QSize getRenderWidgetSize();
     void setSendKeyboardInput(bool enabled);
 signals:
     void paint(const QImage& image);
     void resizeContents(int w, int h);
+    void resizeContentsMonitor(int w, int h, int monitor_index);
     void pollMouse();
     void statusBarMessage(const QString& msg);
     void updateStatusBarPanes();
@@ -40,6 +43,10 @@ signals:
     void updateStatusBarTip(int tag);
     void updateMenuResizeOptions();
     void updateWindowRememberOption();
+    void initRendererMonitor(int monitor_index);
+    void destroyRendererMonitor(int monitor_index);
+    void initRendererMonitorForNonQtThread(int monitor_index);
+    void destroyRendererMonitorForNonQtThread(int monitor_index);
 
     void setTitle(const QString& title);
     void setFullscreen(bool state);
@@ -51,6 +58,8 @@ public slots:
     void showSettings();
     void hardReset();
     void togglePause();
+    void initRendererMonitorSlot(int monitor_index);
+    void destroyRendererMonitorSlot(int monitor_index);
 private slots:
     void on_actionFullscreen_triggered();
     void on_actionSettings_triggered();
@@ -115,9 +124,13 @@ protected:
     void closeEvent(QCloseEvent* event) override;
     void changeEvent(QEvent* event) override;
 
+private slots:
+    void on_actionShow_non_primary_monitors_triggered();
+
 private:
     Ui::MainWindow *ui;
     std::unique_ptr<MachineStatus> status;
+    std::array<std::unique_ptr<RendererStack>, 8> renderers;
     std::shared_ptr<MediaMenu> mm;
 
 #ifdef Q_OS_MACOS
