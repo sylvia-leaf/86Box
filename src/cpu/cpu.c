@@ -162,6 +162,11 @@ void		(*cpu_exec)(int cycs);
 
 static uint8_t	ccr0, ccr1, ccr2, ccr3, ccr4, ccr5, ccr6;
 
+void cpu_INVD(uint8_t wb)
+{
+	mem_invalidate_mtrr(wb);
+}
+
 static int	cyrix_addr;
 
 
@@ -2410,6 +2415,7 @@ cpu_RDMSR(void)
 		break;
 
 	case CPU_CYRIX3S:
+	case CPU_CYRIX3N:
 		EAX = EDX = 0;
 		switch (ECX) {
 			case 0x00: case 0x01:
@@ -2808,7 +2814,7 @@ i686_invalid_rdmsr:
 void
 cpu_WRMSR(void)
 {
-    uint64_t temp;
+    uint64_t temp, temp2;
 
     cpu_log("WRMSR %08X %08X%08X\n", ECX, EDX, EAX);
 
@@ -2875,6 +2881,7 @@ cpu_WRMSR(void)
 		break;
 
 	case CPU_CYRIX3S:
+	case CPU_CYRIX3N:
 		switch (ECX) {
 			case 0x00: case 0x01:
 				break;
@@ -2898,11 +2905,24 @@ cpu_WRMSR(void)
 			case 0x204: case 0x205: case 0x206: case 0x207:
 			case 0x208: case 0x209: case 0x20a: case 0x20b:
 			case 0x20c: case 0x20d: case 0x20e: case 0x20f:
-				if (ECX & 1)
-					msr.mtrr_physmask[(ECX - 0x200) >> 1] = EAX | ((uint64_t)EDX << 32);
-				else
-					msr.mtrr_physbase[(ECX - 0x200) >> 1] = EAX | ((uint64_t)EDX << 32);
-				break;
+				temp = EAX | ((uint64_t)EDX << 32);
+                        temp2 = (ECX - 0x200) >> 1;
+                        if (ECX & 1) {
+                        	cpu_log("MTRR physmask[%d] = %08llx\n", temp2, temp);
+
+                        	if ((msr.mtrr_physmask[temp2] >> 11) & 0x1)
+                                	mem_del_mtrr(msr.mtrr_physbase[temp2] & ~(0xFFF), msr.mtrr_physmask[temp2] & ~(0xFFF));
+
+                                if ((temp >> 11) & 0x1)
+                                	mem_add_mtrr(msr.mtrr_physbase[temp2] & ~(0xFFF), temp & ~(0xFFF), msr.mtrr_physbase[temp2] & 0xFF);
+
+                                msr.mtrr_physmask[temp2] = temp;
+                        } else {
+                        	cpu_log("MTRR physbase[%d] = %08llx\n", temp2, temp);
+
+                                msr.mtrr_physbase[temp2] = temp;
+                        }
+                        break;
 			case 0x250:
 				msr.mtrr_fix64k_8000 = EAX | ((uint64_t)EDX << 32);
 				break;
@@ -3106,11 +3126,24 @@ amd_k_invalid_wrmsr:
 			case 0x204: case 0x205: case 0x206: case 0x207:
 			case 0x208: case 0x209: case 0x20a: case 0x20b:
 			case 0x20c: case 0x20d: case 0x20e: case 0x20f:
-				if (ECX & 1)
-					msr.mtrr_physmask[(ECX - 0x200) >> 1] = EAX | ((uint64_t)EDX << 32);
-				else
-					msr.mtrr_physbase[(ECX - 0x200) >> 1] = EAX | ((uint64_t)EDX << 32);
-				break;
+				temp = EAX | ((uint64_t)EDX << 32);
+                        temp2 = (ECX - 0x200) >> 1;
+                        if (ECX & 1) {
+                        	cpu_log("MTRR physmask[%d] = %08llx\n", temp2, temp);
+
+                        	if ((msr.mtrr_physmask[temp2] >> 11) & 0x1)
+                                	mem_del_mtrr(msr.mtrr_physbase[temp2] & ~(0xFFF), msr.mtrr_physmask[temp2] & ~(0xFFF));
+
+                                if ((temp >> 11) & 0x1)
+                                	mem_add_mtrr(msr.mtrr_physbase[temp2] & ~(0xFFF), temp & ~(0xFFF), msr.mtrr_physbase[temp2] & 0xFF);
+
+                                msr.mtrr_physmask[temp2] = temp;
+                        } else {
+                        	cpu_log("MTRR physbase[%d] = %08llx\n", temp2, temp);
+
+                                msr.mtrr_physbase[temp2] = temp;
+                        }
+                        break;
 			case 0x250:
 				msr.mtrr_fix64k_8000 = EAX | ((uint64_t)EDX << 32);
 				break;

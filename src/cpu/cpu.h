@@ -660,6 +660,7 @@ extern void	cpu_set_agp_speed(int speed);
 extern void	cpu_CPUID(void);
 extern void	cpu_RDMSR(void);
 extern void	cpu_WRMSR(void);
+extern void	cpu_INVD(uint8_t wb);
 
 extern int      checkio(uint32_t port);
 extern void	codegen_block_end(void);
