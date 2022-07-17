@@ -81,11 +81,10 @@ typedef struct
 			devsts, glben,
 			glbctl, devctl,
 			padsts, paden,
-			gptren, gptimer, timer_val,
+			gptren, gptimer,
 			gpo_val, gpi_val,
 			smi_en, smi_sts,
 			extsmi_val, pad0;
-    uint64_t		tmr_overflow_time;
 } acpi_regs_t;
 
 
