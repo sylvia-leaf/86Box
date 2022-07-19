@@ -126,7 +126,7 @@ int		isa_cycles, cpu_inited,
 
         bochs_timing,
 
- 		is286, is386, is486 = 1,
+ 		is286, is386, is6117, is486 = 1,
 		cpu_isintel, cpu_iscyrix, hascache, isibm486, israpidcad, is_vpc,
 		is_am486, is_am486dxl, is_pentium, is_k5, is_k6, is_p6, is_cxsmm, is_pentium3, hasfpu,
 
@@ -400,6 +400,8 @@ cpu_set(void)
     is486        = (cpu_s->cpu_type >= CPU_RAPIDCAD);
     is_am486     = (cpu_s->cpu_type == CPU_ENH_Am486DX);
     is_am486dxl  = (cpu_s->cpu_type == CPU_Am486DXL);
+
+    is6117      = !strcmp(cpu_f->manufacturer, "ALi");
 
     cpu_isintel = !strcmp(cpu_f->manufacturer, "Intel");
     cpu_iscyrix = !strcmp(cpu_f->manufacturer, "Cyrix") || !strcmp(cpu_f->manufacturer, "ST");
