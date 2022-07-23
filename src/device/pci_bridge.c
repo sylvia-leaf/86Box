@@ -530,14 +530,14 @@ pci_bridge_init(const device_t *info)
     pci_bridge_reset(dev);
 
     dev->slot = pci_add_card(AGP_BRIDGE(dev->local) ? PCI_ADD_AGPBRIDGE : PCI_ADD_BRIDGE, pci_bridge_read, pci_bridge_write, dev);
-    if ((info->local != PCI_BRIDGE_INTEL_ICH2) && (info->local != AGP_BRIDGE_INTEL_815EP)) /* Let the machine configuration slot handle the absurd interrupt tables */
-    {
-        interrupt_count = sizeof(interrupts);
-        interrupt_mask = interrupt_count - 1;
-        if (dev->slot < 32) {
-	    for (i = 0; i < interrupt_count; i++)
-		    interrupts[i] = pci_get_int(dev->slot, PCI_INTA + i);
-        }
+
+    interrupt_count = sizeof(interrupts);
+    interrupt_mask = interrupt_count - 1;
+    if (dev->slot < 32) {
+	for (i = 0; i < interrupt_count; i++)
+		interrupts[i] = pci_get_int(dev->slot, PCI_INTA + i);
+    }
+    pci_bridge_log("PCI Bridge %d: upstream bus %02X slot %02X interrupts %02X %02X %02X %02X\n", dev->bus_index, (dev->slot >> 5) & 0xff, dev->slot & 31, interrupts[0], interrupts[1], interrupts[2], interrupts[3]);
 
         pci_bridge_log("PCI Bridge %d: upstream bus %02X slot %02X interrupts %02X %02X %02X %02X\n", dev->bus_index, (dev->slot >> 5) & 0xff, dev->slot & 31, interrupts[0], interrupts[1], interrupts[2], interrupts[3]);
 

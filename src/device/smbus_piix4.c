@@ -32,7 +32,6 @@
 #include <86box/acpi.h>
 #include <86box/smbus.h>
 
-
 #ifdef ENABLE_SMBUS_PIIX4_LOG
 int smbus_piix4_do_log = ENABLE_SMBUS_PIIX4_LOG;
 
