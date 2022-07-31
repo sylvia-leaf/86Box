@@ -20,11 +20,11 @@
 #define EMU_NAME	"PCBox"
 #define EMU_NAME_W	LSTR(EMU_NAME)
 
-#define EMU_VERSION	"3.6"
+#define EMU_VERSION	"3.7"
 #define EMU_VERSION_W	LSTR(EMU_VERSION)
 #define EMU_VERSION_EX	"3.50" /* frozen due to IDE re-detection behavior on Windows */
 #define EMU_VERSION_MAJ	3
-#define EMU_VERSION_MIN	6
+#define EMU_VERSION_MIN	7
 #define EMU_VERSION_PATCH 0
 
 #define EMU_BUILD_NUM	0
