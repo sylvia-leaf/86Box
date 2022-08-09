@@ -1898,6 +1898,8 @@ nmi_raise(void)
 {
     if (is486 && (cpu_fast_off_flags & 0x20000000))
 	cpu_fast_off_advance();
+
+    nmi = 1;
 }
 
 
