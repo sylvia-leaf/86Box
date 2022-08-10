@@ -166,7 +166,7 @@ fx_save_stor_common(uint32_t fetchdat, int bits)
 
 	x87_settag(rec_ftw);
 
-	if(is_pentium3)
+	if(cpu_features & CPU_FEATURE_SSE)
 	{
 		mxcsr = readmeml(easeg,cpu_state.eaaddr+24) & ~0xffbf;
 		XMM[0].q[0] = readmemq(easeg,cpu_state.eaaddr+0xa0);
