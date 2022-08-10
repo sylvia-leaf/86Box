@@ -168,7 +168,8 @@ fx_save_stor_common(uint32_t fetchdat, int bits)
 
 	if(cpu_features & CPU_FEATURE_SSE)
 	{
-		mxcsr = readmeml(easeg,cpu_state.eaaddr+24) & ~0xffbf;
+		if(!(cpu_features & CPU_FEATURE_SSE2)) mxcsr = readmeml(easeg,cpu_state.eaaddr+24) & ~0xffbf;
+		else mxcsr = readmeml(easeg,cpu_state.eaaddr+24) & ~0xffff;
 		XMM[0].q[0] = readmemq(easeg,cpu_state.eaaddr+0xa0);
 		XMM[0].q[1] = readmemq(easeg,cpu_state.eaaddr+0xa8);
 		XMM[1].q[0] = readmemq(easeg,cpu_state.eaaddr+0xb0);
@@ -306,7 +307,7 @@ fx_save_stor_common(uint32_t fetchdat, int bits)
 			return cpu_state.abrt;
 		}
 		SEG_CHECK_WRITE(cpu_state.ea_seg);
-    	writememl(easeg, cpu_state.eaaddr, mxcsr & 0xffbf); if (cpu_state.abrt) return 1;
+    	writememl(easeg, cpu_state.eaaddr, mxcsr); if (cpu_state.abrt) return 1;
 	}
 	//fxinst == 5 or 6 or 7 is L/M/SFENCE which deals with cache stuff.
 	//We don't emulate the cache so we can safely ignore it.
