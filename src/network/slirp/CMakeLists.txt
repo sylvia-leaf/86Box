@@ -17,10 +17,11 @@ add_library(slirp STATIC arp_table.c bootp.c cksum.c dnssearch.c if.c ip_icmp.c
     ip_input.c ip_output.c mbuf.c misc.c sbuf.c slirp.c socket.c tcp_input.c
     tcp_output.c tcp_subr.c tcp_timer.c udp.c util.c version.c)
 
-if(WIN32)
-    target_link_libraries(slirp wsock32 iphlpapi)
-endif()
-
 find_package(PkgConfig REQUIRED)
 pkg_check_modules(GLIB REQUIRED IMPORTED_TARGET glib-2.0)
 target_link_libraries(slirp PkgConfig::GLIB)
+
+
+if(WIN32)
+    target_link_libraries(slirp wsock32 ws2_32 iphlpapi iconv)
+endif()
