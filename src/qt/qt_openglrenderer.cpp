@@ -80,6 +80,8 @@ OpenGLRenderer::exposeEvent(QExposeEvent *event)
 
     if (!isInitialized)
         initialize();
+
+    onResize(size().width(), size().height());
 }
 
 void
@@ -252,7 +254,7 @@ OpenGLRenderer::initializeExtensions()
 
         glBufferStorage = (PFNGLBUFFERSTORAGEEXTPROC_LOCAL) context->getProcAddress(context->hasExtension("GL_EXT_buffer_storage") ? "glBufferStorageEXT" : "glBufferStorage");
         if (!glBufferStorage)
-            glBufferStorage = glBufferStorage = (PFNGLBUFFERSTORAGEEXTPROC_LOCAL) context->getProcAddress("glBufferStorage");
+            glBufferStorage = (PFNGLBUFFERSTORAGEEXTPROC_LOCAL) context->getProcAddress("glBufferStorage");
     }
 #endif
 }
