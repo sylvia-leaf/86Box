@@ -952,7 +952,7 @@ load_storage_controllers(void)
 	if (strlen(p) > 511)
 		fatal("load_storage_controllers(): strlen(p) > 511\n");
 	else
-		strcpy(cart_fns[c], p);
+		strncpy(cart_fns[c], p, strlen(p) + 1);
     }
 }
 
@@ -1200,7 +1200,7 @@ load_floppy_drives(void)
 	if (strlen(p) > 511)
 		fatal("load_floppy_drives(): strlen(p) > 511\n");
 	else
-		strcpy(floppyfns[c], p);
+		strmcpy(floppyfns[c], p, strlen(p) + 1);
 
         /* if (*wp != L'\0')
             config_log("Floppy%d: %ls\n", c, floppyfns[c]); */
@@ -1262,7 +1262,7 @@ load_floppy_and_cdrom_drives(void)
 	if (strlen(p) > 511)
 		fatal("load_floppy_and_cdrom_drives(): strlen(p) > 511\n");
 	else
-		strcpy(floppyfns[c], p);
+		strncpy(floppyfns[c], p, strlen(p) + 1);
 
         /* if (*wp != L'\0')
             config_log("Floppy%d: %ls\n", c, floppyfns[c]); */
@@ -2094,9 +2094,9 @@ save_machine(void)
         ini_section_delete_var(cat, "cpu_override");
 
     if (bochs_timing)
-	config_set_int(cat, "bochs_timing", bochs_timing);
+	ini_section_set_int(cat, "bochs_timing", bochs_timing);
     else
-	config_delete_var(cat, "bochs_timing");
+	ini_section_delete_var(cat, "bochs_timing");
 
     /* Forwards compatibility with the previous CPU model system. */
     ini_section_delete_var(cat, "cpu_manufacturer");
