@@ -1200,7 +1200,7 @@ load_floppy_drives(void)
 	if (strlen(p) > 511)
 		fatal("load_floppy_drives(): strlen(p) > 511\n");
 	else
-		strmcpy(floppyfns[c], p, strlen(p) + 1);
+		strncpy(floppyfns[c], p, strlen(p) + 1);
 
         /* if (*wp != L'\0')
             config_log("Floppy%d: %ls\n", c, floppyfns[c]); */
