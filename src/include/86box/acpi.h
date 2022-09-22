@@ -15,8 +15,7 @@
  *		Copyright 2020 Miran Grca.
  */
 #ifndef ACPI_H
-# define ACPI_H
-
+#define ACPI_H
 
 #ifdef __cplusplus
 extern "C" {
@@ -27,29 +26,29 @@ extern "C" {
 #define ACPI_TIMER_FREQ	3579545
 #define PM_FREQ		ACPI_TIMER_FREQ
 
-#define RSM_STS		(1 << 15)
-#define PWRBTN_STS	(1 << 8)
-#define GBL_STS		(1 << 5)
-#define BM_STS		(1 << 4)
-#define TMROF_STS	(1 << 0)
+#define RSM_STS         (1 << 15)
+#define PWRBTN_STS      (1 << 8)
+#define GBL_STS         (1 << 5)
+#define BM_STS          (1 << 4)
+#define TMROF_STS       (1 << 0)
 
-#define RTC_EN		(1 << 10)
-#define PWRBTN_EN	(1 << 8)
-#define GBL_EN		(1 << 5)
-#define TMROF_EN	(1 << 0)
+#define RTC_EN          (1 << 10)
+#define PWRBTN_EN       (1 << 8)
+#define GBL_EN          (1 << 5)
+#define TMROF_EN        (1 << 0)
 
-#define SCI_EN		(1 << 0)
-#define SUS_EN		(1 << 13)
+#define SCI_EN          (1 << 0)
+#define SUS_EN          (1 << 13)
 
-#define SUS_POWER_OFF	(1 << 0)
-#define SUS_SUSPEND	(1 << 1)
-#define SUS_NVR		(1 << 2)
-#define SUS_RESET_CPU	(1 << 3)
-#define SUS_RESET_CACHE	(1 << 4)
-#define SUS_RESET_PCI	(1 << 5)
+#define SUS_POWER_OFF   (1 << 0)
+#define SUS_SUSPEND     (1 << 1)
+#define SUS_NVR         (1 << 2)
+#define SUS_RESET_CPU   (1 << 3)
+#define SUS_RESET_CACHE (1 << 4)
+#define SUS_RESET_PCI   (1 << 5)
 
-#define ACPI_ENABLE	0xf1
-#define	ACPI_DISABLE	0xf0
+#define ACPI_ENABLE     0xf1
+#define ACPI_DISABLE    0xf0
 
 #define VEN_ALI		0x010b9
 #define VEN_INTEL	0x08086
@@ -58,7 +57,6 @@ extern "C" {
 #define VEN_SMC		0x01055
 #define VEN_VIA		0x01106
 #define VEN_VIA_596B	0x11106
-
 
 typedef struct
 {
@@ -87,7 +85,6 @@ typedef struct
 			extsmi_val, pad0;
 } acpi_regs_t;
 
-
 typedef struct
 {
     acpi_regs_t		regs;
@@ -107,7 +104,6 @@ typedef struct
 			(*trap_update)(void *priv), *trap_priv;
 } acpi_t;
 
-
 /* Global variables. */
 extern int		acpi_rtc_status;
 
@@ -118,6 +114,11 @@ extern const device_t	acpi_smc_device;
 extern const device_t	acpi_via_device;
 extern const device_t	acpi_via_596b_device;
 
+extern const device_t acpi_ali_device;
+extern const device_t acpi_intel_device;
+extern const device_t acpi_smc_device;
+extern const device_t acpi_via_device;
+extern const device_t acpi_via_596b_device;
 
 /* Functions */
 extern void		acpi_update_irq(acpi_t *dev);
@@ -142,5 +143,4 @@ extern void		acpi_ali_soft_smi_status_write(acpi_t *dev, uint8_t soft_smi);
 }
 #endif
 
-
-#endif	/*ACPI_H*/
+#endif /*ACPI_H*/
