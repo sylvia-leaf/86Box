@@ -298,7 +298,7 @@ fx_save_stor_common(uint32_t fetchdat, int bits)
     
     	SEG_CHECK_READ(cpu_state.ea_seg);
     	src = readmeml(easeg, cpu_state.eaaddr); if (cpu_state.abrt) return 1;
-		if(src & ~mxcsr_mask) x86gpf(NULL, 0);
+		//if(src & ~mxcsr_mask) x86gpf(NULL, 0);
 		mxcsr = src & mxcsr_mask;
 	}
 	else if(fxinst == 3)
