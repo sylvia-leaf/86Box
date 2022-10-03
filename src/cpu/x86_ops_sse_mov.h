@@ -925,7 +925,7 @@ static int opPMOVMSKB_l_xmm_a16(uint32_t fetchdat)
     if (cpu_mod == 3)
     {
         uint32_t result = 0;
-        if(sse_xmm)
+        if((cpu_features & CPU_FEATURE_SSE2) && sse_xmm)
         {
             if(XMM[cpu_rm].b[0] & (1 << 7)) result |= 1;
             if(XMM[cpu_rm].b[1] & (1 << 7)) result |= 2;
@@ -946,7 +946,6 @@ static int opPMOVMSKB_l_xmm_a16(uint32_t fetchdat)
         }
         else
         {
-            MMX_ENTER();
             if(cpu_state.MM[cpu_rm].b[0] & (1 << 7)) result |= 1;
             if(cpu_state.MM[cpu_rm].b[1] & (1 << 7)) result |= 2;
             if(cpu_state.MM[cpu_rm].b[2] & (1 << 7)) result |= 4;
@@ -969,7 +968,7 @@ static int opPMOVMSKB_l_xmm_a32(uint32_t fetchdat)
     if (cpu_mod == 3)
     {
         uint32_t result = 0;
-        if(sse_xmm)
+        if((cpu_features & CPU_FEATURE_SSE2) && sse_xmm)
         {
             if(XMM[cpu_rm].b[0] & (1 << 7)) result |= 1;
             if(XMM[cpu_rm].b[1] & (1 << 7)) result |= 2;
