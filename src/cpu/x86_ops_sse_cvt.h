@@ -212,8 +212,8 @@ static int opCVTPS2PI_mm_xmm_a16(uint32_t fetchdat)
     if (cpu_mod == 3)
     {
         fesetround(rounding_modes[(mxcsr >> 14) & 3]);
-        cpu_state.MM[cpu_reg].l[0] = XMM[cpu_rm].f[0];
-        cpu_state.MM[cpu_reg].l[1] = XMM[cpu_rm].f[1];
+        if(XMM[cpu_rm].f[0] > 2147483647.0) cpu_state.MM[cpu_reg].l[0] = 0x80000000; else cpu_state.MM[cpu_reg].l[0] = XMM[cpu_rm].f[0];
+        if(XMM[cpu_rm].f[1] > 2147483647.0) cpu_state.MM[cpu_reg].l[1] = 0x80000000; else cpu_state.MM[cpu_reg].l[1] = XMM[cpu_rm].f[1];
         fesetround(FE_TONEAREST);
         CLOCK_CYCLES(1);
     }
@@ -228,8 +228,8 @@ static int opCVTPS2PI_mm_xmm_a16(uint32_t fetchdat)
         dst_real[0] = *(float*)&dst[0];
         dst_real[1] = *(float*)&dst[1];
         fesetround(rounding_modes[(mxcsr >> 14) & 3]);
-        cpu_state.MM[cpu_reg].l[0] = dst_real[0];
-        cpu_state.MM[cpu_reg].l[1] = dst_real[1];
+        if(dst_real[0] > 2147483647.0) cpu_state.MM[cpu_reg].l[0] = 0x80000000; else cpu_state.MM[cpu_reg].l[0] = dst_real[0];
+        if(dst_real[0] > 2147483647.0) cpu_state.MM[cpu_reg].l[1] = 0x80000000; else cpu_state.MM[cpu_reg].l[1] = dst_real[1];
         fesetround(FE_TONEAREST);
         CLOCK_CYCLES(2);
     }
@@ -244,8 +244,8 @@ static int opCVTPS2PI_mm_xmm_a32(uint32_t fetchdat)
     if (cpu_mod == 3)
     {
         fesetround(rounding_modes[(mxcsr >> 14) & 3]);
-        cpu_state.MM[cpu_reg].l[0] = XMM[cpu_rm].f[0];
-        cpu_state.MM[cpu_reg].l[1] = XMM[cpu_rm].f[1];
+        if(XMM[cpu_rm].f[0] > 2147483647.0) cpu_state.MM[cpu_reg].l[0] = 0x80000000; else cpu_state.MM[cpu_reg].l[0] = XMM[cpu_rm].f[0];
+        if(XMM[cpu_rm].f[1] > 2147483647.0) cpu_state.MM[cpu_reg].l[1] = 0x80000000; else cpu_state.MM[cpu_reg].l[1] = XMM[cpu_rm].f[1];
         fesetround(FE_TONEAREST);
         CLOCK_CYCLES(1);
     }
@@ -260,11 +260,12 @@ static int opCVTPS2PI_mm_xmm_a32(uint32_t fetchdat)
         dst_real[0] = *(float*)&dst[0];
         dst_real[1] = *(float*)&dst[1];
         fesetround(rounding_modes[(mxcsr >> 14) & 3]);
-        cpu_state.MM[cpu_reg].l[0] = dst_real[0];
-        cpu_state.MM[cpu_reg].l[1] = dst_real[1];
+        if(dst_real[0] > 2147483647.0) cpu_state.MM[cpu_reg].l[0] = 0x80000000; else cpu_state.MM[cpu_reg].l[0] = dst_real[0];
+        if(dst_real[0] > 2147483647.0) cpu_state.MM[cpu_reg].l[1] = 0x80000000; else cpu_state.MM[cpu_reg].l[1] = dst_real[1];
         fesetround(FE_TONEAREST);
         CLOCK_CYCLES(2);
     }
+    return 0;
     return 0;
 }
 

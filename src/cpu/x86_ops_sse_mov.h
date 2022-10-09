@@ -863,14 +863,18 @@ static int opSHUFPS_xmm_w_a16(uint32_t fetchdat)
     uint8_t imm = getbyte();
     if (cpu_mod == 3)
     {
-        XMM[cpu_reg].f[0] = XMM[cpu_rm].f[imm & 3];
-        XMM[cpu_reg].f[1] = XMM[cpu_rm].f[(imm >> 2) & 3];
-        XMM[cpu_reg].f[2] = XMM[cpu_rm].f[(imm >> 4) & 3];
-        XMM[cpu_reg].f[3] = XMM[cpu_rm].f[(imm >> 6) & 3];
+        SSE_REG tmp;
+        tmp.f[0] = XMM[cpu_rm].f[imm & 3];
+        tmp.f[1] = XMM[cpu_rm].f[(imm >> 2) & 3];
+        tmp.f[2] = XMM[cpu_reg].f[(imm >> 4) & 3];
+        tmp.f[3] = XMM[cpu_reg].f[(imm >> 6) & 3];
+        XMM[cpu_reg].q[0] = tmp.q[0];
+        XMM[cpu_reg].q[1] = tmp.q[1];
         CLOCK_CYCLES(1);
     }
     else
     {
+        SSE_REG tmp;
         uint32_t src[4];
         
         SEG_CHECK_READ(cpu_state.ea_seg);
@@ -878,10 +882,12 @@ static int opSHUFPS_xmm_w_a16(uint32_t fetchdat)
         src[1] = readmeml(easeg, cpu_state.eaaddr + 4); if (cpu_state.abrt) return 1;
         src[2] = readmeml(easeg, cpu_state.eaaddr + 8); if (cpu_state.abrt) return 1;
         src[3] = readmeml(easeg, cpu_state.eaaddr + 12); if (cpu_state.abrt) return 1;
-        XMM[cpu_reg].l[0] = src[imm & 3];
-        XMM[cpu_reg].l[1] = src[(imm >> 2) & 3];
-        XMM[cpu_reg].l[2] = src[(imm >> 4) & 3];
-        XMM[cpu_reg].l[3] = src[(imm >> 6) & 3];
+        tmp.l[0] = src[imm & 3];
+        tmp.l[1] = src[(imm >> 2) & 3];
+        tmp.l[2] = XMM[cpu_reg].l[(imm >> 4) & 3];
+        tmp.l[3] = XMM[cpu_reg].l[(imm >> 6) & 3];
+        XMM[cpu_reg].q[0] = tmp.q[0];
+        XMM[cpu_reg].q[1] = tmp.q[1];
         CLOCK_CYCLES(2);
     }
     return 0;
@@ -894,14 +900,18 @@ static int opSHUFPS_xmm_w_a32(uint32_t fetchdat)
     uint8_t imm = getbyte();
     if (cpu_mod == 3)
     {
-        XMM[cpu_reg].f[0] = XMM[cpu_rm].f[imm & 3];
-        XMM[cpu_reg].f[1] = XMM[cpu_rm].f[(imm >> 2) & 3];
-        XMM[cpu_reg].f[2] = XMM[cpu_rm].f[(imm >> 4) & 3];
-        XMM[cpu_reg].f[3] = XMM[cpu_rm].f[(imm >> 6) & 3];
+        SSE_REG tmp;
+        tmp.f[0] = XMM[cpu_rm].f[imm & 3];
+        tmp.f[1] = XMM[cpu_rm].f[(imm >> 2) & 3];
+        tmp.f[2] = XMM[cpu_reg].f[(imm >> 4) & 3];
+        tmp.f[3] = XMM[cpu_reg].f[(imm >> 6) & 3];
+        XMM[cpu_reg].q[0] = tmp.q[0];
+        XMM[cpu_reg].q[1] = tmp.q[1];
         CLOCK_CYCLES(1);
     }
     else
     {
+        SSE_REG tmp;
         uint32_t src[4];
         
         SEG_CHECK_READ(cpu_state.ea_seg);
@@ -909,10 +919,12 @@ static int opSHUFPS_xmm_w_a32(uint32_t fetchdat)
         src[1] = readmeml(easeg, cpu_state.eaaddr + 4); if (cpu_state.abrt) return 1;
         src[2] = readmeml(easeg, cpu_state.eaaddr + 8); if (cpu_state.abrt) return 1;
         src[3] = readmeml(easeg, cpu_state.eaaddr + 12); if (cpu_state.abrt) return 1;
-        XMM[cpu_reg].l[0] = src[imm & 3];
-        XMM[cpu_reg].l[1] = src[(imm >> 2) & 3];
-        XMM[cpu_reg].l[2] = src[(imm >> 4) & 3];
-        XMM[cpu_reg].l[3] = src[(imm >> 6) & 3];
+        tmp.l[0] = src[imm & 3];
+        tmp.l[1] = src[(imm >> 2) & 3];
+        tmp.l[2] = XMM[cpu_reg].l[(imm >> 4) & 3];
+        tmp.l[3] = XMM[cpu_reg].l[(imm >> 6) & 3];
+        XMM[cpu_reg].q[0] = tmp.q[0];
+        XMM[cpu_reg].q[1] = tmp.q[1];
         CLOCK_CYCLES(2);
     }
     return 0;

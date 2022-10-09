@@ -338,12 +338,10 @@ static int opRCPPS_xmm_xmm_a16(uint32_t fetchdat)
     fetch_ea_16(fetchdat);
     if (cpu_mod == 3)
     {
-        fesetround(rounding_modes[(mxcsr >> 14) & 3]);
         XMM[cpu_reg].f[0] = 1.0 / XMM[cpu_rm].f[0];
         XMM[cpu_reg].f[1] = 1.0 / XMM[cpu_rm].f[1];
         XMM[cpu_reg].f[2] = 1.0 / XMM[cpu_rm].f[2];
         XMM[cpu_reg].f[3] = 1.0 / XMM[cpu_rm].f[3];
-        fesetround(FE_TONEAREST);
         CLOCK_CYCLES(1);
     }
     else
@@ -362,12 +360,10 @@ static int opRCPPS_xmm_xmm_a16(uint32_t fetchdat)
         src_real[1] = *(float*)&src[1];
         src_real[2] = *(float*)&src[2];
         src_real[3] = *(float*)&src[3];
-        fesetround(rounding_modes[(mxcsr >> 14) & 3]);
         XMM[cpu_reg].f[0] = 1.0 / src_real[0];
         XMM[cpu_reg].f[1] = 1.0 / src_real[1];
         XMM[cpu_reg].f[2] = 1.0 / src_real[2];
         XMM[cpu_reg].f[3] = 1.0 / src_real[3];
-        fesetround(FE_TONEAREST);
     }
     return 0;
 }
