@@ -125,7 +125,8 @@ void MediaMenu::refresh(QMenu *parentMenu) {
         cdromMutePos = menu->children().count();
         menu->addAction(tr("&Mute"), [this, i]() { cdromMute(i); })->setCheckable(true);
         menu->addSeparator();
-        menu->addAction(tr("&Image..."), [this, i]() { cdromMount(i); })->setCheckable(false);
+        menu->addAction(tr("&Image..."), [this, i]() { cdromMount(i, 0); })->setCheckable(false);
+        menu->addAction(tr("&Folder..."), [this, i]() { cdromMount(i, 1); })->setCheckable(false);
         menu->addSeparator();
         for (int slot = 0; slot < MAX_PREV_IMAGES; slot++) {
             cdromImageHistoryPos[slot] = menu->children().count();
@@ -133,6 +134,7 @@ void MediaMenu::refresh(QMenu *parentMenu) {
         }
         menu->addSeparator();
         cdromImagePos = menu->children().count();
+        cdromDirPos = menu->children().count();
         menu->addAction(tr("E&ject"), [this, i]() { cdromEject(i); })->setCheckable(false);
         cdromMenus[i] = menu;
         cdromUpdateMenu(i);
@@ -434,16 +436,23 @@ void MediaMenu::cdromMount(int i, const QString &filename)
     config_save();
 }
 
-void MediaMenu::cdromMount(int i) {
+void MediaMenu::cdromMount(int i, int dir) {
+    QString filename;
+    QFileInfo fi(cdrom[i].image_path);
 
-    auto filename = QFileDialog::getOpenFileName(
-        parentWidget,
-        QString(),
-        getMediaOpenDirectory(),
-        tr("CD-ROM images") %
-        util::DlgFilter({ "iso","cue" }) %
-        tr("All files") %
-        util::DlgFilter({ "*" }, true));
+    if (dir) {
+        filename = QFileDialog::getExistingDirectory(
+            parentWidget);
+    } else {
+        filename = QFileDialog::getOpenFileName(
+            parentWidget,
+            QString(),
+            QString(),
+            tr("CD-ROM images") %
+            util::DlgFilter({ "iso","cue" }) %
+            tr("All files") %
+            util::DlgFilter({ "*" }, true));
+    }
 
     if (filename.isEmpty()) {
         return;

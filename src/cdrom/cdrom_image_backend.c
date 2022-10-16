@@ -1,36 +1,35 @@
 /*
- * 86Box	A hypervisor and IBM PC system emulator that specializes in
- *		running old operating systems and software designed for IBM
- *		PC systems and compatibles from 1981 through fairly recent
- *		system designs based on the PCI bus.
+ * 86Box    A hypervisor and IBM PC system emulator that specializes in
+ *          running old operating systems and software designed for IBM
+ *          PC systems and compatibles from 1981 through fairly recent
+ *          system designs based on the PCI bus.
  *
- *		This file is part of the 86Box distribution.
+ *          This file is part of the 86Box distribution.
  *
- *		CD-ROM image file handling module, translated to C from
- *		cdrom_dosbox.cpp.
+ *          CD-ROM image file handling module, translated to C from
+ *          cdrom_dosbox.cpp.
  *
- * Authors:	Miran Grca, <mgrca8@gmail.com>
- *		Fred N. van Kempen, <decwiz@yahoo.com>
- *		The DOSBox Team, <unknown>
+ * Authors: Miran Grca, <mgrca8@gmail.com>
+ *          Fred N. van Kempen, <decwiz@yahoo.com>
+ *          The DOSBox Team, <unknown>
  *
- *		Copyright 2016-2020 Miran Grca.
- *		Copyright 2017-2020 Fred N. van Kempen.
- *		Copyright 2002-2020 The DOSBox Team.
+ *          Copyright 2016-2020 Miran Grca.
+ *          Copyright 2017-2020 Fred N. van Kempen.
+ *          Copyright 2002-2020 The DOSBox Team.
  */
 #define __STDC_FORMAT_MACROS
-#include <stdarg.h>
-#include <inttypes.h>
-#include <stdlib.h>
-#include <stdio.h>
-#include <stdint.h>
-#include <string.h>
 #include <ctype.h>
+#include <inttypes.h>
+#include <stdarg.h>
+#include <stdint.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
 #ifdef _WIN32
 #    include <string.h>
 #else
 #    include <libgen.h>
 #endif
-#include <wchar.h>
 #define HAVE_STDARG_H
 #include <86box/86box.h>
 #include <86box/path.h>
@@ -222,11 +221,13 @@ cdi_close(cd_img_t *cdi)
 int
 cdi_set_device(cd_img_t *cdi, const char *path)
 {
-    if (cdi_load_cue(cdi, path))
-        return 1;
+    int ret;
 
-    if (cdi_load_iso(cdi, path))
-        return 1;
+    if ((ret = cdi_load_cue(cdi, path)))
+        return ret;
+
+    if ((ret = cdi_load_iso(cdi, path)))
+        return ret;
 
     return 0;
 }
@@ -532,7 +533,7 @@ cdi_track_push_back(cd_img_t *cdi, track_t *trk)
 int
 cdi_load_iso(cd_img_t *cdi, const char *filename)
 {
-    int     error;
+    int     error, ret = 2;
     track_t trk;
 
     cdi->tracks     = NULL;
@@ -545,7 +546,13 @@ cdi_load_iso(cd_img_t *cdi, const char *filename)
     if (error) {
         if ((trk.file != NULL) && (trk.file->close != NULL))
             trk.file->close(trk.file);
-        return 0;
+        ret      = 3;
+        trk.file = viso_init(filename, &error);
+        if (error) {
+            if ((trk.file != NULL) && (trk.file->close != NULL))
+                trk.file->close(trk.file);
+            return 0;
+        }
     }
     trk.number       = 1;
     trk.track_number = 1;
@@ -585,7 +592,7 @@ cdi_load_iso(cd_img_t *cdi, const char *filename)
     trk.file         = NULL;
     cdi_track_push_back(cdi, &trk);
 
-    return 1;
+    return ret;
 }
 
 static int
