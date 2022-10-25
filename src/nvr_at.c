@@ -279,6 +279,8 @@
 #define REGC_UF            0x10
 #define RTC_REGD           13
 #define REGD_VRT           0x80
+#define RTC_FDD_TYPES	0x10
+#define RTC_INST_EQUIP	0x14
 #define RTC_CENTURY_AT     0x32 /* century register for AT etc */
 #define RTC_CENTURY_PS     0x37 /* century register for PS/1 PS/2 */
 #define RTC_CENTURY_ELT    0x1A /* century register for Epson Equity LT */
