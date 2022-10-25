@@ -535,6 +535,7 @@ extern int	is_am486, is_am486dxl, is_pentium, is_k5, is_k6, is_p6, is_cxsmm, is_
 extern int	hascache;
 extern int	isibm486;
 extern int is_nec;
+extern int is186;
 extern int	is_rapidcad;
 extern int	hasfpu;
 #define CPU_FEATURE_RDTSC (1 << 0)
