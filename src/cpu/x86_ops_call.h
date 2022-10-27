@@ -122,9 +122,9 @@ static int opCALL_far_w(uint32_t fetchdat)
         int cycles_old = cycles; UN_USED(cycles_old);
 
         new_pc = getwordf();
-        new_cs = getword();                             if (cpu_state.abrt) return 1;
+        new_cs = getword();
 
-        CALL_FAR_w(new_cs, new_pc);
+        CALL_FAR_w(new_cs, new_pc); if (cpu_state.abrt) return 1;
         CPU_BLOCK_END();
         PREFETCH_RUN(cycles_old-cycles, 5, -1, 0,0,cgate16 ? 2:0,cgate16 ? 0:2, 0);
         PREFETCH_FLUSH();
@@ -138,9 +138,9 @@ static int opCALL_far_l(uint32_t fetchdat)
         int cycles_old = cycles; UN_USED(cycles_old);
 
         new_pc = getlong();
-        new_cs = getword();                             if (cpu_state.abrt) return 1;
+        new_cs = getword();
 
-        CALL_FAR_l(new_cs, new_pc);
+        CALL_FAR_l(new_cs, new_pc); if (cpu_state.abrt) return 1;
         CPU_BLOCK_END();
         PREFETCH_RUN(cycles_old-cycles, 7, -1, 0,0,cgate16 ? 2:0,cgate16 ? 0:2, 0);
         PREFETCH_FLUSH();
@@ -195,9 +195,9 @@ static int opFF_w_a16(uint32_t fetchdat)
                 if (cpu_mod != 3)
                         SEG_CHECK_READ(cpu_state.ea_seg);
                 new_pc = readmemw(easeg, cpu_state.eaaddr);
-                new_cs = readmemw(easeg, (cpu_state.eaaddr + 2)); if (cpu_state.abrt) return 1;
+                new_cs = readmemw(easeg, (cpu_state.eaaddr + 2));
 
-                CALL_FAR_w(new_cs, new_pc);
+                CALL_FAR_w(new_cs, new_pc); if (cpu_state.abrt) return 1;
                 CPU_BLOCK_END();
                 PREFETCH_RUN(cycles_old-cycles, 2, rmdat, 2,0,cgate16 ? 2:0,cgate16 ? 0:2, 0);
                 PREFETCH_FLUSH();
@@ -294,9 +294,9 @@ static int opFF_w_a32(uint32_t fetchdat)
                 if (cpu_mod != 3)
                         SEG_CHECK_READ(cpu_state.ea_seg);
                 new_pc = readmemw(easeg, cpu_state.eaaddr);
-                new_cs = readmemw(easeg, (cpu_state.eaaddr + 2)); if (cpu_state.abrt) return 1;
+                new_cs = readmemw(easeg, (cpu_state.eaaddr + 2));
 
-                CALL_FAR_w(new_cs, new_pc);
+                CALL_FAR_w(new_cs, new_pc); if (cpu_state.abrt) return 1;
                 CPU_BLOCK_END();
                 PREFETCH_RUN(cycles_old-cycles, 2, rmdat, 2,0,cgate16 ? 2:0,cgate16 ? 0:2, 1);
                 PREFETCH_FLUSH();
