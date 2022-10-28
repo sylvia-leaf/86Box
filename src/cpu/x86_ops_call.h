@@ -193,7 +193,9 @@ static int opFF_w_a16(uint32_t fetchdat)
                 break;
                 case 0x18: /*CALL far*/
                 if (cpu_mod != 3)
-                        SEG_CHECK_READ(cpu_state.ea_seg);
+                {
+                        SEG_CHECK_READ(cpu_state.ea_seg); if (cpu_state.abrt) return 1;
+                }
                 new_pc = readmemw(easeg, cpu_state.eaaddr);
                 new_cs = readmemw(easeg, (cpu_state.eaaddr + 2));
 
@@ -280,7 +282,9 @@ static int opFF_w_a32(uint32_t fetchdat)
                 break;
                 case 0x10: /*CALL*/
                 if (cpu_mod != 3)
-                        SEG_CHECK_READ(cpu_state.ea_seg);
+                {
+                        SEG_CHECK_READ(cpu_state.ea_seg); if (cpu_state.abrt) return 1;
+                }
                 new_pc = geteaw();                      if (cpu_state.abrt) return 1;
                 PUSH_W(cpu_state.pc);
                 cpu_state.pc = new_pc;
@@ -292,11 +296,13 @@ static int opFF_w_a32(uint32_t fetchdat)
                 break;
                 case 0x18: /*CALL far*/
                 if (cpu_mod != 3)
-                        SEG_CHECK_READ(cpu_state.ea_seg);
+                {
+                        SEG_CHECK_READ(cpu_state.ea_seg); if (cpu_state.abrt) return 1;
+                }
                 new_pc = readmemw(easeg, cpu_state.eaaddr);
-                new_cs = readmemw(easeg, (cpu_state.eaaddr + 2));
+                new_cs = readmemw(easeg, (cpu_state.eaaddr + 2)); if (cpu_state.abrt) return 1;
 
-                CALL_FAR_w(new_cs, new_pc); if (cpu_state.abrt) return 1;
+                CALL_FAR_w(new_cs, new_pc);
                 CPU_BLOCK_END();
                 PREFETCH_RUN(cycles_old-cycles, 2, rmdat, 2,0,cgate16 ? 2:0,cgate16 ? 0:2, 1);
                 PREFETCH_FLUSH();
@@ -392,7 +398,9 @@ static int opFF_l_a16(uint32_t fetchdat)
                 break;
                 case 0x18: /*CALL far*/
                 if (cpu_mod != 3)
-                        SEG_CHECK_READ(cpu_state.ea_seg);
+                {
+                        SEG_CHECK_READ(cpu_state.ea_seg); if (cpu_state.abrt) return 1;
+                }
                 new_pc = readmeml(easeg, cpu_state.eaaddr);
                 new_cs = readmemw(easeg, (cpu_state.eaaddr + 4)); if (cpu_state.abrt) return 1;
 
@@ -491,7 +499,9 @@ static int opFF_l_a32(uint32_t fetchdat)
                 break;
                 case 0x18: /*CALL far*/
                 if (cpu_mod != 3)
-                        SEG_CHECK_READ(cpu_state.ea_seg);
+                {
+                        SEG_CHECK_READ(cpu_state.ea_seg); if (cpu_state.abrt) return 1;
+                }
                 new_pc = readmeml(easeg, cpu_state.eaaddr);
                 new_cs = readmemw(easeg, (cpu_state.eaaddr + 4)); if (cpu_state.abrt) return 1;
 
