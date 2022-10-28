@@ -278,10 +278,14 @@ machine_at_micronics386_init(const machine_t *model)
 }
 
 static void
-machine_at_scat_init(const machine_t *model, int is_v4)
+machine_at_scat_init(const machine_t *model, int is_v4, int is_ami)
 {
     machine_at_common_init(model);
-    device_add(&keyboard_at_ami_device);
+
+    if (is_ami)
+        device_add(&keyboard_at_ami_device);
+    else
+        device_add(&keyboard_at_device);
 
     if (is_v4)
         device_add(&scat_4_device);
@@ -313,7 +317,7 @@ machine_at_award286_init(const machine_t *model)
     if (bios_only || !ret)
         return ret;
 
-    machine_at_scat_init(model, 0);
+    machine_at_scat_init(model, 0, 1);
 
     if (fdc_type == FDC_INTERNAL)
         device_add(&fdc_at_device);
@@ -332,7 +336,7 @@ machine_at_gdc212m_init(const machine_t *model)
     if (bios_only || !ret)
         return ret;
 
-    machine_at_scat_init(model, 0);
+    machine_at_scat_init(model, 0, 1);
 
     if (fdc_type == FDC_INTERNAL)
         device_add(&fdc_at_device);
@@ -355,10 +359,7 @@ machine_at_gw286ct_init(const machine_t *model)
 
     device_add(&f82c710_device);
 
-    machine_at_common_init(model);
-    device_add(&keyboard_at_device);
-
-    device_add(&scat_4_device);
+    machine_at_scat_init(model, 1, 0);
 
     device_add(&ide_isa_device);
 
@@ -376,7 +377,7 @@ machine_at_super286tr_init(const machine_t *model)
     if (bios_only || !ret)
         return ret;
 
-    machine_at_scat_init(model, 0);
+    machine_at_scat_init(model, 0, 1);
 
     if (fdc_type == FDC_INTERNAL)
         device_add(&fdc_at_device);
@@ -395,7 +396,7 @@ machine_at_spc4200p_init(const machine_t *model)
     if (bios_only || !ret)
         return ret;
 
-    machine_at_scat_init(model, 0);
+    machine_at_scat_init(model, 0, 1);
 
     if (fdc_type == FDC_INTERNAL)
         device_add(&fdc_at_device);
@@ -415,7 +416,7 @@ machine_at_spc4216p_init(const machine_t *model)
     if (bios_only || !ret)
         return ret;
 
-    machine_at_scat_init(model, 1);
+    machine_at_scat_init(model, 1, 1);
 
     if (fdc_type == FDC_INTERNAL)
         device_add(&fdc_at_device);
@@ -438,7 +439,7 @@ machine_at_spc4620p_init(const machine_t *model)
     if (gfxcard == VID_INTERNAL)
         device_add(&ati28800k_spc4620p_device);
 
-    machine_at_scat_init(model, 1);
+    machine_at_scat_init(model, 1, 1);
 
     if (fdc_type == FDC_INTERNAL)
         device_add(&fdc_at_device);
@@ -473,7 +474,7 @@ machine_at_deskmaster286_init(const machine_t *model)
     if (bios_only || !ret)
         return ret;
 
-    machine_at_scat_init(model, 0);
+    machine_at_scat_init(model, 0, 1);
 
     if (fdc_type == FDC_INTERNAL)
         device_add(&fdc_at_device);
@@ -744,11 +745,10 @@ machine_at_mr1217_init(const machine_t *model)
     if (bios_only || !ret)
         return ret;
 
-    machine_at_common_init(model);
+    machine_at_common_ide_init(model);
 
     device_add(&ali1217_device);
     device_add(&fdc_at_device);
-    device_add(&ide_isa_device);
     device_add(&keyboard_ps2_device);
 
     return ret;
