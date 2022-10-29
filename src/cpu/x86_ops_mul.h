@@ -5,7 +5,10 @@ static int opIMUL_w_iw_a16(uint32_t fetchdat)
 
         fetch_ea_16(fetchdat);
         if (cpu_mod != 3)
+        {
                 SEG_CHECK_READ(cpu_state.ea_seg);
+                CHECK_READ(cpu_state.ea_seg, cpu_state.eaaddr, cpu_state.eaaddr + 1);
+        }
 
         tempw = geteaw();               if (cpu_state.abrt) return 1;
         tempw2 = getword();             if (cpu_state.abrt) return 1;
@@ -27,7 +30,10 @@ static int opIMUL_w_iw_a32(uint32_t fetchdat)
 
         fetch_ea_32(fetchdat);
         if (cpu_mod != 3)
+        {
                 SEG_CHECK_READ(cpu_state.ea_seg);
+                CHECK_READ(cpu_state.ea_seg, cpu_state.eaaddr, cpu_state.eaaddr + 1);
+        }
 
         tempw = geteaw();               if (cpu_state.abrt) return 1;
         tempw2 = getword();             if (cpu_state.abrt) return 1;
@@ -50,7 +56,10 @@ static int opIMUL_l_il_a16(uint32_t fetchdat)
 
         fetch_ea_16(fetchdat);
         if (cpu_mod != 3)
+        {
                 SEG_CHECK_READ(cpu_state.ea_seg);
+                CHECK_READ(cpu_state.ea_seg, cpu_state.eaaddr, cpu_state.eaaddr + 3);
+        }
 
         templ = geteal();               if (cpu_state.abrt) return 1;
         templ2 = getlong();             if (cpu_state.abrt) return 1;
@@ -72,7 +81,10 @@ static int opIMUL_l_il_a32(uint32_t fetchdat)
 
         fetch_ea_32(fetchdat);
         if (cpu_mod != 3)
+        {
                 SEG_CHECK_READ(cpu_state.ea_seg);
+                CHECK_READ(cpu_state.ea_seg, cpu_state.eaaddr, cpu_state.eaaddr + 3);
+        }
 
         templ = geteal();               if (cpu_state.abrt) return 1;
         templ2 = getlong();             if (cpu_state.abrt) return 1;
@@ -95,7 +107,10 @@ static int opIMUL_w_ib_a16(uint32_t fetchdat)
 
         fetch_ea_16(fetchdat);
         if (cpu_mod != 3)
+        {
                 SEG_CHECK_READ(cpu_state.ea_seg);
+                CHECK_READ(cpu_state.ea_seg, cpu_state.eaaddr, cpu_state.eaaddr + 1);
+        }
 
         tempw = geteaw();               if (cpu_state.abrt) return 1;
         tempw2 = getbyte();             if (cpu_state.abrt) return 1;
@@ -118,7 +133,10 @@ static int opIMUL_w_ib_a32(uint32_t fetchdat)
 
         fetch_ea_32(fetchdat);
         if (cpu_mod != 3)
+        {
                 SEG_CHECK_READ(cpu_state.ea_seg);
+                CHECK_READ(cpu_state.ea_seg, cpu_state.eaaddr, cpu_state.eaaddr + 1);
+        }
 
         tempw = geteaw();               if (cpu_state.abrt) return 1;
         tempw2 = getbyte();             if (cpu_state.abrt) return 1;
@@ -142,7 +160,10 @@ static int opIMUL_l_ib_a16(uint32_t fetchdat)
 
         fetch_ea_16(fetchdat);
         if (cpu_mod != 3)
+        {
                 SEG_CHECK_READ(cpu_state.ea_seg);
+                CHECK_READ(cpu_state.ea_seg, cpu_state.eaaddr, cpu_state.eaaddr + 3);
+        }
 
         templ = geteal();               if (cpu_state.abrt) return 1;
         templ2 = getbyte();             if (cpu_state.abrt) return 1;
@@ -165,7 +186,10 @@ static int opIMUL_l_ib_a32(uint32_t fetchdat)
 
         fetch_ea_32(fetchdat);
         if (cpu_mod != 3)
+        {
                 SEG_CHECK_READ(cpu_state.ea_seg);
+                CHECK_READ(cpu_state.ea_seg, cpu_state.eaaddr, cpu_state.eaaddr + 3);
+        }
 
         templ = geteal();               if (cpu_state.abrt) return 1;
         templ2 = getbyte();             if (cpu_state.abrt) return 1;
@@ -190,7 +214,10 @@ static int opIMUL_w_w_a16(uint32_t fetchdat)
 
         fetch_ea_16(fetchdat);
         if (cpu_mod != 3)
+        {
                 SEG_CHECK_READ(cpu_state.ea_seg);
+                CHECK_READ(cpu_state.ea_seg, cpu_state.eaaddr, cpu_state.eaaddr + 1);
+        }
 
         templ = (int32_t)(int16_t)cpu_state.regs[cpu_reg].w * (int32_t)(int16_t)geteaw();
         if (cpu_state.abrt) return 1;
@@ -209,7 +236,10 @@ static int opIMUL_w_w_a32(uint32_t fetchdat)
 
         fetch_ea_32(fetchdat);
         if (cpu_mod != 3)
+        {
                 SEG_CHECK_READ(cpu_state.ea_seg);
+                CHECK_READ(cpu_state.ea_seg, cpu_state.eaaddr, cpu_state.eaaddr + 1);
+        }
 
         templ = (int32_t)(int16_t)cpu_state.regs[cpu_reg].w * (int32_t)(int16_t)geteaw();
         if (cpu_state.abrt) return 1;
@@ -229,7 +259,10 @@ static int opIMUL_l_l_a16(uint32_t fetchdat)
 
         fetch_ea_16(fetchdat);
         if (cpu_mod != 3)
+        {
                 SEG_CHECK_READ(cpu_state.ea_seg);
+                CHECK_READ(cpu_state.ea_seg, cpu_state.eaaddr, cpu_state.eaaddr + 3);
+        }
 
         temp64 = (int64_t)(int32_t)cpu_state.regs[cpu_reg].l * (int64_t)(int32_t)geteal();
         if (cpu_state.abrt) return 1;
@@ -248,7 +281,10 @@ static int opIMUL_l_l_a32(uint32_t fetchdat)
 
         fetch_ea_32(fetchdat);
         if (cpu_mod != 3)
+        {
                 SEG_CHECK_READ(cpu_state.ea_seg);
+                CHECK_READ(cpu_state.ea_seg, cpu_state.eaaddr, cpu_state.eaaddr + 3);
+        }
 
         temp64 = (int64_t)(int32_t)cpu_state.regs[cpu_reg].l * (int64_t)(int32_t)geteal();
         if (cpu_state.abrt) return 1;

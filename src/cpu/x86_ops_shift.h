@@ -482,7 +482,10 @@ static int opC0_a16(uint32_t fetchdat)
 
         fetch_ea_16(fetchdat);
         if (cpu_mod != 3)
+        {
                 SEG_CHECK_WRITE(cpu_state.ea_seg);
+                CHECK_WRITE(cpu_state.ea_seg, cpu_state.eaaddr, cpu_state.eaaddr);
+        }
         c = readmemb(cs, cpu_state.pc) & 31; cpu_state.pc++;
         PREFETCH_PREFIX();
         temp = geteab();                if (cpu_state.abrt) return 1;
@@ -497,7 +500,10 @@ static int opC0_a32(uint32_t fetchdat)
 
         fetch_ea_32(fetchdat);
         if (cpu_mod != 3)
+        {
                 SEG_CHECK_WRITE(cpu_state.ea_seg);
+                CHECK_WRITE(cpu_state.ea_seg, cpu_state.eaaddr, cpu_state.eaaddr);
+        }
         c = readmemb(cs, cpu_state.pc) & 31; cpu_state.pc++;
         PREFETCH_PREFIX();
         temp = geteab();                if (cpu_state.abrt) return 1;
@@ -512,7 +518,10 @@ static int opC1_w_a16(uint32_t fetchdat)
 
         fetch_ea_16(fetchdat);
         if (cpu_mod != 3)
+        {
                 SEG_CHECK_WRITE(cpu_state.ea_seg);
+                CHECK_WRITE(cpu_state.ea_seg, cpu_state.eaaddr, cpu_state.eaaddr + 1);
+        }
         c = readmemb(cs, cpu_state.pc) & 31; cpu_state.pc++;
         PREFETCH_PREFIX();
         temp = geteaw();                if (cpu_state.abrt) return 1;
@@ -527,7 +536,10 @@ static int opC1_w_a32(uint32_t fetchdat)
 
         fetch_ea_32(fetchdat);
         if (cpu_mod != 3)
+        {
                 SEG_CHECK_WRITE(cpu_state.ea_seg);
+                CHECK_WRITE(cpu_state.ea_seg, cpu_state.eaaddr, cpu_state.eaaddr + 1);
+        }
         c = readmemb(cs, cpu_state.pc) & 31; cpu_state.pc++;
         PREFETCH_PREFIX();
         temp = geteaw();                if (cpu_state.abrt) return 1;
@@ -542,7 +554,10 @@ static int opC1_l_a16(uint32_t fetchdat)
 
         fetch_ea_16(fetchdat);
         if (cpu_mod != 3)
+        {
                 SEG_CHECK_WRITE(cpu_state.ea_seg);
+                CHECK_WRITE(cpu_state.ea_seg, cpu_state.eaaddr, cpu_state.eaaddr + 3);
+        }
         c = readmemb(cs, cpu_state.pc) & 31; cpu_state.pc++;
         PREFETCH_PREFIX();
         temp = geteal();                if (cpu_state.abrt) return 1;
@@ -557,7 +572,10 @@ static int opC1_l_a32(uint32_t fetchdat)
 
         fetch_ea_32(fetchdat);
         if (cpu_mod != 3)
+        {
                 SEG_CHECK_WRITE(cpu_state.ea_seg);
+                CHECK_WRITE(cpu_state.ea_seg, cpu_state.eaaddr, cpu_state.eaaddr + 3);
+        }
         c = readmemb(cs, cpu_state.pc) & 31; cpu_state.pc++;
         PREFETCH_PREFIX();
         temp = geteal();                if (cpu_state.abrt) return 1;
@@ -573,7 +591,10 @@ static int opD0_a16(uint32_t fetchdat)
 
         fetch_ea_16(fetchdat);
         if (cpu_mod != 3)
+        {
                 SEG_CHECK_WRITE(cpu_state.ea_seg);
+                CHECK_WRITE(cpu_state.ea_seg, cpu_state.eaaddr, cpu_state.eaaddr);
+        }
         temp = geteab();                if (cpu_state.abrt) return 1;
         OP_SHIFT_b(c, 0);
         return 0;
@@ -586,7 +607,10 @@ static int opD0_a32(uint32_t fetchdat)
 
         fetch_ea_32(fetchdat);
         if (cpu_mod != 3)
+        {
                 SEG_CHECK_WRITE(cpu_state.ea_seg);
+                CHECK_WRITE(cpu_state.ea_seg, cpu_state.eaaddr, cpu_state.eaaddr);
+        }
         temp = geteab();                if (cpu_state.abrt) return 1;
         OP_SHIFT_b(c, 1);
         return 0;
@@ -599,7 +623,10 @@ static int opD1_w_a16(uint32_t fetchdat)
 
         fetch_ea_16(fetchdat);
         if (cpu_mod != 3)
+        {
                 SEG_CHECK_WRITE(cpu_state.ea_seg);
+                CHECK_WRITE(cpu_state.ea_seg, cpu_state.eaaddr, cpu_state.eaaddr + 1);
+        }
         temp = geteaw();                if (cpu_state.abrt) return 1;
         OP_SHIFT_w(c, 0);
         return 0;
@@ -612,7 +639,10 @@ static int opD1_w_a32(uint32_t fetchdat)
 
         fetch_ea_32(fetchdat);
         if (cpu_mod != 3)
+        {
                 SEG_CHECK_WRITE(cpu_state.ea_seg);
+                CHECK_WRITE(cpu_state.ea_seg, cpu_state.eaaddr, cpu_state.eaaddr + 1);
+        }
         temp = geteaw();                if (cpu_state.abrt) return 1;
         OP_SHIFT_w(c, 1);
         return 0;
@@ -625,7 +655,10 @@ static int opD1_l_a16(uint32_t fetchdat)
 
         fetch_ea_16(fetchdat);
         if (cpu_mod != 3)
+        {
                 SEG_CHECK_WRITE(cpu_state.ea_seg);
+                CHECK_WRITE(cpu_state.ea_seg, cpu_state.eaaddr, cpu_state.eaaddr + 3);
+        }
         temp = geteal();                if (cpu_state.abrt) return 1;
         OP_SHIFT_l(c, 0);
         return 0;
@@ -638,7 +671,10 @@ static int opD1_l_a32(uint32_t fetchdat)
 
         fetch_ea_32(fetchdat);
         if (cpu_mod != 3)
+        {
                 SEG_CHECK_WRITE(cpu_state.ea_seg);
+                CHECK_WRITE(cpu_state.ea_seg, cpu_state.eaaddr, cpu_state.eaaddr + 3);
+        }
         temp = geteal();                if (cpu_state.abrt) return 1;
         OP_SHIFT_l(c, 1);
         return 0;
@@ -652,7 +688,10 @@ static int opD2_a16(uint32_t fetchdat)
 
         fetch_ea_16(fetchdat);
         if (cpu_mod != 3)
+        {
                 SEG_CHECK_WRITE(cpu_state.ea_seg);
+                CHECK_WRITE(cpu_state.ea_seg, cpu_state.eaaddr, cpu_state.eaaddr);
+        }
         c = CL & 31;
         temp = geteab();                if (cpu_state.abrt) return 1;
         OP_SHIFT_b(c, 0);
@@ -666,7 +705,10 @@ static int opD2_a32(uint32_t fetchdat)
 
         fetch_ea_32(fetchdat);
         if (cpu_mod != 3)
+        {
                 SEG_CHECK_WRITE(cpu_state.ea_seg);
+                CHECK_WRITE(cpu_state.ea_seg, cpu_state.eaaddr, cpu_state.eaaddr);
+        }
         c = CL & 31;
         temp = geteab();                if (cpu_state.abrt) return 1;
         OP_SHIFT_b(c, 1);
@@ -680,7 +722,10 @@ static int opD3_w_a16(uint32_t fetchdat)
 
         fetch_ea_16(fetchdat);
         if (cpu_mod != 3)
+        {
                 SEG_CHECK_WRITE(cpu_state.ea_seg);
+                CHECK_WRITE(cpu_state.ea_seg, cpu_state.eaaddr, cpu_state.eaaddr + 1);
+        }
         c = CL & 31;
         temp = geteaw();                if (cpu_state.abrt) return 1;
         OP_SHIFT_w(c, 0);
@@ -694,7 +739,10 @@ static int opD3_w_a32(uint32_t fetchdat)
 
         fetch_ea_32(fetchdat);
         if (cpu_mod != 3)
+        {
                 SEG_CHECK_WRITE(cpu_state.ea_seg);
+                CHECK_WRITE(cpu_state.ea_seg, cpu_state.eaaddr, cpu_state.eaaddr + 1);
+        }
         c = CL & 31;
         temp = geteaw();                if (cpu_state.abrt) return 1;
         OP_SHIFT_w(c, 1);
@@ -708,7 +756,10 @@ static int opD3_l_a16(uint32_t fetchdat)
 
         fetch_ea_16(fetchdat);
         if (cpu_mod != 3)
+        {
                 SEG_CHECK_WRITE(cpu_state.ea_seg);
+                CHECK_WRITE(cpu_state.ea_seg, cpu_state.eaaddr, cpu_state.eaaddr + 3);
+        }
         c = CL & 31;
         temp = geteal();                if (cpu_state.abrt) return 1;
         OP_SHIFT_l(c, 0);
@@ -722,7 +773,10 @@ static int opD3_l_a32(uint32_t fetchdat)
 
         fetch_ea_32(fetchdat);
         if (cpu_mod != 3)
+        {
                 SEG_CHECK_WRITE(cpu_state.ea_seg);
+                CHECK_WRITE(cpu_state.ea_seg, cpu_state.eaaddr, cpu_state.eaaddr + 3);
+        }
         c = CL & 31;
         temp = geteal();                if (cpu_state.abrt) return 1;
         OP_SHIFT_l(c, 1);
@@ -731,6 +785,10 @@ static int opD3_l_a32(uint32_t fetchdat)
 
 
 #define SHLD_w()                                                                \
+        if (cpu_mod != 3) \
+        { \
+                CHECK_WRITE(cpu_state.ea_seg, cpu_state.eaaddr, cpu_state.eaaddr + 1); \
+        } \
         if (count)                                                              \
         {                                                                       \
 		int tempc;							\
@@ -747,6 +805,10 @@ static int opD3_l_a32(uint32_t fetchdat)
         }
 
 #define SHLD_l()                                                                \
+        if (cpu_mod != 3) \
+        { \
+                CHECK_WRITE(cpu_state.ea_seg, cpu_state.eaaddr, cpu_state.eaaddr + 3); \
+        } \
         if (count)                                                              \
         {                                                                       \
 		int tempc;							\
@@ -761,6 +823,10 @@ static int opD3_l_a32(uint32_t fetchdat)
 
 
 #define SHRD_w()                                                                \
+        if (cpu_mod != 3) \
+        { \
+                CHECK_WRITE(cpu_state.ea_seg, cpu_state.eaaddr, cpu_state.eaaddr + 1); \
+        } \
         if (count)                                                              \
         {                  							\
 		int tempc;                                                     \
@@ -776,6 +842,10 @@ static int opD3_l_a32(uint32_t fetchdat)
         }
 
 #define SHRD_l()                                                                \
+        if (cpu_mod != 3) \
+        { \
+                CHECK_WRITE(cpu_state.ea_seg, cpu_state.eaaddr, cpu_state.eaaddr + 3); \
+        } \
         if (count)                                                              \
         {                                                                       \
 		int tempc;							\

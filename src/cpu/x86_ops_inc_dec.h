@@ -51,7 +51,10 @@ static int opINCDEC_b_a16(uint32_t fetchdat)
 
         fetch_ea_16(fetchdat);
         if (cpu_mod != 3)
+        {
                 SEG_CHECK_WRITE(cpu_state.ea_seg);
+                CHECK_WRITE(cpu_state.ea_seg, cpu_state.eaaddr, cpu_state.eaaddr);
+        }
         temp=geteab();                  if (cpu_state.abrt) return 1;
 
         if (rmdat&0x38)
@@ -74,7 +77,10 @@ static int opINCDEC_b_a32(uint32_t fetchdat)
 
         fetch_ea_32(fetchdat);
         if (cpu_mod != 3)
+        {
                 SEG_CHECK_WRITE(cpu_state.ea_seg);
+                CHECK_WRITE(cpu_state.ea_seg, cpu_state.eaaddr, cpu_state.eaaddr);
+        }
         temp=geteab();                  if (cpu_state.abrt) return 1;
 
         if (rmdat&0x38)
