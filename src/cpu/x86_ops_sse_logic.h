@@ -14,6 +14,7 @@ static int opANDPS_q_xmm_a16(uint32_t fetchdat)
                 uint64_t dst[4];
 
                 SEG_CHECK_READ(cpu_state.ea_seg);
+                CHECK_READ(cpu_state.ea_seg, cpu_state.eaaddr, cpu_state.eaaddr + 15);
                 dst[0] = readmeml(easeg, cpu_state.eaaddr); if (cpu_state.abrt) return 1;
                 dst[1] = readmeml(easeg, cpu_state.eaaddr + 4); if (cpu_state.abrt) return 1;
                 dst[2] = readmeml(easeg, cpu_state.eaaddr + 8); if (cpu_state.abrt) return 1;
@@ -44,6 +45,7 @@ static int opANDPS_q_xmm_a32(uint32_t fetchdat)
                 uint64_t dst[4];
 
                 SEG_CHECK_READ(cpu_state.ea_seg);
+                CHECK_READ(cpu_state.ea_seg, cpu_state.eaaddr, cpu_state.eaaddr + 15);
                 dst[0] = readmeml(easeg, cpu_state.eaaddr); if (cpu_state.abrt) return 1;
                 dst[1] = readmeml(easeg, cpu_state.eaaddr + 4); if (cpu_state.abrt) return 1;
                 dst[2] = readmeml(easeg, cpu_state.eaaddr + 8); if (cpu_state.abrt) return 1;
@@ -74,6 +76,7 @@ static int opANDNPS_q_xmm_a16(uint32_t fetchdat)
                 uint64_t dst[4];
 
                 SEG_CHECK_READ(cpu_state.ea_seg);
+                CHECK_READ(cpu_state.ea_seg, cpu_state.eaaddr, cpu_state.eaaddr + 15);
                 dst[0] = readmeml(easeg, cpu_state.eaaddr); if (cpu_state.abrt) return 1;
                 dst[1] = readmeml(easeg, cpu_state.eaaddr + 4); if (cpu_state.abrt) return 1;
                 dst[2] = readmeml(easeg, cpu_state.eaaddr + 8); if (cpu_state.abrt) return 1;
@@ -104,6 +107,7 @@ static int opANDNPS_q_xmm_a32(uint32_t fetchdat)
                 uint64_t dst[4];
 
                 SEG_CHECK_READ(cpu_state.ea_seg);
+                CHECK_READ(cpu_state.ea_seg, cpu_state.eaaddr, cpu_state.eaaddr + 15);
                 dst[0] = readmeml(easeg, cpu_state.eaaddr); if (cpu_state.abrt) return 1;
                 dst[1] = readmeml(easeg, cpu_state.eaaddr + 4); if (cpu_state.abrt) return 1;
                 dst[2] = readmeml(easeg, cpu_state.eaaddr + 8); if (cpu_state.abrt) return 1;
@@ -134,6 +138,7 @@ static int opORPS_q_xmm_a16(uint32_t fetchdat)
                 uint64_t dst[4];
 
                 SEG_CHECK_READ(cpu_state.ea_seg);
+                CHECK_READ(cpu_state.ea_seg, cpu_state.eaaddr, cpu_state.eaaddr + 15);
                 dst[0] = readmeml(easeg, cpu_state.eaaddr); if (cpu_state.abrt) return 1;
                 dst[1] = readmeml(easeg, cpu_state.eaaddr + 4); if (cpu_state.abrt) return 1;
                 dst[2] = readmeml(easeg, cpu_state.eaaddr + 8); if (cpu_state.abrt) return 1;
@@ -164,6 +169,7 @@ static int opORPS_q_xmm_a32(uint32_t fetchdat)
                 uint64_t dst[4];
 
                 SEG_CHECK_READ(cpu_state.ea_seg);
+                CHECK_READ(cpu_state.ea_seg, cpu_state.eaaddr, cpu_state.eaaddr + 15);
                 dst[0] = readmeml(easeg, cpu_state.eaaddr); if (cpu_state.abrt) return 1;
                 dst[1] = readmeml(easeg, cpu_state.eaaddr + 4); if (cpu_state.abrt) return 1;
                 dst[2] = readmeml(easeg, cpu_state.eaaddr + 8); if (cpu_state.abrt) return 1;
@@ -194,6 +200,7 @@ static int opXORPS_q_xmm_a16(uint32_t fetchdat)
                 uint64_t dst[4];
 
                 SEG_CHECK_READ(cpu_state.ea_seg);
+                CHECK_READ(cpu_state.ea_seg, cpu_state.eaaddr, cpu_state.eaaddr + 15);
                 dst[0] = readmeml(easeg, cpu_state.eaaddr); if (cpu_state.abrt) return 1;
                 dst[1] = readmeml(easeg, cpu_state.eaaddr + 4); if (cpu_state.abrt) return 1;
                 dst[2] = readmeml(easeg, cpu_state.eaaddr + 8); if (cpu_state.abrt) return 1;
@@ -224,6 +231,7 @@ static int opXORPS_q_xmm_a32(uint32_t fetchdat)
                 uint64_t dst[4];
 
                 SEG_CHECK_READ(cpu_state.ea_seg);
+                CHECK_READ(cpu_state.ea_seg, cpu_state.eaaddr, cpu_state.eaaddr + 15);
                 dst[0] = readmeml(easeg, cpu_state.eaaddr); if (cpu_state.abrt) return 1;
                 dst[1] = readmeml(easeg, cpu_state.eaaddr + 4); if (cpu_state.abrt) return 1;
                 dst[2] = readmeml(easeg, cpu_state.eaaddr + 8); if (cpu_state.abrt) return 1;

@@ -14,6 +14,7 @@ static int opMOVUPS_q_xmm_a16(uint32_t fetchdat)
                 uint64_t dst[4];
 
                 SEG_CHECK_READ(cpu_state.ea_seg);
+                CHECK_READ(cpu_state.ea_seg, cpu_state.eaaddr, cpu_state.eaaddr + 15);
                 dst[0] = readmeml(easeg, cpu_state.eaaddr); if (cpu_state.abrt) return 1;
                 dst[1] = readmeml(easeg, cpu_state.eaaddr + 4); if (cpu_state.abrt) return 1;
                 dst[2] = readmeml(easeg, cpu_state.eaaddr + 8); if (cpu_state.abrt) return 1;
@@ -44,6 +45,7 @@ static int opMOVUPS_q_xmm_a32(uint32_t fetchdat)
                 uint64_t dst[4];
 
                 SEG_CHECK_READ(cpu_state.ea_seg);
+                CHECK_READ(cpu_state.ea_seg, cpu_state.eaaddr, cpu_state.eaaddr + 15);
                 dst[0] = readmeml(easeg, cpu_state.eaaddr); if (cpu_state.abrt) return 1;
                 dst[1] = readmeml(easeg, cpu_state.eaaddr + 4); if (cpu_state.abrt) return 1;
                 dst[2] = readmeml(easeg, cpu_state.eaaddr + 8); if (cpu_state.abrt) return 1;
@@ -73,6 +75,7 @@ static int opMOVUPS_xmm_q_a16(uint32_t fetchdat)
     {
         uint32_t rm[4] = {XMM[cpu_reg].l[0], XMM[cpu_reg].l[1], XMM[cpu_reg].l[2], XMM[cpu_reg].l[3]};
         SEG_CHECK_WRITE(cpu_state.ea_seg);
+        CHECK_WRITE(cpu_state.ea_seg, cpu_state.eaaddr, cpu_state.eaaddr + 15);
         writememl(easeg, cpu_state.eaaddr, rm[0]); if (cpu_state.abrt) return 1;
         writememl(easeg, cpu_state.eaaddr + 4, rm[1]); if (cpu_state.abrt) return 1;
         writememl(easeg, cpu_state.eaaddr + 8, rm[2]); if (cpu_state.abrt) return 1;
@@ -98,6 +101,7 @@ static int opMOVUPS_xmm_q_a32(uint32_t fetchdat)
     {
         uint32_t rm[4] = {XMM[cpu_reg].l[0], XMM[cpu_reg].l[1], XMM[cpu_reg].l[2], XMM[cpu_reg].l[3]};
         SEG_CHECK_WRITE(cpu_state.ea_seg);
+        CHECK_WRITE(cpu_state.ea_seg, cpu_state.eaaddr, cpu_state.eaaddr + 15);
         writememl(easeg, cpu_state.eaaddr, rm[0]); if (cpu_state.abrt) return 1;
         writememl(easeg, cpu_state.eaaddr + 4, rm[1]); if (cpu_state.abrt) return 1;
         writememl(easeg, cpu_state.eaaddr + 8, rm[2]); if (cpu_state.abrt) return 1;
@@ -121,6 +125,7 @@ static int opMOVSS_f_xmm_a16(uint32_t fetchdat)
         uint32_t dst;
 
         SEG_CHECK_READ(cpu_state.ea_seg);
+        CHECK_READ(cpu_state.ea_seg, cpu_state.eaaddr, cpu_state.eaaddr + 3);
         dst = readmeml(easeg, cpu_state.eaaddr); if (cpu_state.abrt) return 1;
         XMM[cpu_reg].l[0] = dst;
         XMM[cpu_reg].l[1] = 0;
@@ -145,6 +150,7 @@ static int opMOVSS_f_xmm_a32(uint32_t fetchdat)
         uint32_t dst;
 
         SEG_CHECK_READ(cpu_state.ea_seg);
+        CHECK_READ(cpu_state.ea_seg, cpu_state.eaaddr, cpu_state.eaaddr + 3);
         dst = readmeml(easeg, cpu_state.eaaddr); if (cpu_state.abrt) return 1;
         XMM[cpu_reg].l[0] = dst;
         XMM[cpu_reg].l[1] = 0;
@@ -169,6 +175,7 @@ static int opMOVSS_xmm_f_a16(uint32_t fetchdat)
         uint32_t rm = XMM[cpu_reg].l[0];
 
         SEG_CHECK_WRITE(cpu_state.ea_seg);
+        CHECK_WRITE(cpu_state.ea_seg, cpu_state.eaaddr, cpu_state.eaaddr + 3);
         writememl(easeg, cpu_state.eaaddr, rm); if (cpu_state.abrt) return 1;
         CLOCK_CYCLES(2);
     }
@@ -188,6 +195,7 @@ static int opMOVSS_xmm_f_a32(uint32_t fetchdat)
         uint32_t rm = XMM[cpu_reg].l[0];
 
         SEG_CHECK_WRITE(cpu_state.ea_seg);
+        CHECK_WRITE(cpu_state.ea_seg, cpu_state.eaaddr, cpu_state.eaaddr + 3);
         writememl(easeg, cpu_state.eaaddr, rm); if (cpu_state.abrt) return 1;
         CLOCK_CYCLES(2);
     }
@@ -209,6 +217,7 @@ static int opMOVLPS_f_xmm_MOVHLPS_xmm_xmm_a16(uint32_t fetchdat)
         uint64_t dst;
 
         SEG_CHECK_READ(cpu_state.ea_seg);
+        CHECK_READ(cpu_state.ea_seg, cpu_state.eaaddr, cpu_state.eaaddr + 7);
         dst = readmemq(easeg, cpu_state.eaaddr); if (cpu_state.abrt) return 1;
         XMM[cpu_reg].q[0] = dst;
         CLOCK_CYCLES(2);
@@ -231,6 +240,7 @@ static int opMOVLPS_f_xmm_MOVHLPS_xmm_xmm_a32(uint32_t fetchdat)
         uint64_t dst;
 
         SEG_CHECK_READ(cpu_state.ea_seg);
+        CHECK_READ(cpu_state.ea_seg, cpu_state.eaaddr, cpu_state.eaaddr + 7);
         dst = readmemq(easeg, cpu_state.eaaddr); if (cpu_state.abrt) return 1;
         XMM[cpu_reg].q[0] = dst;
         CLOCK_CYCLES(2);
@@ -250,6 +260,7 @@ static int opMOVLPS_xmm_f_a16(uint32_t fetchdat)
     else
     {
         SEG_CHECK_WRITE(cpu_state.ea_seg);
+        CHECK_WRITE(cpu_state.ea_seg, cpu_state.eaaddr, cpu_state.eaaddr + 7);
         writememq(easeg, cpu_state.eaaddr, XMM[cpu_reg].q[0]); if (cpu_state.abrt) return 1;
         CLOCK_CYCLES(2);
     }
@@ -268,6 +279,7 @@ static int opMOVLPS_xmm_f_a32(uint32_t fetchdat)
     else
     {
         SEG_CHECK_WRITE(cpu_state.ea_seg);
+        CHECK_WRITE(cpu_state.ea_seg, cpu_state.eaaddr, cpu_state.eaaddr + 7);
         writememq(easeg, cpu_state.eaaddr, XMM[cpu_reg].q[0]); if (cpu_state.abrt) return 1;
         CLOCK_CYCLES(2);
     }
@@ -290,6 +302,7 @@ static int opUNPCKLPS_f_xmm_a16(uint32_t fetchdat)
     {
         uint32_t dst[2];
         SEG_CHECK_READ(cpu_state.ea_seg);
+        CHECK_READ(cpu_state.ea_seg, cpu_state.eaaddr, cpu_state.eaaddr + 7);
         dst[0] = readmeml(easeg, cpu_state.eaaddr); if (cpu_state.abrt) return 1;
         dst[1] = readmeml(easeg, cpu_state.eaaddr + 4); if (cpu_state.abrt) return 1;
         XMM[cpu_reg].l[0] = dst[0];
@@ -317,6 +330,7 @@ static int opUNPCKLPS_f_xmm_a32(uint32_t fetchdat)
     {
         uint32_t dst[2];
         SEG_CHECK_READ(cpu_state.ea_seg);
+        CHECK_READ(cpu_state.ea_seg, cpu_state.eaaddr, cpu_state.eaaddr + 7);
         dst[0] = readmeml(easeg, cpu_state.eaaddr); if (cpu_state.abrt) return 1;
         dst[1] = readmeml(easeg, cpu_state.eaaddr + 4); if (cpu_state.abrt) return 1;
         XMM[cpu_reg].l[0] = dst[0];
@@ -344,6 +358,7 @@ static int opUNPCKHPS_f_xmm_a16(uint32_t fetchdat)
     {
         uint32_t dst[2];
         SEG_CHECK_READ(cpu_state.ea_seg);
+        CHECK_READ(cpu_state.ea_seg, cpu_state.eaaddr, cpu_state.eaaddr + 7);
         dst[0] = readmeml(easeg, cpu_state.eaaddr + 8); if (cpu_state.abrt) return 1;
         dst[1] = readmeml(easeg, cpu_state.eaaddr + 12); if (cpu_state.abrt) return 1;
         XMM[cpu_reg].l[0] = dst[0];
@@ -371,6 +386,7 @@ static int opUNPCKHPS_f_xmm_a32(uint32_t fetchdat)
     {
         uint32_t dst[2];
         SEG_CHECK_READ(cpu_state.ea_seg);
+        CHECK_READ(cpu_state.ea_seg, cpu_state.eaaddr, cpu_state.eaaddr + 7);
         dst[0] = readmeml(easeg, cpu_state.eaaddr); if (cpu_state.abrt) return 1;
         dst[1] = readmeml(easeg, cpu_state.eaaddr + 4); if (cpu_state.abrt) return 1;
         XMM[cpu_reg].l[0] = dst[0];
@@ -397,6 +413,7 @@ static int opMOVHPS_f_xmm_MOVLHPS_xmm_xmm_a16(uint32_t fetchdat)
         uint64_t dst;
 
         SEG_CHECK_READ(cpu_state.ea_seg);
+        CHECK_READ(cpu_state.ea_seg, cpu_state.eaaddr, cpu_state.eaaddr + 7);
         dst = readmemq(easeg, cpu_state.eaaddr); if (cpu_state.abrt) return 1;
         XMM[cpu_reg].q[1] = dst;
         CLOCK_CYCLES(2);
@@ -419,6 +436,7 @@ static int opMOVHPS_f_xmm_MOVLHPS_xmm_xmm_a32(uint32_t fetchdat)
         uint64_t dst;
 
         SEG_CHECK_READ(cpu_state.ea_seg);
+        CHECK_READ(cpu_state.ea_seg, cpu_state.eaaddr, cpu_state.eaaddr + 7);
         dst = readmemq(easeg, cpu_state.eaaddr); if (cpu_state.abrt) return 1;
         XMM[cpu_reg].q[1] = dst;
         CLOCK_CYCLES(2);
@@ -438,6 +456,7 @@ static int opMOVHPS_xmm_f_a16(uint32_t fetchdat)
     else
     {
         SEG_CHECK_WRITE(cpu_state.ea_seg);
+        CHECK_WRITE(cpu_state.ea_seg, cpu_state.eaaddr, cpu_state.eaaddr + 7);
         writememq(easeg, cpu_state.eaaddr + 8, XMM[cpu_reg].q[0]); if (cpu_state.abrt) return 1;
         CLOCK_CYCLES(2);
     }
@@ -456,6 +475,7 @@ static int opMOVHPS_xmm_f_a32(uint32_t fetchdat)
     else
     {
         SEG_CHECK_WRITE(cpu_state.ea_seg);
+        CHECK_WRITE(cpu_state.ea_seg, cpu_state.eaaddr, cpu_state.eaaddr + 7);
         writememq(easeg, cpu_state.eaaddr + 8, XMM[cpu_reg].q[0]); if (cpu_state.abrt) return 1;
         CLOCK_CYCLES(2);
     }
@@ -478,6 +498,7 @@ static int opMOVAPS_q_xmm_a16(uint32_t fetchdat)
                 uint64_t dst[4];
 
                 SEG_CHECK_READ(cpu_state.ea_seg);
+                CHECK_READ(cpu_state.ea_seg, cpu_state.eaaddr, cpu_state.eaaddr + 15);
                 if(cpu_state.eaaddr & 0xf)
                 {
                     x86gpf(NULL, 0);
@@ -513,6 +534,7 @@ static int opMOVAPS_q_xmm_a32(uint32_t fetchdat)
                 uint64_t dst[4];
 
                 SEG_CHECK_READ(cpu_state.ea_seg);
+                CHECK_READ(cpu_state.ea_seg, cpu_state.eaaddr, cpu_state.eaaddr + 15);
                 if(cpu_state.eaaddr & 0xf)
                 {
                     x86gpf(NULL, 0);
@@ -547,6 +569,7 @@ static int opMOVAPS_xmm_q_a16(uint32_t fetchdat)
     {
         uint32_t rm[4] = {XMM[cpu_reg].l[0], XMM[cpu_reg].l[1], XMM[cpu_reg].l[2], XMM[cpu_reg].l[3]};
         SEG_CHECK_WRITE(cpu_state.ea_seg);
+        CHECK_WRITE(cpu_state.ea_seg, cpu_state.eaaddr, cpu_state.eaaddr + 15);
         if(cpu_state.eaaddr & 0xf)
         {
             x86gpf(NULL, 0);
@@ -577,6 +600,7 @@ static int opMOVAPS_xmm_q_a32(uint32_t fetchdat)
     {
         uint32_t rm[4] = {XMM[cpu_reg].l[0], XMM[cpu_reg].l[1], XMM[cpu_reg].l[2], XMM[cpu_reg].l[3]};
         SEG_CHECK_WRITE(cpu_state.ea_seg);
+        CHECK_WRITE(cpu_state.ea_seg, cpu_state.eaaddr, cpu_state.eaaddr + 15);
         if(cpu_state.eaaddr & 0xf)
         {
             x86gpf(NULL, 0);
@@ -599,6 +623,7 @@ static int opMOVNTPS_xmm_q_a16(uint32_t fetchdat)
 
     uint32_t rm[4] = {XMM[cpu_reg].l[0], XMM[cpu_reg].l[1], XMM[cpu_reg].l[2], XMM[cpu_reg].l[3]};
     SEG_CHECK_WRITE(cpu_state.ea_seg);
+    CHECK_WRITE(cpu_state.ea_seg, cpu_state.eaaddr, cpu_state.eaaddr + 15);
     if(cpu_state.eaaddr & 0xf)
     {
         x86gpf(NULL, 0);
@@ -620,6 +645,7 @@ static int opMOVNTPS_xmm_q_a32(uint32_t fetchdat)
 
     uint32_t rm[4] = {XMM[cpu_reg].l[0], XMM[cpu_reg].l[1], XMM[cpu_reg].l[2], XMM[cpu_reg].l[3]};
     SEG_CHECK_WRITE(cpu_state.ea_seg);
+    CHECK_WRITE(cpu_state.ea_seg, cpu_state.eaaddr, cpu_state.eaaddr + 15);
     if(cpu_state.eaaddr & 0xf)
     {
         x86gpf(NULL, 0);
@@ -689,6 +715,7 @@ static int opPSHUFW_mm_mm_a16(uint32_t fetchdat)
         uint64_t src;
         
         SEG_CHECK_READ(cpu_state.ea_seg);
+        CHECK_READ(cpu_state.ea_seg, cpu_state.eaaddr, cpu_state.eaaddr + 7);
         src = readmemq(easeg, cpu_state.eaaddr); if (cpu_state.abrt) return 1;
         cpu_state.MM[cpu_reg].w[0] = (src >> ((imm & 3) << 16)) & 0xffff;
         cpu_state.MM[cpu_reg].w[1] = (src >> (((imm >> 2) & 3) << 16)) & 0xffff;
@@ -718,6 +745,7 @@ static int opPSHUFW_mm_mm_a32(uint32_t fetchdat)
         uint64_t src;
         
         SEG_CHECK_READ(cpu_state.ea_seg);
+        CHECK_READ(cpu_state.ea_seg, cpu_state.eaaddr, cpu_state.eaaddr + 7);
         src = readmemq(easeg, cpu_state.eaaddr); if (cpu_state.abrt) return 1;
         cpu_state.MM[cpu_reg].w[0] = (src >> ((imm & 3) << 4)) & 0xffff;
         cpu_state.MM[cpu_reg].w[1] = (src >> (((imm >> 2) & 3) << 4)) & 0xffff;
@@ -748,6 +776,7 @@ static int opPINSRW_xmm_w_a16(uint32_t fetchdat)
         uint16_t src;
         
         SEG_CHECK_READ(cpu_state.ea_seg);
+        CHECK_READ(cpu_state.ea_seg, cpu_state.eaaddr, cpu_state.eaaddr + 1);
         src = readmemw(easeg, cpu_state.eaaddr); if (cpu_state.abrt) return 1;
         if(sse_xmm) XMM[cpu_reg].w[imm & 7] = src;
         else
@@ -780,6 +809,7 @@ static int opPINSRW_xmm_w_a32(uint32_t fetchdat)
         uint16_t src;
         
         SEG_CHECK_READ(cpu_state.ea_seg);
+        CHECK_READ(cpu_state.ea_seg, cpu_state.eaaddr, cpu_state.eaaddr + 1);
         src = readmemw(easeg, cpu_state.eaaddr); if (cpu_state.abrt) return 1;
         if(sse_xmm) XMM[cpu_reg].w[imm & 7] = src;
         else
@@ -875,13 +905,12 @@ static int opSHUFPS_xmm_w_a16(uint32_t fetchdat)
     else
     {
         SSE_REG tmp;
-        uint32_t src[4];
+        uint32_t src[2];
         
         SEG_CHECK_READ(cpu_state.ea_seg);
+        CHECK_READ(cpu_state.ea_seg, cpu_state.eaaddr, cpu_state.eaaddr + 7);
         src[0] = readmeml(easeg, cpu_state.eaaddr); if (cpu_state.abrt) return 1;
         src[1] = readmeml(easeg, cpu_state.eaaddr + 4); if (cpu_state.abrt) return 1;
-        src[2] = readmeml(easeg, cpu_state.eaaddr + 8); if (cpu_state.abrt) return 1;
-        src[3] = readmeml(easeg, cpu_state.eaaddr + 12); if (cpu_state.abrt) return 1;
         tmp.l[0] = src[imm & 3];
         tmp.l[1] = src[(imm >> 2) & 3];
         tmp.l[2] = XMM[cpu_reg].l[(imm >> 4) & 3];
@@ -912,13 +941,12 @@ static int opSHUFPS_xmm_w_a32(uint32_t fetchdat)
     else
     {
         SSE_REG tmp;
-        uint32_t src[4];
+        uint32_t src[2];
         
         SEG_CHECK_READ(cpu_state.ea_seg);
+        CHECK_READ(cpu_state.ea_seg, cpu_state.eaaddr, cpu_state.eaaddr + 7);
         src[0] = readmeml(easeg, cpu_state.eaaddr); if (cpu_state.abrt) return 1;
         src[1] = readmeml(easeg, cpu_state.eaaddr + 4); if (cpu_state.abrt) return 1;
-        src[2] = readmeml(easeg, cpu_state.eaaddr + 8); if (cpu_state.abrt) return 1;
-        src[3] = readmeml(easeg, cpu_state.eaaddr + 12); if (cpu_state.abrt) return 1;
         tmp.l[0] = src[imm & 3];
         tmp.l[1] = src[(imm >> 2) & 3];
         tmp.l[2] = XMM[cpu_reg].l[(imm >> 4) & 3];
@@ -1056,6 +1084,7 @@ static int opMASKMOVQ_l_mm_a16(uint32_t fetchdat)
     if (cpu_mod == 3)
     {
         SEG_CHECK_WRITE(cpu_state.ea_seg);
+        CHECK_WRITE(cpu_state.ea_seg, cpu_state.eaaddr, cpu_state.eaaddr + 7);
         if(cpu_state.MM[cpu_rm].b[0] & (1 << 7))
         {
             writememb(ds, DI, cpu_state.MM[cpu_reg].b[0]); if (cpu_state.abrt) return 1;
@@ -1102,6 +1131,7 @@ static int opMASKMOVQ_l_mm_a32(uint32_t fetchdat)
     if (cpu_mod == 3)
     {
         SEG_CHECK_WRITE(cpu_state.ea_seg);
+        CHECK_WRITE(cpu_state.ea_seg, cpu_state.eaaddr, cpu_state.eaaddr + 7);
         if(cpu_state.MM[cpu_rm].b[0] & (1 << 7))
         {
             writememb(ds, EDI, cpu_state.MM[cpu_reg].b[0]); if (cpu_state.abrt) return 1;

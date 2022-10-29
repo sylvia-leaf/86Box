@@ -16,6 +16,7 @@ static int opCVTPI2PS_xmm_mm_a16(uint32_t fetchdat)
         uint32_t dst[2];
         
         SEG_CHECK_READ(cpu_state.ea_seg);
+        CHECK_READ(cpu_state.ea_seg, cpu_state.eaaddr, cpu_state.eaaddr + 7);
         dst[0] = readmeml(easeg, cpu_state.eaaddr); if (cpu_state.abrt) return 1;
         dst[1] = readmeml(easeg, cpu_state.eaaddr + 4); if (cpu_state.abrt) return 1;
         fesetround(rounding_modes[(mxcsr >> 14) & 3]);
@@ -45,6 +46,7 @@ static int opCVTPI2PS_xmm_mm_a32(uint32_t fetchdat)
         uint32_t dst[2];
         
         SEG_CHECK_READ(cpu_state.ea_seg);
+        CHECK_READ(cpu_state.ea_seg, cpu_state.eaaddr, cpu_state.eaaddr + 7);
         dst[0] = readmeml(easeg, cpu_state.eaaddr); if (cpu_state.abrt) return 1;
         dst[1] = readmeml(easeg, cpu_state.eaaddr + 4); if (cpu_state.abrt) return 1;
         fesetround(rounding_modes[(mxcsr >> 14) & 3]);
@@ -71,6 +73,7 @@ static int opCVTSI2SS_xmm_l_a16(uint32_t fetchdat)
         uint32_t dst;
         
         SEG_CHECK_READ(cpu_state.ea_seg);
+        CHECK_READ(cpu_state.ea_seg, cpu_state.eaaddr, cpu_state.eaaddr + 3);
         dst = readmeml(easeg, cpu_state.eaaddr); if (cpu_state.abrt) return 1;
         fesetround(rounding_modes[(mxcsr >> 14) & 3]);
         XMM[cpu_reg].f[0] = dst;
@@ -95,6 +98,7 @@ static int opCVTSI2SS_xmm_l_a32(uint32_t fetchdat)
         uint32_t dst;
         
         SEG_CHECK_READ(cpu_state.ea_seg);
+        CHECK_READ(cpu_state.ea_seg, cpu_state.eaaddr, cpu_state.eaaddr + 3);
         dst = readmeml(easeg, cpu_state.eaaddr); if (cpu_state.abrt) return 1;
         fesetround(rounding_modes[(mxcsr >> 14) & 3]);
         XMM[cpu_reg].f[0] = dst;
@@ -120,6 +124,7 @@ static int opCVTTPS2PI_mm_xmm_a16(uint32_t fetchdat)
         uint32_t dst[2];
         
         SEG_CHECK_READ(cpu_state.ea_seg);
+        CHECK_READ(cpu_state.ea_seg, cpu_state.eaaddr, cpu_state.eaaddr + 7);
         dst[0] = readmeml(easeg, cpu_state.eaaddr); if (cpu_state.abrt) return 1;
         dst[1] = readmeml(easeg, cpu_state.eaaddr + 4); if (cpu_state.abrt) return 1;
         float dst_real[2];
@@ -148,6 +153,7 @@ static int opCVTTPS2PI_mm_xmm_a32(uint32_t fetchdat)
         uint32_t dst[2];
         
         SEG_CHECK_READ(cpu_state.ea_seg);
+        CHECK_READ(cpu_state.ea_seg, cpu_state.eaaddr, cpu_state.eaaddr + 7);
         dst[0] = readmeml(easeg, cpu_state.eaaddr); if (cpu_state.abrt) return 1;
         dst[1] = readmeml(easeg, cpu_state.eaaddr + 4); if (cpu_state.abrt) return 1;
         float dst_real[2];
@@ -173,6 +179,7 @@ static int opCVTTSS2SI_l_xmm_a16(uint32_t fetchdat)
         uint32_t dst;
         
         SEG_CHECK_READ(cpu_state.ea_seg);
+        CHECK_READ(cpu_state.ea_seg, cpu_state.eaaddr, cpu_state.eaaddr + 3);
         dst = readmeml(easeg, cpu_state.eaaddr); if (cpu_state.abrt) return 1;
         float dst_real;
         dst_real = *(float*)&dst;
@@ -195,6 +202,7 @@ static int opCVTTSS2SI_l_xmm_a32(uint32_t fetchdat)
         uint32_t dst;
         
         SEG_CHECK_READ(cpu_state.ea_seg);
+        CHECK_READ(cpu_state.ea_seg, cpu_state.eaaddr, cpu_state.eaaddr + 3);
         dst = readmeml(easeg, cpu_state.eaaddr); if (cpu_state.abrt) return 1;
         float dst_real;
         dst_real = *(float*)&dst;
@@ -222,6 +230,7 @@ static int opCVTPS2PI_mm_xmm_a16(uint32_t fetchdat)
         uint32_t dst[2];
         
         SEG_CHECK_READ(cpu_state.ea_seg);
+        CHECK_READ(cpu_state.ea_seg, cpu_state.eaaddr, cpu_state.eaaddr + 7);
         dst[0] = readmeml(easeg, cpu_state.eaaddr); if (cpu_state.abrt) return 1;
         dst[1] = readmeml(easeg, cpu_state.eaaddr + 4); if (cpu_state.abrt) return 1;
         float dst_real[2];
@@ -254,6 +263,7 @@ static int opCVTPS2PI_mm_xmm_a32(uint32_t fetchdat)
         uint32_t dst[2];
         
         SEG_CHECK_READ(cpu_state.ea_seg);
+        CHECK_READ(cpu_state.ea_seg, cpu_state.eaaddr, cpu_state.eaaddr + 7);
         dst[0] = readmeml(easeg, cpu_state.eaaddr); if (cpu_state.abrt) return 1;
         dst[1] = readmeml(easeg, cpu_state.eaaddr + 4); if (cpu_state.abrt) return 1;
         float dst_real[2];
@@ -284,6 +294,7 @@ static int opCVTSS2SI_l_xmm_a16(uint32_t fetchdat)
         uint32_t dst;
         
         SEG_CHECK_READ(cpu_state.ea_seg);
+        CHECK_READ(cpu_state.ea_seg, cpu_state.eaaddr, cpu_state.eaaddr + 3);
         dst = readmeml(easeg, cpu_state.eaaddr); if (cpu_state.abrt) return 1;
         float dst_real;
         dst_real = *(float*)&dst;
@@ -310,6 +321,7 @@ static int opCVTSS2SI_l_xmm_a32(uint32_t fetchdat)
         uint32_t dst;
         
         SEG_CHECK_READ(cpu_state.ea_seg);
+        CHECK_READ(cpu_state.ea_seg, cpu_state.eaaddr, cpu_state.eaaddr + 3);
         dst = readmeml(easeg, cpu_state.eaaddr); if (cpu_state.abrt) return 1;
         float dst_real;
         dst_real = *(float*)&dst;
