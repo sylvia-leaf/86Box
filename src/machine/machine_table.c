@@ -2034,7 +2034,7 @@ const machine_t machines[] = {
             .max = 640,
             .step = 128
         },
-        .nvrmask = 0,
+        .nvrmask = 15,
         .kbc = KBC_OLIVETTI_XT,
         .kbc_p1 = 0xff00,
         .gpio = 0xffffffff,
@@ -2071,7 +2071,7 @@ const machine_t machines[] = {
             .max = 640,
             .step = 128
         },
-        .nvrmask = 0,
+        .nvrmask = 15,
         .kbc = KBC_OLIVETTI,
         .kbc_p1 = 0xff04,
         .gpio = 0xffffffff,
