@@ -168,7 +168,6 @@ static int opPFRCP(uint32_t fetchdat)
         else
         {
                 SEG_CHECK_READ(cpu_state.ea_seg);
-                CHECK_READ(cpu_state.ea_seg, cpu_state.eaaddr, cpu_state.eaaddr + 3);
                 src.i = readmeml(easeg, cpu_state.eaaddr); if (cpu_state.abrt) return 1;
                 CLOCK_CYCLES(2);
         }
@@ -217,7 +216,6 @@ static int opPFRSQRT(uint32_t fetchdat)
         else
         {
                 SEG_CHECK_READ(cpu_state.ea_seg);
-                CHECK_READ(cpu_state.ea_seg, cpu_state.eaaddr, cpu_state.eaaddr + 3);
                 src.i = readmeml(easeg, cpu_state.eaaddr); if (cpu_state.abrt) return 1;
                 CLOCK_CYCLES(2);
         }
@@ -285,7 +283,6 @@ static int opPMULHRW(uint32_t fetchdat)
                 MMX_REG src;
 
                 SEG_CHECK_READ(cpu_state.ea_seg);
-                CHECK_READ(cpu_state.ea_seg, cpu_state.eaaddr, cpu_state.eaaddr + 7);
                 src.l[0] = readmeml(easeg, cpu_state.eaaddr);
                 src.l[1] = readmeml(easeg, cpu_state.eaaddr + 4); if (cpu_state.abrt) return 0;
                 cpu_state.MM[cpu_reg].w[0] = ((int32_t)(cpu_state.MM[cpu_reg].sw[0] * (int32_t)src.sw[0]) + 0x8000) >> 16;

@@ -237,10 +237,7 @@ static int opPOPW_a16(uint32_t fetchdat)
 
         fetch_ea_16(fetchdat);
         if (cpu_mod != 3)
-        {
                 SEG_CHECK_WRITE(cpu_state.ea_seg);
-                CHECK_WRITE(cpu_state.ea_seg, cpu_state.eaaddr, cpu_state.eaaddr + 1);
-        }
         seteaw(temp);
         if (cpu_state.abrt)
         {
@@ -261,10 +258,7 @@ static int opPOPW_a32(uint32_t fetchdat)
 
         fetch_ea_32(fetchdat);
         if (cpu_mod != 3)
-        {
                 SEG_CHECK_WRITE(cpu_state.ea_seg);
-                CHECK_WRITE(cpu_state.ea_seg, cpu_state.eaaddr, cpu_state.eaaddr + 1);
-        }
         seteaw(temp);
         if (cpu_state.abrt)
         {
@@ -286,10 +280,7 @@ static int opPOPL_a16(uint32_t fetchdat)
 
         fetch_ea_16(fetchdat);
         if (cpu_mod != 3)
-        {
                 SEG_CHECK_WRITE(cpu_state.ea_seg);
-                CHECK_WRITE(cpu_state.ea_seg, cpu_state.eaaddr, cpu_state.eaaddr + 3);
-        }
         seteal(temp);
         if (cpu_state.abrt)
         {
@@ -310,10 +301,7 @@ static int opPOPL_a32(uint32_t fetchdat)
 
         fetch_ea_32(fetchdat);
         if (cpu_mod != 3)
-        {
                 SEG_CHECK_WRITE(cpu_state.ea_seg);
-                CHECK_WRITE(cpu_state.ea_seg, cpu_state.eaaddr, cpu_state.eaaddr + 3);
-        }
         seteal(temp);
         if (cpu_state.abrt)
         {

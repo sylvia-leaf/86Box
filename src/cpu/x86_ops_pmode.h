@@ -5,10 +5,7 @@ static int opARPL_a16(uint32_t fetchdat)
         NOTRM
         fetch_ea_16(fetchdat);
         if (cpu_mod != 3)
-        {
                 SEG_CHECK_WRITE(cpu_state.ea_seg);
-                CHECK_WRITE(cpu_state.ea_seg, cpu_state.eaaddr, cpu_state.eaaddr + 1);
-        }
         temp_seg = geteaw();            if (cpu_state.abrt) return 1;
 
         flags_rebuild();
@@ -32,10 +29,7 @@ static int opARPL_a32(uint32_t fetchdat)
         NOTRM
         fetch_ea_32(fetchdat);
         if (cpu_mod != 3)
-        {
                 SEG_CHECK_WRITE(cpu_state.ea_seg);
-                CHECK_WRITE(cpu_state.ea_seg, cpu_state.eaaddr, cpu_state.eaaddr + 1);
-        }
         temp_seg = geteaw();            if (cpu_state.abrt) return 1;
 
         flags_rebuild();
@@ -62,10 +56,7 @@ static int opARPL_a32(uint32_t fetchdat)
                 NOTRM                                                                                           \
                 fetch_ea(fetchdat);                                                                             \
                 if (cpu_mod != 3)                                                                               \
-                { \
                         SEG_CHECK_READ(cpu_state.ea_seg);                                                       \
-                        CHECK_READ(cpu_state.ea_seg, cpu_state.eaaddr, cpu_state.eaaddr + 1); \
-                } \
                                                                                                                 \
                 sel = geteaw();                 if (cpu_state.abrt) return 1;                                             \
                                                                                                                 \
@@ -117,10 +108,7 @@ opLAR(l_a32, fetch_ea_32, 1, 1)
                 NOTRM                                                                                           \
                 fetch_ea(fetchdat);                                                                             \
                 if (cpu_mod != 3)                                                                               \
-                { \
                         SEG_CHECK_READ(cpu_state.ea_seg);                                                       \
-                        CHECK_READ(cpu_state.ea_seg, cpu_state.eaaddr, cpu_state.eaaddr + 1); \
-                } \
                                                                                                                 \
                 sel = geteaw();                 if (cpu_state.abrt) return 1;                                             \
                 flags_rebuild();                                                                                \
@@ -181,20 +169,14 @@ static int op0F00_common(uint32_t fetchdat, int ea32)
         {
                 case 0x00: /*SLDT*/
                 if (cpu_mod != 3)
-                {
                         SEG_CHECK_WRITE(cpu_state.ea_seg);
-                        CHECK_WRITE(cpu_state.ea_seg, cpu_state.eaaddr, cpu_state.eaaddr + 1);
-                }
                 seteaw(ldt.seg);
                 CLOCK_CYCLES(4);
                 PREFETCH_RUN(4, 2, rmdat, 0,0,(cpu_mod == 3) ? 0:1,0, ea32);
                 break;
                 case 0x08: /*STR*/
                 if (cpu_mod != 3)
-                {
                         SEG_CHECK_WRITE(cpu_state.ea_seg);
-                        CHECK_WRITE(cpu_state.ea_seg, cpu_state.eaaddr, cpu_state.eaaddr + 1);
-                }
                 seteaw(tr.seg);
                 CLOCK_CYCLES(4);
                 PREFETCH_RUN(4, 2, rmdat, 0,0,(cpu_mod == 3) ? 0:1,0, ea32);
@@ -206,10 +188,7 @@ static int op0F00_common(uint32_t fetchdat, int ea32)
                         return 1;
                 }
                 if (cpu_mod != 3)
-                {
                         SEG_CHECK_READ(cpu_state.ea_seg);
-                        CHECK_READ(cpu_state.ea_seg, cpu_state.eaaddr, cpu_state.eaaddr + 1);
-                }
                 sel = geteaw(); if (cpu_state.abrt) return 1;
                 addr = (sel & ~7) + gdt.base;
                 limit = readmemw(0, addr) + ((readmemb(0, addr + 6) & 0xf) << 16);
@@ -238,10 +217,7 @@ static int op0F00_common(uint32_t fetchdat, int ea32)
                         break;
                 }
                 if (cpu_mod != 3)
-                {
                         SEG_CHECK_READ(cpu_state.ea_seg);
-                        CHECK_READ(cpu_state.ea_seg, cpu_state.eaaddr, cpu_state.eaaddr + 1);
-                }
                 sel = geteaw(); if (cpu_state.abrt) return 1;
                 addr = (sel & ~7) + gdt.base;
                 limit = readmemw(0, addr) + ((readmemb(0, addr + 6) & 0xf) << 16);
@@ -268,10 +244,7 @@ static int op0F00_common(uint32_t fetchdat, int ea32)
                 break;
                 case 0x20: /*VERR*/
                 if (cpu_mod != 3)
-                {
                         SEG_CHECK_READ(cpu_state.ea_seg);
-                        CHECK_READ(cpu_state.ea_seg, cpu_state.eaaddr, cpu_state.eaaddr + 1);
-                }
                 sel = geteaw();                 if (cpu_state.abrt) return 1;
                 flags_rebuild();
                 cpu_state.flags &= ~Z_FLAG;
@@ -293,10 +266,7 @@ static int op0F00_common(uint32_t fetchdat, int ea32)
                 break;
                 case 0x28: /*VERW*/
                 if (cpu_mod != 3)
-                {
                         SEG_CHECK_READ(cpu_state.ea_seg);
-                        CHECK_READ(cpu_state.ea_seg, cpu_state.eaaddr, cpu_state.eaaddr + 1);
-                }
                 sel = geteaw();                 if (cpu_state.abrt) return 1;
                 flags_rebuild();
                 cpu_state.flags &= ~Z_FLAG;
@@ -348,10 +318,7 @@ static int op0F01_common(uint32_t fetchdat, int is32, int is286, int ea32)
         {
                 case 0x00: /*SGDT*/
                 if (cpu_mod != 3)
-                {
                         SEG_CHECK_WRITE(cpu_state.ea_seg);
-                        CHECK_WRITE(cpu_state.ea_seg, cpu_state.eaaddr, cpu_state.eaaddr + 1);
-                }
                 seteaw(gdt.limit);
                 base = gdt.base; //is32 ? gdt.base : (gdt.base & 0xffffff);
                 if (is286)
@@ -362,10 +329,7 @@ static int op0F01_common(uint32_t fetchdat, int is32, int is286, int ea32)
                 break;
                 case 0x08: /*SIDT*/
                 if (cpu_mod != 3)
-                {
                         SEG_CHECK_WRITE(cpu_state.ea_seg);
-                        CHECK_WRITE(cpu_state.ea_seg, cpu_state.eaaddr, cpu_state.eaaddr + 1);
-                }
                 seteaw(idt.limit);
                 base = idt.base;
                 if (is286)
@@ -381,10 +345,7 @@ static int op0F01_common(uint32_t fetchdat, int is32, int is286, int ea32)
                         break;
                 }
                 if (cpu_mod != 3)
-                {
                         SEG_CHECK_READ(cpu_state.ea_seg);
-                        CHECK_READ(cpu_state.ea_seg, cpu_state.eaaddr, cpu_state.eaaddr + 1);
-                }
                 limit = geteaw();
                 base = readmeml(0, easeg + cpu_state.eaaddr + 2);         if (cpu_state.abrt) return 1;
                 gdt.limit = limit;
@@ -400,10 +361,7 @@ static int op0F01_common(uint32_t fetchdat, int is32, int is286, int ea32)
                         break;
                 }
                 if (cpu_mod != 3)
-                {
                         SEG_CHECK_READ(cpu_state.ea_seg);
-                        CHECK_READ(cpu_state.ea_seg, cpu_state.eaaddr, cpu_state.eaaddr + 1);
-                }
                 limit = geteaw();
                 base = readmeml(0, easeg + cpu_state.eaaddr + 2);         if (cpu_state.abrt) return 1;
                 idt.limit = limit;
@@ -415,10 +373,7 @@ static int op0F01_common(uint32_t fetchdat, int is32, int is286, int ea32)
 
                 case 0x20: /*SMSW*/
                 if (cpu_mod != 3)
-                {
                         SEG_CHECK_WRITE(cpu_state.ea_seg);
-                        CHECK_WRITE(cpu_state.ea_seg, cpu_state.eaaddr, cpu_state.eaaddr + 1);
-                }
                 if (is486 || isibm486)      seteaw(msw);
                 else if (is386) seteaw(msw | /* 0xFF00 */ 0xFFE0);
                 else            seteaw(msw | 0xFFF0);
@@ -432,10 +387,7 @@ static int op0F01_common(uint32_t fetchdat, int is32, int is286, int ea32)
                         break;
                 }
                 if (cpu_mod != 3)
-                {
                         SEG_CHECK_READ(cpu_state.ea_seg);
-                        CHECK_READ(cpu_state.ea_seg, cpu_state.eaaddr, cpu_state.eaaddr + 1);
-                }
                 tempw = geteaw();                                       if (cpu_state.abrt) return 1;
                 if (msw & 1) tempw |= 1;
                 if (is386)

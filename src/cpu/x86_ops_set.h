@@ -3,10 +3,7 @@
         {                                                               \
                 fetch_ea_16(fetchdat);                                  \
                 if (cpu_mod != 3)                                       \
-                { \
                         SEG_CHECK_READ(cpu_state.ea_seg);               \
-                        CHECK_READ(cpu_state.ea_seg, cpu_state.eaaddr, cpu_state.eaaddr); \
-                } \
                 seteab((cond_ ## condition) ? 1 : 0);                   \
                 CLOCK_CYCLES(4);                                        \
                 return cpu_state.abrt;                                            \
@@ -16,10 +13,7 @@
         {                                                               \
                 fetch_ea_32(fetchdat);                                  \
                 if (cpu_mod != 3)                                       \
-                { \
                         SEG_CHECK_READ(cpu_state.ea_seg);               \
-                        CHECK_READ(cpu_state.ea_seg, cpu_state.eaaddr, cpu_state.eaaddr); \
-                } \
                 seteab((cond_ ## condition) ? 1 : 0);                   \
                 CLOCK_CYCLES(4);                                        \
                 return cpu_state.abrt;                                            \

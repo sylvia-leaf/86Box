@@ -297,7 +297,6 @@ fx_save_stor_common(uint32_t fetchdat, int bits)
 		if(!(cpu_features & CPU_FEATURE_SSE2)) mxcsr_mask = 0xffff;
     
     	SEG_CHECK_READ(cpu_state.ea_seg);
-		CHECK_READ(cpu_state.ea_seg, cpu_state.eaaddr, cpu_state.eaaddr + 3);
     	src = readmeml(easeg, cpu_state.eaaddr); if (cpu_state.abrt) return 1;
 		//if(src & ~mxcsr_mask) x86gpf(NULL, 0);
 		mxcsr = src & mxcsr_mask;
@@ -310,7 +309,6 @@ fx_save_stor_common(uint32_t fetchdat, int bits)
 			return cpu_state.abrt;
 		}
 		SEG_CHECK_WRITE(cpu_state.ea_seg);
-		CHECK_WRITE(cpu_state.ea_seg, cpu_state.eaaddr, cpu_state.eaaddr + 3);
     	writememl(easeg, cpu_state.eaaddr, mxcsr); if (cpu_state.abrt) return 1;
 	}
 	//fxinst == 5 or 6 or 7 is L/M/SFENCE which deals with cache stuff.
