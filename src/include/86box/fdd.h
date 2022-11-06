@@ -31,26 +31,26 @@ extern "C" {
 
 extern int fdd_swap;
 
-extern void	fdd_set_motor_enable(int drive, int motor_enable);
-extern void	fdd_do_seek(int drive, int track);
-extern void	fdd_forced_seek(int drive, int track_diff);
-extern void	fdd_seek(int drive, int track_diff);
-extern int	fdd_track0(int drive);
-extern int	fdd_getrpm(int drive);
-extern void	fdd_set_densel(int densel);
-extern int	fdd_can_read_medium(int drive);
-extern int	fdd_doublestep_40(int drive);
-extern int	fdd_is_525(int drive);
-extern int	fdd_is_dd(int drive);
-extern int	fdd_is_hd(int drive);
-extern int	fdd_is_ed(int drive);
-extern int	fdd_is_double_sided(int drive);
-extern void	fdd_set_head(int drive, int head);
-extern int	fdd_get_head(int drive);
-extern void	fdd_set_turbo(int drive, int turbo);
-extern int	fdd_get_turbo(int drive);
-extern void	fdd_set_check_bpb(int drive, int check_bpb);
-extern int	fdd_get_check_bpb(int drive);
+extern void fdd_set_motor_enable(int drive, int motor_enable);
+extern void fdd_do_seek(int drive, int track);
+extern void fdd_forced_seek(int drive, int track_diff);
+extern void fdd_seek(int drive, int track_diff);
+extern int  fdd_track0(int drive);
+extern int  fdd_getrpm(int drive);
+extern void fdd_set_densel(int densel);
+extern int  fdd_can_read_medium(int drive);
+extern int  fdd_doublestep_40(int drive);
+extern int  fdd_is_525(int drive);
+extern int  fdd_is_dd(int drive);
+extern int  fdd_is_hd(int drive);
+extern int  fdd_is_ed(int drive);
+extern int  fdd_is_double_sided(int drive);
+extern void fdd_set_head(int drive, int head);
+extern int  fdd_get_head(int drive);
+extern void fdd_set_turbo(int drive, int turbo);
+extern int  fdd_get_turbo(int drive);
+extern void fdd_set_check_bpb(int drive, int check_bpb);
+extern int  fdd_get_check_bpb(int drive);
 
 extern void fdd_set_type(int drive, int type);
 extern int  fdd_get_type(int drive);
