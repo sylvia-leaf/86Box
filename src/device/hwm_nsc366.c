@@ -39,14 +39,17 @@
 #define FAN_FROM_REG(val, div) ((val) == 0 ? 0 : 480000 / ((val) * (div)))
 
 /* Voltage Algorithms */
-#define IN_TO_REG(val, ref) ((val) < 0 ? 0 : (val) * 256 >= (ref) * 255 ? 255 : ((val) * 256 + (ref) / 2) / (ref))
+#define IN_TO_REG(val, ref) ((val) < 0 ? 0 : (val) *256 >= (ref) *255 ? 255 \
+                                                                      : ((val) *256 + (ref) / 2) / (ref))
 #define IN_FROM_REG(val, ref) (((val) * (ref) + 128) / 256)
 #define VREF                  (dev->vlm_config_global[0x08] & 2) ? 3025 : 2966 // VREF taken from pc87360.c
 #define VLM_BANK              dev->vlm_config_global[0x09]
 
 /* Temperature Algorithms */
-#define TEMP_TO_REG(val) ((val) < -55000 ? -55 : (val) > 127000 ? 127 : (val) < 0 ? ((val) - 500) / 1000 : ((val) + 500) / 1000)
-#define TEMP_FROM_REG(val) ((val) * 1000)
+#define TEMP_TO_REG(val) ((val) < -55000 ? -55 : (val) > 127000 ? 127                 \
+                              : (val) < 0                       ? ((val) -500) / 1000 \
+                                                                : ((val) + 500) / 1000)
+#define TEMP_FROM_REG(val) ((val) *1000)
 #define TMS_BANK           dev->tms_config_global[0x09]
 
 #ifdef ENABLE_NSC366_HWM_LOG
@@ -323,7 +326,7 @@ nsc366_update_tms_io(int enable, uint16_t addr, nsc366_hwm_t *dev)
         io_sethandler(addr, 15, nsc366_tms_read, NULL, NULL, nsc366_tms_write, NULL, NULL, dev);
 }
 
-#define TEMP_FROM_REG(val) ((val) * 1000)
+#define TEMP_FROM_REG(val) ((val) *1000)
 
 static void
 nsc366_hwm_reset(void *priv)

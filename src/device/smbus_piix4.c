@@ -371,6 +371,7 @@ unknown_protocol:
                 if (dev->index >= SMBUS_PIIX4_BLOCK_DATA_SIZE)
                     dev->index = 0;
             }
+            break;
     }
 
     if (dev->next_stat) { /* schedule dispatch of any pending status register update */

@@ -568,6 +568,10 @@ spd_write_drbs_intel_815ep(uint8_t *regs)
     /* All Intel MCH based boards demand SPD so we ignore completely the non-SPD calculations */
     int      size;
     int      reg_apply;
+    uint16_t rows[SPD_MAX_SLOTS];
+
+    if (!spd_present)
+        spd_populate(rows, 3, mem_size << 10, 32, 512, 0);
 
     /* Clear previous configurations */
     regs[0x52] = regs[0x54] = 0;

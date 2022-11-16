@@ -28,6 +28,7 @@
 #include <86box/timer.h>
 #include <86box/device.h>
 #include <86box/hwm.h>
+#include <86box/io.h>
 #include <86box/keyboard.h>
 #include <86box/lpt.h>
 #include <86box/nsc366.h>

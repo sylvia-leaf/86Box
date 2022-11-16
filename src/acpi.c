@@ -101,9 +101,20 @@ acpi_get_overflow_period(acpi_t *dev)
 static void
 acpi_timer_overflow(void *priv)
 {
-    acpi_t *dev      = (acpi_t *) priv;
+    acpi_t *dev    = (acpi_t *) priv;
+    int     sci_en = dev->regs.pmcntrl & 1;
+
     dev->regs.pmsts |= TMROF_STS;
-    acpi_update_irq(dev);
+
+    if (dev->regs.pmen & 1) /* Timer Overflow Interrupt Enable */
+    {
+        acpi_log("ACPI: Overflow detected. Provoking an %s\n", sci_en ? "SCI" : "SMI");
+
+        if (sci_en) /* Trigger an SCI or SMI depending on the status of the SCI_EN register */
+            acpi_update_irq(dev);
+        else
+            acpi_raise_smi(dev, 1);
+    }
 }
 
 static void
@@ -167,7 +178,7 @@ acpi_raise_smi(void *priv, int do_smi)
                 smi_raise();
         }
     } else if ((dev->vendor == VEN_INTEL_ICH2) && do_smi && (dev->regs.smi_en & 1))
-        smi_line = 1;
+        smi_raise();
 }
 
 static uint32_t
@@ -483,7 +494,7 @@ acpi_reg_read_intel_ich2(int size, uint16_t addr, void *p)
     }
 
 #ifdef ENABLE_ACPI_LOG
-    // if (size != 1)
+        // if (size != 1)
         // acpi_log("(%i) ACPI Read  (%i) %02X: %02X\n", in_smm, size, addr, ret);
 #endif
     return ret;
@@ -1784,7 +1795,8 @@ acpi_apm_out(uint16_t port, uint8_t val, void *p)
             if (dev->vendor == VEN_INTEL)
                 dev->regs.glbsts |= 0x20;
             else if (dev->vendor == VEN_INTEL_ICH2)
-                dev->regs.smi_sts |= 0x00000020;
+                if (dev->apm->do_smi)
+                    dev->regs.smi_sts |= 0x00000020;
             acpi_raise_smi(dev, dev->apm->do_smi);
         } else
             dev->apm->stat = val;
