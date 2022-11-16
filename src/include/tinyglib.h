@@ -21,6 +21,7 @@
 /* Types */
 
 /* Windows does not define ssize_t, so we need to define it here. */
+#ifndef __APPLE__
 #ifndef _SSIZE_T_DEFINED
 # define _SSIZE_T_DEFINED
 # undef ssize_t
@@ -29,6 +30,7 @@
 # else
 #  define ssize_t int32_t
 # endif
+#endif
 #endif
 
 #endif
