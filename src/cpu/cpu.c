@@ -2338,7 +2338,7 @@ cpu_CPUID(void)
                 EDX = 0x00000000;
             } else
                 EAX = EBX = ECX = EDX = 0;
-                break;
+            break;
     }
 }
 
