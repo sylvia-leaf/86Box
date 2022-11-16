@@ -9,7 +9,8 @@
         "glib",
         "libpng",
         "sdl2",
-        "rtmidi"
+        "rtmidi",
+        "libiconv"
     ],
     "features": {
         "qt-ui": {

@@ -154,12 +154,12 @@ exec386(int cycs)
                 fetchdat >>= 8;
                 trap = cpu_state.flags & T_FLAG;
 
-			cpu_state.pc++;
-			x86_opcodes[(opcode | cpu_state.op32) & 0x3ff](fetchdat);
-			sse_xmm = 0;
-			if (x86_was_reset)
-				break;
-		}
+                cpu_state.pc++;
+                x86_opcodes[(opcode | cpu_state.op32) & 0x3ff](fetchdat);
+                sse_xmm = 0;
+                if (x86_was_reset)
+                    break;
+            }
 #ifdef ENABLE_386_LOG
             else if (in_smm)
                 x386_log("[%04X:%08X] ABRT\n", CS, cpu_state.pc);

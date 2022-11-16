@@ -610,7 +610,7 @@ gdbstub_client_write_reg(int index, uint8_t *buf)
             break;
         
         case GDB_REG_XMM0 ... GDB_REG_XMM7:
-            width                               = 16;
+            width                          = 16;
             XMM[index - GDB_REG_XMM0].q[0] = *((uint64_t *) &buf);
             XMM[index - GDB_REG_XMM0].q[1] = *((uint64_t *) (&buf + 8));
             break;
