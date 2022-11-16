@@ -18,9 +18,22 @@ add_library(slirp STATIC arp_table.c bootp.c cksum.c dnssearch.c if.c ip_icmp.c
     tcp_output.c tcp_subr.c tcp_timer.c udp.c util.c version.c)
 
 if(WIN32)
-    target_link_libraries(slirp wsock32 ws2_32 iphlpapi iconv)
+    target_link_libraries(slirp wsock32 iphlpapi)
 endif()
 
-find_package(PkgConfig REQUIRED)
-pkg_check_modules(GLIB REQUIRED IMPORTED_TARGET glib-2.0)
-target_link_libraries(slirp PkgConfig::GLIB)
+# tinyglib conflicts with the real GLib used by Qt, let's just be safe
+if(QT AND UNIX AND NOT APPLE)
+    set(SLIRP_TINYGLIB OFF)
+endif()
+
+option(SLIRP_TINYGLIB "Use a minimal GLib stub (`tinyglib`) with SLiRP" ON)
+
+if(SLIRP_TINYGLIB)
+    target_sources(slirp PRIVATE tinyglib.c)
+else()
+    find_package(PkgConfig REQUIRED)
+    pkg_check_modules(GLIB REQUIRED IMPORTED_TARGET glib-2.0)
+    target_link_libraries(slirp PkgConfig::GLIB)
+
+    target_compile_definitions(slirp PRIVATE TINYGLIB_USE_GLIB)
+endif()
