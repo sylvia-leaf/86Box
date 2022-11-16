@@ -6,11 +6,9 @@
     "license": "GPL-2.0-or-later",
     "dependencies": [
         "freetype",
-        "glib",
         "libpng",
         "sdl2",
-        "rtmidi",
-        "libiconv"
+        "rtmidi"
     ],
     "features": {
         "qt-ui": {
