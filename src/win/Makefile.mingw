@@ -668,7 +668,7 @@ SCSIOBJ := scsi.o scsi_device.o \
 
 NETOBJ := network.o \
           net_pcap.o \
-          net_slirp.o \
+          net_slirp.o tinyglib.o \
           arp_table.o bootp.o cksum.o dnssearch.o if.o ip_icmp.o ip_input.o \
           ip_output.o mbuf.o misc.o sbuf.o slirp.o socket.o tcp_input.o \
           tcp_output.o tcp_subr.o tcp_timer.o udp.o util.o version.o \
@@ -808,7 +808,7 @@ endif
 ifeq ($(VNC), y)
  LIBS += $(VNCLIB) -lws2_32
 endif
-LIBS += -lpng -lz -lwsock32 -liphlpapi -lpsapi -lhid -lsetupapi -luxtheme -static -lstdc++ -lglib-2.0 -lintl -liconv -lws2_32 -luuid
+LIBS += -lpng -lz -lwsock32 -liphlpapi -lpsapi -lhid -lsetupapi -luxtheme -static -lstdc++
 ifneq ($(X64), y)
  ifneq ($(ARM64), y)
   LIBS += -Wl,--large-address-aware
