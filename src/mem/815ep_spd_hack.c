@@ -1,9 +1,18 @@
 /*
- * 815EP SPD Memory Hack
+ * 86Box    A hypervisor and IBM PC system emulator that specializes in
+ *          running old operating systems and software designed for IBM
+ *          PC systems and compatibles from 1981 through fairly recent
+ *          system designs based on the PCI bus.
  *
- * Authors:	Tiseno100,
+ *          This file is part of the 86Box distribution.
  *
- * Copyright 2022 Tiseno100.
+ *          Intel 82815EP SPD Memory Hack
+ *
+ *
+ *
+ * Authors: Tiseno100,
+ *
+ *          Copyright 2022 Tiseno100.
  */
 
 /* This is a hack because the 86Box SPD calculation algorithm is not made for the 815EP banking.
@@ -24,8 +33,7 @@
 uint8_t
 intel_815ep_get_banking()
 {
-    switch(MEM_SIZE_MB)
-    {
+    switch (MEM_SIZE_MB) {
         case 32:
             return 0x02;
 
@@ -64,50 +72,49 @@ intel_815ep_get_banking()
 void
 intel_815ep_spd_init()
 {
-    switch(MEM_SIZE_MB)
-    {
+    switch (MEM_SIZE_MB) {
         case 32:
             spd_register(SPD_TYPE_SDRAM, 1, 32);
-        break;
+            break;
 
         case 64:
             spd_register(SPD_TYPE_SDRAM, 3, 32);
-        break;
+            break;
 
         case 96:
             spd_register(SPD_TYPE_SDRAM, 7, 32);
-        break;
+            break;
 
         case 128:
             spd_register(SPD_TYPE_SDRAM, 3, 64);
-        break;
+            break;
 
         case 160:
             spd_register(SPD_TYPE_SDRAM, 7, 64);
-        break;
+            break;
 
         case 192:
             spd_register(SPD_TYPE_SDRAM, 3, 96);
-        break;
+            break;
 
         case 256:
             spd_register(SPD_TYPE_SDRAM, 3, 128);
-        break;
+            break;
 
         case 320:
             spd_register(SPD_TYPE_SDRAM, 7, 128);
-        break;
+            break;
 
         case 384:
             spd_register(SPD_TYPE_SDRAM, 7, 128);
-        break;
+            break;
 
         case 512:
             spd_register(SPD_TYPE_SDRAM, 3, 256);
-        break;
+            break;
 
         default:
             pclog("Intel 815EP SPD Hack: Illegal Size %dMB\n", MEM_SIZE_MB);
-        break;
+            break;
     }
 }

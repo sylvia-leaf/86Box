@@ -566,8 +566,8 @@ void
 spd_write_drbs_intel_815ep(uint8_t *regs)
 {
     /* All Intel MCH based boards demand SPD so we ignore completely the non-SPD calculations */
-    int size;
-    int reg_apply;
+    int      size;
+    int      reg_apply;
 
     /* Clear previous configurations */
     regs[0x52] = regs[0x54] = 0;
@@ -578,62 +578,60 @@ spd_write_drbs_intel_815ep(uint8_t *regs)
         spd_log("Intel 815EP SPD: Registering Slot %d with size %dMB.\n", slot, size);
 
         /* Calculate Size. Nullify if the size is illegal. */
-        switch(size)
-        {
+        switch (size) {
             default:
                 reg_apply = 0;
                 spd_log("Intel 815EP SPD: Illegal Size on Slot %d. Size not divisible by 32.\n", slot);
-            break;
+                break;
 
             case 32:
                 reg_apply = 1;
-            break;
+                break;
 
             case 48:
                 reg_apply = 3;
-            break;
+                break;
 
             case 64:
                 reg_apply = 4;
-            break;
+                break;
 
             case 96:
                 reg_apply = 6;
-            break;
+                break;
 
             case 128:
                 reg_apply = 7;
-            break;
+                break;
 
             case 192:
                 reg_apply = 11;
-            break;
+                break;
 
             case 256:
                 reg_apply = 12;
-            break;
+                break;
 
             case 512:
                 reg_apply = 15;
-            break;
+                break;
         }
 
         /* Write on the representative register */
-        switch(slot)
-        {
+        switch (slot) {
             case 0:
                 regs[0x52] |= reg_apply;
-            break;
+                break;
 
             case 1:
                 regs[0x52] |= reg_apply << 4;
-            break;
+                break;
 
             case 2:
                 regs[0x54] |= reg_apply;
-            break;
+                break;
         }
-	}
+    }
 }
 
 static const device_t spd_device = {

@@ -11,8 +11,10 @@
  *
  *
  * Authors: Miran Grca, <mgrca8@gmail.com>
+ *          Tiseno100
  *
  *          Copyright 2020 Miran Grca.
+ *          Copyright 2022 Tiseno100.
  */
 #include <stdarg.h>
 #include <stdio.h>
@@ -99,7 +101,7 @@ acpi_get_overflow_period(acpi_t *dev)
 static void
 acpi_timer_overflow(void *priv)
 {
-    acpi_t *dev = (acpi_t *) priv;
+    acpi_t *dev    = (acpi_t *) priv;
     dev->regs.pmsts |= TMROF_STS;
     acpi_update_irq(dev);
 }
@@ -164,8 +166,7 @@ acpi_raise_smi(void *priv, int do_smi)
             if (do_smi)
                 smi_raise();
         }
-    }
-	else if ((dev->vendor == VEN_INTEL_ICH2) && do_smi && (dev->regs.smi_en & 1))
+    } else if ((dev->vendor == VEN_INTEL_ICH2) && do_smi && (dev->regs.smi_en & 1))
         smi_line = 1;
 }
 
@@ -386,75 +387,104 @@ acpi_reg_read_intel(int size, uint16_t addr, void *p)
 static uint32_t
 acpi_reg_read_intel_ich2(int size, uint16_t addr, void *p)
 {
-    acpi_t *dev = (acpi_t *) p;
+    acpi_t  *dev = (acpi_t *) p;
     uint32_t ret = 0x00000000;
-    int shift16, shift32;
+    int      shift16, shift32;
 
     addr &= 0x7f;
     shift16 = (addr & 1) << 3;
     shift32 = (addr & 3) << 3;
 
     switch (addr) {
-    case 0x10: case 0x11: case 0x12: case 0x13:
-		/* PROC_CNT—Processor Control Register */
-        ret = (dev->regs.pcntrl >> shift32) & 0xff;
-        break;
-	case 0x28: case 0x29:
-		/* GPE0_STS—General Purpose Event 0 Status Register */
-		ret = (dev->regs.gpsts >> shift16) & 0xff;
-		break;
-	case 0x2a: case 0x2b:
-		/* GPE0_EN—General Purpose Event 0 Enables Register */
-		ret = (dev->regs.gpen >> shift16) & 0xff;
-		break;
-	case 0x2c: case 0x2d:
-		/* GPE1_STS—General Purpose Event 1 Status Register */
-		ret = (dev->regs.gpsts1 >> shift16) & 0xff;
-		break;
-	case 0x2e: case 0x2f:
-		/* GPE1_EN—General Purpose Event 1 Enable Register */
-		ret = (dev->regs.gpen1 >> shift16) & 0xff;
-		break;
-    case 0x30: case 0x31: case 0x32: case 0x33:
-		/* SMI_EN—SMI Control and Enable Register */
-		ret = (dev->regs.smi_en >> shift32) & 0xff;
-		break;
-    case 0x34: case 0x35: case 0x36: case 0x37:
-		/* SMI_STS—SMI Status Register */
-		ret = (dev->regs.smi_sts >> shift32) & 0xff;
-		break;
-	case 0x40: case 0x41:
-		/* MON_SMI—Device Monitor SMI Status and Enable Register */
-		ret = (dev->regs.mon_smi >> shift16) & 0xff;
-		break;
-	case 0x44: case 0x45:
-		/* DEVACT_STS—Device Activity Status Register */
-		ret = (dev->regs.devact_sts >> shift16) & 0xff;
-		break;
-	case 0x48: case 0x49:
-		/* DEVTRAP_EN—Device Trap Enable Register */
-		ret = (dev->regs.devtrap_en >> shift16) & 0xff;
-		break;
-    case 0x4c ... 0x4d:
-        /* BUS_ADDR_TRACK—Bus Address Tracker Register */
-        ret = (dev->regs.bus_addr_track >> shift16) & 0xff;
-        break;
-    case 0x4e:
-        /* BUS_CYC_TRACK—Bus Cycle Tracker Register */
-        ret = dev->regs.bus_cyc_track;
-        break;
-    case 0x60 ... 0x70:
-        /* TCO Registers */
-        ret = tco_read(addr, dev->tco);
-        break;
-	default:
-		ret = acpi_reg_read_common_regs(size, addr, p);
-		break;
+        case 0x10:
+        case 0x11:
+        case 0x12:
+        case 0x13:
+            /* PROC_CNT - Processor Control Register */
+            ret = (dev->regs.pcntrl >> shift32) & 0xff;
+            break;
+
+        case 0x28:
+        case 0x29:
+            /* GPE0_STS - General Purpose Event 0 Status Register */
+            ret = (dev->regs.gpsts >> shift16) & 0xff;
+            break;
+
+        case 0x2a:
+        case 0x2b:
+            /* GPE0_EN - General Purpose Event 0 Enables Register */
+            ret = (dev->regs.gpen >> shift16) & 0xff;
+            break;
+
+        case 0x2c:
+        case 0x2d:
+            /* GPE1_STS - General Purpose Event 1 Status Register */
+            ret = (dev->regs.gpsts1 >> shift16) & 0xff;
+            break;
+
+        case 0x2e:
+        case 0x2f:
+            /* GPE1_EN - General Purpose Event 1 Enable Register */
+            ret = (dev->regs.gpen1 >> shift16) & 0xff;
+            break;
+
+        case 0x30:
+        case 0x31:
+        case 0x32:
+        case 0x33:
+            /* SMI_EN - SMI Control and Enable Register */
+            ret = (dev->regs.smi_en >> shift32) & 0xff;
+            break;
+
+        case 0x34:
+        case 0x35:
+        case 0x36:
+        case 0x37:
+            /* SMI_STS - SMI Status Register */
+            ret = (dev->regs.smi_sts >> shift32) & 0xff;
+            break;
+
+        case 0x40:
+        case 0x41:
+            /* MON_SMI - Device Monitor SMI Status and Enable Register */
+            ret = (dev->regs.mon_smi >> shift16) & 0xff;
+            break;
+
+        case 0x44:
+        case 0x45:
+            /* DEVACT_STS - Device Activity Status Register */
+            ret = (dev->regs.devact_sts >> shift16) & 0xff;
+            break;
+
+        case 0x48:
+        case 0x49:
+            /* DEVTRAP_EN - Device Trap Enable Register */
+            ret = (dev->regs.devtrap_en >> shift16) & 0xff;
+            break;
+
+        case 0x4c ... 0x4d:
+            /* BUS_ADDR_TRACK - Bus Address Tracker Register */
+            ret = (dev->regs.bus_addr_track >> shift16) & 0xff;
+            break;
+
+        case 0x4e:
+            /* BUS_CYC_TRACK - Bus Cycle Tracker Register */
+            ret = dev->regs.bus_cyc_track;
+            break;
+
+        case 0x60 ... 0x70:
+            /* TCO Registers */
+            ret = tco_read(addr, dev->tco);
+            break;
+
+        default:
+            ret = acpi_reg_read_common_regs(size, addr, p);
+            break;
     }
 
 #ifdef ENABLE_ACPI_LOG
     // if (size != 1)
-		// acpi_log("(%i) ACPI Read  (%i) %02X: %02X\n", in_smm, size, addr, ret);
+        // acpi_log("(%i) ACPI Read  (%i) %02X: %02X\n", in_smm, size, addr, ret);
 #endif
     return ret;
 }
@@ -730,26 +760,28 @@ acpi_reg_write_common_regs(int size, uint16_t addr, uint8_t val, void *p)
     shift16 = (addr & 1) << 3;
 
     switch (addr) {
-	case 0x00: case 0x01:
-		/* PMSTS - Power Management Status Register (IO) */
-		dev->regs.pmsts &= ~((val << shift16) & 0x8d31);
-		if ((addr == 0x01) && (val & 0x04))
-			acpi_rtc_status = 0;
-		acpi_update_irq(dev);
-		break;
-	case 0x02: case 0x03:
-		/* PMEN - Power Management Resume Enable Register (IO) */
-		dev->regs.pmen = ((dev->regs.pmen & ~(0xff << shift16)) | (val << shift16)) & 0x0521;
-		acpi_update_irq(dev);
-		break;
-	case 0x04: case 0x05:
-		/* PMCNTRL - Power Management Control Register (IO) */
-		if((addr == 0x05) && !!(val & 0x20) && !!(val & 4) && !!(dev->regs.smi_en & 0x00000010) && (dev->vendor == VEN_INTEL_ICH2)) {
-            dev->regs.smi_sts |= 0x00000010; /* ICH2 Specific. Trigger an SMI if SLP_SMI_EN bit is set instead of transistioning to a Sleep State. */
-            acpi_raise_smi(dev, 1);
-        }
-		else if ((addr == 0x05) && (val & 0x20)) {
-			sus_typ = dev->suspend_types[(val >> 2) & 7];
+        case 0x00:
+        case 0x01:
+            /* PMSTS - Power Management Status Register (IO) */
+            dev->regs.pmsts &= ~((val << shift16) & 0x8d31);
+            if ((addr == 0x01) && (val & 0x04))
+                acpi_rtc_status = 0;
+            acpi_update_irq(dev);
+            break;
+        case 0x02:
+        case 0x03:
+            /* PMEN - Power Management Resume Enable Register (IO) */
+            dev->regs.pmen = ((dev->regs.pmen & ~(0xff << shift16)) | (val << shift16)) & 0x0521;
+            acpi_update_irq(dev);
+            break;
+        case 0x04:
+        case 0x05:
+            /* PMCNTRL - Power Management Control Register (IO) */
+            if ((addr == 0x05) && !!(val & 0x20) && !!(val & 4) && !!(dev->regs.smi_en & 0x00000010) && (dev->vendor == VEN_INTEL_ICH2)) {
+                dev->regs.smi_sts |= 0x00000010; /* ICH2 Specific. Trigger an SMI if SLP_SMI_EN bit is set instead of transistioning to a Sleep State. */
+                acpi_raise_smi(dev, 1);
+            } else if ((addr == 0x05) && (val & 0x20)) {
+                sus_typ = dev->suspend_types[(val >> 2) & 7];
 
                 if (sus_typ & SUS_POWER_OFF) {
                     /* Soft power off. */
@@ -965,91 +997,119 @@ static void
 acpi_reg_write_intel_ich2(int size, uint16_t addr, uint8_t val, void *p)
 {
     acpi_t *dev = (acpi_t *) p;
-    int shift16, shift32;
+    int     shift16, shift32;
 
     addr &= 0x7f;
 #ifdef ENABLE_ACPI_LOG
     if (size != 1)
-	acpi_log("(%i) ACPI Write (%i) %02X: %02X\n", in_smm, size, addr, val);
+        acpi_log("(%i) ACPI Write (%i) %02X: %02X\n", in_smm, size, addr, val);
 #endif
     shift16 = (addr & 1) << 3;
     shift32 = (addr & 3) << 3;
 
     switch (addr) {
-    case 0x10: case 0x11: case 0x12: case 0x13:
-		/* PROC_CNT—Processor Control Register */
-        dev->regs.pcntrl = ((dev->regs.pcntrl & ~(0xff << shift32)) | (val << shift32)) & 0x000201fe;
-        break;
-	case 0x28: case 0x29:
-		/* GPE0_STS—General Purpose Event 0 Status Register */
-		dev->regs.gpsts &= ~((val << shift16) & 0x09fb);
-		break;
-	case 0x2a: case 0x2b:
-		/* GPE0_EN—General Purpose Event 0 Enables Register */
-		dev->regs.gpen = ((dev->regs.gpen & ~(0xff << shift16)) | (val << shift16)) & 0x097d;
-		break;
-	case 0x2c: case 0x2d:
-		/* GPE1_STS—General Purpose Event 1 Status Register */
-		dev->regs.gpsts1 &= ~((val << shift16) & 0x09fb);
-		break;
-	case 0x2e: case 0x2f:
-		/* GPE1_EN—General Purpose Event 1 Enable Register */
-		dev->regs.gpen1 = ((dev->regs.gpen & ~(0xff << shift16)) | (val << shift16)) & 0x097d;
-		break;
-    case 0x30: case 0x31: case 0x32: case 0x33:
-		/* SMI_EN—SMI Control and Enable Register */
-		dev->regs.smi_en = ((dev->regs.smi_en & ~(0xff << shift32)) | (val << shift32)) & 0x0000867f;
+        case 0x10:
+        case 0x11:
+        case 0x12:
+        case 0x13:
+            /* PROC_CNT - Processor Control Register */
+            dev->regs.pcntrl = ((dev->regs.pcntrl & ~(0xff << shift32)) | (val << shift32)) & 0x000201fe;
+            break;
 
-        if(addr == 0x30) {
-            apm_set_do_smi(dev->apm, !!(val & 0x20));
+        case 0x28:
+        case 0x29:
+            /* GPE0_STS - General Purpose Event 0 Status Register */
+            dev->regs.gpsts &= ~((val << shift16) & 0x09fb);
+            break;
 
-            if(val & 0x80) {
-                dev->regs.glbsts |= 0x0020;
-                acpi_update_irq(dev);
+        case 0x2a:
+        case 0x2b:
+            /* GPE0_EN - General Purpose Event 0 Enables Register */
+            dev->regs.gpen = ((dev->regs.gpen & ~(0xff << shift16)) | (val << shift16)) & 0x097d;
+            break;
+
+        case 0x2c:
+        case 0x2d:
+            /* GPE1_STS - General Purpose Event 1 Status Register */
+            dev->regs.gpsts1 &= ~((val << shift16) & 0x09fb);
+            break;
+
+        case 0x2e:
+        case 0x2f:
+            /* GPE1_EN - General Purpose Event 1 Enable Register */
+            dev->regs.gpen1 = ((dev->regs.gpen & ~(0xff << shift16)) | (val << shift16)) & 0x097d;
+            break;
+
+        case 0x30:
+        case 0x31:
+        case 0x32:
+        case 0x33:
+            /* SMI_EN - SMI Control and Enable Register */
+            dev->regs.smi_en = ((dev->regs.smi_en & ~(0xff << shift32)) | (val << shift32)) & 0x0000867f;
+
+            if (addr == 0x30) {
+                apm_set_do_smi(dev->apm, !!(val & 0x20));
+
+                if (val & 0x80) {
+                    dev->regs.glbsts |= 0x0020;
+                    acpi_update_irq(dev);
+                }
             }
-        }
-		break;
-    case 0x34: case 0x35: case 0x36: case 0x37:
-		/* SMI_STS—SMI Status Register */
-		dev->regs.smi_sts &= ~((val << shift32) & 0x0001ff7c);
-		break;
-	case 0x40: case 0x41:
-		/* MON_SMI—Device Monitor SMI Status and Enable Register */
-		dev->regs.mon_smi = ((dev->regs.mon_smi & ~(0xff << shift16)) | (val << shift16)) & 0x097d;
-		break;
-	case 0x44: case 0x45:
-		/* DEVACT_STS—Device Activity Status Register */
-		dev->regs.devact_sts &= ~((val << shift16) & 0x3fef);
-		break;
-	case 0x48: case 0x49:
-		/* DEVTRAP_EN—Device Trap Enable Register */
-		dev->regs.devtrap_en = ((dev->regs.devtrap_en & ~(0xff << shift16)) | (val << shift16)) & 0x3c2f;
-		if (dev->trap_update)
-			dev->trap_update(dev->trap_priv);
-		break;
-    case 0x4c ... 0x4d:
-        /* BUS_ADDR_TRACK—Bus Address Tracker Register */
-        dev->regs.bus_addr_track = ((dev->regs.bus_addr_track & ~(0xff << shift16)) | (val << shift16)) & 0x097d;
-        break;
-    case 0x4e:
-        /* BUS_CYC_TRACK—Bus Cycle Tracker Register */
-        dev->regs.bus_cyc_track = val;
-        break;
-    case 0x60 ... 0x70:
-        /* TCO Registers */
-        tco_write(addr, val, dev->tco);
-        break;
-	default:
-		acpi_reg_write_common_regs(size, addr, val, p);
-        if((addr == 0x04) && !!(val & 4) && !!(dev->regs.smi_en & 4)) {
-            dev->regs.smi_sts = 0x00000004;
-            acpi_raise_smi(dev, 1);
-        }
+            break;
 
-        if((addr == 0x02) || !!(val & 0x20) || !!(dev->regs.glbsts & 0x0020))
-            acpi_update_irq(dev);
+        case 0x34:
+        case 0x35:
+        case 0x36:
+        case 0x37:
+            /* SMI_STS - SMI Status Register */
+            dev->regs.smi_sts &= ~((val << shift32) & 0x0001ff7c);
+            break;
 
-        break;
+        case 0x40:
+        case 0x41:
+            /* MON_SMI - Device Monitor SMI Status and Enable Register */
+            dev->regs.mon_smi = ((dev->regs.mon_smi & ~(0xff << shift16)) | (val << shift16)) & 0x097d;
+            break;
+
+        case 0x44:
+        case 0x45:
+            /* DEVACT_STS - Device Activity Status Register */
+            dev->regs.devact_sts &= ~((val << shift16) & 0x3fef);
+            break;
+
+        case 0x48:
+        case 0x49:
+            /* DEVTRAP_EN - Device Trap Enable Register */
+            dev->regs.devtrap_en = ((dev->regs.devtrap_en & ~(0xff << shift16)) | (val << shift16)) & 0x3c2f;
+            if (dev->trap_update)
+                dev->trap_update(dev->trap_priv);
+            break;
+
+        case 0x4c ... 0x4d:
+            /* BUS_ADDR_TRACK - Bus Address Tracker Register */
+            dev->regs.bus_addr_track = ((dev->regs.bus_addr_track & ~(0xff << shift16)) | (val << shift16)) & 0x097d;
+            break;
+
+        case 0x4e:
+            /* BUS_CYC_TRACK - Bus Cycle Tracker Register */
+            dev->regs.bus_cyc_track = val;
+            break;
+
+        case 0x60 ... 0x70:
+            /* TCO Registers */
+            tco_write(addr, val, dev->tco);
+            break;
+
+        default:
+            acpi_reg_write_common_regs(size, addr, val, p);
+            if ((addr == 0x04) && !!(val & 4) && !!(dev->regs.smi_en & 4)) {
+                dev->regs.smi_sts = 0x00000004;
+                acpi_raise_smi(dev, 1);
+            }
+
+            if ((addr == 0x02) || !!(val & 0x20) || !!(dev->regs.glbsts & 0x0020))
+                acpi_update_irq(dev);
+            break;
     }
 }
 
@@ -1346,9 +1406,9 @@ acpi_reg_read_common(int size, uint16_t addr, void *p)
     else if (dev->vendor == VEN_VIA_596B)
         ret = acpi_reg_read_via_596b(size, addr, p);
     else if (dev->vendor == VEN_INTEL)
-	ret = acpi_reg_read_intel(size, addr, p);
-	else if (dev->vendor == VEN_INTEL_ICH2)
-	ret = acpi_reg_read_intel_ich2(size, addr, p);
+        ret = acpi_reg_read_intel(size, addr, p);
+    else if (dev->vendor == VEN_INTEL_ICH2)
+        ret = acpi_reg_read_intel_ich2(size, addr, p);
     else if (dev->vendor == VEN_SMC)
         ret = acpi_reg_read_smc(size, addr, p);
 
@@ -1367,9 +1427,9 @@ acpi_reg_write_common(int size, uint16_t addr, uint8_t val, void *p)
     else if (dev->vendor == VEN_VIA_596B)
         acpi_reg_write_via_596b(size, addr, val, p);
     else if (dev->vendor == VEN_INTEL)
-	acpi_reg_write_intel(size, addr, val, p);
-	else if (dev->vendor == VEN_INTEL_ICH2)
-	acpi_reg_write_intel_ich2(size, addr, val, p);
+        acpi_reg_write_intel(size, addr, val, p);
+    else if (dev->vendor == VEN_INTEL_ICH2)
+        acpi_reg_write_intel_ich2(size, addr, val, p);
     else if (dev->vendor == VEN_SMC)
         acpi_reg_write_smc(size, addr, val, p);
 }
@@ -1537,21 +1597,21 @@ acpi_update_io_mapping(acpi_t *dev, uint32_t base, int chipset_en)
     int size;
 
     switch (dev->vendor) {
-	case VEN_ALI:
-	case VEN_INTEL:
-	default:
-		size = 0x040;
-		break;
-	case VEN_SMC:
-		size = 0x010;
-		break;
-	case VEN_VIA:
-		size = 0x100;
-		break;
-	case VEN_VIA_596B:
-	case VEN_INTEL_ICH2:
-		size = 0x080;
-		break;
+        case VEN_ALI:
+        case VEN_INTEL:
+        default:
+            size = 0x040;
+            break;
+        case VEN_SMC:
+            size = 0x010;
+            break;
+        case VEN_VIA:
+            size = 0x100;
+            break;
+        case VEN_INTEL_ICH2:
+        case VEN_VIA_596B:
+            size = 0x080;
+            break;
     }
 
     acpi_log("ACPI: Update I/O %04X to %04X (%sabled)\n", dev->io_base, base, chipset_en ? "en" : "dis");
@@ -1719,15 +1779,15 @@ acpi_apm_out(uint16_t port, uint8_t val, void *p)
         } else if (port == 0x0003)
             dev->apm->stat = val;
     } else {
-	if (port == 0x0000) {
-		dev->apm->cmd = val;
-		if (dev->vendor == VEN_INTEL)
-			dev->regs.glbsts |= 0x20;
-		else if (dev->vendor == VEN_INTEL_ICH2)
-        	dev->regs.smi_sts |= 0x00000020;
-		acpi_raise_smi(dev, dev->apm->do_smi);
-	} else
-		dev->apm->stat = val;
+        if (port == 0x0000) {
+            dev->apm->cmd = val;
+            if (dev->vendor == VEN_INTEL)
+                dev->regs.glbsts |= 0x20;
+            else if (dev->vendor == VEN_INTEL_ICH2)
+                dev->regs.smi_sts |= 0x00000020;
+            acpi_raise_smi(dev, dev->apm->do_smi);
+        } else
+            dev->apm->stat = val;
     }
 }
 
@@ -1847,14 +1907,14 @@ acpi_init(const device_t *info)
     dev->irq_line = 9;
 
     if ((dev->vendor == VEN_INTEL) || (dev->vendor == VEN_ALI) || (dev->vendor == VEN_INTEL_ICH2)) {
-	if (dev->vendor == VEN_ALI)
-		dev->irq_mode = 2;
-	dev->apm = device_add(&apm_pci_acpi_device);
-	if (dev->vendor == VEN_ALI) {
-		acpi_log("Setting I/O handler at port B1\n");
-		io_sethandler(0x00b1, 0x0003, acpi_apm_in, NULL, NULL, acpi_apm_out, NULL, NULL, dev);
-	} else
-		io_sethandler(0x00b2, 0x0002, acpi_apm_in, NULL, NULL, acpi_apm_out, NULL, NULL, dev);
+        if (dev->vendor == VEN_ALI)
+            dev->irq_mode = 2;
+        dev->apm = device_add(&apm_pci_acpi_device);
+        if (dev->vendor == VEN_ALI) {
+            acpi_log("Setting I/O handler at port B1\n");
+            io_sethandler(0x00b1, 0x0003, acpi_apm_in, NULL, NULL, acpi_apm_out, NULL, NULL, dev);
+        } else
+            io_sethandler(0x00b2, 0x0002, acpi_apm_in, NULL, NULL, acpi_apm_out, NULL, NULL, dev);
     } else if (dev->vendor == VEN_VIA) {
         dev->i2c  = i2c_gpio_init("smbus_vt82c586b");
         i2c_smbus = i2c_gpio_get_bus(dev->i2c);
@@ -1881,19 +1941,20 @@ acpi_init(const device_t *info)
             dev->suspend_types[6] = SUS_SUSPEND | SUS_RESET_CPU | SUS_RESET_PCI;
             break;
 
-	case VEN_INTEL:
-		dev->suspend_types[0] = SUS_POWER_OFF;
-		dev->suspend_types[1] = SUS_SUSPEND | SUS_NVR | SUS_RESET_CPU | SUS_RESET_PCI;
-		dev->suspend_types[2] = SUS_SUSPEND | SUS_RESET_CPU;
-		dev->suspend_types[3] = SUS_SUSPEND | SUS_RESET_CACHE;
-		dev->suspend_types[4] = SUS_SUSPEND;
-		break;
-	case VEN_INTEL_ICH2:
-        dev->suspend_types[1] = SUS_SUSPEND | SUS_RESET_CPU;
-        dev->suspend_types[5] = SUS_SUSPEND | SUS_NVR | SUS_RESET_CPU | SUS_RESET_PCI;
-        dev->suspend_types[6] = SUS_POWER_OFF;
-        dev->suspend_types[7] = SUS_POWER_OFF;
-	break;
+        case VEN_INTEL:
+            dev->suspend_types[0] = SUS_POWER_OFF;
+            dev->suspend_types[1] = SUS_SUSPEND | SUS_NVR | SUS_RESET_CPU | SUS_RESET_PCI;
+            dev->suspend_types[2] = SUS_SUSPEND | SUS_RESET_CPU;
+            dev->suspend_types[3] = SUS_SUSPEND | SUS_RESET_CACHE;
+            dev->suspend_types[4] = SUS_SUSPEND;
+            break;
+
+        case VEN_INTEL_ICH2:
+            dev->suspend_types[1] = SUS_SUSPEND | SUS_RESET_CPU;
+            dev->suspend_types[5] = SUS_SUSPEND | SUS_NVR | SUS_RESET_CPU | SUS_RESET_PCI;
+            dev->suspend_types[6] = SUS_POWER_OFF;
+            dev->suspend_types[7] = SUS_POWER_OFF;
+            break;
     }
 
     timer_add(&dev->timer, acpi_timer_overflow, dev, 0);
@@ -1933,17 +1994,17 @@ const device_t acpi_intel_device = {
 };
 
 const device_t acpi_intel_ich2_device = {
-    .name = "Intel ICH2 ACPI",
+    .name          = "Intel ICH2 ACPI",
     .internal_name = "acpi_intel_ich2",
-    .flags = DEVICE_PCI,
-    .local = VEN_INTEL_ICH2,
-    .init = acpi_init,
-    .close = acpi_close,
-    .reset = acpi_reset,
+    .flags         = DEVICE_PCI,
+    .local         = VEN_INTEL_ICH2,
+    .init          = acpi_init,
+    .close         = acpi_close,
+    .reset         = acpi_reset,
     { .available = NULL },
     .speed_changed = acpi_speed_changed,
-    .force_redraw = NULL,
-    .config = NULL
+    .force_redraw  = NULL,
+    .config        = NULL
 };
 
 const device_t acpi_via_device = {

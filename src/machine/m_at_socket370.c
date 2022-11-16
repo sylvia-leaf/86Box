@@ -465,22 +465,22 @@ machine_at_6via90ap_init(const machine_t *model)
 
 /*
  * Biostar M6TSL
- * 
+ *
  * North Bridge: Intel 815E
  * Super I/O: National Semiconductor NSC366 (PC87366)
  * BIOS: AwardBIOS 6.00PG
  * Notes: No integrated ESS Solo & GPU
-*/
+ */
 int
 machine_at_m6tsl_init(const machine_t *model)
 {
     int ret;
 
     ret = bios_load_linear("roms/machines/m6tsl/tsl0425b.bin",
-			   0x00080000, 524288, 0);
+                           0x00080000, 524288, 0);
 
     if (bios_only || !ret)
-	return ret;
+        return ret;
 
     machine_at_common_init_ex(model, 2);
 
@@ -497,11 +497,11 @@ machine_at_m6tsl_init(const machine_t *model)
     pci_register_bus_slot(2, 0x07, PCI_CARD_NORMAL,      1, 2, 3, 4);
     pci_register_bus_slot(2, 0x08, PCI_CARD_NORMAL,      2, 3, 4, 1);
 
-    device_add(&intel_815ep_device); /* Intel 815EP MCH (This board has normally an i815E but this doesn't matter on our implementation) */
-    device_add(&intel_ich2_device); /* Intel ICH2 */
-    device_add(&nsc366_device); /* National Semiconductor NSC366 */
-    device_add(&sst_flash_49lf004_device); /* SST 4Mbit Firmware Hub */
-    device_add(ics9xxx_get(ICS9250_08)); /* ICS Clock Chip */
+    device_add(&intel_815ep_device);        /* Intel 815E MCH (This board has normally an i815E but this doesn't matter on our implementation) */
+    device_add(&intel_ich2_device);         /* Intel ICH2 */
+    device_add(&nsc366_device);             /* National Semiconductor NSC366 */
+    device_add(&sst_flash_49lf004_device);  /* SST 4Mbit Firmware Hub */
+    device_add(ics9xxx_get(ICS9250_08));    /* ICS Clock Chip */
     spd_register(SPD_TYPE_SDRAM, 0x7, 512);
 
     return ret;
@@ -509,22 +509,22 @@ machine_at_m6tsl_init(const machine_t *model)
 
 /*
  * Tyan Tomcat 815T (S2080)
- * 
+ *
  * North Bridge: Intel 815EP
  * Super I/O: National Semiconductor NSC366 (PC87366)
  * BIOS: AMIBIOS 7 (AMI Home BIOS Fork)
  * Notes: None
-*/
+ */
 int
 machine_at_s2080_init(const machine_t *model)
 {
     int ret;
 
     ret = bios_load_linear("roms/machines/s2080/2080V110.ROM",
-			   0x00080000, 524288, 0);
+                           0x00080000, 524288, 0);
 
     if (bios_only || !ret)
-	return ret;
+        return ret;
 
     machine_at_common_init_ex(model, 2);
 
@@ -541,9 +541,9 @@ machine_at_s2080_init(const machine_t *model)
     pci_register_bus_slot(2, 0x08, PCI_CARD_NORMAL,      6, 7, 8, 2);
     pci_register_bus_slot(2, 0x09, PCI_CARD_NORMAL,      7, 8, 2, 3);
 
-    device_add(&intel_815ep_device); /* Intel 815EP MCH */
-    device_add(&intel_ich2_device); /* Intel ICH2 */
-    device_add(&nsc366_device); /* National Semiconductor NSC366 */
+    device_add(&intel_815ep_device);       /* Intel 815EP MCH */
+    device_add(&intel_ich2_device);        /* Intel ICH2 */
+    device_add(&nsc366_device);            /* National Semiconductor NSC366 */
     device_add(&sst_flash_49lf004_device); /* SST 4Mbit Firmware Hub */
     spd_register(SPD_TYPE_SDRAM, 0x7, 512);
 
