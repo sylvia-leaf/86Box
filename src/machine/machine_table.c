@@ -11991,8 +11991,47 @@ const machine_t machines[] = {
         .net_device = NULL
     },
 
-    /* Intel i815EP */
+    /* Miscellaneous/Fake/Hypervisor machines */
+    /* Has a Winbond W83977F Super I/O chip with on-chip KBC with AMIKey-2 KBC
+       firmware. */
+    {
+        .name = "[i440BX] Microsoft Virtual PC 2007",
+        .internal_name = "vpc2007",
+        .type = MACHINE_TYPE_MISC,
+        .chipset = MACHINE_CHIPSET_INTEL_440BX,
+        .init = machine_at_vpc2007_init,
+        .pad = 0,
+        .pad0 = 0,
+        .pad1 = MACHINE_AVAILABLE,
+        .pad2 = 0,
+        .cpu = {
+            .package = CPU_PKG_SLOT1,
+            .block = CPU_BLOCK(CPU_PENTIUM2, CPU_CYRIX3S),
+            .min_bus = 0,
+            .max_bus = 66666667,
+            .min_voltage = 0,
+            .max_voltage = 0,
+            .min_multi = 0,
+            .max_multi = 0
+        },
+        .bus_flags = MACHINE_PS2_PCI,
+        .flags = MACHINE_IDE_DUAL,
+        .ram = {
+            .min = 8192,
+            .max = 1048576,
+            .step = 8192
+        },
+        .nvrmask = 255,
+        .kbc = KBC_UNKNOWN,
+        .kbc_p1 = 0,
+        .gpio = 0,
+        .device = NULL,
+        .vid_device = NULL,
+        .snd_device = NULL,
+        .net_device = NULL
+    },
 
+    /* Intel 815EP Motherboards */
     {
         .name = "[Intel i815EP] Biostar M6TSL",
         .internal_name = "m6tsl",
@@ -12060,46 +12099,6 @@ const machine_t machines[] = {
         .gpio = 0,
         .device = NULL,
         .vid_device = NULL
-    },
-
-    /* Miscellaneous/Fake/Hypervisor machines */
-    /* Has a Winbond W83977F Super I/O chip with on-chip KBC with AMIKey-2 KBC
-       firmware. */
-    {
-        .name = "[i440BX] Microsoft Virtual PC 2007",
-        .internal_name = "vpc2007",
-        .type = MACHINE_TYPE_MISC,
-        .chipset = MACHINE_CHIPSET_INTEL_440BX,
-        .init = machine_at_vpc2007_init,
-        .pad = 0,
-        .pad0 = 0,
-        .pad1 = MACHINE_AVAILABLE,
-        .pad2 = 0,
-        .cpu = {
-            .package = CPU_PKG_SLOT1,
-            .block = CPU_BLOCK(CPU_PENTIUM2, CPU_CYRIX3S),
-            .min_bus = 0,
-            .max_bus = 66666667,
-            .min_voltage = 0,
-            .max_voltage = 0,
-            .min_multi = 0,
-            .max_multi = 0
-        },
-        .bus_flags = MACHINE_PS2_PCI,
-        .flags = MACHINE_IDE_DUAL,
-        .ram = {
-            .min = 8192,
-            .max = 1048576,
-            .step = 8192
-        },
-        .nvrmask = 255,
-        .kbc = KBC_UNKNOWN,
-        .kbc_p1 = 0,
-        .gpio = 0,
-        .device = NULL,
-        .vid_device = NULL,
-        .snd_device = NULL,
-        .net_device = NULL
     },
 
     {

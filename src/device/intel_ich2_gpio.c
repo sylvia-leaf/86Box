@@ -1,11 +1,19 @@
 /*
- * Intel ICH2 GPIO
+ * 86Box    A hypervisor and IBM PC system emulator that specializes in
+ *          running old operating systems and software designed for IBM
+ *          PC systems and compatibles from 1981 through fairly recent
+ *          system designs based on the PCI bus.
  *
- * Authors:	Tiseno100,
+ *          This file is part of the 86Box distribution.
  *
- * Copyright 2022 Tiseno100.
+ *          Implementation of Intel ICH2 GPIO
+ *
+ *
+ *
+ * Authors: Tiseno100,
+ *
+ *          Copyright 2022 Tiseno100.
  */
-
 
 #include <stdarg.h>
 #include <stdint.h>
@@ -29,15 +37,14 @@ intel_ich2_gpio_log(const char *fmt, ...)
     va_list ap;
 
     if (intel_ich2_gpio_do_log) {
-	va_start(ap, fmt);
-	pclog_ex(fmt, ap);
-	va_end(ap);
+        va_start(ap, fmt);
+        pclog_ex(fmt, ap);
+        va_end(ap);
     }
 }
 #else
-#define intel_ich2_gpio_log(fmt, ...)
+#    define intel_ich2_gpio_log(fmt, ...)
 #endif
-
 
 static void
 intel_ich2_gpio_write(uint16_t addr, uint8_t val, void *priv)
@@ -48,52 +55,50 @@ intel_ich2_gpio_write(uint16_t addr, uint8_t val, void *priv)
 
     intel_ich2_gpio_log("Intel ICH2 GPIO: Write 0x%02x on GPIO Register 0x%02x\n", val, addr);
 
-    switch(addr)
-    {
+    switch (addr) {
         /* GPIO Use Enable */
         case 0x00:
             dev->gpio_regs[addr] = val & 0x3f;
-        break;
+            break;
 
         case 0x01:
             dev->gpio_regs[addr] = val & 8;
-        break;
+            break;
 
         case 0x02:
             dev->gpio_regs[addr] = val & 0x20;
-        break;
+            break;
 
         /* GPIO I/O Select */
         case 0x07:
             dev->gpio_regs[addr] = val & 0x1b;
-        break;
+            break;
 
         /* GPIO Level */
         case 0x0e:
             dev->gpio_regs[addr] = val;
-        break;
+            break;
 
         case 0x0f:
             dev->gpio_regs[addr] = val & 0x1b;
             dev->gpio_regs[addr] &= dev->gpio_regs[0x1b]; // Mask out whatever change if the bits aren't programmed as outputs.
-        break;
+            break;
 
         /* GPIO Blink which is not Utilized */
         case 0x1a:
             dev->gpio_regs[addr] = val & 6;
-        break;
+            break;
 
         case 0x1b:
             dev->gpio_regs[addr] = val & 0x1a;
-        break;
+            break;
 
         /* GPIO Signal Inverter */
         case 0x2d:
             dev->gpio_regs[addr] = val & 0x39;
-        break;
+            break;
     }
 }
-
 
 static uint8_t
 intel_ich2_gpio_read(uint16_t addr, void *priv)
@@ -104,7 +109,7 @@ intel_ich2_gpio_read(uint16_t addr, void *priv)
 
     intel_ich2_gpio_log("Intel ICH2 GPIO: Reading 0x%02x from Register 0x%02x\n", dev->gpio_regs[addr], addr);
 
-    if(addr <= 0x2f)
+    if (addr <= 0x2f)
         return dev->gpio_regs[addr];
     else
         return 0xff;
@@ -113,12 +118,12 @@ intel_ich2_gpio_read(uint16_t addr, void *priv)
 void
 intel_ich2_gpio_base(int enable, uint16_t addr, intel_ich2_gpio_t *dev)
 {
-    if(dev->gpio_addr != 0)
+    if (dev->gpio_addr != 0)
         io_removehandler(dev->gpio_addr, 15, intel_ich2_gpio_read, NULL, NULL, intel_ich2_gpio_write, NULL, NULL, dev);
 
     dev->gpio_addr = addr;
 
-    if((addr != 0) && enable)
+    if ((addr != 0) && enable)
         io_sethandler(addr, 15, intel_ich2_gpio_read, NULL, NULL, intel_ich2_gpio_write, NULL, NULL, dev);
 }
 
@@ -126,7 +131,7 @@ static void
 intel_ich2_gpio_reset(void *priv)
 {
     intel_ich2_gpio_t *dev = (intel_ich2_gpio_t *) priv;
-    dev->gpio_addr = 0;
+    dev->gpio_addr         = 0;
 
     /* Enabled GPIO's */
     dev->gpio_regs[0x00] = 0x80;
@@ -144,7 +149,6 @@ intel_ich2_gpio_reset(void *priv)
     dev->gpio_regs[0x17] = 0x06;
 }
 
-
 static void
 intel_ich2_gpio_close(void *priv)
 {
@@ -152,7 +156,6 @@ intel_ich2_gpio_close(void *priv)
 
     free(dev);
 }
-
 
 static void *
 intel_ich2_gpio_init(const device_t *info)
@@ -166,15 +169,15 @@ intel_ich2_gpio_init(const device_t *info)
 }
 
 const device_t intel_ich2_gpio_device = {
-    .name = "Intel ICH2 GPIO",
+    .name          = "Intel ICH2 GPIO",
     .internal_name = "intel_ich2_gpio",
-    .flags = 0,
-    .local = 0,
-    .init = intel_ich2_gpio_init,
-    .close = intel_ich2_gpio_close,
-    .reset = intel_ich2_gpio_reset,
+    .flags         = 0,
+    .local         = 0,
+    .init          = intel_ich2_gpio_init,
+    .close         = intel_ich2_gpio_close,
+    .reset         = intel_ich2_gpio_reset,
     { .available = NULL },
     .speed_changed = NULL,
-    .force_redraw = NULL,
-    .config = NULL
+    .force_redraw  = NULL,
+    .config        = NULL
 };

@@ -1806,12 +1806,12 @@ config_load(void)
         cpu_f = (cpu_family_t *) &cpu_families[0];
         cpu   = 0;
 
-	kbd_req_capture = 0;
-	hide_status_bar = 0;
-	hide_tool_bar = 0;
-	scale = 1;
-	machine = machine_get_machine_from_internal_name("ibmpc");
-	dpi_scale = 1;
+        kbd_req_capture = 0;
+        hide_status_bar = 0;
+        hide_tool_bar   = 0;
+        scale           = 1;
+        machine         = machine_get_machine_from_internal_name("ibmpc");
+        dpi_scale       = 1;
 
         fpu_type               = fpu_get_type(cpu_f, cpu, "none");
         gfxcard                = video_get_video_from_internal_name("cga");
@@ -2108,9 +2108,9 @@ save_machine(void)
         ini_section_delete_var(cat, "cpu_override");
 
     if (bochs_timing)
-	ini_section_set_int(cat, "bochs_timing", bochs_timing);
+        ini_section_set_int(cat, "bochs_timing", bochs_timing);
     else
-	ini_section_delete_var(cat, "bochs_timing");
+        ini_section_delete_var(cat, "bochs_timing");
 
     /* Forwards compatibility with the previous CPU model system. */
     ini_section_delete_var(cat, "cpu_manufacturer");

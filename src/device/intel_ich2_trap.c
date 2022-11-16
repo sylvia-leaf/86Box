@@ -1,9 +1,18 @@
 /*
- * Intel ICH2 Trap Handler
+ * 86Box    A hypervisor and IBM PC system emulator that specializes in
+ *          running old operating systems and software designed for IBM
+ *          PC systems and compatibles from 1981 through fairly recent
+ *          system designs based on the PCI bus.
  *
- * Authors:	Tiseno100,
+ *          This file is part of the 86Box distribution.
  *
- * Copyright 2022 Tiseno100.
+ *          Intel ICH2 Trap Handler
+ *
+ *
+ *
+ * Authors: Tiseno100,
+ *
+ *          Copyright 2022 Tiseno100.
  */
 
 #include <stdarg.h>
@@ -33,13 +42,13 @@ intel_ich2_trap_log(const char *fmt, ...)
     va_list ap;
 
     if (intel_ich2_trap_do_log) {
-	va_start(ap, fmt);
-	pclog_ex(fmt, ap);
-	va_end(ap);
+        va_start(ap, fmt);
+        pclog_ex(fmt, ap);
+        va_end(ap);
     }
 }
 #else
-#define intel_ich2_trap_log(fmt, ...)
+#    define intel_ich2_trap_log(fmt, ...)
 #endif
 
 void
@@ -59,17 +68,16 @@ intel_ich2_trap_kick(int size, uint16_t addr, uint8_t write, uint8_t val, void *
 void
 intel_ich2_device_trap_setup(int enable, uint8_t acpi_reg, uint8_t acpi_reg_val, uint16_t addr, uint16_t size, int is_hdd, intel_ich2_trap_t *trap)
 {
-uint8_t acpi_trap_recieve = ((acpi_reg == 0x49) ? (trap->acpi->regs.devtrap_en >> 8) : (trap->acpi->regs.devtrap_en)) & 0xff; // Check if the decoded range is enabled on ACPI
-int acpi_enable = !!(acpi_trap_recieve & acpi_reg_val);
-int trap_enabled = acpi_enable && enable;
+    uint8_t acpi_trap_recieve = ((acpi_reg == 0x49) ? (trap->acpi->regs.devtrap_en >> 8) : (trap->acpi->regs.devtrap_en)) & 0xff; // Check if the decoded range is enabled on ACPI
+    int     acpi_enable       = !!(acpi_trap_recieve & acpi_reg_val);
+    int     trap_enabled      = acpi_enable && enable;
 
-if(trap_enabled)
-{
-    intel_ich2_trap_log("Intel ICH2 Trap: An I/O has been enabled on range 0x%x\n", addr);
-    io_trap_add(intel_ich2_trap_kick, trap->trap);
-}
+    if (trap_enabled) {
+        intel_ich2_trap_log("Intel ICH2 Trap: An I/O has been enabled on range 0x%x\n", addr);
+        io_trap_add(intel_ich2_trap_kick, trap->trap);
+    }
 
-io_trap_remap(trap->trap, trap_enabled, addr, size);
+    io_trap_remap(trap->trap, trap_enabled, addr, size);
 }
 
 static void
@@ -93,15 +101,15 @@ intel_ich2_trap_init(const device_t *info)
 }
 
 const device_t intel_ich2_trap_device = {
-    .name = "Intel ICH2 Trap Hander",
+    .name          = "Intel ICH2 Trap Hander",
     .internal_name = "intel_ich2_trap",
-    .flags = 0,
-    .local = 0,
-    .init = intel_ich2_trap_init,
-    .close = intel_ich2_trap_close,
-    .reset = NULL,
+    .flags         = 0,
+    .local         = 0,
+    .init          = intel_ich2_trap_init,
+    .close         = intel_ich2_trap_close,
+    .reset         = NULL,
     { .available = NULL },
     .speed_changed = NULL,
-    .force_redraw = NULL,
-    .config = NULL
+    .force_redraw  = NULL,
+    .config        = NULL
 };

@@ -95,19 +95,19 @@
 #define MACHINE_AV            (MACHINE_VIDEO | MACHINE_SOUND)    /* sys has video and sound */
 #define MACHINE_AG            (MACHINE_SOUND | MACHINE_GAMEPORT) /* sys has sound and game port */
 /* Feature flags for internal storage controllers. */
-#define MACHINE_HDC           0x03FE0000    /* sys has int HDC */
-#define MACHINE_MFM           0x00020000    /* sys has int MFM/RLL */
-#define MACHINE_XTA           0x00040000    /* sys has int XTA */
-#define MACHINE_ESDI          0x00080000    /* sys has int ESDI */
-#define MACHINE_IDE_PRI       0x00100000    /* sys has int pri IDE/ATAPI */
-#define MACHINE_IDE_SEC       0x00200000    /* sys has int sec IDE/ATAPI */
-#define MACHINE_IDE_TER       0x00400000    /* sys has int ter IDE/ATAPI */
-#define MACHINE_IDE_QUA       0x00800000    /* sys has int qua IDE/ATAPI */
-#define MACHINE_SCSI_PRI      0x01000000    /* sys has int pri SCSI */
-#define MACHINE_SCSI_SEC      0x02000000    /* sys has int sec SCSI */
-#define MACHINE_USB_PRI       0x04000000    /* sys has int pri USB */
-#define MACHINE_USB_SEC       0x08000000    /* sys has int sec USB */
-#define MACHINE_COREBOOT      0x10000000    /* sys has coreboot BIOS */
+#define MACHINE_HDC      0x03FE0000 /* sys has int HDC */
+#define MACHINE_MFM      0x00020000 /* sys has int MFM/RLL */
+#define MACHINE_XTA      0x00040000 /* sys has int XTA */
+#define MACHINE_ESDI     0x00080000 /* sys has int ESDI */
+#define MACHINE_IDE_PRI  0x00100000 /* sys has int pri IDE/ATAPI */
+#define MACHINE_IDE_SEC  0x00200000 /* sys has int sec IDE/ATAPI */
+#define MACHINE_IDE_TER  0x00400000 /* sys has int ter IDE/ATAPI */
+#define MACHINE_IDE_QUA  0x00800000 /* sys has int qua IDE/ATAPI */
+#define MACHINE_SCSI_PRI 0x01000000 /* sys has int pri SCSI */
+#define MACHINE_SCSI_SEC 0x02000000 /* sys has int sec SCSI */
+#define MACHINE_USB_PRI  0x04000000 /* sys has int pri USB */
+#define MACHINE_USB_SEC  0x08000000 /* sys has int sec USB */
+#define MACHINE_COREBOOT 0x10000000 /* sys has coreboot BIOS */
 /* Combined flags. */
 #define MACHINE_IDE        (MACHINE_IDE_PRI)                   /* sys has int single IDE/ATAPI - mark as pri IDE/ATAPI */
 #define MACHINE_IDE_DUAL   (MACHINE_IDE_PRI | MACHINE_IDE_SEC) /* sys has int dual IDE/ATAPI - mark as both pri and sec IDE/ATAPI */
@@ -388,9 +388,9 @@ extern int machine_at_px286_init(const machine_t *);
 extern int machine_at_quadt286_init(const machine_t *);
 extern int machine_at_mr286_init(const machine_t *);
 
-extern int	machine_at_neat_init(const machine_t *);
-extern int	machine_at_neat_ami_init(const machine_t *);
-extern int	machine_at_ataripc4_init(const machine_t *);
+extern int machine_at_neat_init(const machine_t *);
+extern int machine_at_neat_ami_init(const machine_t *);
+extern int machine_at_ataripc4_init(const machine_t *);
 
 extern int machine_at_quadt386sx_init(const machine_t *);
 
@@ -668,19 +668,19 @@ extern int machine_at_spitfire_init(const machine_t *);
 
 extern int machine_at_p6i440e2_init(const machine_t *);
 
-extern int	machine_at_p2bls_init(const machine_t *);
-extern int	machine_at_p3bf_init(const machine_t *);
-extern int	machine_at_p2bls_coreboot_init(const machine_t *);
-extern int	machine_at_p3bf_coreboot_init(const machine_t *);
-extern int	machine_at_bf6_init(const machine_t *);
-extern int	machine_at_ax6bc_init(const machine_t *);
-extern int	machine_at_atc6310bxii_init(const machine_t *);
-extern int	machine_at_686bx_init(const machine_t *);
-extern int	machine_at_s1846_init(const machine_t *);
-extern int	machine_at_p6sba_init(const machine_t *);
-extern int	machine_at_ficka6130_init(const machine_t *);
-extern int	machine_at_p3v133_init(const machine_t *);
-extern int	machine_at_p3v4x_init(const machine_t *);
+extern int machine_at_p2bls_init(const machine_t *);
+extern int machine_at_p2bls_coreboot_init(const machine_t *);
+extern int machine_at_p3bf_init(const machine_t *);
+extern int machine_at_p3bf_coreboot_init(const machine_t *);
+extern int machine_at_bf6_init(const machine_t *);
+extern int machine_at_ax6bc_init(const machine_t *);
+extern int machine_at_atc6310bxii_init(const machine_t *);
+extern int machine_at_686bx_init(const machine_t *);
+extern int machine_at_s1846_init(const machine_t *);
+extern int machine_at_p6sba_init(const machine_t *);
+extern int machine_at_ficka6130_init(const machine_t *);
+extern int machine_at_p3v133_init(const machine_t *);
+extern int machine_at_p3v4x_init(const machine_t *);
 
 extern int machine_at_vei8_init(const machine_t *);
 
@@ -695,20 +695,20 @@ extern int machine_at_fw6400gx_init(const machine_t *);
 /* m_at_socket370.c */
 extern int machine_at_s370slm_init(const machine_t *);
 
-extern int	machine_at_cubx_init(const machine_t *);
-extern int	machine_at_atc7020bxii_init(const machine_t *);
-extern int	machine_at_ambx133_init(const machine_t *);
-extern int	machine_at_awo671r_init(const machine_t *);
-extern int	machine_at_63a1_init(const machine_t *);
-extern int	machine_at_s370sba_init(const machine_t *);
-extern int	machine_at_apas3_init(const machine_t *);
-extern int	machine_at_gt694va_init(const machine_t *);
-extern int	machine_at_cuv4xls_init(const machine_t *);
-extern int	machine_at_6via90ap_init(const machine_t *);
-extern int	machine_at_s1857_init(const machine_t *);
-extern int	machine_at_p6bap_init(const machine_t *);
-extern int	machine_at_m6tsl_init(const machine_t *);
-extern int	machine_at_s2080_init(const machine_t *);
+extern int machine_at_cubx_init(const machine_t *);
+extern int machine_at_atc7020bxii_init(const machine_t *);
+extern int machine_at_ambx133_init(const machine_t *);
+extern int machine_at_awo671r_init(const machine_t *);
+extern int machine_at_63a1_init(const machine_t *);
+extern int machine_at_s370sba_init(const machine_t *);
+extern int machine_at_apas3_init(const machine_t *);
+extern int machine_at_gt694va_init(const machine_t *);
+extern int machine_at_cuv4xls_init(const machine_t *);
+extern int machine_at_6via90ap_init(const machine_t *);
+extern int machine_at_s1857_init(const machine_t *);
+extern int machine_at_p6bap_init(const machine_t *);
+extern int machine_at_m6tsl_init(const machine_t *);
+extern int machine_at_s2080_init(const machine_t *);
 
 /* m_at_misc.c */
 extern int machine_at_vpc2007_init(const machine_t *);
@@ -773,27 +773,27 @@ extern int machine_genxt_init(const machine_t *);
 
 extern int machine_xt86_init(const machine_t *);
 
-extern int	machine_xt_americxt_init(const machine_t *);
-extern int	machine_xt_amixt_init(const machine_t *);
-extern int	machine_xt_ataripc3_init(const machine_t *);
-extern int	machine_xt_dtk_init(const machine_t *);
-extern int	machine_xt_jukopc_init(const machine_t *);
-extern int	machine_xt_openxt_init(const machine_t *);
-extern int	machine_xt_pcxt_init(const machine_t *);
-extern int	machine_xt_pxxt_init(const machine_t *);
-extern int	machine_xt_pc4i_init(const machine_t *);
-extern int	machine_xt_mpc1600_init(const machine_t *);
-extern int	machine_xt_pcspirit_init(const machine_t *);
-extern int	machine_xt_pc700_init(const machine_t *);
-extern int	machine_xt_pc500_init(const machine_t *);
-extern int	machine_xt_vendex_init(const machine_t *);
-extern int	machine_xt_znic_init(const machine_t *);
-extern int	machine_xt_super16t_init(const machine_t *);
-extern int	machine_xt_super16te_init(const machine_t *);
-extern int	machine_xt_top88_init(const machine_t *);
-extern int	machine_xt_kaypropc_init(const machine_t *);
-extern int	machine_xt_sansx16_init(const machine_t *);
-extern int	machine_xt_bw230_init(const machine_t *);
+extern int machine_xt_americxt_init(const machine_t *);
+extern int machine_xt_amixt_init(const machine_t *);
+extern int machine_xt_ataripc3_init(const machine_t *);
+extern int machine_xt_dtk_init(const machine_t *);
+extern int machine_xt_jukopc_init(const machine_t *);
+extern int machine_xt_openxt_init(const machine_t *);
+extern int machine_xt_pcxt_init(const machine_t *);
+extern int machine_xt_pxxt_init(const machine_t *);
+extern int machine_xt_pc4i_init(const machine_t *);
+extern int machine_xt_mpc1600_init(const machine_t *);
+extern int machine_xt_pcspirit_init(const machine_t *);
+extern int machine_xt_pc700_init(const machine_t *);
+extern int machine_xt_pc500_init(const machine_t *);
+extern int machine_xt_vendex_init(const machine_t *);
+extern int machine_xt_znic_init(const machine_t *);
+extern int machine_xt_super16t_init(const machine_t *);
+extern int machine_xt_super16te_init(const machine_t *);
+extern int machine_xt_top88_init(const machine_t *);
+extern int machine_xt_kaypropc_init(const machine_t *);
+extern int machine_xt_sansx16_init(const machine_t *);
+extern int machine_xt_bw230_init(const machine_t *);
 extern int machine_xt_pb8810_init(const machine_t *);
 
 extern int machine_xt_v20xt_init(const machine_t *);

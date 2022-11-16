@@ -420,9 +420,9 @@ extern void mmu_invalidate(uint32_t addr);
 extern void mem_a20_init(void);
 extern void mem_a20_recalc(void);
 
-extern void	mem_add_mtrr(uint64_t base, uint64_t mask, uint8_t type);
-extern void	mem_del_mtrr(uint64_t base, uint64_t mask);
-extern void	mem_invalidate_mtrr(uint8_t wb);
+extern void mem_add_mtrr(uint64_t base, uint64_t mask, uint8_t type);
+extern void mem_del_mtrr(uint64_t base, uint64_t mask);
+extern void mem_invalidate_mtrr(uint8_t wb);
 
 extern void mem_init(void);
 extern void mem_close(void);

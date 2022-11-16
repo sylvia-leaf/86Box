@@ -19,8 +19,8 @@
 #define LSTR(s) _LSTR(s)
 
 /* Version info. */
-#define EMU_NAME	"PCBox"
-#define EMU_NAME_W	LSTR(EMU_NAME)
+#define EMU_NAME    "PCBox"
+#define EMU_NAME_W  LSTR(EMU_NAME)
 
 #define EMU_VERSION       "3.8"
 #define EMU_VERSION_W     LSTR(EMU_VERSION)
@@ -37,9 +37,9 @@
 #define COPYRIGHT_YEAR "2022"
 
 /* Web URL info. */
-#define EMU_SITE	"pcbox.github.io"
-#define EMU_SITE_W	LSTR(EMU_SITE)
-#define EMU_ROMS_URL	"https://github.com/PCBox/roms/releases/latest"
-#define EMU_ROMS_URL_W	LSTR(EMU_ROMS_URL)
-#define EMU_DOCS_URL	"https://86box.readthedocs.io"
-#define EMU_DOCS_URL_W	LSTR(EMU_DOCS_URL)
+#define EMU_SITE       "pcbox.github.io"
+#define EMU_SITE_W     LSTR(EMU_SITE)
+#define EMU_ROMS_URL   "https://github.com/PCBox/roms/releases/latest"
+#define EMU_ROMS_URL_W LSTR(EMU_ROMS_URL)
+#define EMU_DOCS_URL  "https://86box.readthedocs.io"
+#define EMU_DOCS_URL_W LSTR(EMU_DOCS_URL)
