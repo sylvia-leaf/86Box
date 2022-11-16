@@ -78,8 +78,6 @@ jobs:
             ${{ matrix.environment.prefix }}-libvncserver
             ${{ matrix.environment.prefix }}-openal
             ${{ matrix.environment.prefix }}-rtmidi
-            ${{ matrix.environment.prefix }}-glib2
-            ${{ matrix.environment.prefix }}-libiconv
       - uses: actions/checkout@v3
       - name: Configure CMake
         run: >-

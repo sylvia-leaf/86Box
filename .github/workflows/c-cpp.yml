@@ -66,8 +66,6 @@ jobs:
           ${{ matrix.environment.prefix }}-libpng
           ${{ matrix.environment.prefix }}-libvncserver
           ${{ matrix.environment.prefix }}-rtmidi
-          ${{ matrix.environment.prefix }}-glib2
-          ${{ matrix.environment.prefix }}-libiconv
     - uses: actions/checkout@v3
     - name: make
       run: make -fwin/makefile.mingw -j DEV_BUILD=${{ matrix.build.dev }} DEBUG=${{ matrix.build.debug }} NEW_DYNAREC=${{ matrix.dynarec.new }} X64=${{ matrix.environment.x64 }} VNC=n
