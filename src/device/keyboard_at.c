@@ -1130,10 +1130,10 @@ write_output(atkbd_t *dev, uint8_t val)
             } else {
                 softresetx86(); /*Pulse reset!*/
                 cpu_set_edx();
+                flushmmucache();
+                if (kbc_ven == KBC_VEN_ALI)
+                    smbase = 0x00030000;
             }
-            flushmmucache();
-            if (kbc_ven == KBC_VEN_ALI)
-                smbase = 0x00030000;
         }
     }
 

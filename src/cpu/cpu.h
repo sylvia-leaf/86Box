@@ -198,17 +198,11 @@ typedef struct {
 #define CR4_PVI  (1 << 1)
 #define CR4_PSE  (1 << 4)
 #define CR4_PAE  (1 << 5)
+#define CR4_PGE (1 << 7)
 
 #define CPL      ((cpu_state.seg_cs.access >> 5) & 3)
 
-#define WP_FLAG		0x10000			/* in CR0 */
-#define CR4_VME		(1 << 0)
-#define CR4_PVI		(1 << 1)
-#define CR4_PSE		(1 << 4)
-#define CR4_PAE		(1 << 5)
-#define CR4_PGE     (1 << 7)
-
-#define IOPL ((cpu_state.flags>>12)&3)
+#define IOPL     ((cpu_state.flags >> 12) & 3)
 
 #define IOPLp    ((!(msw & 1)) || (CPL <= IOPL))
 
@@ -244,14 +238,14 @@ typedef union {
 
 typedef union {
     uint64_t q[2];
-    int64_t sq[2];
+    int64_t  sq[2];
     uint32_t l[4];
-    int32_t	sl[4];
+    int32_t  sl[4];
     uint16_t w[8];
-    int16_t	sw[8];
-    uint8_t	b[16];
-    int8_t  sb[16];
-    float	 f[4];
+    int16_t  sw[8];
+    uint8_t  b[16];
+    int8_t   sb[16];
+    float    f[4];
     double   d[2];
 } SSE_REG;
 
@@ -425,8 +419,7 @@ typedef struct {
 
 extern int sse_xmm;
 
-#define smbase		cpu_state._smbase
-
+#define smbase   cpu_state._smbase
 
 /*The cpu_state.flags below must match in both cpu_cur_status and block->status for a block
   to be valid*/
@@ -493,16 +486,9 @@ COMPILE_TIME_ASSERT(sizeof(cpu_state_t) <= 128)
 #    define fpu_cycles cpu_state._fpu_cycles
 #endif
 
-#define cpu_rm	cpu_state.rm_data.rm_mod_reg.rm
-#define cpu_mod	cpu_state.rm_data.rm_mod_reg.mod
-#define cpu_reg	cpu_state.rm_data.rm_mod_reg.reg
-
-#define CR4_TSD  (1 << 2)
-#define CR4_DE   (1 << 3)
-#define CR4_MCE  (1 << 6)
-#define CR4_PGE  (1 << 7)
-#define CR4_PCE  (1 << 8)
-#define CR4_OSFXSR  (1 << 9)
+#define cpu_rm     cpu_state.rm_data.rm_mod_reg.rm
+#define cpu_mod    cpu_state.rm_data.rm_mod_reg.mod
+#define cpu_reg    cpu_state.rm_data.rm_mod_reg.reg
 
 #define CR4_TSD    (1 << 2)
 #define CR4_DE     (1 << 3)
@@ -515,10 +501,10 @@ extern cpu_state_t cpu_state;
 
 extern const cpu_family_t         cpu_families[];
 extern const cpu_legacy_machine_t cpu_legacy_table[];
-extern cpu_family_t *cpu_f;
-extern CPU	*cpu_s;
-extern int	cpu_override;
-extern int  bochs_timing;
+extern cpu_family_t              *cpu_f;
+extern CPU                       *cpu_s;
+extern int                        cpu_override;
+extern int                        bochs_timing;
 
 extern int    cpu_isintel;
 extern int    cpu_iscyrix;
@@ -530,26 +516,25 @@ extern double fpu_multi;
 extern int    cpu_cyrix_alignment; /*Cyrix 5x86/6x86 only has data misalignment
                                      penalties when crossing 8-byte boundaries*/
 
-extern int	is8086,	is286, is386, is6117, is486;
-extern int	is_am486, is_am486dxl, is_pentium, is_k5, is_k6, is_p6, is_cxsmm, is_pentium3;
-extern int	hascache;
-extern int	isibm486;
+extern int is8086, is186, is286, is386, is6117, is486;
+extern int is_am486, is_am486dxl, is_pentium, is_k5, is_k6, is_p6, is_cxsmm, is_pentium3;
+extern int hascache;
+extern int isibm486;
 extern int is_nec;
-extern int is186;
-extern int	is_rapidcad;
-extern int	hasfpu;
-#define CPU_FEATURE_RDTSC (1 << 0)
-#define CPU_FEATURE_MSR   (1 << 1)
-#define CPU_FEATURE_MMX   (1 << 2)
-#define CPU_FEATURE_CR4   (1 << 3)
-#define CPU_FEATURE_VME   (1 << 4)
-#define CPU_FEATURE_CX8   (1 << 5)
-#define CPU_FEATURE_3DNOW (1 << 6)
-#define CPU_FEATURE_SSE   (1 << 7)
-#define CPU_FEATURE_PGE   (1 << 8)
-#define CPU_FEATURE_SSE2  (1 << 9)
-#define CPU_FEATURE_SYSCALL (1 << 10)
-#define CPU_FEATURE_3DNOWE  (1 << 11)
+extern int is_rapidcad;
+extern int hasfpu;
+#define CPU_FEATURE_RDTSC   (1 << 0)
+#define CPU_FEATURE_MSR     (1 << 1)
+#define CPU_FEATURE_MMX     (1 << 2)
+#define CPU_FEATURE_CR4     (1 << 3)
+#define CPU_FEATURE_VME     (1 << 4)
+#define CPU_FEATURE_CX8     (1 << 5)
+#define CPU_FEATURE_3DNOW   (1 << 6)
+#define CPU_FEATURE_SYSCALL (1 << 7)
+#define CPU_FEATURE_3DNOWE  (1 << 8)
+#define CPU_FEATURE_SSE     (1 << 9)
+#define CPU_FEATURE_PGE     (1 << 10)
+#define CPU_FEATURE_SSE2    (1 << 11)
 
 extern uint32_t cpu_features;
 
@@ -574,13 +559,13 @@ extern uint32_t oldds, oldss, olddslimit, oldsslimit, olddslimitw, oldsslimitw;
 extern uint32_t pccache;
 extern uint8_t *pccache2;
 
-extern double		bus_timing, isa_timing, pci_timing, agp_timing;
-extern uint64_t		pmc[2];
-extern uint16_t		temp_seg_data[4];
-extern uint16_t		cs_msr;
-extern uint32_t		esp_msr;
-extern uint32_t		eip_msr;
-extern SSE_REG XMM[8];
+extern double   bus_timing, isa_timing, pci_timing, agp_timing;
+extern uint64_t pmc[2];
+extern uint16_t temp_seg_data[4];
+extern uint16_t cs_msr;
+extern uint32_t esp_msr;
+extern uint32_t eip_msr;
+extern SSE_REG  XMM[8];
 extern uint32_t mxcsr;
 
 /* For the AMD K6. */
@@ -672,10 +657,10 @@ extern void cpu_set_pci_speed(int speed);
 extern void cpu_set_isa_pci_div(int div);
 extern void cpu_set_agp_speed(int speed);
 
-extern void	cpu_CPUID(void);
-extern void	cpu_RDMSR(void);
-extern void	cpu_WRMSR(void);
-extern void	cpu_INVD(uint8_t wb);
+extern void cpu_CPUID(void);
+extern void cpu_RDMSR(void);
+extern void cpu_WRMSR(void);
+extern void cpu_INVD(uint8_t wb);
 
 extern int  checkio(uint32_t port);
 extern void codegen_block_end(void);

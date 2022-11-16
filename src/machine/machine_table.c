@@ -487,7 +487,9 @@ const machine_t machines[] = {
         .kbc_p1 = 0xff00,
         .gpio = 0xffffffff,
         .device = NULL,
-        .vid_device = NULL
+        .vid_device = NULL,
+        .snd_device = NULL,
+        .net_device = NULL
     },
     {
         .name = "[8088] Bondwell BW230",
@@ -10864,7 +10866,9 @@ const machine_t machines[] = {
         .kbc_p1 = 0,
         .gpio = 0,
         .device = NULL,
-        .vid_device = NULL
+        .vid_device = NULL,
+        .snd_device = NULL,
+        .net_device = NULL
     },
     /* Has a Winbond W83977EF Super I/O chip with on-chip KBC with AMIKey-2 KBC
        firmware. */
@@ -10936,7 +10940,9 @@ const machine_t machines[] = {
         .kbc_p1 = 0,
         .gpio = 0,
         .device = NULL,
-        .vid_device = NULL
+        .vid_device = NULL,
+        .snd_device = NULL,
+        .net_device = NULL
     },
     /* Has a Winbond W83977EF Super I/O chip with on-chip KBC with AMIKey-2 KBC
        firmware. */
@@ -12064,7 +12070,9 @@ const machine_t machines[] = {
         .kbc_p1 = 0,
         .gpio = 0,
         .device = NULL,
-        .vid_device = NULL
+        .vid_device = NULL,
+        .snd_device = NULL,
+        .net_device = NULL
     },
     {
         .name = "[Intel i815EP] Tyan Tomcat i815T",
@@ -12098,7 +12106,9 @@ const machine_t machines[] = {
         .kbc_p1 = 0,
         .gpio = 0,
         .device = NULL,
-        .vid_device = NULL
+        .vid_device = NULL,
+        .snd_device = NULL,
+        .net_device = NULL
     },
 
     {

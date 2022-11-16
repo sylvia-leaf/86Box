@@ -1,6 +1,7 @@
 static int opPUNPCKLDQ_a16(uint32_t fetchdat)
 {
         if((cpu_features & CPU_FEATURE_SSE2) && sse_xmm) return opPUNPCKLDQ_xmm_a16(fetchdat);
+
         MMX_ENTER();
 
         fetch_ea_16(fetchdat);
@@ -49,6 +50,7 @@ static int opPUNPCKLDQ_a32(uint32_t fetchdat)
 static int opPUNPCKHDQ_a16(uint32_t fetchdat)
 {
         if((cpu_features & CPU_FEATURE_SSE2) && sse_xmm) return opPUNPCKHDQ_xmm_a16(fetchdat);
+
         MMX_REG src;
         MMX_ENTER();
 
@@ -63,6 +65,7 @@ static int opPUNPCKHDQ_a16(uint32_t fetchdat)
 static int opPUNPCKHDQ_a32(uint32_t fetchdat)
 {
         if((cpu_features & CPU_FEATURE_SSE2) && sse_xmm) return opPUNPCKHDQ_xmm_a32(fetchdat);
+
         MMX_REG src;
         MMX_ENTER();
 
@@ -78,6 +81,7 @@ static int opPUNPCKHDQ_a32(uint32_t fetchdat)
 static int opPUNPCKLBW_a16(uint32_t fetchdat)
 {
         if((cpu_features & CPU_FEATURE_SSE2) && sse_xmm) return opPUNPCKLBW_xmm_a16(fetchdat);
+
         MMX_REG src;
         MMX_ENTER();
 
@@ -98,6 +102,7 @@ static int opPUNPCKLBW_a16(uint32_t fetchdat)
 static int opPUNPCKLBW_a32(uint32_t fetchdat)
 {
         if((cpu_features & CPU_FEATURE_SSE2) && sse_xmm) return opPUNPCKLBW_xmm_a32(fetchdat);
+
         MMX_REG src;
         MMX_ENTER();
 
@@ -119,6 +124,7 @@ static int opPUNPCKLBW_a32(uint32_t fetchdat)
 static int opPUNPCKHBW_a16(uint32_t fetchdat)
 {
         if((cpu_features & CPU_FEATURE_SSE2) && sse_xmm) return opPUNPCKHBW_xmm_a16(fetchdat);
+
         MMX_REG src;
         MMX_ENTER();
 
@@ -139,6 +145,7 @@ static int opPUNPCKHBW_a16(uint32_t fetchdat)
 static int opPUNPCKHBW_a32(uint32_t fetchdat)
 {
         if((cpu_features & CPU_FEATURE_SSE2) && sse_xmm) return opPUNPCKHBW_xmm_a32(fetchdat);
+
         MMX_REG src;
         MMX_ENTER();
 
@@ -212,6 +219,7 @@ static int opPUNPCKHWD_a16(uint32_t fetchdat)
 static int opPUNPCKHWD_a32(uint32_t fetchdat)
 {
         if((cpu_features & CPU_FEATURE_SSE2) && sse_xmm) return opPUNPCKHWD_xmm_a32(fetchdat);
+
         MMX_REG src;
         MMX_ENTER();
 
@@ -274,6 +282,7 @@ static int opPACKSSWB_a32(uint32_t fetchdat)
 static int opPACKUSWB_a16(uint32_t fetchdat)
 {
         if((cpu_features & CPU_FEATURE_SSE2) && sse_xmm) return opPACKUSWB_xmm_a16(fetchdat);
+
         MMX_REG src, dst;
         MMX_ENTER();
 
@@ -295,6 +304,7 @@ static int opPACKUSWB_a16(uint32_t fetchdat)
 static int opPACKUSWB_a32(uint32_t fetchdat)
 {
         if((cpu_features & CPU_FEATURE_SSE2) && sse_xmm) return opPACKUSWB_xmm_a32(fetchdat);
+
         MMX_REG src, dst;
         MMX_ENTER();
 
@@ -333,11 +343,10 @@ static int opPACKSSDW_a16(uint32_t fetchdat)
         return 0;
 }
 
-
 static int opPACKSSDW_a32(uint32_t fetchdat)
 {
         if((cpu_features & CPU_FEATURE_SSE2) && sse_xmm) return opPACKSSDW_xmm_a32(fetchdat);
-        
+
         MMX_REG src, dst;
         MMX_ENTER();
 

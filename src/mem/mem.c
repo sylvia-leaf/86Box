@@ -130,9 +130,11 @@ static mem_mapping_t *write_mapping_bus[MEM_MAPPINGS_NO];
 static uint8_t       *_mem_exec[MEM_MAPPINGS_NO];
 static uint8_t        ff_pccache[4] = { 0xff, 0xff, 0xff, 0xff };
 static mem_state_t    _mem_state[MEM_MAPPINGS_NO];
+
+static uint8_t *mtrr_areas[MEM_MAPPINGS_NO];
+static uint8_t  mtrr_area_refcounts[MEM_MAPPINGS_NO];
+
 static uint32_t       remap_start_addr, remap_start_addr2;
-static uint8_t       *mtrr_areas[MEM_MAPPINGS_NO];
-static uint8_t        mtrr_area_refcounts[MEM_MAPPINGS_NO];
 #if (!(defined __amd64__ || defined _M_X64 || defined __aarch64__ || defined _M_ARM64))
 static size_t ram_size = 0, ram2_size = 0;
 #else
@@ -1048,7 +1050,7 @@ writememwl(uint32_t addr, uint16_t val)
     page = (addr >> MEM_GRANULARITY_BITS);
     mtrr = mtrr_areas[page];
     if (mtrr) {
-        mtrr[addr & MEM_GRANULARITY_MASK] = val;
+        mtrr[addr & MEM_GRANULARITY_MASK]       = val;
         mtrr[(addr + 1) & MEM_GRANULARITY_MASK] = val >> 8;
         return;
     }
@@ -1168,7 +1170,7 @@ writememwl_no_mmut(uint32_t addr, uint32_t *a64, uint16_t val)
     page = (addr >> MEM_GRANULARITY_BITS);
     mtrr = mtrr_areas[page];
     if (mtrr) {
-        mtrr[addr & MEM_GRANULARITY_MASK] = val;
+        mtrr[addr & MEM_GRANULARITY_MASK]       = val;
         mtrr[(addr + 1) & MEM_GRANULARITY_MASK] = val >> 8;
         return;
     }
@@ -1271,8 +1273,8 @@ readmemll(uint32_t addr)
 void
 writememll(uint32_t addr, uint32_t val)
 {
-    uint32_t page;
-    uint8_t *mtrr;
+    uint32_t       page;
+    uint8_t       *mtrr;
     mem_mapping_t *map;
     int            i;
     uint64_t       a = 0x0000000000000000ULL;
@@ -1346,7 +1348,7 @@ writememll(uint32_t addr, uint32_t val)
     page = (addr >> MEM_GRANULARITY_BITS);
     mtrr = mtrr_areas[page];
     if (mtrr) {
-        mtrr[addr & MEM_GRANULARITY_MASK] = val;
+        mtrr[addr & MEM_GRANULARITY_MASK]       = val;
         mtrr[(addr + 1) & MEM_GRANULARITY_MASK] = val >> 8;
         mtrr[(addr + 2) & MEM_GRANULARITY_MASK] = val >> 16;
         mtrr[(addr + 3) & MEM_GRANULARITY_MASK] = val >> 24;
@@ -1378,8 +1380,8 @@ uint32_t
 readmemll_no_mmut(uint32_t addr, uint32_t *a64)
 {
     mem_mapping_t *map;
-    uint32_t page;
-    uint8_t *mtrr;
+    uint32_t       page;
+    uint8_t       *mtrr;
 
     GDBSTUB_MEM_ACCESS(addr, GDBSTUB_MEM_READ, 4);
 
@@ -1476,7 +1478,7 @@ writememll_no_mmut(uint32_t addr, uint32_t *a64, uint32_t val)
     page = (addr >> MEM_GRANULARITY_BITS);
     mtrr = mtrr_areas[page];
     if (mtrr) {
-        mtrr[addr & MEM_GRANULARITY_MASK] = val;
+        mtrr[addr & MEM_GRANULARITY_MASK]       = val;
         mtrr[(addr + 1) & MEM_GRANULARITY_MASK] = val >> 8;
         mtrr[(addr + 2) & MEM_GRANULARITY_MASK] = val >> 16;
         mtrr[(addr + 3) & MEM_GRANULARITY_MASK] = val >> 24;
@@ -1567,7 +1569,7 @@ readmemql(uint32_t addr)
     page = (addr >> MEM_GRANULARITY_BITS);
     mtrr = mtrr_areas[page];
     if (mtrr)
-        return readmemll(addr) | ((uint64_t)readmemll(addr+4)<<32);
+        return readmemll(addr) | ((uint64_t) readmemll(addr + 4) << 32);
 
     map = read_mapping[addr >> MEM_GRANULARITY_BITS];
     if (map && map->read_l)
@@ -1652,7 +1654,7 @@ writememql(uint32_t addr, uint64_t val)
     page = (addr >> MEM_GRANULARITY_BITS);
     mtrr = mtrr_areas[page];
     if (mtrr) {
-        mtrr[addr & MEM_GRANULARITY_MASK] = val;
+        mtrr[addr & MEM_GRANULARITY_MASK]       = val;
         mtrr[(addr + 1) & MEM_GRANULARITY_MASK] = val >> 8;
         mtrr[(addr + 2) & MEM_GRANULARITY_MASK] = val >> 16;
         mtrr[(addr + 3) & MEM_GRANULARITY_MASK] = val >> 24;
@@ -2937,7 +2939,7 @@ mem_init(void)
     writelookup2 = malloc((1 << 20) * sizeof(uintptr_t));
     writelookupp = malloc((1 << 20) * sizeof(uint8_t));
 
-    memset(mtrr_areas, 0x00, MEM_MAPPINGS_NO*sizeof(uint8_t *));
+    memset(mtrr_areas, 0x00, MEM_MAPPINGS_NO * sizeof(uint8_t *));
 }
 
 void
@@ -3148,7 +3150,6 @@ mem_add_mtrr(uint64_t base, uint64_t mask, uint8_t type)
         mtrr = malloc(MEM_GRANULARITY_SIZE);
         if (!mtrr)
             fatal("Failed to allocate page for MTRR page %08llx (errno=%d)\n", page_base, errno);
-
 
         /* populate area with data from RAM */
         for (addr = 0; addr < MEM_GRANULARITY_SIZE; addr++) {

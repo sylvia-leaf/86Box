@@ -101,7 +101,7 @@ acpi_get_overflow_period(acpi_t *dev)
 static void
 acpi_timer_overflow(void *priv)
 {
-    acpi_t *dev    = (acpi_t *) priv;
+    acpi_t *dev      = (acpi_t *) priv;
     dev->regs.pmsts |= TMROF_STS;
     acpi_update_irq(dev);
 }
@@ -1610,7 +1610,7 @@ acpi_update_io_mapping(acpi_t *dev, uint32_t base, int chipset_en)
             break;
         case VEN_INTEL_ICH2:
         case VEN_VIA_596B:
-            size = 0x080;
+            size = 0x0080;
             break;
     }
 
