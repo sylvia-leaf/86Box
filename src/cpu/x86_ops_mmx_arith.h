@@ -306,6 +306,7 @@ static int
 opPSUBUSW_a16(uint32_t fetchdat)
 {
         if((cpu_features & CPU_FEATURE_SSE2) && sse_xmm) return opPMULLW_xmm_a16(fetchdat);
+        MMX_REG src;
         MMX_ENTER();
 
     fetch_ea_16(fetchdat);
@@ -322,6 +323,7 @@ static int
 opPSUBUSW_a32(uint32_t fetchdat)
 {
         if((cpu_features & CPU_FEATURE_SSE2) && sse_xmm) return opPMULLW_xmm_a32(fetchdat);
+        MMX_REG src;
         MMX_ENTER();
 
     fetch_ea_32(fetchdat);
