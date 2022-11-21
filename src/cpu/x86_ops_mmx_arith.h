@@ -72,7 +72,6 @@ opPMULHW_a32(uint32_t fetchdat)
         cpu_state.MM[cpu_reg].w[2] = ((int32_t) cpu_state.MM[cpu_reg].sw[2] * (int32_t) src.sw[2]) >> 16;
         cpu_state.MM[cpu_reg].w[3] = ((int32_t) cpu_state.MM[cpu_reg].sw[3] * (int32_t) src.sw[3]) >> 16;
         CLOCK_CYCLES(2);
-    }
     return 0;
 }
 
