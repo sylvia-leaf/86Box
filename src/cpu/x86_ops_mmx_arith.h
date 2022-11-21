@@ -337,7 +337,6 @@ opPSUBUSW_a32(uint32_t fetchdat)
                 cpu_state.MM[cpu_reg].w[2] *= src.w[2];
                 cpu_state.MM[cpu_reg].w[3] *= src.w[3];
                 CLOCK_CYCLES(2);
-        }
         return 0;
 }
 
