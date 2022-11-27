@@ -176,6 +176,9 @@ typedef struct riva128_t
 
         uint32_t pattern_mono_color_rgb[2];
         uint32_t pattern_mono_color_a[2];
+        uint32_t pattern_shape;
+        uint32_t pattern_bitmap[2];
+
         uint32_t chroma;
         uint8_t rop;
 
@@ -1401,6 +1404,11 @@ uint32_t graphobj0, uint32_t graphobj1, uint32_t graphobj2, uint32_t graphobj3, 
                     riva128_pgraph_invalid_interrupt(0, riva128);
                     break;
                 }
+                case 0x308:
+                {
+                    riva128->pgraph.pattern_shape = param & 3;
+                    break;
+                }
                 case 0x310:
                 {
                     riva128_pgraph_color_t color = riva128_pgraph_expand_color(graphobj0, param, riva128);
@@ -1413,6 +1421,16 @@ uint32_t graphobj0, uint32_t graphobj1, uint32_t graphobj2, uint32_t graphobj3, 
                     riva128_pgraph_color_t color = riva128_pgraph_expand_color(graphobj0, param, riva128);
                     riva128->pgraph.pattern_mono_color_rgb[1] = (color.r << 20) | (color.g << 10) | color.b;
                     riva128->pgraph.pattern_mono_color_a[1] = color.a;
+                    break;
+                }
+                case 0x318:
+                {
+                    riva128->pgraph.pattern_bitmap[0] = param;
+                    break;
+                }
+                case 0x31c:
+                {
+                    riva128->pgraph.pattern_bitmap[1] = param;
                     break;
                 }
             }
@@ -1542,6 +1560,7 @@ uint32_t graphobj0, uint32_t graphobj1, uint32_t graphobj2, uint32_t graphobj3, 
                 case 0x310:
                 {
                     riva128->pgraph.itm_pitch = param & 0xffff;
+                    if(param == 0) riva128->pgraph.itm_pitch = 1;
                     break;
                 }
                 case 0x314:
