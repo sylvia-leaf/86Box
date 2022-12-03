@@ -60,6 +60,7 @@ typedef struct
 
 #ifdef ENABLE_NSC366_LOG
 int nsc366_do_log = ENABLE_NSC366_LOG;
+
 void
 nsc366_log(const char *fmt, ...)
 {

@@ -41,5 +41,5 @@
 #define EMU_SITE_W     LSTR(EMU_SITE)
 #define EMU_ROMS_URL   "https://github.com/PCBox/roms/releases/latest"
 #define EMU_ROMS_URL_W LSTR(EMU_ROMS_URL)
-#define EMU_DOCS_URL  "https://86box.readthedocs.io"
+# define EMU_DOCS_URL  "https://86box.readthedocs.io"
 #define EMU_DOCS_URL_W LSTR(EMU_DOCS_URL)
