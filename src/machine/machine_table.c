@@ -1268,7 +1268,7 @@ const machine_t machines[] = {
             .max_multi = 0
         },
         .bus_flags = MACHINE_PC,
-        MACHINE_FLAGS_NONE,
+        .flags = MACHINE_FLAGS_NONE,
         .ram = {
             .min = 256,
             .max = 640,
@@ -2995,6 +2995,42 @@ const machine_t machines[] = {
         },
         .bus_flags = MACHINE_AT,
         .flags = MACHINE_IDE,
+        .ram = {
+            .min = 512,
+            .max = 8192,
+            .step = 128
+        },
+        .nvrmask = 127,
+        .kbc = KBC_UNKNOWN,
+        .kbc_p1 = 0,
+        .gpio = 0,
+        .device = NULL,
+        .vid_device = NULL,
+        .snd_device = NULL,
+        .net_device = NULL
+    },
+    {
+        .name = "[NEAT] Atari PC 4",
+        .internal_name = "ataripc4",
+        .type = MACHINE_TYPE_286,
+        .chipset = MACHINE_CHIPSET_NEAT,
+        .init = machine_at_ataripc4_init,
+        .pad = 0,
+        .pad0 = 0,
+        .pad1 = MACHINE_AVAILABLE,
+        .pad2 = 0,
+        .cpu = {
+            .package = CPU_PKG_286,
+            .block = CPU_BLOCK_NONE,
+            .min_bus = 0,
+            .max_bus = 0,
+            .min_voltage = 0,
+            .max_voltage = 0,
+            .min_multi = 0,
+            .max_multi = 0
+        },
+        .bus_flags = MACHINE_AT,
+        .flags = MACHINE_FLAGS_NONE,
         .ram = {
             .min = 512,
             .max = 8192,
