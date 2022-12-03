@@ -2050,8 +2050,8 @@ const OpFn OP_TABLE(pentium2d_0f)[1024] = {
     // clang-format on
 };
 
-const OpFn OP_TABLE(pentium3_0f)[1024] =
-{
+const OpFn OP_TABLE(pentium3_0f)[1024] = {
+    // clang-format off
         /*16-bit data, 16-bit addr*/
 /*      00              01              02              03              04              05              06              07              08              09              0a              0b              0c              0d              0e              0f*/
 /*00*/  op0F00_a16,     op0F01_w_a16,   opLAR_w_a16,    opLSL_w_a16,    ILLEGAL,        ILLEGAL,        opCLTS,         ILLEGAL,        opINVD,         opWBINVD,       ILLEGAL,        ILLEGAL,        ILLEGAL,        opNOP,          ILLEGAL,        ILLEGAL,
@@ -2139,10 +2139,11 @@ const OpFn OP_TABLE(pentium3_0f)[1024] =
 /*d0*/  ILLEGAL,        opPSRLW_a32,    opPSRLD_a32,    opPSRLQ_a32,    ILLEGAL,        opPMULLW_a32,   ILLEGAL,        opPMOVMSKB_l_xmm_a32,        opPSUBUSB_a32,  opPSUBUSW_a32,  opPMINUB_a32,           opPAND_a32,     opPADDUSB_a32,  opPADDUSW_a32,  opPMAXUB_a32,           opPANDN_a32,
 /*e0*/  opPAVGB_a32,        opPSRAW_a32,    opPSRAD_a32,    opPAVGW_a32,        opPMULHUW_a32,        opPMULHW_a32,   ILLEGAL,        opMOVNTQ_q_mm_a32,        opPSUBSB_a32,   opPSUBSW_a32,   opPMINSW_a32,           opPOR_a32,      opPADDSB_a32,   opPADDSW_a32,   opPMAXSW_a32,           opPXOR_a32,
 /*f0*/  ILLEGAL,        opPSLLW_a32,    opPSLLD_a32,    opPSLLQ_a32,    ILLEGAL,        opPMADDWD_a32,  opPSADBW_a32,        ILLEGAL,        opPSUBB_a32,    opPSUBW_a32,    opPSUBD_a32,    ILLEGAL,        opPADDB_a32,    opPADDW_a32,    opPADDD_a32,    ILLEGAL,
+    // clang-format on
 };
 
-const OpFn OP_TABLE(pentium3_REPE_0f)[1024] =
-{
+const OpFn OP_TABLE(pentium3_REPE_0f)[1024] = {
+    // clang-format off
         /*16-bit data, 16-bit addr*/
 /*      00              01              02              03              04              05              06              07              08              09              0a              0b              0c              0d              0e              0f*/
 /*00*/  NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL,
@@ -2230,10 +2231,11 @@ const OpFn OP_TABLE(pentium3_REPE_0f)[1024] =
 /*d0*/  ILLEGAL,        opPSRLW_a32,    opPSRLD_a32,    opPSRLQ_a32,    ILLEGAL,        opPMULLW_a32,   ILLEGAL,        opPMOVMSKB_l_xmm_a32,        opPSUBUSB_a32,  opPSUBUSW_a32,  opPMINUB_a32,           opPAND_a32,     opPADDUSB_a32,  opPADDUSW_a32,  opPMAXUB_a32,           opPANDN_a32,
 /*e0*/  opPAVGB_a32,        opPSRAW_a32,    opPSRAD_a32,    opPAVGW_a32,        opPMULHUW_a32,        opPMULHW_a32,   ILLEGAL,        opMOVNTQ_q_mm_a32,        opPSUBSB_a32,   opPSUBSW_a32,   opPMINSW_a32,           opPOR_a32,      opPADDSB_a32,   opPADDSW_a32,   opPMAXSW_a32,           opPXOR_a32,
 /*f0*/  ILLEGAL,        opPSLLW_a32,    opPSLLD_a32,    opPSLLQ_a32,    ILLEGAL,        opPMADDWD_a32,  opPSADBW_a32,        ILLEGAL,        opPSUBB_a32,    opPSUBW_a32,    opPSUBD_a32,    ILLEGAL,        opPADDB_a32,    opPADDW_a32,    opPADDD_a32,    ILLEGAL,
+    // clang-format on
 };
 
-const OpFn OP_TABLE(nehemiah_0f)[1024] =
-{
+const OpFn OP_TABLE(nehemiah_0f)[1024] = {
+    // clang-format off
         /*16-bit data, 16-bit addr*/
 /*      00              01              02              03              04              05              06              07              08              09              0a              0b              0c              0d              0e              0f*/
 /*00*/  op0F00_a16,     op0F01_w_a16,   opLAR_w_a16,    opLSL_w_a16,    ILLEGAL,        ILLEGAL,        opCLTS,         ILLEGAL,        opINVD,         opWBINVD,       ILLEGAL,        ILLEGAL,        ILLEGAL,        opPREFETCH_a16, opFEMMS,        op3DNOW_a16,
@@ -2321,10 +2323,11 @@ const OpFn OP_TABLE(nehemiah_0f)[1024] =
 /*d0*/  ILLEGAL,        opPSRLW_a32,    opPSRLD_a32,    opPSRLQ_a32,    ILLEGAL,        opPMULLW_a32,   ILLEGAL,        opPMOVMSKB_l_xmm_a32,        opPSUBUSB_a32,  opPSUBUSW_a32,  opPMINUB_a32,           opPAND_a32,     opPADDUSB_a32,  opPADDUSW_a32,  opPMAXUB_a32,           opPANDN_a32,
 /*e0*/  opPAVGB_a32,        opPSRAW_a32,    opPSRAD_a32,    opPAVGW_a32,        opPMULHUW_a32,        opPMULHW_a32,   ILLEGAL,        opMOVNTQ_q_mm_a32,        opPSUBSB_a32,   opPSUBSW_a32,   opPMINSW_a32,           opPOR_a32,      opPADDSB_a32,   opPADDSW_a32,   opPMAXSW_a32,           opPXOR_a32,
 /*f0*/  ILLEGAL,        opPSLLW_a32,    opPSLLD_a32,    opPSLLQ_a32,    ILLEGAL,        opPMADDWD_a32,  opPSADBW_a32,        ILLEGAL,        opPSUBB_a32,    opPSUBW_a32,    opPSUBD_a32,    ILLEGAL,        opPADDB_a32,    opPADDW_a32,    opPADDD_a32,    ILLEGAL,
+    // clang-format on
 };
 
-const OpFn OP_TABLE(nehemiah_REPE_0f)[1024] =
-{
+const OpFn OP_TABLE(nehemiah_REPE_0f)[1024] = {
+    // clang-format off
         /*16-bit data, 16-bit addr*/
 /*      00              01              02              03              04              05              06              07              08              09              0a              0b              0c              0d              0e              0f*/
 /*00*/  NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL,
@@ -2412,10 +2415,11 @@ const OpFn OP_TABLE(nehemiah_REPE_0f)[1024] =
 /*d0*/  ILLEGAL,        opPSRLW_a32,    opPSRLD_a32,    opPSRLQ_a32,    ILLEGAL,        opPMULLW_a32,   ILLEGAL,        opPMOVMSKB_l_xmm_a32,        opPSUBUSB_a32,  opPSUBUSW_a32,  opPMINUB_a32,           opPAND_a32,     opPADDUSB_a32,  opPADDUSW_a32,  opPMAXUB_a32,           opPANDN_a32,
 /*e0*/  opPAVGB_a32,        opPSRAW_a32,    opPSRAD_a32,    opPAVGW_a32,        opPMULHUW_a32,        opPMULHW_a32,   ILLEGAL,        opMOVNTQ_q_mm_a32,        opPSUBSB_a32,   opPSUBSW_a32,   opPMINSW_a32,           opPOR_a32,      opPADDSB_a32,   opPADDSW_a32,   opPMAXSW_a32,           opPXOR_a32,
 /*f0*/  ILLEGAL,        opPSLLW_a32,    opPSLLD_a32,    opPSLLQ_a32,    ILLEGAL,        opPMADDWD_a32,  opPSADBW_a32,        ILLEGAL,        opPSUBB_a32,    opPSUBW_a32,    opPSUBD_a32,    ILLEGAL,        opPADDB_a32,    opPADDW_a32,    opPADDD_a32,    ILLEGAL,
+    // clang-format on
 };
 
-const OpFn OP_TABLE(genericintel_0f)[1024] =
-{
+const OpFn OP_TABLE(genericintel_0f)[1024] = {
+    // clang-format off
         /*16-bit data, 16-bit addr*/
 /*      00              01              02              03              04              05              06              07              08              09              0a              0b              0c              0d              0e              0f*/
 /*00*/  op0F00_a16,     op0F01_w_a16,   opLAR_w_a16,    opLSL_w_a16,    ILLEGAL,        ILLEGAL,        opCLTS,         ILLEGAL,        opINVD,         opWBINVD,       ILLEGAL,        ILLEGAL,        ILLEGAL,        opNOP,          ILLEGAL,        ILLEGAL,
@@ -2503,10 +2507,11 @@ const OpFn OP_TABLE(genericintel_0f)[1024] =
 /*d0*/  ILLEGAL,        opPSRLW_a32,    opPSRLD_a32,    opPSRLQ_a32,    opPADDQ_a32,        opPMULLW_a32,   opMOVQ_q_xmm_a32,        opPMOVMSKB_l_xmm_a32,        opPSUBUSB_a32,  opPSUBUSW_a32,  opPMINUB_a32,           opPAND_a32,     opPADDUSB_a32,  opPADDUSW_a32,  opPMAXUB_a32,           opPANDN_a32,
 /*e0*/  opPAVGB_a32,        opPSRAW_a32,    opPSRAD_a32,    opPAVGW_a32,        opPMULHUW_a32,        opPMULHW_a32,   opCVTTPD2DQ_mm_xmm_a32,        opMOVNTQ_q_mm_a32,        opPSUBSB_a32,   opPSUBSW_a32,   opPMINSW_a32,           opPOR_a32,      opPADDSB_a32,   opPADDSW_a32,   opPMAXSW_a32,           opPXOR_a32,
 /*f0*/  ILLEGAL,        opPSLLW_a32,    opPSLLD_a32,    opPSLLQ_a32,    ILLEGAL,        opPMADDWD_a32,  opPSADBW_a32,        ILLEGAL,        opPSUBB_a32,    opPSUBW_a32,    opPSUBD_a32,    ILLEGAL,        opPADDB_a32,    opPADDW_a32,    opPADDD_a32,    ILLEGAL,
+    // clang-format on
 };
 
-const OpFn OP_TABLE(genericintel_REPE_0f)[1024] =
-{
+const OpFn OP_TABLE(genericintel_REPE_0f)[1024] = {
+    // clang-format off
         /*16-bit data, 16-bit addr*/
 /*      00              01              02              03              04              05              06              07              08              09              0a              0b              0c              0d              0e              0f*/
 /*00*/  NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL,
@@ -2594,10 +2599,11 @@ const OpFn OP_TABLE(genericintel_REPE_0f)[1024] =
 /*d0*/  ILLEGAL,        opPSRLW_a32,    opPSRLD_a32,    opPSRLQ_a32,    ILLEGAL,        opPMULLW_a32,   ILLEGAL,        opPMOVMSKB_l_xmm_a32,        opPSUBUSB_a32,  opPSUBUSW_a32,  opPMINUB_a32,           opPAND_a32,     opPADDUSB_a32,  opPADDUSW_a32,  opPMAXUB_a32,           opPANDN_a32,
 /*e0*/  opPAVGB_a32,        opPSRAW_a32,    opPSRAD_a32,    opPAVGW_a32,        opPMULHUW_a32,        opPMULHW_a32,   ILLEGAL,        opMOVNTQ_q_mm_a32,        opPSUBSB_a32,   opPSUBSW_a32,   opPMINSW_a32,           opPOR_a32,      opPADDSB_a32,   opPADDSW_a32,   opPMAXSW_a32,           opPXOR_a32,
 /*f0*/  ILLEGAL,        opPSLLW_a32,    opPSLLD_a32,    opPSLLQ_a32,    ILLEGAL,        opPMADDWD_a32,  opPSADBW_a32,        ILLEGAL,        opPSUBB_a32,    opPSUBW_a32,    opPSUBD_a32,    ILLEGAL,        opPADDB_a32,    opPADDW_a32,    opPADDD_a32,    ILLEGAL,
+    // clang-format on
 };
 
-const OpFn OP_TABLE(genericintel_REPNE_0f)[1024] =
-{
+const OpFn OP_TABLE(genericintel_REPNE_0f)[1024] = {
+    // clang-format off
         /*16-bit data, 16-bit addr*/
 /*      00              01              02              03              04              05              06              07              08              09              0a              0b              0c              0d              0e              0f*/
 /*00*/  NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL,
@@ -2685,6 +2691,7 @@ const OpFn OP_TABLE(genericintel_REPNE_0f)[1024] =
 /*d0*/  ILLEGAL,        opPSRLW_a32,    opPSRLD_a32,    opPSRLQ_a32,    ILLEGAL,        opPMULLW_a32,   opMOVQ2DQ_a32,        opPMOVMSKB_l_xmm_a32,        opPSUBUSB_a32,  opPSUBUSW_a32,  opPMINUB_a32,           opPAND_a32,     opPADDUSB_a32,  opPADDUSW_a32,  opPMAXUB_a32,           opPANDN_a32,
 /*e0*/  opPAVGB_a32,        opPSRAW_a32,    opPSRAD_a32,    opPAVGW_a32,        opPMULHUW_a32,        opPMULHW_a32,   opCVTDQ2PD_mm_xmm_a32,        opMOVNTQ_q_mm_a32,        opPSUBSB_a32,   opPSUBSW_a32,   opPMINSW_a32,           opPOR_a32,      opPADDSB_a32,   opPADDSW_a32,   opPMAXSW_a32,           opPXOR_a32,
 /*f0*/  ILLEGAL,        opPSLLW_a32,    opPSLLD_a32,    opPSLLQ_a32,    ILLEGAL,        opPMADDWD_a32,  opPSADBW_a32,        ILLEGAL,        opPSUBB_a32,    opPSUBW_a32,    opPSUBD_a32,    ILLEGAL,        opPADDB_a32,    opPADDW_a32,    opPADDD_a32,    ILLEGAL,
+    // clang-format on
 };
 
 const OpFn OP_TABLE(186)[1024] = {

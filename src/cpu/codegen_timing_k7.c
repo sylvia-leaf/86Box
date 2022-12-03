@@ -23,10 +23,10 @@ typedef enum uop_type_t
         UOP_ALUP0,     /*Executes in Port 0 or Port 1 ALU unit*/
         UOP_LOAD,      /*Executes in Load unit*/
         UOP_STORED,    /*Executes in Data Store unit*/
-	UOP_STOREA,    /*Executes in Address Store unit*/
+        UOP_STOREA,    /*Executes in Address Store unit*/
         UOP_FLOAD,     /*Executes in Load unit*/
         UOP_FSTORED,   /*Executes in Data Store unit*/
-	UOP_FSTOREA,   /*Executes in Address Store unit*/
+        UOP_FSTOREA,   /*Executes in Address Store unit*/
         UOP_MLOAD,     /*Executes in Load unit*/
         UOP_MSTORED,   /*Executes in Data Store unit*/
         UOP_MSTOREA,   /*Executes in Address Store unit*/
@@ -94,8 +94,8 @@ static const macro_op_t alu_store_op =
         .uop[0] = {.type = UOP_LOAD,    .latency = 1},
         .uop[1] = {.type = UOP_ALU,     .latency = 1},
         .uop[2] = {.type = UOP_STORED,  .latency = 1},
-        .uop[3] = {.type = UOP_STOREA,  .latency = 1}	
-	};
+        .uop[3] = {.type = UOP_STOREA,  .latency = 1}
+};
 static const macro_op_t alup01_store_op =
 {
         .nr_uops = 4,
@@ -103,7 +103,7 @@ static const macro_op_t alup01_store_op =
         .uop[0] = {.type = UOP_LOAD,    .latency = 1},
         .uop[1] = {.type = UOP_ALUP0,   .latency = 1},
         .uop[2] = {.type = UOP_STORED,  .latency = 1},
-        .uop[3] = {.type = UOP_STOREA,  .latency = 1}		
+        .uop[3] = {.type = UOP_STOREA,  .latency = 1}
 };
 
 static const macro_op_t branch_op =
@@ -132,7 +132,7 @@ static const macro_op_t store_op =
         .nr_uops = 2,
         .decode_type = DECODE_COMPLEX,
         .uop[0] = {.type = UOP_STORED,  .latency = 1},
-        .uop[1] = {.type = UOP_STOREA,  .latency = 1}		
+        .uop[1] = {.type = UOP_STOREA,  .latency = 1}
 };
 
 
@@ -141,7 +141,7 @@ static const macro_op_t bswap_op =
         .nr_uops = 2,
         .decode_type = DECODE_COMPLEX,
         .uop[0] = {.type = UOP_ALU,   .latency = 1},
-        .uop[1] = {.type = UOP_ALU,   .latency = 1},	
+        .uop[1] = {.type = UOP_ALU,   .latency = 1}
 };
 static const macro_op_t leave_op =
 {
@@ -177,7 +177,7 @@ static const macro_op_t movs_op =
         .decode_type = DECODE_COMPLEX,
         .uop[0] = {.type = UOP_LOAD,   .latency = 1},
         .uop[1] = {.type = UOP_STORED, .latency = 1},
-        .uop[2] = {.type = UOP_STOREA, .latency = 1},	
+        .uop[2] = {.type = UOP_STOREA, .latency = 1},
         .uop[3] = {.type = UOP_ALU,    .latency = 1}
 };
 static const macro_op_t pop_reg_op =
@@ -193,7 +193,7 @@ static const macro_op_t pop_mem_op =
         .decode_type = DECODE_COMPLEX,
         .uop[0] = {.type = UOP_LOAD,   .latency = 1},
         .uop[1] = {.type = UOP_STORED, .latency = 1},
-        .uop[2] = {.type = UOP_STOREA, .latency = 1},	
+        .uop[2] = {.type = UOP_STOREA, .latency = 1},
         .uop[3] = {.type = UOP_ALU,    .latency = 1}
 };
 static const macro_op_t push_imm_op =
@@ -201,7 +201,7 @@ static const macro_op_t push_imm_op =
         .nr_uops = 2,
         .decode_type = DECODE_COMPLEX,
         .uop[0] = {.type = UOP_STORED,  .latency = 1},
-        .uop[1] = {.type = UOP_STOREA,  .latency = 1},	
+        .uop[1] = {.type = UOP_STOREA,  .latency = 1},
 };
 static const macro_op_t push_mem_op =
 {
@@ -218,14 +218,14 @@ static const macro_op_t push_seg_op =
         .uop[0] = {.type = UOP_LOAD,   .latency = 1},
         .uop[1] = {.type = UOP_STORED, .latency = 1},
         .uop[2] = {.type = UOP_STOREA, .latency = 1},
-	.uop[3] = {.type = UOP_ALU,    .latency = 1}
+        .uop[3] = {.type = UOP_ALU,    .latency = 1}
 };
 static const macro_op_t stos_op =
 {
         .nr_uops = 3,
         .decode_type = DECODE_COMPLEX,
         .uop[1] = {.type = UOP_STORED, .latency = 1},
-        .uop[2] = {.type = UOP_STOREA, .latency = 1},	
+        .uop[2] = {.type = UOP_STOREA, .latency = 1},
         .uop[3] = {.type = UOP_ALU,    .latency = 1}
 };
 static const macro_op_t test_reg_op =
@@ -361,7 +361,7 @@ static const macro_op_t fchs_op =
         .decode_type = DECODE_COMPLEX,
         .uop[0] = {.type = UOP_FLOAT, .latency = 2},
         .uop[1] = {.type = UOP_FLOAT, .latency = 2},
-        .uop[2] = {.type = UOP_FLOAT, .latency = 2}	
+        .uop[2] = {.type = UOP_FLOAT, .latency = 2}
 };
 static const macro_op_t load_float_op =
 {
@@ -401,7 +401,7 @@ static const macro_op_t load_fiadd_op =
         .uop[3] = {.type = UOP_FLOAT, .latency = 1},
         .uop[4] = {.type = UOP_FLOAT, .latency = 1},
         .uop[5] = {.type = UOP_FLOAT, .latency = 1},
-        .uop[6] = {.type = UOP_FLOAT, .latency = 1}	
+        .uop[6] = {.type = UOP_FLOAT, .latency = 1}
 };
 static const macro_op_t fdiv_op =
 {
@@ -549,7 +549,7 @@ static const macro_op_t call_far_op =
         .decode_type = DECODE_COMPLEX,
         .uop[0] = {.type = UOP_ALU,     .latency = 3},
         .uop[1] = {.type = UOP_STORED,  .latency = 1},
-        .uop[2] = {.type = UOP_STOREA,  .latency = 1},	
+        .uop[2] = {.type = UOP_STOREA,  .latency = 1},
         .uop[3] = {.type = UOP_BRANCH,  .latency = 1}
 };
 static const macro_op_t cli_sti_op =
@@ -677,7 +677,7 @@ static const macro_op_t int_op =
         .uop[3] = {.type = UOP_STORED,  .latency =  1},
         .uop[4] = {.type = UOP_STOREA,  .latency =  1},
         .uop[5] = {.type = UOP_STORED,  .latency =  1},
-        .uop[6] = {.type = UOP_STOREA,  .latency =  1},	
+        .uop[6] = {.type = UOP_STOREA,  .latency =  1},
         .uop[7] = {.type = UOP_BRANCH,  .latency =  1}
 };
 static const macro_op_t iret_op =
@@ -773,7 +773,7 @@ static const macro_op_t outs_op =
         .nr_uops = 3,
         .decode_type = DECODE_COMPLEX,
         .uop[0] = {.type = UOP_LOAD,   .latency =  1},
-        .uop[1] = {.type = UOP_ALU,    .latency = 18}	
+        .uop[1] = {.type = UOP_ALU,    .latency = 18}
 };
 static const macro_op_t pusha_op =
 {
@@ -806,7 +806,7 @@ static const macro_op_t popf_op =
         .nr_uops = 3,
         .decode_type = DECODE_COMPLEX,
         .uop[0] = {.type = UOP_LOAD,  .latency =  1},
-        .uop[1] = {.type = UOP_ALU,   .latency =  6},	
+        .uop[1] = {.type = UOP_ALU,   .latency =  6},
         .uop[2] = {.type = UOP_ALUP0, .latency = 10}
 };
 static const macro_op_t pushf_op =
@@ -883,7 +883,7 @@ static const macro_op_t xchg_mem_op =
         .decode_type = DECODE_COMPLEX,
         .uop[0] = {.type = UOP_LOAD,   .latency = 1},
         .uop[1] = {.type = UOP_STORED, .latency = 1},
-        .uop[2] = {.type = UOP_STOREA, .latency = 1},	
+        .uop[2] = {.type = UOP_STOREA, .latency = 1},
         .uop[3] = {.type = UOP_ALU,    .latency = 1}
 };
 static const macro_op_t xlat_op =
@@ -1154,7 +1154,7 @@ static const macro_op_t *opcode_timings_mod3[256] =
         &alup0_6_op,               &alup0_3_op,               &complex_alup0_1_op,       &xlat_op,
         INVALID,                   INVALID,                   INVALID,                   INVALID,
         INVALID,                   INVALID,                   INVALID,                   INVALID,
-	
+
 /*      LOOPNE                     LOOPE                      LOOP                       JCXZ*/
 /*e0*/  &loop_op,                  &loop_op,                  &loop_op,                  &loop_op,
 /*      IN AL                      IN AX                      OUT_AL                     OUT_AX*/
@@ -1607,12 +1607,12 @@ static k7_unit_t *units;
 static k7_unit_t k7_units[] =
 {
         //{.uop_mask = (1 << UOP_ALU) | (1 << UOP_ALUP0) | (1 << UOP_FLOAT) |             /*Port 0*/
-	    //             (1 << UOP_MMX) | (1 << UOP_MMX_MUL)},
+        //             (1 << UOP_MMX) | (1 << UOP_MMX_MUL)},
         //{.uop_mask = (1 << UOP_ALU) | (1 << UOP_BRANCH) |                               /*Port 1*/
-	    //             (1 << UOP_MMX) | (1 << UOP_MMX_SHIFT)},           
-        //{.uop_mask = (1 << UOP_LOAD)  | (1 << UOP_FLOAD)  | (1 << UOP_MLOAD)},  	/*Port 2*/
+        //             (1 << UOP_MMX) | (1 << UOP_MMX_SHIFT)},           
+        //{.uop_mask = (1 << UOP_LOAD)  | (1 << UOP_FLOAD)  | (1 << UOP_MLOAD)},          /*Port 2*/
         //{.uop_mask = (1 << UOP_STORED) | (1 << UOP_FSTORED) | (1 << UOP_MSTORED)},      /*Port 3*/
-	    //{.uop_mask = (1 << UOP_STOREA) | (1 << UOP_FSTOREA) | (1 << UOP_MSTOREA)}, 	/*Port 4*/
+        //{.uop_mask = (1 << UOP_STOREA) | (1 << UOP_FSTOREA) | (1 << UOP_MSTOREA)},      /*Port 4*/
     {.uop_mask = (1 << UOP_ALU) | (1 << UOP_ALUP0) | (1 << UOP_BRANCH)}, /*Port 0*/
     {.uop_mask = (1 << UOP_ALU) | (1 << UOP_BRANCH)}, /*Port 1*/
     {.uop_mask = (1 << UOP_ALU) | (1 << UOP_BRANCH)}, /*Port 2*/
@@ -1636,7 +1636,7 @@ static int uop_run(const k7_uop_t *uop, int decode_time)
         /*UOP_FXCH does not require execution*/
         if (uop->type == UOP_FXCH)
                return decode_time;
-	
+
         /*Find execution unit for this uOP*/
         for (c = 0; c < nr_units; c++)
         {
@@ -1655,7 +1655,7 @@ static int uop_run(const k7_uop_t *uop, int decode_time)
         if (best_start_cycle < decode_time)
                 best_start_cycle = decode_time;
         best_unit->first_available_cycle = best_start_cycle + uop->latency;
-	
+
 
 
         return best_start_cycle + uop->latency;
@@ -1694,7 +1694,7 @@ void decode_flush_k7()
 {
         int c;
         int start_timestamp, uop_timestamp = 0;
-	
+
         /*Decoded opseq can not be submitted if there are no free spaces in the
           opseq buffer*/
         if (decode_timestamp < opseq_completion_timestamp[next_opseq])
@@ -1787,9 +1787,9 @@ static int codegen_timing_instr_length(uint64_t deps, uint32_t fetchdat, int op_
 static void decode_instruction(const macro_op_t *ins, uint64_t deps, uint32_t fetchdat, int op_32, int bit8)
 {
         uint32_t regmask_required;
-        uint32_t regmask_modified;	
+        uint32_t regmask_modified;
         int c;
-	int d = 0; /*Complex decoder uOPs*/
+        int d = 0; /*Complex decoder uOPs*/
         int earliest_start = 0;
         decode_type_t decode_type = ins->decode_type;
         int instr_length = codegen_timing_instr_length(deps, fetchdat, op_32);
@@ -1824,35 +1824,35 @@ static void decode_instruction(const macro_op_t *ins, uint64_t deps, uint32_t fe
                 decode_type = DECODE_COMPLEX;
 
         switch (decode_type)
-        {		
-                case DECODE_SIMPLE:		
+        {
+                case DECODE_SIMPLE:
                 if (decode_buffer.nr_uops - d == 2)
                 {
                         decode_buffer.uops[decode_buffer.nr_uops] = &ins->uop[0];
                         decode_buffer.earliest_start[decode_buffer.nr_uops] = earliest_start;
                         decode_buffer.nr_uops = 3;
                         decode_flush_k7();
-                }		
+                }
                 else if (decode_buffer.nr_uops - d == 1)
-                {			
+                {
                         decode_buffer.uops[decode_buffer.nr_uops] = &ins->uop[0];
                         decode_buffer.earliest_start[decode_buffer.nr_uops] = earliest_start;
                         decode_buffer.nr_uops = 2+d;
-			if (d)
+                if (d)
                         decode_flush_k7();
-                }		
+                }
                 else if (decode_buffer.nr_uops)
                 {
                         decode_buffer.uops[decode_buffer.nr_uops] = &ins->uop[0];
                         decode_buffer.earliest_start[decode_buffer.nr_uops] = earliest_start;
-                        decode_buffer.nr_uops = 1+d;			
+                        decode_buffer.nr_uops = 1+d;
                 }
                 else
                 {
                         decode_buffer.nr_uops = 1;
                         decode_buffer.uops[0] = &ins->uop[0];
                         decode_buffer.earliest_start[0] = earliest_start;
-                }		
+                }
                 break;
                 
                 case DECODE_COMPLEX:
@@ -1860,7 +1860,7 @@ static void decode_instruction(const macro_op_t *ins, uint64_t deps, uint32_t fe
                         decode_flush_k7(); /*The 4-1-1 arrangement implies that a complex ins. can't be decoded after a simple one*/
                         
                 d = 0;
-		
+
                 for (c = 0; c < ins->nr_uops; c++)
                 {
                         decode_buffer.uops[d] = &ins->uop[c];
@@ -1868,7 +1868,7 @@ static void decode_instruction(const macro_op_t *ins, uint64_t deps, uint32_t fe
                                 decode_buffer.earliest_start[d] = earliest_start;
                         else
                                 decode_buffer.earliest_start[d] = -1;
-			d++;
+                        d++;
                                 
                         if ((d == 3) && (ins->nr_uops > 4)) /*Ins. with >4 uOPs require the use of special units only present on 3 translate PLAs*/
                         {
@@ -1877,11 +1877,11 @@ static void decode_instruction(const macro_op_t *ins, uint64_t deps, uint32_t fe
                                 decode_flush_k7(); /*The other two decoders are halted to preserve in-order issue*/
                         }
                 }
-		if (d)
-		{
-			decode_buffer.nr_uops = d;	
-		}		
-                break;	
+                if (d)
+                {
+                    decode_buffer.nr_uops = d;
+                }
+                break;
         }
 
         /*Update write timestamps for any output registers*/
@@ -1976,10 +1976,10 @@ void codegen_timing_k7_opcode(uint8_t opcode, uint32_t fetchdat, int op_32, uint
                 if(opcode == 0x0f)
                 {
                     ins_table = mod3 ? opcode_timings_0f_mod3 : opcode_timings_0f;
-		            deps = mod3 ? opcode_deps_0f0f_mod3 : opcode_deps_0f0f;
+                    deps = mod3 ? opcode_deps_0f0f_mod3 : opcode_deps_0f0f;
                 }
-		ins_table = mod3 ? opcode_timings_0f_mod3 : opcode_timings_0f;
-		deps = mod3 ? opcode_deps_0f_mod3 : opcode_deps_0f;
+                ins_table = mod3 ? opcode_timings_0f_mod3 : opcode_timings_0f;
+                deps = mod3 ? opcode_deps_0f_mod3 : opcode_deps_0f;
                 break;
 
                 case 0xd8:

@@ -68,42 +68,38 @@ fx_save_stor_common(uint32_t fetchdat, int bits)
     fxinst = (rmdat >> 3) & 7;
 
     if (((fxinst > 1) && !(cpu_features & CPU_FEATURE_SSE))) {
-	x86illegal();
-	return cpu_state.abrt;
+        x86illegal();
+        return cpu_state.abrt;
     }
-	if(((fxinst > 3) && (fxinst != 7)) && (cpu_features & CPU_FEATURE_SSE) && !(cpu_features & CPU_FEATURE_SSE2))
-	{
-		x86illegal();
-		return cpu_state.abrt;
-	}
-	else if(fxinst == 4)
-	{
-		x86illegal();
-		return cpu_state.abrt;
-	}
+    if (((fxinst > 3) && (fxinst != 7)) && (cpu_features & CPU_FEATURE_SSE) && !(cpu_features & CPU_FEATURE_SSE2)) {
+        x86illegal();
+        return cpu_state.abrt;
+    } else if (fxinst == 4) {
+        x86illegal();
+        return cpu_state.abrt;
+    }
 
     FP_ENTER();
 
     old_eaaddr = cpu_state.eaaddr;
 
     if (fxinst == 1) {
-	/* FXRSTOR */
-	if (cpu_state.eaaddr & 0xf) {
-	x386_dynarec_log("Effective address %08X not on 16-byte boundary\n", cpu_state.eaaddr);
-	x86gpf(NULL, 0);
-	return cpu_state.abrt;
-    }
-	if(cpu_mod == 3)
-	{
-		x86illegal();
-		return cpu_state.abrt;
-	}
-	cpu_state.npxc = readmemw(easeg, cpu_state.eaaddr);
-	fpus = readmemw(easeg, cpu_state.eaaddr + 2);
-	cpu_state.npxc = (cpu_state.npxc & ~FPU_CW_Reserved_Bits) | 0x0040;
-	codegen_set_rounding_mode((cpu_state.npxc >> 10) & 3);
-	cpu_state.TOP = (fpus >> 11) & 7;
-	cpu_state.npxs &= fpus & ~0x3800;
+        /* FXRSTOR */
+        if (cpu_state.eaaddr & 0xf) {
+            x386_dynarec_log("Effective address %08X not on 16-byte boundary\n", cpu_state.eaaddr);
+            x86gpf(NULL, 0);
+            return cpu_state.abrt;
+        }
+        if (cpu_mod == 3) {
+            x86illegal();
+            return cpu_state.abrt;
+        }
+        cpu_state.npxc = readmemw(easeg, cpu_state.eaaddr);
+        fpus           = readmemw(easeg, cpu_state.eaaddr + 2);
+        cpu_state.npxc = (cpu_state.npxc & ~FPU_CW_Reserved_Bits) | 0x0040;
+        codegen_set_rounding_mode((cpu_state.npxc >> 10) & 3);
+        cpu_state.TOP = (fpus >> 11) & 7;
+        cpu_state.npxs &= fpus & ~0x3800;
 
         x87_pc_off = readmeml(easeg, cpu_state.eaaddr + 8);
         x87_pc_seg = readmemw(easeg, cpu_state.eaaddr + 12);
@@ -176,49 +172,57 @@ fx_save_stor_common(uint32_t fetchdat, int bits)
 
         x87_settag(rec_ftw);
 
-	if(cpu_features & CPU_FEATURE_SSE)
-	{
-		if(!(cpu_features & CPU_FEATURE_SSE2)) mxcsr = readmeml(easeg,cpu_state.eaaddr+24) & ~0xffbf;
-		else mxcsr = readmeml(easeg,cpu_state.eaaddr+24) & ~0xffff;
-		XMM[0].q[0] = readmemq(easeg,cpu_state.eaaddr+0xa0);
-		XMM[0].q[1] = readmemq(easeg,cpu_state.eaaddr+0xa8);
-		XMM[1].q[0] = readmemq(easeg,cpu_state.eaaddr+0xb0);
-		XMM[1].q[1] = readmemq(easeg,cpu_state.eaaddr+0xb8);
-		XMM[2].q[0] = readmemq(easeg,cpu_state.eaaddr+0xc0);
-		XMM[2].q[1] = readmemq(easeg,cpu_state.eaaddr+0xc8);
-		XMM[3].q[0] = readmemq(easeg,cpu_state.eaaddr+0xd0);
-		XMM[3].q[1] = readmemq(easeg,cpu_state.eaaddr+0xd8);
-		XMM[4].q[0] = readmemq(easeg,cpu_state.eaaddr+0xe0);
-		XMM[4].q[1] = readmemq(easeg,cpu_state.eaaddr+0xe8);
-		XMM[5].q[0] = readmemq(easeg,cpu_state.eaaddr+0xf0);
-		XMM[5].q[1] = readmemq(easeg,cpu_state.eaaddr+0xf8);
-		XMM[6].q[0] = readmemq(easeg,cpu_state.eaaddr+0x100);
-		XMM[6].q[1] = readmemq(easeg,cpu_state.eaaddr+0x108);
-		XMM[7].q[0] = readmemq(easeg,cpu_state.eaaddr+0x110);
-		XMM[7].q[1] = readmemq(easeg,cpu_state.eaaddr+0x118);
-	}
+        if (cpu_features & CPU_FEATURE_SSE) {
+            if (!(cpu_features & CPU_FEATURE_SSE2))
+                mxcsr = readmeml(easeg, cpu_state.eaaddr + 24) & ~0xffbf;
+            else
+                mxcsr = readmeml(easeg, cpu_state.eaaddr + 24) & ~0xffff;
+            XMM[0].q[0] = readmemq(easeg, cpu_state.eaaddr + 0xa0);
+            XMM[0].q[1] = readmemq(easeg, cpu_state.eaaddr + 0xa8);
+            XMM[1].q[0] = readmemq(easeg, cpu_state.eaaddr + 0xb0);
+            XMM[1].q[1] = readmemq(easeg, cpu_state.eaaddr + 0xb8);
+            XMM[2].q[0] = readmemq(easeg, cpu_state.eaaddr + 0xc0);
+            XMM[2].q[1] = readmemq(easeg, cpu_state.eaaddr + 0xc8);
+            XMM[3].q[0] = readmemq(easeg, cpu_state.eaaddr + 0xd0);
+            XMM[3].q[1] = readmemq(easeg, cpu_state.eaaddr + 0xd8);
+            XMM[4].q[0] = readmemq(easeg, cpu_state.eaaddr + 0xe0);
+            XMM[4].q[1] = readmemq(easeg, cpu_state.eaaddr + 0xe8);
+            XMM[5].q[0] = readmemq(easeg, cpu_state.eaaddr + 0xf0);
+            XMM[5].q[1] = readmemq(easeg, cpu_state.eaaddr + 0xf8);
+            XMM[6].q[0] = readmemq(easeg, cpu_state.eaaddr + 0x100);
+            XMM[6].q[1] = readmemq(easeg, cpu_state.eaaddr + 0x108);
+            XMM[7].q[0] = readmemq(easeg, cpu_state.eaaddr + 0x110);
+            XMM[7].q[1] = readmemq(easeg, cpu_state.eaaddr + 0x118);
+        }
 
-	CLOCK_CYCLES((cr0 & 1) ? 34 : 44);
-    } else if(fxinst == 0){
-	/* FXSAVE */
-	if (cpu_state.eaaddr & 0xf) {
-	x386_dynarec_log("Effective address %08X not on 16-byte boundary\n", cpu_state.eaaddr);
-	x86gpf(NULL, 0);
-	return cpu_state.abrt;
-    }
-	if(cpu_mod == 3)
-	{
-		x86illegal();
-		return cpu_state.abrt;
-	}
-	if ((twd & 0x0003) == 0x0003)  ftwb |= 0x01;
-	if ((twd & 0x000C) == 0x000C)  ftwb |= 0x02;
-	if ((twd & 0x0030) == 0x0030)  ftwb |= 0x04;
-	if ((twd & 0x00C0) == 0x00C0)  ftwb |= 0x08;
-	if ((twd & 0x0300) == 0x0300)  ftwb |= 0x10;
-	if ((twd & 0x0C00) == 0x0C00)  ftwb |= 0x20;
-	if ((twd & 0x3000) == 0x3000)  ftwb |= 0x40;
-	if ((twd & 0xC000) == 0xC000)  ftwb |= 0x80;
+        CLOCK_CYCLES((cr0 & 1) ? 34 : 44);
+    } else if (fxinst == 0) {
+        /* FXSAVE */
+        if (cpu_state.eaaddr & 0xf) {
+            x386_dynarec_log("Effective address %08X not on 16-byte boundary\n", cpu_state.eaaddr);
+            x86gpf(NULL, 0);
+            return cpu_state.abrt;
+        }
+        if (cpu_mod == 3) {
+            x86illegal();
+            return cpu_state.abrt;
+        }
+        if ((twd & 0x0003) == 0x0003)
+            ftwb |= 0x01;
+        if ((twd & 0x000C) == 0x000C)
+            ftwb |= 0x02;
+        if ((twd & 0x0030) == 0x0030)
+            ftwb |= 0x04;
+        if ((twd & 0x00C0) == 0x00C0)
+            ftwb |= 0x08;
+        if ((twd & 0x0300) == 0x0300)
+            ftwb |= 0x10;
+        if ((twd & 0x0C00) == 0x0C00)
+            ftwb |= 0x20;
+        if ((twd & 0x3000) == 0x3000)
+            ftwb |= 0x40;
+        if ((twd & 0xC000) == 0xC000)
+            ftwb |= 0x80;
 
         writememw(easeg, cpu_state.eaaddr, cpu_state.npxc);
         writememw(easeg, cpu_state.eaaddr + 2, cpu_state.npxs);
@@ -255,30 +259,31 @@ fx_save_stor_common(uint32_t fetchdat, int bits)
         cpu_state.eaaddr = old_eaaddr + 144;
         cpu_state.ismmx ? x87_stmmx(cpu_state.MM[7]) : x87_st_fsave(7);
 
-	if(cpu_features & CPU_FEATURE_SSE)
-	{
-		writememl(easeg,cpu_state.eaaddr+24,mxcsr);
-		if(!(cpu_features & CPU_FEATURE_SSE2)) writememl(easeg, cpu_state.eaaddr+28,0xffbf);
-		else writememl(easeg, cpu_state.eaaddr+28,0xffff);
-		writememq(easeg,cpu_state.eaaddr+0xa0,XMM[0].q[0]);
-		writememq(easeg,cpu_state.eaaddr+0xa8,XMM[0].q[1]);
-		writememq(easeg,cpu_state.eaaddr+0xb0,XMM[1].q[0]);
-		writememq(easeg,cpu_state.eaaddr+0xb8,XMM[1].q[1]);
-		writememq(easeg,cpu_state.eaaddr+0xc0,XMM[2].q[0]);
-		writememq(easeg,cpu_state.eaaddr+0xc8,XMM[2].q[1]);
-		writememq(easeg,cpu_state.eaaddr+0xd0,XMM[3].q[0]);
-		writememq(easeg,cpu_state.eaaddr+0xd8,XMM[3].q[1]);
-		writememq(easeg,cpu_state.eaaddr+0xe0,XMM[4].q[0]);
-		writememq(easeg,cpu_state.eaaddr+0xe8,XMM[4].q[1]);
-		writememq(easeg,cpu_state.eaaddr+0xf0,XMM[5].q[0]);
-		writememq(easeg,cpu_state.eaaddr+0xf8,XMM[5].q[1]);
-		writememq(easeg,cpu_state.eaaddr+0x100,XMM[6].q[0]);
-		writememq(easeg,cpu_state.eaaddr+0x108,XMM[6].q[1]);
-		writememq(easeg,cpu_state.eaaddr+0x110,XMM[7].q[0]);
-		writememq(easeg,cpu_state.eaaddr+0x118,XMM[7].q[1]);
-	}
+        if (cpu_features & CPU_FEATURE_SSE) {
+            writememl(easeg, cpu_state.eaaddr + 24, mxcsr);
+            if (!(cpu_features & CPU_FEATURE_SSE2))
+                writememl(easeg, cpu_state.eaaddr + 28, 0xffbf);
+            else
+                writememl(easeg, cpu_state.eaaddr + 28, 0xffff);
+            writememq(easeg, cpu_state.eaaddr + 0xa0, XMM[0].q[0]);
+            writememq(easeg, cpu_state.eaaddr + 0xa8, XMM[0].q[1]);
+            writememq(easeg, cpu_state.eaaddr + 0xb0, XMM[1].q[0]);
+            writememq(easeg, cpu_state.eaaddr + 0xb8, XMM[1].q[1]);
+            writememq(easeg, cpu_state.eaaddr + 0xc0, XMM[2].q[0]);
+            writememq(easeg, cpu_state.eaaddr + 0xc8, XMM[2].q[1]);
+            writememq(easeg, cpu_state.eaaddr + 0xd0, XMM[3].q[0]);
+            writememq(easeg, cpu_state.eaaddr + 0xd8, XMM[3].q[1]);
+            writememq(easeg, cpu_state.eaaddr + 0xe0, XMM[4].q[0]);
+            writememq(easeg, cpu_state.eaaddr + 0xe8, XMM[4].q[1]);
+            writememq(easeg, cpu_state.eaaddr + 0xf0, XMM[5].q[0]);
+            writememq(easeg, cpu_state.eaaddr + 0xf8, XMM[5].q[1]);
+            writememq(easeg, cpu_state.eaaddr + 0x100, XMM[6].q[0]);
+            writememq(easeg, cpu_state.eaaddr + 0x108, XMM[6].q[1]);
+            writememq(easeg, cpu_state.eaaddr + 0x110, XMM[7].q[0]);
+            writememq(easeg, cpu_state.eaaddr + 0x118, XMM[7].q[1]);
+        }
 
-	cpu_state.eaaddr = old_eaaddr;
+        cpu_state.eaaddr = old_eaaddr;
 
         cpu_state.npxc = 0x37F;
         codegen_set_rounding_mode(X87_ROUNDING_NEAREST);
@@ -293,36 +298,35 @@ fx_save_stor_common(uint32_t fetchdat, int bits)
         cpu_state.ismmx = 0;
 
         CLOCK_CYCLES((cr0 & 1) ? 56 : 67);
-    }
-	else if(fxinst == 2)
-	{
-		if(cpu_mod == 3)
-		{
-			x86illegal();
-			return cpu_state.abrt;
-		}
-		uint32_t src;
+    } else if (fxinst == 2) {
+        if (cpu_mod == 3) {
+            x86illegal();
+            return cpu_state.abrt;
+        }
+        uint32_t src;
 
-		uint32_t mxcsr_mask = 0xffbf;
-		if(!(cpu_features & CPU_FEATURE_SSE2)) mxcsr_mask = 0xffff;
-    
-    	SEG_CHECK_READ(cpu_state.ea_seg);
-    	src = readmeml(easeg, cpu_state.eaaddr); if (cpu_state.abrt) return 1;
-		//if(src & ~mxcsr_mask) x86gpf(NULL, 0);
-		mxcsr = src & mxcsr_mask;
-	}
-	else if(fxinst == 3)
-	{
-		if(cpu_mod == 3)
-		{
-			x86illegal();
-			return cpu_state.abrt;
-		}
-		SEG_CHECK_WRITE(cpu_state.ea_seg);
-    	writememl(easeg, cpu_state.eaaddr, mxcsr); if (cpu_state.abrt) return 1;
-	}
-	//fxinst == 5 or 6 or 7 is L/M/SFENCE which deals with cache stuff.
-	//We don't emulate the cache so we can safely ignore it.
+        uint32_t mxcsr_mask = 0xffbf;
+        if (!(cpu_features & CPU_FEATURE_SSE2))
+            mxcsr_mask = 0xffff;
+
+        SEG_CHECK_READ(cpu_state.ea_seg);
+        src = readmeml(easeg, cpu_state.eaaddr);
+        if (cpu_state.abrt)
+            return 1;
+        // if(src & ~mxcsr_mask) x86gpf(NULL, 0);
+        mxcsr = src & mxcsr_mask;
+    } else if (fxinst == 3) {
+        if (cpu_mod == 3) {
+            x86illegal();
+            return cpu_state.abrt;
+        }
+        SEG_CHECK_WRITE(cpu_state.ea_seg);
+        writememl(easeg, cpu_state.eaaddr, mxcsr);
+        if (cpu_state.abrt)
+            return 1;
+    }
+    // fxinst == 5 or 6 or 7 is L/M/SFENCE which deals with cache stuff.
+    // We don't emulate the cache so we can safely ignore it.
 
     return cpu_state.abrt;
 }

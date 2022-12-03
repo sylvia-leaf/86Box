@@ -37,6 +37,7 @@
 
 #ifdef ENABLE_TCO_LOG
 int tco_do_log = ENABLE_TCO_LOG;
+
 static void
 tco_log(const char *fmt, ...)
 {

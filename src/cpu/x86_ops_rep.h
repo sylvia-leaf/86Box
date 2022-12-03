@@ -867,20 +867,22 @@ opREPNE(uint32_t fetchdat)
         return x86_opcodes_REPNE[(fetchdat & 0xff) | cpu_state.op32](fetchdat >> 8);
     return x86_opcodes[(fetchdat & 0xff) | cpu_state.op32](fetchdat >> 8);
 }
-static int opREPNE_0f(uint32_t fetchdat)
+static int
+opREPNE_0f(uint32_t fetchdat)
 {
     int opcode = fetchdat & 0xff;
-    fopcode = opcode;
+    fopcode    = opcode;
     cpu_state.pc++;
 
     PREFETCH_PREFIX();
-    if(!x86_opcodes_REPNE_0f)
+    if (!x86_opcodes_REPNE_0f)
         return x86_opcodes_0f[opcode | cpu_state.op32](fetchdat >> 8);
     if (x86_opcodes_REPNE_0f[opcode | cpu_state.op32])
         return x86_opcodes_REPNE_0f[opcode | cpu_state.op32](fetchdat >> 8);
     return x86_opcodes_0f[opcode | cpu_state.op32](fetchdat >> 8);
 }
-static int opREPE(uint32_t fetchdat)
+static int
+opREPE(uint32_t fetchdat)
 {
     fetchdat = fastreadl(cs + cpu_state.pc);
     if (cpu_state.abrt)
@@ -894,14 +896,15 @@ static int opREPE(uint32_t fetchdat)
     return x86_opcodes[(fetchdat & 0xff) | cpu_state.op32](fetchdat >> 8);
 }
 
-static int opREPE_0f(uint32_t fetchdat)
+static int
+opREPE_0f(uint32_t fetchdat)
 {
     int opcode = fetchdat & 0xff;
-    fopcode = opcode;
+    fopcode    = opcode;
     cpu_state.pc++;
 
     PREFETCH_PREFIX();
-    if(!x86_opcodes_REPE_0f)
+    if (!x86_opcodes_REPE_0f)
         return x86_opcodes_0f[opcode | cpu_state.op32](fetchdat >> 8);
     if (x86_opcodes_REPE_0f[opcode | cpu_state.op32])
         return x86_opcodes_REPE_0f[opcode | cpu_state.op32](fetchdat >> 8);
