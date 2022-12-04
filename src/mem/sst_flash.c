@@ -530,6 +530,20 @@ const device_t sst_flash_29ee010_device = {
     .config        = NULL
 };
 
+const device_t winbond_flash_w29c010_device = {
+    .name          = "SST 29EE010 Flash BIOS",
+    .internal_name = "winbond_flash_w29c010",
+    .flags         = 0,
+    .local         = WINBOND | W29C010 | SIZE_1M,
+    .init          = sst_init,
+    .close         = sst_close,
+    .reset         = NULL,
+    { .available = NULL },
+    .speed_changed = NULL,
+    .force_redraw  = NULL,
+    .config        = NULL
+};
+
 const device_t sst_flash_29ee020_device = {
     .name          = "SST 29EE020 Flash BIOS",
     .internal_name = "sst_flash_29ee020",
