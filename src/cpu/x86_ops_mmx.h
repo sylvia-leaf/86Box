@@ -58,3 +58,26 @@ opEMMS(uint32_t fetchdat)
     CLOCK_CYCLES(100); /*Guess*/
     return 0;
 }
+
+static int
+check_sse_exceptions(double result)
+{
+    feclearexcept(FE_ALL_EXCEPT);
+    int fperaised = fetestexcept(FE_ALL_EXCEPT);
+    if(fperaised & FE_INVALID) mxcsr |= 1;
+    if(fpclassify(result) == FP_SUBNORMAL)
+    {
+        mxcsr |= 2;
+    }
+    if(fperaise & FE_DIVBYZERO) mxcsr |= 4;
+    if(fperaise & FE_OVERFLOW) mxcsr |= 8;
+    if(fperaise & FE_UNDERFLOW) mxcsr |= 0x10;
+    if(fperaise & FE_INEXACT) mxcsr |= 0x20;
+
+    int unmasked = (mxcsr >> 7) & 0x3f;
+    if(unmasked & 7)
+    {
+        if((cr4 >> 9) & 1) x86_doabrt(0x13);
+        ILLEGAL_ON(!((cr4 >> 9) & 1));
+    }
+}
