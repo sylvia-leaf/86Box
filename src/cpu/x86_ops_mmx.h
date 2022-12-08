@@ -69,10 +69,10 @@ check_sse_exceptions(double result)
     {
         mxcsr |= 2;
     }
-    if(fperaise & FE_DIVBYZERO) mxcsr |= 4;
-    if(fperaise & FE_OVERFLOW) mxcsr |= 8;
-    if(fperaise & FE_UNDERFLOW) mxcsr |= 0x10;
-    if(fperaise & FE_INEXACT) mxcsr |= 0x20;
+    if(fperaised & FE_DIVBYZERO) mxcsr |= 4;
+    if(fperaised & FE_OVERFLOW) mxcsr |= 8;
+    if(fperaised & FE_UNDERFLOW) mxcsr |= 0x10;
+    if(fperaised & FE_INEXACT) mxcsr |= 0x20;
 
     int unmasked = (mxcsr >> 7) & 0x3f;
     if(unmasked & 7)
