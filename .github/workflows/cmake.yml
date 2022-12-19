@@ -25,7 +25,7 @@ on:
 
 jobs:
   msys2:
-    name: MSYS2 ${{ matrix.build.name }} ${{ matrix.dynarec.name }} build (${{ matrix.environment.msystem }})
+    name: MSYS2 (${{ matrix.ui.name }}, ${{ matrix.build.name }}, ${{ matrix.dynarec.name }}, ${{ matrix.environment.msystem }})
 
     runs-on: windows-2022
 
@@ -50,6 +50,17 @@ jobs:
           - name: NDR
             new: on
             slug: -NDR
+        ui:
+          - name: Win32 GUI
+            qt: off
+            static: on
+          - name: Qt GUI
+            qt: on
+            static: off
+            slug: -Qt
+            packages: >-
+              qt5-base:p
+              qt5-tools:p
         environment:
           - msystem: MINGW32
             prefix: mingw-w64-i686
@@ -64,20 +75,20 @@ jobs:
     steps:
       - uses: msys2/setup-msys2@v2
         with:
-          path-type: inherit
           update: true
           msystem: ${{ matrix.environment.msystem }}
-          install: >-
-            ${{ matrix.environment.prefix }}-ninja
-            ${{ matrix.environment.prefix }}-cc
-            ${{ matrix.environment.prefix }}-pkg-config
-            ${{ matrix.environment.prefix }}-freetype
-            ${{ matrix.environment.prefix }}-SDL2
-            ${{ matrix.environment.prefix }}-zlib
-            ${{ matrix.environment.prefix }}-libpng
-            ${{ matrix.environment.prefix }}-libvncserver
-            ${{ matrix.environment.prefix }}-openal
-            ${{ matrix.environment.prefix }}-rtmidi
+          pacboy: >-
+            ninja:p
+            cmake:p
+            cc:p
+            pkg-config:p
+            freetype:p
+            SDL2:p
+            zlib:p
+            libpng:p
+            openal:p
+            rtmidi:p
+            ${{ matrix.ui.packages }}
       - uses: actions/checkout@v3
       - name: Configure CMake
         run: >-
@@ -85,14 +96,15 @@ jobs:
           --toolchain ${{ matrix.environment.toolchain }}
           -D NEW_DYNAREC=${{ matrix.dynarec.new }}
           -D CMAKE_INSTALL_PREFIX=./build/artifacts
-          -D QT=OFF
+          -D QT=${{ matrix.ui.qt }}
+          -D STATIC_BUILD=${{ matrix.ui.static }}
       - name: Build
         run: cmake --build build
       - name: Generate package
         run: cmake --install build
       - uses: actions/upload-artifact@v3
         with:
-          name: '86Box${{ matrix.dynarec.slug }}${{ matrix.build.slug }}-Windows-${{ matrix.environment.msystem }}-gha${{ github.run_number }}'
+          name: '86Box${{ matrix.ui.slug }}${{ matrix.dynarec.slug }}${{ matrix.build.slug }}-Windows-${{ matrix.environment.msystem }}-gha${{ github.run_number }}'
           path: build/artifacts/**
 
   llvm-windows:
