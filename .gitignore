@@ -9,6 +9,7 @@ Makefile
 /src/86Box
 /src/include/86box/version.h
 *.exe
+roms/
 
 # Legacy Makefile
 /src/*.o
@@ -39,8 +40,6 @@ Makefile
 # Visual Studio Code
 /.vs
 /.vscode
-roms/
-src/win/RCa04980
 
 # Windows resource compiler
 RC*

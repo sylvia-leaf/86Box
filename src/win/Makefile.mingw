@@ -76,6 +76,12 @@ ifeq ($(DEV_BUILD), y)
  ifndef PAS16
   PAS16 := y
  endif
+ ifndef RIVA128
+  RIVA128 := y
+ endif
+ ifndef RIVATNT
+  RIVATNT := y
+ endif
  ifndef SIO_DETECT
   SIO_DETECT := y
  endif
@@ -84,12 +90,6 @@ ifeq ($(DEV_BUILD), y)
  endif
  ifndef XL24
   XL24 := y
- endif
- ifndef RIVA128
-  RIVA128 := y
- endif
- ifndef RIVATNT
-  RIVATNT := y
  endif
  ifndef NEW_KBC
   NEW_KBC := n
@@ -143,6 +143,12 @@ else
  ifndef PAS16
   PAS16 := n
  endif
+ ifndef RIVA128
+  RIVA128 := n
+ endif
+ ifndef RIVATNT
+  RIVATNT := n
+ endif
  ifndef SIO_DETECT
   SIO_DETECT := n
  endif
@@ -151,12 +157,6 @@ else
  endif
  ifndef XL24
   XL24 := n
- endif
- ifndef RIVA128
-  RIVA128 := n
- endif
- ifndef RIVATNT
-  RIVATNT := n
  endif
  ifndef NEW_KBC
   NEW_KBC := n
@@ -496,6 +496,16 @@ ifeq ($(DEV_BRANCH), y)
   DEVBROBJ += snd_pas16.o
  endif
 
+ ifeq ($(RIVA128), y)
+  OPTS     += -DUSE_RIVA128
+  DEVBROBJ += vid_riva128.o
+ endif
+
+ ifeq ($(RIVATNT), y)
+  OPTS     += -DUSE_RIVATNT
+  DEVBROBJ += vid_rivatnt.o
+ endif
+
  ifeq ($(SIO_DETECT), y)
   OPTS     += -DUSE_SIO_DETECT
   DEVBROBJ += sio_detect.o
@@ -512,16 +522,6 @@ ifeq ($(DEV_BRANCH), y)
  ifeq ($(OLIVETTI), y)
   OPTS     += -DUSE_OLIVETTI
   DEVBROBJ += olivetti_eva.o
- endif
-
- ifeq ($(RIVA128), y)
-  OPTS     += -DUSE_RIVA128
-  DEVBROBJ += vid_riva128.o
- endif
-
- ifeq ($(RIVATNT), y)
-  OPTS     += -DUSE_RIVATNT
-  DEVBROBJ += vid_rivatnt.o
  endif
 
  ifeq ($(GDBSTUB), y)

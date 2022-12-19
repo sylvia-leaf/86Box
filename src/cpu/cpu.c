@@ -1598,7 +1598,7 @@ cpu_set(void)
     else
         cpu_exec = execx86;
 
-    if(bochs_timing)
+    if (bochs_timing)
         codegen_timing_set(&codegen_timing_486);
 
     gdbstub_cpu_init();
