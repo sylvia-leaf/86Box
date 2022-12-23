@@ -39,6 +39,19 @@ jobs:
         # Learn more about CodeQL language support at https://aka.ms/codeql-docs/language-support
 
     steps:
+    - name: Install dependencies
+        run: >-
+          sudo apt update && sudo apt install
+          build-essential
+          ninja-build
+          libfreetype-dev
+          libsdl2-dev
+          libpng-dev
+          libc6-dev
+          librtmidi-dev
+          qtbase5-dev
+          qttools5-dev
+          libopenal-dev
     - name: Checkout repository
       uses: actions/checkout@v3
 
