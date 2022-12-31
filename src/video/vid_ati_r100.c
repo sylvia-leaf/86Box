@@ -306,19 +306,18 @@ r100_mmio_read_l(uint32_t addr, void *p)
     if ((addr >= 0xf00) && (addr <= 0xfff))
         return r100_pci_read(0, addr & 0xff, r100) | (r100_pci_read(0, (addr + 1) & 0xff, r100) << 8)
             | (r100_pci_read(0, (addr + 2) & 0xff, r100) << 16) | (r100_pci_read(0, (addr + 3) & 0xff, r100) << 24);
-    
-    switch(addr & 0x1ffc)
-    {
+
+    switch (addr & 0x1ffc) {
         case 0x060:
-        {
-            ret = (i2c_gpio_get_scl(r100->i2c) << 9) | (i2c_gpio_get_sda(r100->i2c) << 8);
-            break;
-        }
+            {
+                ret = (i2c_gpio_get_scl(r100->i2c) << 9) | (i2c_gpio_get_sda(r100->i2c) << 8);
+                break;
+            }
         case 0x208:
-        {
-            ret = svga->vtotal | (svga->dispend << 16);
-            break;
-        }
+            {
+                ret = svga->vtotal | (svga->dispend << 16);
+                break;
+            }
     }
 
     pclog("[RADEON] MMIO read %08x returns value %08x\n", addr, ret);
@@ -370,15 +369,14 @@ r100_mmio_write_l(uint32_t addr, uint32_t val, void *p)
         r100_pci_write(0, (addr + 3) & 0xff, val, r100);
     }
 
-    switch(addr & 0x1ffc)
-    {
+    switch (addr & 0x1ffc) {
         case 0x60:
-        {
-            int scl = (val >> 17) & 1 ? (val >> 1) & 1 : 1;
-            int sda = (val >> 16) & 1 ? (val >> 0) & 1 : 1;
-            i2c_gpio_set(r100->i2c, scl, sda);
-            break;
-        }
+            {
+                int scl = (val >> 17) & 1 ? (val >> 1) & 1 : 1;
+                int sda = (val >> 16) & 1 ? (val >> 0) & 1 : 1;
+                i2c_gpio_set(r100->i2c, scl, sda);
+                break;
+            }
     }
 
     pclog("[RADEON] MMIO write %08x %08x\n", addr, val);
@@ -436,17 +434,22 @@ r100_out(uint16_t addr, uint8_t val, void *p)
         addr ^= 0x60;
 
     if (((addr >= r100->io_base) && (addr < (r100->io_base + 0x100))) || ((addr >= 0xd000) && (addr < 0xd100))) {
-        if((addr & 0xff) != 0x16 && (addr & 0xff) != 0x17) pclog("[RADEON] IO write %04x %02x\n", addr, val);
+        if ((addr & 0xff) != 0x16 && (addr & 0xff) != 0x17)
+            pclog("[RADEON] IO write %04x %02x\n", addr, val);
         r100->io_regs[addr & 0xff] = val;
-        switch(addr & 0xff)
-        {
-            case 0x04: case 0x05: case 0x06: case 0x07:
-            {
-                uint32_t mm_addr = r100->io_regs[0] | (r100->io_regs[1] << 8) | (r100->io_regs[2] << 16) | ((r100->io_regs[3] & 3) << 24);
-                if(r100->io_regs[3] & (1 << 7)) svga_writeb_linear(mm_addr + (addr & 3), val, svga);
-                else r100_mmio_write((mm_addr & 0x1fff) + (addr & 3), val, r100);
-                break;
-            }
+        switch (addr & 0xff) {
+            case 0x04:
+            case 0x05:
+            case 0x06:
+            case 0x07:
+                {
+                    uint32_t mm_addr = r100->io_regs[0] | (r100->io_regs[1] << 8) | (r100->io_regs[2] << 16) | ((r100->io_regs[3] & 3) << 24);
+                    if (r100->io_regs[3] & (1 << 7))
+                        svga_writeb_linear(mm_addr + (addr & 3), val, svga);
+                    else
+                        r100_mmio_write((mm_addr & 0x1fff) + (addr & 3), val, r100);
+                    break;
+                }
         }
     }
 
@@ -486,19 +489,30 @@ r100_in(uint16_t addr, void *p)
         addr ^= 0x60;
 
     if (((addr >= r100->io_base) && (addr < (r100->io_base + 0x100))) || ((addr >= 0xd000) && (addr < 0xd100))) {
-        if((addr & 0xff) != 0x16 && (addr & 0xff) != 0x17) pclog("[RADEON] IO read %04x\n", addr);
+        if ((addr & 0xff) != 0x16 && (addr & 0xff) != 0x17)
+            pclog("[RADEON] IO read %04x\n", addr);
         temp = r100->io_regs[addr & 0xff];
-        switch(addr & 0xff)
-        {
-            case 0x04: case 0x05: case 0x06: case 0x07:
-            {
-                uint32_t mm_addr = r100->io_regs[0] | (r100->io_regs[1] << 8) | (r100->io_regs[2] << 16) | ((r100->io_regs[3] & 3) << 24);
-                if(r100->io_regs[3] & (1 << 7)) temp = svga_readb_linear(mm_addr + (addr & 3), svga);
-                else temp = r100_mmio_read((mm_addr & 0x1fff) + (addr & 3), r100);
+        switch (addr & 0xff) {
+            case 0x04:
+            case 0x05:
+            case 0x06:
+            case 0x07:
+                {
+                    uint32_t mm_addr = r100->io_regs[0] | (r100->io_regs[1] << 8) | (r100->io_regs[2] << 16) | ((r100->io_regs[3] & 3) << 24);
+                    if (r100->io_regs[3] & (1 << 7))
+                        temp = svga_readb_linear(mm_addr + (addr & 3), svga);
+                    else
+                        temp = r100_mmio_read((mm_addr & 0x1fff) + (addr & 3), r100);
+                    break;
+                }
+            case 0xf8:
+            case 0xf9:
+            case 0xfa:
+                temp = 0;
                 break;
-            }
-            case 0xf8: case 0xf9: case 0xfa: temp = 0; break;
-            case 0xfb: temp = 0x02; break;
+            case 0xfb:
+                temp = 0x02;
+                break;
         }
     }
 
@@ -558,7 +572,7 @@ static void
     r100->i2c = i2c_gpio_init("ddc_r100");
     r100->ddc = ddc_init(i2c_gpio_get_bus(r100->i2c));
 
-    //Undocumented mirror
+    // Undocumented mirror
     io_sethandler(0xd000, 0x0100, r100_in, NULL, NULL, r100_out, NULL, NULL, r100);
 
     return r100;
@@ -595,7 +609,6 @@ r100_force_redraw(void *p)
 
     r100->svga.fullchange = changeframecount;
 }
-
 
 static const device_config_t r100_config[] = {
   // clang-format off
