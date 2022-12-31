@@ -76,6 +76,9 @@ ifeq ($(DEV_BUILD), y)
  ifndef PAS16
   PAS16 := y
  endif
+ ifndef R100
+  R100 := y
+ endif
  ifndef RIVA128
   RIVA128 := y
  endif
@@ -142,6 +145,9 @@ else
  endif
  ifndef PAS16
   PAS16 := n
+ endif
+ ifndef R100
+  R100 := n
  endif
  ifndef RIVA128
   RIVA128 := n
@@ -497,6 +503,11 @@ ifeq ($(DEV_BRANCH), y)
  ifeq ($(PAS16), y)
   OPTS     += -DUSE_PAS16
   DEVBROBJ += snd_pas16.o
+ endif
+
+ ifeq ($(R100), y)
+  OPTS     += -DUSE_R100
+  DEVBROBJ += vid_ati_r100.o
  endif
 
  ifeq ($(RIVA128), y)
