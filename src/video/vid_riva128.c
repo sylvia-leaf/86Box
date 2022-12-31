@@ -238,7 +238,7 @@ riva128_pci_read(int func, int addr, void *p)
     riva128_t *riva128 = (riva128_t *)p;
     // svga_t *svga = &riva128->svga;
 
-    pclog("RIVA 128 PCI reg read %02x\n", addr);
+    //pclog("RIVA 128 PCI reg read %02x\n", addr);
 
     switch (addr) {
     case 0x00: return 0xd2; /*nVidia*/
@@ -344,7 +344,7 @@ riva128_pci_write(int func, int addr, uint8_t val, void *p)
 {
     riva128_t *riva128 = (riva128_t *)p;
 
-    pclog("RIVA 128 PCI reg write %02x val %02x\n", addr, val);
+    //pclog("RIVA 128 PCI reg write %02x val %02x\n", addr, val);
 
     switch (addr) {
     case PCI_REG_COMMAND:
@@ -1312,7 +1312,7 @@ riva128_pgraph_execute_command(uint16_t method, uint32_t param, uint32_t ctx,
 uint32_t graphobj0, uint32_t graphobj1, uint32_t graphobj2, uint32_t graphobj3, void *p)
 {
     riva128_t *riva128 = (riva128_t *)p;
-    //svga_t *svga = &riva128->svga;
+    svga_t *svga = &riva128->svga;
 
     uint8_t objclass = (ctx >> 16) & 0x1f;
 
@@ -1627,18 +1627,40 @@ uint32_t graphobj0, uint32_t graphobj1, uint32_t graphobj2, uint32_t graphobj3, 
         riva128->pgraph.notify_impending--;
         if(riva128->pgraph.notify_impending == 0)
         {
-            //uint64_t *vram_q = (uint64_t *)svga->vram;
+            uint32_t *vram_l = (uint32_t *)svga->vram;
             uint32_t notify_obj_addr = (graphobj1 >> 16) << 4;
-            //uint32_t flags = riva128_ramin_read_l(notify_obj_addr, riva128);
+            uint32_t flags = riva128_ramin_read_l(notify_obj_addr, riva128);
             //uint32_t limit = riva128_ramin_read_l(notify_obj_addr + 4, riva128);
             uint32_t pte = riva128_ramin_read_l(notify_obj_addr + 8, riva128);
             uint32_t pte_frame = pte & 0xfffff000;
+            uint32_t adjust = flags & 0xfff;
+            int target = (flags >> 24) & 3;
             uint32_t notifier[4];
             notifier[0] = riva128->ptimer.time & 0xffffffffull;
             notifier[1] = riva128->ptimer.time >> 32;
             notifier[2] = notifier[3] = 0;
-            dma_bm_write(pte_frame, (uint8_t*)notifier, 4, 4);
-            if(riva128->pgraph.notifier_obj == 1) riva128_pgraph_interrupt(28, riva128);
+            if(riva128->pgraph.notifier_obj == 1)
+            {
+                riva128_pgraph_interrupt(28, riva128);
+                riva128->pgraph.notifier_obj = 0;
+            }
+            uint32_t logical_addr = riva128->pgraph.notifier_obj << 4;
+            uint32_t unpaged_addr = pte_frame + adjust + logical_addr;
+            uint32_t pte_index = (logical_addr + adjust) >> 12;
+            uint32_t paged_addr = (riva128_ramin_read_l(notify_obj_addr + (pte_index << 2) + 8, riva128) & 0xfffff000) | ((logical_addr + adjust) & 0xfff);
+            if(!target)
+            {
+                pclog("[RIVA 128] VRAM notifier at %08x\n", unpaged_addr);
+                vram_l[(unpaged_addr >> 2) & 0xfffff] = notifier[0];
+                vram_l[((unpaged_addr >> 2) + 1) & 0xfffff] = notifier[1];
+                vram_l[((unpaged_addr >> 2) + 2) & 0xfffff] = notifier[2];
+                vram_l[((unpaged_addr >> 2) + 3) & 0xfffff] = notifier[3];
+            }
+            else
+            {
+                pclog("[RIVA 128] PCI notifier at %08x\n", paged_addr);
+                dma_bm_write(paged_addr, (uint8_t*)notifier, 4, 4);
+            }
         }
     }
 }
@@ -1967,7 +1989,7 @@ riva128_mmio_read_l(uint32_t addr, void *p)
     if ((addr >= 0x1800) && (addr <= 0x18ff))
         ret = (riva128_pci_read(0,(addr+0) & 0xff,p) << 0) | (riva128_pci_read(0,(addr+1) & 0xff,p) << 8) | (riva128_pci_read(0,(addr+2) & 0xff,p) << 16) | (riva128_pci_read(0,(addr+3) & 0xff,p) << 24);
 
-    if(!(addr <= 0x000fff) && !((addr >= 0x009000) && (addr <= 0x009fff))) pclog("[RIVA 128] MMIO read %08x returns value %08x\n", addr, ret);
+    //if(!(addr <= 0x000fff) && !((addr >= 0x009000) && (addr <= 0x009fff))) pclog("[RIVA 128] MMIO read %08x returns value %08x\n", addr, ret);
 
     riva128_do_gpu_work(riva128);
 
@@ -2034,7 +2056,7 @@ riva128_mmio_write_l(uint32_t addr, uint32_t val, void *p)
 
     addr &= 0xffffff;
 
-    if(!(addr == 0x400100) && !(addr == 0x000140)) pclog("[RIVA 128] MMIO write %08x %08x\n", addr, val);
+    //if(!(addr == 0x400100) && !(addr == 0x000140)) pclog("[RIVA 128] MMIO write %08x %08x\n", addr, val);
 
     if ((addr >= 0x1800) && (addr <= 0x18ff)) {
     riva128_pci_write(0, addr & 0xff, val & 0xff, p);
