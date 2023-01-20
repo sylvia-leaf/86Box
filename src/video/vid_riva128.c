@@ -994,6 +994,7 @@ uint32_t
 riva128_pgraph_read(uint32_t addr, void *p)
 {
     riva128_t *riva128 = (riva128_t *)p;
+    pclog("RIVA 128 PGRAPH read %08x\n", addr);
     switch(addr)
     {
         case 0x400080:
@@ -1012,6 +1013,8 @@ riva128_pgraph_read(uint32_t addr, void *p)
             return riva128->pgraph.ctx_user;
         case 0x40062c:
             return riva128->pgraph.chroma;
+        case 0x400684:
+            return riva128->pgraph.notifier_obj;
         case 0x4006a4:
             return riva128->pgraph.fifo_access;
     }
@@ -1022,6 +1025,7 @@ void
 riva128_pgraph_write(uint32_t addr, uint32_t val, void *p)
 {
     riva128_t *riva128 = (riva128_t *)p;
+    pclog("[RIVA 128] PGRAPH write %08x data %08x\n", addr, val);
     switch(addr)
     {
         case 0x400080:
@@ -1049,6 +1053,9 @@ riva128_pgraph_write(uint32_t addr, uint32_t val, void *p)
             break;
         case 0x400194:
             riva128->pgraph.ctx_user = val;
+            break;
+        case 0x400624:
+            riva128->pgraph.rop = val & 0xff;
             break;
         case 0x40062c:
             riva128->pgraph.chroma = val;
@@ -1505,10 +1512,11 @@ uint32_t graphobj0, uint32_t graphobj1, uint32_t graphobj2, uint32_t graphobj3, 
                     if(riva128->pgraph.notify_impending)
                     {
                         riva128_pgraph_invalid_interrupt(12, riva128);
+                        riva128->pgraph.fifo_access = 0;
                         break;
                     }
                     riva128->pgraph.notify_impending = 2;
-                    riva128->pgraph.notifier_obj = param;
+                    riva128->pgraph.notifier_obj = (param & 0xf) << 20;
                     break;
                 }
                 case 0x3fc:
@@ -1542,7 +1550,7 @@ uint32_t graphobj0, uint32_t graphobj1, uint32_t graphobj2, uint32_t graphobj3, 
                         break;
                     }
                     riva128->pgraph.notify_impending = 2;
-                    riva128->pgraph.notifier_obj = param;
+                    riva128->pgraph.notifier_obj = (param & 0xf) << 20;
                     break;
                 }
                 case 0x308:
@@ -1639,12 +1647,13 @@ uint32_t graphobj0, uint32_t graphobj1, uint32_t graphobj2, uint32_t graphobj3, 
             notifier[0] = riva128->ptimer.time & 0xffffffffull;
             notifier[1] = riva128->ptimer.time >> 32;
             notifier[2] = notifier[3] = 0;
-            if(riva128->pgraph.notifier_obj == 1)
+            uint32_t notifier_obj = (riva128->pgraph.notifier_obj >> 20) & 0xf;
+            if(notifier_obj == 1)
             {
                 riva128_pgraph_interrupt(28, riva128);
-                riva128->pgraph.notifier_obj = 0;
+                notifier_obj = 0;
             }
-            uint32_t logical_addr = riva128->pgraph.notifier_obj << 4;
+            uint32_t logical_addr = notifier_obj << 4;
             uint32_t unpaged_addr = pte_frame + adjust + logical_addr;
             uint32_t pte_index = (logical_addr + adjust) >> 12;
             uint32_t paged_addr = (riva128_ramin_read_l(notify_obj_addr + (pte_index << 2) + 8, riva128) & 0xfffff000) | ((logical_addr + adjust) & 0xfff);
@@ -2359,9 +2368,7 @@ riva128_vblank_start(svga_t *svga)
 {
     riva128_t *riva128 = (riva128_t *)svga->p;
 
-    riva128->pgraph.intr_0 |= (1u << 8);
-
-    riva128_pmc_recompute_intr(1, riva128);
+    riva128_pgraph_interrupt(8, riva128);
 }
 
 static void
