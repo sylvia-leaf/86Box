@@ -353,7 +353,7 @@ opPSRAD_a16(uint32_t fetchdat)
 
     MMX_ENTER();
 
-    fetch_ea_32(fetchdat);
+    fetch_ea_16(fetchdat);
     MMX_GETSHIFT();
 
     if (shift > 31)
