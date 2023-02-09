@@ -497,7 +497,7 @@ const machine_t machines[] = {
             .step = 64
         },
         .nvrmask = 0,
-        .kbc = KBC_IBM_PC_XT,
+        .kbc_device = &keyboard_xtclone_device,
         .kbc_p1 = 0xff00,
         .gpio = 0xffffffff,
         .device = NULL,
@@ -3189,7 +3189,7 @@ const machine_t machines[] = {
             .step = 128
         },
         .nvrmask = 127,
-        .kbc = KBC_UNKNOWN,
+        .kbc_device = NULL,
         .kbc_p1 = 0,
         .gpio = 0,
         .device = NULL,
@@ -11657,7 +11657,7 @@ const machine_t machines[] = {
             .step = 8192
         },
         .nvrmask = 255,
-        .kbc = KBC_UNKNOWN,
+        .kbc_device = NULL,
         .kbc_p1 = 0,
         .gpio = 0,
         .device = NULL,
@@ -11733,7 +11733,7 @@ const machine_t machines[] = {
             .step = 8192
         },
         .nvrmask = 255,
-        .kbc = KBC_UNKNOWN,
+        .kbc_device = NULL,
         .kbc_p1 = 0,
         .gpio = 0,
         .device = NULL,
@@ -12960,7 +12960,7 @@ const machine_t machines[] = {
             .step = 32768
         },
         .nvrmask = 255,
-        .kbc = KBC_UNKNOWN,
+        .kbc_device = NULL,
         .kbc_p1 = 0,
         .gpio = 0,
         .device = NULL,
@@ -12996,7 +12996,7 @@ const machine_t machines[] = {
             .step = 32768
         },
         .nvrmask = 255,
-        .kbc = KBC_UNKNOWN,
+        .kbc_device = NULL,
         .kbc_p1 = 0,
         .gpio = 0,
         .device = NULL,
@@ -13033,7 +13033,7 @@ const machine_t machines[] = {
             .step = 32768
         },
         .nvrmask = 255,
-        .kbc = KBC_UNKNOWN,
+        .kbc_device = NULL,
         .kbc_p1 = 0,
         .gpio = 0,
         .device = NULL,
@@ -13069,7 +13069,7 @@ const machine_t machines[] = {
             .step = 32768
         },
         .nvrmask = 255,
-        .kbc = KBC_UNKNOWN,
+        .kbc_device = NULL,
         .kbc_p1 = 0,
         .gpio = 0,
         .device = NULL,
@@ -13105,7 +13105,7 @@ const machine_t machines[] = {
             .step = 32768
         },
         .nvrmask = 255,
-        .kbc = KBC_UNKNOWN,
+        .kbc_device = NULL,
         .kbc_p1 = 0,
         .gpio = 0,
         .device = NULL,
