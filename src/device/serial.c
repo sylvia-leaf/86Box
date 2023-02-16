@@ -153,9 +153,6 @@ static void
 serial_receive_timer(void *priv)
 {
     serial_t *dev   = (serial_t *) priv;
-#if 0
-    uint16_t old_out_new = dev->out_new;
-#endif
 
     // serial_log("serial_receive_timer()\n");
 
@@ -179,8 +176,9 @@ serial_receive_timer(void *priv)
                 dev->rcvr_fifo[dev->rcvr_fifo_end] = (uint8_t) (dev->out_new & 0xff);
                 dev->rcvr_fifo_end = (dev->rcvr_fifo_end + 1) & 0x0f;
 
-                serial_log("To FIFO: %02X (%i)\n", (uint8_t) (dev->out_new & 0xff),
-                           abs(dev->rcvr_fifo_end - dev->rcvr_fifo_pos));
+                serial_log("To FIFO: %02X (%i, %i, %i)\n", (uint8_t) (dev->out_new & 0xff),
+                           abs(dev->rcvr_fifo_end - dev->rcvr_fifo_pos),
+                           dev->rcvr_fifo_end, dev->rcvr_fifo_pos);
                 dev->out_new = 0xffff;
 
                 if (abs(dev->rcvr_fifo_end - dev->rcvr_fifo_pos) >= dev->rcvr_fifo_len) {
@@ -191,25 +189,24 @@ serial_receive_timer(void *priv)
                     serial_update_ints(dev);
                 }
 
+                if (dev->rcvr_fifo_end == dev->rcvr_fifo_pos)
+                    dev->rcvr_fifo_full = 1;
+
                 timer_on_auto(&dev->timeout_timer, 4.0 * dev->bits * dev->transmit_period);
             }
         }
     }
 
     serial_update_ints(dev);
-
-#if 0
-    serial_log("FIFO: %i, out_new = %04X, old_out_new = %04X, was_enabled = %i, condition = %i\n",
-               ((dev->type >= SERIAL_16550) && dev->fifo_enabled), dev->out_new,
-               old_out_new, was_enabled,
-               ((dev->type >= SERIAL_16550) && dev->fifo_enabled) ? (dev->rcvr_fifo_pos != dev->rcvr_fifo_end) : 0);
-#endif
 }
 
 static void
 write_fifo(serial_t *dev, uint8_t dat)
 {
-    serial_log("write_fifo(%08X, %02X, %i, %i)\n", dev, dat, (dev->type >= SERIAL_16550) && dev->fifo_enabled, dev->rcvr_fifo_pos % dev->rcvr_fifo_len);
+    serial_log("write_fifo(%08X, %02X, %i, %i)\n", dev, dat,
+               (dev->type >= SERIAL_16550) && dev->fifo_enabled,
+               ((dev->type >= SERIAL_16550) && dev->fifo_enabled) ?
+               (dev->rcvr_fifo_pos % dev->rcvr_fifo_len) : 0);
 
     if ((dev->type >= SERIAL_16550) && dev->fifo_enabled) {
         /* FIFO mode. */
@@ -411,7 +408,7 @@ serial_set_dsr(serial_t *dev, uint8_t enabled)
         return;
 
     dev->msr &= ~0x2;
-    dev->msr |= !!((dev->msr & 0x20) ^ (enabled << 5)) << 1;
+    dev->msr |= ((dev->msr & 0x20) ^ ((!!enabled) << 5)) >> 4;
     dev->msr &= ~0x20;
     dev->msr |= (!!enabled) << 5;
     dev->msr_set &= ~0x20;
@@ -430,7 +427,7 @@ serial_set_cts(serial_t *dev, uint8_t enabled)
         return;
 
     dev->msr &= ~0x1;
-    dev->msr |= !!((dev->msr & 0x10) ^ (enabled << 4));
+    dev->msr |= ((dev->msr & 0x10) ^ ((!!enabled) << 4)) >> 4;
     dev->msr &= ~0x10;
     dev->msr |= (!!enabled) << 4;
     dev->msr_set &= ~0x10;
@@ -449,7 +446,7 @@ serial_set_dcd(serial_t *dev, uint8_t enabled)
         return;
 
     dev->msr &= ~0x8;
-    dev->msr |= !!((dev->msr & 0x80) ^ (enabled << 7));
+    dev->msr |= ((dev->msr & 0x80) ^ ((!!enabled) << 7)) >> 4;
     dev->msr &= ~0x80;
     dev->msr |= (!!enabled) << 7;
     dev->msr_set &= ~0x80;
@@ -476,7 +473,8 @@ serial_write(uint16_t addr, uint8_t val, void *p)
     serial_t *dev = (serial_t *) p;
     uint8_t   new_msr, old;
 
-    serial_log("UART: Write %02X to port %02X\n", val, addr);
+    // serial_log("UART: Write %02X to port %02X\n", val, addr);
+    serial_log("UART: [%04X:%08X] Write %02X to port %02X\n", CS, cpu_state.pc, val, addr);
 
     cycles -= ISA_CYCLES(8);
 
@@ -622,7 +620,11 @@ serial_write(uint16_t addr, uint8_t val, void *p)
             serial_update_ints(dev);
             break;
         case 6:
-            dev->msr = (val & 0xF0) | (dev->msr & 0x0F);
+            // dev->msr = (val & 0xf0) | (dev->msr & 0x0f);
+            // dev->msr = val;
+            /* The actual condition bits of the MSR are read-only, but the delta bits are
+               undocumentedly writable, and the PCjr BIOS uses them to raise MSR interrupts. */
+            dev->msr = (dev->msr & 0xf0) | (val & 0x0f);
             if (dev->msr & 0x0f)
                 dev->int_status |= SERIAL_INT_MSR;
             serial_update_ints(dev);
@@ -655,7 +657,7 @@ serial_read(uint16_t addr, void *p)
             if ((dev->type >= SERIAL_16550) && dev->fifo_enabled) {
                 /* FIFO mode. */
 
-                if (dev->rcvr_fifo_pos != dev->rcvr_fifo_end) {
+                if (dev->lsr & 0x01) {
                     /* There is data in the FIFO. */
                     ret = dev->rcvr_fifo[dev->rcvr_fifo_pos];
                     dev->rcvr_fifo_pos = (dev->rcvr_fifo_pos + 1) & 0x0f;
@@ -729,7 +731,8 @@ serial_read(uint16_t addr, void *p)
             break;
     }
 
-    serial_log("UART: Read %02X from port %02X\n", ret, addr);
+    // serial_log("UART: Read %02X from port %02X\n", ret, addr);
+    serial_log("UART: [%04X:%08X] Read %02X from port %02X\n", CS, cpu_state.pc, ret, addr);
     return ret;
 }
 
@@ -879,7 +882,10 @@ serial_init(const device_t *info)
         /* Default to 1200,N,7. */
         dev->dlab      = 96;
         dev->fcr       = 0x06;
-        dev->clock_src = 1843200.0;
+        if (info->local == SERIAL_8250_PCJR)
+            dev->clock_src = 1789500.0;
+        else
+            dev->clock_src = 1843200.0;
         timer_add(&dev->transmit_timer, serial_transmit_timer, dev, 0);
         timer_add(&dev->timeout_timer, serial_timeout_timer, dev, 0);
         timer_add(&dev->receive_timer, serial_receive_timer, dev, 0);
