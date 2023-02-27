@@ -2485,7 +2485,7 @@ execx86(int cycs)
                     cpu_dest = AL;
                     AL = new_al = cpu_data = cpu_dest - cpu_src;
                     //undefined flag behavior, tested on real 8088 by dbalsom on GitHub.
-                    set_psz(8);
+                    set_pzs(8);
                     set_of(0);
                     cpu_state.flags &= ~0x80;
                     if(old_af && old_al >= 0x80 && old_al <= 0x85) set_of(1);
