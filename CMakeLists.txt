@@ -39,7 +39,7 @@ if(MUNT_EXTERNAL)
 endif()
 
 project(PCBox
-    VERSION 3.11
+    VERSION 4.0
     DESCRIPTION "Emulator of x86-based systems"
     HOMEPAGE_URL "https://pcbox.github.io/"
     LANGUAGES C CXX)
