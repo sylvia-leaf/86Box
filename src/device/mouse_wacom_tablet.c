@@ -81,7 +81,6 @@ wacom_reset(mouse_wacom_t *wacom)
     wacom->mode                 = WACOM_MODE_POINT;
     wacom->data_pos             = 0;
     wacom->transmission_ongoing = 0;
-    wacom->mode                 = 0;
     wacom->transmission_stopped = 0;
     wacom->interval             = 0;
     wacom->transmit_id          = 0;
@@ -331,6 +330,8 @@ wacom_report_timer(void *priv)
 
             case WACOM_MODE_POINT:
                 {
+                    if (wacom->suppressed_increment)
+                        break;
                     if (!(wacom_switch_off_to_on(wacom->b, wacom->oldb)))
                         return;
                     break;
