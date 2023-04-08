@@ -36,6 +36,8 @@ roms/
 *.tar.*
 *.AppImage
 /appimage-builder-cache
+/appimage-build
+/AppImageBuilder-generated.yml
 
 # Visual Studio Code
 /.vs
