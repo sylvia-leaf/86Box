@@ -133,7 +133,9 @@ static std::unordered_map<std::string, uint16_t> xkb_keycodes = {
     {"HIRA", 0x77},
     {"KATA", 0x78},
     {"HENK", 0x79},
+    {"KANA", 0x79}, /* kana => henkan (for Apple keyboards) */
     {"MUHE", 0x7b},
+    {"EISU", 0x7b}, /* eisu => muhenkan (for Apple keyboards) */
     {"AE13", 0x7d}, /* \| */
     {"KPPT", 0x7e}, /* Brazilian Num. */
     {"I06",  0x7e}, /* alias of KPPT on keycodes/xfree86 (i.e. X11 forwarding) */
@@ -150,6 +152,7 @@ static std::unordered_map<std::string, uint16_t> xkb_keycodes = {
     {"FK13", 0x137}, /* F13 => SysRq (for Apple keyboards) */
     {"RALT", 0x138},
     {"ALGR", 0x138},
+    {"LVL3", 0x138}, /* observed on TigerVNC with AltGr-enabled layout */
     {"PAUS", 0x145},
     {"FK15", 0x145}, /* F15 => Pause (for Apple keyboards) */
     {"BRK",  0x145},
@@ -199,7 +202,7 @@ xkbcommon_init(struct xkb_keymap *keymap)
 void
 xkbcommon_close()
 {
-    xkbcommon_keymap = NULL;
+    xkbcommon_keymap = nullptr;
 }
 
 uint16_t

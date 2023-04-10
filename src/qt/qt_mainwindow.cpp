@@ -126,6 +126,7 @@ namespace IOKit {
 #ifdef __HAIKU__
 #    include <os/AppKit.h>
 #    include <os/InterfaceKit.h>
+#    include "be_keyboard.hpp"
 
 extern MainWindow *main_window;
 
@@ -906,147 +907,67 @@ MainWindow::on_actionSettings_triggered()
     plat_pause(currentPause);
 }
 
-#ifdef __HAIKU__
-static std::unordered_map<uint8_t, uint16_t> be_to_xt = {
-    {0x01,       0x01 },
-    { B_F1_KEY,  0x3B },
-    { B_F2_KEY,  0x3C },
-    { B_F3_KEY,  0x3D },
-    { B_F4_KEY,  0x3E },
-    { B_F5_KEY,  0x3F },
-    { B_F6_KEY,  0x40 },
-    { B_F7_KEY,  0x41 },
-    { B_F8_KEY,  0x42 },
-    { B_F9_KEY,  0x43 },
-    { B_F10_KEY, 0x44 },
-    { B_F11_KEY, 0x57 },
-    { B_F12_KEY, 0x58 },
-    { 0x11,      0x29 },
-    { 0x12,      0x02 },
-    { 0x13,      0x03 },
-    { 0x14,      0x04 },
-    { 0x15,      0x05 },
-    { 0x16,      0x06 },
-    { 0x17,      0x07 },
-    { 0x18,      0x08 },
-    { 0x19,      0x09 },
-    { 0x1A,      0x0A },
-    { 0x1B,      0x0B },
-    { 0x1C,      0x0C },
-    { 0x1D,      0x0D },
-    { 0x1E,      0x0E },
-    { 0x1F,      0x152},
-    { 0x20,      0x147},
-    { 0x21,      0x149},
-    { 0x22,      0x45 },
-    { 0x23,      0x135},
-    { 0x24,      0x37 },
-    { 0x25,      0x4A },
-    { 0x26,      0x0F },
-    { 0x27,      0x10 },
-    { 0x28,      0x11 },
-    { 0x29,      0x12 },
-    { 0x2A,      0x13 },
-    { 0x2B,      0x14 },
-    { 0x2C,      0x15 },
-    { 0x2D,      0x16 },
-    { 0x2E,      0x17 },
-    { 0x2F,      0x18 },
-    { 0x30,      0x19 },
-    { 0x31,      0x1A },
-    { 0x32,      0x1B },
-    { 0x33,      0x2B },
-    { 0x34,      0x153},
-    { 0x35,      0x14F},
-    { 0x36,      0x151},
-    { 0x37,      0x47 },
-    { 0x38,      0x48 },
-    { 0x39,      0x49 },
-    { 0x3A,      0x4E },
-    { 0x3B,      0x3A },
-    { 0x3C,      0x1E },
-    { 0x3D,      0x1F },
-    { 0x3E,      0x20 },
-    { 0x3F,      0x21 },
-    { 0x40,      0x22 },
-    { 0x41,      0x23 },
-    { 0x42,      0x24 },
-    { 0x43,      0x25 },
-    { 0x44,      0x26 },
-    { 0x45,      0x27 },
-    { 0x46,      0x28 },
-    { 0x47,      0x1C },
-    { 0x48,      0x4B },
-    { 0x49,      0x4C },
-    { 0x4A,      0x4D },
-    { 0x4B,      0x2A },
-    { 0x4C,      0x2C },
-    { 0x4D,      0x2D },
-    { 0x4E,      0x2E },
-    { 0x4F,      0x2F },
-    { 0x50,      0x30 },
-    { 0x51,      0x31 },
-    { 0x52,      0x32 },
-    { 0x53,      0x33 },
-    { 0x54,      0x34 },
-    { 0x55,      0x35 },
-    { 0x56,      0x36 },
-    { 0x57,      0x148},
-    { 0x58,      0x51 },
-    { 0x59,      0x50 },
-    { 0x5A,      0x4F },
-    { 0x5B,      0x11C},
-    { 0x5C,      0x1D },
-    { 0x5D,      0x38 },
-    { 0x5E,      0x39 },
-    { 0x5F,      0x138},
-    { 0x60,      0x11D},
-    { 0x61,      0x14B},
-    { 0x62,      0x150},
-    { 0x63,      0x14D},
-    { 0x64,      0x52 },
-    { 0x65,      0x53 },
-
-    { 0x0e,      0x137},
-    { 0x0f,      0x46 },
-    { 0x66,      0x15B},
-    { 0x67,      0x15C},
-    { 0x68,      0x15D},
-    { 0x69,      0x56 }
-};
-#endif
-
-uint16_t
-x11_keycode_to_keysym(uint32_t keycode)
+void
+MainWindow::processKeyboardInput(bool down, uint32_t keycode)
 {
-    uint16_t finalkeycode;
-#if defined(Q_OS_WINDOWS)
-    finalkeycode = (keycode & 0xFFFF);
+#if defined(Q_OS_WINDOWS) /* non-raw input */
+    keycode &= 0xffff;
 #elif defined(Q_OS_MACOS)
-    finalkeycode = (keycode < 127) ? cocoa_keycodes[keycode] : 0;
+    keycode = (keycode < 127) ? cocoa_keycodes[keycode] : 0;
 #elif defined(__HAIKU__)
-    finalkeycode = be_to_xt[keycode];
+    keycode = be_keycodes[keycode];
 #else
 #    ifdef XKBCOMMON
     if (xkbcommon_keymap)
-        finalkeycode = xkbcommon_translate(keycode);
+        keycode = xkbcommon_translate(keycode);
     else
 #    endif
 #    ifdef EVDEV_KEYBOARD_HPP
-        finalkeycode = evdev_translate(keycode - 8);
+        keycode = evdev_translate(keycode - 8);
 #    else
-        finalkeycode = 0;
+        keycode = 0;
 #    endif
 #endif
-    /* Special case for Alt+Print Screen and Ctrl+Pause. */
-    if ((finalkeycode == 0x137) && (keyboard_recv(0x38) || keyboard_recv(0x138)))
-        finalkeycode = 0x54;
-    else if ((finalkeycode == 0x145) && (keyboard_recv(0x1d) || keyboard_recv(0x11d)))
-        finalkeycode = 0x146;
 
-    if (rctrl_is_lalt && finalkeycode == 0x11D)
-        finalkeycode = 0x38;
-    return finalkeycode;
+    /* Apply special cases. */
+    switch (keycode) {
+        case 0x54: /* Alt + Print Screen (special case, i.e. evdev SELECTIVE_SCREENSHOT) */
+            /* Send Alt as well. */
+            if (down) {
+                keyboard_input(down, 0x38);
+            } else {
+                keyboard_input(down, keycode);
+                keycode = 0x38;
+            }
+            break;
+
+        case 0x11d: /* Right Ctrl */
+            if (rctrl_is_lalt)
+                keycode = 0x38; /* map to Left Alt */
+            break;
+
+        case 0x137: /* Print Screen */
+            if (keyboard_recv(0x38) || keyboard_recv(0x138)) { /* Alt+ */
+                keycode = 0x54;
+            } else if (down) {
+                keyboard_input(down, 0x12a);
+            } else {
+                keyboard_input(down, keycode);
+                keycode = 0x12a;
+            }
+            break;
+
+        case 0x145: /* Pause */
+            if (keyboard_recv(0x1d) || keyboard_recv(0x11d)) { /* Ctrl+ */
+                keycode = 0x146;
+            } else {
+                keyboard_input(down, 0xe11d);
+                keycode &= 0x00ff;
+            }
+            break;
+    }
+
+    keyboard_input(down, keycode);
 }
 
 #ifdef Q_OS_MACOS
@@ -1064,6 +985,7 @@ static std::unordered_map<uint32_t, uint16_t> mac_modifiers_to_xt = {
     { NX_DEVICE_ALPHASHIFT_STATELESS_MASK, 0x3A },
     { NX_DEVICERCTLKEYMASK,                0x11D},
 };
+static bool mac_iso_swap = false;
 
 void
 MainWindow::processMacKeyboardInput(bool down, const QKeyEvent *event)
@@ -1104,11 +1026,63 @@ MainWindow::processMacKeyboardInput(bool down, const QKeyEvent *event)
         // It's possible that other lock keys get delivered in this way, but
         // standard Apple keyboards don't have them, so this is untested.
         if (event->key() == Qt::Key_CapsLock) {
-            keyboard_input(1, 0x3A);
-            keyboard_input(0, 0x3A);
+            keyboard_input(1, 0x3a);
+            keyboard_input(0, 0x3a);
         }
     } else {
-        keyboard_input(down, x11_keycode_to_keysym(event->nativeVirtualKey()));
+        /* Apple ISO keyboards are notorious for swapping ISO_Section and ANSI_Grave
+           on *some* layouts and/or models. While macOS can sort this mess out at
+           keymap level, it still provides applications with unfiltered, ambiguous
+           keycodes, so we have to disambiguate them by making some bold assumptions
+           about the user's keyboard layout based on the OS-provided key mappings. */
+        auto nvk = event->nativeVirtualKey();
+        if ((nvk == 0x0a) || (nvk == 0x32)) {
+            /* Flaws:
+               - Layouts with `~ on ISO_Section are partially detected due to a conflict with ANSI
+               - Czech and Slovak are not detected as they have <> ANSI_Grave and \| ISO_Section (differing from PC actually)
+               - Italian is partially detected due to \| conflicting with Brazilian
+               - Romanian third level ANSI_Grave is unknown
+               - Russian clusters <>, plusminus and paragraph into a four-level ANSI_Grave, with the aforementioned `~ on ISO_Section */
+            auto key = event->key();
+            if ((nvk == 0x32) && ( /* system reports ANSI_Grave for ISO_Section keys: */
+                    (key == Qt::Key_Less) || (key == Qt::Key_Greater) || /* Croatian, French, German, Icelandic, Italian, Norwegian, Portuguese, Spanish, Spanish Latin America, Turkish Q */
+                    (key == Qt::Key_Ugrave) || /* French Canadian */
+                    (key == Qt::Key_Icircumflex) || /* Romanian */
+                    (key == Qt::Key_Iacute) || /* Hungarian */
+                    (key == Qt::Key_BracketLeft) || (key == Qt::Key_BracketRight) || /* Russian upper two levels */
+                    (key == Qt::Key_W) /* Turkish F */
+                ))
+                mac_iso_swap = true;
+            else if ((nvk == 0x0a) && ( /* system reports ISO_Section for ANSI_Grave keys: */
+                    (key == Qt::Key_paragraph) || (key == Qt::Key_plusminus) || /* Arabic, British, Bulgarian, Danish shifted, Dutch, Greek, Hebrew, Hungarian shifted, International English, Norwegian shifted, Portuguese, Russian lower two levels, Swiss unshifted, Swedish unshifted, Turkish F */
+                    (key == Qt::Key_At) || (key == Qt::Key_NumberSign) || /* Belgian, French */
+                    (key == Qt::Key_Apostrophe) || /* Brazilian unshifted */
+                    (key == Qt::Key_QuoteDbl) || /* Brazilian shifted, Turkish Q unshifted */
+                    (key == Qt::Key_QuoteLeft) || /* Croatian (right quote unknown) */
+                    (key == Qt::Key_Dollar) || /* Danish unshifted */
+                    (key == Qt::Key_AsciiCircum) || /* German unshifted, Polish unshifted */
+                    (key == Qt::Key_degree) || /* German shifted, Icelandic unshifted, Spanish Latin America shifted, Swiss shifted, Swedish shifted */
+                    (key == Qt::Key_0) || /* Hungarian unshifted */
+                    (key == Qt::Key_diaeresis) || /* Icelandic shifted */
+                    (key == Qt::Key_acute) || /* Norwegian unshifted */
+                    (key == Qt::Key_Asterisk) || /* Polish shifted */
+                    (key == Qt::Key_masculine) || (key == Qt::Key_ordfeminine) || /* Spanish (masculine unconfirmed) */
+                    (key == Qt::Key_Eacute) || /* Turkish Q shifted */
+                    (key == Qt::Key_Slash) /* French Canadian unshifted, Ukrainian shifted */
+                ))
+                mac_iso_swap = true;
+
+            /* Temporary debug code. */
+            if (down) {
+                QMessageBox questionbox(QMessageBox::Icon::Information, QString("Mac key swap test"), QString("nativeVirtualKey 0x%1\nnativeScanCode 0x%2\nkey 0x%3\nmac_iso_swap %4").arg(nvk, 0, 16).arg(event->nativeScanCode(), 0, 16).arg(key, 0, 16).arg(mac_iso_swap ? "yes" : "no"), QMessageBox::Ok, this);
+                questionbox.exec();
+            }
+
+            if (mac_iso_swap)
+                nvk = (nvk == 0x0a) ? 0x32 : 0x0a;
+        }
+
+        processKeyboardInput(down, nvk);
     }
 }
 #endif
@@ -1255,16 +1229,7 @@ MainWindow::keyPressEvent(QKeyEvent *event)
 #ifdef Q_OS_MACOS
         processMacKeyboardInput(true, event);
 #else
-        auto scan = x11_keycode_to_keysym(event->nativeScanCode());
-        if (scan == 0x137) {
-            /* Special case for Print Screen. */
-            keyboard_input(1, 0x12a);
-        } else if (scan == 0x145) {
-            /* Special case for Pause. */
-            keyboard_input(1, 0xe11d);
-            scan &= 0x00ff;
-        }
-        keyboard_input(1, scan);
+        processKeyboardInput(true, event->nativeScanCode());
 #endif
     }
 
@@ -1312,17 +1277,7 @@ MainWindow::keyReleaseEvent(QKeyEvent *event)
 #ifdef Q_OS_MACOS
     processMacKeyboardInput(false, event);
 #else
-    auto scan = x11_keycode_to_keysym(event->nativeScanCode());
-    if (scan == 0x137) {
-        /* Special case for Print Screen. */
-        keyboard_input(0, scan);
-        scan = 0x12a;
-    } else if (scan == 0x145) {
-        /* Special case for Pause. */
-        keyboard_input(0, 0xe11d);
-        scan &= 0x00ff;
-    }
-    keyboard_input(0, scan);
+    processKeyboardInput(false, event->nativeScanCode());
 #endif
 }
 
