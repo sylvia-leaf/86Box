@@ -167,6 +167,10 @@ private:
     bool resizableonce       = false;
     bool vnc_enabled         = false;
 
+    /* Full screen ON and OFF signals */
+    bool fs_on_signal        = false;
+    bool fs_off_signal       = false;
+
     friend class SpecifyDimensions;
     friend class ProgSettings;
     friend class RendererCommon;
