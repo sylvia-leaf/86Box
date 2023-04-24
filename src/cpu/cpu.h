@@ -673,7 +673,7 @@ extern void cpu_RDMSR(void);
 extern void cpu_WRMSR(void);
 extern void cpu_INVD(uint8_t wb);
 
-extern int  checkio(uint32_t port);
+extern int  checkio(uint32_t port, int mask);
 extern void codegen_block_end(void);
 extern void codegen_reset(void);
 extern void cpu_set_edx(void);
