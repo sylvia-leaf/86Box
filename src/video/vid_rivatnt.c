@@ -643,6 +643,7 @@ rivatnt_mmio_read_l(uint32_t addr, void *p)
     case 0x6013b4: case 0x6013b5:
     case 0x6013d4: case 0x6013d5:
     case 0x6013da:
+    case 0x6013c0:
     case 0x0c03c2: case 0x0c03c3: case 0x0c03c4: case 0x0c03c5: case 0x0c03cc:
     case 0x6813c6: case 0x6813c7: case 0x6813c8: case 0x6813c9: case 0x6813ca: case 0x6813cb:
         ret = (rivatnt_in((addr+0) & 0x3ff,p) << 0) | (rivatnt_in((addr+1) & 0x3ff,p) << 8) | (rivatnt_in((addr+2) & 0x3ff,p) << 16) | (rivatnt_in((addr+3) & 0x3ff,p) << 24);
@@ -686,6 +687,7 @@ rivatnt_mmio_read(uint32_t addr, void *p)
     case 0x6013b4: case 0x6013b5:
     case 0x6013d4: case 0x6013d5:
     case 0x6013da:
+    case 0x6013c0:
     case 0x0c03c2: case 0x0c03c3: case 0x0c03c4: case 0x0c03c5: case 0x0c03cc:
     case 0x6813c6: case 0x6813c7: case 0x6813c8: case 0x6813c9: case 0x6813ca: case 0x6813cb:
         return rivatnt_in(addr & 0x3ff,p);
@@ -712,6 +714,7 @@ rivatnt_mmio_read_w(uint32_t addr, void *p)
     case 0x6013b4: case 0x6013b5:
     case 0x6013d4: case 0x6013d5:
     case 0x6013da:
+    case 0x6013c0:
     case 0x0c03c2: case 0x0c03c3: case 0x0c03c4: case 0x0c03c5: case 0x0c03cc:
     case 0x6813c6: case 0x6813c7: case 0x6813c8: case 0x6813c9: case 0x6813ca: case 0x6813cb:
         return (rivatnt_in((addr+0) & 0x3ff,p) << 0) | (rivatnt_in((addr+1) & 0x3ff,p) << 8);
@@ -750,6 +753,7 @@ rivatnt_mmio_write_l(uint32_t addr, uint32_t val, void *p)
     case 0x6013b4: case 0x6013b5:
     case 0x6013d4: case 0x6013d5:
     case 0x6013da:
+    case 0x6013c0:
     case 0x0c03c2: case 0x0c03c3: case 0x0c03c4: case 0x0c03c5: case 0x0c03cc:
     case 0x6813c6: case 0x6813c7: case 0x6813c8: case 0x6813c9: case 0x6813ca: case 0x6813cb:
         rivatnt_out(addr & 0xfff, val & 0xff, p);
@@ -768,10 +772,16 @@ rivatnt_mmio_write(uint32_t addr, uint8_t val, void *p)
 
     addr &= 0xffffff;
 
+    if ((addr >= 0x1800) && (addr <= 0x18ff)) {
+    rivatnt_pci_write(0, addr & 0xff, val & 0xff, p);
+    return;
+    }
+
     switch(addr) {
     case 0x6013b4: case 0x6013b5:
     case 0x6013d4: case 0x6013d5:
     case 0x6013da:
+    case 0x6013c0:
     case 0x0c03c2: case 0x0c03c3: case 0x0c03c4: case 0x0c03c5: case 0x0c03cc:
     case 0x6813c6: case 0x6813c7: case 0x6813c8: case 0x6813c9: case 0x6813ca: case 0x6813cb:
         rivatnt_out(addr & 0xfff, val & 0xff, p);
@@ -791,13 +801,26 @@ rivatnt_mmio_write_w(uint32_t addr, uint16_t val, void *p)
 {
     uint32_t tmp;
 
+    addr &= 0xffffff;
+
     if ((addr >= 0x1800) && (addr <= 0x18ff)) {
     rivatnt_pci_write(0, addr & 0xff, val & 0xff, p);
     rivatnt_pci_write(0, (addr+1) & 0xff, (val>>8) & 0xff, p);
     return;
     }
 
-    addr &= 0xffffff;
+    switch(addr) {
+    case 0x6013b4: case 0x6013b5:
+    case 0x6013d4: case 0x6013d5:
+    case 0x6013da:
+    case 0x6013c0:
+    case 0x0c03c2: case 0x0c03c3: case 0x0c03c4: case 0x0c03c5: case 0x0c03cc:
+    case 0x6813c6: case 0x6813c7: case 0x6813c8: case 0x6813c9: case 0x6813ca: case 0x6813cb:
+        rivatnt_out(addr & 0xfff, val & 0xff, p);
+        rivatnt_out(addr & 0xfff, val >> 8, p);
+        return;
+    }
+
     tmp = rivatnt_mmio_read_l(addr,p);
     tmp &= ~(0xffff << ((addr & 3) << 3));
     tmp |= val << ((addr & 3) << 3);
