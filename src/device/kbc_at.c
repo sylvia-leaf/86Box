@@ -808,6 +808,12 @@ write64_generic(void *priv, uint8_t val)
             }
             break;
 
+        case 0xa5: /* load security */
+            kbc_at_log("ATkbc: load security\n");
+            dev->wantdata = 1;
+            dev->state = STATE_KBC_PARAM;
+            return 0;
+
         case 0xa7: /* disable auxiliary port */
             if (dev->misc_flags & FLAG_PS2) {
                 kbc_at_log("ATkbc: disable auxiliary port\n");
@@ -1003,11 +1009,6 @@ write60_ami(void *priv, uint8_t val)
                 write_cmd(dev, val);
             return 0;
 
-        case 0xa5: /* get extended controller RAM */
-            kbc_at_log("ATkbc: AMI - get extended controller RAM\n");
-            kbc_delay_to_ob(dev, dev->mem[val], 0, 0x00);
-            return 0;
-
         case 0xaf: /* set extended controller RAM */
             kbc_at_log("ATkbc: AMI - set extended controller RAM\n");
             if (dev->command_phase == 1) {
@@ -1102,12 +1103,8 @@ write64_ami(void *priv, uint8_t val)
             if (!(dev->misc_flags & FLAG_PS2)) {
                 kbc_at_log("ATkbc: AMI - write clock = high\n");
                 dev->misc_flags |= FLAG_CLOCK;
-            } else {
-                kbc_at_log("ATkbc: get extended controller RAM\n");
-                dev->wantdata  = 1;
-                dev->state     = STATE_KBC_PARAM;
+                return 0;
             }
-            return 0;
 
         case 0xa6: /* read clock */
             if (!(dev->misc_flags & FLAG_PS2)) {
@@ -1604,6 +1601,17 @@ kbc_at_process_cmd(void *priv)
                     write_cmd(dev, dev->ib);
                 break;
 
+            case 0xa5: /* load security */
+                if (dev->misc_flags & FLAG_PS2) {
+                    kbc_at_log("ATkbc: load security (%02X)\n", dev->ib);
+
+                    if (dev->ib != 0x00) {
+                        dev->wantdata = 1;
+                        dev->state = STATE_KBC_PARAM;
+                    }
+                }
+                break;
+
             case 0xc7: /* set port1 bits */
                 kbc_at_log("ATkbc: Phoenix - set port1 bits\n");
                 dev->p1 |= dev->ib;
@@ -1780,7 +1788,7 @@ kbc_at_reset(void *priv)
     dev->sc_or = 0;
 
     dev->ami_flags = ((dev->flags & KBC_TYPE_MASK) >= KBC_TYPE_PS2_1) ? 0x01 : 0x00;
-    dev->misc_flags = 0x00;
+    dev->misc_flags &= FLAG_PCI;
 
     if ((dev->flags & KBC_TYPE_MASK) >= KBC_TYPE_PS2_1) {
         dev->misc_flags |= FLAG_PS2;
@@ -1834,11 +1842,11 @@ kbc_at_init(const device_t *info)
 
     dev->flags = info->local;
 
-    if (info->flags & DEVICE_PCI)
-        dev->misc_flags |= FLAG_PCI;
-
     video_reset(gfxcard[0]);
     kbc_at_reset(dev);
+
+    if (info->flags & DEVICE_PCI)
+        dev->misc_flags |= FLAG_PCI;
 
     io_sethandler(0x0060, 1, kbc_at_read, NULL, NULL, kbc_at_write, NULL, NULL, dev);
     io_sethandler(0x0064, 1, kbc_at_read, NULL, NULL, kbc_at_write, NULL, NULL, dev);
