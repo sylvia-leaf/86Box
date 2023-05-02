@@ -1343,9 +1343,6 @@ machine_ps2_common_init(const machine_t *model)
     nmi_mask = 0x80;
 
     ps2.uart = device_add_inst(&ns16550_device, 1);
-
-    pic_kbd_latch(0x01);
-    pic_mouse_latch(0x01);
 }
 
 int
@@ -1492,6 +1489,27 @@ machine_ps2_model_80_axx_init(const machine_t *model)
     ps2.planar_id = 0xfff9;
 
     ps2_mca_board_model_70_type34_init(0, 8);
+
+    return ret;
+}
+
+int
+machine_ps2_model_70_type4_init(const machine_t *model)
+{
+    int ret;
+
+    ret = bios_load_interleaved("roms/machines/ibmps2_m70_type4/64F3126.BIN",
+                                "roms/machines/ibmps2_m70_type4/64F3125.BIN",
+                                0x000e0000, 131072, 0);
+
+    if (bios_only || !ret)
+        return ret;
+
+    machine_ps2_common_init(model);
+
+    ps2.planar_id = 0xf9ff;
+
+    ps2_mca_board_model_70_type34_init(1, 4);
 
     return ret;
 }
