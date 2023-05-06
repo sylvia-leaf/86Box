@@ -36,7 +36,13 @@ typedef struct
 /* USB Host Controller device struct */
 typedef struct usb_t
 {
-    uint8_t       uhci_io[32], ohci_mmio[4096];
+    union
+    {
+        uint8_t  ohci_mmio[4096];
+        uint16_t ohci_mmio_w[2048];
+        uint32_t ohci_mmio_l[1024];
+    };
+    uint8_t       uhci_io[32];
     uint16_t      uhci_io_base;
     int           uhci_enable, ohci_enable;
     uint32_t      ohci_mem_base;
@@ -70,6 +76,15 @@ typedef struct
 } usb_desc_conf_t;
 #pragma pack(pop)
 
+typedef struct
+{
+    uint32_t HccaInterrruptTable[32];
+    uint16_t HccaFrameNumber;
+    uint16_t HccaPad1;
+    uint32_t HccaDoneHead;
+    uint32_t Reserved[29];
+} usb_hcca_t;
+
 /* USB endpoint device struct. Incomplete and unused. */
 typedef struct
 {
@@ -82,6 +97,8 @@ typedef struct
     uint8_t (*device_out)(void* priv, uint8_t* data, uint32_t len);
     /* Process setup packets. */
     uint8_t (*device_setup)(void* priv, uint8_t* data);
+    /* Device reset */
+    void (*device_reset)(void* priv);
 
     void* priv;
 } usb_device_t;
