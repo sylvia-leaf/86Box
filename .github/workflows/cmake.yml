@@ -320,8 +320,9 @@ jobs:
         with:
           name: '86Box${{ matrix.ui.slug }}${{ matrix.dynarec.slug }}${{ matrix.build.slug }}-UbuntuJammy-x86_64-gha${{ github.run_number }}'
           path: build/artifacts/**
+      
       - name: SonarCloud
-          env:
+        env:
             BUILD_WRAPPER_OUT_DIR: build_wrapper_output_directory # Directory where build-wrapper output will be placed
         uses: SonarSource/sonarcloud-github-c-cpp@v1
         run: |
