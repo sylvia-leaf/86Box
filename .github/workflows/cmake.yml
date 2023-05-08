@@ -304,8 +304,10 @@ jobs:
           -D CMAKE_INSTALL_PREFIX=./build/artifacts
           -D QT=${{ matrix.ui.qt }}
 
-      - name: Build
+      - name: Install SonarCloud tools
         uses: SonarSource/sonarcloud-github-c-cpp@v1
+
+      - name: Build
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
