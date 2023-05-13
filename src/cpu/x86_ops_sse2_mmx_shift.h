@@ -1,3 +1,4 @@
+/* SPDX-License-Identifier: GPL-2.0-or-later */
 static int
 opPSxxW_xmm_imm(uint32_t fetchdat)
 {

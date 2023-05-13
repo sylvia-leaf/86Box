@@ -1,3 +1,4 @@
+/* SPDX-License-Identifier: GPL-2.0-or-later */
 static int
 opUCOMISS_xmm_xmm_a16(uint32_t fetchdat)
 {

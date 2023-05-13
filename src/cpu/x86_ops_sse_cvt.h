@@ -1,3 +1,4 @@
+/* SPDX-License-Identifier: GPL-2.0-or-later */
 static int
 opCVTPI2PS_xmm_mm_a16(uint32_t fetchdat)
 {
