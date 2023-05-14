@@ -528,14 +528,15 @@ riva128_pmc_recompute_intr(int send_intr, void *p)
 	if (riva128->pmc.intr & (1u << 31))
 		intr |= (1u << 31);
 	
-	if (send_intr) {
-		/* Hardware interrupt */
-		if ((intr & 0x7fffffff) && (riva128->pmc.intr_en & 1))
-			pci_set_irq(riva128->card, PCI_INTA);
-		else
-			pci_clear_irq(riva128->card, PCI_INTA);
-	} /* else
-		pci_clear_irq(riva128->card, PCI_INTA); */
+	if (!send_intr)
+		return intr;
+
+	/* Hardware interrupt */
+	if ((intr & 0x7fffffff) && (riva128->pmc.intr_en & 1))
+		pci_set_irq(riva128->card, PCI_INTA);
+	else
+		pci_clear_irq(riva128->card, PCI_INTA);
+	}
 	return intr;
 }
 
@@ -722,16 +723,15 @@ riva128_pfifo_read(uint32_t addr, void *p)
 	case 0x0032f0:
 		return riva128->pfifo.caches[1].ctx[7];
 	}
-	if ((addr >= 0x003300) && (addr <= 0x003403)) {
-		if (addr & 4)
-			return riva128->pfifo.cache1[(addr >> 3) & 0x1f].param;
-		else {
-			return riva128->pfifo.cache1[(addr >> 3) & 0x1f].method
-					| (riva128->pfifo.cache1[(addr >> 3)
-							& 0x1f].subchan << 13);
-		}
-	}
-	return 0;
+
+	if ((addr < 0x003300) || (addr > 0x003403))
+		return 0;
+	else if (addr & 4)
+		return riva128->pfifo.cache1[(addr >> 3) & 0x1f].param;
+	else
+		return riva128->pfifo.cache1[(addr >> 3) & 0x1f].method
+				| (riva128->pfifo.cache1[(addr >> 3)
+						& 0x1f].subchan << 13);
 }
 
 void
@@ -890,23 +890,19 @@ riva128_pfifo_write(uint32_t addr, uint32_t val, void *p)
 		riva128->pfifo.caches[1].pull_state |= 0x10;
 		break;
 	}
-	if ((addr >= 0x003300) && (addr <= 0x003403)) {
-		if (addr & 4) {
-			riva128->pfifo.cache1[
-					riva128_pfifo_normal2gray(
-					(addr >> 3) & 0x1f)
-				].param = val;
-		} else {
-			riva128->pfifo.cache1[
-					riva128_pfifo_normal2gray(
-						(addr >> 3) & 0x1f)
-					].method = val & 0x1ffc;
-			riva128->pfifo.cache1[
-					riva128_pfifo_normal2gray(
-						(addr >> 3) & 0x1f)
-					].subchan = val >> 13;
-		}
+	if ((addr < 0x003300) || (addr > 0x003403))
+		return
+	if (addr & 4) {
+		riva128->pfifo.cache1[
+				riva128_pfifo_normal2gray((addr >> 3) & 0x1f)
+			].param = val;
+		return
 	}
+	riva128->pfifo.cache1[
+			riva128_pfifo_normal2gray((addr >> 3) & 0x1f)].method
+					= val & 0x1ffc;
+	riva128->pfifo.cache1[riva128_pfifo_normal2gray((addr >> 3) & 0x1f)
+			].subchan = val >> 13;
 }
 
 void
@@ -1216,28 +1212,28 @@ riva128_ramht_lookup(uint32_t handle, int cache_num, uint8_t chanid,
 		riva128->pfifo.cache_error |= cache_num ? 0x10 : 0x01;
 		riva128_pfifo_interrupt(0, riva128);
 		return 1;
-	} else {
-		pclog("[RIVA 128] Object found at RAMHT addr %08x\n",
-				ramht_addr);
-		uint32_t ctx = riva128_ramin_read_l(ramht_addr + 4, riva128);
-		riva128->pfifo.caches[cache_num].pull_ctrl &= ~0x010;
-		if (cache_num)
-			riva128->pfifo.caches[1].ctx[subchanid]
-					= ctx & 0xffffff;
-		else riva128->pfifo.caches[0].ctx[0] = ctx & 0xffffff;
-		pclog("[RIVA 128] CTX %08x\n", ctx & 0xffffff);
-		if (!(ctx & 0x800000)) {
-			pclog("[RIVA 128] Cache error: Software object!\n");
-			riva128->pfifo.caches[cache_num].pull_ctrl |= 0x100;
-			riva128->pfifo.caches[cache_num].pull_ctrl &= ~1;
-			riva128->pfifo.cache_error |= cache_num ? 0x10 : 0x01;
-			riva128_pfifo_interrupt(0, riva128);
-			return 1;
-		} else
-			riva128->pfifo.caches[cache_num].pull_ctrl &= ~0x100;
-		return 0;
 	}
-	
+
+	pclog("[RIVA 128] Object found at RAMHT addr %08x\n",
+			ramht_addr);
+	uint32_t ctx = riva128_ramin_read_l(ramht_addr + 4, riva128);
+	riva128->pfifo.caches[cache_num].pull_ctrl &= ~0x010;
+	if (cache_num)
+		riva128->pfifo.caches[1].ctx[subchanid] = ctx & 0xffffff;
+	else
+		riva128->pfifo.caches[0].ctx[0] = ctx & 0xffffff;
+	pclog("[RIVA 128] CTX %08x\n", ctx & 0xffffff);
+	if (!(ctx & 0x800000)) {
+		pclog("[RIVA 128] Cache error: Software object!\n");
+		riva128->pfifo.caches[cache_num].pull_ctrl |= 0x100;
+		riva128->pfifo.caches[cache_num].pull_ctrl &= ~1;
+		riva128->pfifo.cache_error |= cache_num ? 0x10 : 0x01;
+		riva128_pfifo_interrupt(0, riva128);
+		return 1;
+	} else
+		riva128->pfifo.caches[cache_num].pull_ctrl &= ~0x100;
+
+	return 0;
 }
 
 typedef struct riva128_pgraph_color
@@ -1663,50 +1659,58 @@ riva128_pgraph_execute_command(uint16_t method, uint32_t param, uint32_t ctx,
 		break;
 	}
 
-	if (riva128->pgraph.notify_impending) {
-		riva128->pgraph.notify_impending--;
-		if (riva128->pgraph.notify_impending != 0)
-			return;
+	if (riva128->pgraph.notify_impending == 0)
+		return;
 
-		uint32_t *vram_l = (uint32_t *)svga->vram;
-		uint32_t notify_obj_addr = (graphobj1 >> 16) << 4;
-		uint32_t flags = riva128_ramin_read_l(notify_obj_addr,
-				riva128);
-		/* uint32_t limit = riva128_ramin_read_l(notify_obj_addr
-				+ 4, riva128); */
-		uint32_t pte = riva128_ramin_read_l(notify_obj_addr + 8,
-				riva128);
-		uint32_t pte_frame = pte & 0xfffff000;
-		uint32_t adjust = flags & 0xfff;
-		int target = (flags >> 24) & 3;
-		uint32_t notifier[4];
-		notifier[0] = riva128->ptimer.time & 0xffffffffull;
-		notifier[1] = riva128->ptimer.time >> 32;
-		notifier[2] = notifier[3] = 0;
-		uint32_t notifier_obj = (riva128->pgraph.notifier_obj >> 20)
-				& 0xf;
-		if (notifier_obj == 1) {
-			riva128_pgraph_interrupt(28, riva128);
-			notifier_obj = 0;
-		}
-		uint32_t logical_addr = notifier_obj << 4;
-		uint32_t unpaged_addr = pte_frame + adjust + logical_addr;
-		uint32_t pte_index = (logical_addr + adjust) >> 12;
-		uint32_t paged_addr = (
-			riva128_ramin_read_l(notify_obj_addr + (pte_index << 2)
-					+ 8, riva128) & 0xfffff000
-				) | ((logical_addr + adjust) & 0xfff);
-		if (target) {
-			pclog("[RIVA 128] PCI notifier at %08x\n", paged_addr);
-			dma_bm_write(paged_addr, (uint8_t*)notifier, 4, 4);
-			return;
-		}
-		pclog("[RIVA 128] VRAM notifier at %08x\n", unpaged_addr);
-		vram_l[(unpaged_addr >> 2) & 0xfffff] = notifier[0];
-		vram_l[((unpaged_addr >> 2) + 1) & 0xfffff] = notifier[1];
-		vram_l[((unpaged_addr >> 2) + 2) & 0xfffff] = notifier[2];
-		vram_l[((unpaged_addr >> 2) + 3) & 0xfffff] = notifier[3];
+	/* TODO: if notify pending then return check below looks fishy */
+	riva128->pgraph.notify_impending--;
+	if (riva128->pgraph.notify_impending != 0)
+		return;
+
+	/* TODO: see TODO above. I ask you: will the code below ever run? */
+
+	/* Remove these comments if I'm full of it, I haven't read the rest
+	of your code thoroughly, but you should explore this. The refactored
+	changes here with reduced indentation, have the same behaviour as
+	your original code, just without all that nesting of code. */
+
+	uint32_t *vram_l = (uint32_t *)svga->vram;
+	uint32_t notify_obj_addr = (graphobj1 >> 16) << 4;
+	uint32_t flags = riva128_ramin_read_l(notify_obj_addr,
+			riva128);
+	/* uint32_t limit = riva128_ramin_read_l(notify_obj_addr
+			+ 4, riva128); */
+	uint32_t pte = riva128_ramin_read_l(notify_obj_addr + 8,
+			riva128);
+	uint32_t pte_frame = pte & 0xfffff000;
+	uint32_t adjust = flags & 0xfff;
+	int target = (flags >> 24) & 3;
+	uint32_t notifier[4];
+	notifier[0] = riva128->ptimer.time & 0xffffffffull;
+	notifier[1] = riva128->ptimer.time >> 32;
+	notifier[2] = notifier[3] = 0;
+	uint32_t notifier_obj = (riva128->pgraph.notifier_obj >> 20) & 0xf;
+	if (notifier_obj == 1) {
+		riva128_pgraph_interrupt(28, riva128);
+		notifier_obj = 0;
 	}
+	uint32_t logical_addr = notifier_obj << 4;
+	uint32_t unpaged_addr = pte_frame + adjust + logical_addr;
+	uint32_t pte_index = (logical_addr + adjust) >> 12;
+	uint32_t paged_addr = (
+		riva128_ramin_read_l(notify_obj_addr + (pte_index << 2)
+				+ 8, riva128) & 0xfffff000
+			) | ((logical_addr + adjust) & 0xfff);
+	if (target) {
+		pclog("[RIVA 128] PCI notifier at %08x\n", paged_addr);
+		dma_bm_write(paged_addr, (uint8_t*)notifier, 4, 4);
+		return;
+	}
+	pclog("[RIVA 128] VRAM notifier at %08x\n", unpaged_addr);
+	vram_l[(unpaged_addr >> 2) & 0xfffff] = notifier[0];
+	vram_l[((unpaged_addr >> 2) + 1) & 0xfffff] = notifier[1];
+	vram_l[((unpaged_addr >> 2) + 2) & 0xfffff] = notifier[2];
+	vram_l[((unpaged_addr >> 2) + 3) & 0xfffff] = notifier[3];
 }
 
 void
@@ -1770,23 +1774,24 @@ riva128_do_cache0_puller(void *p)
 		pclog("[RIVA 128] CTX = %08x\n", ctx);
 		riva128_pgraph_command_submit(method, chanid,
 				subchanid, param, ctx, riva128);
-	} else {
-		uint32_t ctx = riva128->pfifo.caches[0].ctx[0];
-		pclog("[RIVA 128] CTX = %08x\n", ctx);
-		if (!(ctx & 0x800000)) {
-			pclog("[RIVA 128] Cache error: Software method!\n");
-			riva128->pfifo.caches[0].pull_ctrl |= 0x100;
-			riva128->pfifo.caches[0].pull_ctrl &= ~1;
-			riva128->pfifo.cache_error |= 0x01;
-			riva128_pfifo_interrupt(0, riva128);
-			return;
-		} else {
-			riva128->pfifo.caches[0].get ^= 4;
-			/* TODO: forward to PGRAPH. */
-			riva128_pgraph_command_submit(method, chanid,
-					subchanid, param, ctx, riva128);
-		}
+		return;
 	}
+
+	uint32_t ctx = riva128->pfifo.caches[0].ctx[0];
+	pclog("[RIVA 128] CTX = %08x\n", ctx);
+	if (!(ctx & 0x800000)) {
+		pclog("[RIVA 128] Cache error: Software method!\n");
+		riva128->pfifo.caches[0].pull_ctrl |= 0x100;
+		riva128->pfifo.caches[0].pull_ctrl &= ~1;
+		riva128->pfifo.cache_error |= 0x01;
+		riva128_pfifo_interrupt(0, riva128);
+		return;
+	}
+
+	riva128->pfifo.caches[0].get ^= 4;
+	/* TODO: forward to PGRAPH. */
+	riva128_pgraph_command_submit(method, chanid,
+			subchanid, param, ctx, riva128);
 }
 
 void
@@ -1837,29 +1842,30 @@ riva128_do_cache1_puller(void *p)
 		pclog("[RIVA 128] CTX = %08x\n", ctx);
 		riva128_pgraph_command_submit(method, chanid,
 				subchanid, param, ctx, riva128);
-	} else {
-		uint32_t ctx = riva128->pfifo.caches[1].ctx[subchanid];
-		pclog("[RIVA 128] CTX = %08x\n", ctx);
-		if (!(ctx & 0x800000)) {
-			pclog("[RIVA 128] Cache error: Software method!\n");
-			riva128->pfifo.caches[1].pull_ctrl |= 0x100;
-			riva128->pfifo.caches[1].pull_ctrl &= ~1;
-			riva128->pfifo.cache_error |= 0x10;
-			riva128_pfifo_interrupt(0, riva128);
-			return;
-		} else {
-			uint32_t next_get = riva128_pfifo_gray2normal(
-					riva128->pfifo.caches[1].get >> 2);
-			next_get++;
-			next_get &= 31;
-			riva128->pfifo.caches[1].get =
-					riva128_pfifo_normal2gray(next_get)
-							<< 2;
-			/* TODO: forward to PGRAPH. */
-			riva128_pgraph_command_submit(method, chanid,
-					subchanid, param, ctx, riva128);
-		}
+		return;
 	}
+
+	uint32_t ctx = riva128->pfifo.caches[1].ctx[subchanid];
+	pclog("[RIVA 128] CTX = %08x\n", ctx);
+	if (!(ctx & 0x800000)) {
+		pclog("[RIVA 128] Cache error: Software method!\n");
+		riva128->pfifo.caches[1].pull_ctrl |= 0x100;
+		riva128->pfifo.caches[1].pull_ctrl &= ~1;
+		riva128->pfifo.cache_error |= 0x10;
+		riva128_pfifo_interrupt(0, riva128);
+		return;
+	}
+
+	uint32_t next_get = riva128_pfifo_gray2normal(
+			riva128->pfifo.caches[1].get >> 2);
+	next_get++;
+	next_get &= 31;
+	riva128->pfifo.caches[1].get =
+			riva128_pfifo_normal2gray(next_get)
+					<< 2;
+	/* TODO: forward to PGRAPH. */
+	riva128_pgraph_command_submit(method, chanid,
+			subchanid, param, ctx, riva128);
 }
 
 void
@@ -1868,9 +1874,7 @@ riva128_do_gpu_work(void *p)
 	riva128_t *riva128 = (riva128_t *)p;
 	/* svga_t *svga = &riva128->svga; */
 
-	/*
-	if (riva128->pfifo.caches[1].dma_ctrl & 1)
-	{
+	/* if (riva128->pfifo.caches[1].dma_ctrl & 1) {
 		uint32_t *vram_l = (uint32_t *)svga->vram;
 		for(int i = riva128->pfifo.caches[1].dma_addr;
 				i <= (riva128->pfifo.caches[1].dma_addr
@@ -1880,8 +1884,7 @@ riva128_do_gpu_work(void *p)
 					>> 2];
 			pclog("[RIVA 128] DMA command %04x\n");
 		}
-	}
-	*/
+	} */
 
 	riva128_do_cache0_puller(riva128);
 	riva128_do_cache1_puller(riva128);
