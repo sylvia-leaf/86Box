@@ -637,7 +637,7 @@ riva128_pfifo_read(uint32_t addr, void *p)
 		return riva128->pfifo.ramfc;
 	case 0x002218:
 		return riva128->pfifo.ramro;
-	case 0x002400:
+	case 0x002400: {
 		uint32_t temp = 0;
 		if (riva128->pfifo.runout_put == riva128->pfifo.runout_get)
 			temp |= 0x010;
@@ -647,6 +647,7 @@ riva128_pfifo_read(uint32_t addr, void *p)
 						== riva128->pfifo.runout_get)
 			temp |= 0x100;
 		return temp;
+    }
 	case 0x002410:
 		return riva128->pfifo.runout_put;
 	case 0x002420:
@@ -655,7 +656,7 @@ riva128_pfifo_read(uint32_t addr, void *p)
 		return riva128->pfifo.caches_reassign;
 	case 0x003010:
 		return riva128->pfifo.caches[0].put;
-	case 0x003014:
+	case 0x003014: {
 		uint32_t temp = 0;
 		if (riva128->pfifo.caches[0].put
 				== riva128->pfifo.caches[0].get)
@@ -663,6 +664,7 @@ riva128_pfifo_read(uint32_t addr, void *p)
 		else
 			temp |= 0x100;
 		return temp;
+    }
 	case 0x003040:
 		return riva128->pfifo.caches[0].pull_ctrl;
 	case 0x003070:
@@ -680,7 +682,7 @@ riva128_pfifo_read(uint32_t addr, void *p)
 		return riva128->pfifo.caches[1].chanid;
 	case 0x003210:
 		return riva128->pfifo.caches[1].put;
-	case 0x003214:
+	case 0x003214: {
 		uint32_t temp = 0;
 		if (riva128->pfifo.caches[1].put
 				== riva128->pfifo.caches[1].get)
@@ -690,6 +692,7 @@ riva128_pfifo_read(uint32_t addr, void *p)
 		if (riva128->pfifo.runout_put != riva128->pfifo.runout_get)
 			temp |= 0x001;
 		return temp;
+    }
 	case 0x003220:
 		return riva128->pfifo.caches[1].dma_ctrl;
 	case 0x003224:
@@ -1357,7 +1360,7 @@ riva128_pgraph_write_pixel(uint16_t x, uint16_t y,
 			* y))) + riva128->pgraph.surf_offset[surf_num];
 
 	switch(riva128->pfb.bpp) {
-	case 8:
+	case 8: {
 		uint32_t src = color & 0xff;
 		uint32_t dst =
 			svga->vram[addr & riva128->vram_mask];
@@ -1365,21 +1368,23 @@ riva128_pgraph_write_pixel(uint16_t x, uint16_t y,
 			riva128_pgraph_rop(riva128->pgraph.rop,
 					src, dst) & 0xff;
 		break;
-	case 16:
+    }
+	case 16: {
 		uint32_t src = color & 0xffff;
 		uint32_t dst = vram_w[(addr & riva128->vram_mask) >> 1];
 		vram_w[(addr & riva128->vram_mask) >> 1] =
 				riva128_pgraph_rop(riva128->pgraph.rop,
 						src, dst) & 0xffff;
 		break;
-	case 32:
-		uint32_t src = color & 0xffff;
+    }
+	case 32: {
+		uint32_t src = color;
 		uint32_t dst = vram_l[(addr & riva128->vram_mask) >> 2];
 		vram_l[(addr & riva128->vram_mask) >> 2] =
 				riva128_pgraph_rop(riva128->pgraph.rop,
 						src, dst);
 		break;
-	}
+    }}
 
 	svga->changedvram[(addr & riva128->vram_mask) >> 12] =
 			changeframecount;
@@ -1457,7 +1462,7 @@ riva128_pgraph_execute_command(uint16_t method, uint32_t param, uint32_t ctx,
 		case 0x308:
 			riva128->pgraph.pattern_shape = param & 3;
 			break;
-		case 0x310:
+		case 0x310: {
 			riva128_pgraph_color_t color =
 					riva128_pgraph_expand_color(graphobj0,
 							param, riva128);
@@ -1466,7 +1471,8 @@ riva128_pgraph_execute_command(uint16_t method, uint32_t param, uint32_t ctx,
 							| color.b;
 			riva128->pgraph.pattern_mono_color_a[0] = color.a;
 			break;
-		case 0x314:
+        }
+		case 0x314: {
 			riva128_pgraph_color_t color =
 					riva128_pgraph_expand_color(graphobj0,
 							param, riva128);
@@ -1475,6 +1481,7 @@ riva128_pgraph_execute_command(uint16_t method, uint32_t param, uint32_t ctx,
 							| color.b;
 			riva128->pgraph.pattern_mono_color_a[1] = color.a;
 			break;
+        }
 		case 0x318:
 			riva128->pgraph.pattern_bitmap[0] = param;
 			break;
@@ -1624,7 +1631,7 @@ riva128_pgraph_execute_command(uint16_t method, uint32_t param, uint32_t ctx,
 		break;
 	case 0x1c:
 		switch(method) {
-		case 0x300:
+		case 0x300: {
 			int surf_num = (riva128->pgraph.ctx_switch_a >> 16) & 3;
 			uint32_t format = 1;
 			if (param & 1)
@@ -1638,19 +1645,21 @@ riva128_pgraph_execute_command(uint16_t method, uint32_t param, uint32_t ctx,
 			riva128->pgraph.surf_config |= ((format | 4)
 					<< (surf_num << 4));
 			break;
+        }
 		case 0x304:
 			riva128_pgraph_invalid_interrupt(0, riva128);
 			break;
-		case 0x308:
+		case 0x308: {
 			int surf_num = (riva128->pgraph.ctx_switch_a >> 16) & 3;
 			riva128->pgraph.surf_pitch[surf_num] = param & 0x1ff0;
 			break;
-		case 0x30c:
+        }
+		case 0x30c: {
 			int surf_num = (riva128->pgraph.ctx_switch_a >> 16) & 3;
 			riva128->pgraph.surf_offset[surf_num] =
 					param & 0x3ffff0;
 			break;
-		}
+        }}
 		break;
 	}
 
@@ -1944,7 +1953,7 @@ riva128_user_write(uint32_t addr, uint32_t val, void *p)
 		if (riva128->pfifo.ramro_size == 8192)
 			riva128->pfifo.runout_put &= 0x1ff8;
 		else
-			riva128->pfifo.runout_put &= 0x1f8
+			riva128->pfifo.runout_put &= 0x1f8;
 		riva128_pfifo_interrupt(4, riva128);
 		if (riva128->pfifo.runout_put == riva128->pfifo.runout_get) {
 			riva128_pfifo_interrupt(8, riva128);
