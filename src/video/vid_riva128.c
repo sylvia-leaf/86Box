@@ -536,7 +536,7 @@ riva128_pmc_recompute_intr(int send_intr, void *p)
 		pci_set_irq(riva128->card, PCI_INTA);
 	else
 		pci_clear_irq(riva128->card, PCI_INTA);
-	}
+
 	return intr;
 }
 
@@ -891,7 +891,8 @@ riva128_pfifo_write(uint32_t addr, uint32_t val, void *p)
 		break;
 	}
 	if ((addr < 0x003300) || (addr > 0x003403))
-		return
+		return 0;
+	
 	if (addr & 4) {
 		riva128->pfifo.cache1[
 				riva128_pfifo_normal2gray((addr >> 3) & 0x1f)
