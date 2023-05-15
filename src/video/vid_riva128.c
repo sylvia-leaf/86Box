@@ -742,13 +742,14 @@ riva128_pfifo_write(uint32_t addr, uint32_t val, void *p)
 	/* pclog("[RIVA 128] PFIFO write addr %08x data %02x\n", addr, val); */
 
 	switch(addr) {
-	case 0x002100:
+	case 0x002100: {
 		uint32_t tmp = riva128->pfifo.intr & ~val;
 		riva128->pfifo.intr = tmp;
 		pci_clear_irq(riva128->card, PCI_INTA);
 		if (!(riva128->pfifo.intr & 1))
 			riva128->pfifo.cache_error = 0;
 		break;
+	}
 	case 0x002140:
 		riva128->pfifo.intr_en = val & 0x11111;
 		riva128_pmc_recompute_intr(1, riva128);
