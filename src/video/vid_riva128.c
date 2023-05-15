@@ -891,13 +891,13 @@ riva128_pfifo_write(uint32_t addr, uint32_t val, void *p)
 		break;
 	}
 	if ((addr < 0x003300) || (addr > 0x003403))
-		return 0;
+		return;
 	
 	if (addr & 4) {
 		riva128->pfifo.cache1[
 				riva128_pfifo_normal2gray((addr >> 3) & 0x1f)
 			].param = val;
-		return
+		return;
 	}
 	riva128->pfifo.cache1[
 			riva128_pfifo_normal2gray((addr >> 3) & 0x1f)].method
