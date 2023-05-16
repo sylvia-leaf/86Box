@@ -237,7 +237,6 @@
 #include <86box/rom.h>
 #include <86box/device.h>
 #include <86box/nvr.h>
-#include <86box/fdd.h>
 
 /* RTC registers and bit definitions. */
 #define RTC_SECONDS        0
@@ -279,8 +278,6 @@
 #define REGC_UF            0x10
 #define RTC_REGD           13
 #define REGD_VRT           0x80
-#define RTC_FDD_TYPES      0x10
-#define RTC_INST_EQUIP     0x14
 #define RTC_CENTURY_AT     0x32 /* century register for AT etc */
 #define RTC_CENTURY_PS     0x37 /* century register for PS/1 PS/2 */
 #define RTC_CENTURY_ELT    0x1A /* century register for Epson Equity LT */
@@ -579,7 +576,8 @@ nvr_reg_write(uint16_t reg, uint8_t val, void *priv)
     local_t  *local = (local_t *) nvr->data;
     struct tm tm;
     uint8_t   old;
-    uint8_t   irq = 0, old_irq = 0;
+    uint8_t   irq = 0;
+    uint8_t   old_irq = 0;
 
     old = nvr->regs[reg];
     switch (reg) {
@@ -677,7 +675,8 @@ nvr_read(uint16_t addr, void *priv)
     local_t *local = (local_t *) nvr->data;
     uint8_t  ret;
     uint8_t  addr_id = (addr & 0x0e) >> 1;
-    uint16_t i, checksum = 0x0000;
+    uint16_t i;
+    uint16_t checksum = 0x0000;
 
     cycles -= ISA_CYCLES(8);
 
@@ -803,7 +802,7 @@ nvr_read(uint16_t addr, void *priv)
             ret = (ret & 0x7f) | (nmi_mask ? 0x00 : 0x80);
     }
 
-    return (ret);
+    return ret;
 }
 
 /* Secondary NVR write - used by SMC. */
@@ -841,13 +840,12 @@ nvr_reset(nvr_t *nvr)
 static void
 nvr_start(nvr_t *nvr)
 {
-    int      i, fdd;
     local_t *local = (local_t *) nvr->data;
 
     struct tm tm;
     int       default_found = 0;
 
-    for (i = 0; i < nvr->size; i++) {
+    for (uint16_t i = 0; i < nvr->size; i++) {
         if (nvr->regs[i] == local->def)
             default_found++;
     }
@@ -855,7 +853,7 @@ nvr_start(nvr_t *nvr)
     if (default_found == nvr->size)
         nvr->regs[0x0e] = 0xff; /* If load failed or it loaded an uninitialized NVR,
                                    mark everything as bad. */
-
+    
     if (machines[machine].flags & MACHINE_COREBOOT) {
         /* Sync floppy drive types on coreboot machines, as SeaBIOS
            lacks a setup utility and just leaves these untouched. */
@@ -1001,9 +999,8 @@ void
 nvr_lock_set(int base, int size, int lock, nvr_t *nvr)
 {
     local_t *local = (local_t *) nvr->data;
-    int      i;
 
-    for (i = 0; i < size; i++)
+    for (int i = 0; i < size; i++)
         local->lock[base + i] = lock;
 }
 
@@ -1150,7 +1147,7 @@ nvr_at_init(const device_t *info)
         nvr_at_inited = 1;
     }
 
-    return (nvr);
+    return nvr;
 }
 
 static void
