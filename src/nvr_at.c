@@ -237,6 +237,7 @@
 #include <86box/rom.h>
 #include <86box/device.h>
 #include <86box/nvr.h>
+#include <86box/fdd.h>
 
 /* RTC registers and bit definitions. */
 #define RTC_SECONDS        0
@@ -842,12 +843,14 @@ nvr_reset(nvr_t *nvr)
 static void
 nvr_start(nvr_t *nvr)
 {
+    int fdd;
+    uint16_t i;
     local_t *local = (local_t *) nvr->data;
 
     struct tm tm;
     int       default_found = 0;
 
-    for (uint16_t i = 0; i < nvr->size; i++) {
+    for (i = 0; i < nvr->size; i++) {
         if (nvr->regs[i] == local->def)
             default_found++;
     }
