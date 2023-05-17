@@ -218,6 +218,7 @@ fx_save_stor_common(uint32_t fetchdat, int bits)
             XMM[6].q[1] = readmemq(easeg, cpu_state.eaaddr + 0x108);
             XMM[7].q[0] = readmemq(easeg, cpu_state.eaaddr + 0x110);
             XMM[7].q[1] = readmemq(easeg, cpu_state.eaaddr + 0x118);
+        }
         if (cpu_state.ismmx) {
             for (i = 0; i <= 7; i++) {
                 cpu_state.eaaddr = old_eaaddr + 32 + (i << 4);
