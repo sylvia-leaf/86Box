@@ -2879,7 +2879,7 @@ mem_reset(void)
 
     memset(pages, 0x00, pages_sz * sizeof(page_t));
 
-    for (c = 0; c < MEM_MAPPINGS_NO; c++) {
+    for (uint32_t c = 0; c < MEM_MAPPINGS_NO; c++) {
         if (mtrr_areas[c]) {
             free(mtrr_areas[c]);
             mtrr_areas[c] = 0;
