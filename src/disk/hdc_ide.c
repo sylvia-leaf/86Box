@@ -1807,7 +1807,6 @@ ide_bad_command:
                     ide_irq_raise(ide);
                     return;
             }
-            return;
     }
 }
 

@@ -874,7 +874,6 @@ pc_init_modules(void)
         if (machine == -1) {
             fatal("No available machines\n");
             exit(-1);
-            return 0;
         }
     }
 
@@ -897,7 +896,6 @@ pc_init_modules(void)
         if (gfxcard[0] == -1) {
             fatal("No available video cards\n");
             exit(-1);
-            return 0;
         }
     }
 
