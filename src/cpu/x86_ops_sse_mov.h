@@ -10,7 +10,7 @@ opMOVUPS_q_xmm_a16(uint32_t fetchdat)
         XMM[cpu_reg].f[3] = XMM[cpu_rm].f[3];
         CLOCK_CYCLES(1);
     } else {
-        uint64_t dst[4];
+        uint32_t dst[4];
 
         SEG_CHECK_READ(cpu_state.ea_seg);
         dst[0] = readmeml(easeg, cpu_state.eaaddr);
@@ -46,7 +46,7 @@ opMOVUPS_q_xmm_a32(uint32_t fetchdat)
         XMM[cpu_reg].f[3] = XMM[cpu_rm].f[3];
         CLOCK_CYCLES(1);
     } else {
-        uint64_t dst[4];
+        uint32_t dst[4];
 
         SEG_CHECK_READ(cpu_state.ea_seg);
         dst[0] = readmeml(easeg, cpu_state.eaaddr);
