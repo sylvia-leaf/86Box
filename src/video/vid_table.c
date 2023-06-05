@@ -379,7 +379,7 @@ video_card_available(int card)
     if (video_cards[card].device)
         return (device_available(video_cards[card].device));
 
-    return (1);
+    return 1;
 }
 
 int
@@ -398,7 +398,7 @@ int
 video_card_has_config(int card)
 {
     if (video_cards[card].device == NULL)
-        return (0);
+        return 0;
 
     return (device_has_config(video_cards[card].device) ? 1 : 0);
 }
@@ -416,11 +416,11 @@ video_get_video_from_internal_name(char *s)
 
     while (video_cards[c].device != NULL) {
         if (!strcmp((char *) video_cards[c].device->internal_name, s))
-            return (c);
+            return c;
         c++;
     }
 
-    return (0);
+    return 0;
 }
 
 int
