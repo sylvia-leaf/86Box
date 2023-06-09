@@ -348,10 +348,6 @@ then
 			# Run build for the architecture.
 			args=
 			[ $strip -ne 0 ] && args="-t $args"
-			case $arch_universal in # workaround: force new dynarec on for ARM
-				arm*) cmake_flags_extra="-D NEW_DYNAREC=ON";;
-				*)    cmake_flags_extra=;;
-			esac
 			zsh -lc 'exec "'"$0"'" -n -b "universal slice" "'"$arch_universal"'" '"$args""$cmake_flags"' '"$cmake_flags_extra"
 			status=$?
 
@@ -587,7 +583,7 @@ else
 	# ...and the ones we do want listed. Non-dev packages fill missing spots on the list.
 	libpkgs=""
 	longest_libpkg=0
-	for pkg in libc6-dev libstdc++6 libopenal-dev libfreetype6-dev libx11-dev libsdl2-dev libpng-dev librtmidi-dev qtdeclarative5-dev libwayland-dev libevdev-dev libxkbcommon-x11-dev libglib2.0-dev libslirp-dev libfaudio-dev libaudio-dev libjack-jackd2-dev libpipewire-0.3-dev libsamplerate0-dev libsndio-dev
+	for pkg in libc6-dev libstdc++6 libopenal-dev libfreetype6-dev libx11-dev libsdl2-dev libpng-dev librtmidi-dev qtdeclarative5-dev libwayland-dev libevdev-dev libxkbcommon-x11-dev libglib2.0-dev libslirp-dev libfaudio-dev libaudio-dev libjack-jackd2-dev libpipewire-0.3-dev libsamplerate0-dev libsndio-dev libvdeplug-dev
 	do
 		libpkgs="$libpkgs $pkg:$arch_deb"
 		length=$(echo -n $pkg | sed 's/-dev$//' | sed "s/qtdeclarative/qt/" | wc -c)
@@ -677,8 +673,8 @@ rm -rf build
 case $arch in
 	32 | x86)	cmake_flags_extra="$cmake_flags_extra -D ARCH=i386";;
 	64 | x86_64*)	cmake_flags_extra="$cmake_flags_extra -D ARCH=x86_64";;
-	ARM32 | arm32)	cmake_flags_extra="$cmake_flags_extra -D ARCH=arm";;
-	ARM64 | arm64)	cmake_flags_extra="$cmake_flags_extra -D ARCH=arm64";;
+	ARM32 | arm32)	cmake_flags_extra="$cmake_flags_extra -D ARCH=arm -D NEW_DYNAREC=ON";;
+	ARM64 | arm64)	cmake_flags_extra="$cmake_flags_extra -D ARCH=arm64 -D NEW_DYNAREC=ON";;
 	*)		cmake_flags_extra="$cmake_flags_extra -D \"ARCH=$arch\"";;
 esac
 
