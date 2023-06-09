@@ -123,8 +123,8 @@ BEGIN
     END
     POPUP "&Ohje"
     BEGIN
-        MENUITEM "&Ohjekirja...",                                       IDM_DOCS
-        MENUITEM "&Tietoja PCBoxista...",                               IDM_ABOUT
+        MENUITEM "&Ohjekirja...", IDM_DOCS
+        MENUITEM "&Tietoja PCBoxista...", IDM_ABOUT
     END
 END
 

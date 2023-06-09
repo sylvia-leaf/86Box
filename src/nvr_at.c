@@ -843,14 +843,13 @@ nvr_reset(nvr_t *nvr)
 static void
 nvr_start(nvr_t *nvr)
 {
-    int fdd;
-    uint16_t i;
+    int      fdd;
     local_t *local = (local_t *) nvr->data;
 
     struct tm tm;
     int       default_found = 0;
 
-    for (i = 0; i < nvr->size; i++) {
+    for (uint16_t i = 0; i < nvr->size; i++) {
         if (nvr->regs[i] == local->def)
             default_found++;
     }
@@ -858,7 +857,7 @@ nvr_start(nvr_t *nvr)
     if (default_found == nvr->size)
         nvr->regs[0x0e] = 0xff; /* If load failed or it loaded an uninitialized NVR,
                                    mark everything as bad. */
-    
+
     if (machines[machine].flags & MACHINE_COREBOOT) {
         /* Sync floppy drive types on coreboot machines, as SeaBIOS
            lacks a setup utility and just leaves these untouched. */
@@ -866,7 +865,7 @@ nvr_start(nvr_t *nvr)
         nvr->regs[RTC_FDD_TYPES] = 0x00;
         nvr->regs[RTC_INST_EQUIP] |= 0xc0;
 
-        for (i = 0; i <= 1; i++) {
+        for (uint8_t i = 0; i <= 1; i++) {
             if (!fdd_get_type(i))
                 continue; /* No floppy drive. */
 
@@ -896,7 +895,7 @@ nvr_start(nvr_t *nvr)
         /* Re-compute CMOS checksum. SeaBIOS doesn't care
            about the checksum either, but Windows does. */
         uint16_t checksum = 0;
-        for (i = 0x10; i <= 0x2d; i++)
+        for (uint8_t i = 0x10; i <= 0x2d; i++)
             checksum += nvr->regs[i];
         nvr->regs[0x2e] = (checksum >> 8);
         nvr->regs[0x2f] = checksum;

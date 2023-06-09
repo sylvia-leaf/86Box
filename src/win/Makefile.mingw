@@ -521,6 +521,7 @@ ifeq ($(DEV_BRANCH), y)
   OPTS     += -DUSE_RIVATNT
   DEVBROBJ += vid_rivatnt.o
  endif
+
  ifeq ($(PCI_DUMMY), y)
   OPTS     += -DUSE_PCI_DUMMY
   DEVBROBJ += pci_dummy.o

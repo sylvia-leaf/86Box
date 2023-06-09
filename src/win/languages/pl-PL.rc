@@ -123,8 +123,8 @@ BEGIN
     END
     POPUP "&Pomoc"
     BEGIN
-        MENUITEM "&Dokumentacja...",           IDM_DOCS
-        MENUITEM "&O PCBox...",             IDM_ABOUT
+        MENUITEM "&Dokumentacja...", IDM_DOCS
+        MENUITEM "&O PCBox...", IDM_ABOUT
     END
 END
 
@@ -394,22 +394,22 @@ END
 
 STRINGTABLE DISCARDABLE
 BEGIN
-    2048	"PCBox"
-    IDS_2049	"Błąd"
-    IDS_2050	"Fatalny błąd"
-    IDS_2051	" - PAUSED"
-    IDS_2052	"Naciśnij klawisze Ctrl+Alt+PgDn aby wrócić to trybu okna."
-    IDS_2053	"Szybkość"
-    IDS_2054	"ZIP %03i %i (%s): %ls"
-    IDS_2055	"Obrazy ZIP (*.IM?;*.ZDI)\0*.IM?;*.ZDI\0"
-    IDS_2056	"PCBox nie może znaleźć obrazów ROM nadających się do użytku.\n\nProszę pobrać zestaw obrazów ROM ze strony <a href=""https://github.com/PCBox/roms/releases/latest"">download</a>, i rozpakować je do katalogu ""roms""."
-    IDS_2057	"(pusty)"
-    IDS_2058	"Obrazy ZIP (*.IM?;*.ZDI)\0*.IM?;*.ZDI\0Wszystkie pliki (*.*)\0*.*\0"
-    IDS_2059	"Turbo"
-    IDS_2060	"Włącz"
-    IDS_2061	"Wyłącz"
-    IDS_2062	"Wszystkie obrazy (*.86F;*.DSK;*.FLP;*.IM?;*.*FD?)\0*.86F;*.DSK;*.FLP;*.IM?;*.*FD?\0Podstawowe obrazy sektorów(*.DSK;*.FLP;*.IM?;*.*FD?)\0*.DSK;*.FLP;*.IM?;*.IMG;*.*FD?\0Obrazy powierzchniowe (*.86F)\0*.86F\0"
-    IDS_2063	"Maszyna ""%hs"" nie jest dostępna, ponieważ brakuje obrazów ROM w katalogu roms/machines. Przełączanie na dostępną maszynę."
+    2048        "PCBox"
+    IDS_2049    "Błąd"
+    IDS_2050    "Fatalny błąd"
+    IDS_2051    " - PAUSED"
+    IDS_2052    "Naciśnij klawisze Ctrl+Alt+PgDn aby wrócić to trybu okna."
+    IDS_2053    "Szybkość"
+    IDS_2054    "ZIP %03i %i (%s): %ls"
+    IDS_2055    "Obrazy ZIP (*.IM?;*.ZDI)\0*.IM?;*.ZDI\0"
+    IDS_2056    "PCBox nie może znaleźć obrazów ROM nadających się do użytku.\n\nProszę pobrać zestaw obrazów ROM ze strony <a href=""https://github.com/PCBox/roms/releases/latest"">download</a>, i rozpakować je do katalogu ""roms""."
+    IDS_2057    "(pusty)"
+    IDS_2058    "Obrazy ZIP (*.IM?;*.ZDI)\0*.IM?;*.ZDI\0Wszystkie pliki (*.*)\0*.*\0"
+    IDS_2059    "Turbo"
+    IDS_2060    "Włącz"
+    IDS_2061    "Wyłącz"
+    IDS_2062    "Wszystkie obrazy (*.86F;*.DSK;*.FLP;*.IM?;*.*FD?)\0*.86F;*.DSK;*.FLP;*.IM?;*.*FD?\0Podstawowe obrazy sektorów(*.DSK;*.FLP;*.IM?;*.*FD?)\0*.DSK;*.FLP;*.IM?;*.IMG;*.*FD?\0Obrazy powierzchniowe (*.86F)\0*.86F\0"
+    IDS_2063    "Maszyna ""%hs"" nie jest dostępna, ponieważ brakuje obrazów ROM w katalogu roms/machines. Przełączanie na dostępną maszynę."
 END
 
 STRINGTABLE DISCARDABLE

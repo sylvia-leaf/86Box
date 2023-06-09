@@ -124,8 +124,8 @@ BEGIN
     END
     POPUP "&?"
     BEGIN
-        MENUITEM "&Documentazione...",           IDM_DOCS
-        MENUITEM "&Informazioni su PCBox...",             IDM_ABOUT
+        MENUITEM "&Documentazione...", IDM_DOCS
+        MENUITEM "&Informazioni su PCBox...", IDM_ABOUT
     END
 END
 
@@ -395,22 +395,22 @@ END
 
 STRINGTABLE DISCARDABLE
 BEGIN
-    2048	"PCBox"
-    IDS_2049	"Errore"
-    IDS_2050	"Errore fatale"
-    IDS_2051	" - PAUSED"
-    IDS_2052	"Usa Ctrl+Alt+PgDn per tornare alla modalità finestra."
-    IDS_2053	"Velocità"
-    IDS_2054	"ZIP %03i %i (%s): %ls"
-    IDS_2055	"Immagini ZIP (*.IM?;*.ZDI)\0*.IM?;*.ZDI\0"
-    IDS_2056	"PCBox non può trovare immagini ROM utilizzabili.\n\nPlease <a href=""https://github.com/PCBox/roms/releases/latest"">download</a> a ROM set and extract it into the ""roms"" directory."
-    IDS_2057	"(empty)"
-    IDS_2058	"Immagini ZIP (*.IM?;*.ZDI)\0*.IM?;*.ZDI\0Tutti i file (*.*)\0*.*\0"
-    IDS_2059	"Turbo"
-    IDS_2060	"Acceso"
-    IDS_2061	"Spento"
-    IDS_2062	"Tutte le immagini (*.86F;*.DSK;*.FLP;*.IM?;*.*FD?)\0*.86F;*.DSK;*.FLP;*.IM?;*.*FD?\0Immagini di settori base (*.DSK;*.FLP;*.IM?;*.*FD?)\0*.DSK;*.FLP;*.IM?;*.IMG;*.*FD?\0Immagini di superficie (*.86F)\0*.86F\0"
-    IDS_2063	"La macchina ""%hs"" non è disponibile a causa di immagini ROM mancanti nella directory roms/machines. Cambiando ad una macchina disponibile."
+    2048        "PCBox"
+    IDS_2049    "Errore"
+    IDS_2050    "Errore fatale"
+    IDS_2051    " - PAUSED"
+    IDS_2052    "Usa Ctrl+Alt+PgDn per tornare alla modalità finestra."
+    IDS_2053    "Velocità"
+    IDS_2054    "ZIP %03i %i (%s): %ls"
+    IDS_2055    "Immagini ZIP (*.IM?;*.ZDI)\0*.IM?;*.ZDI\0"
+    IDS_2056    "PCBox non può trovare immagini ROM utilizzabili.\n\nPlease <a href=""https://github.com/PCBox/roms/releases/latest"">download</a> a ROM set and extract it into the ""roms"" directory."
+    IDS_2057    "(empty)"
+    IDS_2058    "Immagini ZIP (*.IM?;*.ZDI)\0*.IM?;*.ZDI\0Tutti i file (*.*)\0*.*\0"
+    IDS_2059    "Turbo"
+    IDS_2060    "Acceso"
+    IDS_2061    "Spento"
+    IDS_2062    "Tutte le immagini (*.86F;*.DSK;*.FLP;*.IM?;*.*FD?)\0*.86F;*.DSK;*.FLP;*.IM?;*.*FD?\0Immagini di settori base (*.DSK;*.FLP;*.IM?;*.*FD?)\0*.DSK;*.FLP;*.IM?;*.IMG;*.*FD?\0Immagini di superficie (*.86F)\0*.86F\0"
+    IDS_2063    "La macchina ""%hs"" non è disponibile a causa di immagini ROM mancanti nella directory roms/machines. Cambiando ad una macchina disponibile."
 END
 
 STRINGTABLE DISCARDABLE

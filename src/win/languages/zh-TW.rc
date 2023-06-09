@@ -123,8 +123,8 @@ BEGIN
     END
     POPUP "說明(&H)"
     BEGIN
-        MENUITEM "文件(&D)...",           IDM_DOCS
-        MENUITEM "關於 PCBox(&A)...",             IDM_ABOUT
+        MENUITEM "文件(&D)...", IDM_DOCS
+        MENUITEM "關於 PCBox(&A)...", IDM_ABOUT
     END
 END
 
@@ -394,7 +394,7 @@ END
 
 STRINGTABLE DISCARDABLE
 BEGIN
-    2048    "PCBox"
+    2048        "PCBox"
     IDS_2049    "錯誤"
     IDS_2050    "致命錯誤"
     IDS_2051    " - 已暫停"
@@ -402,7 +402,7 @@ BEGIN
     IDS_2053    "速度"
     IDS_2054    "ZIP %03i %i (%s): %ls"
     IDS_2055    "ZIP 映像 (*.IM?;*.ZDI)\0*.IM?;*.ZDI\0"
-    IDS_2056    "86Box 找不到任何可用的 ROM 映像。\n\n請<a href=""https://github.com/86Box/roms/releases/latest"">下載</a>ROM 包並將其解壓到 ""roms"" 資料夾。"
+    IDS_2056    "PCBox 找不到任何可用的 ROM 映像。\n\n請<a href=""https://github.com/PCBox/roms/releases/latest"">下載</a>ROM 包並將其解壓到 ""roms"" 資料夾。"
     IDS_2057    "(空)"
     IDS_2058    "ZIP 映像 (*.IM?;*.ZDI)\0*.IM?;*.ZDI\0所有檔案 (*.*)\0*.*\0"
     IDS_2059    "加速"

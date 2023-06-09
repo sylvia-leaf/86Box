@@ -123,8 +123,8 @@ BEGIN
     END
     POPUP "&Help"
     BEGIN
-        MENUITEM "&Documentation...",           IDM_DOCS
-        MENUITEM "&About PCBox...",             IDM_ABOUT
+        MENUITEM "&Documentation...", IDM_DOCS
+        MENUITEM "&About PCBox...", IDM_ABOUT
     END
 END
 
@@ -394,22 +394,22 @@ END
 
 STRINGTABLE DISCARDABLE
 BEGIN
-    2048	"PCBox"
-    IDS_2049	"Error"
-    IDS_2050	"Fatal error"
-    IDS_2051	" - PAUSED"
-    IDS_2052	"Press Ctrl+Alt+PgDn to return to windowed mode."
-    IDS_2053	"Speed"
-    IDS_2054	"ZIP %03i %i (%s): %ls"
-    IDS_2055	"ZIP images (*.IM?;*.ZDI)\0*.IM?;*.ZDI\0"
-    IDS_2056	"PCBox could not find any usable ROM images.\n\nPlease <a href=""https://github.com/PCBox/roms/releases/latest"">download</a> a ROM set and extract it into the ""roms"" directory."
-    IDS_2057	"(empty)"
-    IDS_2058	"ZIP images (*.IM?;*.ZDI)\0*.IM?;*.ZDI\0All files (*.*)\0*.*\0"
-    IDS_2059	"Turbo"
-    IDS_2060	"On"
-    IDS_2061	"Off"
-    IDS_2062	"All images (*.86F;*.DSK;*.FLP;*.IM?;*.*FD?)\0*.86F;*.DSK;*.FLP;*.IM?;*.*FD?\0Basic sector images (*.DSK;*.FLP;*.IM?;*.*FD?)\0*.DSK;*.FLP;*.IM?;*.IMG;*.*FD?\0Surface images (*.86F)\0*.86F\0"
-    IDS_2063	"Machine ""%hs"" is not available due to missing ROMs in the roms/machines directory. Switching to an available machine."
+    2048        "PCBox"
+    IDS_2049    "Error"
+    IDS_2050    "Fatal error"
+    IDS_2051    " - PAUSED"
+    IDS_2052    "Press Ctrl+Alt+PgDn to return to windowed mode."
+    IDS_2053    "Speed"
+    IDS_2054    "ZIP %03i %i (%s): %ls"
+    IDS_2055    "ZIP images (*.IM?;*.ZDI)\0*.IM?;*.ZDI\0"
+    IDS_2056    "PCBox could not find any usable ROM images.\n\nPlease <a href=""https://github.com/PCBox/roms/releases/latest"">download</a> a ROM set and extract it into the ""roms"" directory."
+    IDS_2057    "(empty)"
+    IDS_2058    "ZIP images (*.IM?;*.ZDI)\0*.IM?;*.ZDI\0All files (*.*)\0*.*\0"
+    IDS_2059    "Turbo"
+    IDS_2060    "On"
+    IDS_2061    "Off"
+    IDS_2062    "All images (*.86F;*.DSK;*.FLP;*.IM?;*.*FD?)\0*.86F;*.DSK;*.FLP;*.IM?;*.*FD?\0Basic sector images (*.DSK;*.FLP;*.IM?;*.*FD?)\0*.DSK;*.FLP;*.IM?;*.IMG;*.*FD?\0Surface images (*.86F)\0*.86F\0"
+    IDS_2063    "Machine ""%hs"" is not available due to missing ROMs in the roms/machines directory. Switching to an available machine."
 END
 
 STRINGTABLE DISCARDABLE

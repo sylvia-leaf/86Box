@@ -123,8 +123,8 @@ BEGIN
     END
     POPUP "&Aide"
     BEGIN
-        MENUITEM "&Documentation...",           IDM_DOCS
-        MENUITEM "&A Propos de PCBox...",             IDM_ABOUT
+        MENUITEM "&Documentation...", IDM_DOCS
+        MENUITEM "&A Propos de PCBox...", IDM_ABOUT
     END
 END
 
@@ -394,22 +394,22 @@ END
 
 STRINGTABLE DISCARDABLE
 BEGIN
-    2048	"PCBox"
-    IDS_2049	"Erreur"
-    IDS_2050	"Erreur fatale"
-    IDS_2051	" - PAUSED"
-    IDS_2052	"Appuyez sur Ctrl+Alt+PgDn pour revenir au mode fenêtré."
-    IDS_2053	"Vitesse"
-    IDS_2054	"ZIP %03i %i (%s): %ls"
-    IDS_2055	"Images ZIP (*.IM?;*.ZDI)\0*.IM?;*.ZDI\0"
-    IDS_2056	"PCBox n'a pas pu trouver d'images ROM utilisables.\n\nS'il vous plait, <a href=""https://github.com/PCBox/roms/releases/latest"">téléchargez</a> un ensemble ROM et extrayez-le dans le répertoire ""roms""."
-    IDS_2057	"(vide)"
-    IDS_2058	"Images ZIP (*.IM?;*.ZDI)\0*.IM?;*.ZDI\0Tous les fichiers (*.*)\0*.*\0"
-    IDS_2059	"Turbo"
-    IDS_2060	"Activé"
-    IDS_2061	"Désactivé"
-    IDS_2062	"Tous les images (*.86F;*.DSK;*.FLP;*.IM?;*.*FD?)\0*.86F;*.DSK;*.FLP;*.IM?;*.*FD?\0Images basiques du secteur (*.DSK;*.FLP;*.IM?;*.*FD?)\0*.DSK;*.FLP;*.IM?;*.IMG;*.*FD?\0Images de la surface (*.86F)\0*.86F\0"
-    IDS_2063	"La machine ""%hs"" n'est pas disponible en raison de l'absence de ROMs dans le répertoire roms/machines. Basculer vers une machine disponible."
+    2048        "PCBox"
+    IDS_2049    "Erreur"
+    IDS_2050    "Erreur fatale"
+    IDS_2051    " - PAUSED"
+    IDS_2052    "Appuyez sur Ctrl+Alt+PgDn pour revenir au mode fenêtré."
+    IDS_2053    "Vitesse"
+    IDS_2054    "ZIP %03i %i (%s): %ls"
+    IDS_2055    "Images ZIP (*.IM?;*.ZDI)\0*.IM?;*.ZDI\0"
+    IDS_2056    "PCBox n'a pas pu trouver d'images ROM utilisables.\n\nS'il vous plait, <a href=""https://github.com/PCBox/roms/releases/latest"">téléchargez</a> un ensemble ROM et extrayez-le dans le répertoire ""roms""."
+    IDS_2057    "(vide)"
+    IDS_2058    "Images ZIP (*.IM?;*.ZDI)\0*.IM?;*.ZDI\0Tous les fichiers (*.*)\0*.*\0"
+    IDS_2059    "Turbo"
+    IDS_2060    "Activé"
+    IDS_2061    "Désactivé"
+    IDS_2062    "Tous les images (*.86F;*.DSK;*.FLP;*.IM?;*.*FD?)\0*.86F;*.DSK;*.FLP;*.IM?;*.*FD?\0Images basiques du secteur (*.DSK;*.FLP;*.IM?;*.*FD?)\0*.DSK;*.FLP;*.IM?;*.IMG;*.*FD?\0Images de la surface (*.86F)\0*.86F\0"
+    IDS_2063    "La machine ""%hs"" n'est pas disponible en raison de l'absence de ROMs dans le répertoire roms/machines. Basculer vers une machine disponible."
 END
 
 STRINGTABLE DISCARDABLE

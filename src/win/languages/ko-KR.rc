@@ -123,8 +123,8 @@ BEGIN
     END
     POPUP "도움말(&H)"
     BEGIN
-        MENUITEM "문서(&D)...",           IDM_DOCS
-        MENUITEM "PCBox에 대해(&A)...",        IDM_ABOUT
+        MENUITEM "문서(&D)...", IDM_DOCS
+        MENUITEM "PCBox에 대해(&A)...", IDM_ABOUT
     END
 END
 
@@ -402,7 +402,7 @@ BEGIN
     IDS_2053    "속도"
     IDS_2054    "ZIP %03i %i (%s): %ls"
     IDS_2055    "ZIP 이미지 (*.IM?;*.ZDI)\0*.IM?;*.ZDI\0"
-    IDS_2056    "86Box에서 사용 가능한 ROM 이미지를 찾을 수 없습니다.\n\nROM 세트를<a href=""https://github.com/86Box/roms/releases/latest"">다운로드</a> 후 ""roms"" 디렉토리에 압축을 풀어 주세요."
+    IDS_2056    "PCBox에서 사용 가능한 ROM 이미지를 찾을 수 없습니다.\n\nROM 세트를<a href=""https://github.com/PCBox/roms/releases/latest"">다운로드</a> 후 ""roms"" 디렉토리에 압축을 풀어 주세요."
     IDS_2057    "(비었음)"
     IDS_2058    "ZIP 이미지 (*.IM?;*.ZDI)\0*.IM?;*.ZDI\0모든 파일 (*.*)\0*.*\0"
     IDS_2059    "터보"
