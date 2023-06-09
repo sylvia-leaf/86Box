@@ -1166,7 +1166,7 @@ const cpu_family_t cpu_families[] = {
     .name = "Celeron (Coppermine)",
     .internal_name = "celeron_coppermine",
     .cpus = (const CPU[]) {
-        {"533",       CPU_PENTIUM3,  fpus_internal, 533333333, 8.0, 1500,  0x686,  0x668, 0, CPU_SUPPORTS_DYNAREC | CPU_REQUIRES_DYNAREC, 41,41,14,14, 60},
+        {"533",       CPU_PENTIUM3,  fpus_internal, 533333333, 8.0, 1500,  0x686,  0x686, 0, CPU_SUPPORTS_DYNAREC | CPU_REQUIRES_DYNAREC, 41,41,14,14, 60},
         {"566",       CPU_PENTIUM3,  fpus_internal, 566666666, 8.5, 1500,  0x686,  0x686, 0, CPU_SUPPORTS_DYNAREC | CPU_REQUIRES_DYNAREC, 41,41,14,14, 60},
         {"600",       CPU_PENTIUM3,  fpus_internal, 600000000, 9.0, 1500,  0x686,  0x686, 0, CPU_SUPPORTS_DYNAREC | CPU_REQUIRES_DYNAREC, 41,41,14,14, 72},
         {"633",       CPU_PENTIUM3,  fpus_internal, 633333333, 9.5, 1500,  0x686,  0x686, 0, CPU_SUPPORTS_DYNAREC | CPU_REQUIRES_DYNAREC, 41,41,14,14, 72},

@@ -2456,7 +2456,7 @@ execx86(int cycs)
                     }
                     cpu_dest = AL;
                     cpu_data = cpu_dest + cpu_src;
-                    //undefined flag behavior, tssted on real 8088 by dbalsom on GitHub.
+                    //undefined flag behavior, tested on real 8088 by dbalsom on GitHub.
                     set_pzs(8);
                     set_of(0);
                     set_zf(0);
