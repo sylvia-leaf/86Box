@@ -134,10 +134,11 @@ static uint8_t       *_mem_exec[MEM_MAPPINGS_NO];
 static uint8_t        ff_pccache[4] = { 0xff, 0xff, 0xff, 0xff };
 static mem_state_t    _mem_state[MEM_MAPPINGS_NO];
 
-static uint8_t *mtrr_areas[MEM_MAPPINGS_NO];
-static uint8_t  mtrr_area_refcounts[MEM_MAPPINGS_NO];
+static uint8_t       *mtrr_areas[MEM_MAPPINGS_NO];
+static uint8_t        mtrr_area_refcounts[MEM_MAPPINGS_NO];
 
-static uint32_t       remap_start_addr, remap_start_addr2;
+static uint32_t       remap_start_addr;
+static uint32_t       remap_start_addr2;
 #if (!(defined __amd64__ || defined _M_X64 || defined __aarch64__ || defined _M_ARM64))
 static size_t ram_size = 0;
 static size_t ram2_size = 0;
@@ -935,7 +936,6 @@ readmemwl(uint32_t addr)
     mem_mapping_t *map;
     uint32_t       page;
     uint8_t       *mtrr;
-    int            i;
     uint64_t       a;
 
     addr64a[0] = addr;
@@ -3190,7 +3190,9 @@ void
 mem_add_mtrr(uint64_t base, uint64_t mask, uint8_t type)
 {
     uint64_t size = ((~mask) & 0xffffffff) + 1;
-    uint64_t page_base, page, addr;
+    uint64_t page_base;
+    uint64_t page;
+    uint64_t addr;
     uint8_t *mtrr;
 
     mem_log("Adding MTRR base=%08llx mask=%08llx size=%08llx type=%d\n", base, mask, size, type);
@@ -3232,7 +3234,8 @@ void
 mem_del_mtrr(uint64_t base, uint64_t mask)
 {
     uint64_t size = ((~mask) & 0xffffffff) + 1;
-    uint64_t page_base, page;
+    uint64_t page_base;
+    uint64_t page;
 
     mem_log("Deleting MTRR base=%08llx mask=%08llx size=%08llx\n", base, mask, size);
 
@@ -3265,7 +3268,9 @@ mem_del_mtrr(uint64_t base, uint64_t mask)
 void
 mem_invalidate_mtrr(uint8_t wb)
 {
-    uint64_t page, page_base, addr;
+    uint64_t page;
+    uint64_t page_base;
+    uint64_t addr;
     uint8_t *mtrr;
 
     mem_log("Invalidating cache (writeback=%d)\n", wb);

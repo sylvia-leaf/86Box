@@ -123,8 +123,8 @@ BEGIN
     END
     POPUP "&Yardım"
     BEGIN
-        MENUITEM "&Dökümanlar...",           IDM_DOCS
-        MENUITEM "&PCBox Hakkında...",             IDM_ABOUT
+        MENUITEM "&Dökümanlar...", IDM_DOCS
+        MENUITEM "&PCBox Hakkında...", IDM_ABOUT
     END
 END
 
@@ -394,22 +394,22 @@ END
 
 STRINGTABLE DISCARDABLE
 BEGIN
-    2048	"PCBox"
-    IDS_2049	"Hata"
-    IDS_2050	"Kritik hata"
-    IDS_2051	" - PAUSED"
-    IDS_2052	"Pencere moduna geri dönmek için Ctrl+Alt+PgDn tuşlarına basın."
-    IDS_2053	"Hız"
-    IDS_2054	"ZIP %03i %i (%s): %ls"
-    IDS_2055	"ZIP imajları (*.IM?;*.ZDI)\0*.IM?;*.ZDI\0"
-    IDS_2056	"PCBox hiç bir kullanılabilir ROM imajı bulamadı.\n\nLütfen <a href=""https://github.com/PCBox/roms/releases/latest"">ROM setini indirin</a> ve onu ""Roms"" klasörüne çıkarın."
-    IDS_2057	"(empty)"
-    IDS_2058	"ZIP imajları (*.IM?;*.ZDI)\0*.IM?;*.ZDI\0All files (*.*)\0*.*\0"
-    IDS_2059	"Turbo"
-    IDS_2060	"Açık"
-    IDS_2061	"Kapalı"
-    IDS_2062	"Tüm imajlar (*.86F;*.DSK;*.FLP;*.IM?;*.*FD?)\0*.86F;*.DSK;*.FLP;*.IM?;*.*FD?\0Basit sektör imajları (*.DSK;*.FLP;*.IM?;*.*FD?)\0*.DSK;*.FLP;*.IM?;*.IMG;*.*FD?\0Yüzey imajları (*.86F)\0*.86F\0"
-    IDS_2063	"""%hs"" makinesi roms/machines klasöründe mevcut olmayan ROM imajı yüzünden mevcut değil. Mevcut olan bir makineye geçiş yapılıyor."
+    2048        "PCBox"
+    IDS_2049    "Hata"
+    IDS_2050    "Kritik hata"
+    IDS_2051    " - PAUSED"
+    IDS_2052    "Pencere moduna geri dönmek için Ctrl+Alt+PgDn tuşlarına basın."
+    IDS_2053    "Hız"
+    IDS_2054    "ZIP %03i %i (%s): %ls"
+    IDS_2055    "ZIP imajları (*.IM?;*.ZDI)\0*.IM?;*.ZDI\0"
+    IDS_2056    "PCBox hiç bir kullanılabilir ROM imajı bulamadı.\n\nLütfen <a href=""https://github.com/PCBox/roms/releases/latest"">ROM setini indirin</a> ve onu ""Roms"" klasörüne çıkarın."
+    IDS_2057    "(empty)"
+    IDS_2058    "ZIP imajları (*.IM?;*.ZDI)\0*.IM?;*.ZDI\0All files (*.*)\0*.*\0"
+    IDS_2059    "Turbo"
+    IDS_2060    "Açık"
+    IDS_2061    "Kapalı"
+    IDS_2062    "Tüm imajlar (*.86F;*.DSK;*.FLP;*.IM?;*.*FD?)\0*.86F;*.DSK;*.FLP;*.IM?;*.*FD?\0Basit sektör imajları (*.DSK;*.FLP;*.IM?;*.*FD?)\0*.DSK;*.FLP;*.IM?;*.IMG;*.*FD?\0Yüzey imajları (*.86F)\0*.86F\0"
+    IDS_2063    """%hs"" makinesi roms/machines klasöründe mevcut olmayan ROM imajı yüzünden mevcut değil. Mevcut olan bir makineye geçiş yapılıyor."
 END
 
 STRINGTABLE DISCARDABLE
