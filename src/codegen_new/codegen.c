@@ -374,7 +374,7 @@ codegen_generate_call(uint8_t opcode, OpFn op, uint32_t fetchdat, uint32_t new_p
     codeblock_t *block              = &codeblock[block_current];
     ir_data_t   *ir                 = codegen_get_ir_data();
     uint32_t     op_pc              = new_pc;
-    OpFn        *op_table           = (OpFn *) x86_dynarec_opcodes;
+    const OpFn  *op_table           = (OpFn *) x86_dynarec_opcodes;
     RecompOpFn  *recomp_op_table    = recomp_opcodes;
     int          opcode_shift       = 0;
     int          opcode_mask        = 0x3ff;
@@ -398,7 +398,7 @@ codegen_generate_call(uint8_t opcode, OpFn op, uint32_t fetchdat, uint32_t new_p
 #ifdef DEBUG_EXTRA
                 last_prefix = 0x0f;
 #endif
-                op_table        = (OpFn *) x86_dynarec_opcodes_0f;
+                op_table        = x86_dynarec_opcodes_0f;
                 recomp_op_table = recomp_opcodes_0f;
                 over            = 1;
                 break;
@@ -541,14 +541,14 @@ codegen_generate_call(uint8_t opcode, OpFn op, uint32_t fetchdat, uint32_t new_p
 #ifdef DEBUG_EXTRA
                 last_prefix = 0xf2;
 #endif
-                op_table        = (OpFn *) x86_dynarec_opcodes_REPNE;
+                op_table        = x86_dynarec_opcodes_REPNE;
                 recomp_op_table = NULL; // recomp_opcodes_REPNE;
                 break;
             case 0xf3: /*REPE*/
 #ifdef DEBUG_EXTRA
                 last_prefix = 0xf3;
 #endif
-                op_table        = (OpFn *) x86_dynarec_opcodes_REPE;
+                op_table        = x86_dynarec_opcodes_REPE;
                 recomp_op_table = NULL; // recomp_opcodes_REPE;
                 break;
 
