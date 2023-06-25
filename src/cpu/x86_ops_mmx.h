@@ -59,7 +59,7 @@ opEMMS(uint32_t fetchdat)
     return 0;
 }
 
-static void
+static int
 check_sse_exceptions(double result)
 {
     feclearexcept(FE_ALL_EXCEPT);
@@ -80,4 +80,5 @@ check_sse_exceptions(double result)
         if((cr4 >> 9) & 1) x86_doabrt(0x13);
         ILLEGAL_ON(!((cr4 >> 9) & 1));
     }
+    return 0;
 }
