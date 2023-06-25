@@ -199,9 +199,9 @@ fx_save_stor_common(uint32_t fetchdat, int bits)
 
         if (cpu_features & CPU_FEATURE_SSE) {
             if (!(cpu_features & CPU_FEATURE_SSE2))
-                mxcsr = readmeml(easeg, cpu_state.eaaddr + 24) & ~0xffbf;
+                mxcsr = readmeml(easeg, cpu_state.eaaddr + 24) & 0xffbf;
             else
-                mxcsr = readmeml(easeg, cpu_state.eaaddr + 24) & ~0xffff;
+                mxcsr = readmeml(easeg, cpu_state.eaaddr + 24) & 0xffff;
             XMM[0].q[0] = readmemq(easeg, cpu_state.eaaddr + 0xa0);
             XMM[0].q[1] = readmemq(easeg, cpu_state.eaaddr + 0xa8);
             XMM[1].q[0] = readmemq(easeg, cpu_state.eaaddr + 0xb0);
