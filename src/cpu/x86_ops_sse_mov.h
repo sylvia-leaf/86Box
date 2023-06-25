@@ -900,38 +900,6 @@ opPINSRW_xmm_w_a32(uint32_t fetchdat)
 }
 
 static int
-opPEXTRW_mm_w_a16(uint32_t fetchdat)
-{
-    MMX_ENTER();
-    fetch_ea_16(fetchdat);
-    uint8_t imm = getbyte();
-    if (cpu_state.abrt)
-        return 1;
-    ILLEGAL_ON(cpu_mod != 3);
-    if (cpu_mod == 3) {
-        setr32(cpu_rm, cpu_state.MM[cpu_reg].w[imm & 3]);
-        CLOCK_CYCLES(1);
-    }
-    return 0;
-}
-
-static int
-opPEXTRW_mm_w_a32(uint32_t fetchdat)
-{
-    MMX_ENTER();
-    fetch_ea_32(fetchdat);
-    uint8_t imm = getbyte();
-    if (cpu_state.abrt)
-        return 1;
-    ILLEGAL_ON(cpu_mod != 3);
-    if (cpu_mod == 3) {
-        setr32(cpu_rm, cpu_state.MM[cpu_reg].w[imm & 3]);
-        CLOCK_CYCLES(1);
-    }
-    return 0;
-}
-
-static int
 opPEXTRW_xmm_w_a16(uint32_t fetchdat)
 {
     fetch_ea_16(fetchdat);
