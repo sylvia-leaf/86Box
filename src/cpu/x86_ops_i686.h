@@ -318,7 +318,7 @@ fx_save_stor_common(uint32_t fetchdat, int bits)
         uint32_t src;
 
         uint32_t mxcsr_mask = 0xffbf;
-        if (!(cpu_features & CPU_FEATURE_SSE2))
+        if ((cpu_features & CPU_FEATURE_SSE2))
             mxcsr_mask = 0xffff;
 
         SEG_CHECK_READ(cpu_state.ea_seg);

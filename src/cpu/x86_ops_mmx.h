@@ -59,7 +59,7 @@ opEMMS(uint32_t fetchdat)
     return 0;
 }
 
-static int
+static void
 check_sse_exceptions(double result)
 {
     feclearexcept(FE_ALL_EXCEPT);
