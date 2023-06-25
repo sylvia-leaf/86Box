@@ -410,7 +410,7 @@ opMOVHPD_xmm_f_a16(uint32_t fetchdat)
         CLOCK_CYCLES(1);
     } else {
         SEG_CHECK_WRITE(cpu_state.ea_seg);
-        writememq(easeg, cpu_state.eaaddr + 8, XMM[cpu_rm].q[0]);
+        writememq(easeg, cpu_state.eaaddr + 8, XMM[cpu_rm].q[1]);
         if (cpu_state.abrt)
             return 1;
         CLOCK_CYCLES(2);
@@ -427,7 +427,7 @@ opMOVHPD_xmm_f_a32(uint32_t fetchdat)
         CLOCK_CYCLES(1);
     } else {
         SEG_CHECK_WRITE(cpu_state.ea_seg);
-        writememq(easeg, cpu_state.eaaddr + 8, XMM[cpu_rm].q[0]);
+        writememq(easeg, cpu_state.eaaddr + 8, XMM[cpu_rm].q[1]);
         if (cpu_state.abrt)
             return 1;
         CLOCK_CYCLES(2);

@@ -296,7 +296,7 @@ static int
 opCVTPS2PI_mm_xmm_a32(uint32_t fetchdat)
 {
     if ((cpu_features & CPU_FEATURE_SSE2) && sse_xmm)
-        return opCVTTPD2PI_mm_xmm_a32(fetchdat);
+        return opCVTPD2PI_mm_xmm_a32(fetchdat);
     MMX_ENTER();
     fetch_ea_32(fetchdat);
     if (cpu_mod == 3) {
