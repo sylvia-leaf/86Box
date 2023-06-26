@@ -2618,14 +2618,14 @@ opPAVGB_mm_mm_a16(uint32_t fetchdat)
     MMX_ENTER();
     fetch_ea_16(fetchdat);
     if (cpu_mod == 3) {
-        cpu_state.MM[cpu_reg].b[0] = (cpu_state.MM[cpu_reg].b[0] + cpu_state.MM[cpu_rm].b[0] + 1) >> 1;
-        cpu_state.MM[cpu_reg].b[1] = (cpu_state.MM[cpu_reg].b[1] + cpu_state.MM[cpu_rm].b[1] + 1) >> 1;
-        cpu_state.MM[cpu_reg].b[2] = (cpu_state.MM[cpu_reg].b[2] + cpu_state.MM[cpu_rm].b[2] + 1) >> 1;
-        cpu_state.MM[cpu_reg].b[3] = (cpu_state.MM[cpu_reg].b[3] + cpu_state.MM[cpu_rm].b[3] + 1) >> 1;
-        cpu_state.MM[cpu_reg].b[4] = (cpu_state.MM[cpu_reg].b[4] + cpu_state.MM[cpu_rm].b[4] + 1) >> 1;
-        cpu_state.MM[cpu_reg].b[5] = (cpu_state.MM[cpu_reg].b[5] + cpu_state.MM[cpu_rm].b[5] + 1) >> 1;
-        cpu_state.MM[cpu_reg].b[6] = (cpu_state.MM[cpu_reg].b[6] + cpu_state.MM[cpu_rm].b[6] + 1) >> 1;
-        cpu_state.MM[cpu_reg].b[7] = (cpu_state.MM[cpu_reg].b[7] + cpu_state.MM[cpu_rm].b[7] + 1) >> 1;
+        cpu_state.MM[cpu_reg].b[0] = (cpu_state.MM[cpu_reg].b[0] + cpu_state.MM[cpu_rm].b[0]) >> 1;
+        cpu_state.MM[cpu_reg].b[1] = (cpu_state.MM[cpu_reg].b[1] + cpu_state.MM[cpu_rm].b[1]) >> 1;
+        cpu_state.MM[cpu_reg].b[2] = (cpu_state.MM[cpu_reg].b[2] + cpu_state.MM[cpu_rm].b[2]) >> 1;
+        cpu_state.MM[cpu_reg].b[3] = (cpu_state.MM[cpu_reg].b[3] + cpu_state.MM[cpu_rm].b[3]) >> 1;
+        cpu_state.MM[cpu_reg].b[4] = (cpu_state.MM[cpu_reg].b[4] + cpu_state.MM[cpu_rm].b[4]) >> 1;
+        cpu_state.MM[cpu_reg].b[5] = (cpu_state.MM[cpu_reg].b[5] + cpu_state.MM[cpu_rm].b[5]) >> 1;
+        cpu_state.MM[cpu_reg].b[6] = (cpu_state.MM[cpu_reg].b[6] + cpu_state.MM[cpu_rm].b[6]) >> 1;
+        cpu_state.MM[cpu_reg].b[7] = (cpu_state.MM[cpu_reg].b[7] + cpu_state.MM[cpu_rm].b[7]) >> 1;
         CLOCK_CYCLES(1);
     } else {
         uint8_t src[8];
@@ -2655,14 +2655,14 @@ opPAVGB_mm_mm_a16(uint32_t fetchdat)
         src[7] = readmemb(easeg, cpu_state.eaaddr + 7);
         if (cpu_state.abrt)
             return 1;
-        cpu_state.MM[cpu_reg].b[0] = (cpu_state.MM[cpu_reg].b[0] + src[0] + 1) >> 1;
-        cpu_state.MM[cpu_reg].b[1] = (cpu_state.MM[cpu_reg].b[1] + src[1] + 1) >> 1;
-        cpu_state.MM[cpu_reg].b[2] = (cpu_state.MM[cpu_reg].b[2] + src[2] + 1) >> 1;
-        cpu_state.MM[cpu_reg].b[3] = (cpu_state.MM[cpu_reg].b[3] + src[3] + 1) >> 1;
-        cpu_state.MM[cpu_reg].b[4] = (cpu_state.MM[cpu_reg].b[4] + src[4] + 1) >> 1;
-        cpu_state.MM[cpu_reg].b[5] = (cpu_state.MM[cpu_reg].b[5] + src[5] + 1) >> 1;
-        cpu_state.MM[cpu_reg].b[6] = (cpu_state.MM[cpu_reg].b[6] + src[6] + 1) >> 1;
-        cpu_state.MM[cpu_reg].b[7] = (cpu_state.MM[cpu_reg].b[7] + src[7] + 1) >> 1;
+        cpu_state.MM[cpu_reg].b[0] = (cpu_state.MM[cpu_reg].b[0] + src[0]) >> 1;
+        cpu_state.MM[cpu_reg].b[1] = (cpu_state.MM[cpu_reg].b[1] + src[1]) >> 1;
+        cpu_state.MM[cpu_reg].b[2] = (cpu_state.MM[cpu_reg].b[2] + src[2]) >> 1;
+        cpu_state.MM[cpu_reg].b[3] = (cpu_state.MM[cpu_reg].b[3] + src[3]) >> 1;
+        cpu_state.MM[cpu_reg].b[4] = (cpu_state.MM[cpu_reg].b[4] + src[4]) >> 1;
+        cpu_state.MM[cpu_reg].b[5] = (cpu_state.MM[cpu_reg].b[5] + src[5]) >> 1;
+        cpu_state.MM[cpu_reg].b[6] = (cpu_state.MM[cpu_reg].b[6] + src[6]) >> 1;
+        cpu_state.MM[cpu_reg].b[7] = (cpu_state.MM[cpu_reg].b[7] + src[7]) >> 1;
     }
     return 0;
 }
@@ -2673,14 +2673,14 @@ opPAVGB_mm_mm_a32(uint32_t fetchdat)
     MMX_ENTER();
     fetch_ea_32(fetchdat);
     if (cpu_mod == 3) {
-        cpu_state.MM[cpu_reg].b[0] = (cpu_state.MM[cpu_reg].b[0] + cpu_state.MM[cpu_rm].b[0] + 1) >> 1;
-        cpu_state.MM[cpu_reg].b[1] = (cpu_state.MM[cpu_reg].b[1] + cpu_state.MM[cpu_rm].b[1] + 1) >> 1;
-        cpu_state.MM[cpu_reg].b[2] = (cpu_state.MM[cpu_reg].b[2] + cpu_state.MM[cpu_rm].b[2] + 1) >> 1;
-        cpu_state.MM[cpu_reg].b[3] = (cpu_state.MM[cpu_reg].b[3] + cpu_state.MM[cpu_rm].b[3] + 1) >> 1;
-        cpu_state.MM[cpu_reg].b[4] = (cpu_state.MM[cpu_reg].b[4] + cpu_state.MM[cpu_rm].b[4] + 1) >> 1;
-        cpu_state.MM[cpu_reg].b[5] = (cpu_state.MM[cpu_reg].b[5] + cpu_state.MM[cpu_rm].b[5] + 1) >> 1;
-        cpu_state.MM[cpu_reg].b[6] = (cpu_state.MM[cpu_reg].b[6] + cpu_state.MM[cpu_rm].b[6] + 1) >> 1;
-        cpu_state.MM[cpu_reg].b[7] = (cpu_state.MM[cpu_reg].b[7] + cpu_state.MM[cpu_rm].b[7] + 1) >> 1;
+        cpu_state.MM[cpu_reg].b[0] = (cpu_state.MM[cpu_reg].b[0] + cpu_state.MM[cpu_rm].b[0]) >> 1;
+        cpu_state.MM[cpu_reg].b[1] = (cpu_state.MM[cpu_reg].b[1] + cpu_state.MM[cpu_rm].b[1]) >> 1;
+        cpu_state.MM[cpu_reg].b[2] = (cpu_state.MM[cpu_reg].b[2] + cpu_state.MM[cpu_rm].b[2]) >> 1;
+        cpu_state.MM[cpu_reg].b[3] = (cpu_state.MM[cpu_reg].b[3] + cpu_state.MM[cpu_rm].b[3]) >> 1;
+        cpu_state.MM[cpu_reg].b[4] = (cpu_state.MM[cpu_reg].b[4] + cpu_state.MM[cpu_rm].b[4]) >> 1;
+        cpu_state.MM[cpu_reg].b[5] = (cpu_state.MM[cpu_reg].b[5] + cpu_state.MM[cpu_rm].b[5]) >> 1;
+        cpu_state.MM[cpu_reg].b[6] = (cpu_state.MM[cpu_reg].b[6] + cpu_state.MM[cpu_rm].b[6]) >> 1;
+        cpu_state.MM[cpu_reg].b[7] = (cpu_state.MM[cpu_reg].b[7] + cpu_state.MM[cpu_rm].b[7]) >> 1;
         CLOCK_CYCLES(1);
     } else {
         uint8_t src[8];
@@ -2710,14 +2710,14 @@ opPAVGB_mm_mm_a32(uint32_t fetchdat)
         src[7] = readmemb(easeg, cpu_state.eaaddr + 7);
         if (cpu_state.abrt)
             return 1;
-        cpu_state.MM[cpu_reg].b[0] = (cpu_state.MM[cpu_reg].b[0] + src[0] + 1) >> 1;
-        cpu_state.MM[cpu_reg].b[1] = (cpu_state.MM[cpu_reg].b[1] + src[1] + 1) >> 1;
-        cpu_state.MM[cpu_reg].b[2] = (cpu_state.MM[cpu_reg].b[2] + src[2] + 1) >> 1;
-        cpu_state.MM[cpu_reg].b[3] = (cpu_state.MM[cpu_reg].b[3] + src[3] + 1) >> 1;
-        cpu_state.MM[cpu_reg].b[4] = (cpu_state.MM[cpu_reg].b[4] + src[4] + 1) >> 1;
-        cpu_state.MM[cpu_reg].b[5] = (cpu_state.MM[cpu_reg].b[5] + src[5] + 1) >> 1;
-        cpu_state.MM[cpu_reg].b[6] = (cpu_state.MM[cpu_reg].b[6] + src[6] + 1) >> 1;
-        cpu_state.MM[cpu_reg].b[7] = (cpu_state.MM[cpu_reg].b[7] + src[7] + 1) >> 1;
+        cpu_state.MM[cpu_reg].b[0] = (cpu_state.MM[cpu_reg].b[0] + src[0]) >> 1;
+        cpu_state.MM[cpu_reg].b[1] = (cpu_state.MM[cpu_reg].b[1] + src[1]) >> 1;
+        cpu_state.MM[cpu_reg].b[2] = (cpu_state.MM[cpu_reg].b[2] + src[2]) >> 1;
+        cpu_state.MM[cpu_reg].b[3] = (cpu_state.MM[cpu_reg].b[3] + src[3]) >> 1;
+        cpu_state.MM[cpu_reg].b[4] = (cpu_state.MM[cpu_reg].b[4] + src[4]) >> 1;
+        cpu_state.MM[cpu_reg].b[5] = (cpu_state.MM[cpu_reg].b[5] + src[5]) >> 1;
+        cpu_state.MM[cpu_reg].b[6] = (cpu_state.MM[cpu_reg].b[6] + src[6]) >> 1;
+        cpu_state.MM[cpu_reg].b[7] = (cpu_state.MM[cpu_reg].b[7] + src[7]) >> 1;
     }
     return 0;
 }
@@ -2727,22 +2727,22 @@ opPAVGB_xmm_xmm_a16(uint32_t fetchdat)
 {
     fetch_ea_16(fetchdat);
     if (cpu_mod == 3) {
-        XMM[cpu_reg].b[0]  = (XMM[cpu_reg].b[0] + XMM[cpu_rm].b[0] + 1) >> 1;
-        XMM[cpu_reg].b[1]  = (XMM[cpu_reg].b[1] + XMM[cpu_rm].b[1] + 1) >> 1;
-        XMM[cpu_reg].b[2]  = (XMM[cpu_reg].b[2] + XMM[cpu_rm].b[2] + 1) >> 1;
-        XMM[cpu_reg].b[3]  = (XMM[cpu_reg].b[3] + XMM[cpu_rm].b[3] + 1) >> 1;
-        XMM[cpu_reg].b[4]  = (XMM[cpu_reg].b[4] + XMM[cpu_rm].b[4] + 1) >> 1;
-        XMM[cpu_reg].b[5]  = (XMM[cpu_reg].b[5] + XMM[cpu_rm].b[5] + 1) >> 1;
-        XMM[cpu_reg].b[6]  = (XMM[cpu_reg].b[6] + XMM[cpu_rm].b[6] + 1) >> 1;
-        XMM[cpu_reg].b[7]  = (XMM[cpu_reg].b[7] + XMM[cpu_rm].b[7] + 1) >> 1;
-        XMM[cpu_reg].b[8]  = (XMM[cpu_reg].b[8] + XMM[cpu_rm].b[8] + 1) >> 1;
-        XMM[cpu_reg].b[9]  = (XMM[cpu_reg].b[9] + XMM[cpu_rm].b[9] + 1) >> 1;
-        XMM[cpu_reg].b[10] = (XMM[cpu_reg].b[10] + XMM[cpu_rm].b[10] + 1) >> 1;
-        XMM[cpu_reg].b[11] = (XMM[cpu_reg].b[11] + XMM[cpu_rm].b[11] + 1) >> 1;
-        XMM[cpu_reg].b[12] = (XMM[cpu_reg].b[12] + XMM[cpu_rm].b[12] + 1) >> 1;
-        XMM[cpu_reg].b[13] = (XMM[cpu_reg].b[13] + XMM[cpu_rm].b[13] + 1) >> 1;
-        XMM[cpu_reg].b[14] = (XMM[cpu_reg].b[14] + XMM[cpu_rm].b[14] + 1) >> 1;
-        XMM[cpu_reg].b[15] = (XMM[cpu_reg].b[15] + XMM[cpu_rm].b[15] + 1) >> 1;
+        XMM[cpu_reg].b[0]  = (XMM[cpu_reg].b[0] + XMM[cpu_rm].b[0]) >> 1;
+        XMM[cpu_reg].b[1]  = (XMM[cpu_reg].b[1] + XMM[cpu_rm].b[1]) >> 1;
+        XMM[cpu_reg].b[2]  = (XMM[cpu_reg].b[2] + XMM[cpu_rm].b[2]) >> 1;
+        XMM[cpu_reg].b[3]  = (XMM[cpu_reg].b[3] + XMM[cpu_rm].b[3]) >> 1;
+        XMM[cpu_reg].b[4]  = (XMM[cpu_reg].b[4] + XMM[cpu_rm].b[4]) >> 1;
+        XMM[cpu_reg].b[5]  = (XMM[cpu_reg].b[5] + XMM[cpu_rm].b[5]) >> 1;
+        XMM[cpu_reg].b[6]  = (XMM[cpu_reg].b[6] + XMM[cpu_rm].b[6]) >> 1;
+        XMM[cpu_reg].b[7]  = (XMM[cpu_reg].b[7] + XMM[cpu_rm].b[7]) >> 1;
+        XMM[cpu_reg].b[8]  = (XMM[cpu_reg].b[8] + XMM[cpu_rm].b[8]) >> 1;
+        XMM[cpu_reg].b[9]  = (XMM[cpu_reg].b[9] + XMM[cpu_rm].b[9]) >> 1;
+        XMM[cpu_reg].b[10] = (XMM[cpu_reg].b[10] + XMM[cpu_rm].b[10]) >> 1;
+        XMM[cpu_reg].b[11] = (XMM[cpu_reg].b[11] + XMM[cpu_rm].b[11]) >> 1;
+        XMM[cpu_reg].b[12] = (XMM[cpu_reg].b[12] + XMM[cpu_rm].b[12]) >> 1;
+        XMM[cpu_reg].b[13] = (XMM[cpu_reg].b[13] + XMM[cpu_rm].b[13]) >> 1;
+        XMM[cpu_reg].b[14] = (XMM[cpu_reg].b[14] + XMM[cpu_rm].b[14]) >> 1;
+        XMM[cpu_reg].b[15] = (XMM[cpu_reg].b[15] + XMM[cpu_rm].b[15]) >> 1;
         CLOCK_CYCLES(1);
     } else {
         uint8_t src[16];
@@ -2796,22 +2796,22 @@ opPAVGB_xmm_xmm_a16(uint32_t fetchdat)
         src[15] = readmemb(easeg, cpu_state.eaaddr + 15);
         if (cpu_state.abrt)
             return 1;
-        XMM[cpu_reg].b[0]  = (XMM[cpu_reg].b[0] + src[0] + 1) >> 1;
-        XMM[cpu_reg].b[1]  = (XMM[cpu_reg].b[1] + src[1] + 1) >> 1;
-        XMM[cpu_reg].b[2]  = (XMM[cpu_reg].b[2] + src[2] + 1) >> 1;
-        XMM[cpu_reg].b[3]  = (XMM[cpu_reg].b[3] + src[3] + 1) >> 1;
-        XMM[cpu_reg].b[4]  = (XMM[cpu_reg].b[4] + src[4] + 1) >> 1;
-        XMM[cpu_reg].b[5]  = (XMM[cpu_reg].b[5] + src[5] + 1) >> 1;
-        XMM[cpu_reg].b[6]  = (XMM[cpu_reg].b[6] + src[6] + 1) >> 1;
-        XMM[cpu_reg].b[7]  = (XMM[cpu_reg].b[7] + src[7] + 1) >> 1;
-        XMM[cpu_reg].b[8]  = (XMM[cpu_reg].b[8] + src[8] + 1) >> 1;
-        XMM[cpu_reg].b[9]  = (XMM[cpu_reg].b[9] + src[9] + 1) >> 1;
-        XMM[cpu_reg].b[10] = (XMM[cpu_reg].b[10] + src[10] + 1) >> 1;
-        XMM[cpu_reg].b[11] = (XMM[cpu_reg].b[11] + src[11] + 1) >> 1;
-        XMM[cpu_reg].b[12] = (XMM[cpu_reg].b[12] + src[12] + 1) >> 1;
-        XMM[cpu_reg].b[13] = (XMM[cpu_reg].b[13] + src[13] + 1) >> 1;
-        XMM[cpu_reg].b[14] = (XMM[cpu_reg].b[14] + src[14] + 1) >> 1;
-        XMM[cpu_reg].b[15] = (XMM[cpu_reg].b[15] + src[15] + 1) >> 1;
+        XMM[cpu_reg].b[0]  = (XMM[cpu_reg].b[0] + src[0]) >> 1;
+        XMM[cpu_reg].b[1]  = (XMM[cpu_reg].b[1] + src[1]) >> 1;
+        XMM[cpu_reg].b[2]  = (XMM[cpu_reg].b[2] + src[2]) >> 1;
+        XMM[cpu_reg].b[3]  = (XMM[cpu_reg].b[3] + src[3]) >> 1;
+        XMM[cpu_reg].b[4]  = (XMM[cpu_reg].b[4] + src[4]) >> 1;
+        XMM[cpu_reg].b[5]  = (XMM[cpu_reg].b[5] + src[5]) >> 1;
+        XMM[cpu_reg].b[6]  = (XMM[cpu_reg].b[6] + src[6]) >> 1;
+        XMM[cpu_reg].b[7]  = (XMM[cpu_reg].b[7] + src[7]) >> 1;
+        XMM[cpu_reg].b[8]  = (XMM[cpu_reg].b[8] + src[8]) >> 1;
+        XMM[cpu_reg].b[9]  = (XMM[cpu_reg].b[9] + src[9]) >> 1;
+        XMM[cpu_reg].b[10] = (XMM[cpu_reg].b[10] + src[10]) >> 1;
+        XMM[cpu_reg].b[11] = (XMM[cpu_reg].b[11] + src[11]) >> 1;
+        XMM[cpu_reg].b[12] = (XMM[cpu_reg].b[12] + src[12]) >> 1;
+        XMM[cpu_reg].b[13] = (XMM[cpu_reg].b[13] + src[13]) >> 1;
+        XMM[cpu_reg].b[14] = (XMM[cpu_reg].b[14] + src[14]) >> 1;
+        XMM[cpu_reg].b[15] = (XMM[cpu_reg].b[15] + src[15]) >> 1;
     }
     return 0;
 }
@@ -2821,22 +2821,22 @@ opPAVGB_xmm_xmm_a32(uint32_t fetchdat)
 {
     fetch_ea_32(fetchdat);
     if (cpu_mod == 3) {
-        XMM[cpu_reg].b[0]  = (XMM[cpu_reg].b[0] + XMM[cpu_rm].b[0] + 1) >> 1;
-        XMM[cpu_reg].b[1]  = (XMM[cpu_reg].b[1] + XMM[cpu_rm].b[1] + 1) >> 1;
-        XMM[cpu_reg].b[2]  = (XMM[cpu_reg].b[2] + XMM[cpu_rm].b[2] + 1) >> 1;
-        XMM[cpu_reg].b[3]  = (XMM[cpu_reg].b[3] + XMM[cpu_rm].b[3] + 1) >> 1;
-        XMM[cpu_reg].b[4]  = (XMM[cpu_reg].b[4] + XMM[cpu_rm].b[4] + 1) >> 1;
-        XMM[cpu_reg].b[5]  = (XMM[cpu_reg].b[5] + XMM[cpu_rm].b[5] + 1) >> 1;
-        XMM[cpu_reg].b[6]  = (XMM[cpu_reg].b[6] + XMM[cpu_rm].b[6] + 1) >> 1;
-        XMM[cpu_reg].b[7]  = (XMM[cpu_reg].b[7] + XMM[cpu_rm].b[7] + 1) >> 1;
-        XMM[cpu_reg].b[8]  = (XMM[cpu_reg].b[8] + XMM[cpu_rm].b[8] + 1) >> 1;
-        XMM[cpu_reg].b[9]  = (XMM[cpu_reg].b[9] + XMM[cpu_rm].b[9] + 1) >> 1;
-        XMM[cpu_reg].b[10] = (XMM[cpu_reg].b[10] + XMM[cpu_rm].b[10] + 1) >> 1;
-        XMM[cpu_reg].b[11] = (XMM[cpu_reg].b[11] + XMM[cpu_rm].b[11] + 1) >> 1;
-        XMM[cpu_reg].b[12] = (XMM[cpu_reg].b[12] + XMM[cpu_rm].b[12] + 1) >> 1;
-        XMM[cpu_reg].b[13] = (XMM[cpu_reg].b[13] + XMM[cpu_rm].b[13] + 1) >> 1;
-        XMM[cpu_reg].b[14] = (XMM[cpu_reg].b[14] + XMM[cpu_rm].b[14] + 1) >> 1;
-        XMM[cpu_reg].b[15] = (XMM[cpu_reg].b[15] + XMM[cpu_rm].b[15] + 1) >> 1;
+        XMM[cpu_reg].b[0]  = (XMM[cpu_reg].b[0] + XMM[cpu_rm].b[0]) >> 1;
+        XMM[cpu_reg].b[1]  = (XMM[cpu_reg].b[1] + XMM[cpu_rm].b[1]) >> 1;
+        XMM[cpu_reg].b[2]  = (XMM[cpu_reg].b[2] + XMM[cpu_rm].b[2]) >> 1;
+        XMM[cpu_reg].b[3]  = (XMM[cpu_reg].b[3] + XMM[cpu_rm].b[3]) >> 1;
+        XMM[cpu_reg].b[4]  = (XMM[cpu_reg].b[4] + XMM[cpu_rm].b[4]) >> 1;
+        XMM[cpu_reg].b[5]  = (XMM[cpu_reg].b[5] + XMM[cpu_rm].b[5]) >> 1;
+        XMM[cpu_reg].b[6]  = (XMM[cpu_reg].b[6] + XMM[cpu_rm].b[6]) >> 1;
+        XMM[cpu_reg].b[7]  = (XMM[cpu_reg].b[7] + XMM[cpu_rm].b[7]) >> 1;
+        XMM[cpu_reg].b[8]  = (XMM[cpu_reg].b[8] + XMM[cpu_rm].b[8]) >> 1;
+        XMM[cpu_reg].b[9]  = (XMM[cpu_reg].b[9] + XMM[cpu_rm].b[9]) >> 1;
+        XMM[cpu_reg].b[10] = (XMM[cpu_reg].b[10] + XMM[cpu_rm].b[10]) >> 1;
+        XMM[cpu_reg].b[11] = (XMM[cpu_reg].b[11] + XMM[cpu_rm].b[11]) >> 1;
+        XMM[cpu_reg].b[12] = (XMM[cpu_reg].b[12] + XMM[cpu_rm].b[12]) >> 1;
+        XMM[cpu_reg].b[13] = (XMM[cpu_reg].b[13] + XMM[cpu_rm].b[13]) >> 1;
+        XMM[cpu_reg].b[14] = (XMM[cpu_reg].b[14] + XMM[cpu_rm].b[14]) >> 1;
+        XMM[cpu_reg].b[15] = (XMM[cpu_reg].b[15] + XMM[cpu_rm].b[15]) >> 1;
         CLOCK_CYCLES(1);
     } else {
         uint8_t src[16];
@@ -2890,22 +2890,22 @@ opPAVGB_xmm_xmm_a32(uint32_t fetchdat)
         src[15] = readmemb(easeg, cpu_state.eaaddr + 15);
         if (cpu_state.abrt)
             return 1;
-        XMM[cpu_reg].b[0]  = (XMM[cpu_reg].b[0] + src[0] + 1) >> 1;
-        XMM[cpu_reg].b[1]  = (XMM[cpu_reg].b[1] + src[1] + 1) >> 1;
-        XMM[cpu_reg].b[2]  = (XMM[cpu_reg].b[2] + src[2] + 1) >> 1;
-        XMM[cpu_reg].b[3]  = (XMM[cpu_reg].b[3] + src[3] + 1) >> 1;
-        XMM[cpu_reg].b[4]  = (XMM[cpu_reg].b[4] + src[4] + 1) >> 1;
-        XMM[cpu_reg].b[5]  = (XMM[cpu_reg].b[5] + src[5] + 1) >> 1;
-        XMM[cpu_reg].b[6]  = (XMM[cpu_reg].b[6] + src[6] + 1) >> 1;
-        XMM[cpu_reg].b[7]  = (XMM[cpu_reg].b[7] + src[7] + 1) >> 1;
-        XMM[cpu_reg].b[8]  = (XMM[cpu_reg].b[8] + src[8] + 1) >> 1;
-        XMM[cpu_reg].b[9]  = (XMM[cpu_reg].b[9] + src[9] + 1) >> 1;
-        XMM[cpu_reg].b[10] = (XMM[cpu_reg].b[10] + src[10] + 1) >> 1;
-        XMM[cpu_reg].b[11] = (XMM[cpu_reg].b[11] + src[11] + 1) >> 1;
-        XMM[cpu_reg].b[12] = (XMM[cpu_reg].b[12] + src[12] + 1) >> 1;
-        XMM[cpu_reg].b[13] = (XMM[cpu_reg].b[13] + src[13] + 1) >> 1;
-        XMM[cpu_reg].b[14] = (XMM[cpu_reg].b[14] + src[14] + 1) >> 1;
-        XMM[cpu_reg].b[15] = (XMM[cpu_reg].b[15] + src[15] + 1) >> 1;
+        XMM[cpu_reg].b[0]  = (XMM[cpu_reg].b[0] + src[0]) >> 1;
+        XMM[cpu_reg].b[1]  = (XMM[cpu_reg].b[1] + src[1]) >> 1;
+        XMM[cpu_reg].b[2]  = (XMM[cpu_reg].b[2] + src[2]) >> 1;
+        XMM[cpu_reg].b[3]  = (XMM[cpu_reg].b[3] + src[3]) >> 1;
+        XMM[cpu_reg].b[4]  = (XMM[cpu_reg].b[4] + src[4]) >> 1;
+        XMM[cpu_reg].b[5]  = (XMM[cpu_reg].b[5] + src[5]) >> 1;
+        XMM[cpu_reg].b[6]  = (XMM[cpu_reg].b[6] + src[6]) >> 1;
+        XMM[cpu_reg].b[7]  = (XMM[cpu_reg].b[7] + src[7]) >> 1;
+        XMM[cpu_reg].b[8]  = (XMM[cpu_reg].b[8] + src[8]) >> 1;
+        XMM[cpu_reg].b[9]  = (XMM[cpu_reg].b[9] + src[9]) >> 1;
+        XMM[cpu_reg].b[10] = (XMM[cpu_reg].b[10] + src[10]) >> 1;
+        XMM[cpu_reg].b[11] = (XMM[cpu_reg].b[11] + src[11]) >> 1;
+        XMM[cpu_reg].b[12] = (XMM[cpu_reg].b[12] + src[12]) >> 1;
+        XMM[cpu_reg].b[13] = (XMM[cpu_reg].b[13] + src[13]) >> 1;
+        XMM[cpu_reg].b[14] = (XMM[cpu_reg].b[14] + src[14]) >> 1;
+        XMM[cpu_reg].b[15] = (XMM[cpu_reg].b[15] + src[15]) >> 1;
     }
     return 0;
 }
@@ -2933,10 +2933,10 @@ opPAVGW_mm_mm_a16(uint32_t fetchdat)
 {
     fetch_ea_16(fetchdat);
     if (cpu_mod == 3) {
-        cpu_state.MM[cpu_reg].w[0] = (cpu_state.MM[cpu_reg].w[0] + cpu_state.MM[cpu_rm].w[0] + 1) >> 1;
-        cpu_state.MM[cpu_reg].w[1] = (cpu_state.MM[cpu_reg].w[1] + cpu_state.MM[cpu_rm].w[1] + 1) >> 1;
-        cpu_state.MM[cpu_reg].w[2] = (cpu_state.MM[cpu_reg].w[2] + cpu_state.MM[cpu_rm].w[2] + 1) >> 1;
-        cpu_state.MM[cpu_reg].w[3] = (cpu_state.MM[cpu_reg].w[3] + cpu_state.MM[cpu_rm].w[3] + 1) >> 1;
+        cpu_state.MM[cpu_reg].w[0] = (cpu_state.MM[cpu_reg].w[0] + cpu_state.MM[cpu_rm].w[0]) >> 1;
+        cpu_state.MM[cpu_reg].w[1] = (cpu_state.MM[cpu_reg].w[1] + cpu_state.MM[cpu_rm].w[1]) >> 1;
+        cpu_state.MM[cpu_reg].w[2] = (cpu_state.MM[cpu_reg].w[2] + cpu_state.MM[cpu_rm].w[2]) >> 1;
+        cpu_state.MM[cpu_reg].w[3] = (cpu_state.MM[cpu_reg].w[3] + cpu_state.MM[cpu_rm].w[3]) >> 1;
         CLOCK_CYCLES(1);
     } else {
         uint16_t src[4];
@@ -2954,10 +2954,10 @@ opPAVGW_mm_mm_a16(uint32_t fetchdat)
         src[3] = readmemw(easeg, cpu_state.eaaddr + 6);
         if (cpu_state.abrt)
             return 1;
-        cpu_state.MM[cpu_reg].w[0] = (cpu_state.MM[cpu_reg].w[0] + src[0] + 1) >> 1;
-        cpu_state.MM[cpu_reg].w[1] = (cpu_state.MM[cpu_reg].w[1] + src[1] + 1) >> 1;
-        cpu_state.MM[cpu_reg].w[2] = (cpu_state.MM[cpu_reg].w[2] + src[2] + 1) >> 1;
-        cpu_state.MM[cpu_reg].w[3] = (cpu_state.MM[cpu_reg].w[3] + src[3] + 1) >> 1;
+        cpu_state.MM[cpu_reg].w[0] = (cpu_state.MM[cpu_reg].w[0] + src[0]) >> 1;
+        cpu_state.MM[cpu_reg].w[1] = (cpu_state.MM[cpu_reg].w[1] + src[1]) >> 1;
+        cpu_state.MM[cpu_reg].w[2] = (cpu_state.MM[cpu_reg].w[2] + src[2]) >> 1;
+        cpu_state.MM[cpu_reg].w[3] = (cpu_state.MM[cpu_reg].w[3] + src[3]) >> 1;
     }
     return 0;
 }
@@ -2967,10 +2967,10 @@ opPAVGW_mm_mm_a32(uint32_t fetchdat)
 {
     fetch_ea_32(fetchdat);
     if (cpu_mod == 3) {
-        cpu_state.MM[cpu_reg].w[0] = (cpu_state.MM[cpu_reg].w[0] + cpu_state.MM[cpu_rm].w[0] + 1) >> 1;
-        cpu_state.MM[cpu_reg].w[1] = (cpu_state.MM[cpu_reg].w[1] + cpu_state.MM[cpu_rm].w[1] + 1) >> 1;
-        cpu_state.MM[cpu_reg].w[2] = (cpu_state.MM[cpu_reg].w[2] + cpu_state.MM[cpu_rm].w[2] + 1) >> 1;
-        cpu_state.MM[cpu_reg].w[3] = (cpu_state.MM[cpu_reg].w[3] + cpu_state.MM[cpu_rm].w[3] + 1) >> 1;
+        cpu_state.MM[cpu_reg].w[0] = (cpu_state.MM[cpu_reg].w[0] + cpu_state.MM[cpu_rm].w[0]) >> 1;
+        cpu_state.MM[cpu_reg].w[1] = (cpu_state.MM[cpu_reg].w[1] + cpu_state.MM[cpu_rm].w[1]) >> 1;
+        cpu_state.MM[cpu_reg].w[2] = (cpu_state.MM[cpu_reg].w[2] + cpu_state.MM[cpu_rm].w[2]) >> 1;
+        cpu_state.MM[cpu_reg].w[3] = (cpu_state.MM[cpu_reg].w[3] + cpu_state.MM[cpu_rm].w[3]) >> 1;
         CLOCK_CYCLES(1);
     } else {
         uint16_t src[4];
@@ -2988,10 +2988,10 @@ opPAVGW_mm_mm_a32(uint32_t fetchdat)
         src[3] = readmemw(easeg, cpu_state.eaaddr + 6);
         if (cpu_state.abrt)
             return 1;
-        cpu_state.MM[cpu_reg].w[0] = (cpu_state.MM[cpu_reg].w[0] + src[0] + 1) >> 1;
-        cpu_state.MM[cpu_reg].w[1] = (cpu_state.MM[cpu_reg].w[1] + src[1] + 1) >> 1;
-        cpu_state.MM[cpu_reg].w[2] = (cpu_state.MM[cpu_reg].w[2] + src[2] + 1) >> 1;
-        cpu_state.MM[cpu_reg].w[3] = (cpu_state.MM[cpu_reg].w[3] + src[3] + 1) >> 1;
+        cpu_state.MM[cpu_reg].w[0] = (cpu_state.MM[cpu_reg].w[0] + src[0]) >> 1;
+        cpu_state.MM[cpu_reg].w[1] = (cpu_state.MM[cpu_reg].w[1] + src[1]) >> 1;
+        cpu_state.MM[cpu_reg].w[2] = (cpu_state.MM[cpu_reg].w[2] + src[2]) >> 1;
+        cpu_state.MM[cpu_reg].w[3] = (cpu_state.MM[cpu_reg].w[3] + src[3]) >> 1;
     }
     return 0;
 }
@@ -3001,14 +3001,14 @@ opPAVGW_xmm_xmm_a16(uint32_t fetchdat)
 {
     fetch_ea_16(fetchdat);
     if (cpu_mod == 3) {
-        XMM[cpu_reg].w[0] = (XMM[cpu_reg].w[0] + XMM[cpu_rm].w[0] + 1) >> 1;
-        XMM[cpu_reg].w[1] = (XMM[cpu_reg].w[1] + XMM[cpu_rm].w[1] + 1) >> 1;
-        XMM[cpu_reg].w[2] = (XMM[cpu_reg].w[2] + XMM[cpu_rm].w[2] + 1) >> 1;
-        XMM[cpu_reg].w[3] = (XMM[cpu_reg].w[3] + XMM[cpu_rm].w[3] + 1) >> 1;
-        XMM[cpu_reg].w[4] = (XMM[cpu_reg].w[4] + XMM[cpu_rm].w[4] + 1) >> 1;
-        XMM[cpu_reg].w[5] = (XMM[cpu_reg].w[5] + XMM[cpu_rm].w[5] + 1) >> 1;
-        XMM[cpu_reg].w[6] = (XMM[cpu_reg].w[6] + XMM[cpu_rm].w[6] + 1) >> 1;
-        XMM[cpu_reg].w[7] = (XMM[cpu_reg].w[7] + XMM[cpu_rm].w[7] + 1) >> 1;
+        XMM[cpu_reg].w[0] = (XMM[cpu_reg].w[0] + XMM[cpu_rm].w[0]) >> 1;
+        XMM[cpu_reg].w[1] = (XMM[cpu_reg].w[1] + XMM[cpu_rm].w[1]) >> 1;
+        XMM[cpu_reg].w[2] = (XMM[cpu_reg].w[2] + XMM[cpu_rm].w[2]) >> 1;
+        XMM[cpu_reg].w[3] = (XMM[cpu_reg].w[3] + XMM[cpu_rm].w[3]) >> 1;
+        XMM[cpu_reg].w[4] = (XMM[cpu_reg].w[4] + XMM[cpu_rm].w[4]) >> 1;
+        XMM[cpu_reg].w[5] = (XMM[cpu_reg].w[5] + XMM[cpu_rm].w[5]) >> 1;
+        XMM[cpu_reg].w[6] = (XMM[cpu_reg].w[6] + XMM[cpu_rm].w[6]) >> 1;
+        XMM[cpu_reg].w[7] = (XMM[cpu_reg].w[7] + XMM[cpu_rm].w[7]) >> 1;
         CLOCK_CYCLES(1);
     } else {
         uint16_t src[8];
@@ -3038,14 +3038,14 @@ opPAVGW_xmm_xmm_a16(uint32_t fetchdat)
         src[7] = readmemw(easeg, cpu_state.eaaddr + 14);
         if (cpu_state.abrt)
             return 1;
-        XMM[cpu_reg].w[0] = (XMM[cpu_reg].w[0] + src[0] + 1) >> 1;
-        XMM[cpu_reg].w[1] = (XMM[cpu_reg].w[1] + src[1] + 1) >> 1;
-        XMM[cpu_reg].w[2] = (XMM[cpu_reg].w[2] + src[2] + 1) >> 1;
-        XMM[cpu_reg].w[3] = (XMM[cpu_reg].w[3] + src[3] + 1) >> 1;
-        XMM[cpu_reg].w[4] = (XMM[cpu_reg].w[4] + src[4] + 1) >> 1;
-        XMM[cpu_reg].w[5] = (XMM[cpu_reg].w[5] + src[5] + 1) >> 1;
-        XMM[cpu_reg].w[6] = (XMM[cpu_reg].w[6] + src[6] + 1) >> 1;
-        XMM[cpu_reg].w[7] = (XMM[cpu_reg].w[7] + src[7] + 1) >> 1;
+        XMM[cpu_reg].w[0] = (XMM[cpu_reg].w[0] + src[0]) >> 1;
+        XMM[cpu_reg].w[1] = (XMM[cpu_reg].w[1] + src[1]) >> 1;
+        XMM[cpu_reg].w[2] = (XMM[cpu_reg].w[2] + src[2]) >> 1;
+        XMM[cpu_reg].w[3] = (XMM[cpu_reg].w[3] + src[3]) >> 1;
+        XMM[cpu_reg].w[4] = (XMM[cpu_reg].w[4] + src[4]) >> 1;
+        XMM[cpu_reg].w[5] = (XMM[cpu_reg].w[5] + src[5]) >> 1;
+        XMM[cpu_reg].w[6] = (XMM[cpu_reg].w[6] + src[6]) >> 1;
+        XMM[cpu_reg].w[7] = (XMM[cpu_reg].w[7] + src[7]) >> 1;
     }
     return 0;
 }
@@ -3055,14 +3055,14 @@ opPAVGW_xmm_xmm_a32(uint32_t fetchdat)
 {
     fetch_ea_32(fetchdat);
     if (cpu_mod == 3) {
-        XMM[cpu_reg].w[0] = (XMM[cpu_reg].w[0] + XMM[cpu_rm].w[0] + 1) >> 1;
-        XMM[cpu_reg].w[1] = (XMM[cpu_reg].w[1] + XMM[cpu_rm].w[1] + 1) >> 1;
-        XMM[cpu_reg].w[2] = (XMM[cpu_reg].w[2] + XMM[cpu_rm].w[2] + 1) >> 1;
-        XMM[cpu_reg].w[3] = (XMM[cpu_reg].w[3] + XMM[cpu_rm].w[3] + 1) >> 1;
-        XMM[cpu_reg].w[4] = (XMM[cpu_reg].w[4] + XMM[cpu_rm].w[4] + 1) >> 1;
-        XMM[cpu_reg].w[5] = (XMM[cpu_reg].w[5] + XMM[cpu_rm].w[5] + 1) >> 1;
-        XMM[cpu_reg].w[6] = (XMM[cpu_reg].w[6] + XMM[cpu_rm].w[6] + 1) >> 1;
-        XMM[cpu_reg].w[7] = (XMM[cpu_reg].w[7] + XMM[cpu_rm].w[7] + 1) >> 1;
+        XMM[cpu_reg].w[0] = (XMM[cpu_reg].w[0] + XMM[cpu_rm].w[0]) >> 1;
+        XMM[cpu_reg].w[1] = (XMM[cpu_reg].w[1] + XMM[cpu_rm].w[1]) >> 1;
+        XMM[cpu_reg].w[2] = (XMM[cpu_reg].w[2] + XMM[cpu_rm].w[2]) >> 1;
+        XMM[cpu_reg].w[3] = (XMM[cpu_reg].w[3] + XMM[cpu_rm].w[3]) >> 1;
+        XMM[cpu_reg].w[4] = (XMM[cpu_reg].w[4] + XMM[cpu_rm].w[4]) >> 1;
+        XMM[cpu_reg].w[5] = (XMM[cpu_reg].w[5] + XMM[cpu_rm].w[5]) >> 1;
+        XMM[cpu_reg].w[6] = (XMM[cpu_reg].w[6] + XMM[cpu_rm].w[6]) >> 1;
+        XMM[cpu_reg].w[7] = (XMM[cpu_reg].w[7] + XMM[cpu_rm].w[7]) >> 1;
         CLOCK_CYCLES(1);
     } else {
         uint16_t src[8];
@@ -3092,14 +3092,14 @@ opPAVGW_xmm_xmm_a32(uint32_t fetchdat)
         src[7] = readmemw(easeg, cpu_state.eaaddr + 14);
         if (cpu_state.abrt)
             return 1;
-        XMM[cpu_reg].w[0] = (XMM[cpu_reg].w[0] + src[0] + 1) >> 1;
-        XMM[cpu_reg].w[1] = (XMM[cpu_reg].w[1] + src[1] + 1) >> 1;
-        XMM[cpu_reg].w[2] = (XMM[cpu_reg].w[2] + src[2] + 1) >> 1;
-        XMM[cpu_reg].w[3] = (XMM[cpu_reg].w[3] + src[3] + 1) >> 1;
-        XMM[cpu_reg].w[4] = (XMM[cpu_reg].w[4] + src[4] + 1) >> 1;
-        XMM[cpu_reg].w[5] = (XMM[cpu_reg].w[5] + src[5] + 1) >> 1;
-        XMM[cpu_reg].w[6] = (XMM[cpu_reg].w[6] + src[6] + 1) >> 1;
-        XMM[cpu_reg].w[7] = (XMM[cpu_reg].w[7] + src[7] + 1) >> 1;
+        XMM[cpu_reg].w[0] = (XMM[cpu_reg].w[0] + src[0]) >> 1;
+        XMM[cpu_reg].w[1] = (XMM[cpu_reg].w[1] + src[1]) >> 1;
+        XMM[cpu_reg].w[2] = (XMM[cpu_reg].w[2] + src[2]) >> 1;
+        XMM[cpu_reg].w[3] = (XMM[cpu_reg].w[3] + src[3]) >> 1;
+        XMM[cpu_reg].w[4] = (XMM[cpu_reg].w[4] + src[4]) >> 1;
+        XMM[cpu_reg].w[5] = (XMM[cpu_reg].w[5] + src[5]) >> 1;
+        XMM[cpu_reg].w[6] = (XMM[cpu_reg].w[6] + src[6]) >> 1;
+        XMM[cpu_reg].w[7] = (XMM[cpu_reg].w[7] + src[7]) >> 1;
     }
     return 0;
 }
@@ -3713,14 +3713,14 @@ opPSADBW_mm_mm_a16(uint32_t fetchdat)
     fetch_ea_16(fetchdat);
     if (cpu_mod == 3) {
         uint8_t temp[8];
-        temp[0]         = abs(cpu_state.MM[cpu_rm].b[0] - cpu_state.MM[cpu_reg].b[0]);
-        temp[1]         = abs(cpu_state.MM[cpu_rm].b[1] - cpu_state.MM[cpu_reg].b[1]);
-        temp[2]         = abs(cpu_state.MM[cpu_rm].b[2] - cpu_state.MM[cpu_reg].b[2]);
-        temp[3]         = abs(cpu_state.MM[cpu_rm].b[3] - cpu_state.MM[cpu_reg].b[3]);
-        temp[4]         = abs(cpu_state.MM[cpu_rm].b[4] - cpu_state.MM[cpu_reg].b[4]);
-        temp[5]         = abs(cpu_state.MM[cpu_rm].b[5] - cpu_state.MM[cpu_reg].b[5]);
-        temp[6]         = abs(cpu_state.MM[cpu_rm].b[6] - cpu_state.MM[cpu_reg].b[6]);
-        temp[7]         = abs(cpu_state.MM[cpu_rm].b[7] - cpu_state.MM[cpu_reg].b[7]);
+        temp[0]         = abs((int8_t)(cpu_state.MM[cpu_rm].b[0] - cpu_state.MM[cpu_reg].b[0]));
+        temp[1]         = abs((int8_t)(cpu_state.MM[cpu_rm].b[1] - cpu_state.MM[cpu_reg].b[1]));
+        temp[2]         = abs((int8_t)(cpu_state.MM[cpu_rm].b[2] - cpu_state.MM[cpu_reg].b[2]));
+        temp[3]         = abs((int8_t)(cpu_state.MM[cpu_rm].b[3] - cpu_state.MM[cpu_reg].b[3]));
+        temp[4]         = abs((int8_t)(cpu_state.MM[cpu_rm].b[4] - cpu_state.MM[cpu_reg].b[4]));
+        temp[5]         = abs((int8_t)(cpu_state.MM[cpu_rm].b[5] - cpu_state.MM[cpu_reg].b[5]));
+        temp[6]         = abs((int8_t)(cpu_state.MM[cpu_rm].b[6] - cpu_state.MM[cpu_reg].b[6]));
+        temp[7]         = abs((int8_t)(cpu_state.MM[cpu_rm].b[7] - cpu_state.MM[cpu_reg].b[7]));
         uint16_t result = 0;
         for (int i = 0; i < 8; i++) {
             result += temp[i];
@@ -3759,14 +3759,14 @@ opPSADBW_mm_mm_a16(uint32_t fetchdat)
         src[7] = readmemb(easeg, cpu_state.eaaddr + 7);
         if (cpu_state.abrt)
             return 1;
-        temp[0]         = abs(src[0] - cpu_state.MM[cpu_reg].b[0]);
-        temp[1]         = abs(src[1] - cpu_state.MM[cpu_reg].b[1]);
-        temp[2]         = abs(src[2] - cpu_state.MM[cpu_reg].b[2]);
-        temp[3]         = abs(src[3] - cpu_state.MM[cpu_reg].b[3]);
-        temp[4]         = abs(src[4] - cpu_state.MM[cpu_reg].b[4]);
-        temp[5]         = abs(src[5] - cpu_state.MM[cpu_reg].b[5]);
-        temp[6]         = abs(src[6] - cpu_state.MM[cpu_reg].b[6]);
-        temp[7]         = abs(src[7] - cpu_state.MM[cpu_reg].b[7]);
+        temp[0]         = abs((int8_t)(src[0] - cpu_state.MM[cpu_reg].b[0]));
+        temp[1]         = abs((int8_t)(src[1] - cpu_state.MM[cpu_reg].b[1]));
+        temp[2]         = abs((int8_t)(src[2] - cpu_state.MM[cpu_reg].b[2]));
+        temp[3]         = abs((int8_t)(src[3] - cpu_state.MM[cpu_reg].b[3]));
+        temp[4]         = abs((int8_t)(src[4] - cpu_state.MM[cpu_reg].b[4]));
+        temp[5]         = abs((int8_t)(src[5] - cpu_state.MM[cpu_reg].b[5]));
+        temp[6]         = abs((int8_t)(src[6] - cpu_state.MM[cpu_reg].b[6]));
+        temp[7]         = abs((int8_t)(src[7] - cpu_state.MM[cpu_reg].b[7]));
         uint16_t result = 0;
         for (int i = 0; i < 8; i++) {
             result += temp[i];
@@ -3786,14 +3786,14 @@ opPSADBW_mm_mm_a32(uint32_t fetchdat)
     fetch_ea_32(fetchdat);
     if (cpu_mod == 3) {
         uint8_t temp[8];
-        temp[0]         = abs(cpu_state.MM[cpu_rm].b[0] - cpu_state.MM[cpu_reg].b[0]);
-        temp[1]         = abs(cpu_state.MM[cpu_rm].b[1] - cpu_state.MM[cpu_reg].b[1]);
-        temp[2]         = abs(cpu_state.MM[cpu_rm].b[2] - cpu_state.MM[cpu_reg].b[2]);
-        temp[3]         = abs(cpu_state.MM[cpu_rm].b[3] - cpu_state.MM[cpu_reg].b[3]);
-        temp[4]         = abs(cpu_state.MM[cpu_rm].b[4] - cpu_state.MM[cpu_reg].b[4]);
-        temp[5]         = abs(cpu_state.MM[cpu_rm].b[5] - cpu_state.MM[cpu_reg].b[5]);
-        temp[6]         = abs(cpu_state.MM[cpu_rm].b[6] - cpu_state.MM[cpu_reg].b[6]);
-        temp[7]         = abs(cpu_state.MM[cpu_rm].b[7] - cpu_state.MM[cpu_reg].b[7]);
+        temp[0]         = abs((int8_t)(cpu_state.MM[cpu_rm].b[0] - cpu_state.MM[cpu_reg].b[0]));
+        temp[1]         = abs((int8_t)(cpu_state.MM[cpu_rm].b[1] - cpu_state.MM[cpu_reg].b[1]));
+        temp[2]         = abs((int8_t)(cpu_state.MM[cpu_rm].b[2] - cpu_state.MM[cpu_reg].b[2]));
+        temp[3]         = abs((int8_t)(cpu_state.MM[cpu_rm].b[3] - cpu_state.MM[cpu_reg].b[3]));
+        temp[4]         = abs((int8_t)(cpu_state.MM[cpu_rm].b[4] - cpu_state.MM[cpu_reg].b[4]));
+        temp[5]         = abs((int8_t)(cpu_state.MM[cpu_rm].b[5] - cpu_state.MM[cpu_reg].b[5]));
+        temp[6]         = abs((int8_t)(cpu_state.MM[cpu_rm].b[6] - cpu_state.MM[cpu_reg].b[6]));
+        temp[7]         = abs((int8_t)(cpu_state.MM[cpu_rm].b[7] - cpu_state.MM[cpu_reg].b[7]));
         uint16_t result = 0;
         for (int i = 0; i < 8; i++) {
             result += temp[i];
@@ -3832,14 +3832,14 @@ opPSADBW_mm_mm_a32(uint32_t fetchdat)
         src[7] = readmemb(easeg, cpu_state.eaaddr + 7);
         if (cpu_state.abrt)
             return 1;
-        temp[0]         = abs(src[0] - cpu_state.MM[cpu_reg].b[0]);
-        temp[1]         = abs(src[1] - cpu_state.MM[cpu_reg].b[1]);
-        temp[2]         = abs(src[2] - cpu_state.MM[cpu_reg].b[2]);
-        temp[3]         = abs(src[3] - cpu_state.MM[cpu_reg].b[3]);
-        temp[4]         = abs(src[4] - cpu_state.MM[cpu_reg].b[4]);
-        temp[5]         = abs(src[5] - cpu_state.MM[cpu_reg].b[5]);
-        temp[6]         = abs(src[6] - cpu_state.MM[cpu_reg].b[6]);
-        temp[7]         = abs(src[7] - cpu_state.MM[cpu_reg].b[7]);
+        temp[0]         = abs((int8_t)(src[0] - cpu_state.MM[cpu_reg].b[0]));
+        temp[1]         = abs((int8_t)(src[1] - cpu_state.MM[cpu_reg].b[1]));
+        temp[2]         = abs((int8_t)(src[2] - cpu_state.MM[cpu_reg].b[2]));
+        temp[3]         = abs((int8_t)(src[3] - cpu_state.MM[cpu_reg].b[3]));
+        temp[4]         = abs((int8_t)(src[4] - cpu_state.MM[cpu_reg].b[4]));
+        temp[5]         = abs((int8_t)(src[5] - cpu_state.MM[cpu_reg].b[5]));
+        temp[6]         = abs((int8_t)(src[6] - cpu_state.MM[cpu_reg].b[6]));
+        temp[7]         = abs((int8_t)(src[7] - cpu_state.MM[cpu_reg].b[7]));
         uint16_t result = 0;
         for (int i = 0; i < 8; i++) {
             result += temp[i];
@@ -3858,22 +3858,22 @@ opPSADBW_xmm_xmm_a16(uint32_t fetchdat)
     fetch_ea_16(fetchdat);
     if (cpu_mod == 3) {
         uint8_t temp[16];
-        temp[0]         = abs(XMM[cpu_rm].b[0] - XMM[cpu_reg].b[0]);
-        temp[1]         = abs(XMM[cpu_rm].b[1] - XMM[cpu_reg].b[1]);
-        temp[2]         = abs(XMM[cpu_rm].b[2] - XMM[cpu_reg].b[2]);
-        temp[3]         = abs(XMM[cpu_rm].b[3] - XMM[cpu_reg].b[3]);
-        temp[4]         = abs(XMM[cpu_rm].b[4] - XMM[cpu_reg].b[4]);
-        temp[5]         = abs(XMM[cpu_rm].b[5] - XMM[cpu_reg].b[5]);
-        temp[6]         = abs(XMM[cpu_rm].b[6] - XMM[cpu_reg].b[6]);
-        temp[7]         = abs(XMM[cpu_rm].b[7] - XMM[cpu_reg].b[7]);
-        temp[8]         = abs(XMM[cpu_rm].b[8] - XMM[cpu_reg].b[8]);
-        temp[9]         = abs(XMM[cpu_rm].b[9] - XMM[cpu_reg].b[9]);
-        temp[10]        = abs(XMM[cpu_rm].b[10] - XMM[cpu_reg].b[10]);
-        temp[11]        = abs(XMM[cpu_rm].b[11] - XMM[cpu_reg].b[11]);
-        temp[12]        = abs(XMM[cpu_rm].b[12] - XMM[cpu_reg].b[12]);
-        temp[13]        = abs(XMM[cpu_rm].b[13] - XMM[cpu_reg].b[13]);
-        temp[14]        = abs(XMM[cpu_rm].b[14] - XMM[cpu_reg].b[14]);
-        temp[15]        = abs(XMM[cpu_rm].b[15] - XMM[cpu_reg].b[15]);
+        temp[0]         = abs((int8_t)(XMM[cpu_rm].b[0] - XMM[cpu_reg].b[0]));
+        temp[1]         = abs((int8_t)(XMM[cpu_rm].b[1] - XMM[cpu_reg].b[1]));
+        temp[2]         = abs((int8_t)(XMM[cpu_rm].b[2] - XMM[cpu_reg].b[2]));
+        temp[3]         = abs((int8_t)(XMM[cpu_rm].b[3] - XMM[cpu_reg].b[3]));
+        temp[4]         = abs((int8_t)(XMM[cpu_rm].b[4] - XMM[cpu_reg].b[4]));
+        temp[5]         = abs((int8_t)(XMM[cpu_rm].b[5] - XMM[cpu_reg].b[5]));
+        temp[6]         = abs((int8_t)(XMM[cpu_rm].b[6] - XMM[cpu_reg].b[6]));
+        temp[7]         = abs((int8_t)(XMM[cpu_rm].b[7] - XMM[cpu_reg].b[7]));
+        temp[8]         = abs((int8_t)(XMM[cpu_rm].b[8] - XMM[cpu_reg].b[8]));
+        temp[9]         = abs((int8_t)(XMM[cpu_rm].b[9] - XMM[cpu_reg].b[9]));
+        temp[10]        = abs((int8_t)(XMM[cpu_rm].b[10] - XMM[cpu_reg].b[10]));
+        temp[11]        = abs((int8_t)(XMM[cpu_rm].b[11] - XMM[cpu_reg].b[11]));
+        temp[12]        = abs((int8_t)(XMM[cpu_rm].b[12] - XMM[cpu_reg].b[12]));
+        temp[13]        = abs((int8_t)(XMM[cpu_rm].b[13] - XMM[cpu_reg].b[13]));
+        temp[14]        = abs((int8_t)(XMM[cpu_rm].b[14] - XMM[cpu_reg].b[14]));
+        temp[15]        = abs((int8_t)(XMM[cpu_rm].b[15] - XMM[cpu_reg].b[15]));
         uint16_t result = 0;
         for (int i = 0; i < 16; i++) {
             result += temp[i];
@@ -3940,22 +3940,22 @@ opPSADBW_xmm_xmm_a16(uint32_t fetchdat)
         src[15] = readmemb(easeg, cpu_state.eaaddr + 15);
         if (cpu_state.abrt)
             return 1;
-        temp[0]         = abs(src[0] - XMM[cpu_reg].b[0]);
-        temp[1]         = abs(src[1] - XMM[cpu_reg].b[1]);
-        temp[2]         = abs(src[2] - XMM[cpu_reg].b[2]);
-        temp[3]         = abs(src[3] - XMM[cpu_reg].b[3]);
-        temp[4]         = abs(src[4] - XMM[cpu_reg].b[4]);
-        temp[5]         = abs(src[5] - XMM[cpu_reg].b[5]);
-        temp[6]         = abs(src[6] - XMM[cpu_reg].b[6]);
-        temp[7]         = abs(src[7] - XMM[cpu_reg].b[7]);
-        temp[8]         = abs(src[8] - XMM[cpu_reg].b[8]);
-        temp[9]         = abs(src[9] - XMM[cpu_reg].b[9]);
-        temp[10]        = abs(src[10] - XMM[cpu_reg].b[10]);
-        temp[11]        = abs(src[11] - XMM[cpu_reg].b[11]);
-        temp[12]        = abs(src[12] - XMM[cpu_reg].b[12]);
-        temp[13]        = abs(src[13] - XMM[cpu_reg].b[13]);
-        temp[14]        = abs(src[14] - XMM[cpu_reg].b[14]);
-        temp[15]        = abs(src[15] - XMM[cpu_reg].b[15]);
+        temp[0]         = abs((int8_t)(src[0] - XMM[cpu_reg].b[0]));
+        temp[1]         = abs((int8_t)(src[1] - XMM[cpu_reg].b[1]));
+        temp[2]         = abs((int8_t)(src[2] - XMM[cpu_reg].b[2]));
+        temp[3]         = abs((int8_t)(src[3] - XMM[cpu_reg].b[3]));
+        temp[4]         = abs((int8_t)(src[4] - XMM[cpu_reg].b[4]));
+        temp[5]         = abs((int8_t)(src[5] - XMM[cpu_reg].b[5]));
+        temp[6]         = abs((int8_t)(src[6] - XMM[cpu_reg].b[6]));
+        temp[7]         = abs((int8_t)(src[7] - XMM[cpu_reg].b[7]));
+        temp[8]         = abs((int8_t)(src[8] - XMM[cpu_reg].b[8]));
+        temp[9]         = abs((int8_t)(src[9] - XMM[cpu_reg].b[9]));
+        temp[10]        = abs((int8_t)(src[10] - XMM[cpu_reg].b[10]));
+        temp[11]        = abs((int8_t)(src[11] - XMM[cpu_reg].b[11]));
+        temp[12]        = abs((int8_t)(src[12] - XMM[cpu_reg].b[12]));
+        temp[13]        = abs((int8_t)(src[13] - XMM[cpu_reg].b[13]));
+        temp[14]        = abs((int8_t)(src[14] - XMM[cpu_reg].b[14]));
+        temp[15]        = abs((int8_t)(src[15] - XMM[cpu_reg].b[15]));
         uint16_t result = 0;
         for (int i = 0; i < 8; i++) {
             result += temp[i];
@@ -3978,22 +3978,22 @@ opPSADBW_xmm_xmm_a32(uint32_t fetchdat)
     fetch_ea_32(fetchdat);
     if (cpu_mod == 3) {
         uint8_t temp[16];
-        temp[0]         = abs(XMM[cpu_rm].b[0] - XMM[cpu_reg].b[0]);
-        temp[1]         = abs(XMM[cpu_rm].b[1] - XMM[cpu_reg].b[1]);
-        temp[2]         = abs(XMM[cpu_rm].b[2] - XMM[cpu_reg].b[2]);
-        temp[3]         = abs(XMM[cpu_rm].b[3] - XMM[cpu_reg].b[3]);
-        temp[4]         = abs(XMM[cpu_rm].b[4] - XMM[cpu_reg].b[4]);
-        temp[5]         = abs(XMM[cpu_rm].b[5] - XMM[cpu_reg].b[5]);
-        temp[6]         = abs(XMM[cpu_rm].b[6] - XMM[cpu_reg].b[6]);
-        temp[7]         = abs(XMM[cpu_rm].b[7] - XMM[cpu_reg].b[7]);
-        temp[8]         = abs(XMM[cpu_rm].b[8] - XMM[cpu_reg].b[8]);
-        temp[9]         = abs(XMM[cpu_rm].b[9] - XMM[cpu_reg].b[9]);
-        temp[10]        = abs(XMM[cpu_rm].b[10] - XMM[cpu_reg].b[10]);
-        temp[11]        = abs(XMM[cpu_rm].b[11] - XMM[cpu_reg].b[11]);
-        temp[12]        = abs(XMM[cpu_rm].b[12] - XMM[cpu_reg].b[12]);
-        temp[13]        = abs(XMM[cpu_rm].b[13] - XMM[cpu_reg].b[13]);
-        temp[14]        = abs(XMM[cpu_rm].b[14] - XMM[cpu_reg].b[14]);
-        temp[15]        = abs(XMM[cpu_rm].b[15] - XMM[cpu_reg].b[15]);
+        temp[0]         = abs((int8_t)(XMM[cpu_rm].b[0] - XMM[cpu_reg].b[0]));
+        temp[1]         = abs((int8_t)(XMM[cpu_rm].b[1] - XMM[cpu_reg].b[1]));
+        temp[2]         = abs((int8_t)(XMM[cpu_rm].b[2] - XMM[cpu_reg].b[2]));
+        temp[3]         = abs((int8_t)(XMM[cpu_rm].b[3] - XMM[cpu_reg].b[3]));
+        temp[4]         = abs((int8_t)(XMM[cpu_rm].b[4] - XMM[cpu_reg].b[4]));
+        temp[5]         = abs((int8_t)(XMM[cpu_rm].b[5] - XMM[cpu_reg].b[5]));
+        temp[6]         = abs((int8_t)(XMM[cpu_rm].b[6] - XMM[cpu_reg].b[6]));
+        temp[7]         = abs((int8_t)(XMM[cpu_rm].b[7] - XMM[cpu_reg].b[7]));
+        temp[8]         = abs((int8_t)(XMM[cpu_rm].b[8] - XMM[cpu_reg].b[8]));
+        temp[9]         = abs((int8_t)(XMM[cpu_rm].b[9] - XMM[cpu_reg].b[9]));
+        temp[10]        = abs((int8_t)(XMM[cpu_rm].b[10] - XMM[cpu_reg].b[10]));
+        temp[11]        = abs((int8_t)(XMM[cpu_rm].b[11] - XMM[cpu_reg].b[11]));
+        temp[12]        = abs((int8_t)(XMM[cpu_rm].b[12] - XMM[cpu_reg].b[12]));
+        temp[13]        = abs((int8_t)(XMM[cpu_rm].b[13] - XMM[cpu_reg].b[13]));
+        temp[14]        = abs((int8_t)(XMM[cpu_rm].b[14] - XMM[cpu_reg].b[14]));
+        temp[15]        = abs((int8_t)(XMM[cpu_rm].b[15] - XMM[cpu_reg].b[15]));
         uint16_t result = 0;
         for (int i = 0; i < 16; i++) {
             result += temp[i];
@@ -4060,22 +4060,22 @@ opPSADBW_xmm_xmm_a32(uint32_t fetchdat)
         src[15] = readmemb(easeg, cpu_state.eaaddr + 15);
         if (cpu_state.abrt)
             return 1;
-        temp[0]         = abs(src[0] - XMM[cpu_reg].b[0]);
-        temp[1]         = abs(src[1] - XMM[cpu_reg].b[1]);
-        temp[2]         = abs(src[2] - XMM[cpu_reg].b[2]);
-        temp[3]         = abs(src[3] - XMM[cpu_reg].b[3]);
-        temp[4]         = abs(src[4] - XMM[cpu_reg].b[4]);
-        temp[5]         = abs(src[5] - XMM[cpu_reg].b[5]);
-        temp[6]         = abs(src[6] - XMM[cpu_reg].b[6]);
-        temp[7]         = abs(src[7] - XMM[cpu_reg].b[7]);
-        temp[8]         = abs(src[8] - XMM[cpu_reg].b[8]);
-        temp[9]         = abs(src[9] - XMM[cpu_reg].b[9]);
-        temp[10]        = abs(src[10] - XMM[cpu_reg].b[10]);
-        temp[11]        = abs(src[11] - XMM[cpu_reg].b[11]);
-        temp[12]        = abs(src[12] - XMM[cpu_reg].b[12]);
-        temp[13]        = abs(src[13] - XMM[cpu_reg].b[13]);
-        temp[14]        = abs(src[14] - XMM[cpu_reg].b[14]);
-        temp[15]        = abs(src[15] - XMM[cpu_reg].b[15]);
+        temp[0]         = abs((int8_t)(src[0] - XMM[cpu_reg].b[0]));
+        temp[1]         = abs((int8_t)(src[1] - XMM[cpu_reg].b[1]));
+        temp[2]         = abs((int8_t)(src[2] - XMM[cpu_reg].b[2]));
+        temp[3]         = abs((int8_t)(src[3] - XMM[cpu_reg].b[3]));
+        temp[4]         = abs((int8_t)(src[4] - XMM[cpu_reg].b[4]));
+        temp[5]         = abs((int8_t)(src[5] - XMM[cpu_reg].b[5]));
+        temp[6]         = abs((int8_t)(src[6] - XMM[cpu_reg].b[6]));
+        temp[7]         = abs((int8_t)(src[7] - XMM[cpu_reg].b[7]));
+        temp[8]         = abs((int8_t)(src[8] - XMM[cpu_reg].b[8]));
+        temp[9]         = abs((int8_t)(src[9] - XMM[cpu_reg].b[9]));
+        temp[10]        = abs((int8_t)(src[10] - XMM[cpu_reg].b[10]));
+        temp[11]        = abs((int8_t)(src[11] - XMM[cpu_reg].b[11]));
+        temp[12]        = abs((int8_t)(src[12] - XMM[cpu_reg].b[12]));
+        temp[13]        = abs((int8_t)(src[13] - XMM[cpu_reg].b[13]));
+        temp[14]        = abs((int8_t)(src[14] - XMM[cpu_reg].b[14]));
+        temp[15]        = abs((int8_t)(src[15] - XMM[cpu_reg].b[15]));
         uint16_t result = 0;
         for (int i = 0; i < 8; i++) {
             result += temp[i];
