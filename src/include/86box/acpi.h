@@ -79,6 +79,7 @@ typedef struct
     uint8_t  gpireg[3];
     uint8_t  gporeg[4];
     uint8_t  extiotrapsts, extiotrapen;
+    uint8_t  bus_cyc_track;
     uint16_t pmsts;
     uint16_t pmen;
     uint16_t pmcntrl;
@@ -94,6 +95,10 @@ typedef struct
     uint16_t gpsmien;
     uint16_t pscntrl;
     uint16_t gpscists;
+    uint16_t mon_smi;
+    uint16_t devact_sts;
+    uint16_t devtrap_en;
+    uint16_t bus_addr_track;
     int      smi_lock;
     int      smi_active;
     uint32_t pcntrl;
@@ -110,6 +115,8 @@ typedef struct
     uint32_t gpo_val;
     uint32_t gpi_val;
     uint32_t extsmi_val;
+    uint32_t smi_en;
+    uint32_t smi_sts;
     uint32_t pad0;
 } acpi_regs_t;
 
@@ -131,6 +138,7 @@ typedef struct
     pc_timer_t  pwrbtn_timer;
     nvr_t      *nvr;
     apm_t      *apm;
+    tco_t      *tco;
     void       *i2c;
     void      (*trap_update)(void *priv);
     void       *trap_priv;
