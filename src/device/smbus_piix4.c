@@ -115,6 +115,9 @@ smbus_piix4_read(uint16_t addr, void *priv)
             if (dev->index >= SMBUS_PIIX4_BLOCK_DATA_SIZE)
                 dev->index = 0;
             break;
+
+        default:
+            break;
     }
 
     smbus_piix4_log("SMBus PIIX4: read(%02X) = %02x\n", addr, ret);
@@ -376,6 +379,9 @@ unknown_protocol:
                 if (dev->index >= SMBUS_PIIX4_BLOCK_DATA_SIZE)
                     dev->index = 0;
             }
+            break;
+
+        default:
             break;
     }
 
