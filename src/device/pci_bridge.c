@@ -558,7 +558,7 @@ pci_bridge_init(const device_t *info)
         interrupt_count = sizeof(interrupts);
         interrupt_mask  = interrupt_count - 1;
         if (dev->slot < 32) {
-            for (i = 0; i < interrupt_count; i++)
+            for (int i = 0; i < interrupt_count; i++)
                 interrupts[i] = pci_get_int(dev->slot, PCI_INTA + i);
         }
 
