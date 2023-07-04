@@ -237,6 +237,7 @@
 #include <86box/rom.h>
 #include <86box/device.h>
 #include <86box/nvr.h>
+#include <86box/fdd.h>
 
 /* RTC registers and bit definitions. */
 #define RTC_SECONDS        0
@@ -278,6 +279,8 @@
 #define REGC_UF            0x10
 #define RTC_REGD           13
 #define REGD_VRT           0x80
+#define RTC_FDD_TYPES      0x10
+#define RTC_INST_EQUIP     0x14
 #define RTC_CENTURY_AT     0x32 /* century register for AT etc */
 #define RTC_CENTURY_PS     0x37 /* century register for PS/1 PS/2 */
 #define RTC_CENTURY_ELT    0x1A /* century register for Epson Equity LT */
@@ -866,6 +869,7 @@ nvr_start(nvr_t *nvr)
     if (machines[machine].flags & MACHINE_COREBOOT) {
         /* Sync floppy drive types on coreboot machines, as SeaBIOS
            lacks a setup utility and just leaves these untouched. */
+        int fdd;
 
         nvr->regs[RTC_FDD_TYPES] = 0x00;
         nvr->regs[RTC_INST_EQUIP] |= 0xc0;
