@@ -497,7 +497,7 @@ acpi_reg_read_intel_ich2(int size, uint16_t addr, void *priv)
             break;
 
         default:
-            ret = acpi_reg_read_common_regs(size, addr, p);
+            ret = acpi_reg_read_common_regs(size, addr, priv);
             break;
     }
 
