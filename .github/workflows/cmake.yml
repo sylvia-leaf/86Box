@@ -106,6 +106,7 @@ jobs:
             rtmidi:p
             libslirp:p
             libvncserver:p
+            fluidsynth:p
             ${{ matrix.ui.packages }}
 
       - name: Checkout repository
@@ -331,6 +332,7 @@ jobs:
           libopenal-dev
           libvncserver-dev
           libslirp-dev
+          libfluidsynth-dev
           ${{ matrix.ui.packages }}
 
       - name: Checkout repository
@@ -420,6 +422,7 @@ jobs:
           rtmidi
           openal-soft
           libvncserver
+          fluidsynth
           ${{ matrix.ui.packages }}
 
       - name: Checkout repository

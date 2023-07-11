@@ -91,6 +91,7 @@ jobs:
             openal:p
             rtmidi:p
             libvncserver:p
+            fluidsynth:p
 
       - name: Checkout repository
         uses: actions/checkout@v3
