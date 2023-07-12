@@ -337,14 +337,14 @@ fx_save_stor_common(uint32_t fetchdat, int bits)
         if (cpu_state.abrt)
             return 1;
     }
+    else if (fxinst == 5 || fxinst == 6)
+        CPU_BLOCK_END();
     else if (fxinst == 7)
     {
         CPU_BLOCK_END();
         if((cpu_features & CPU_FEATURE_CLFLUSH) && cpu_mod != 3)
-            flushmmucache();
+            flushmmucache_nopc();
     }
-    // fxinst == 5 or 6 is L/MFENCE which deals with cache stuff.
-    // We don't emulate the cache so we can safely ignore it.
 
     return cpu_state.abrt;
 }
