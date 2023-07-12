@@ -597,6 +597,7 @@ extern int hasfpu;
 #define CPU_FEATURE_SSE     (1 << 9)
 #define CPU_FEATURE_PGE     (1 << 10)
 #define CPU_FEATURE_SSE2    (1 << 11)
+#define CPU_FEATURE_CLFLUSH (1 << 12)
 
 extern uint32_t cpu_features;
 

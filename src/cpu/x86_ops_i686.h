@@ -340,7 +340,7 @@ fx_save_stor_common(uint32_t fetchdat, int bits)
     else if (fxinst == 7)
     {
         CPU_BLOCK_END();
-        if(cpu_features & CPU_FEATURE_SSE2)
+        if(cpu_features & CPU_FEATURE_CLFLUSH)
             flushmmucache();
     }
     // fxinst == 5 or 6 is L/MFENCE which deals with cache stuff.
