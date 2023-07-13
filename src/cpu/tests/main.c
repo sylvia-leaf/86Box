@@ -27,6 +27,8 @@
 #include <86box/gdbstub.h>
 #include "codegen.h"
 
+#include <xmmintrin.h>
+
 void
 mem_add_ram_mapping(mem_mapping_t *mapping, uint32_t base, uint32_t size);
 
@@ -102,24 +104,51 @@ int main(int ac, char** av)
     testrom[0x10004] = 0x0f;
     testrom[0x10005] = 0x10;
     testrom[0x10006] = 0x07;
-    testrom[0x10007] = 0xf4; // HLT
+    testrom[0x10007] = 0xbb; // MOV BX, 1000h
+    testrom[0x10008] = 0x10;
+    testrom[0x10009] = 0x10;
+    testrom[0x1000a] = 0x2e; // MOVUPS XMM1, CS:[BX]
+    testrom[0x1000b] = 0x0f;
+    testrom[0x1000c] = 0x10;
+    testrom[0x1000d] = 0x0f;
+    testrom[0x1000e] = 0x0f; // CVTPS2PI XMM0, XMM1
+    testrom[0x1000f] = 0x5d;
+    testrom[0x10010] = 0xc1;
+    testrom[0x10011] = 0xf4; // HLT
 
     testrom[0x11000] = 0x00;
-    testrom[0x11001] = 0x01;
-    testrom[0x11002] = 0x02;
-    testrom[0x11003] = 0x03;
-    testrom[0x11004] = 0x04;
-    testrom[0x11005] = 0x05;
-    testrom[0x11006] = 0x06;
-    testrom[0x11007] = 0x07;
-    testrom[0x11008] = 0x08;
-    testrom[0x11009] = 0x09;
-    testrom[0x1100a] = 0x0a;
-    testrom[0x1100b] = 0x0b;
-    testrom[0x1100c] = 0x0c;
-    testrom[0x1100d] = 0x0d;
-    testrom[0x1100e] = 0x0e;
-    testrom[0x1100f] = 0x0f;
+    testrom[0x11001] = 0x00;
+    testrom[0x11002] = 0x80;
+    testrom[0x11003] = 0x3f;
+    testrom[0x11004] = 0x00;
+    testrom[0x11005] = 0x00;
+    testrom[0x11006] = 0x00;
+    testrom[0x11007] = 0x00;
+    testrom[0x11008] = 0x00;
+    testrom[0x11009] = 0x00;
+    testrom[0x1100a] = 0x20;
+    testrom[0x1100b] = 0x40;
+    testrom[0x1100c] = 0x00;
+    testrom[0x1100d] = 0x00;
+    testrom[0x1100e] = 0xa0;
+    testrom[0x1100f] = 0x42;
+
+    testrom[0x11010] = 0x00;
+    testrom[0x11011] = 0x00;
+    testrom[0x11012] = 0x00;
+    testrom[0x11013] = 0x00;
+    testrom[0x11014] = 0x00;
+    testrom[0x11015] = 0x00;
+    testrom[0x11016] = 0x00;
+    testrom[0x11017] = 0x00;
+    testrom[0x11018] = 0x80;
+    testrom[0x11019] = 0x3f;
+    testrom[0x1101a] = 0xa0;
+    testrom[0x1101b] = 0x42;
+    testrom[0x1101c] = 0x00;
+    testrom[0x1101d] = 0x00;
+    testrom[0x1101e] = 0x20;
+    testrom[0x1101f] = 0x40;
 
     while(opcode != 0xF4)
     {
@@ -134,10 +163,18 @@ int main(int ac, char** av)
         sse_xmm = 0;
     }
 
-    if(XMM[0].q[0] == 0x0706050403020100ull && XMM[0].q[1] == 0x0f0e0d0c0b0a0908ull)
-        printf("MOVUPS matched expected results\n");
+    uint64_t result = XMM[0].q[0];
+    uint64_t result2 = XMM[0].q[1];
+    __m128* operand = &testrom[0x11000];
+    __m128* operand2 = &testrom[0x11010];
+    __m128 tmpresult = _mm_min_ps(*operand, *operand2);
+    uint64_t expectedresult = *(uint64_t*)&tmpresult;
+    uint64_t expectedresult2 = *(uint64_t*)(&tmpresult + 8);
+
+    if(result == expectedresult)
+        printf("MINPS matched expected results\n");
     else
-        printf("MOVUPS did not match expected results! XMM low half %016llx XMM high half %016llx \n", XMM[0].q[0], XMM[0].q[1]);
+        printf("MINPS did not match expected results! result %016llx expected %016llx\n", result, expectedresult);
 
     free(testrom);
     pc_close(NULL);
