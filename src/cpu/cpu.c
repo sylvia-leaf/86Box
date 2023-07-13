@@ -1850,8 +1850,10 @@ cpu_set(void)
     else
         cpu_exec = execx86;
 
+#ifdef USE_DYNAREC
     if (bochs_timing)
         codegen_timing_set(&codegen_timing_486);
+#endif
 
     gdbstub_cpu_init();
 }
