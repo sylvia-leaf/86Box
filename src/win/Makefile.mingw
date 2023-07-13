@@ -907,9 +907,9 @@ endif
 
 all: $(PROG).exe
 
-test: $(OBJ)
+test: $(OBJ) 86Box.res
 	@echo Linking test.exe
-	@$(CC) $(LDFLAGS) -o test.exe cpu/tests/main.c $(CFLAGS) $(OBJ) $(LIBS) -pipe
+	@$(CC) $(LDFLAGS) -o test.exe cpu/tests/main.c 86Box.res $(CFLAGS) $(OBJ) $(LIBS) -pipe
 
 86Box.res: 86Box.rc
 	@echo Processing $<
