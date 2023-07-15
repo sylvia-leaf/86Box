@@ -1142,7 +1142,7 @@ opPSUBUSB_a16(uint32_t fetchdat)
     if ((cpu_features & CPU_FEATURE_SSE2) && sse_xmm)
         return opPSUBUSB_xmm_a16(fetchdat);
 
-    MMX_REG src, dst;
+    MMX_REG src, dst, result;
     MMX_ENTER();
 
     fetch_ea_16(fetchdat);
@@ -1185,7 +1185,7 @@ opPSUBUSB_a32(uint32_t fetchdat)
     if ((cpu_features & CPU_FEATURE_SSE2) && sse_xmm)
         return opPSUBUSB_xmm_a32(fetchdat);
 
-    MMX_REG src, dst;
+    MMX_REG src, dst, result;
     MMX_ENTER();
 
     fetch_ea_32(fetchdat);
