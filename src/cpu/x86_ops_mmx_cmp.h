@@ -4,22 +4,41 @@ opPCMPEQB_a16(uint32_t fetchdat)
     if ((cpu_features & CPU_FEATURE_SSE2) && sse_xmm)
         return opPCMPEQB_xmm_a16(fetchdat);
 
-    MMX_REG src;
+    MMX_REG src, dst;
 
     MMX_ENTER();
 
     fetch_ea_16(fetchdat);
+    if (fpu_softfloat)
+        dst = *(MMX_REG *)&fpu_state.st_space[cpu_reg].fraction;
+
     MMX_GETSRC();
 
-    cpu_state.MM[cpu_reg].b[0] = (cpu_state.MM[cpu_reg].b[0] == src.b[0]) ? 0xff : 0;
-    cpu_state.MM[cpu_reg].b[1] = (cpu_state.MM[cpu_reg].b[1] == src.b[1]) ? 0xff : 0;
-    cpu_state.MM[cpu_reg].b[2] = (cpu_state.MM[cpu_reg].b[2] == src.b[2]) ? 0xff : 0;
-    cpu_state.MM[cpu_reg].b[3] = (cpu_state.MM[cpu_reg].b[3] == src.b[3]) ? 0xff : 0;
-    cpu_state.MM[cpu_reg].b[4] = (cpu_state.MM[cpu_reg].b[4] == src.b[4]) ? 0xff : 0;
-    cpu_state.MM[cpu_reg].b[5] = (cpu_state.MM[cpu_reg].b[5] == src.b[5]) ? 0xff : 0;
-    cpu_state.MM[cpu_reg].b[6] = (cpu_state.MM[cpu_reg].b[6] == src.b[6]) ? 0xff : 0;
-    cpu_state.MM[cpu_reg].b[7] = (cpu_state.MM[cpu_reg].b[7] == src.b[7]) ? 0xff : 0;
+    if (fpu_softfloat) {
+        fpu_state.tag = 0;
+        fpu_state.tos = 0; /* reset FPU Top-Of-Stack */
 
+        dst.b[0] = (dst.b[0] == src.b[0]) ? 0xff : 0;
+        dst.b[1] = (dst.b[1] == src.b[1]) ? 0xff : 0;
+        dst.b[2] = (dst.b[2] == src.b[2]) ? 0xff : 0;
+        dst.b[3] = (dst.b[3] == src.b[3]) ? 0xff : 0;
+        dst.b[4] = (dst.b[4] == src.b[4]) ? 0xff : 0;
+        dst.b[5] = (dst.b[5] == src.b[5]) ? 0xff : 0;
+        dst.b[6] = (dst.b[6] == src.b[6]) ? 0xff : 0;
+        dst.b[7] = (dst.b[7] == src.b[7]) ? 0xff : 0;
+
+        fpu_state.st_space[cpu_reg].fraction = dst.q;
+        fpu_state.st_space[cpu_reg].exp = 0xffff;
+    } else {
+        cpu_state.MM[cpu_reg].b[0] = (cpu_state.MM[cpu_reg].b[0] == src.b[0]) ? 0xff : 0;
+        cpu_state.MM[cpu_reg].b[1] = (cpu_state.MM[cpu_reg].b[1] == src.b[1]) ? 0xff : 0;
+        cpu_state.MM[cpu_reg].b[2] = (cpu_state.MM[cpu_reg].b[2] == src.b[2]) ? 0xff : 0;
+        cpu_state.MM[cpu_reg].b[3] = (cpu_state.MM[cpu_reg].b[3] == src.b[3]) ? 0xff : 0;
+        cpu_state.MM[cpu_reg].b[4] = (cpu_state.MM[cpu_reg].b[4] == src.b[4]) ? 0xff : 0;
+        cpu_state.MM[cpu_reg].b[5] = (cpu_state.MM[cpu_reg].b[5] == src.b[5]) ? 0xff : 0;
+        cpu_state.MM[cpu_reg].b[6] = (cpu_state.MM[cpu_reg].b[6] == src.b[6]) ? 0xff : 0;
+        cpu_state.MM[cpu_reg].b[7] = (cpu_state.MM[cpu_reg].b[7] == src.b[7]) ? 0xff : 0;
+    }
     return 0;
 }
 static int
@@ -28,22 +47,41 @@ opPCMPEQB_a32(uint32_t fetchdat)
     if ((cpu_features & CPU_FEATURE_SSE2) && sse_xmm)
         return opPCMPEQB_xmm_a32(fetchdat);
 
-    MMX_REG src;
+    MMX_REG src, dst;
 
     MMX_ENTER();
 
     fetch_ea_32(fetchdat);
+    if (fpu_softfloat)
+        dst = *(MMX_REG *)&fpu_state.st_space[cpu_reg].fraction;
+
     MMX_GETSRC();
 
-    cpu_state.MM[cpu_reg].b[0] = (cpu_state.MM[cpu_reg].b[0] == src.b[0]) ? 0xff : 0;
-    cpu_state.MM[cpu_reg].b[1] = (cpu_state.MM[cpu_reg].b[1] == src.b[1]) ? 0xff : 0;
-    cpu_state.MM[cpu_reg].b[2] = (cpu_state.MM[cpu_reg].b[2] == src.b[2]) ? 0xff : 0;
-    cpu_state.MM[cpu_reg].b[3] = (cpu_state.MM[cpu_reg].b[3] == src.b[3]) ? 0xff : 0;
-    cpu_state.MM[cpu_reg].b[4] = (cpu_state.MM[cpu_reg].b[4] == src.b[4]) ? 0xff : 0;
-    cpu_state.MM[cpu_reg].b[5] = (cpu_state.MM[cpu_reg].b[5] == src.b[5]) ? 0xff : 0;
-    cpu_state.MM[cpu_reg].b[6] = (cpu_state.MM[cpu_reg].b[6] == src.b[6]) ? 0xff : 0;
-    cpu_state.MM[cpu_reg].b[7] = (cpu_state.MM[cpu_reg].b[7] == src.b[7]) ? 0xff : 0;
+    if (fpu_softfloat) {
+        fpu_state.tag = 0;
+        fpu_state.tos = 0; /* reset FPU Top-Of-Stack */
 
+        dst.b[0] = (dst.b[0] == src.b[0]) ? 0xff : 0;
+        dst.b[1] = (dst.b[1] == src.b[1]) ? 0xff : 0;
+        dst.b[2] = (dst.b[2] == src.b[2]) ? 0xff : 0;
+        dst.b[3] = (dst.b[3] == src.b[3]) ? 0xff : 0;
+        dst.b[4] = (dst.b[4] == src.b[4]) ? 0xff : 0;
+        dst.b[5] = (dst.b[5] == src.b[5]) ? 0xff : 0;
+        dst.b[6] = (dst.b[6] == src.b[6]) ? 0xff : 0;
+        dst.b[7] = (dst.b[7] == src.b[7]) ? 0xff : 0;
+
+        fpu_state.st_space[cpu_reg].fraction = dst.q;
+        fpu_state.st_space[cpu_reg].exp = 0xffff;
+    } else {
+        cpu_state.MM[cpu_reg].b[0] = (cpu_state.MM[cpu_reg].b[0] == src.b[0]) ? 0xff : 0;
+        cpu_state.MM[cpu_reg].b[1] = (cpu_state.MM[cpu_reg].b[1] == src.b[1]) ? 0xff : 0;
+        cpu_state.MM[cpu_reg].b[2] = (cpu_state.MM[cpu_reg].b[2] == src.b[2]) ? 0xff : 0;
+        cpu_state.MM[cpu_reg].b[3] = (cpu_state.MM[cpu_reg].b[3] == src.b[3]) ? 0xff : 0;
+        cpu_state.MM[cpu_reg].b[4] = (cpu_state.MM[cpu_reg].b[4] == src.b[4]) ? 0xff : 0;
+        cpu_state.MM[cpu_reg].b[5] = (cpu_state.MM[cpu_reg].b[5] == src.b[5]) ? 0xff : 0;
+        cpu_state.MM[cpu_reg].b[6] = (cpu_state.MM[cpu_reg].b[6] == src.b[6]) ? 0xff : 0;
+        cpu_state.MM[cpu_reg].b[7] = (cpu_state.MM[cpu_reg].b[7] == src.b[7]) ? 0xff : 0;
+    }
     return 0;
 }
 
@@ -53,22 +91,41 @@ opPCMPGTB_a16(uint32_t fetchdat)
     if ((cpu_features & CPU_FEATURE_SSE2) && sse_xmm)
         return opPCMPGTB_xmm_a16(fetchdat);
 
-    MMX_REG src;
+    MMX_REG src, dst;
 
     MMX_ENTER();
 
     fetch_ea_16(fetchdat);
+    if (fpu_softfloat)
+        dst = *(MMX_REG *)&fpu_state.st_space[cpu_reg].fraction;
+
     MMX_GETSRC();
 
-    cpu_state.MM[cpu_reg].b[0] = (cpu_state.MM[cpu_reg].sb[0] > src.sb[0]) ? 0xff : 0;
-    cpu_state.MM[cpu_reg].b[1] = (cpu_state.MM[cpu_reg].sb[1] > src.sb[1]) ? 0xff : 0;
-    cpu_state.MM[cpu_reg].b[2] = (cpu_state.MM[cpu_reg].sb[2] > src.sb[2]) ? 0xff : 0;
-    cpu_state.MM[cpu_reg].b[3] = (cpu_state.MM[cpu_reg].sb[3] > src.sb[3]) ? 0xff : 0;
-    cpu_state.MM[cpu_reg].b[4] = (cpu_state.MM[cpu_reg].sb[4] > src.sb[4]) ? 0xff : 0;
-    cpu_state.MM[cpu_reg].b[5] = (cpu_state.MM[cpu_reg].sb[5] > src.sb[5]) ? 0xff : 0;
-    cpu_state.MM[cpu_reg].b[6] = (cpu_state.MM[cpu_reg].sb[6] > src.sb[6]) ? 0xff : 0;
-    cpu_state.MM[cpu_reg].b[7] = (cpu_state.MM[cpu_reg].sb[7] > src.sb[7]) ? 0xff : 0;
+    if (fpu_softfloat) {
+        fpu_state.tag = 0;
+        fpu_state.tos = 0; /* reset FPU Top-Of-Stack */
 
+        dst.b[0] = (dst.sb[0] > src.sb[0]) ? 0xff : 0;
+        dst.b[1] = (dst.sb[1] > src.sb[1]) ? 0xff : 0;
+        dst.b[2] = (dst.sb[2] > src.sb[2]) ? 0xff : 0;
+        dst.b[3] = (dst.sb[3] > src.sb[3]) ? 0xff : 0;
+        dst.b[4] = (dst.sb[4] > src.sb[4]) ? 0xff : 0;
+        dst.b[5] = (dst.sb[5] > src.sb[5]) ? 0xff : 0;
+        dst.b[6] = (dst.sb[6] > src.sb[6]) ? 0xff : 0;
+        dst.b[7] = (dst.sb[7] > src.sb[7]) ? 0xff : 0;
+
+        fpu_state.st_space[cpu_reg].fraction = dst.q;
+        fpu_state.st_space[cpu_reg].exp = 0xffff;
+    } else {
+        cpu_state.MM[cpu_reg].b[0] = (cpu_state.MM[cpu_reg].sb[0] > src.sb[0]) ? 0xff : 0;
+        cpu_state.MM[cpu_reg].b[1] = (cpu_state.MM[cpu_reg].sb[1] > src.sb[1]) ? 0xff : 0;
+        cpu_state.MM[cpu_reg].b[2] = (cpu_state.MM[cpu_reg].sb[2] > src.sb[2]) ? 0xff : 0;
+        cpu_state.MM[cpu_reg].b[3] = (cpu_state.MM[cpu_reg].sb[3] > src.sb[3]) ? 0xff : 0;
+        cpu_state.MM[cpu_reg].b[4] = (cpu_state.MM[cpu_reg].sb[4] > src.sb[4]) ? 0xff : 0;
+        cpu_state.MM[cpu_reg].b[5] = (cpu_state.MM[cpu_reg].sb[5] > src.sb[5]) ? 0xff : 0;
+        cpu_state.MM[cpu_reg].b[6] = (cpu_state.MM[cpu_reg].sb[6] > src.sb[6]) ? 0xff : 0;
+        cpu_state.MM[cpu_reg].b[7] = (cpu_state.MM[cpu_reg].sb[7] > src.sb[7]) ? 0xff : 0;
+    }
     return 0;
 }
 static int
@@ -77,22 +134,41 @@ opPCMPGTB_a32(uint32_t fetchdat)
     if ((cpu_features & CPU_FEATURE_SSE2) && sse_xmm)
         return opPCMPGTB_xmm_a32(fetchdat);
 
-    MMX_REG src;
+    MMX_REG src, dst;
 
     MMX_ENTER();
 
     fetch_ea_32(fetchdat);
+    if (fpu_softfloat)
+        dst = *(MMX_REG *)&fpu_state.st_space[cpu_reg].fraction;
+
     MMX_GETSRC();
 
-    cpu_state.MM[cpu_reg].b[0] = (cpu_state.MM[cpu_reg].sb[0] > src.sb[0]) ? 0xff : 0;
-    cpu_state.MM[cpu_reg].b[1] = (cpu_state.MM[cpu_reg].sb[1] > src.sb[1]) ? 0xff : 0;
-    cpu_state.MM[cpu_reg].b[2] = (cpu_state.MM[cpu_reg].sb[2] > src.sb[2]) ? 0xff : 0;
-    cpu_state.MM[cpu_reg].b[3] = (cpu_state.MM[cpu_reg].sb[3] > src.sb[3]) ? 0xff : 0;
-    cpu_state.MM[cpu_reg].b[4] = (cpu_state.MM[cpu_reg].sb[4] > src.sb[4]) ? 0xff : 0;
-    cpu_state.MM[cpu_reg].b[5] = (cpu_state.MM[cpu_reg].sb[5] > src.sb[5]) ? 0xff : 0;
-    cpu_state.MM[cpu_reg].b[6] = (cpu_state.MM[cpu_reg].sb[6] > src.sb[6]) ? 0xff : 0;
-    cpu_state.MM[cpu_reg].b[7] = (cpu_state.MM[cpu_reg].sb[7] > src.sb[7]) ? 0xff : 0;
+    if (fpu_softfloat) {
+        fpu_state.tag = 0;
+        fpu_state.tos = 0; /* reset FPU Top-Of-Stack */
 
+        dst.b[0] = (dst.sb[0] > src.sb[0]) ? 0xff : 0;
+        dst.b[1] = (dst.sb[1] > src.sb[1]) ? 0xff : 0;
+        dst.b[2] = (dst.sb[2] > src.sb[2]) ? 0xff : 0;
+        dst.b[3] = (dst.sb[3] > src.sb[3]) ? 0xff : 0;
+        dst.b[4] = (dst.sb[4] > src.sb[4]) ? 0xff : 0;
+        dst.b[5] = (dst.sb[5] > src.sb[5]) ? 0xff : 0;
+        dst.b[6] = (dst.sb[6] > src.sb[6]) ? 0xff : 0;
+        dst.b[7] = (dst.sb[7] > src.sb[7]) ? 0xff : 0;
+
+        fpu_state.st_space[cpu_reg].fraction = dst.q;
+        fpu_state.st_space[cpu_reg].exp = 0xffff;
+    } else {
+        cpu_state.MM[cpu_reg].b[0] = (cpu_state.MM[cpu_reg].sb[0] > src.sb[0]) ? 0xff : 0;
+        cpu_state.MM[cpu_reg].b[1] = (cpu_state.MM[cpu_reg].sb[1] > src.sb[1]) ? 0xff : 0;
+        cpu_state.MM[cpu_reg].b[2] = (cpu_state.MM[cpu_reg].sb[2] > src.sb[2]) ? 0xff : 0;
+        cpu_state.MM[cpu_reg].b[3] = (cpu_state.MM[cpu_reg].sb[3] > src.sb[3]) ? 0xff : 0;
+        cpu_state.MM[cpu_reg].b[4] = (cpu_state.MM[cpu_reg].sb[4] > src.sb[4]) ? 0xff : 0;
+        cpu_state.MM[cpu_reg].b[5] = (cpu_state.MM[cpu_reg].sb[5] > src.sb[5]) ? 0xff : 0;
+        cpu_state.MM[cpu_reg].b[6] = (cpu_state.MM[cpu_reg].sb[6] > src.sb[6]) ? 0xff : 0;
+        cpu_state.MM[cpu_reg].b[7] = (cpu_state.MM[cpu_reg].sb[7] > src.sb[7]) ? 0xff : 0;
+    }
     return 0;
 }
 
@@ -102,18 +178,33 @@ opPCMPEQW_a16(uint32_t fetchdat)
     if ((cpu_features & CPU_FEATURE_SSE2) && sse_xmm)
         return opPCMPEQW_xmm_a16(fetchdat);
 
-    MMX_REG src;
+    MMX_REG src, dst;
 
     MMX_ENTER();
 
     fetch_ea_16(fetchdat);
+    if (fpu_softfloat)
+        dst = *(MMX_REG *)&fpu_state.st_space[cpu_reg].fraction;
+
     MMX_GETSRC();
 
-    cpu_state.MM[cpu_reg].w[0] = (cpu_state.MM[cpu_reg].w[0] == src.w[0]) ? 0xffff : 0;
-    cpu_state.MM[cpu_reg].w[1] = (cpu_state.MM[cpu_reg].w[1] == src.w[1]) ? 0xffff : 0;
-    cpu_state.MM[cpu_reg].w[2] = (cpu_state.MM[cpu_reg].w[2] == src.w[2]) ? 0xffff : 0;
-    cpu_state.MM[cpu_reg].w[3] = (cpu_state.MM[cpu_reg].w[3] == src.w[3]) ? 0xffff : 0;
+    if (fpu_softfloat) {
+        fpu_state.tag = 0;
+        fpu_state.tos = 0; /* reset FPU Top-Of-Stack */
 
+        dst.w[0] = (dst.w[0] == src.w[0]) ? 0xffff : 0;
+        dst.w[1] = (dst.w[1] == src.w[1]) ? 0xffff : 0;
+        dst.w[2] = (dst.w[2] == src.w[2]) ? 0xffff : 0;
+        dst.w[3] = (dst.w[3] == src.w[3]) ? 0xffff : 0;
+
+        fpu_state.st_space[cpu_reg].fraction = dst.q;
+        fpu_state.st_space[cpu_reg].exp = 0xffff;
+    } else {
+        cpu_state.MM[cpu_reg].w[0] = (cpu_state.MM[cpu_reg].w[0] == src.w[0]) ? 0xffff : 0;
+        cpu_state.MM[cpu_reg].w[1] = (cpu_state.MM[cpu_reg].w[1] == src.w[1]) ? 0xffff : 0;
+        cpu_state.MM[cpu_reg].w[2] = (cpu_state.MM[cpu_reg].w[2] == src.w[2]) ? 0xffff : 0;
+        cpu_state.MM[cpu_reg].w[3] = (cpu_state.MM[cpu_reg].w[3] == src.w[3]) ? 0xffff : 0;
+    }
     return 0;
 }
 static int
@@ -122,18 +213,33 @@ opPCMPEQW_a32(uint32_t fetchdat)
     if ((cpu_features & CPU_FEATURE_SSE2) && sse_xmm)
         return opPCMPEQW_xmm_a32(fetchdat);
 
-    MMX_REG src;
+    MMX_REG src, dst;
 
     MMX_ENTER();
 
     fetch_ea_32(fetchdat);
+    if (fpu_softfloat)
+        dst = *(MMX_REG *)&fpu_state.st_space[cpu_reg].fraction;
+
     MMX_GETSRC();
 
-    cpu_state.MM[cpu_reg].w[0] = (cpu_state.MM[cpu_reg].w[0] == src.w[0]) ? 0xffff : 0;
-    cpu_state.MM[cpu_reg].w[1] = (cpu_state.MM[cpu_reg].w[1] == src.w[1]) ? 0xffff : 0;
-    cpu_state.MM[cpu_reg].w[2] = (cpu_state.MM[cpu_reg].w[2] == src.w[2]) ? 0xffff : 0;
-    cpu_state.MM[cpu_reg].w[3] = (cpu_state.MM[cpu_reg].w[3] == src.w[3]) ? 0xffff : 0;
+    if (fpu_softfloat) {
+        fpu_state.tag = 0;
+        fpu_state.tos = 0; /* reset FPU Top-Of-Stack */
 
+        dst.w[0] = (dst.w[0] == src.w[0]) ? 0xffff : 0;
+        dst.w[1] = (dst.w[1] == src.w[1]) ? 0xffff : 0;
+        dst.w[2] = (dst.w[2] == src.w[2]) ? 0xffff : 0;
+        dst.w[3] = (dst.w[3] == src.w[3]) ? 0xffff : 0;
+
+        fpu_state.st_space[cpu_reg].fraction = dst.q;
+        fpu_state.st_space[cpu_reg].exp = 0xffff;
+    } else {
+        cpu_state.MM[cpu_reg].w[0] = (cpu_state.MM[cpu_reg].w[0] == src.w[0]) ? 0xffff : 0;
+        cpu_state.MM[cpu_reg].w[1] = (cpu_state.MM[cpu_reg].w[1] == src.w[1]) ? 0xffff : 0;
+        cpu_state.MM[cpu_reg].w[2] = (cpu_state.MM[cpu_reg].w[2] == src.w[2]) ? 0xffff : 0;
+        cpu_state.MM[cpu_reg].w[3] = (cpu_state.MM[cpu_reg].w[3] == src.w[3]) ? 0xffff : 0;
+    }
     return 0;
 }
 
@@ -143,18 +249,33 @@ opPCMPGTW_a16(uint32_t fetchdat)
     if ((cpu_features & CPU_FEATURE_SSE2) && sse_xmm)
         return opPCMPGTW_xmm_a16(fetchdat);
 
-    MMX_REG src;
+    MMX_REG src, dst;
 
     MMX_ENTER();
 
     fetch_ea_16(fetchdat);
+    if (fpu_softfloat)
+        dst = *(MMX_REG *)&fpu_state.st_space[cpu_reg].fraction;
+
     MMX_GETSRC();
 
-    cpu_state.MM[cpu_reg].w[0] = (cpu_state.MM[cpu_reg].sw[0] > src.sw[0]) ? 0xffff : 0;
-    cpu_state.MM[cpu_reg].w[1] = (cpu_state.MM[cpu_reg].sw[1] > src.sw[1]) ? 0xffff : 0;
-    cpu_state.MM[cpu_reg].w[2] = (cpu_state.MM[cpu_reg].sw[2] > src.sw[2]) ? 0xffff : 0;
-    cpu_state.MM[cpu_reg].w[3] = (cpu_state.MM[cpu_reg].sw[3] > src.sw[3]) ? 0xffff : 0;
+    if (fpu_softfloat) {
+        fpu_state.tag = 0;
+        fpu_state.tos = 0; /* reset FPU Top-Of-Stack */
 
+        dst.w[0] = (dst.sw[0] > src.sw[0]) ? 0xffff : 0;
+        dst.w[1] = (dst.sw[1] > src.sw[1]) ? 0xffff : 0;
+        dst.w[2] = (dst.sw[2] > src.sw[2]) ? 0xffff : 0;
+        dst.w[3] = (dst.sw[3] > src.sw[3]) ? 0xffff : 0;
+
+        fpu_state.st_space[cpu_reg].fraction = dst.q;
+        fpu_state.st_space[cpu_reg].exp = 0xffff;
+    } else {
+        cpu_state.MM[cpu_reg].w[0] = (cpu_state.MM[cpu_reg].sw[0] > src.sw[0]) ? 0xffff : 0;
+        cpu_state.MM[cpu_reg].w[1] = (cpu_state.MM[cpu_reg].sw[1] > src.sw[1]) ? 0xffff : 0;
+        cpu_state.MM[cpu_reg].w[2] = (cpu_state.MM[cpu_reg].sw[2] > src.sw[2]) ? 0xffff : 0;
+        cpu_state.MM[cpu_reg].w[3] = (cpu_state.MM[cpu_reg].sw[3] > src.sw[3]) ? 0xffff : 0;
+    }
     return 0;
 }
 static int
@@ -163,18 +284,33 @@ opPCMPGTW_a32(uint32_t fetchdat)
     if ((cpu_features & CPU_FEATURE_SSE2) && sse_xmm)
         return opPCMPGTW_xmm_a32(fetchdat);
 
-    MMX_REG src;
+    MMX_REG src, dst;
 
     MMX_ENTER();
 
     fetch_ea_32(fetchdat);
+    if (fpu_softfloat)
+        dst = *(MMX_REG *)&fpu_state.st_space[cpu_reg].fraction;
+
     MMX_GETSRC();
 
-    cpu_state.MM[cpu_reg].w[0] = (cpu_state.MM[cpu_reg].sw[0] > src.sw[0]) ? 0xffff : 0;
-    cpu_state.MM[cpu_reg].w[1] = (cpu_state.MM[cpu_reg].sw[1] > src.sw[1]) ? 0xffff : 0;
-    cpu_state.MM[cpu_reg].w[2] = (cpu_state.MM[cpu_reg].sw[2] > src.sw[2]) ? 0xffff : 0;
-    cpu_state.MM[cpu_reg].w[3] = (cpu_state.MM[cpu_reg].sw[3] > src.sw[3]) ? 0xffff : 0;
+    if (fpu_softfloat) {
+        fpu_state.tag = 0;
+        fpu_state.tos = 0; /* reset FPU Top-Of-Stack */
 
+        dst.w[0] = (dst.sw[0] > src.sw[0]) ? 0xffff : 0;
+        dst.w[1] = (dst.sw[1] > src.sw[1]) ? 0xffff : 0;
+        dst.w[2] = (dst.sw[2] > src.sw[2]) ? 0xffff : 0;
+        dst.w[3] = (dst.sw[3] > src.sw[3]) ? 0xffff : 0;
+
+        fpu_state.st_space[cpu_reg].fraction = dst.q;
+        fpu_state.st_space[cpu_reg].exp = 0xffff;
+    } else {
+        cpu_state.MM[cpu_reg].w[0] = (cpu_state.MM[cpu_reg].sw[0] > src.sw[0]) ? 0xffff : 0;
+        cpu_state.MM[cpu_reg].w[1] = (cpu_state.MM[cpu_reg].sw[1] > src.sw[1]) ? 0xffff : 0;
+        cpu_state.MM[cpu_reg].w[2] = (cpu_state.MM[cpu_reg].sw[2] > src.sw[2]) ? 0xffff : 0;
+        cpu_state.MM[cpu_reg].w[3] = (cpu_state.MM[cpu_reg].sw[3] > src.sw[3]) ? 0xffff : 0;
+    }
     return 0;
 }
 
@@ -184,16 +320,29 @@ opPCMPEQD_a16(uint32_t fetchdat)
     if ((cpu_features & CPU_FEATURE_SSE2) && sse_xmm)
         return opPCMPEQD_xmm_a16(fetchdat);
 
-    MMX_REG src;
+    MMX_REG src, dst;
 
     MMX_ENTER();
 
     fetch_ea_16(fetchdat);
+    if (fpu_softfloat)
+        dst = *(MMX_REG *)&fpu_state.st_space[cpu_reg].fraction;
+
     MMX_GETSRC();
 
-    cpu_state.MM[cpu_reg].l[0] = (cpu_state.MM[cpu_reg].l[0] == src.l[0]) ? 0xffffffff : 0;
-    cpu_state.MM[cpu_reg].l[1] = (cpu_state.MM[cpu_reg].l[1] == src.l[1]) ? 0xffffffff : 0;
+    if (fpu_softfloat) {
+        fpu_state.tag = 0;
+        fpu_state.tos = 0; /* reset FPU Top-Of-Stack */
 
+        dst.l[0] = (dst.l[0] == src.l[0]) ? 0xffffffff : 0;
+        dst.l[1] = (dst.l[1] == src.l[1]) ? 0xffffffff : 0;
+
+        fpu_state.st_space[cpu_reg].fraction = dst.q;
+        fpu_state.st_space[cpu_reg].exp = 0xffff;
+    } else {
+        cpu_state.MM[cpu_reg].l[0] = (cpu_state.MM[cpu_reg].l[0] == src.l[0]) ? 0xffffffff : 0;
+        cpu_state.MM[cpu_reg].l[1] = (cpu_state.MM[cpu_reg].l[1] == src.l[1]) ? 0xffffffff : 0;
+    }
     return 0;
 }
 static int
@@ -202,16 +351,29 @@ opPCMPEQD_a32(uint32_t fetchdat)
     if ((cpu_features & CPU_FEATURE_SSE2) && sse_xmm)
         return opPCMPEQD_xmm_a32(fetchdat);
 
-    MMX_REG src;
+    MMX_REG src, dst;
 
     MMX_ENTER();
 
     fetch_ea_32(fetchdat);
+    if (fpu_softfloat)
+        dst = *(MMX_REG *)&fpu_state.st_space[cpu_reg].fraction;
+
     MMX_GETSRC();
 
-    cpu_state.MM[cpu_reg].l[0] = (cpu_state.MM[cpu_reg].l[0] == src.l[0]) ? 0xffffffff : 0;
-    cpu_state.MM[cpu_reg].l[1] = (cpu_state.MM[cpu_reg].l[1] == src.l[1]) ? 0xffffffff : 0;
+    if (fpu_softfloat) {
+        fpu_state.tag = 0;
+        fpu_state.tos = 0; /* reset FPU Top-Of-Stack */
 
+        dst.l[0] = (dst.l[0] == src.l[0]) ? 0xffffffff : 0;
+        dst.l[1] = (dst.l[1] == src.l[1]) ? 0xffffffff : 0;
+
+        fpu_state.st_space[cpu_reg].fraction = dst.q;
+        fpu_state.st_space[cpu_reg].exp = 0xffff;
+    } else {
+        cpu_state.MM[cpu_reg].l[0] = (cpu_state.MM[cpu_reg].l[0] == src.l[0]) ? 0xffffffff : 0;
+        cpu_state.MM[cpu_reg].l[1] = (cpu_state.MM[cpu_reg].l[1] == src.l[1]) ? 0xffffffff : 0;
+    }
     return 0;
 }
 
@@ -221,16 +383,29 @@ opPCMPGTD_a16(uint32_t fetchdat)
     if ((cpu_features & CPU_FEATURE_SSE2) && sse_xmm)
         return opPCMPGTD_xmm_a16(fetchdat);
 
-    MMX_REG src;
+    MMX_REG src, dst;
 
     MMX_ENTER();
 
     fetch_ea_16(fetchdat);
+    if (fpu_softfloat)
+        dst = *(MMX_REG *)&fpu_state.st_space[cpu_reg].fraction;
+
     MMX_GETSRC();
 
-    cpu_state.MM[cpu_reg].l[0] = (cpu_state.MM[cpu_reg].sl[0] > src.sl[0]) ? 0xffffffff : 0;
-    cpu_state.MM[cpu_reg].l[1] = (cpu_state.MM[cpu_reg].sl[1] > src.sl[1]) ? 0xffffffff : 0;
+    if (fpu_softfloat) {
+        fpu_state.tag = 0;
+        fpu_state.tos = 0; /* reset FPU Top-Of-Stack */
 
+        dst.l[0] = (dst.sl[0] > src.sl[0]) ? 0xffffffff : 0;
+        dst.l[1] = (dst.sl[1] > src.sl[1]) ? 0xffffffff : 0;
+
+        fpu_state.st_space[cpu_reg].fraction = dst.q;
+        fpu_state.st_space[cpu_reg].exp = 0xffff;
+    } else {
+        cpu_state.MM[cpu_reg].l[0] = (cpu_state.MM[cpu_reg].sl[0] > src.sl[0]) ? 0xffffffff : 0;
+        cpu_state.MM[cpu_reg].l[1] = (cpu_state.MM[cpu_reg].sl[1] > src.sl[1]) ? 0xffffffff : 0;
+    }
     return 0;
 }
 static int
@@ -239,15 +414,28 @@ opPCMPGTD_a32(uint32_t fetchdat)
     if ((cpu_features & CPU_FEATURE_SSE2) && sse_xmm)
         return opPCMPGTD_xmm_a32(fetchdat);
 
-    MMX_REG src;
+    MMX_REG src, dst;
 
     MMX_ENTER();
 
     fetch_ea_32(fetchdat);
+    if (fpu_softfloat)
+        dst = *(MMX_REG *)&fpu_state.st_space[cpu_reg].fraction;
+
     MMX_GETSRC();
 
-    cpu_state.MM[cpu_reg].l[0] = (cpu_state.MM[cpu_reg].sl[0] > src.sl[0]) ? 0xffffffff : 0;
-    cpu_state.MM[cpu_reg].l[1] = (cpu_state.MM[cpu_reg].sl[1] > src.sl[1]) ? 0xffffffff : 0;
+    if (fpu_softfloat) {
+        fpu_state.tag = 0;
+        fpu_state.tos = 0; /* reset FPU Top-Of-Stack */
 
+        dst.l[0] = (dst.sl[0] > src.sl[0]) ? 0xffffffff : 0;
+        dst.l[1] = (dst.sl[1] > src.sl[1]) ? 0xffffffff : 0;
+
+        fpu_state.st_space[cpu_reg].fraction = dst.q;
+        fpu_state.st_space[cpu_reg].exp = 0xffff;
+    } else {
+        cpu_state.MM[cpu_reg].l[0] = (cpu_state.MM[cpu_reg].sl[0] > src.sl[0]) ? 0xffffffff : 0;
+        cpu_state.MM[cpu_reg].l[1] = (cpu_state.MM[cpu_reg].sl[1] > src.sl[1]) ? 0xffffffff : 0;
+    }
     return 0;
 }

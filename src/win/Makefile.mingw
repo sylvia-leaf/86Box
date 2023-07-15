@@ -734,47 +734,48 @@ SNDOBJ := sound.o \
 	  snd_ym7128.o
 
 VIDOBJ := agpgart.o video.o \
-	  vid_table.o \
-	  vid_cga.o vid_cga_comp.o \
-	  vid_compaq_cga.o \
-	  vid_mda.o \
-	  vid_hercules.o vid_herculesplus.o vid_incolor.o \
-	  vid_colorplus.o \
-	  vid_genius.o \
-	  vid_pgc.o vid_im1024.o \
-	  vid_sigma.o \
-	  vid_wy700.o \
-	  vid_ega.o vid_ega_render.o \
-	  vid_svga.o vid_svga_render.o \
-	  vid_8514a.o \
-	  vid_ddc.o \
-	  vid_vga.o \
-	  vid_ati_eeprom.o \
-	  vid_ati18800.o vid_ati28800.o \
-	  vid_ati_mach64.o vid_ati68860_ramdac.o \
-	  vid_bt48x_ramdac.o \
-	  vid_av9194.o vid_icd2061.o vid_ics2494.o vid_ics2595.o \
-	  vid_cl54xx.o \
-	  vid_et3000.o \
-	  vid_et4000.o vid_sc1148x_ramdac.o \
-	  vid_sc1502x_ramdac.o \
-	  vid_et4000w32.o vid_stg_ramdac.o \
-	  vid_ht216.o \
-	  vid_oak_oti.o \
-	  vid_paradise.o \
-	  vid_rtg310x.o \
-	  vid_ti_cf62011.o \
-	  vid_f82c425.o \
-	  vid_tvga.o \
-	  vid_tgui9440.o vid_tkd8001_ramdac.o \
-	  vid_att20c49x_ramdac.o \
-	  vid_att2xc498_ramdac.o \
-	  vid_s3.o vid_s3_virge.o \
-	  vid_ibm_rgb528_ramdac.o vid_sdac_ramdac.o \
-	  vid_ogc.o \
-	  vid_nga.o \
-	  vid_tvp3026_ramdac.o \
-	  vid_xga.o
+          vid_table.o \
+          vid_cga.o vid_cga_comp.o \
+          vid_compaq_cga.o \
+          vid_mda.o \
+          vid_hercules.o vid_herculesplus.o vid_incolor.o \
+          vid_colorplus.o \
+          vid_genius.o \
+          vid_pgc.o vid_im1024.o \
+          vid_sigma.o \
+          vid_wy700.o \
+          vid_ega.o vid_ega_render.o \
+          vid_svga.o vid_svga_render.o \
+          vid_8514a.o \
+          vid_ddc.o \
+          vid_vga.o \
+          vid_ati_eeprom.o \
+          vid_ati18800.o vid_ati28800.o \
+	  vid_ati_mach8.o \
+          vid_ati_mach64.o vid_ati68860_ramdac.o \
+          vid_bt48x_ramdac.o \
+          vid_av9194.o vid_icd2061.o vid_ics2494.o vid_ics2595.o \
+          vid_cl54xx.o \
+          vid_et3000.o \
+          vid_et4000.o vid_sc1148x_ramdac.o \
+          vid_sc1502x_ramdac.o \
+          vid_et4000w32.o vid_stg_ramdac.o \
+          vid_ht216.o \
+          vid_oak_oti.o \
+          vid_paradise.o \
+          vid_rtg310x.o \
+          vid_ti_cf62011.o \
+          vid_f82c425.o \
+          vid_tvga.o \
+          vid_tgui9440.o vid_tkd8001_ramdac.o \
+          vid_att20c49x_ramdac.o \
+          vid_att2xc498_ramdac.o \
+          vid_s3.o vid_s3_virge.o \
+          vid_ibm_rgb528_ramdac.o vid_sdac_ramdac.o \
+          vid_ogc.o \
+          vid_nga.o \
+          vid_tvp3026_ramdac.o \
+          vid_xga.o
 
 VOODOOOBJ := vid_voodoo.o vid_voodoo_banshee.o \
 	     vid_voodoo_banshee_blitter.o \
