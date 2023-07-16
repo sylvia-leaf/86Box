@@ -4,25 +4,19 @@ opPAND_a16(uint32_t fetchdat)
     if ((cpu_features & CPU_FEATURE_SSE2) && sse_xmm)
         return opPAND_xmm_a16(fetchdat);
 
-    MMX_REG src, dst;
+    MMX_REG src;
+	MMX_REG *dst;
     MMX_ENTER();
 
     fetch_ea_16(fetchdat);
-    if (fpu_softfloat)
-        dst = *(MMX_REG *)&fpu_state.st_space[cpu_reg].fraction;
+
+    dst = MMX_GETREGP(cpu_reg);
 
     MMX_GETSRC();
 
-    if (fpu_softfloat) {
-        fpu_state.tag = 0;
-        fpu_state.tos = 0; /* reset FPU Top-Of-Stack */
+    dst->q &= src.q;
 
-        dst.q &= src.q;
-
-        fpu_state.st_space[cpu_reg].fraction = dst.q;
-        fpu_state.st_space[cpu_reg].exp = 0xffff;
-    } else
-        cpu_state.MM[cpu_reg].q &= src.q;
+    MMX_SETEXP(cpu_reg);
 
     return 0;
 }
@@ -32,25 +26,19 @@ opPAND_a32(uint32_t fetchdat)
     if ((cpu_features & CPU_FEATURE_SSE2) && sse_xmm)
         return opPAND_xmm_a32(fetchdat);
 
-    MMX_REG src, dst;
+    MMX_REG src;
+	MMX_REG *dst;
     MMX_ENTER();
 
     fetch_ea_32(fetchdat);
-    if (fpu_softfloat)
-        dst = *(MMX_REG *)&fpu_state.st_space[cpu_reg].fraction;
+
+    dst = MMX_GETREGP(cpu_reg);
 
     MMX_GETSRC();
 
-    if (fpu_softfloat) {
-        fpu_state.tag = 0;
-        fpu_state.tos = 0; /* reset FPU Top-Of-Stack */
+    dst->q &= src.q;
 
-        dst.q &= src.q;
-
-        fpu_state.st_space[cpu_reg].fraction = dst.q;
-        fpu_state.st_space[cpu_reg].exp = 0xffff;
-    } else
-        cpu_state.MM[cpu_reg].q &= src.q;
+    MMX_SETEXP(cpu_reg);
 
     return 0;
 }
@@ -61,25 +49,19 @@ opPANDN_a16(uint32_t fetchdat)
     if ((cpu_features & CPU_FEATURE_SSE2) && sse_xmm)
         return opPANDN_xmm_a16(fetchdat);
 
-    MMX_REG src, dst;
+    MMX_REG src;
+	MMX_REG *dst;
     MMX_ENTER();
 
     fetch_ea_16(fetchdat);
-    if (fpu_softfloat)
-        dst = *(MMX_REG *)&fpu_state.st_space[cpu_reg].fraction;
+
+    dst = MMX_GETREGP(cpu_reg);
 
     MMX_GETSRC();
 
-    if (fpu_softfloat) {
-        fpu_state.tag = 0;
-        fpu_state.tos = 0; /* reset FPU Top-Of-Stack */
+    dst->q = ~dst->q & src.q;
 
-        dst.q = ~dst.q & src.q;
-
-        fpu_state.st_space[cpu_reg].fraction = dst.q;
-        fpu_state.st_space[cpu_reg].exp = 0xffff;
-    } else
-        cpu_state.MM[cpu_reg].q = ~cpu_state.MM[cpu_reg].q & src.q;
+    MMX_SETEXP(cpu_reg);
 
     return 0;
 }
@@ -89,25 +71,19 @@ opPANDN_a32(uint32_t fetchdat)
     if ((cpu_features & CPU_FEATURE_SSE2) && sse_xmm)
         return opPANDN_xmm_a32(fetchdat);
 
-    MMX_REG src, dst;
+    MMX_REG src;
+	MMX_REG *dst;
     MMX_ENTER();
 
     fetch_ea_32(fetchdat);
-    if (fpu_softfloat)
-        dst = *(MMX_REG *)&fpu_state.st_space[cpu_reg].fraction;
+
+    dst = MMX_GETREGP(cpu_reg);
 
     MMX_GETSRC();
 
-    if (fpu_softfloat) {
-        fpu_state.tag = 0;
-        fpu_state.tos = 0; /* reset FPU Top-Of-Stack */
+    dst->q = ~dst->q & src.q;
 
-        dst.q = ~dst.q & src.q;
-
-        fpu_state.st_space[cpu_reg].fraction = dst.q;
-        fpu_state.st_space[cpu_reg].exp = 0xffff;
-    } else
-        cpu_state.MM[cpu_reg].q = ~cpu_state.MM[cpu_reg].q & src.q;
+    MMX_SETEXP(cpu_reg);
 
     return 0;
 }
@@ -118,25 +94,19 @@ opPOR_a16(uint32_t fetchdat)
     if ((cpu_features & CPU_FEATURE_SSE2) && sse_xmm)
         return opPOR_xmm_a16(fetchdat);
 
-    MMX_REG src, dst;
+    MMX_REG src;
+	MMX_REG *dst;
     MMX_ENTER();
 
     fetch_ea_16(fetchdat);
-    if (fpu_softfloat)
-        dst = *(MMX_REG *)&fpu_state.st_space[cpu_reg].fraction;
+
+    dst = MMX_GETREGP(cpu_reg);
 
     MMX_GETSRC();
 
-    if (fpu_softfloat) {
-        fpu_state.tag = 0;
-        fpu_state.tos = 0; /* reset FPU Top-Of-Stack */
+    dst->q |= src.q;
 
-        dst.q |= src.q;
-
-        fpu_state.st_space[cpu_reg].fraction = dst.q;
-        fpu_state.st_space[cpu_reg].exp = 0xffff;
-    } else
-        cpu_state.MM[cpu_reg].q |= src.q;
+    MMX_SETEXP(cpu_reg);
 
     return 0;
 }
@@ -146,25 +116,19 @@ opPOR_a32(uint32_t fetchdat)
     if ((cpu_features & CPU_FEATURE_SSE2) && sse_xmm)
         return opPOR_xmm_a32(fetchdat);
 
-    MMX_REG src, dst;
+    MMX_REG src;
+	MMX_REG *dst;
     MMX_ENTER();
 
     fetch_ea_32(fetchdat);
-    if (fpu_softfloat)
-        dst = *(MMX_REG *)&fpu_state.st_space[cpu_reg].fraction;
+
+    dst = MMX_GETREGP(cpu_reg);
 
     MMX_GETSRC();
 
-    if (fpu_softfloat) {
-        fpu_state.tag = 0;
-        fpu_state.tos = 0; /* reset FPU Top-Of-Stack */
+    dst->q |= src.q;
 
-        dst.q |= src.q;
-
-        fpu_state.st_space[cpu_reg].fraction = dst.q;
-        fpu_state.st_space[cpu_reg].exp = 0xffff;
-    } else
-        cpu_state.MM[cpu_reg].q |= src.q;
+    MMX_SETEXP(cpu_reg);
 
     return 0;
 }
@@ -175,25 +139,19 @@ opPXOR_a16(uint32_t fetchdat)
     if ((cpu_features & CPU_FEATURE_SSE2) && sse_xmm)
         return opPXOR_xmm_a16(fetchdat);
 
-    MMX_REG src, dst;
+    MMX_REG src;
+	MMX_REG *dst;
     MMX_ENTER();
 
     fetch_ea_16(fetchdat);
-    if (fpu_softfloat)
-        dst = *(MMX_REG *)&fpu_state.st_space[cpu_reg].fraction;
+
+    dst = MMX_GETREGP(cpu_reg);
 
     MMX_GETSRC();
 
-    if (fpu_softfloat) {
-        fpu_state.tag = 0;
-        fpu_state.tos = 0; /* reset FPU Top-Of-Stack */
+    dst->q ^= src.q;
 
-        dst.q ^= src.q;
-
-        fpu_state.st_space[cpu_reg].fraction = dst.q;
-        fpu_state.st_space[cpu_reg].exp = 0xffff;
-    } else
-        cpu_state.MM[cpu_reg].q ^= src.q;
+    MMX_SETEXP(cpu_reg);
 
     return 0;
 }
@@ -203,25 +161,19 @@ opPXOR_a32(uint32_t fetchdat)
     if ((cpu_features & CPU_FEATURE_SSE2) && sse_xmm)
         return opPXOR_xmm_a32(fetchdat);
 
-    MMX_REG src, dst;
+    MMX_REG src;
+	MMX_REG *dst;
     MMX_ENTER();
 
     fetch_ea_32(fetchdat);
-    if (fpu_softfloat)
-        dst = *(MMX_REG *)&fpu_state.st_space[cpu_reg].fraction;
+
+    dst = MMX_GETREGP(cpu_reg);
 
     MMX_GETSRC();
 
-    if (fpu_softfloat) {
-        fpu_state.tag = 0;
-        fpu_state.tos = 0; /* reset FPU Top-Of-Stack */
+    dst->q ^= src.q;
 
-        dst.q ^= src.q;
-
-        fpu_state.st_space[cpu_reg].fraction = dst.q;
-        fpu_state.st_space[cpu_reg].exp = 0xffff;
-    } else
-        cpu_state.MM[cpu_reg].q ^= src.q;
+    MMX_SETEXP(cpu_reg);
 
     return 0;
 }
