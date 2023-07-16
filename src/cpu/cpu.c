@@ -1855,6 +1855,7 @@ cpu_set(void)
         codegen_timing_set(&codegen_timing_486);
 #endif
 
+    mmx_init();
     gdbstub_cpu_init();
 }
 

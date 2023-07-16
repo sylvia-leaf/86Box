@@ -260,13 +260,13 @@ PROG := PCBox
 #              Nothing should need changing from here on..              #
 #########################################################################
 VPATH := $(EXPATH) . $(CODEGEN) minitrace cpu cpu/softfloat \
-	 cdrom chipset device disk disk/minivhd floppy \
-	 game machine mem printer \
-	 sio sound \
-	 sound/munt sound/munt/c_interface sound/munt/sha1 \
-	 sound/munt/srchelper sound/munt/srchelper/srctools/src \
-	 sound/resid-fp sound/ymfm \
-	 scsi video network win
+         cpu/808x cdrom chipset device disk disk/minivhd floppy \
+         game machine mem printer \
+         sio sound \
+         sound/munt sound/munt/c_interface sound/munt/sha1 \
+         sound/munt/srchelper sound/munt/srchelper/srctools/src \
+         sound/resid-fp sound/ymfm \
+         scsi video network win
 
 WINDRES := windres
 STRIP   := strip
@@ -581,11 +581,13 @@ MAINOBJ := 86box.o config.o log.o random.o timer.o io.o acpi.o apm.o dma.o ddma.
 MEMOBJ := catalyst_flash.o i2c_eeprom.o intel_flash.o mem.o rom.o row.o smram.o spd.o sst_flash.o \
 	  815ep_spd_hack.o
 
+CPU808XOBJ := queue.o
+
 CPUOBJ := $(DYNARECOBJ) \
-	  $(CGTOBJ) \
-	  cpu.o cpu_table.o fpu.o x86.o \
-	  8080.o 808x.o 386.o 386_common.o 386_dynarec.o 386_dynarec_ops.o \
-	  x86seg.o x87.o x87_timings.o \
+          $(CGTOBJ) \
+          cpu.o cpu_table.o fpu.o x86.o \
+          8080.o 808x.o 386.o 386_common.o 386_dynarec.o 386_dynarec_ops.o \
+          x86_ops_mmx.o x86seg.o x87.o x87_timings.o \
 	  f2xm1.o fpatan.o fprem.o fsincos.o fyl2x.o softfloat_poly.o softfloat.o softfloat16.o \
 	  softfloat-muladd.o softfloat-round-pack.o softfloat-specialize.o softfloatx80.o
 
@@ -734,47 +736,48 @@ SNDOBJ := sound.o \
 	  snd_ym7128.o
 
 VIDOBJ := agpgart.o video.o \
-	  vid_table.o \
-	  vid_cga.o vid_cga_comp.o \
-	  vid_compaq_cga.o \
-	  vid_mda.o \
-	  vid_hercules.o vid_herculesplus.o vid_incolor.o \
-	  vid_colorplus.o \
-	  vid_genius.o \
-	  vid_pgc.o vid_im1024.o \
-	  vid_sigma.o \
-	  vid_wy700.o \
-	  vid_ega.o vid_ega_render.o \
-	  vid_svga.o vid_svga_render.o \
-	  vid_8514a.o \
-	  vid_ddc.o \
-	  vid_vga.o \
-	  vid_ati_eeprom.o \
-	  vid_ati18800.o vid_ati28800.o \
-	  vid_ati_mach64.o vid_ati68860_ramdac.o \
-	  vid_bt48x_ramdac.o \
-	  vid_av9194.o vid_icd2061.o vid_ics2494.o vid_ics2595.o \
-	  vid_cl54xx.o \
-	  vid_et3000.o \
-	  vid_et4000.o vid_sc1148x_ramdac.o \
-	  vid_sc1502x_ramdac.o \
-	  vid_et4000w32.o vid_stg_ramdac.o \
-	  vid_ht216.o \
-	  vid_oak_oti.o \
-	  vid_paradise.o \
-	  vid_rtg310x.o \
-	  vid_ti_cf62011.o \
-	  vid_f82c425.o \
-	  vid_tvga.o \
-	  vid_tgui9440.o vid_tkd8001_ramdac.o \
-	  vid_att20c49x_ramdac.o \
-	  vid_att2xc498_ramdac.o \
-	  vid_s3.o vid_s3_virge.o \
-	  vid_ibm_rgb528_ramdac.o vid_sdac_ramdac.o \
-	  vid_ogc.o \
-	  vid_nga.o \
-	  vid_tvp3026_ramdac.o \
-	  vid_xga.o
+          vid_table.o \
+          vid_cga.o vid_cga_comp.o \
+          vid_compaq_cga.o \
+          vid_mda.o \
+          vid_hercules.o vid_herculesplus.o vid_incolor.o \
+          vid_colorplus.o \
+          vid_genius.o \
+          vid_pgc.o vid_im1024.o \
+          vid_sigma.o \
+          vid_wy700.o \
+          vid_ega.o vid_ega_render.o \
+          vid_svga.o vid_svga_render.o \
+          vid_8514a.o \
+          vid_ddc.o \
+          vid_vga.o \
+          vid_ati_eeprom.o \
+          vid_ati18800.o vid_ati28800.o \
+	  vid_ati_mach8.o \
+          vid_ati_mach64.o vid_ati68860_ramdac.o \
+          vid_bt48x_ramdac.o \
+          vid_av9194.o vid_icd2061.o vid_ics2494.o vid_ics2595.o \
+          vid_cl54xx.o \
+          vid_et3000.o \
+          vid_et4000.o vid_sc1148x_ramdac.o \
+          vid_sc1502x_ramdac.o \
+          vid_et4000w32.o vid_stg_ramdac.o \
+          vid_ht216.o \
+          vid_oak_oti.o \
+          vid_paradise.o \
+          vid_rtg310x.o \
+          vid_ti_cf62011.o \
+          vid_f82c425.o \
+          vid_tvga.o \
+          vid_tgui9440.o vid_tkd8001_ramdac.o \
+          vid_att20c49x_ramdac.o \
+          vid_att2xc498_ramdac.o \
+          vid_s3.o vid_s3_virge.o \
+          vid_ibm_rgb528_ramdac.o vid_sdac_ramdac.o \
+          vid_ogc.o \
+          vid_nga.o \
+          vid_tvp3026_ramdac.o \
+          vid_xga.o
 
 VOODOOOBJ := vid_voodoo.o vid_voodoo_banshee.o \
 	     vid_voodoo_banshee_blitter.o \
@@ -812,7 +815,7 @@ ifeq ($(RTMIDI), y)
  SNDOBJ += midi_rtmidi.o
 endif
 
-OBJ := $(MAINOBJ) $(CPUOBJ) $(CHIPSETOBJ) $(MCHOBJ) $(DEVOBJ) $(MEMOBJ) \
+OBJ := $(MAINOBJ) $(CPU808XOBJ) $(CPUOBJ) $(CHIPSETOBJ) $(MCHOBJ) $(DEVOBJ) $(MEMOBJ) \
        $(FDDOBJ) $(GAMEOBJ) $(CDROMOBJ) $(ZIPOBJ) $(MOOBJ) $(HDDOBJ) $(MINIVHDOBJ) \
        $(NETOBJ) $(PRINTOBJ) $(SCSIOBJ) $(SIOOBJ) $(SNDOBJ) $(VIDOBJ) $(VOODOOOBJ) \
        $(PLATOBJ) $(UIOBJ) $(FSYNTHOBJ) $(MUNTOBJ) $(DEVBROBJ) $(MINITRACEOBJ) $(THREADOBJ)
@@ -826,15 +829,24 @@ else
  MWIN := -mwindows
 endif
 
-LIBS := -lfluidsynth -lslirp -lgomp -lsndfile -lflac -lmp3lame -lmpg123 -lopus -lvorbis -lvorbisenc -logg -ldsound -lshlwapi -lksuser -lreadline -ltermcap -lportaudio -lgmodule-2.0 -lglib-2.0 -lintl -liconv
+LIBS := -lfreetype -lfluidsynth -lslirp -lbz2 -lharfbuzz -lgraphite2 -lbrotlidec \
+        -lbrotlicommon -lusp10 -lrpcrt4 -lgomp -lsndfile -lflac -lmp3lame -lmpg123 \
+        -lopus -lvorbis -lvorbisenc -logg -ldsound -lshlwapi -lksuser -lreadline \
+        -ltermcap -lportaudio -lgmodule-2.0 -lglib-2.0 -lintl -liconv
 
 ifeq ($(OPENAL), y)
- LIBS += $(MWIN) -lopenal -lcomctl32 -lSDL2 -limagehlp -ldinput8 -ldxguid -ldxerr8 -luser32 -lgdi32 -lwinmm -limm32 -lole32 -loleaut32 -lshell32 -lversion -luuid -lws2_32
+ LIBS += $(MWIN) -lopenal -lcomctl32 -lSDL2 -limagehlp -ldinput8 -ldxguid -ldxerr8 \
+         -luser32 -lgdi32 -lwinmm -limm32 -lole32 -loleaut32 -lshell32 -lversion \
+         -luuid -lws2_32
 else
  ifeq ($(FAUDIO), y)
-  LIBS += $(MWIN) -lfaudio -lcomctl32 -lSDL2 -limagehlp -ldinput8 -ldxguid -ldxerr8 -luser32 -lgdi32 -lwinmm -limm32 -lole32 -loleaut32 -lshell32 -lversion -luuid -lws2_32
+  LIBS += $(MWIN) -lfaudio -lcomctl32 -lSDL2 -limagehlp -ldinput8 -ldxguid -ldxerr8 \
+          -luser32 -lgdi32 -lwinmm -limm32 -lole32 -loleaut32 -lshell32 -lversion \
+          -luuid -lws2_32
  else
-  LIBS += $(MWIN) -lcomctl32 -lSDL2 -limagehlp -ldinput8 -ldxguid -ldxerr8 -luser32 -lgdi32 -lwinmm -limm32 -lole32 -loleaut32 -lshell32 -lversion -luuid -lws2_32
+  LIBS += $(MWIN) -lcomctl32 -lSDL2 -limagehlp -ldinput8 -ldxguid -ldxerr8 -luser32 \
+          -lgdi32 -lwinmm -limm32 -lole32 -loleaut32 -lshell32 -lversion -luuid \
+          -lws2_32
  endif
 endif
 
