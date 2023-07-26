@@ -241,10 +241,10 @@ acpi_reg_read_common_regs(UNUSED(int size), uint16_t addr, void *priv)
 static uint32_t
 acpi_reg_read_ali(int size, uint16_t addr, void *priv)
 {
-    acpi_t  *dev = (acpi_t *) priv;
-    uint32_t ret = 0x00000000;
-    int      shift16;
-    int      shift32;
+    const acpi_t  *dev = (acpi_t *) priv;
+    uint32_t       ret = 0x00000000;
+    int            shift16;
+    int            shift32;
 
     addr &= 0x3f;
     shift16 = (addr & 1) << 3;
@@ -309,10 +309,10 @@ acpi_reg_read_ali(int size, uint16_t addr, void *priv)
 static uint32_t
 acpi_reg_read_intel(int size, uint16_t addr, void *priv)
 {
-    acpi_t  *dev = (acpi_t *) priv;
-    uint32_t ret = 0x00000000;
-    int      shift16;
-    int      shift32;
+    const acpi_t  *dev = (acpi_t *) priv;
+    uint32_t       ret = 0x00000000;
+    int            shift16;
+    int            shift32;
 
     addr &= 0x3f;
     shift16 = (addr & 1) << 3;
@@ -511,10 +511,10 @@ acpi_reg_read_intel_ich2(int size, uint16_t addr, void *priv)
 static uint32_t
 acpi_reg_read_via_common(int size, uint16_t addr, void *priv)
 {
-    acpi_t  *dev = (acpi_t *) priv;
-    uint32_t ret = 0x00000000;
-    int      shift16;
-    int      shift32;
+    const acpi_t  *dev = (acpi_t *) priv;
+    uint32_t       ret = 0x00000000;
+    int            shift16;
+    int            shift32;
 
     addr &= 0xff;
     shift16 = (addr & 1) << 3;
@@ -664,10 +664,10 @@ acpi_reg_read_via(int size, uint16_t addr, void *priv)
 static uint32_t
 acpi_reg_read_via_596b(int size, uint16_t addr, void *priv)
 {
-    acpi_t  *dev = (acpi_t *) priv;
-    uint32_t ret = 0x00000000;
-    int      shift16;
-    int      shift32;
+    const acpi_t  *dev = (acpi_t *) priv;
+    uint32_t       ret = 0x00000000;
+    int            shift16;
+    int            shift32;
 
     addr &= 0x7f;
     shift16 = (addr & 1) << 3;
@@ -730,9 +730,9 @@ acpi_reg_read_smc(int size, uint16_t addr, void *priv)
 static uint32_t
 acpi_aux_reg_read_smc(UNUSED(int size), uint16_t addr, void *priv)
 {
-    acpi_t  *dev = (acpi_t *) priv;
-    uint32_t ret = 0x00000000;
-    int      shift16;
+    const acpi_t  *dev = (acpi_t *) priv;
+    uint32_t       ret = 0x00000000;
+    int            shift16;
 
     addr &= 0x07;
     shift16 = (addr & 1) << 3;
@@ -1432,7 +1432,7 @@ acpi_aux_reg_write_smc(UNUSED(int size), uint16_t addr, uint8_t val, void *priv)
 static uint32_t
 acpi_reg_read_common(int size, uint16_t addr, void *priv)
 {
-    acpi_t *dev = (acpi_t *) priv;
+    const acpi_t *dev = (acpi_t *) priv;
     uint8_t ret = 0xff;
 
     if (dev->vendor == VEN_ALI)
@@ -1454,7 +1454,7 @@ acpi_reg_read_common(int size, uint16_t addr, void *priv)
 static void
 acpi_reg_write_common(int size, uint16_t addr, uint8_t val, void *priv)
 {
-    acpi_t *dev = (acpi_t *) priv;
+    const acpi_t *dev = (acpi_t *) priv;
 
     if (dev->vendor == VEN_ALI)
         acpi_reg_write_ali(size, addr, val, priv);
@@ -1473,7 +1473,7 @@ acpi_reg_write_common(int size, uint16_t addr, uint8_t val, void *priv)
 static uint32_t
 acpi_aux_reg_read_common(int size, uint16_t addr, void *priv)
 {
-    acpi_t *dev = (acpi_t *) priv;
+    const acpi_t *dev = (acpi_t *) priv;
     uint8_t ret = 0xff;
 
     if (dev->vendor == VEN_SMC)
@@ -1485,7 +1485,7 @@ acpi_aux_reg_read_common(int size, uint16_t addr, void *priv)
 static void
 acpi_aux_reg_write_common(int size, uint16_t addr, uint8_t val, void *priv)
 {
-    acpi_t *dev = (acpi_t *) priv;
+    const acpi_t *dev = (acpi_t *) priv;
 
     if (dev->vendor == VEN_SMC)
         acpi_aux_reg_write_smc(size, addr, val, priv);
@@ -1848,8 +1848,8 @@ acpi_apm_out(uint16_t port, uint8_t val, void *priv)
 static uint8_t
 acpi_apm_in(uint16_t port, void *priv)
 {
-    acpi_t *dev = (acpi_t *) priv;
-    uint8_t ret = 0xff;
+    const acpi_t *dev = (acpi_t *) priv;
+    uint8_t       ret = 0xff;
 
     port &= 0x0001;
 
@@ -1951,7 +1951,7 @@ acpi_init(const device_t *info)
 
     dev = (acpi_t *) malloc(sizeof(acpi_t));
     if (dev == NULL)
-        return (NULL);
+        return NULL;
     memset(dev, 0x00, sizeof(acpi_t));
 
     cpu_to_acpi = ACPI_TIMER_FREQ / cpuclock;
