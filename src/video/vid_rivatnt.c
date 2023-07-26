@@ -1042,7 +1042,7 @@ rivatnt_in(uint16_t addr, void *p)
 static void
 rivatnt_recalctimings(svga_t *svga)
 {
-    rivatnt_t *rivatnt = (rivatnt_t *)svga->p;
+    rivatnt_t *rivatnt = (rivatnt_t *)svga->priv;
 
     svga->ma_latch += (svga->crtc[0x19] & 0x1f) << 16;
     svga->rowoffset += (svga->crtc[0x19] & 0xe0) << 3;
@@ -1112,7 +1112,7 @@ rivatnt_recalctimings(svga_t *svga)
 void
 rivatnt_vblank_start(svga_t *svga)
 {
-    rivatnt_t *rivatnt = (rivatnt_t *)svga->p;
+    rivatnt_t *rivatnt = (rivatnt_t *)svga->priv;
 
     rivatnt->pcrtc.intr |= 1;
 

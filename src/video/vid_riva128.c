@@ -2525,7 +2525,7 @@ riva128_in(uint16_t addr, void *p)
 static void
 riva128_vblank_start(svga_t *svga)
 {
-	riva128_t *riva128 = (riva128_t *)svga->p;
+	riva128_t *riva128 = (riva128_t *)svga->priv;
 
 	riva128_pgraph_interrupt(8, riva128);
 }
@@ -2533,7 +2533,7 @@ riva128_vblank_start(svga_t *svga)
 static void
 riva128_recalctimings(svga_t *svga)
 {
-	riva128_t *riva128 = (riva128_t *)svga->p;
+	riva128_t *riva128 = (riva128_t *)svga->priv;
 
 	svga->ma_latch += (svga->crtc[0x19] & 0x1f) << 16;
 	svga->rowoffset += (svga->crtc[0x19] & 0xe0) << 3;
