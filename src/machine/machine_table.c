@@ -33,6 +33,7 @@
 #include <86box/machine.h>
 #include <86box/keyboard.h>
 #include <86box/sound.h>
+#include <86box/snd_ac97.h>
 #include <86box/video.h>
 #include <86box/plat_unused.h>
 
@@ -78,6 +79,7 @@ const machine_filter_t machine_types[] = {
     { "Slot 1/Socket 370",         MACHINE_TYPE_SLOT1_370  },
     { "Slot 2",                    MACHINE_TYPE_SLOT2      },
     { "Socket 370",                MACHINE_TYPE_SOCKET370  },
+    { "Slot A",                    MACHINE_TYPE_SLOTA      },
     { "Miscellaneous",             MACHINE_TYPE_MISC       }
 };
 
@@ -98,6 +100,7 @@ const machine_filter_t machine_chipsets[] = {
     { "ALi ALADDiN IV+",            MACHINE_CHIPSET_ALI_ALADDIN_IV_PLUS },
     { "ALi ALADDiN V",              MACHINE_CHIPSET_ALI_ALADDIN_V       },
     { "ALi ALADDiN-PRO II",         MACHINE_CHIPSET_ALI_ALADDIN_PRO_II  },
+    { "AMD 750",                    MACHINE_CHIPSET_AMD_750             },
     { "C&T 82C235 SCAT",            MACHINE_CHIPSET_SCAT                },
     { "C&T CS8121 NEAT",            MACHINE_CHIPSET_NEAT                },
     { "C&T 386",                    MACHINE_CHIPSET_CT_386              },
@@ -13247,6 +13250,47 @@ const machine_t machines[] = {
         .net_device = NULL
     },
 
+#if defined(DEV_BRANCH) && defined(USE_ATHLON)
+    /* AMD 750 boards */
+    {
+        .name = "[AMD 750] ASUS K7M",
+        .internal_name = "k7m",
+        .type = MACHINE_TYPE_SLOTA,
+        .chipset = MACHINE_CHIPSET_AMD_750,
+        .init = machine_at_k7m_init,
+        .pad = 0,
+        .pad0 = 0,
+        .pad1 = MACHINE_AVAILABLE,
+        .pad2 = 0,
+        .cpu = {
+            .package = CPU_PKG_SLOTA,
+            .block = CPU_BLOCK_NONE,
+            .min_bus = 66666667,
+            .max_bus = 133333333,
+            .min_voltage = 1300,
+            .max_voltage = 3500,
+            .min_multi = 1.5,
+            .max_multi = 15.0
+        },
+        .bus_flags = MACHINE_PS2_NOISA,
+        .flags = MACHINE_IDE_DUAL,
+        .ram = {
+            .min = 32768,
+            .max = 786432,
+            .step = 32768
+        },
+        .nvrmask = 255,
+        .kbc_device = NULL,
+        .kbc_p1 = 0,
+        .gpio = 0,
+        .device = NULL,
+        .fdc_device = NULL,
+        .sio_device = NULL,
+        .vid_device = NULL,
+        .snd_device = &ad1881_device,
+        .net_device = NULL
+    },
+#endif
     {
         .name = NULL,
         .internal_name = NULL,

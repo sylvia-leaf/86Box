@@ -84,6 +84,7 @@ enum {
     CPU_PENTIUMPRO, /* 686 class CPUs */
     CPU_PENTIUM2,
     CPU_PENTIUM2D,
+    CPU_ATHLON,
     CPU_PENTIUM3,
     CPU_GENERICINTEL
 };
@@ -360,6 +361,23 @@ typedef struct {
     /* K6-3, K6-2P, and K6-3P MSR's */
     uint64_t amd_l2aar; /* 0xc0000089 */
 
+    /* K7 MSRs */
+    uint64_t amd_syscfg; /* 0xc0010010 */
+
+    uint64_t amd_hwcr; /* 0xc0010015 */
+    uint64_t amd_iorrbase1; /* 0xc0010016 */
+    uint64_t amd_iorrmask1; /* 0xc0010017 */
+    uint64_t amd_iorrbase2; /* 0xc0010018 */
+    uint64_t amd_iorrmask2; /* 0xc0010019 */
+    uint64_t amd_topmem; /* 0xc001001a */
+    uint64_t amd_clkctl; /* 0xc001001b */
+
+    uint64_t ecxc001001c; /* 0xc001001c */
+
+    uint64_t amd_smbase; /* 0xc0010111 */
+    uint64_t amd_smmaddr; /* 0xc0010112 */
+    uint64_t amd_smmmask; /* 0xc0010113 */
+
     /* Pentium Pro, Pentium II Klamath, and Pentium II Deschutes MSR's */
     uint64_t ecxf0f00250; /* 0xf0f00250 - Some weird long MSR's used by i686 AMI & some Phoenix BIOSes */
     uint64_t ecxf0f00258; /* 0xf0f00258 */
@@ -578,6 +596,7 @@ extern int is_pentium;
 extern int is_k5;
 extern int is_k6;
 extern int is_p6;
+extern int is_athlon;
 extern int is_pentium3;
 extern int is_cxsmm;
 extern int hascache;

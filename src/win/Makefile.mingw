@@ -617,6 +617,7 @@ CPUOBJ := $(DYNARECOBJ) \
 CHIPSETOBJ := 82c100.o acc2168.o \
 	      contaq_82c59x.o \
 	      cs4031.o cs8230.o \
+              amd751.o \
 	      ali1429.o ali1435.o ali1489.o ali1531.o ali1541.o ali1543.o ali1621.o ali6117.o \
 	      gc100.o headland.o \
 	      ims8848.o intel_82335.o intel_420ex.o intel_4x0.o intel_i450kx.o intel_sio.o intel_piix.o \
@@ -647,7 +648,7 @@ MCHOBJ := machine.o machine_table.o \
 	  m_at_compaq.o \
 	  m_at_286_386sx.o m_at_386dx_486.o \
 	  m_at_socket4.o m_at_socket5.o m_at_socket7_3v.o m_at_socket7.o m_at_sockets7.o \
-	  m_at_socket8.o m_at_slot1.o m_at_slot2.o m_at_socket370.o \
+	  m_at_socket8.o m_at_slot1.o m_at_slot2.o m_at_socket370.o m_at_slota.o \
 	  m_at_misc.o
 
 KBCOBJ := kbc_at.o kbc_at_dev.o \

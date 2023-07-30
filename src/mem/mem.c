@@ -3201,13 +3201,8 @@ mem_add_mtrr(uint64_t base, uint64_t mask, uint8_t type)
 
     mem_log("Adding MTRR base=%08llx mask=%08llx size=%08llx type=%d\n", base, mask, size, type);
 
-    if (size > 0x8000) {
+    if (size > 0x10000) {
         mem_log("Ignoring MTRR, size too big\n");
-        return;
-    }
-
-    if (mem_addr_is_ram(base)) {
-        mem_log("Ignoring MTRR, base is in RAM\n");
         return;
     }
 
@@ -3243,13 +3238,8 @@ mem_del_mtrr(uint64_t base, uint64_t mask)
 
     mem_log("Deleting MTRR base=%08llx mask=%08llx size=%08llx\n", base, mask, size);
 
-    if (size > 0x8000) {
+    if (size > 0x10000) {
         mem_log("Ignoring MTRR, size too big\n");
-        return;
-    }
-
-    if (mem_addr_is_ram(base)) {
-        mem_log("Ignoring MTRR, base is in RAM\n");
         return;
     }
 
