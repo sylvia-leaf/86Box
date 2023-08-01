@@ -1490,6 +1490,9 @@ opCMPPS_xmm_xmm_a16(uint32_t fetchdat)
                     cmp[3] = isunordered(XMM[cpu_reg].f[3], XMM[cpu_rm].f[3]) ? 0 : ~0;
                     break;
                 }
+
+            default:
+                break;
         }
         XMM[cpu_reg].l[0] = cmp[0];
         XMM[cpu_reg].l[1] = cmp[1];
@@ -1582,6 +1585,9 @@ opCMPPS_xmm_xmm_a16(uint32_t fetchdat)
                     cmp[3] = isunordered(XMM[cpu_reg].f[3], src_real[3]) ? 0 : ~0;
                     break;
                 }
+
+            default:
+                break;
         }
         XMM[cpu_reg].l[0] = cmp[0];
         XMM[cpu_reg].l[1] = cmp[1];
@@ -1666,6 +1672,9 @@ opCMPPS_xmm_xmm_a32(uint32_t fetchdat)
                     cmp[3] = isunordered(XMM[cpu_reg].f[3], XMM[cpu_rm].f[3]) ? 0 : ~0;
                     break;
                 }
+
+            default:
+                break;
         }
         XMM[cpu_reg].l[0] = cmp[0];
         XMM[cpu_reg].l[1] = cmp[1];
@@ -1758,6 +1767,9 @@ opCMPPS_xmm_xmm_a32(uint32_t fetchdat)
                     cmp[3] = isunordered(XMM[cpu_reg].f[3], src_real[3]) ? 0 : ~0;
                     break;
                 }
+
+            default:
+                break;
         }
         XMM[cpu_reg].l[0] = cmp[0];
         XMM[cpu_reg].l[1] = cmp[1];
@@ -1816,6 +1828,9 @@ opCMPSS_xmm_xmm_a16(uint32_t fetchdat)
                     cmp = isunordered(XMM[cpu_reg].f[0], XMM[cpu_rm].f[0]) ? 0 : ~0;
                     break;
                 }
+
+            default:
+                break;
         }
         XMM[cpu_reg].l[0] = cmp;
         CLOCK_CYCLES(1);
@@ -1869,6 +1884,9 @@ opCMPSS_xmm_xmm_a16(uint32_t fetchdat)
                     cmp = isunordered(XMM[cpu_reg].f[0], src_real) ? 0 : ~0;
                     break;
                 }
+
+            default:
+                break;
         }
         XMM[cpu_reg].l[0] = cmp;
         CLOCK_CYCLES(2);
@@ -1924,6 +1942,9 @@ opCMPSS_xmm_xmm_a32(uint32_t fetchdat)
                     cmp = isunordered(XMM[cpu_reg].f[0], XMM[cpu_rm].f[0]) ? 0 : ~0;
                     break;
                 }
+
+            default:
+                break;
         }
         XMM[cpu_reg].l[0] = cmp;
         CLOCK_CYCLES(1);
@@ -1977,6 +1998,9 @@ opCMPSS_xmm_xmm_a32(uint32_t fetchdat)
                     cmp = isunordered(XMM[cpu_reg].f[0], src_real) ? 0 : ~0;
                     break;
                 }
+
+            default:
+                break;
         }
         XMM[cpu_reg].l[0] = cmp;
         CLOCK_CYCLES(2);

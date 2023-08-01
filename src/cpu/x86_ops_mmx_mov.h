@@ -259,7 +259,6 @@ opMOVQ_mm_q_a16(uint32_t fetchdat)
 
     MMX_REG src;
     MMX_REG *dst;
-
     MMX_ENTER();
 
     fetch_ea_16(fetchdat);
@@ -292,7 +291,6 @@ opMOVQ_mm_q_a32(uint32_t fetchdat)
 
     MMX_REG src;
     MMX_REG *dst;
-
     MMX_ENTER();
 
     fetch_ea_32(fetchdat);

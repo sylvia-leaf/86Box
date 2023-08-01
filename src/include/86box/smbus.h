@@ -29,9 +29,9 @@
 #define SMBUS_ALI7101_BLOCK_DATA_MASK (SMBUS_ALI7101_BLOCK_DATA_SIZE - 1)
 
 enum {
-    SMBUS_PIIX4 = 0,
+    SMBUS_PIIX4      = 0,
     SMBUS_INTEL_ICH2 = 1,
-    SMBUS_VIA   = 2
+    SMBUS_VIA        = 2
 };
 
 typedef struct smbus_piix4_t {
@@ -52,7 +52,7 @@ typedef struct smbus_piix4_t {
     uint8_t    block_data_byte;
     uint8_t    irq;
     uint8_t    smi_en;
-    acpi_t     *acpi;
+    acpi_t    *acpi;
     pc_timer_t response_timer;
     void      *i2c;
 } smbus_piix4_t;

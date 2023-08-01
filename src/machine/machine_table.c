@@ -13291,6 +13291,7 @@ const machine_t machines[] = {
         .net_device = NULL
     },
 #endif
+
     {
         .name = NULL,
         .internal_name = NULL,

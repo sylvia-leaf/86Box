@@ -497,7 +497,9 @@ machine_at_cusl2c_init(const machine_t *model)
     device_add(&as99127f_device);          /* ASUS Hardware Monitor */
     ics9xxx_get(ICS9150_08);               /* ICS Clock Chip */
     intel_815ep_spd_init();                /* SPD */
-//  spd_register(SPD_TYPE_SDRAM, 3, 256);  /* SPD */
+#if 0
+    spd_register(SPD_TYPE_SDRAM, 3, 256);  /* SPD */
+#endif
 
     return ret;
 }
@@ -547,7 +549,9 @@ machine_at_j815epda_init(const machine_t *model)
     device_add(&sst_flash_39sf020_device);
     device_add(ics9xxx_get(ICS9250_18));
     intel_815ep_spd_init();                 /* SPD */
-//  spd_register(SPD_TYPE_SDRAM, 0x7, 512); /* SPD */
+#if 0
+    spd_register(SPD_TYPE_SDRAM, 0x7, 512); /* SPD */
+#endif
 
     return ret;
 }
@@ -592,7 +596,9 @@ machine_at_m6tsl_init(const machine_t *model)
     device_add(&sst_flash_49lf004_device);  /* SST 4Mbit Firmware Hub */
     device_add(ics9xxx_get(ICS9250_08));    /* ICS Clock Chip */
     intel_815ep_spd_init();                 /* SPD */
-//  spd_register(SPD_TYPE_SDRAM, 0x7, 512); /* SPD */
+#if 0
+    spd_register(SPD_TYPE_SDRAM, 0x7, 512); /* SPD */
+#endif
 
     return ret;
 }
@@ -610,7 +616,9 @@ machine_at_m6tss_init(const machine_t *model)
 {
     int ret;
 
-//    ret = bios_load_linear("roms/machines/m6tss/tss0518b.bin",
+#if 0
+    ret = bios_load_linear("roms/machines/m6tss/tss0518b.bin",
+#endif
     ret = bios_load_linear("roms/machines/m6tss/tss0619f.bin",
                            0x00080000, 524288, 0);
 
@@ -637,7 +645,9 @@ machine_at_m6tss_init(const machine_t *model)
     device_add(&sst_flash_49lf004_device);  /* SST 4Mbit Firmware Hub */
     device_add(ics9xxx_get(ICS9250_08));    /* ICS Clock Chip */
     intel_815ep_spd_init();                 /* SPD */
-//  spd_register(SPD_TYPE_SDRAM, 0x7, 512); /* SPD */
+#if 0
+    spd_register(SPD_TYPE_SDRAM, 0x7, 512); /* SPD */
+#endif
 
     return ret;
 }
@@ -679,7 +689,9 @@ machine_at_s2080_init(const machine_t *model)
     device_add(&nsc366_device);             /* National Semiconductor NSC366 */
     device_add(&sst_flash_49lf004_device);  /* SST 4Mbit Firmware Hub */
     intel_815ep_spd_init();                 /* SPD */
-//  spd_register(SPD_TYPE_SDRAM, 0x7, 512); /* SPD */
+#if 0
+    spd_register(SPD_TYPE_SDRAM, 0x7, 512); /* SPD */
+#endif
 
     return ret;
 }

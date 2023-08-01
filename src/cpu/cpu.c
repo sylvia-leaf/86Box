@@ -106,8 +106,8 @@ const OpFn *x86_dynarec_opcodes_de_a32;
 const OpFn *x86_dynarec_opcodes_df_a16;
 const OpFn *x86_dynarec_opcodes_df_a32;
 const OpFn *x86_dynarec_opcodes_REPE;
-const OpFn *x86_dynarec_opcodes_REPNE;
 const OpFn *x86_dynarec_opcodes_REPE_0f;
+const OpFn *x86_dynarec_opcodes_REPNE;
 const OpFn *x86_dynarec_opcodes_REPNE_0f;
 const OpFn *x86_dynarec_opcodes_3DNOW;
 #endif
@@ -131,8 +131,8 @@ const OpFn *x86_opcodes_de_a32;
 const OpFn *x86_opcodes_df_a16;
 const OpFn *x86_opcodes_df_a32;
 const OpFn *x86_opcodes_REPE;
-const OpFn *x86_opcodes_REPNE;
 const OpFn *x86_opcodes_REPE_0f;
+const OpFn *x86_opcodes_REPNE;
 const OpFn *x86_opcodes_REPNE_0f;
 const OpFn *x86_opcodes_3DNOW;
 
@@ -141,6 +141,7 @@ uint16_t cpu_fast_off_val;
 uint16_t temp_seg_data[4] = { 0, 0, 0, 0 };
 
 int sse_xmm;
+
 int isa_cycles;
 int cpu_inited;
 
@@ -168,8 +169,8 @@ int cpu_16bitbus;
 int cpu_64bitbus;
 int cpu_cyrix_alignment;
 int CPUID;
-
 int bochs_timing;
+
 int is186;
 int is_nec;
 int is286;

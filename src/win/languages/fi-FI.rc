@@ -394,7 +394,7 @@ END
 
 STRINGTABLE DISCARDABLE
 BEGIN
-    2048    "PCBox"
+    2048        "PCBox"
     IDS_2049    "Virhe"
     IDS_2050    "Vakava virhe"
     IDS_2051    " - TAUKO"
