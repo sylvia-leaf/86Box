@@ -250,7 +250,7 @@ fx_save_stor_common(uint32_t fetchdat, int bits)
 
     fxinst = (rmdat >> 3) & 7;
 
-    if (((fxinst > 1) && !(cpu_features & CPU_FEATURE_SSE))) {
+    if ((fxinst > 1) && !(cpu_features & CPU_FEATURE_SSE)) {
         x86illegal();
         return cpu_state.abrt;
     }
@@ -443,15 +443,18 @@ fx_save_stor_common(uint32_t fetchdat, int bits)
         }
         uint32_t src;
 
-        uint32_t mxcsr_mask = 0xffbf;
-        if ((cpu_features & CPU_FEATURE_SSE2))
-            mxcsr_mask = 0xffff;
+        uint32_t mxcsr_mask = 0xffff;
+        if (!(cpu_features & CPU_FEATURE_SSE2))
+            mxcsr_mask = 0xffbf;
 
         SEG_CHECK_READ(cpu_state.ea_seg);
         src = readmeml(easeg, cpu_state.eaaddr);
         if (cpu_state.abrt)
             return 1;
-        // if(src & ~mxcsr_mask) x86gpf(NULL, 0);
+#if 0
+        if(src & ~mxcsr_mask)
+            x86gpf(NULL, 0);
+#endif
         mxcsr = src & mxcsr_mask;
     } else if (fxinst == 3) {
         if (cpu_mod == 3) {

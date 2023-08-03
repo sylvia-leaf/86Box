@@ -452,6 +452,9 @@ smbus_piix4_init(const device_t *info)
         case SMBUS_VIA:
             i2c_smbus = dev->i2c = i2c_addbus("smbus_vt82c686b");
             break;
+
+        default:
+            break;
     }
 
     timer_add(&dev->response_timer, smbus_piix4_response, dev, 0);

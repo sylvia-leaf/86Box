@@ -70,20 +70,23 @@ check_sse_exceptions(double result)
 {
     feclearexcept(FE_ALL_EXCEPT);
     int fperaised = fetestexcept(FE_ALL_EXCEPT);
-    if(fperaised & FE_INVALID) mxcsr |= 1;
-    if(fpclassify(result) == FP_SUBNORMAL)
-    {
+    if (fperaised & FE_INVALID)
+        mxcsr |= 1;
+    if (fpclassify(result) == FP_SUBNORMAL)
         mxcsr |= 2;
-    }
-    if(fperaised & FE_DIVBYZERO) mxcsr |= 4;
-    if(fperaised & FE_OVERFLOW) mxcsr |= 8;
-    if(fperaised & FE_UNDERFLOW) mxcsr |= 0x10;
-    if(fperaised & FE_INEXACT) mxcsr |= 0x20;
+    if (fperaised & FE_DIVBYZERO)
+        mxcsr |= 4;
+    if (fperaised & FE_OVERFLOW)
+        mxcsr |= 8;
+    if (fperaised & FE_UNDERFLOW)
+        mxcsr |= 0x10;
+    if (fperaised & FE_INEXACT)
+        mxcsr |= 0x20;
 
     int unmasked = (mxcsr >> 7) & 0x3f;
-    if(unmasked & 7)
-    {
-        if((cr4 >> 9) & 1) x86_doabrt(0x13);
+    if (unmasked & 7) {
+        if ((cr4 >> 9) & 1)
+            x86_doabrt(0x13);
         ILLEGAL_ON(!((cr4 >> 9) & 1));
     }
     return 0;

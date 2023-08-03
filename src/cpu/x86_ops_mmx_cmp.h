@@ -5,8 +5,7 @@ opPCMPEQB_a16(uint32_t fetchdat)
         return opPCMPEQB_xmm_a16(fetchdat);
 
     MMX_REG src;
-	MMX_REG *dst;
-
+    MMX_REG *dst;
     MMX_ENTER();
 
     fetch_ea_16(fetchdat);
@@ -35,8 +34,7 @@ opPCMPEQB_a32(uint32_t fetchdat)
         return opPCMPEQB_xmm_a32(fetchdat);
 
     MMX_REG src;
-	MMX_REG *dst;
-
+    MMX_REG *dst;
     MMX_ENTER();
 
     fetch_ea_32(fetchdat);
@@ -66,8 +64,7 @@ opPCMPGTB_a16(uint32_t fetchdat)
         return opPCMPGTB_xmm_a16(fetchdat);
 
     MMX_REG src;
-	MMX_REG *dst;
-
+    MMX_REG *dst;
     MMX_ENTER();
 
     fetch_ea_16(fetchdat);
@@ -96,8 +93,7 @@ opPCMPGTB_a32(uint32_t fetchdat)
         return opPCMPGTB_xmm_a32(fetchdat);
 
     MMX_REG src;
-	MMX_REG *dst;
-
+    MMX_REG *dst;
     MMX_ENTER();
 
     fetch_ea_32(fetchdat);
@@ -127,8 +123,7 @@ opPCMPEQW_a16(uint32_t fetchdat)
         return opPCMPEQW_xmm_a16(fetchdat);
 
     MMX_REG src;
-	MMX_REG *dst;
-
+    MMX_REG *dst;
     MMX_ENTER();
 
     fetch_ea_16(fetchdat);
@@ -153,8 +148,7 @@ opPCMPEQW_a32(uint32_t fetchdat)
         return opPCMPEQW_xmm_a32(fetchdat);
 
     MMX_REG src;
-	MMX_REG *dst;
-
+    MMX_REG *dst;
     MMX_ENTER();
 
     fetch_ea_32(fetchdat);
@@ -180,8 +174,7 @@ opPCMPGTW_a16(uint32_t fetchdat)
         return opPCMPGTW_xmm_a16(fetchdat);
 
     MMX_REG src;
-	MMX_REG *dst;
-
+    MMX_REG *dst;
     MMX_ENTER();
 
     fetch_ea_16(fetchdat);
@@ -206,8 +199,7 @@ opPCMPGTW_a32(uint32_t fetchdat)
         return opPCMPGTW_xmm_a32(fetchdat);
 
     MMX_REG src;
-	MMX_REG *dst;
-
+    MMX_REG *dst;
     MMX_ENTER();
 
     fetch_ea_32(fetchdat);
@@ -233,8 +225,7 @@ opPCMPEQD_a16(uint32_t fetchdat)
         return opPCMPEQD_xmm_a16(fetchdat);
 
     MMX_REG src;
-	MMX_REG *dst;
-
+    MMX_REG *dst;
     MMX_ENTER();
 
     fetch_ea_16(fetchdat);
@@ -257,8 +248,7 @@ opPCMPEQD_a32(uint32_t fetchdat)
         return opPCMPEQD_xmm_a32(fetchdat);
 
     MMX_REG src;
-	MMX_REG *dst;
-
+    MMX_REG *dst;
     MMX_ENTER();
 
     fetch_ea_32(fetchdat);
@@ -282,8 +272,7 @@ opPCMPGTD_a16(uint32_t fetchdat)
         return opPCMPGTD_xmm_a16(fetchdat);
 
     MMX_REG src;
-	MMX_REG *dst;
-
+    MMX_REG *dst;
     MMX_ENTER();
 
     fetch_ea_16(fetchdat);
@@ -306,8 +295,7 @@ opPCMPGTD_a32(uint32_t fetchdat)
         return opPCMPGTD_xmm_a32(fetchdat);
 
     MMX_REG src;
-	MMX_REG *dst;
-
+    MMX_REG *dst;
     MMX_ENTER();
 
     fetch_ea_32(fetchdat);

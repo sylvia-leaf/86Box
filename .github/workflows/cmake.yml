@@ -107,7 +107,6 @@ jobs:
             libslirp:p
             fluidsynth:p
             libvncserver:p
-            fluidsynth:p
             ${{ matrix.ui.packages }}
 
       - name: Checkout repository
@@ -353,10 +352,6 @@ jobs:
           -D QT=${{ matrix.ui.qt }}
 
       - name: Build
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
-          BUILD_WRAPPER_OUT_DIR: build_wrapper_output_directory # Directory where build-wrapper output will be placed
         run: |
           build-wrapper-linux-x86-64 --out-dir ${{ env.BUILD_WRAPPER_OUT_DIR }} cmake --build build
 
@@ -424,7 +419,6 @@ jobs:
           openal-soft
           fluidsynth
           libvncserver
-          fluidsynth
           ${{ matrix.ui.packages }}
 
       - name: Checkout repository

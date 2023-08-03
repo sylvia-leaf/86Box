@@ -932,6 +932,9 @@ opCMPPD_xmm_xmm_a16(uint32_t fetchdat)
                     cmp[1] = ~0;
                     break;
                 }
+
+            default:
+                break;
         }
         XMM[cpu_reg].q[0] = cmp[0];
         XMM[cpu_reg].q[1] = cmp[1];
@@ -1000,6 +1003,9 @@ opCMPPD_xmm_xmm_a16(uint32_t fetchdat)
                     cmp[1] = ~0;
                     break;
                 }
+
+            default:
+                break;
         }
         XMM[cpu_reg].q[0] = cmp[0];
         XMM[cpu_reg].q[1] = cmp[1];
@@ -1066,6 +1072,9 @@ opCMPPD_xmm_xmm_a32(uint32_t fetchdat)
                     cmp[1] = ~0;
                     break;
                 }
+
+            default:
+                break;
         }
         XMM[cpu_reg].q[0] = cmp[0];
         XMM[cpu_reg].q[1] = cmp[1];
@@ -1134,6 +1143,9 @@ opCMPPD_xmm_xmm_a32(uint32_t fetchdat)
                     cmp[1] = ~0;
                     break;
                 }
+
+            default:
+                break;
         }
         XMM[cpu_reg].q[0] = cmp[0];
         XMM[cpu_reg].q[1] = cmp[1];
@@ -1192,6 +1204,9 @@ opCMPSD_xmm_xmm_a16(uint32_t fetchdat)
                     cmp = ~0;
                     break;
                 }
+
+            default:
+                break;
         }
         XMM[cpu_reg].q[0] = cmp;
         CLOCK_CYCLES(1);
@@ -1247,6 +1262,9 @@ opCMPSD_xmm_xmm_a16(uint32_t fetchdat)
                     cmp = ~0;
                     break;
                 }
+
+            default:
+                break;
         }
         XMM[cpu_reg].q[0] = cmp;
         CLOCK_CYCLES(2);
@@ -1304,6 +1322,9 @@ opCMPSD_xmm_xmm_a32(uint32_t fetchdat)
                     cmp = ~0;
                     break;
                 }
+
+            default:
+                break;
         }
         XMM[cpu_reg].q[0] = cmp;
         CLOCK_CYCLES(1);
@@ -1359,6 +1380,9 @@ opCMPSD_xmm_xmm_a32(uint32_t fetchdat)
                     cmp = ~0;
                     break;
                 }
+
+            default:
+                break;
         }
         XMM[cpu_reg].q[0] = cmp;
         CLOCK_CYCLES(2);

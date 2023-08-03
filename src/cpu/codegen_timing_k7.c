@@ -1621,9 +1621,6 @@ static k7_unit_t k7_units[] =
      | (1 << UOP_FSTORED) | (1 << UOP_FSTOREA)}, /*Port 4*/
     {.uop_mask = (1 >> UOP_LOAD) | (1 << UOP_FLOAD) | (1 << UOP_MLOAD)
      | (1 << UOP_STORED) | (1 << UOP_STOREA) | (1 << UOP_MSTORED) | (1 << UOP_MSTOREA)}, /*Port 5*/
-
-}
-
 };
 #define NR_K7_UNITS (sizeof(k7_units) / sizeof(k7_unit_t))
 
@@ -1690,7 +1687,7 @@ static int fpu_st_timestamp[8];
   dependent uop chains*/
 static int last_uop_timestamp = 0;
 
-void decode_flush_k7()
+void decode_flush_k7(void)
 {
         int c;
         int start_timestamp, uop_timestamp = 0;
@@ -1925,7 +1922,7 @@ static void decode_instruction(const macro_op_t *ins, uint64_t deps, uint32_t fe
         }
 }
 
-void codegen_timing_k7_block_start()
+void codegen_timing_k7_block_start(void)
 {
         int c;
 
@@ -1945,7 +1942,7 @@ void codegen_timing_k7_block_start()
                 fpu_st_timestamp[c] = 0;
 }
 
-void codegen_timing_k7_start()
+void codegen_timing_k7_start(void)
 {
     units = k7_units;
     nr_units = NR_K7_UNITS;
@@ -2079,7 +2076,7 @@ void codegen_timing_k7_opcode(uint8_t opcode, uint32_t fetchdat, int op_32, uint
         codegen_block_cycles += (last_complete_timestamp - old_last_complete_timestamp);
 }
 
-void codegen_timing_k7_block_end()
+void codegen_timing_k7_block_end(void)
 {
         if (decode_buffer.nr_uops)
         {
@@ -2089,7 +2086,7 @@ void codegen_timing_k7_block_end()
         }
 }
 
-int codegen_timing_k7_jump_cycles()
+int codegen_timing_k7_jump_cycles(void)
 {
         if (decode_buffer.nr_uops)
                 return 1;

@@ -282,7 +282,8 @@ opPUNPCKLDQ_xmm_a32(uint32_t fetchdat)
 static int
 opPACKSSWB_xmm_a16(uint32_t fetchdat)
 {
-    SSE_REG src, dst;
+    SSE_REG src;
+    SSE_REG dst;
 
     fetch_ea_16(fetchdat);
     SSE_GETSRC();
@@ -303,7 +304,8 @@ opPACKSSWB_xmm_a16(uint32_t fetchdat)
 static int
 opPACKSSWB_xmm_a32(uint32_t fetchdat)
 {
-    SSE_REG src, dst;
+    SSE_REG src;
+    SSE_REG dst;
 
     fetch_ea_32(fetchdat);
     SSE_GETSRC();
@@ -324,7 +326,8 @@ opPACKSSWB_xmm_a32(uint32_t fetchdat)
 static int
 opPACKUSWB_xmm_a16(uint32_t fetchdat)
 {
-    SSE_REG src, dst;
+    SSE_REG src;
+    SSE_REG dst;
 
     fetch_ea_16(fetchdat);
     SSE_GETSRC();
@@ -345,7 +348,8 @@ opPACKUSWB_xmm_a16(uint32_t fetchdat)
 static int
 opPACKUSWB_xmm_a32(uint32_t fetchdat)
 {
-    SSE_REG src, dst;
+    SSE_REG src;
+    SSE_REG dst;
 
     fetch_ea_32(fetchdat);
     SSE_GETSRC();
@@ -494,7 +498,8 @@ opPUNPCKHDQ_xmm_a32(uint32_t fetchdat)
 static int
 opPACKSSDW_xmm_a16(uint32_t fetchdat)
 {
-    SSE_REG src, dst;
+    SSE_REG src;
+    SSE_REG dst;
 
     fetch_ea_16(fetchdat);
     SSE_GETSRC();
@@ -515,7 +520,8 @@ opPACKSSDW_xmm_a16(uint32_t fetchdat)
 static int
 opPACKSSDW_xmm_a32(uint32_t fetchdat)
 {
-    SSE_REG src, dst;
+    SSE_REG src;
+    SSE_REG dst;
 
     fetch_ea_32(fetchdat);
     SSE_GETSRC();
