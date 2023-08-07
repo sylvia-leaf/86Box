@@ -3373,6 +3373,10 @@ amd_k_invalid_rdmsr:
                     EAX = msr.ecx1a0 & 0xffffffff;
                     EDX = msr.ecx1a0 >> 32;
                     break;
+                case 0x1d9:
+                    EAX = msr.debug_ctl & 0xffffffff;
+                    EDX = msr.debug_ctl >> 32;
+                    break;
                 case 0x1e0:
                     EAX = msr.ecx1e0 & 0xffffffff;
                     EDX = msr.ecx1e0 >> 32;
@@ -4043,6 +4047,9 @@ amd_k_invalid_wrmsr:
                     break;
                 case 0x1a0:
                     msr.ecx1a0 = EAX | ((uint64_t) EDX << 32);
+                    break;
+                case 0x1d9:
+                    msr.debug_ctl = EAX | ((uint64_t) EDX << 32);
                     break;
                 case 0x1e0:
                     msr.ecx1e0 = EAX | ((uint64_t) EDX << 32);
