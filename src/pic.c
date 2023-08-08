@@ -60,7 +60,6 @@ static uint16_t latched_irqs       = 0x0000;
 static int shadow = 0;
 static int elcr_enabled = 0;
 static int tmr_inited = 0;
-static int latched = 0;
 static int pic_pci = 0;
 
 static void    (*update_pending)(void);
@@ -225,12 +224,7 @@ find_best_interrupt(pic_t *dev)
 static __inline void
 pic_update_pending_xt(void)
 {
-    if (find_best_interrupt(&pic) != -1) {
-        latched++;
-        if (latched == 1)
-            timer_on_auto(&pic_timer, 0.35);
-    } else if (latched == 0)
-        pic.int_pending = 0;
+    pic.int_pending = (find_best_interrupt(&pic) != -1);
 }
 
 static __inline void
@@ -244,15 +238,9 @@ pic_update_pending_at(void)
 }
 
 static void
-pic_callback(void *priv)
+pic_callback(UNUSED(void *priv))
 {
-    pic_t *dev = (pic_t *) priv;
-
-    dev->int_pending = 1;
-
-    latched--;
-    if (latched > 0)
-        timer_on_auto(&pic_timer, 0.35);
+    update_pending();
 }
 
 void
@@ -501,7 +489,10 @@ pic_write(uint16_t addr, uint8_t val, void *priv)
                 break;
             case STATE_NONE:
                 dev->imr = val;
-                update_pending();
+                if (is286)
+                    update_pending();
+                else
+                    timer_on_auto(&pic_timer, .0 * ((10000000.0 * (double) xt_cpu_multi) / (double) cpu_s->rspeed));
                 break;
 
             default:
