@@ -562,7 +562,7 @@ static void
     mem_mapping_add(&r100->linear_mapping, 0, 0, svga_read_linear, svga_readw_linear, svga_readl_linear, svga_write_linear, svga_writew_linear, svga_writel_linear, NULL, MEM_MAPPING_EXTERNAL, &r100->svga);
     mem_mapping_disable(&r100->linear_mapping);
 
-    r100->card = pci_add_card(PCI_ADD_AGP, r100_pci_read, r100_pci_write, r100, &r100->pci_slot);
+    pci_add_card(PCI_ADD_AGP, r100_pci_read, r100_pci_write, r100, &r100->pci_slot);
 
     r100->pci_regs[0x30] = 0x00;
     r100->pci_regs[0x32] = 0x0c;
