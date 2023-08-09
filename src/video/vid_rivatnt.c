@@ -59,6 +59,8 @@ typedef struct rivatnt_t
     uint8_t		read_bank, write_bank;
 
     uint8_t		pci_regs[256];
+    uint8_t     pci_slot;
+    uint8_t     irq_state;
     uint8_t		int_line;
 
     int			card;
@@ -301,9 +303,9 @@ rivatnt_pmc_recompute_intr(void *p)
     if(rivatnt->pcrtc.intr & rivatnt->pcrtc.intr_en) intr |= (1 << 24);
     if(rivatnt->pmc.intr & (1u << 31)) intr |= (1u << 31);
     
-    if((intr & 0x7fffffff) && (rivatnt->pmc.intr_en & 1)) pci_set_irq(rivatnt->card, PCI_INTA);
-    else if((intr & (1 << 31)) && (rivatnt->pmc.intr_en & 2)) pci_set_irq(rivatnt->card, PCI_INTA);
-    //else pci_clear_irq(rivatnt->card, PCI_INTA);
+    if((intr & 0x7fffffff) && (rivatnt->pmc.intr_en & 1)) pci_set_irq(rivatnt->pci_slot, PCI_INTA, &rivatnt->irq_state);
+    else if((intr & (1 << 31)) && (rivatnt->pmc.intr_en & 2)) pci_set_irq(rivatnt->pci_slot, PCI_INTA, &rivatnt->irq_state);
+    //else pci_clear_irq(rivatnt->pci_slot, PCI_INTA, &rivatnt->irq_state);
     return intr;
 }
 
@@ -375,7 +377,7 @@ rivatnt_pfifo_write(uint32_t addr, uint32_t val, void *p)
     {
         uint32_t tmp = rivatnt->pfifo.intr & ~val;
         rivatnt->pfifo.intr = tmp;
-        pci_clear_irq(rivatnt->card, PCI_INTA);
+        pci_clear_irq(rivatnt->pci_slot, PCI_INTA, &rivatnt->irq_state);
         if(!(rivatnt->pfifo.intr & 1)) rivatnt->pfifo.cache_error = 0;
         break;
     }
@@ -1148,7 +1150,7 @@ static void
 
     svga->vblank_start = rivatnt_vblank_start;
 
-    rivatnt->card = pci_add_card(PCI_ADD_VIDEO, rivatnt_pci_read, rivatnt_pci_write, rivatnt);
+    pci_add_card(PCI_ADD_VIDEO, rivatnt_pci_read, rivatnt_pci_write, rivatnt, &rivatnt->pci_slot);
 
     rivatnt->pci_regs[0x04] = 0x07;
     rivatnt->pci_regs[0x05] = 0x00;

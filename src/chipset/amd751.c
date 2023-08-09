@@ -38,6 +38,8 @@
 typedef struct amd751_t {
     uint8_t  pci_conf[256];
 
+    uint8_t pci_slot;
+
     agpgart_t *agpgart;
 } amd751_t;
 
@@ -200,7 +202,7 @@ amd751_init(const device_t *info)
     amd751_t *dev = (amd751_t *) malloc(sizeof(amd751_t));
     memset(dev, 0, sizeof(amd751_t));
 
-    pci_add_card(PCI_ADD_NORTHBRIDGE, amd751_read, amd751_write, dev);
+    pci_add_card(PCI_ADD_NORTHBRIDGE, amd751_read, amd751_write, dev, &dev->pci_slot);
 
     device_add(&amd751_agp_device);
 
