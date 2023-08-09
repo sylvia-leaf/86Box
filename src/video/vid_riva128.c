@@ -68,6 +68,8 @@ typedef struct riva128_t
 	uint8_t	read_bank, write_bank;
 
 	uint8_t	pci_regs[256];
+	uint8_t pci_slot;
+	uint8_t irq_state;
 	uint8_t	int_line;
 
 	int card;
@@ -533,9 +535,9 @@ riva128_pmc_recompute_intr(int send_intr, void *p)
 
 	/* Hardware interrupt */
 	if ((intr & 0x7fffffff) && (riva128->pmc.intr_en & 1))
-		pci_set_irq(riva128->card, PCI_INTA);
+		pci_set_irq(riva128->pci_slot, PCI_INTA, &riva128->irq_state);
 	else
-		pci_clear_irq(riva128->card, PCI_INTA);
+		pci_clear_irq(riva128->pci_slot, PCI_INTA, &riva128->irq_state);
 
 	return intr;
 }
@@ -549,7 +551,7 @@ riva128_pmc_read(uint32_t addr, void *p)
 	case 0x000000:
 		return 0x00030100; /* ID register. */
 	case 0x000100:
-		pci_clear_irq(riva128->card, PCI_INTA);
+		pci_clear_irq(riva128->pci_slot, PCI_INTA, &riva128->irq_state);
 		return riva128_pmc_recompute_intr(0, riva128);
 	case 0x000140:
 		return riva128->pmc.intr_en;
@@ -568,9 +570,9 @@ riva128_pmc_write(uint32_t addr, uint32_t val, void *p)
 	case 0x000100:
 		riva128->pmc.intr = val & (1u << 31);
 		if ((val & (1u << 31)) && (riva128->pmc.intr_en & 2))
-			pci_set_irq(riva128->card, PCI_INTA); /* sw interrupt */
+			pci_set_irq(riva128->pci_slot, PCI_INTA, &riva128->irq_state); /* sw interrupt */
 		/* else
-			pci_clear_irq(riva128->card, PCI_INTA); */
+			pci_clear_irq(riva128->pci_slot, PCI_INTA, &riva128->irq_state); */
 		break;
 	case 0x000140:
 		riva128->pmc.intr_en = val & 3;
@@ -745,7 +747,7 @@ riva128_pfifo_write(uint32_t addr, uint32_t val, void *p)
 	case 0x002100: {
 		uint32_t tmp = riva128->pfifo.intr & ~val;
 		riva128->pfifo.intr = tmp;
-		pci_clear_irq(riva128->card, PCI_INTA);
+		pci_clear_irq(riva128->pci_slot, PCI_INTA, &riva128->irq_state);
 		if (!(riva128->pfifo.intr & 1))
 			riva128->pfifo.cache_error = 0;
 		break;
@@ -952,7 +954,7 @@ riva128_ptimer_write(uint32_t addr, uint32_t val, void *p)
 	{
 	case 0x009100:
 		riva128->ptimer.intr &= ~val;
-		pci_clear_irq(riva128->card, PCI_INTA);
+		pci_clear_irq(riva128->pci_slot, PCI_INTA, &riva128->irq_state);
 		break;
 	case 0x009140:
 		riva128->ptimer.intr_en = val & 1;
@@ -1091,13 +1093,13 @@ riva128_pgraph_write(uint32_t addr, uint32_t val, void *p)
 		break;
 	case 0x400100:
 		riva128->pgraph.intr_0 &= ~val;
-		pci_clear_irq(riva128->card, PCI_INTA);
+		pci_clear_irq(riva128->pci_slot, PCI_INTA, &riva128->irq_state);
 		break;
 	case 0x400104:
 		riva128->pgraph.intr_1 &= ~val;
 		/* if (!riva128->pgraph.intr_1)
 			riva128->pgraph.intr_0 &= ~1; */
-		pci_clear_irq(riva128->card, PCI_INTA);
+		pci_clear_irq(riva128->pci_slot, PCI_INTA, &riva128->irq_state);
 		break;
 	case 0x400140:
 		riva128->pgraph.intr_en_0 = val & 0x11111111;
@@ -2681,8 +2683,8 @@ static void
 	io_sethandler(0x03c0, 0x0020, riva128_in, NULL, NULL, riva128_out,
 			NULL, NULL, riva128);
 
-	riva128->card = pci_add_card(PCI_ADD_VIDEO, riva128_pci_read,
-			riva128_pci_write, riva128);
+	pci_add_card(PCI_ADD_VIDEO, riva128_pci_read,
+			riva128_pci_write, riva128, &riva128->pci_slot);
 
 	riva128->pci_regs[0x04] = 0x08;
 	riva128->pci_regs[0x07] = 0x02;
