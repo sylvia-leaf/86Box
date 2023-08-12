@@ -111,6 +111,7 @@ static int             mouse_old_b;
 static const device_t *mouse_curr;
 static void           *mouse_priv;
 static int             mouse_nbut;
+static int             mouse_raw;
 static int (*mouse_dev_poll)(void *priv);
 static void (*mouse_poll_ex)(void) = NULL;
 
@@ -164,22 +165,55 @@ mouse_clear_buttons(void)
     mouse_delta_b  = 0x00;
 }
 
+static double
+mouse_scale_coord_x(double x, int mul)
+{
+    double ratio = 1.0;
+
+    if (!mouse_raw)        
+        ratio = ((double) monitors[0].mon_unscaled_size_x) /
+                (monitors[0].mon_res_x * plat_get_dpi());
+
+    if (mul)
+        x *= ratio;
+    else
+        x /= ratio;
+
+    return x;
+}
+
+static double
+mouse_scale_coord_y(double y, int mul)
+{
+    double ratio = 1.0;
+
+    if (!mouse_raw)        
+        ratio = ((double) monitors[0].mon_efscrnsz_y) /
+                (monitors[0].mon_res_y * plat_get_dpi());
+
+    if (mul)
+        y *= ratio;
+    else
+        y /= ratio;
+
+    return y;
+}
 void
 mouse_subtract_x(int *delta_x, int *o_x, int min, int max, int abs)
 {
-    double real_x = mouse_x;
+    double real_x = atomic_load(&mouse_x);
     double smax_x;
     double rsmin_x;
     double smin_x;
 
-    rsmin_x = (double) min;
+    rsmin_x = mouse_scale_coord_x(min, 0);
     if (abs) {
-        smax_x = (double) max + ABS(rsmin_x);
+        smax_x = mouse_scale_coord_x(max, 0) + ABS(rsmin_x);
         max += ABS(min);
         real_x += rsmin_x;
         smin_x = 0;
     } else {
-        smax_x = (double) max;
+        smax_x = mouse_scale_coord_x(max, 0);
         smin_x = rsmin_x;
     }
 
@@ -188,13 +222,22 @@ mouse_subtract_x(int *delta_x, int *o_x, int min, int max, int abs)
         *o_x = 1;
 
     if (real_x > smax_x) {
-        *delta_x = abs ? (int) real_x : max;
+        if (abs)
+            *delta_x = (int) mouse_scale_coord_x(real_x, 1);
+        else
+            *delta_x = max;
         real_x -= smax_x;
     } else if (real_x < smin_x) {
-        *delta_x = abs ? (int) real_x : min;
+        if (abs)
+            *delta_x = (int) mouse_scale_coord_x(real_x, 1);
+         else
+            *delta_x = min;
         real_x += ABS(smin_x);
     } else {
-        *delta_x = (int) real_x;
+        if (abs)
+            *delta_x = (int) mouse_scale_coord_x(real_x, 1);
+        else
+            *delta_x = (int) mouse_scale_coord_x(real_x, 1);
         real_x = 0.0;
         if (o_x != NULL)
             *o_x = 0;
@@ -203,7 +246,7 @@ mouse_subtract_x(int *delta_x, int *o_x, int min, int max, int abs)
     if (abs)
         real_x -= rsmin_x;
 
-    mouse_x = real_x;
+    atomic_store(&mouse_x, real_x);
 }
 
 /* It appears all host platforms give us y in the Microsoft format
@@ -212,7 +255,7 @@ mouse_subtract_x(int *delta_x, int *o_x, int min, int max, int abs)
 void
 mouse_subtract_y(int *delta_y, int *o_y, int min, int max, int invert, int abs)
 {
-    double real_y = mouse_y;
+    double real_y = atomic_load(&mouse_y);
     double smax_y;
     double rsmin_y;
     double smin_y;
@@ -220,14 +263,14 @@ mouse_subtract_y(int *delta_y, int *o_y, int min, int max, int invert, int abs)
     if (invert)
         real_y = -real_y;
 
-    rsmin_y = (double) min;
+    rsmin_y = mouse_scale_coord_y(min, 0);
     if (abs) {
-        smax_y = (double) max + ABS(rsmin_y);
+        smax_y = mouse_scale_coord_y(max, 0) + ABS(rsmin_y);
         max += ABS(min);
         real_y += rsmin_y;
         smin_y = 0;
     } else {
-        smax_y = (double) max;
+        smax_y = mouse_scale_coord_y(max, 0);
         smin_y = rsmin_y;
     }
 
@@ -236,13 +279,22 @@ mouse_subtract_y(int *delta_y, int *o_y, int min, int max, int invert, int abs)
         *o_y = 1;
 
     if (real_y > smax_y) {
-        *delta_y = abs ? (int) real_y : max;
+        if (abs)
+            *delta_y = (int) mouse_scale_coord_y(real_y, 1);
+        else
+            *delta_y = max;
         real_y -= smax_y;
     } else if (real_y < smin_y) {
-        *delta_y = abs ? (int) real_y : min;
+        if (abs)
+            *delta_y = (int) mouse_scale_coord_y(real_y, 1);
+         else
+            *delta_y = min;
         real_y += ABS(smin_y);
     } else {
-        *delta_y = (int) real_y;
+        if (abs)
+            *delta_y = (int) mouse_scale_coord_y(real_y, 1);
+        else
+            *delta_y = (int) mouse_scale_coord_y(real_y, 1);
         real_y = 0.0;
         if (o_y != NULL)
             *o_y = 0;
@@ -254,7 +306,7 @@ mouse_subtract_y(int *delta_y, int *o_y, int min, int max, int invert, int abs)
     if (invert)
         real_y = -real_y;
 
-    mouse_y = real_y;
+    atomic_store(&mouse_y, real_y);
 }
 
 /* It appears all host platforms give us y in the Microsoft format
@@ -272,7 +324,8 @@ int
 mouse_moved(void)
 {
     /* Convert them to integer so we treat < 1.0 and > -1.0 as 0. */
-    int ret = (((int) floor(mouse_x) != 0) || ((int) floor(mouse_y) != 0));
+    int ret = (((int) floor(atomic_load(&mouse_x)) != 0) ||
+               ((int) floor(atomic_load(&mouse_y)) != 0));
 
     return ret;
 }
@@ -280,14 +333,16 @@ mouse_moved(void)
 int
 mouse_state_changed(void)
 {
+    int b;
     int b_mask    = (1 << mouse_nbut) - 1;
     int wheel     = (mouse_nbut >= 4);
     int ret;
 
-    mouse_delta_b = (mouse_buttons ^ mouse_old_b);
-    mouse_old_b   = mouse_buttons;
+    b = atomic_load(&mouse_buttons);
+    mouse_delta_b = (b ^ mouse_old_b);
+    mouse_old_b   = b;
 
-    ret = mouse_moved() || ((mouse_z != 0) && wheel) || (mouse_delta_b & b_mask);
+    ret = mouse_moved() || ((atomic_load(&mouse_z) != 0) && wheel) || (mouse_delta_b & b_mask);
 
     return ret;
 }
@@ -314,48 +369,75 @@ mouse_timer_poll(UNUSED(void *priv))
 #endif
 }
 
-void
-mouse_scale(int x, int y)
+static void
+atomic_double_add(_Atomic double *var, double val)
 {
-    double ratio_x = (double) monitors[0].mon_unscaled_size_x / (double) monitors[0].mon_res_x;
-    double ratio_y = (double) monitors[0].mon_efscrnsz_y / (double) monitors[0].mon_res_y;
+    double temp = atomic_load(var);
 
-    mouse_x += (((double) x) * mouse_sensitivity * ratio_x);
-    mouse_y += (((double) y) * mouse_sensitivity * ratio_y);
+    temp += val;
+
+    atomic_store(var, temp);
+}
+
+void
+mouse_scale_fx(double x)
+{
+    atomic_double_add(&mouse_x, ((double) x) * mouse_sensitivity);
+}
+
+void
+mouse_scale_fy(double y)
+{
+    atomic_double_add(&mouse_y, ((double) y) * mouse_sensitivity);
 }
 
 void
 mouse_scale_x(int x)
 {
-    double ratio_x = (double) monitors[0].mon_unscaled_size_x / (double) monitors[0].mon_res_x;
-
-    mouse_x += (((double) x) * mouse_sensitivity * ratio_x);
+    atomic_double_add(&mouse_x, ((double) x) * mouse_sensitivity);
 }
 
 void
 mouse_scale_y(int y)
 {
-    double ratio_y = (double) monitors[0].mon_efscrnsz_y / (double) monitors[0].mon_res_y;
+    atomic_double_add(&mouse_y, ((double) y) * mouse_sensitivity);
+}
 
-    mouse_y += (((double) y) * mouse_sensitivity * ratio_y);
+void
+mouse_scalef(double x, double y)
+{
+    pclog("DPI = %lf (%lfx%lf)\n", plat_get_dpi(), monitors[0].mon_res_x, monitors[0].mon_res_y);
+
+    mouse_scale_fx(x);
+    mouse_scale_fy(y);
+}
+
+void
+mouse_scale(int x, int y)
+{
+    pclog("DPI = %lf (%lfx%lf)\n", plat_get_dpi(), monitors[0].mon_res_x, monitors[0].mon_res_y);
+
+    mouse_scale_x(x);
+    mouse_scale_y(y);
 }
 
 void
 mouse_set_z(int z)
 {
-    mouse_z += z;
+    atomic_fetch_add(&mouse_z, z);
 }
 
 void
 mouse_clear_z(void)
 {
-    mouse_z = 0;
+    atomic_store(&mouse_z, 0);
 }
 
 void
 mouse_subtract_z(int *delta_z, int min, int max, int invert)
 {
-    int real_z = invert ? -mouse_z : mouse_z;
+    int z = atomic_load(&mouse_z);
+    int real_z = invert ? -z : z;
 
     if (mouse_z > max) {
         *delta_z = max;
@@ -365,23 +447,22 @@ mouse_subtract_z(int *delta_z, int min, int max, int invert)
         real_z += ABS(min);
     } else {
         *delta_z = mouse_z;
-        mouse_clear_z();
         real_z = 0;
     }
 
-    mouse_z = invert ? -real_z : real_z;
+    atomic_store(&mouse_z, invert ? -real_z : real_z);
 }
 
 void
 mouse_set_buttons_ex(int b)
 {
-    mouse_buttons = b;
+    atomic_store(&mouse_buttons, b);
 }
 
 int
 mouse_get_buttons_ex(void)
 {
-    return mouse_buttons;
+    return atomic_load(&mouse_buttons);
 }
 
 void
@@ -494,6 +575,12 @@ int
 mouse_get_ndev(void)
 {
     return ((sizeof(mouse_devices) / sizeof(mouse_t)) - 1);
+}
+
+void
+mouse_set_raw(int raw)
+{
+    mouse_raw = raw;
 }
 
 void

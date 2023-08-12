@@ -5,7 +5,7 @@ opPUNPCKLDQ_a16(uint32_t fetchdat)
         return opPUNPCKLDQ_xmm_a16(fetchdat);
 
     uint32_t usrc;
-    MMX_REG src;
+    MMX_REG  src;
     MMX_REG *dst;
     MMX_ENTER();
 
@@ -38,7 +38,7 @@ opPUNPCKLDQ_a32(uint32_t fetchdat)
         return opPUNPCKLDQ_xmm_a32(fetchdat);
 
     uint32_t usrc;
-    MMX_REG src;
+    MMX_REG  src;
     MMX_REG *dst;
     MMX_ENTER();
 
@@ -458,12 +458,12 @@ opPACKSSDW_a16(uint32_t fetchdat)
 
     MMX_REG src;
     MMX_REG *dst;
-    MMX_REG dst2;
+    MMX_REG  dst2;
     MMX_ENTER();
 
     fetch_ea_16(fetchdat);
 
-    dst = MMX_GETREGP(cpu_reg);
+    dst  = MMX_GETREGP(cpu_reg);
     dst2 = *dst;
 
     MMX_GETSRC();
@@ -486,12 +486,12 @@ opPACKSSDW_a32(uint32_t fetchdat)
 
     MMX_REG src;
     MMX_REG *dst;
-    MMX_REG dst2;
+    MMX_REG  dst2;
     MMX_ENTER();
 
     fetch_ea_32(fetchdat);
 
-    dst = MMX_GETREGP(cpu_reg);
+    dst  = MMX_GETREGP(cpu_reg);
     dst2 = *dst;
 
     MMX_GETSRC();

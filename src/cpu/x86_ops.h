@@ -201,7 +201,6 @@ extern const OpFn dynarec_ops_3DNOWE[256];
 extern void x86_setopcodes(const OpFn *opcodes, const OpFn *opcodes_0f);
 #endif
 
-
 extern const OpFn *x86_opcodes;
 extern const OpFn *x86_opcodes_0f;
 extern const OpFn *x86_opcodes_d8_a16;
@@ -352,7 +351,6 @@ extern const OpFn ops_REPNE[1024];
 extern const OpFn ops_3DNOW[256];
 extern const OpFn ops_3DNOWE[256];
 
-
 extern void x86_setopcodes_2386(const OpFn *opcodes, const OpFn *opcodes_0f);
 
 extern const OpFn *x86_2386_opcodes;
@@ -457,7 +455,6 @@ extern const OpFn ops_2386_nofpu_a32[256];
 extern const OpFn ops_2386_REPE[1024];
 extern const OpFn ops_2386_REPNE[1024];
 extern const OpFn ops_2386_3DNOW[256];
-
 
 #define C0 (1 << 8)
 #define C1 (1 << 9)
