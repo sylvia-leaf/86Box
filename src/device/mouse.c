@@ -156,7 +156,7 @@ mouse_clear_coords(void)
     mouse_z = 0;
 }
 
-static void
+void
 mouse_clear_buttons(void)
 {
     mouse_buttons  = 0x00;
@@ -171,8 +171,7 @@ mouse_scale_coord_x(double x, int mul)
     double ratio = 1.0;
 
     if (!mouse_raw)        
-        ratio = ((double) monitors[0].mon_unscaled_size_x) /
-                (monitors[0].mon_res_x * plat_get_dpi());
+        ratio = ((double) monitors[0].mon_unscaled_size_x) / monitors[0].mon_res_x;
 
     if (mul)
         x *= ratio;
@@ -188,8 +187,7 @@ mouse_scale_coord_y(double y, int mul)
     double ratio = 1.0;
 
     if (!mouse_raw)        
-        ratio = ((double) monitors[0].mon_efscrnsz_y) /
-                (monitors[0].mon_res_y * plat_get_dpi());
+        ratio = ((double) monitors[0].mon_efscrnsz_y) / monitors[0].mon_res_y;
 
     if (mul)
         y *= ratio;
@@ -198,6 +196,7 @@ mouse_scale_coord_y(double y, int mul)
 
     return y;
 }
+
 void
 mouse_subtract_x(int *delta_x, int *o_x, int min, int max, int abs)
 {
@@ -205,11 +204,13 @@ mouse_subtract_x(int *delta_x, int *o_x, int min, int max, int abs)
     double smax_x;
     double rsmin_x;
     double smin_x;
+    int    ds_x;
+    int    scaled_x;
 
     rsmin_x = mouse_scale_coord_x(min, 0);
     if (abs) {
         smax_x = mouse_scale_coord_x(max, 0) + ABS(rsmin_x);
-        max += ABS(min);
+        max += ABSD(min);
         real_x += rsmin_x;
         smin_x = 0;
     } else {
@@ -217,28 +218,39 @@ mouse_subtract_x(int *delta_x, int *o_x, int min, int max, int abs)
         smin_x = rsmin_x;
     }
 
-    /* Default the X and Y overflows to 1. */
+    smax_x = floor(smax_x);
+    smin_x = ceil(smin_x);
+
+    /* Default the X overflow to 1. */
     if (o_x != NULL)
         *o_x = 1;
 
+    ds_x = mouse_scale_coord_x(real_x, 1);
+
+    if (ds_x >= 0.0)
+        scaled_x = (int) floor(mouse_scale_coord_x(real_x, 1));
+    else
+        scaled_x = (int) ceil(mouse_scale_coord_x(real_x, 1));
+
     if (real_x > smax_x) {
-        if (abs)
-            *delta_x = (int) mouse_scale_coord_x(real_x, 1);
-        else
+        if (abs) {
+            *delta_x = scaled_x;
+            real_x -= mouse_scale_coord_x((double) scaled_x, 0);
+        } else {
             *delta_x = max;
-        real_x -= smax_x;
+            real_x -= smax_x;
+       }
     } else if (real_x < smin_x) {
-        if (abs)
-            *delta_x = (int) mouse_scale_coord_x(real_x, 1);
-         else
+        if (abs) {
+            *delta_x = scaled_x;
+            real_x -= mouse_scale_coord_x((double) scaled_x, 0);
+        } else {
             *delta_x = min;
-        real_x += ABS(smin_x);
+            real_x += ABSD(smin_x);
+        }
     } else {
-        if (abs)
-            *delta_x = (int) mouse_scale_coord_x(real_x, 1);
-        else
-            *delta_x = (int) mouse_scale_coord_x(real_x, 1);
-        real_x = 0.0;
+        *delta_x = scaled_x;
+        real_x -= mouse_scale_coord_x((double) scaled_x, 0);
         if (o_x != NULL)
             *o_x = 0;
     }
@@ -259,6 +271,8 @@ mouse_subtract_y(int *delta_y, int *o_y, int min, int max, int invert, int abs)
     double smax_y;
     double rsmin_y;
     double smin_y;
+    int    ds_y;
+    int    scaled_y;
 
     if (invert)
         real_y = -real_y;
@@ -266,7 +280,7 @@ mouse_subtract_y(int *delta_y, int *o_y, int min, int max, int invert, int abs)
     rsmin_y = mouse_scale_coord_y(min, 0);
     if (abs) {
         smax_y = mouse_scale_coord_y(max, 0) + ABS(rsmin_y);
-        max += ABS(min);
+        max += ABSD(min);
         real_y += rsmin_y;
         smin_y = 0;
     } else {
@@ -274,28 +288,39 @@ mouse_subtract_y(int *delta_y, int *o_y, int min, int max, int invert, int abs)
         smin_y = rsmin_y;
     }
 
-    /* Default the X and Y overflows to 1. */
+    smax_y = floor(smax_y);
+    smin_y = ceil(smin_y);
+
+    /* Default Y overflow to 1. */
     if (o_y != NULL)
         *o_y = 1;
 
+    ds_y = mouse_scale_coord_x(real_y, 1);
+
+    if (ds_y >= 0.0)
+        scaled_y = (int) floor(mouse_scale_coord_x(real_y, 1));
+    else
+        scaled_y = (int) ceil(mouse_scale_coord_x(real_y, 1));
+
     if (real_y > smax_y) {
-        if (abs)
-            *delta_y = (int) mouse_scale_coord_y(real_y, 1);
-        else
+        if (abs) {
+            *delta_y = scaled_y;
+            real_y -= mouse_scale_coord_y((double) scaled_y, 0);
+        } else {
             *delta_y = max;
-        real_y -= smax_y;
+            real_y -= smax_y;
+       }
     } else if (real_y < smin_y) {
-        if (abs)
-            *delta_y = (int) mouse_scale_coord_y(real_y, 1);
-         else
+        if (abs) {
+            *delta_y = scaled_y;
+            real_y -= mouse_scale_coord_y((double) scaled_y, 0);
+        } else {
             *delta_y = min;
-        real_y += ABS(smin_y);
+            real_y += ABSD(smin_y);
+        }
     } else {
-        if (abs)
-            *delta_y = (int) mouse_scale_coord_y(real_y, 1);
-        else
-            *delta_y = (int) mouse_scale_coord_y(real_y, 1);
-        real_y = 0.0;
+        *delta_y = scaled_y;
+        real_y -= mouse_scale_coord_y((double) scaled_y, 0);
         if (o_y != NULL)
             *o_y = 0;
     }
@@ -323,9 +348,11 @@ mouse_subtract_coords(int *delta_x, int *delta_y, int *o_x, int *o_y,
 int
 mouse_moved(void)
 {
+    int moved_x = !!((int) floor(ABSD(mouse_scale_coord_x(atomic_load(&mouse_x), 1))));
+    int moved_y = !!((int) floor(ABSD(mouse_scale_coord_y(atomic_load(&mouse_y), 1))));
+
     /* Convert them to integer so we treat < 1.0 and > -1.0 as 0. */
-    int ret = (((int) floor(atomic_load(&mouse_x)) != 0) ||
-               ((int) floor(atomic_load(&mouse_y)) != 0));
+    int ret = (moved_x || moved_y);
 
     return ret;
 }
@@ -406,8 +433,6 @@ mouse_scale_y(int y)
 void
 mouse_scalef(double x, double y)
 {
-    pclog("DPI = %lf (%lfx%lf)\n", plat_get_dpi(), monitors[0].mon_res_x, monitors[0].mon_res_y);
-
     mouse_scale_fx(x);
     mouse_scale_fy(y);
 }
@@ -415,8 +440,6 @@ mouse_scalef(double x, double y)
 void
 mouse_scale(int x, int y)
 {
-    pclog("DPI = %lf (%lfx%lf)\n", plat_get_dpi(), monitors[0].mon_res_x, monitors[0].mon_res_y);
-
     mouse_scale_x(x);
     mouse_scale_y(y);
 }
