@@ -2011,110 +2011,51 @@ opCMPSS_xmm_xmm_a32(uint32_t fetchdat)
 static int
 opPMINUB_mm_mm_a16(uint32_t fetchdat)
 {
+    MMX_REG src;
+    MMX_REG *dst;
     MMX_ENTER();
     fetch_ea_16(fetchdat);
-    if (cpu_mod == 3) {
-        cpu_state.MM[cpu_reg].b[0] = fmin(cpu_state.MM[cpu_reg].b[0], cpu_state.MM[cpu_rm].b[0]);
-        cpu_state.MM[cpu_reg].b[1] = fmin(cpu_state.MM[cpu_reg].b[1], cpu_state.MM[cpu_rm].b[1]);
-        cpu_state.MM[cpu_reg].b[2] = fmin(cpu_state.MM[cpu_reg].b[2], cpu_state.MM[cpu_rm].b[2]);
-        cpu_state.MM[cpu_reg].b[3] = fmin(cpu_state.MM[cpu_reg].b[3], cpu_state.MM[cpu_rm].b[3]);
-        cpu_state.MM[cpu_reg].b[4] = fmin(cpu_state.MM[cpu_reg].b[4], cpu_state.MM[cpu_rm].b[4]);
-        cpu_state.MM[cpu_reg].b[5] = fmin(cpu_state.MM[cpu_reg].b[5], cpu_state.MM[cpu_rm].b[5]);
-        cpu_state.MM[cpu_reg].b[6] = fmin(cpu_state.MM[cpu_reg].b[6], cpu_state.MM[cpu_rm].b[6]);
-        cpu_state.MM[cpu_reg].b[7] = fmin(cpu_state.MM[cpu_reg].b[7], cpu_state.MM[cpu_rm].b[7]);
-        CLOCK_CYCLES(1);
-    } else {
-        uint8_t src[8];
 
-        SEG_CHECK_READ(cpu_state.ea_seg);
-        src[0] = readmemb(easeg, cpu_state.eaaddr);
-        if (cpu_state.abrt)
-            return 1;
-        src[1] = readmemb(easeg, cpu_state.eaaddr + 1);
-        if (cpu_state.abrt)
-            return 1;
-        src[2] = readmemb(easeg, cpu_state.eaaddr + 2);
-        if (cpu_state.abrt)
-            return 1;
-        src[3] = readmemb(easeg, cpu_state.eaaddr + 3);
-        if (cpu_state.abrt)
-            return 1;
-        src[4] = readmemb(easeg, cpu_state.eaaddr + 4);
-        if (cpu_state.abrt)
-            return 1;
-        src[5] = readmemb(easeg, cpu_state.eaaddr + 5);
-        if (cpu_state.abrt)
-            return 1;
-        src[6] = readmemb(easeg, cpu_state.eaaddr + 6);
-        if (cpu_state.abrt)
-            return 1;
-        src[7] = readmemb(easeg, cpu_state.eaaddr + 7);
-        if (cpu_state.abrt)
-            return 1;
-        cpu_state.MM[cpu_reg].b[0] = fmin(cpu_state.MM[cpu_reg].b[0], src[0]);
-        cpu_state.MM[cpu_reg].b[1] = fmin(cpu_state.MM[cpu_reg].b[1], src[1]);
-        cpu_state.MM[cpu_reg].b[2] = fmin(cpu_state.MM[cpu_reg].b[2], src[2]);
-        cpu_state.MM[cpu_reg].b[3] = fmin(cpu_state.MM[cpu_reg].b[3], src[3]);
-        cpu_state.MM[cpu_reg].b[4] = fmin(cpu_state.MM[cpu_reg].b[4], src[4]);
-        cpu_state.MM[cpu_reg].b[5] = fmin(cpu_state.MM[cpu_reg].b[5], src[5]);
-        cpu_state.MM[cpu_reg].b[6] = fmin(cpu_state.MM[cpu_reg].b[6], src[6]);
-        cpu_state.MM[cpu_reg].b[7] = fmin(cpu_state.MM[cpu_reg].b[7], src[7]);
-    }
+    dst = MMX_GETREGP(cpu_reg);
+
+    MMX_GETSRC();
+
+    dst->b[0] = fmin(dst->b[0], src.b[0]);
+    dst->b[1] = fmin(dst->b[1], src.b[1]);
+    dst->b[2] = fmin(dst->b[2], src.b[2]);
+    dst->b[3] = fmin(dst->b[3], src.b[3]);
+    dst->b[4] = fmin(dst->b[4], src.b[4]);
+    dst->b[5] = fmin(dst->b[5], src.b[5]);
+    dst->b[6] = fmin(dst->b[6], src.b[6]);
+    dst->b[7] = fmin(dst->b[7], src.b[7]);
+
+    MMX_SETEXP(cpu_reg);
+    CLOCK_CYCLES(1);
     return 0;
 }
 
 static int
 opPMINUB_mm_mm_a32(uint32_t fetchdat)
 {
+    MMX_REG src;
+    MMX_REG *dst;
     MMX_ENTER();
     fetch_ea_32(fetchdat);
-    if (cpu_mod == 3) {
-        cpu_state.MM[cpu_reg].b[0] = fmin(cpu_state.MM[cpu_reg].b[0], cpu_state.MM[cpu_rm].b[0]);
-        cpu_state.MM[cpu_reg].b[1] = fmin(cpu_state.MM[cpu_reg].b[1], cpu_state.MM[cpu_rm].b[1]);
-        cpu_state.MM[cpu_reg].b[2] = fmin(cpu_state.MM[cpu_reg].b[2], cpu_state.MM[cpu_rm].b[2]);
-        cpu_state.MM[cpu_reg].b[3] = fmin(cpu_state.MM[cpu_reg].b[3], cpu_state.MM[cpu_rm].b[3]);
-        cpu_state.MM[cpu_reg].b[4] = fmin(cpu_state.MM[cpu_reg].b[4], cpu_state.MM[cpu_rm].b[4]);
-        cpu_state.MM[cpu_reg].b[5] = fmin(cpu_state.MM[cpu_reg].b[5], cpu_state.MM[cpu_rm].b[5]);
-        cpu_state.MM[cpu_reg].b[6] = fmin(cpu_state.MM[cpu_reg].b[6], cpu_state.MM[cpu_rm].b[6]);
-        cpu_state.MM[cpu_reg].b[7] = fmin(cpu_state.MM[cpu_reg].b[7], cpu_state.MM[cpu_rm].b[7]);
-        CLOCK_CYCLES(1);
-    } else {
-        uint8_t src[8];
+    dst = MMX_GETREGP(cpu_reg);
 
-        SEG_CHECK_READ(cpu_state.ea_seg);
-        src[0] = readmemb(easeg, cpu_state.eaaddr);
-        if (cpu_state.abrt)
-            return 1;
-        src[1] = readmemb(easeg, cpu_state.eaaddr + 1);
-        if (cpu_state.abrt)
-            return 1;
-        src[2] = readmemb(easeg, cpu_state.eaaddr + 2);
-        if (cpu_state.abrt)
-            return 1;
-        src[3] = readmemb(easeg, cpu_state.eaaddr + 3);
-        if (cpu_state.abrt)
-            return 1;
-        src[4] = readmemb(easeg, cpu_state.eaaddr + 4);
-        if (cpu_state.abrt)
-            return 1;
-        src[5] = readmemb(easeg, cpu_state.eaaddr + 5);
-        if (cpu_state.abrt)
-            return 1;
-        src[6] = readmemb(easeg, cpu_state.eaaddr + 6);
-        if (cpu_state.abrt)
-            return 1;
-        src[7] = readmemb(easeg, cpu_state.eaaddr + 7);
-        if (cpu_state.abrt)
-            return 1;
-        cpu_state.MM[cpu_reg].b[0] = fmin(cpu_state.MM[cpu_reg].b[0], src[0]);
-        cpu_state.MM[cpu_reg].b[1] = fmin(cpu_state.MM[cpu_reg].b[1], src[1]);
-        cpu_state.MM[cpu_reg].b[2] = fmin(cpu_state.MM[cpu_reg].b[2], src[2]);
-        cpu_state.MM[cpu_reg].b[3] = fmin(cpu_state.MM[cpu_reg].b[3], src[3]);
-        cpu_state.MM[cpu_reg].b[4] = fmin(cpu_state.MM[cpu_reg].b[4], src[4]);
-        cpu_state.MM[cpu_reg].b[5] = fmin(cpu_state.MM[cpu_reg].b[5], src[5]);
-        cpu_state.MM[cpu_reg].b[6] = fmin(cpu_state.MM[cpu_reg].b[6], src[6]);
-        cpu_state.MM[cpu_reg].b[7] = fmin(cpu_state.MM[cpu_reg].b[7], src[7]);
-    }
+    MMX_GETSRC();
+
+    dst->b[0] = fmin(dst->b[0], src.b[0]);
+    dst->b[1] = fmin(dst->b[1], src.b[1]);
+    dst->b[2] = fmin(dst->b[2], src.b[2]);
+    dst->b[3] = fmin(dst->b[3], src.b[3]);
+    dst->b[4] = fmin(dst->b[4], src.b[4]);
+    dst->b[5] = fmin(dst->b[5], src.b[5]);
+    dst->b[6] = fmin(dst->b[6], src.b[6]);
+    dst->b[7] = fmin(dst->b[7], src.b[7]);
+
+    MMX_SETEXP(cpu_reg);
+    CLOCK_CYCLES(1);
     return 0;
 }
 
@@ -2327,110 +2268,52 @@ opPMINUB_a32(uint32_t fetchdat)
 static int
 opPMAXUB_mm_mm_a16(uint32_t fetchdat)
 {
+    MMX_REG src;
+    MMX_REG *dst;
     MMX_ENTER();
     fetch_ea_16(fetchdat);
-    if (cpu_mod == 3) {
-        cpu_state.MM[cpu_reg].b[0] = fmax(cpu_state.MM[cpu_reg].b[0], cpu_state.MM[cpu_rm].b[0]);
-        cpu_state.MM[cpu_reg].b[1] = fmax(cpu_state.MM[cpu_reg].b[1], cpu_state.MM[cpu_rm].b[1]);
-        cpu_state.MM[cpu_reg].b[2] = fmax(cpu_state.MM[cpu_reg].b[2], cpu_state.MM[cpu_rm].b[2]);
-        cpu_state.MM[cpu_reg].b[3] = fmax(cpu_state.MM[cpu_reg].b[3], cpu_state.MM[cpu_rm].b[3]);
-        cpu_state.MM[cpu_reg].b[4] = fmax(cpu_state.MM[cpu_reg].b[4], cpu_state.MM[cpu_rm].b[4]);
-        cpu_state.MM[cpu_reg].b[5] = fmax(cpu_state.MM[cpu_reg].b[5], cpu_state.MM[cpu_rm].b[5]);
-        cpu_state.MM[cpu_reg].b[6] = fmax(cpu_state.MM[cpu_reg].b[6], cpu_state.MM[cpu_rm].b[6]);
-        cpu_state.MM[cpu_reg].b[7] = fmax(cpu_state.MM[cpu_reg].b[7], cpu_state.MM[cpu_rm].b[7]);
-        CLOCK_CYCLES(1);
-    } else {
-        uint8_t src[8];
 
-        SEG_CHECK_READ(cpu_state.ea_seg);
-        src[0] = readmemb(easeg, cpu_state.eaaddr);
-        if (cpu_state.abrt)
-            return 1;
-        src[1] = readmemb(easeg, cpu_state.eaaddr + 1);
-        if (cpu_state.abrt)
-            return 1;
-        src[2] = readmemb(easeg, cpu_state.eaaddr + 2);
-        if (cpu_state.abrt)
-            return 1;
-        src[3] = readmemb(easeg, cpu_state.eaaddr + 3);
-        if (cpu_state.abrt)
-            return 1;
-        src[4] = readmemb(easeg, cpu_state.eaaddr + 4);
-        if (cpu_state.abrt)
-            return 1;
-        src[5] = readmemb(easeg, cpu_state.eaaddr + 5);
-        if (cpu_state.abrt)
-            return 1;
-        src[6] = readmemb(easeg, cpu_state.eaaddr + 6);
-        if (cpu_state.abrt)
-            return 1;
-        src[7] = readmemb(easeg, cpu_state.eaaddr + 7);
-        if (cpu_state.abrt)
-            return 1;
-        cpu_state.MM[cpu_reg].b[0] = fmax(cpu_state.MM[cpu_reg].b[0], src[0]);
-        cpu_state.MM[cpu_reg].b[1] = fmax(cpu_state.MM[cpu_reg].b[1], src[1]);
-        cpu_state.MM[cpu_reg].b[2] = fmax(cpu_state.MM[cpu_reg].b[2], src[2]);
-        cpu_state.MM[cpu_reg].b[3] = fmax(cpu_state.MM[cpu_reg].b[3], src[3]);
-        cpu_state.MM[cpu_reg].b[4] = fmax(cpu_state.MM[cpu_reg].b[4], src[4]);
-        cpu_state.MM[cpu_reg].b[5] = fmax(cpu_state.MM[cpu_reg].b[5], src[5]);
-        cpu_state.MM[cpu_reg].b[6] = fmax(cpu_state.MM[cpu_reg].b[6], src[6]);
-        cpu_state.MM[cpu_reg].b[7] = fmax(cpu_state.MM[cpu_reg].b[7], src[7]);
-    }
+    dst = MMX_GETREGP(cpu_reg);
+
+    MMX_GETSRC();
+
+    dst->b[0] = fmax(dst->b[0], src.b[0]);
+    dst->b[1] = fmax(dst->b[1], src.b[1]);
+    dst->b[2] = fmax(dst->b[2], src.b[2]);
+    dst->b[3] = fmax(dst->b[3], src.b[3]);
+    dst->b[4] = fmax(dst->b[4], src.b[4]);
+    dst->b[5] = fmax(dst->b[5], src.b[5]);
+    dst->b[6] = fmax(dst->b[6], src.b[6]);
+    dst->b[7] = fmax(dst->b[7], src.b[7]);
+
+    MMX_SETEXP(cpu_reg);
+    CLOCK_CYCLES(1);
     return 0;
 }
 
 static int
 opPMAXUB_mm_mm_a32(uint32_t fetchdat)
 {
+    MMX_REG src;
+    MMX_REG *dst;
     MMX_ENTER();
     fetch_ea_32(fetchdat);
-    if (cpu_mod == 3) {
-        cpu_state.MM[cpu_reg].b[0] = fmax(cpu_state.MM[cpu_reg].b[0], cpu_state.MM[cpu_rm].b[0]);
-        cpu_state.MM[cpu_reg].b[1] = fmax(cpu_state.MM[cpu_reg].b[1], cpu_state.MM[cpu_rm].b[1]);
-        cpu_state.MM[cpu_reg].b[2] = fmax(cpu_state.MM[cpu_reg].b[2], cpu_state.MM[cpu_rm].b[2]);
-        cpu_state.MM[cpu_reg].b[3] = fmax(cpu_state.MM[cpu_reg].b[3], cpu_state.MM[cpu_rm].b[3]);
-        cpu_state.MM[cpu_reg].b[4] = fmax(cpu_state.MM[cpu_reg].b[4], cpu_state.MM[cpu_rm].b[4]);
-        cpu_state.MM[cpu_reg].b[5] = fmax(cpu_state.MM[cpu_reg].b[5], cpu_state.MM[cpu_rm].b[5]);
-        cpu_state.MM[cpu_reg].b[6] = fmax(cpu_state.MM[cpu_reg].b[6], cpu_state.MM[cpu_rm].b[6]);
-        cpu_state.MM[cpu_reg].b[7] = fmax(cpu_state.MM[cpu_reg].b[7], cpu_state.MM[cpu_rm].b[7]);
-        CLOCK_CYCLES(1);
-    } else {
-        uint8_t src[8];
 
-        SEG_CHECK_READ(cpu_state.ea_seg);
-        src[0] = readmemb(easeg, cpu_state.eaaddr);
-        if (cpu_state.abrt)
-            return 1;
-        src[1] = readmemb(easeg, cpu_state.eaaddr + 1);
-        if (cpu_state.abrt)
-            return 1;
-        src[2] = readmemb(easeg, cpu_state.eaaddr + 2);
-        if (cpu_state.abrt)
-            return 1;
-        src[3] = readmemb(easeg, cpu_state.eaaddr + 3);
-        if (cpu_state.abrt)
-            return 1;
-        src[4] = readmemb(easeg, cpu_state.eaaddr + 4);
-        if (cpu_state.abrt)
-            return 1;
-        src[5] = readmemb(easeg, cpu_state.eaaddr + 5);
-        if (cpu_state.abrt)
-            return 1;
-        src[6] = readmemb(easeg, cpu_state.eaaddr + 6);
-        if (cpu_state.abrt)
-            return 1;
-        src[7] = readmemb(easeg, cpu_state.eaaddr + 7);
-        if (cpu_state.abrt)
-            return 1;
-        cpu_state.MM[cpu_reg].b[0] = fmax(cpu_state.MM[cpu_reg].b[0], src[0]);
-        cpu_state.MM[cpu_reg].b[1] = fmax(cpu_state.MM[cpu_reg].b[1], src[1]);
-        cpu_state.MM[cpu_reg].b[2] = fmax(cpu_state.MM[cpu_reg].b[2], src[2]);
-        cpu_state.MM[cpu_reg].b[3] = fmax(cpu_state.MM[cpu_reg].b[3], src[3]);
-        cpu_state.MM[cpu_reg].b[4] = fmax(cpu_state.MM[cpu_reg].b[4], src[4]);
-        cpu_state.MM[cpu_reg].b[5] = fmax(cpu_state.MM[cpu_reg].b[5], src[5]);
-        cpu_state.MM[cpu_reg].b[6] = fmax(cpu_state.MM[cpu_reg].b[6], src[6]);
-        cpu_state.MM[cpu_reg].b[7] = fmax(cpu_state.MM[cpu_reg].b[7], src[7]);
-    }
+    dst = MMX_GETREGP(cpu_reg);
+
+    MMX_GETSRC();
+
+    dst->b[0] = fmax(dst->b[0], src.b[0]);
+    dst->b[1] = fmax(dst->b[1], src.b[1]);
+    dst->b[2] = fmax(dst->b[2], src.b[2]);
+    dst->b[3] = fmax(dst->b[3], src.b[3]);
+    dst->b[4] = fmax(dst->b[4], src.b[4]);
+    dst->b[5] = fmax(dst->b[5], src.b[5]);
+    dst->b[6] = fmax(dst->b[6], src.b[6]);
+    dst->b[7] = fmax(dst->b[7], src.b[7]);
+
+    MMX_SETEXP(cpu_reg);
+    CLOCK_CYCLES(1);
     return 0;
 }
 
@@ -2643,110 +2526,54 @@ opPMAXUB_a32(uint32_t fetchdat)
 static int
 opPAVGB_mm_mm_a16(uint32_t fetchdat)
 {
+    MMX_REG src;
+    MMX_REG *dst;
     MMX_ENTER();
     fetch_ea_16(fetchdat);
-    if (cpu_mod == 3) {
-        cpu_state.MM[cpu_reg].b[0] = (cpu_state.MM[cpu_reg].b[0] + cpu_state.MM[cpu_rm].b[0]) >> 1;
-        cpu_state.MM[cpu_reg].b[1] = (cpu_state.MM[cpu_reg].b[1] + cpu_state.MM[cpu_rm].b[1]) >> 1;
-        cpu_state.MM[cpu_reg].b[2] = (cpu_state.MM[cpu_reg].b[2] + cpu_state.MM[cpu_rm].b[2]) >> 1;
-        cpu_state.MM[cpu_reg].b[3] = (cpu_state.MM[cpu_reg].b[3] + cpu_state.MM[cpu_rm].b[3]) >> 1;
-        cpu_state.MM[cpu_reg].b[4] = (cpu_state.MM[cpu_reg].b[4] + cpu_state.MM[cpu_rm].b[4]) >> 1;
-        cpu_state.MM[cpu_reg].b[5] = (cpu_state.MM[cpu_reg].b[5] + cpu_state.MM[cpu_rm].b[5]) >> 1;
-        cpu_state.MM[cpu_reg].b[6] = (cpu_state.MM[cpu_reg].b[6] + cpu_state.MM[cpu_rm].b[6]) >> 1;
-        cpu_state.MM[cpu_reg].b[7] = (cpu_state.MM[cpu_reg].b[7] + cpu_state.MM[cpu_rm].b[7]) >> 1;
-        CLOCK_CYCLES(1);
-    } else {
-        uint8_t src[8];
 
-        SEG_CHECK_READ(cpu_state.ea_seg);
-        src[0] = readmemb(easeg, cpu_state.eaaddr);
-        if (cpu_state.abrt)
-            return 1;
-        src[1] = readmemb(easeg, cpu_state.eaaddr + 1);
-        if (cpu_state.abrt)
-            return 1;
-        src[2] = readmemb(easeg, cpu_state.eaaddr + 2);
-        if (cpu_state.abrt)
-            return 1;
-        src[3] = readmemb(easeg, cpu_state.eaaddr + 3);
-        if (cpu_state.abrt)
-            return 1;
-        src[4] = readmemb(easeg, cpu_state.eaaddr + 4);
-        if (cpu_state.abrt)
-            return 1;
-        src[5] = readmemb(easeg, cpu_state.eaaddr + 5);
-        if (cpu_state.abrt)
-            return 1;
-        src[6] = readmemb(easeg, cpu_state.eaaddr + 6);
-        if (cpu_state.abrt)
-            return 1;
-        src[7] = readmemb(easeg, cpu_state.eaaddr + 7);
-        if (cpu_state.abrt)
-            return 1;
-        cpu_state.MM[cpu_reg].b[0] = (cpu_state.MM[cpu_reg].b[0] + src[0]) >> 1;
-        cpu_state.MM[cpu_reg].b[1] = (cpu_state.MM[cpu_reg].b[1] + src[1]) >> 1;
-        cpu_state.MM[cpu_reg].b[2] = (cpu_state.MM[cpu_reg].b[2] + src[2]) >> 1;
-        cpu_state.MM[cpu_reg].b[3] = (cpu_state.MM[cpu_reg].b[3] + src[3]) >> 1;
-        cpu_state.MM[cpu_reg].b[4] = (cpu_state.MM[cpu_reg].b[4] + src[4]) >> 1;
-        cpu_state.MM[cpu_reg].b[5] = (cpu_state.MM[cpu_reg].b[5] + src[5]) >> 1;
-        cpu_state.MM[cpu_reg].b[6] = (cpu_state.MM[cpu_reg].b[6] + src[6]) >> 1;
-        cpu_state.MM[cpu_reg].b[7] = (cpu_state.MM[cpu_reg].b[7] + src[7]) >> 1;
-    }
+    dst = MMX_GETREGP(cpu_reg);
+
+    MMX_GETSRC();
+
+    dst->b[0] = (dst->b[0] + src.b[0]) >> 1;
+    dst->b[1] = (dst->b[1] + src.b[1]) >> 1;
+    dst->b[2] = (dst->b[2] + src.b[2]) >> 1;
+    dst->b[3] = (dst->b[3] + src.b[3]) >> 1;
+    dst->b[4] = (dst->b[4] + src.b[4]) >> 1;
+    dst->b[5] = (dst->b[5] + src.b[5]) >> 1;
+    dst->b[6] = (dst->b[6] + src.b[6]) >> 1;
+    dst->b[7] = (dst->b[7] + src.b[7]) >> 1;
+
+    CLOCK_CYCLES(1);
+    MMX_SETEXP(cpu_reg); 
+
     return 0;
 }
 
 static int
 opPAVGB_mm_mm_a32(uint32_t fetchdat)
 {
+    MMX_REG src;
+    MMX_REG *dst;
     MMX_ENTER();
     fetch_ea_32(fetchdat);
-    if (cpu_mod == 3) {
-        cpu_state.MM[cpu_reg].b[0] = (cpu_state.MM[cpu_reg].b[0] + cpu_state.MM[cpu_rm].b[0]) >> 1;
-        cpu_state.MM[cpu_reg].b[1] = (cpu_state.MM[cpu_reg].b[1] + cpu_state.MM[cpu_rm].b[1]) >> 1;
-        cpu_state.MM[cpu_reg].b[2] = (cpu_state.MM[cpu_reg].b[2] + cpu_state.MM[cpu_rm].b[2]) >> 1;
-        cpu_state.MM[cpu_reg].b[3] = (cpu_state.MM[cpu_reg].b[3] + cpu_state.MM[cpu_rm].b[3]) >> 1;
-        cpu_state.MM[cpu_reg].b[4] = (cpu_state.MM[cpu_reg].b[4] + cpu_state.MM[cpu_rm].b[4]) >> 1;
-        cpu_state.MM[cpu_reg].b[5] = (cpu_state.MM[cpu_reg].b[5] + cpu_state.MM[cpu_rm].b[5]) >> 1;
-        cpu_state.MM[cpu_reg].b[6] = (cpu_state.MM[cpu_reg].b[6] + cpu_state.MM[cpu_rm].b[6]) >> 1;
-        cpu_state.MM[cpu_reg].b[7] = (cpu_state.MM[cpu_reg].b[7] + cpu_state.MM[cpu_rm].b[7]) >> 1;
-        CLOCK_CYCLES(1);
-    } else {
-        uint8_t src[8];
 
-        SEG_CHECK_READ(cpu_state.ea_seg);
-        src[0] = readmemb(easeg, cpu_state.eaaddr);
-        if (cpu_state.abrt)
-            return 1;
-        src[1] = readmemb(easeg, cpu_state.eaaddr + 1);
-        if (cpu_state.abrt)
-            return 1;
-        src[2] = readmemb(easeg, cpu_state.eaaddr + 2);
-        if (cpu_state.abrt)
-            return 1;
-        src[3] = readmemb(easeg, cpu_state.eaaddr + 3);
-        if (cpu_state.abrt)
-            return 1;
-        src[4] = readmemb(easeg, cpu_state.eaaddr + 4);
-        if (cpu_state.abrt)
-            return 1;
-        src[5] = readmemb(easeg, cpu_state.eaaddr + 5);
-        if (cpu_state.abrt)
-            return 1;
-        src[6] = readmemb(easeg, cpu_state.eaaddr + 6);
-        if (cpu_state.abrt)
-            return 1;
-        src[7] = readmemb(easeg, cpu_state.eaaddr + 7);
-        if (cpu_state.abrt)
-            return 1;
-        cpu_state.MM[cpu_reg].b[0] = (cpu_state.MM[cpu_reg].b[0] + src[0]) >> 1;
-        cpu_state.MM[cpu_reg].b[1] = (cpu_state.MM[cpu_reg].b[1] + src[1]) >> 1;
-        cpu_state.MM[cpu_reg].b[2] = (cpu_state.MM[cpu_reg].b[2] + src[2]) >> 1;
-        cpu_state.MM[cpu_reg].b[3] = (cpu_state.MM[cpu_reg].b[3] + src[3]) >> 1;
-        cpu_state.MM[cpu_reg].b[4] = (cpu_state.MM[cpu_reg].b[4] + src[4]) >> 1;
-        cpu_state.MM[cpu_reg].b[5] = (cpu_state.MM[cpu_reg].b[5] + src[5]) >> 1;
-        cpu_state.MM[cpu_reg].b[6] = (cpu_state.MM[cpu_reg].b[6] + src[6]) >> 1;
-        cpu_state.MM[cpu_reg].b[7] = (cpu_state.MM[cpu_reg].b[7] + src[7]) >> 1;
-    }
+    dst = MMX_GETREGP(cpu_reg);
+
+    MMX_GETSRC();
+
+    dst->b[0] = (dst->b[0] + src.b[0]) >> 1;
+    dst->b[1] = (dst->b[1] + src.b[1]) >> 1;
+    dst->b[2] = (dst->b[2] + src.b[2]) >> 1;
+    dst->b[3] = (dst->b[3] + src.b[3]) >> 1;
+    dst->b[4] = (dst->b[4] + src.b[4]) >> 1;
+    dst->b[5] = (dst->b[5] + src.b[5]) >> 1;
+    dst->b[6] = (dst->b[6] + src.b[6]) >> 1;
+    dst->b[7] = (dst->b[7] + src.b[7]) >> 1;
+
+    CLOCK_CYCLES(1);
+    MMX_SETEXP(cpu_reg); 
+
     return 0;
 }
 
@@ -2959,70 +2786,46 @@ opPAVGB_a32(uint32_t fetchdat)
 static int
 opPAVGW_mm_mm_a16(uint32_t fetchdat)
 {
+    MMX_REG src;
+    MMX_REG *dst;
     MMX_ENTER();
     fetch_ea_16(fetchdat);
-    if (cpu_mod == 3) {
-        cpu_state.MM[cpu_reg].w[0] = (cpu_state.MM[cpu_reg].w[0] + cpu_state.MM[cpu_rm].w[0]) >> 1;
-        cpu_state.MM[cpu_reg].w[1] = (cpu_state.MM[cpu_reg].w[1] + cpu_state.MM[cpu_rm].w[1]) >> 1;
-        cpu_state.MM[cpu_reg].w[2] = (cpu_state.MM[cpu_reg].w[2] + cpu_state.MM[cpu_rm].w[2]) >> 1;
-        cpu_state.MM[cpu_reg].w[3] = (cpu_state.MM[cpu_reg].w[3] + cpu_state.MM[cpu_rm].w[3]) >> 1;
-        CLOCK_CYCLES(1);
-    } else {
-        uint16_t src[4];
 
-        SEG_CHECK_READ(cpu_state.ea_seg);
-        src[0] = readmemw(easeg, cpu_state.eaaddr);
-        if (cpu_state.abrt)
-            return 1;
-        src[1] = readmemw(easeg, cpu_state.eaaddr + 2);
-        if (cpu_state.abrt)
-            return 1;
-        src[2] = readmemw(easeg, cpu_state.eaaddr + 4);
-        if (cpu_state.abrt)
-            return 1;
-        src[3] = readmemw(easeg, cpu_state.eaaddr + 6);
-        if (cpu_state.abrt)
-            return 1;
-        cpu_state.MM[cpu_reg].w[0] = (cpu_state.MM[cpu_reg].w[0] + src[0]) >> 1;
-        cpu_state.MM[cpu_reg].w[1] = (cpu_state.MM[cpu_reg].w[1] + src[1]) >> 1;
-        cpu_state.MM[cpu_reg].w[2] = (cpu_state.MM[cpu_reg].w[2] + src[2]) >> 1;
-        cpu_state.MM[cpu_reg].w[3] = (cpu_state.MM[cpu_reg].w[3] + src[3]) >> 1;
-    }
+    dst = MMX_GETREGP(cpu_reg);
+
+    MMX_GETSRC();
+
+    dst->w[0] = (dst->w[0] + src.w[0]) >> 1;
+    dst->w[1] = (dst->w[1] + src.w[1]) >> 1;
+    dst->w[2] = (dst->w[2] + src.w[2]) >> 1;
+    dst->w[3] = (dst->w[3] + src.w[3]) >> 1;
+
+    CLOCK_CYCLES(1);
+    MMX_SETEXP(cpu_reg); 
+
     return 0;
 }
 
 static int
 opPAVGW_mm_mm_a32(uint32_t fetchdat)
 {
+    MMX_REG src;
+    MMX_REG *dst;
     MMX_ENTER();
-    fetch_ea_32(fetchdat);
-    if (cpu_mod == 3) {
-        cpu_state.MM[cpu_reg].w[0] = (cpu_state.MM[cpu_reg].w[0] + cpu_state.MM[cpu_rm].w[0]) >> 1;
-        cpu_state.MM[cpu_reg].w[1] = (cpu_state.MM[cpu_reg].w[1] + cpu_state.MM[cpu_rm].w[1]) >> 1;
-        cpu_state.MM[cpu_reg].w[2] = (cpu_state.MM[cpu_reg].w[2] + cpu_state.MM[cpu_rm].w[2]) >> 1;
-        cpu_state.MM[cpu_reg].w[3] = (cpu_state.MM[cpu_reg].w[3] + cpu_state.MM[cpu_rm].w[3]) >> 1;
-        CLOCK_CYCLES(1);
-    } else {
-        uint16_t src[4];
+    fetch_ea_16(fetchdat);
 
-        SEG_CHECK_READ(cpu_state.ea_seg);
-        src[0] = readmemw(easeg, cpu_state.eaaddr);
-        if (cpu_state.abrt)
-            return 1;
-        src[1] = readmemw(easeg, cpu_state.eaaddr + 2);
-        if (cpu_state.abrt)
-            return 1;
-        src[2] = readmemw(easeg, cpu_state.eaaddr + 4);
-        if (cpu_state.abrt)
-            return 1;
-        src[3] = readmemw(easeg, cpu_state.eaaddr + 6);
-        if (cpu_state.abrt)
-            return 1;
-        cpu_state.MM[cpu_reg].w[0] = (cpu_state.MM[cpu_reg].w[0] + src[0]) >> 1;
-        cpu_state.MM[cpu_reg].w[1] = (cpu_state.MM[cpu_reg].w[1] + src[1]) >> 1;
-        cpu_state.MM[cpu_reg].w[2] = (cpu_state.MM[cpu_reg].w[2] + src[2]) >> 1;
-        cpu_state.MM[cpu_reg].w[3] = (cpu_state.MM[cpu_reg].w[3] + src[3]) >> 1;
-    }
+    dst = MMX_GETREGP(cpu_reg);
+
+    MMX_GETSRC();
+
+    dst->w[0] = (dst->w[0] + src.w[0]) >> 1;
+    dst->w[1] = (dst->w[1] + src.w[1]) >> 1;
+    dst->w[2] = (dst->w[2] + src.w[2]) >> 1;
+    dst->w[3] = (dst->w[3] + src.w[3]) >> 1;
+
+    CLOCK_CYCLES(1);
+    MMX_SETEXP(cpu_reg); 
+
     return 0;
 }
 
@@ -3155,70 +2958,46 @@ opPAVGW_a32(uint32_t fetchdat)
 static int
 opPMULHUW_mm_mm_a16(uint32_t fetchdat)
 {
+    MMX_REG src;
+    MMX_REG *dst;
     MMX_ENTER();
     fetch_ea_16(fetchdat);
-    if (cpu_mod == 3) {
-        cpu_state.MM[cpu_reg].w[0] = ((uint32_t) cpu_state.MM[cpu_reg].w[0] * (uint32_t) cpu_state.MM[cpu_rm].w[0]) >> 16;
-        cpu_state.MM[cpu_reg].w[1] = ((uint32_t) cpu_state.MM[cpu_reg].w[1] * (uint32_t) cpu_state.MM[cpu_rm].w[1]) >> 16;
-        cpu_state.MM[cpu_reg].w[2] = ((uint32_t) cpu_state.MM[cpu_reg].w[2] * (uint32_t) cpu_state.MM[cpu_rm].w[2]) >> 16;
-        cpu_state.MM[cpu_reg].w[3] = ((uint32_t) cpu_state.MM[cpu_reg].w[3] * (uint32_t) cpu_state.MM[cpu_rm].w[3]) >> 16;
-        CLOCK_CYCLES(1);
-    } else {
-        uint32_t src[4];
 
-        SEG_CHECK_READ(cpu_state.ea_seg);
-        src[0] = readmemw(easeg, cpu_state.eaaddr);
-        if (cpu_state.abrt)
-            return 1;
-        src[1] = readmemw(easeg, cpu_state.eaaddr + 2);
-        if (cpu_state.abrt)
-            return 1;
-        src[2] = readmemw(easeg, cpu_state.eaaddr + 4);
-        if (cpu_state.abrt)
-            return 1;
-        src[3] = readmemw(easeg, cpu_state.eaaddr + 6);
-        if (cpu_state.abrt)
-            return 1;
-        cpu_state.MM[cpu_reg].w[0] = ((uint32_t) cpu_state.MM[cpu_reg].w[0] * src[0]) >> 16;
-        cpu_state.MM[cpu_reg].w[1] = ((uint32_t) cpu_state.MM[cpu_reg].w[1] * src[1]) >> 16;
-        cpu_state.MM[cpu_reg].w[2] = ((uint32_t) cpu_state.MM[cpu_reg].w[2] * src[2]) >> 16;
-        cpu_state.MM[cpu_reg].w[3] = ((uint32_t) cpu_state.MM[cpu_reg].w[3] * src[3]) >> 16;
-    }
+    dst = MMX_GETREGP(cpu_reg);
+
+    MMX_GETSRC();
+
+    dst->w[0] = ((uint32_t)dst->w[0] * (uint32_t)src.w[0]) >> 16;
+    dst->w[1] = ((uint32_t)dst->w[1] * (uint32_t)src.w[1]) >> 16;
+    dst->w[2] = ((uint32_t)dst->w[2] * (uint32_t)src.w[2]) >> 16;
+    dst->w[3] = ((uint32_t)dst->w[3] * (uint32_t)src.w[3]) >> 16;
+
+    CLOCK_CYCLES(1);
+    MMX_SETEXP(cpu_reg); 
+
     return 0;
 }
 
 static int
 opPMULHUW_mm_mm_a32(uint32_t fetchdat)
 {
+    MMX_REG src;
+    MMX_REG *dst;
     MMX_ENTER();
     fetch_ea_32(fetchdat);
-    if (cpu_mod == 3) {
-        cpu_state.MM[cpu_reg].w[0] = ((uint32_t) cpu_state.MM[cpu_reg].w[0] * (uint32_t) cpu_state.MM[cpu_rm].w[0]) >> 16;
-        cpu_state.MM[cpu_reg].w[1] = ((uint32_t) cpu_state.MM[cpu_reg].w[1] * (uint32_t) cpu_state.MM[cpu_rm].w[1]) >> 16;
-        cpu_state.MM[cpu_reg].w[2] = ((uint32_t) cpu_state.MM[cpu_reg].w[2] * (uint32_t) cpu_state.MM[cpu_rm].w[2]) >> 16;
-        cpu_state.MM[cpu_reg].w[3] = ((uint32_t) cpu_state.MM[cpu_reg].w[3] * (uint32_t) cpu_state.MM[cpu_rm].w[3]) >> 16;
-        CLOCK_CYCLES(1);
-    } else {
-        uint32_t src[4];
 
-        SEG_CHECK_READ(cpu_state.ea_seg);
-        src[0] = readmemw(easeg, cpu_state.eaaddr);
-        if (cpu_state.abrt)
-            return 1;
-        src[1] = readmemw(easeg, cpu_state.eaaddr + 2);
-        if (cpu_state.abrt)
-            return 1;
-        src[2] = readmemw(easeg, cpu_state.eaaddr + 4);
-        if (cpu_state.abrt)
-            return 1;
-        src[3] = readmemw(easeg, cpu_state.eaaddr + 6);
-        if (cpu_state.abrt)
-            return 1;
-        cpu_state.MM[cpu_reg].w[0] = ((uint32_t) cpu_state.MM[cpu_reg].w[0] * src[0]) >> 16;
-        cpu_state.MM[cpu_reg].w[1] = ((uint32_t) cpu_state.MM[cpu_reg].w[1] * src[1]) >> 16;
-        cpu_state.MM[cpu_reg].w[2] = ((uint32_t) cpu_state.MM[cpu_reg].w[2] * src[2]) >> 16;
-        cpu_state.MM[cpu_reg].w[3] = ((uint32_t) cpu_state.MM[cpu_reg].w[3] * src[3]) >> 16;
-    }
+    dst = MMX_GETREGP(cpu_reg);
+
+    MMX_GETSRC();
+
+    dst->w[0] = ((uint32_t)dst->w[0] * (uint32_t)src.w[0]) >> 16;
+    dst->w[1] = ((uint32_t)dst->w[1] * (uint32_t)src.w[1]) >> 16;
+    dst->w[2] = ((uint32_t)dst->w[2] * (uint32_t)src.w[2]) >> 16;
+    dst->w[3] = ((uint32_t)dst->w[3] * (uint32_t)src.w[3]) >> 16;
+
+    CLOCK_CYCLES(1);
+    MMX_SETEXP(cpu_reg); 
+
     return 0;
 }
 
@@ -3351,70 +3130,46 @@ opPMULHUW_a32(uint32_t fetchdat)
 static int
 opPMINSW_mm_mm_a16(uint32_t fetchdat)
 {
+    MMX_REG src;
+    MMX_REG *dst;
     MMX_ENTER();
     fetch_ea_16(fetchdat);
-    if (cpu_mod == 3) {
-        cpu_state.MM[cpu_reg].sw[0] = fmin(cpu_state.MM[cpu_reg].sw[0], cpu_state.MM[cpu_rm].sw[0]);
-        cpu_state.MM[cpu_reg].sw[1] = fmin(cpu_state.MM[cpu_reg].sw[1], cpu_state.MM[cpu_rm].sw[1]);
-        cpu_state.MM[cpu_reg].sw[2] = fmin(cpu_state.MM[cpu_reg].sw[2], cpu_state.MM[cpu_rm].sw[2]);
-        cpu_state.MM[cpu_reg].sw[3] = fmin(cpu_state.MM[cpu_reg].sw[3], cpu_state.MM[cpu_rm].sw[3]);
-        CLOCK_CYCLES(1);
-    } else {
-        int16_t src[4];
 
-        SEG_CHECK_READ(cpu_state.ea_seg);
-        src[0] = readmemw(easeg, cpu_state.eaaddr);
-        if (cpu_state.abrt)
-            return 1;
-        src[1] = readmemw(easeg, cpu_state.eaaddr + 2);
-        if (cpu_state.abrt)
-            return 1;
-        src[2] = readmemw(easeg, cpu_state.eaaddr + 4);
-        if (cpu_state.abrt)
-            return 1;
-        src[3] = readmemw(easeg, cpu_state.eaaddr + 6);
-        if (cpu_state.abrt)
-            return 1;
-        cpu_state.MM[cpu_reg].sw[0] = fmin(cpu_state.MM[cpu_reg].sw[0], src[0]);
-        cpu_state.MM[cpu_reg].sw[1] = fmin(cpu_state.MM[cpu_reg].sw[1], src[1]);
-        cpu_state.MM[cpu_reg].sw[2] = fmin(cpu_state.MM[cpu_reg].sw[2], src[2]);
-        cpu_state.MM[cpu_reg].sw[3] = fmin(cpu_state.MM[cpu_reg].sw[3], src[3]);
-    }
+    dst = MMX_GETREGP(cpu_reg);
+
+    MMX_GETSRC();
+
+    dst->w[0] = fmin(dst->sw[0], src.sw[0]);
+    dst->w[1] = fmin(dst->sw[1], src.sw[1]);
+    dst->w[2] = fmin(dst->sw[2], src.sw[2]);
+    dst->w[3] = fmin(dst->sw[3], src.sw[3]);
+
+    CLOCK_CYCLES(1);
+    MMX_SETEXP(cpu_reg); 
+
     return 0;
 }
 
 static int
 opPMINSW_mm_mm_a32(uint32_t fetchdat)
 {
+    MMX_REG src;
+    MMX_REG *dst;
     MMX_ENTER();
     fetch_ea_32(fetchdat);
-    if (cpu_mod == 3) {
-        cpu_state.MM[cpu_reg].sw[0] = fmin(cpu_state.MM[cpu_reg].sw[0], cpu_state.MM[cpu_rm].sw[0]);
-        cpu_state.MM[cpu_reg].sw[1] = fmin(cpu_state.MM[cpu_reg].sw[1], cpu_state.MM[cpu_rm].sw[1]);
-        cpu_state.MM[cpu_reg].sw[2] = fmin(cpu_state.MM[cpu_reg].sw[2], cpu_state.MM[cpu_rm].sw[2]);
-        cpu_state.MM[cpu_reg].sw[3] = fmin(cpu_state.MM[cpu_reg].sw[3], cpu_state.MM[cpu_rm].sw[3]);
-        CLOCK_CYCLES(1);
-    } else {
-        int16_t src[4];
 
-        SEG_CHECK_READ(cpu_state.ea_seg);
-        src[0] = readmemw(easeg, cpu_state.eaaddr);
-        if (cpu_state.abrt)
-            return 1;
-        src[1] = readmemw(easeg, cpu_state.eaaddr + 2);
-        if (cpu_state.abrt)
-            return 1;
-        src[2] = readmemw(easeg, cpu_state.eaaddr + 4);
-        if (cpu_state.abrt)
-            return 1;
-        src[3] = readmemw(easeg, cpu_state.eaaddr + 6);
-        if (cpu_state.abrt)
-            return 1;
-        cpu_state.MM[cpu_reg].sw[0] = fmin(cpu_state.MM[cpu_reg].sw[0], src[0]);
-        cpu_state.MM[cpu_reg].sw[1] = fmin(cpu_state.MM[cpu_reg].sw[1], src[1]);
-        cpu_state.MM[cpu_reg].sw[2] = fmin(cpu_state.MM[cpu_reg].sw[2], src[2]);
-        cpu_state.MM[cpu_reg].sw[3] = fmin(cpu_state.MM[cpu_reg].sw[3], src[3]);
-    }
+    dst = MMX_GETREGP(cpu_reg);
+
+    MMX_GETSRC();
+
+    dst->w[0] = fmin(dst->sw[0], src.sw[0]);
+    dst->w[1] = fmin(dst->sw[1], src.sw[1]);
+    dst->w[2] = fmin(dst->sw[2], src.sw[2]);
+    dst->w[3] = fmin(dst->sw[3], src.sw[3]);
+
+    CLOCK_CYCLES(1);
+    MMX_SETEXP(cpu_reg); 
+
     return 0;
 }
 
@@ -3547,70 +3302,46 @@ opPMINSW_a32(uint32_t fetchdat)
 static int
 opPMAXSW_mm_mm_a16(uint32_t fetchdat)
 {
+    MMX_REG src;
+    MMX_REG *dst;
     MMX_ENTER();
     fetch_ea_16(fetchdat);
-    if (cpu_mod == 3) {
-        cpu_state.MM[cpu_reg].sw[0] = fmax(cpu_state.MM[cpu_reg].sw[0], cpu_state.MM[cpu_rm].sw[0]);
-        cpu_state.MM[cpu_reg].sw[1] = fmax(cpu_state.MM[cpu_reg].sw[1], cpu_state.MM[cpu_rm].sw[1]);
-        cpu_state.MM[cpu_reg].sw[2] = fmax(cpu_state.MM[cpu_reg].sw[2], cpu_state.MM[cpu_rm].sw[2]);
-        cpu_state.MM[cpu_reg].sw[3] = fmax(cpu_state.MM[cpu_reg].sw[3], cpu_state.MM[cpu_rm].sw[3]);
-        CLOCK_CYCLES(1);
-    } else {
-        int16_t src[4];
 
-        SEG_CHECK_READ(cpu_state.ea_seg);
-        src[0] = readmemw(easeg, cpu_state.eaaddr);
-        if (cpu_state.abrt)
-            return 1;
-        src[1] = readmemw(easeg, cpu_state.eaaddr + 2);
-        if (cpu_state.abrt)
-            return 1;
-        src[2] = readmemw(easeg, cpu_state.eaaddr + 4);
-        if (cpu_state.abrt)
-            return 1;
-        src[3] = readmemw(easeg, cpu_state.eaaddr + 6);
-        if (cpu_state.abrt)
-            return 1;
-        cpu_state.MM[cpu_reg].sw[0] = fmax(cpu_state.MM[cpu_reg].sw[0], src[0]);
-        cpu_state.MM[cpu_reg].sw[1] = fmax(cpu_state.MM[cpu_reg].sw[1], src[1]);
-        cpu_state.MM[cpu_reg].sw[2] = fmax(cpu_state.MM[cpu_reg].sw[2], src[2]);
-        cpu_state.MM[cpu_reg].sw[3] = fmax(cpu_state.MM[cpu_reg].sw[3], src[3]);
-    }
+    dst = MMX_GETREGP(cpu_reg);
+
+    MMX_GETSRC();
+
+    dst->w[0] = fmax(dst->sw[0], src.sw[0]);
+    dst->w[1] = fmax(dst->sw[1], src.sw[1]);
+    dst->w[2] = fmax(dst->sw[2], src.sw[2]);
+    dst->w[3] = fmax(dst->sw[3], src.sw[3]);
+
+    CLOCK_CYCLES(1);
+    MMX_SETEXP(cpu_reg); 
+
     return 0;
 }
 
 static int
 opPMAXSW_mm_mm_a32(uint32_t fetchdat)
 {
+    MMX_REG src;
+    MMX_REG *dst;
     MMX_ENTER();
     fetch_ea_32(fetchdat);
-    if (cpu_mod == 3) {
-        cpu_state.MM[cpu_reg].sw[0] = fmax(cpu_state.MM[cpu_reg].sw[0], cpu_state.MM[cpu_rm].sw[0]);
-        cpu_state.MM[cpu_reg].sw[1] = fmax(cpu_state.MM[cpu_reg].sw[1], cpu_state.MM[cpu_rm].sw[1]);
-        cpu_state.MM[cpu_reg].sw[2] = fmax(cpu_state.MM[cpu_reg].sw[2], cpu_state.MM[cpu_rm].sw[2]);
-        cpu_state.MM[cpu_reg].sw[3] = fmax(cpu_state.MM[cpu_reg].sw[3], cpu_state.MM[cpu_rm].sw[3]);
-        CLOCK_CYCLES(1);
-    } else {
-        int16_t src[4];
 
-        SEG_CHECK_READ(cpu_state.ea_seg);
-        src[0] = readmemw(easeg, cpu_state.eaaddr);
-        if (cpu_state.abrt)
-            return 1;
-        src[1] = readmemw(easeg, cpu_state.eaaddr + 2);
-        if (cpu_state.abrt)
-            return 1;
-        src[2] = readmemw(easeg, cpu_state.eaaddr + 4);
-        if (cpu_state.abrt)
-            return 1;
-        src[3] = readmemw(easeg, cpu_state.eaaddr + 6);
-        if (cpu_state.abrt)
-            return 1;
-        cpu_state.MM[cpu_reg].sw[0] = fmax(cpu_state.MM[cpu_reg].sw[0], src[0]);
-        cpu_state.MM[cpu_reg].sw[1] = fmax(cpu_state.MM[cpu_reg].sw[1], src[1]);
-        cpu_state.MM[cpu_reg].sw[2] = fmax(cpu_state.MM[cpu_reg].sw[2], src[2]);
-        cpu_state.MM[cpu_reg].sw[3] = fmax(cpu_state.MM[cpu_reg].sw[3], src[3]);
-    }
+    dst = MMX_GETREGP(cpu_reg);
+
+    MMX_GETSRC();
+
+    dst->w[0] = fmax(dst->sw[0], src.sw[0]);
+    dst->w[1] = fmax(dst->sw[1], src.sw[1]);
+    dst->w[2] = fmax(dst->sw[2], src.sw[2]);
+    dst->w[3] = fmax(dst->sw[3], src.sw[3]);
+
+    CLOCK_CYCLES(1);
+    MMX_SETEXP(cpu_reg); 
+
     return 0;
 }
 
@@ -3743,146 +3474,74 @@ opPMAXSW_a32(uint32_t fetchdat)
 static int
 opPSADBW_mm_mm_a16(uint32_t fetchdat)
 {
+    MMX_REG src;
+    MMX_REG *dst;
+    MMX_REG temp;
     MMX_ENTER();
     fetch_ea_16(fetchdat);
-    if (cpu_mod == 3) {
-        uint8_t temp[8];
-        temp[0]         = abs((int8_t)(cpu_state.MM[cpu_rm].b[0] - cpu_state.MM[cpu_reg].b[0]));
-        temp[1]         = abs((int8_t)(cpu_state.MM[cpu_rm].b[1] - cpu_state.MM[cpu_reg].b[1]));
-        temp[2]         = abs((int8_t)(cpu_state.MM[cpu_rm].b[2] - cpu_state.MM[cpu_reg].b[2]));
-        temp[3]         = abs((int8_t)(cpu_state.MM[cpu_rm].b[3] - cpu_state.MM[cpu_reg].b[3]));
-        temp[4]         = abs((int8_t)(cpu_state.MM[cpu_rm].b[4] - cpu_state.MM[cpu_reg].b[4]));
-        temp[5]         = abs((int8_t)(cpu_state.MM[cpu_rm].b[5] - cpu_state.MM[cpu_reg].b[5]));
-        temp[6]         = abs((int8_t)(cpu_state.MM[cpu_rm].b[6] - cpu_state.MM[cpu_reg].b[6]));
-        temp[7]         = abs((int8_t)(cpu_state.MM[cpu_rm].b[7] - cpu_state.MM[cpu_reg].b[7]));
-        uint16_t result = 0;
-        for (int i = 0; i < 8; i++) {
-            result += temp[i];
-        }
-        cpu_state.MM[cpu_reg].w[0] = result;
-        cpu_state.MM[cpu_reg].w[1] = 0;
-        cpu_state.MM[cpu_reg].w[2] = 0;
-        cpu_state.MM[cpu_reg].w[3] = 0;
-        CLOCK_CYCLES(1);
-    } else {
-        uint8_t src[8];
-        uint8_t temp[8];
 
-        SEG_CHECK_READ(cpu_state.ea_seg);
-        src[0] = readmemb(easeg, cpu_state.eaaddr);
-        if (cpu_state.abrt)
-            return 1;
-        src[1] = readmemb(easeg, cpu_state.eaaddr + 1);
-        if (cpu_state.abrt)
-            return 1;
-        src[2] = readmemb(easeg, cpu_state.eaaddr + 2);
-        if (cpu_state.abrt)
-            return 1;
-        src[3] = readmemb(easeg, cpu_state.eaaddr + 3);
-        if (cpu_state.abrt)
-            return 1;
-        src[4] = readmemb(easeg, cpu_state.eaaddr + 4);
-        if (cpu_state.abrt)
-            return 1;
-        src[5] = readmemb(easeg, cpu_state.eaaddr + 5);
-        if (cpu_state.abrt)
-            return 1;
-        src[6] = readmemb(easeg, cpu_state.eaaddr + 6);
-        if (cpu_state.abrt)
-            return 1;
-        src[7] = readmemb(easeg, cpu_state.eaaddr + 7);
-        if (cpu_state.abrt)
-            return 1;
-        temp[0]         = abs((int8_t)(src[0] - cpu_state.MM[cpu_reg].b[0]));
-        temp[1]         = abs((int8_t)(src[1] - cpu_state.MM[cpu_reg].b[1]));
-        temp[2]         = abs((int8_t)(src[2] - cpu_state.MM[cpu_reg].b[2]));
-        temp[3]         = abs((int8_t)(src[3] - cpu_state.MM[cpu_reg].b[3]));
-        temp[4]         = abs((int8_t)(src[4] - cpu_state.MM[cpu_reg].b[4]));
-        temp[5]         = abs((int8_t)(src[5] - cpu_state.MM[cpu_reg].b[5]));
-        temp[6]         = abs((int8_t)(src[6] - cpu_state.MM[cpu_reg].b[6]));
-        temp[7]         = abs((int8_t)(src[7] - cpu_state.MM[cpu_reg].b[7]));
-        uint16_t result = 0;
-        for (int i = 0; i < 8; i++) {
-            result += temp[i];
-        }
-        cpu_state.MM[cpu_reg].w[0] = result;
-        cpu_state.MM[cpu_reg].w[1] = 0;
-        cpu_state.MM[cpu_reg].w[2] = 0;
-        cpu_state.MM[cpu_reg].w[3] = 0;
+    dst = MMX_GETREGP(cpu_reg);
+
+    MMX_GETSRC();
+
+    temp.b[0] = abs((int8_t)(src.b[0] - dst->b[0]));
+    temp.b[1] = abs((int8_t)(src.b[1] - dst->b[1]));
+    temp.b[2] = abs((int8_t)(src.b[2] - dst->b[2]));
+    temp.b[3] = abs((int8_t)(src.b[3] - dst->b[3]));
+    temp.b[4] = abs((int8_t)(src.b[4] - dst->b[4]));
+    temp.b[5] = abs((int8_t)(src.b[5] - dst->b[5]));
+    temp.b[6] = abs((int8_t)(src.b[6] - dst->b[6]));
+    temp.b[7] = abs((int8_t)(src.b[7] - dst->b[7]));
+
+    uint16_t result = 0;
+    for (int i = 0; i < 8; i++) {
+        result += temp[i];
     }
+    dst->w[0] = result;
+    dst->w[1] = 0;
+    dst->w[2] = 0;
+    dst->w[3] = 0;
+
+    CLOCK_CYCLES(1);
+    MMX_SETEXP(cpu_reg); 
+
     return 0;
 }
 
 static int
 opPSADBW_mm_mm_a32(uint32_t fetchdat)
 {
+    MMX_REG src;
+    MMX_REG *dst;
+    MMX_REG temp;
     MMX_ENTER();
     fetch_ea_32(fetchdat);
-    if (cpu_mod == 3) {
-        uint8_t temp[8];
-        temp[0]         = abs((int8_t)(cpu_state.MM[cpu_rm].b[0] - cpu_state.MM[cpu_reg].b[0]));
-        temp[1]         = abs((int8_t)(cpu_state.MM[cpu_rm].b[1] - cpu_state.MM[cpu_reg].b[1]));
-        temp[2]         = abs((int8_t)(cpu_state.MM[cpu_rm].b[2] - cpu_state.MM[cpu_reg].b[2]));
-        temp[3]         = abs((int8_t)(cpu_state.MM[cpu_rm].b[3] - cpu_state.MM[cpu_reg].b[3]));
-        temp[4]         = abs((int8_t)(cpu_state.MM[cpu_rm].b[4] - cpu_state.MM[cpu_reg].b[4]));
-        temp[5]         = abs((int8_t)(cpu_state.MM[cpu_rm].b[5] - cpu_state.MM[cpu_reg].b[5]));
-        temp[6]         = abs((int8_t)(cpu_state.MM[cpu_rm].b[6] - cpu_state.MM[cpu_reg].b[6]));
-        temp[7]         = abs((int8_t)(cpu_state.MM[cpu_rm].b[7] - cpu_state.MM[cpu_reg].b[7]));
-        uint16_t result = 0;
-        for (int i = 0; i < 8; i++) {
-            result += temp[i];
-        }
-        cpu_state.MM[cpu_reg].w[0] = result;
-        cpu_state.MM[cpu_reg].w[1] = 0;
-        cpu_state.MM[cpu_reg].w[2] = 0;
-        cpu_state.MM[cpu_reg].w[3] = 0;
-        CLOCK_CYCLES(1);
-    } else {
-        uint8_t src[8];
-        uint8_t temp[8];
 
-        SEG_CHECK_READ(cpu_state.ea_seg);
-        src[0] = readmemb(easeg, cpu_state.eaaddr);
-        if (cpu_state.abrt)
-            return 1;
-        src[1] = readmemb(easeg, cpu_state.eaaddr + 1);
-        if (cpu_state.abrt)
-            return 1;
-        src[2] = readmemb(easeg, cpu_state.eaaddr + 2);
-        if (cpu_state.abrt)
-            return 1;
-        src[3] = readmemb(easeg, cpu_state.eaaddr + 3);
-        if (cpu_state.abrt)
-            return 1;
-        src[4] = readmemb(easeg, cpu_state.eaaddr + 4);
-        if (cpu_state.abrt)
-            return 1;
-        src[5] = readmemb(easeg, cpu_state.eaaddr + 5);
-        if (cpu_state.abrt)
-            return 1;
-        src[6] = readmemb(easeg, cpu_state.eaaddr + 6);
-        if (cpu_state.abrt)
-            return 1;
-        src[7] = readmemb(easeg, cpu_state.eaaddr + 7);
-        if (cpu_state.abrt)
-            return 1;
-        temp[0]         = abs((int8_t)(src[0] - cpu_state.MM[cpu_reg].b[0]));
-        temp[1]         = abs((int8_t)(src[1] - cpu_state.MM[cpu_reg].b[1]));
-        temp[2]         = abs((int8_t)(src[2] - cpu_state.MM[cpu_reg].b[2]));
-        temp[3]         = abs((int8_t)(src[3] - cpu_state.MM[cpu_reg].b[3]));
-        temp[4]         = abs((int8_t)(src[4] - cpu_state.MM[cpu_reg].b[4]));
-        temp[5]         = abs((int8_t)(src[5] - cpu_state.MM[cpu_reg].b[5]));
-        temp[6]         = abs((int8_t)(src[6] - cpu_state.MM[cpu_reg].b[6]));
-        temp[7]         = abs((int8_t)(src[7] - cpu_state.MM[cpu_reg].b[7]));
-        uint16_t result = 0;
-        for (int i = 0; i < 8; i++) {
-            result += temp[i];
-        }
-        cpu_state.MM[cpu_reg].w[0] = result;
-        cpu_state.MM[cpu_reg].w[1] = 0;
-        cpu_state.MM[cpu_reg].w[2] = 0;
-        cpu_state.MM[cpu_reg].w[3] = 0;
+    dst = MMX_GETREGP(cpu_reg);
+
+    MMX_GETSRC();
+
+    temp.b[0] = abs((int8_t)(src.b[0] - dst->b[0]));
+    temp.b[1] = abs((int8_t)(src.b[1] - dst->b[1]));
+    temp.b[2] = abs((int8_t)(src.b[2] - dst->b[2]));
+    temp.b[3] = abs((int8_t)(src.b[3] - dst->b[3]));
+    temp.b[4] = abs((int8_t)(src.b[4] - dst->b[4]));
+    temp.b[5] = abs((int8_t)(src.b[5] - dst->b[5]));
+    temp.b[6] = abs((int8_t)(src.b[6] - dst->b[6]));
+    temp.b[7] = abs((int8_t)(src.b[7] - dst->b[7]));
+
+    uint16_t result = 0;
+    for (int i = 0; i < 8; i++) {
+        result += temp[i];
     }
+    dst->w[0] = result;
+    dst->w[1] = 0;
+    dst->w[2] = 0;
+    dst->w[3] = 0;
+
+    CLOCK_CYCLES(1);
+    MMX_SETEXP(cpu_reg); 
+
     return 0;
 }
 
