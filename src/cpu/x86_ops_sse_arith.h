@@ -3495,7 +3495,7 @@ opPSADBW_mm_mm_a16(uint32_t fetchdat)
 
     uint16_t result = 0;
     for (int i = 0; i < 8; i++) {
-        result += temp[i];
+        result += temp.b[i];
     }
     dst->w[0] = result;
     dst->w[1] = 0;
@@ -3532,7 +3532,7 @@ opPSADBW_mm_mm_a32(uint32_t fetchdat)
 
     uint16_t result = 0;
     for (int i = 0; i < 8; i++) {
-        result += temp[i];
+        result += temp.b[i];
     }
     dst->w[0] = result;
     dst->w[1] = 0;
