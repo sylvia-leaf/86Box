@@ -2011,6 +2011,7 @@ opCMPSS_xmm_xmm_a32(uint32_t fetchdat)
 static int
 opPMINUB_mm_mm_a16(uint32_t fetchdat)
 {
+    MMX_ENTER();
     fetch_ea_16(fetchdat);
     if (cpu_mod == 3) {
         cpu_state.MM[cpu_reg].b[0] = fmin(cpu_state.MM[cpu_reg].b[0], cpu_state.MM[cpu_rm].b[0]);
@@ -2065,6 +2066,7 @@ opPMINUB_mm_mm_a16(uint32_t fetchdat)
 static int
 opPMINUB_mm_mm_a32(uint32_t fetchdat)
 {
+    MMX_ENTER();
     fetch_ea_32(fetchdat);
     if (cpu_mod == 3) {
         cpu_state.MM[cpu_reg].b[0] = fmin(cpu_state.MM[cpu_reg].b[0], cpu_state.MM[cpu_rm].b[0]);
@@ -2325,6 +2327,7 @@ opPMINUB_a32(uint32_t fetchdat)
 static int
 opPMAXUB_mm_mm_a16(uint32_t fetchdat)
 {
+    MMX_ENTER();
     fetch_ea_16(fetchdat);
     if (cpu_mod == 3) {
         cpu_state.MM[cpu_reg].b[0] = fmax(cpu_state.MM[cpu_reg].b[0], cpu_state.MM[cpu_rm].b[0]);
@@ -2379,6 +2382,7 @@ opPMAXUB_mm_mm_a16(uint32_t fetchdat)
 static int
 opPMAXUB_mm_mm_a32(uint32_t fetchdat)
 {
+    MMX_ENTER();
     fetch_ea_32(fetchdat);
     if (cpu_mod == 3) {
         cpu_state.MM[cpu_reg].b[0] = fmax(cpu_state.MM[cpu_reg].b[0], cpu_state.MM[cpu_rm].b[0]);
@@ -2955,6 +2959,7 @@ opPAVGB_a32(uint32_t fetchdat)
 static int
 opPAVGW_mm_mm_a16(uint32_t fetchdat)
 {
+    MMX_ENTER();
     fetch_ea_16(fetchdat);
     if (cpu_mod == 3) {
         cpu_state.MM[cpu_reg].w[0] = (cpu_state.MM[cpu_reg].w[0] + cpu_state.MM[cpu_rm].w[0]) >> 1;
@@ -2989,6 +2994,7 @@ opPAVGW_mm_mm_a16(uint32_t fetchdat)
 static int
 opPAVGW_mm_mm_a32(uint32_t fetchdat)
 {
+    MMX_ENTER();
     fetch_ea_32(fetchdat);
     if (cpu_mod == 3) {
         cpu_state.MM[cpu_reg].w[0] = (cpu_state.MM[cpu_reg].w[0] + cpu_state.MM[cpu_rm].w[0]) >> 1;
@@ -3345,6 +3351,7 @@ opPMULHUW_a32(uint32_t fetchdat)
 static int
 opPMINSW_mm_mm_a16(uint32_t fetchdat)
 {
+    MMX_ENTER();
     fetch_ea_16(fetchdat);
     if (cpu_mod == 3) {
         cpu_state.MM[cpu_reg].sw[0] = fmin(cpu_state.MM[cpu_reg].sw[0], cpu_state.MM[cpu_rm].sw[0]);
@@ -3379,6 +3386,7 @@ opPMINSW_mm_mm_a16(uint32_t fetchdat)
 static int
 opPMINSW_mm_mm_a32(uint32_t fetchdat)
 {
+    MMX_ENTER();
     fetch_ea_32(fetchdat);
     if (cpu_mod == 3) {
         cpu_state.MM[cpu_reg].sw[0] = fmin(cpu_state.MM[cpu_reg].sw[0], cpu_state.MM[cpu_rm].sw[0]);
@@ -3539,6 +3547,7 @@ opPMINSW_a32(uint32_t fetchdat)
 static int
 opPMAXSW_mm_mm_a16(uint32_t fetchdat)
 {
+    MMX_ENTER();
     fetch_ea_16(fetchdat);
     if (cpu_mod == 3) {
         cpu_state.MM[cpu_reg].sw[0] = fmax(cpu_state.MM[cpu_reg].sw[0], cpu_state.MM[cpu_rm].sw[0]);
@@ -3573,6 +3582,7 @@ opPMAXSW_mm_mm_a16(uint32_t fetchdat)
 static int
 opPMAXSW_mm_mm_a32(uint32_t fetchdat)
 {
+    MMX_ENTER();
     fetch_ea_32(fetchdat);
     if (cpu_mod == 3) {
         cpu_state.MM[cpu_reg].sw[0] = fmax(cpu_state.MM[cpu_reg].sw[0], cpu_state.MM[cpu_rm].sw[0]);
