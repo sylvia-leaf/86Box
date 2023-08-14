@@ -4774,9 +4774,9 @@ const machine_t machines[] = {
         .bus_flags = MACHINE_AT,
         .flags = MACHINE_IDE,
         .ram = {
-            .min = 640,
+            .min = 1024,
             .max = 16384,
-            .step = 128
+            .step = 1024
         },
         .nvrmask = 63,
         .kbc_device = NULL,
@@ -4812,9 +4812,9 @@ const machine_t machines[] = {
         .bus_flags = MACHINE_AT,
         .flags = MACHINE_IDE,
         .ram = {
-            .min = 640,
+            .min = 1024,
             .max = 16384,
-            .step = 128
+            .step = 1024
         },
         .nvrmask = 63,
         .kbc_device = NULL,

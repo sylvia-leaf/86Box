@@ -37,6 +37,9 @@ extern const device_t ali6117d_device;
 extern const device_t amd640_device;
 extern const device_t amd751_device;
 
+/* Compaq */
+extern const device_t compaq_386_device;
+
 /* Contaq/Cypress */
 extern const device_t contaq_82c596a_device;
 extern const device_t contaq_82c597_device;
