@@ -6563,17 +6563,17 @@ const machine_t machines[] = {
             .max_multi = 3.0
         },
         .bus_flags = MACHINE_PS2_PCI,
-        .flags = MACHINE_IDE | MACHINE_APM,
+        .flags = MACHINE_IDE | MACHINE_VIDEO | MACHINE_APM,
         .ram = {
             .min = 1024,
             .max = 65536,
             .step = 1024
         },
-        .nvrmask = 127,
+        .nvrmask = 255,
         .kbc_device = NULL,
         .kbc_p1 = 0,
         .gpio = 0,
-        .device = NULL,
+        .device = &gd5430_onboard_pci_device,
         .fdc_device = NULL,
         .sio_device = NULL,
         .vid_device = NULL,
@@ -8361,7 +8361,7 @@ const machine_t machines[] = {
             .max = 131072,
             .step = 8192
         },
-        .nvrmask = 127,
+        .nvrmask = 255,
         .kbc_device = NULL,
         .kbc_p1 = 0,
         .gpio = 0,
@@ -8802,7 +8802,7 @@ const machine_t machines[] = {
             .max = 131072,
             .step = 8192
         },
-        .nvrmask = 127,
+        .nvrmask = 255,
         .kbc_device = NULL,
         .kbc_p1 = 0,
         .gpio = 0,
@@ -8883,7 +8883,7 @@ const machine_t machines[] = {
             .max = 131072,
             .step = 8192
         },
-        .nvrmask = 127,
+        .nvrmask = 255,
         .kbc_device = NULL,
         .kbc_p1 = 0,
         .gpio = 0,
@@ -8924,7 +8924,7 @@ const machine_t machines[] = {
             .max = 131072,
             .step = 8192
         },
-        .nvrmask = 127,
+        .nvrmask = 255,
         .kbc_device = NULL,
         .kbc_p1 = 0,
         .gpio = 0,
@@ -8965,7 +8965,7 @@ const machine_t machines[] = {
             .max = 131072,
             .step = 8192
         },
-        .nvrmask = 127,
+        .nvrmask = 255,
         .kbc_device = NULL,
         .kbc_p1 = 0,
         .gpio = 0,
@@ -9044,7 +9044,7 @@ const machine_t machines[] = {
             .max = 131072,
             .step = 8192
         },
-        .nvrmask = 127,
+        .nvrmask = 255,
         .kbc_device = NULL,
         .kbc_p1 = 0,
         .gpio = 0,
@@ -9283,7 +9283,7 @@ const machine_t machines[] = {
             .max = 786432,
             .step = 8192
         },
-        .nvrmask = 127,
+        .nvrmask = 255,
         .kbc_device = NULL,
         .kbc_p1 = 0,
         .gpio = 0,
@@ -9687,7 +9687,7 @@ const machine_t machines[] = {
             .max = 196608,
             .step = 8192
         },
-        .nvrmask = 127,
+        .nvrmask = 255,
         .kbc_device = NULL,
         .kbc_p1 = 0,
         .gpio = 0,
@@ -9729,7 +9729,7 @@ const machine_t machines[] = {
             .max = 196608,
             .step = 8192
         },
-        .nvrmask = 127,
+        .nvrmask = 255,
         .kbc_device = NULL,
         .kbc_p1 = 0,
         .gpio = 0,
@@ -10125,7 +10125,7 @@ const machine_t machines[] = {
             .max = 131072,
             .step = 8192
         },
-        .nvrmask = 127,
+        .nvrmask = 255,
         .kbc_device = NULL,
         .kbc_p1 = 0,
         .gpio = 0,
