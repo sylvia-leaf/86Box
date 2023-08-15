@@ -41,7 +41,7 @@
 #include <86box/vid_ati_eeprom.h>
 
 #define BIOS_MACH8_ROM_PATH      "roms/video/mach8/BIOS.BIN"
-#define BIOS_MACH32_ISA_ROM_PATH "roms/video/mach32/Mach32_ISA.BIN"
+#define BIOS_MACH32_ISA_ROM_PATH "roms/video/mach32/ATi Mach32 Graphics Pro ISA.BIN"
 #define BIOS_MACH32_VLB_ROM_PATH "roms/video/mach32/MACH32VLB.VBI"
 #define BIOS_MACH32_MCA_ROM_PATH "roms/video/mach32/MACH32MCA_Olivetti.BIN"
 #define BIOS_MACH32_PCI_ROM_PATH "roms/video/mach32/intelopt_00000.rom"
@@ -2507,6 +2507,10 @@ mach_in(uint16_t addr, void *priv)
                         temp |= 8;
                     break;
 
+                case 0xbd:
+                    temp = mach->regs[0xbd] | 0x10;
+                    break;
+
                 default:
                     temp = mach->regs[mach->index];
                     break;
@@ -2565,7 +2569,7 @@ mach_recalctimings(svga_t *svga)
 {
     const mach_t *mach = (mach_t *) svga->priv;
     ibm8514_t    *dev  = &svga->dev8514;
-    int clock_sel;
+    int           clock_sel;
 
     clock_sel = ((svga->miscout >> 2) & 3) | ((mach->regs[0xbe] & 0x10) >> 1) | ((mach->regs[0xb9] & 2) << 1);
 
@@ -2639,7 +2643,7 @@ mach_recalctimings(svga_t *svga)
 
             dev->pitch = dev->ext_pitch;
             dev->rowoffset = dev->ext_crt_pitch;
-            if ((mach->accel.ext_ge_config & 0x800) || ((!(mach->accel.ext_ge_config & 0x8000) && !(mach->accel.ext_ge_config & 0x800)))) {
+            if ((mach->accel.ext_ge_config & 0x800) || (!(mach->accel.ext_ge_config & 0x8000) && !(mach->accel.ext_ge_config & 0x800))) {
                 if ((mach->accel.ext_ge_config & 0x30) == 0x20) {
                     if ((mach->accel.ext_ge_config & 0xc0) == 0x40)
                         dev->accel_bpp = 16;
@@ -2676,6 +2680,9 @@ mach_recalctimings(svga_t *svga)
                         else
                             svga->render8514 = ibm8514_render_RGBA8888;
                         break;
+
+                    default:
+                        break;
                 }
             }
             switch (mach->regs[0xb8] & 0xc0) {
@@ -2687,6 +2694,9 @@ mach_recalctimings(svga_t *svga)
                     break;
                 case 0xc0:
                     svga->clock *= 4;
+                    break;
+
+                default:
                     break;
             }
         } else {
@@ -2772,6 +2782,9 @@ mach_recalctimings(svga_t *svga)
                             break;
 
                     }
+                    break;
+
+                default:
                     break;
             }
         }
@@ -3645,7 +3658,7 @@ mach_accel_out(uint16_t port, uint8_t val, mach_t *mach)
             svga_recalctimings(svga);
             break;
 
-		case 0x1ee8:
+        case 0x1ee8:
         case 0x1ee9:
             mach_log("ATI 8514/A: V_SYNC_WID write 1EE8 = %02x\n", val);
             svga_recalctimings(svga);
@@ -3675,7 +3688,7 @@ mach_accel_out(uint16_t port, uint8_t val, mach_t *mach)
             } else {
                 dev->on = (dev->accel.advfunc_cntl & 0x01);
                 vga_on = !dev->on;
-                pclog("ATI 8514/A: (0x4ae8) val = %04x\n", val & 0x01);
+                mach_log("ATI 8514/A: (0x4ae8) val = %04x\n", val & 0x01);
             }
             svga_recalctimings(svga);
             break;
@@ -3800,7 +3813,7 @@ mach_accel_out(uint16_t port, uint8_t val, mach_t *mach)
         case 0x4aef:
             WRITE8(port, mach->accel.clock_sel, val);
             if (port & 1) {
-                pclog("ATI 8514/A: (0x4aee) val = %04x\n", mach->accel.clock_sel & 0x01);
+                mach_log("ATI 8514/A: (0x4aee) val = %04x\n", mach->accel.clock_sel & 0x01);
                 dev->on = mach->accel.clock_sel & 0x01;
                 vga_on = !dev->on;
             }
@@ -4733,9 +4746,8 @@ mach32_write_linear(uint32_t addr, uint8_t val, void *priv)
 static void
 mach32_write(uint32_t addr, uint8_t val, void *priv)
 {
-    svga_t   *svga   = (svga_t *) priv;
-    mach_t   *mach   = (mach_t *) svga->priv;
-    ibm8514_t *dev    = &svga->dev8514;
+    svga_t          *svga = (svga_t *) priv;
+    const ibm8514_t *dev  = &svga->dev8514;
 
     if (!dev->on) {
         svga_write(addr, val, svga);
@@ -4749,9 +4761,8 @@ mach32_write(uint32_t addr, uint8_t val, void *priv)
 static void
 mach32_writew(uint32_t addr, uint16_t val, void *priv)
 {
-    svga_t   *svga   = (svga_t *) priv;
-    mach_t   *mach   = (mach_t *) svga->priv;
-    ibm8514_t *dev    = &svga->dev8514;
+    svga_t          *svga = (svga_t *) priv;
+    const ibm8514_t *dev  = &svga->dev8514;
 
     if (!dev->on) {
         svga_writew(addr, val, svga);
@@ -4765,9 +4776,8 @@ mach32_writew(uint32_t addr, uint16_t val, void *priv)
 static void
 mach32_writel(uint32_t addr, uint32_t val, void *priv)
 {
-    svga_t   *svga   = (svga_t *) priv;
-    mach_t   *mach   = (mach_t *) svga->priv;
-    ibm8514_t *dev    = &svga->dev8514;
+    svga_t          *svga = (svga_t *) priv;
+    const ibm8514_t *dev  = &svga->dev8514;
 
     if (!dev->on) {
         svga_writel(addr, val, svga);
@@ -4783,13 +4793,13 @@ mach32_writel(uint32_t addr, uint32_t val, void *priv)
 static uint8_t
 mach32_read_linear(uint32_t addr, void *priv)
 {
-    svga_t  *svga       = (svga_t *) priv;
-    ibm8514_t *dev      = &svga->dev8514;
-    uint32_t latch_addr = 0;
-    int      readplane  = svga->readplane;
-    uint8_t  count;
-    uint8_t  temp;
-    uint8_t  ret;
+    svga_t          *svga       = (svga_t *) priv;
+    const ibm8514_t *dev        = &svga->dev8514;
+    uint32_t         latch_addr = 0;
+    int              readplane  = svga->readplane;
+    uint8_t          count;
+    uint8_t          temp;
+    uint8_t          ret;
 
     cycles -= svga->monitor->mon_video_timing_read_b;
 
@@ -4864,10 +4874,9 @@ mach32_read_linear(uint32_t addr, void *priv)
 static uint8_t
 mach32_read(uint32_t addr, void *priv)
 {
-    svga_t   *svga   = (svga_t *) priv;
-    mach_t   *mach   = (mach_t *) svga->priv;
-    ibm8514_t *dev    = &svga->dev8514;
-    uint8_t  ret;
+    svga_t          *svga = (svga_t *) priv;
+    const ibm8514_t *dev  = &svga->dev8514;
+    uint8_t          ret;
 
     if (!dev->on) {
         ret = svga_read(addr, svga);
@@ -4882,10 +4891,9 @@ mach32_read(uint32_t addr, void *priv)
 static uint16_t
 mach32_readw(uint32_t addr, void *priv)
 {
-    svga_t   *svga   = (svga_t *) priv;
-    mach_t   *mach   = (mach_t *) svga->priv;
-    ibm8514_t *dev    = &svga->dev8514;
-    uint16_t  ret;
+    svga_t          *svga = (svga_t *) priv;
+    const ibm8514_t *dev  = &svga->dev8514;
+    uint16_t         ret;
 
     if (!dev->on) {
         ret = svga_readw(addr, svga);
@@ -4900,10 +4908,9 @@ mach32_readw(uint32_t addr, void *priv)
 static uint32_t
 mach32_readl(uint32_t addr, void *priv)
 {
-    svga_t   *svga   = (svga_t *) priv;
-    mach_t   *mach   = (mach_t *) svga->priv;
-    ibm8514_t *dev    = &svga->dev8514;
-    uint32_t  ret;
+    svga_t          *svga = (svga_t *) priv;
+    const ibm8514_t *dev  = &svga->dev8514;
+    uint32_t         ret;
 
     if (!dev->on) {
         ret = svga_readl(addr, svga);
@@ -5171,6 +5178,7 @@ mach32_hwcursor_draw(svga_t *svga, int displine)
         dev->hwcursor_latch.addr += 16;
 }
 
+#if 0
 static void
 mach_io_remove(mach_t *mach)
 {
@@ -5284,6 +5292,7 @@ mach_io_remove(mach_t *mach)
     io_removehandler(0xfaee, 0x0002, mach_accel_inb, mach_accel_inw, mach_accel_inl, mach_accel_outb, mach_accel_outw, mach_accel_outl, mach);
     io_removehandler(0xfeee, 0x0002, mach_accel_inb, mach_accel_inw, mach_accel_inl, mach_accel_outb, mach_accel_outw, mach_accel_outl, mach);
 }
+#endif
 
 static void
 mach_io_set(mach_t *mach)
@@ -5630,10 +5639,6 @@ mach8_init(const device_t *info)
                      BIOS_MACH32_ISA_ROM_PATH,
                      0xc0000, 0x8000, 0x7fff,
                      0, MEM_MAPPING_EXTERNAL);
-            rom_init(&mach->bios_rom2,
-                     BIOS_MACH32_ISA_ROM_PATH,
-                     0xc8000, 0x1000, 0x0fff,
-                     0x8000, MEM_MAPPING_EXTERNAL);
         }
     } else {
         rom_init(&mach->bios_rom,
