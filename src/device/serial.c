@@ -12,11 +12,9 @@
  *
  *
  *
- * Authors: Sarah Walker, <https://pcem-emulator.co.uk/>
- *          Miran Grca, <mgrca8@gmail.com>
+ * Authors: Miran Grca, <mgrca8@gmail.com>
  *          Fred N. van Kempen, <decwiz@yahoo.com>
  *
- *          Copyright 2008-2020 Sarah Walker.
  *          Copyright 2016-2020 Miran Grca.
  *          Copyright 2017-2020 Fred N. van Kempen.
  */
@@ -363,7 +361,7 @@ serial_update_speed(serial_t *dev)
     if (dev->transmit_enabled & 3)
         timer_on_auto(&dev->transmit_timer, dev->transmit_period);
 
-    if (timer_is_enabled(&dev->timeout_timer))
+    if (timer_is_on(&dev->timeout_timer))
         timer_on_auto(&dev->timeout_timer, 4.0 * dev->bits * dev->transmit_period);
 }
 
@@ -742,7 +740,7 @@ serial_rcvr_d_empty_evt(void *priv)
 {
     serial_t *dev = (serial_t *) priv;
 
-    dev->lsr = (dev->lsr & 0xfe) | !fifo_get_empty(dev->rcvr_fifo);
+    dev->lsr = (dev->lsr & 0xfe) | (fifo_get_empty(dev->rcvr_fifo) ? 0 : 1);
 }
 
 static void
