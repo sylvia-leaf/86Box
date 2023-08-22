@@ -1017,14 +1017,19 @@ load_storage_controllers(void)
         sprintf(temp, "cartridge_%02i_fn", c + 1);
         p = ini_section_get_string(cat, temp, "");
 
-        if (path_abs(p)) {
-            if (strlen(p) > 511)
-                fatal("load_storage_controllers(): strlen(p) > 511 (cart_fns[%i])\n", c);
-            else
-                strncpy(cart_fns[c], p, 511);
-        } else
-            path_append_filename(cart_fns[c], usr_path, p);
-        path_normalize(cart_fns[c]);
+        if (!strcmp(p, usr_path))
+            p[0] = 0x00;
+
+        if (p[0] != 0x00) {
+            if (path_abs(p)) {
+                if (strlen(p) > 511)
+                    fatal("load_storage_controllers(): strlen(p) > 511 (cart_fns[%i])\n", c);
+                else
+                    strncpy(cart_fns[c], p, 511);
+            } else
+                path_append_filename(cart_fns[c], usr_path, p);
+            path_normalize(cart_fns[c]);
+        }
     }
 }
 
@@ -1180,14 +1185,19 @@ load_hard_disks(void)
          * When loading differencing VHDs, the absolute path is required.
          * So we should not convert absolute paths to relative. -sards
          */
-        if (path_abs(p)) {
-            if (strlen(p) > 511)
-                fatal("load_hard_disks(): strlen(p) > 511 (hdd[%i].fn)\n", c);
-            else
-                strncpy(hdd[c].fn, p, 511);
-        } else
-            path_append_filename(hdd[c].fn, usr_path, p);
-        path_normalize(hdd[c].fn);
+        if (!strcmp(p, usr_path))
+            p[0] = 0x00;
+
+        if (p[0] != 0x00) {
+            if (path_abs(p)) {
+                if (strlen(p) > 511)
+                    fatal("load_hard_disks(): strlen(p) > 511 (hdd[%i].fn)\n", c);
+                else
+                    strncpy(hdd[c].fn, p, 511);
+            } else
+                path_append_filename(hdd[c].fn, usr_path, p);
+            path_normalize(hdd[c].fn);
+        }
 
         sprintf(temp, "hdd_%02i_vhd_blocksize", c + 1);
         hdd[c].vhd_blocksize = ini_section_get_int(cat, temp, 0);
@@ -1246,14 +1256,19 @@ load_floppy_drives(void)
         p = ini_section_get_string(cat, temp, "");
         ini_section_delete_var(cat, temp);
 
-        if (path_abs(p)) {
-            if (strlen(p) > 511)
-                fatal("load_floppy_drives(): strlen(p) > 511 (floppyfns[%i])\n", c);
-            else
-                strncpy(floppyfns[c], p, 511);
-        } else
-            path_append_filename(floppyfns[c], usr_path, p);
-        path_normalize(floppyfns[c]);
+        if (!strcmp(p, usr_path))
+            p[0] = 0x00;
+
+        if (p[0] != 0x00) {
+            if (path_abs(p)) {
+                if (strlen(p) > 511)
+                    fatal("load_floppy_drives(): strlen(p) > 511 (floppyfns[%i])\n", c);
+                else
+                    strncpy(floppyfns[c], p, 511);
+            } else
+                path_append_filename(floppyfns[c], usr_path, p);
+            path_normalize(floppyfns[c]);
+        }
 
 #if defined(ENABLE_CONFIG_LOG) && (ENABLE_CONFIG_LOG == 2)
         if (*p != '\0')
@@ -1301,14 +1316,19 @@ load_floppy_and_cdrom_drives(void)
         sprintf(temp, "fdd_%02i_fn", c + 1);
         p = ini_section_get_string(cat, temp, "");
 
-        if (path_abs(p)) {
-            if (strlen(p) > 511)
-                fatal("load_floppy_and_cdrom_drives(): strlen(p) > 511 (floppyfns[%i])\n", c);
-            else
-                strncpy(floppyfns[c], p, 511);
-        } else
-            path_append_filename(floppyfns[c], usr_path, p);
-        path_normalize(floppyfns[c]);
+        if (!strcmp(p, usr_path))
+            p[0] = 0x00;
+
+        if (p[0] != 0x00) {
+            if (path_abs(p)) {
+                if (strlen(p) > 511)
+                    fatal("load_floppy_and_cdrom_drives(): strlen(p) > 511 (floppyfns[%i])\n", c);
+                else
+                    strncpy(floppyfns[c], p, 511);
+            } else
+                path_append_filename(floppyfns[c], usr_path, p);
+            path_normalize(floppyfns[c]);
+        }
 
 #if defined(ENABLE_CONFIG_LOG) && (ENABLE_CONFIG_LOG == 2)
         if (*p != '\0')
@@ -1355,7 +1375,7 @@ load_floppy_and_cdrom_drives(void)
                     else
                         snprintf(fdd_image_history[c][i], 255, "%s", p);
                 } else
-                    snprintf(fdd_image_history[c][i], 255, "%s%$s%s", usr_path,
+                    snprintf(fdd_image_history[c][i], 255, "%s%s%s", usr_path,
                              path_get_slash(usr_path), p);
                 path_normalize(fdd_image_history[c][i]);
             }
@@ -1439,14 +1459,19 @@ load_floppy_and_cdrom_drives(void)
         sprintf(temp, "cdrom_%02i_image_path", c + 1);
         p = ini_section_get_string(cat, temp, "");
 
-        if (path_abs(p)) {
-            if (strlen(p) > 511)
-                fatal("load_floppy_and_cdrom_drives(): strlen(p) > 511 (cdrom[%i].image_path)\n", c);
-            else
-                strncpy(cdrom[c].image_path, p, 511);
-        } else
-            path_append_filename(cdrom[c].image_path, usr_path, p);
-        path_normalize(cdrom[c].image_path);
+        if (!strcmp(p, usr_path))
+            p[0] = 0x00;
+
+        if (p[0] != 0x00) {
+            if (path_abs(p)) {
+                if (strlen(p) > 511)
+                    fatal("load_floppy_and_cdrom_drives(): strlen(p) > 511 (cdrom[%i].image_path)\n", c);
+                else
+                    strncpy(cdrom[c].image_path, p, 511);
+            } else
+                path_append_filename(cdrom[c].image_path, usr_path, p);
+            path_normalize(cdrom[c].image_path);
+        }
 
         if (cdrom[c].host_drive && (cdrom[c].host_drive != 200))
             cdrom[c].host_drive = 0;
@@ -1466,7 +1491,7 @@ load_floppy_and_cdrom_drives(void)
                     else
                         snprintf(cdrom[c].image_history[i], 511, "%s", p);
                 } else
-                    snprintf(cdrom[c].image_history[i], 511, "%s%$s%s", usr_path,
+                    snprintf(cdrom[c].image_history[i], 511, "%s%s%s", usr_path,
                              path_get_slash(usr_path), p);
                 path_normalize(cdrom[c].image_history[i]);
             }
@@ -1568,14 +1593,20 @@ load_other_removable_devices(void)
             p = ini_section_get_string(cat, temp, "");
             ini_section_delete_var(cat, temp);
 
-            if (path_abs(p)) {
-                if (strlen(p) > 511)
-                    fatal("load_other_removable_devices(): strlen(p) > 511 (cdrom[%i].image_path)\n", c);
-                else
-                    strncpy(cdrom[c].image_path, p, 511);
-            } else
-                path_append_filename(cdrom[c].image_path, usr_path, p);
-            path_normalize(cdrom[c].image_path);
+            if (!strcmp(p, usr_path))
+                p[0] = 0x00;
+
+            if (p[0] != 0x00) {
+                if (path_abs(p)) {
+                    if (strlen(p) > 511)
+                        fatal("load_other_removable_devices(): strlen(p) > 511 (cdrom[%i].image_path)\n",
+                              c);
+                    else
+                        strncpy(cdrom[c].image_path, p, 511);
+                } else
+                    path_append_filename(cdrom[c].image_path, usr_path, p);
+                path_normalize(cdrom[c].image_path);
+            }
 
             if (cdrom[c].host_drive && (cdrom[c].host_drive != 200))
                 cdrom[c].host_drive = 0;
@@ -1645,14 +1676,20 @@ load_other_removable_devices(void)
         sprintf(temp, "zip_%02i_image_path", c + 1);
         p = ini_section_get_string(cat, temp, "");
 
-        if (path_abs(p)) {
-            if (strlen(p) > 511)
-                fatal("load_other_removable_devices(): strlen(p) > 511 (zip_drives[%i].image_path)\n", c);
-            else
-                strncpy(zip_drives[c].image_path, p, 511);
-        } else
-            path_append_filename(zip_drives[c].image_path, usr_path, p);
-        path_normalize(zip_drives[c].image_path);
+        if (!strcmp(p, usr_path))
+            p[0] = 0x00;
+
+        if (p[0] != 0x00) {
+            if (path_abs(p)) {
+                if (strlen(p) > 511)
+                    fatal("load_other_removable_devices(): strlen(p) > 511 (zip_drives[%i].image_path)\n",
+                          c);
+                else
+                    strncpy(zip_drives[c].image_path, p, 511);
+            } else
+                path_append_filename(zip_drives[c].image_path, usr_path, p);
+            path_normalize(zip_drives[c].image_path);
+        }
 
         for (int i = 0; i < MAX_PREV_IMAGES; i++) {
             zip_drives[c].image_history[i] = (char *) calloc(MAX_IMAGE_PATH_LEN + 1, sizeof(char));
@@ -1666,7 +1703,7 @@ load_other_removable_devices(void)
                     else
                         snprintf(zip_drives[c].image_history[i], 511, "%s", p);
                 } else
-                    snprintf(zip_drives[c].image_history[i], 511, "%s%$s%s", usr_path,
+                    snprintf(zip_drives[c].image_history[i], 511, "%s%s%s", usr_path,
                              path_get_slash(usr_path), p);
                 path_normalize(zip_drives[c].image_history[i]);
             }
@@ -1755,14 +1792,20 @@ load_other_removable_devices(void)
         sprintf(temp, "mo_%02i_image_path", c + 1);
         p = ini_section_get_string(cat, temp, "");
 
-        if (path_abs(p)) {
-            if (strlen(p) > 511)
-                fatal("load_other_removable_devices(): strlen(p) > 511 (mo_drives[%i].image_path)\n", c);
-            else
-                strncpy(mo_drives[c].image_path, p, 511);
-        } else
-            path_append_filename(mo_drives[c].image_path, usr_path, p);
-        path_normalize(mo_drives[c].image_path);
+        if (!strcmp(p, usr_path))
+            p[0] = 0x00;
+
+        if (p[0] != 0x00) {
+            if (path_abs(p)) {
+                if (strlen(p) > 511)
+                    fatal("load_other_removable_devices(): strlen(p) > 511 (mo_drives[%i].image_path)\n", 
+                          c);
+                else
+                    strncpy(mo_drives[c].image_path, p, 511);
+            } else
+                path_append_filename(mo_drives[c].image_path, usr_path, p);
+            path_normalize(mo_drives[c].image_path);
+        }
 
         for (int i = 0; i < MAX_PREV_IMAGES; i++) {
             mo_drives[c].image_history[i] = (char *) calloc(MAX_IMAGE_PATH_LEN + 1, sizeof(char));
@@ -1776,7 +1819,7 @@ load_other_removable_devices(void)
                     else
                         snprintf(mo_drives[c].image_history[i], 511, "%s", p);
                 } else
-                    snprintf(mo_drives[c].image_history[i], 511, "%s%$s%s", usr_path,
+                    snprintf(mo_drives[c].image_history[i], 511, "%s%s%s", usr_path,
                              path_get_slash(usr_path), p);
                 path_normalize(mo_drives[c].image_history[i]);
             }
