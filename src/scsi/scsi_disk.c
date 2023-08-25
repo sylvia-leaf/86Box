@@ -720,6 +720,7 @@ scsi_disk_command(scsi_common_t *sc, uint8_t *cdb)
                 scsi_disk_command_complete(dev);
                 break;
             }
+            fallthrough;
         case GPCMD_WRITE_6:
         case GPCMD_WRITE_10:
         case GPCMD_WRITE_AND_VERIFY_10:

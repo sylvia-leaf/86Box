@@ -624,7 +624,6 @@ st506_callback(void *priv)
                 break;
             }
             fallthrough;
-
         case CMD_FORMAT_TRACK:
         case CMD_FORMAT_BAD_TRACK:
             switch (dev->state) {
@@ -671,6 +670,7 @@ st506_callback(void *priv)
                 st506_complete(dev);
                 break;
             }
+            fallthrough;
         case CMD_READ:
 #if 0
         case CMD_READ_LONG:
@@ -770,6 +770,7 @@ st506_callback(void *priv)
                 st506_complete(dev);
                 break;
             }
+            fallthrough;
         case CMD_WRITE:
 #if 0
         case CMD_WRITE_LONG:
