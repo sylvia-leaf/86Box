@@ -1170,7 +1170,7 @@ enter_smm(int in_hlt)
         smram_save_state_cyrix(saved_state, in_hlt);
     else if (is_pentium || is_am486) /* Am486 / 5x86 / Intel P5 (Pentium) */
         smram_save_state_p5(saved_state, in_hlt);
-    else if (is_k5 || is_k6 || is_athlon)         /* AMD K5 and K6 */
+    else if (is_k5 || is_k6 || is_athlon) /* AMD K5 and K6 */
         smram_save_state_amd_k(saved_state, in_hlt);
     else if (is_p6) /* Intel P6 (Pentium Pro, Pentium II, Celeron) */
         smram_save_state_p6(saved_state, in_hlt);

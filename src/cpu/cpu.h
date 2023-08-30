@@ -147,7 +147,7 @@ typedef struct cpu_t {
     const char *name;
     uint64_t    cpu_type;
     const FPU  *fpus;
-    int         rspeed;
+    uint32_t    rspeed;
     double      multi;
     uint16_t    voltage;
     uint32_t    edx_reset;
@@ -365,17 +365,17 @@ typedef struct {
     /* K7 MSRs */
     uint64_t amd_syscfg; /* 0xc0010010 */
 
-    uint64_t amd_hwcr; /* 0xc0010015 */
+    uint64_t amd_hwcr;      /* 0xc0010015 */
     uint64_t amd_iorrbase1; /* 0xc0010016 */
     uint64_t amd_iorrmask1; /* 0xc0010017 */
     uint64_t amd_iorrbase2; /* 0xc0010018 */
     uint64_t amd_iorrmask2; /* 0xc0010019 */
-    uint64_t amd_topmem; /* 0xc001001a */
-    uint64_t amd_clkctl; /* 0xc001001b */
+    uint64_t amd_topmem;    /* 0xc001001a */
+    uint64_t amd_clkctl;    /* 0xc001001b */
 
     uint64_t ecxc001001c; /* 0xc001001c */
 
-    uint64_t amd_smbase; /* 0xc0010111 */
+    uint64_t amd_smbase;  /* 0xc0010111 */
     uint64_t amd_smmaddr; /* 0xc0010112 */
     uint64_t amd_smmmask; /* 0xc0010113 */
 

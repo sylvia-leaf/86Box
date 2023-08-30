@@ -34,10 +34,10 @@
 #include <86box/chipset.h>
 #include <86box/spd.h>
 #include <86box/agpgart.h>
+#include <86box/plat_unused.h>
 
 typedef struct amd751_t {
-    uint8_t  pci_conf[256];
-
+    uint8_t pci_conf[256];
     uint8_t pci_slot;
 
     agpgart_t *agpgart;
@@ -57,8 +57,8 @@ static uint8_t
 amd751_host_read(int addr, amd751_t* dev)
 {
     pclog("amd751 read %02x\n", addr);
-    switch(addr)
-    {
+
+    switch (addr) {
         case 0x00: return 0x22;
         case 0x01: return 0x10;
         case 0x02: return 0x06;
@@ -89,8 +89,12 @@ amd751_host_read(int addr, amd751_t* dev)
         case 0x40: case 0x41: case 0x42: case 0x43: case 0x44: case 0x45: case 0x46: case 0x47: case 0x48: case 0x49: case 0x4a: case 0x4b:
         case 0x50: case 0x51: case 0x52:
             return dev->pci_conf[addr];
-        //case 0x5a: return dev->pci_conf[0x5a] & 0x97;
-        //case 0x5b: return (dev->pci_conf[0x5b] & 0x01) | 0x02;
+#if 0
+        case 0x5a:
+            return dev->pci_conf[0x5a] & 0x97;
+        case 0x5b:
+            return (dev->pci_conf[0x5b] & 0x01) | 0x02;
+#endif
         case 0x80: case 0x81: return 0x00;
         case 0xa0: return 0x02;
         case 0xa1: case 0xa3: case 0xa6: return 0x00;
@@ -113,8 +117,8 @@ amd751_host_write(int addr, uint8_t val, void *priv)
 {
     pclog("amd751 write %02x %02x\n", addr, val);
     amd751_t *dev = (amd751_t *) priv;
-    switch(addr)
-    {
+
+    switch (addr) {
         case 0x13: /* Graphics Aperture Base */
             dev->pci_conf[0x13] = val;
             amd751_agp_map(dev);
@@ -170,10 +174,12 @@ amd751_read(int func, int addr, void *priv)
     amd751_t *dev = (amd751_t *) priv;
     uint8_t       ret = 0xff;
 
-    switch(func)
-    {
+    switch (func) {
         case 0:
             ret = amd751_host_read(addr, dev);
+            break;
+
+        default:
             break;
     }
 
@@ -183,21 +189,24 @@ amd751_read(int func, int addr, void *priv)
 static void
 amd751_write(int func, int addr, uint8_t val, void *priv)
 {
-    switch(func)
-    {
+    switch (func) {
         case 0:
             amd751_host_write(addr, val, priv);
+            break;
+
+        default:
             break;
     }
 }
 
 static void
-amd751_reset(void *priv)
+amd751_reset(UNUSED(void *priv))
 {
+    //
 }
 
 static void *
-amd751_init(const device_t *info)
+amd751_init(UNUSED(const device_t *info))
 {
     amd751_t *dev = (amd751_t *) malloc(sizeof(amd751_t));
     memset(dev, 0, sizeof(amd751_t));

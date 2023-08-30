@@ -470,6 +470,7 @@ timer_update(void *priv)
 
     if (local->ecount == (244ULL * TIMER_USEC)) {
         rtc_tick();
+
         /* Get the current time from the internal clock. */
         nvr_time_get(&tm);
 
@@ -477,10 +478,9 @@ timer_update(void *priv)
         time_set(nvr, &tm);
 
         /* Check for any alarms we need to handle. */
-        if (check_alarm(nvr, RTC_SECONDS) && check_alarm(nvr, RTC_MINUTES) && check_alarm(nvr, RTC_HOURS) && check_alarm_via(nvr, RTC_DOM, RTC_ALDAY) && check_alarm_via(nvr, RTC_MONTH, RTC_ALMONTH) /* &&
-                                                                                                                                                              check_alarm_via(nvr, RTC_DOM, RTC_ALDAY_SIS) &&
-                                                                                                                                                              check_alarm_via(nvr, RTC_MONTH, RTC_ALMONT_SIS)*/
-        ) {
+        if (check_alarm(nvr, RTC_SECONDS) && check_alarm(nvr, RTC_MINUTES) && check_alarm(nvr, RTC_HOURS) &&
+            check_alarm_via(nvr, RTC_DOM, RTC_ALDAY) && check_alarm_via(nvr, RTC_MONTH, RTC_ALMONTH) /* &&
+            check_alarm_via(nvr, RTC_DOM, RTC_ALDAY_SIS) && check_alarm_via(nvr, RTC_MONTH, RTC_ALMONT_SIS) */) {
             nvr->regs[RTC_REGC] |= REGC_AF;
             timer_update_irq(nvr);
         }
@@ -489,7 +489,6 @@ timer_update(void *priv)
         local->ecount = 1984ULL * TIMER_USEC;
         timer_set_delay_u64(&local->update_timer, local->ecount);
     } else {
-
         /*
          * The flag and interrupt should be issued
          * on update ended, not started.
@@ -602,7 +601,7 @@ nvr_reg_write(uint16_t reg, uint8_t val, void *priv)
         case RTC_SECONDS: /* bit 7 of seconds is read-only */
             nvr_reg_common_write(reg, val & 0x7f, nvr, local);
             break;
-            
+
         case RTC_REGA:
             if ((val & nvr->regs[RTC_REGA]) & ~REGA_UIP) {
                 nvr->regs[RTC_REGA] = (nvr->regs[RTC_REGA] & REGA_UIP) | (val & ~REGA_UIP);

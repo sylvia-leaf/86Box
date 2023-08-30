@@ -129,6 +129,7 @@ intel_lsmm_segment_recalc(intel_815ep_t *dev, uint8_t val)
         case 3:
             smram_enable(dev->lsmm_segment, 0x000a0000, 0x000a0000, 0x20000, 0, 1);
             break;
+
         default:
             break;
     }
@@ -319,7 +320,7 @@ intel_815ep_write(int func, int addr, uint8_t val, void *priv)
 static uint8_t
 intel_815ep_read(int func, int addr, void *priv)
 {
-    intel_815ep_t *dev = (intel_815ep_t *) priv;
+    const intel_815ep_t *dev = (intel_815ep_t *) priv;
 
     intel_815ep_log("Intel 815EP MCH: dev->regs[%02x] (%02x)\n", addr, dev->pci_conf[addr]);
 
