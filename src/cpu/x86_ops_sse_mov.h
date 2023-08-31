@@ -32,6 +32,7 @@ opMOVUPS_q_xmm_a16(uint32_t fetchdat)
 
         CLOCK_CYCLES(2);
     }
+
     return 0;
 }
 
@@ -68,6 +69,7 @@ opMOVUPS_q_xmm_a32(uint32_t fetchdat)
 
         CLOCK_CYCLES(2);
     }
+
     return 0;
 }
 
@@ -99,6 +101,7 @@ opMOVUPS_xmm_q_a16(uint32_t fetchdat)
 
         CLOCK_CYCLES(2);
     }
+
     return 0;
 }
 
@@ -130,6 +133,7 @@ opMOVUPS_xmm_q_a32(uint32_t fetchdat)
 
         CLOCK_CYCLES(2);
     }
+
     return 0;
 }
 
@@ -154,6 +158,7 @@ opMOVSS_f_xmm_a16(uint32_t fetchdat)
 
         CLOCK_CYCLES(2);
     }
+
     return 0;
 }
 
@@ -178,6 +183,7 @@ opMOVSS_f_xmm_a32(uint32_t fetchdat)
 
         CLOCK_CYCLES(2);
     }
+
     return 0;
 }
 
@@ -197,6 +203,7 @@ opMOVSS_xmm_f_a16(uint32_t fetchdat)
             return 1;
         CLOCK_CYCLES(2);
     }
+
     return 0;
 }
 
@@ -216,6 +223,7 @@ opMOVSS_xmm_f_a32(uint32_t fetchdat)
             return 1;
         CLOCK_CYCLES(2);
     }
+
     return 0;
 }
 
@@ -238,6 +246,7 @@ opMOVLPS_f_xmm_MOVHLPS_xmm_xmm_a16(uint32_t fetchdat)
         XMM[cpu_reg].q[0] = dst;
         CLOCK_CYCLES(2);
     }
+
     return 0;
 }
 
@@ -260,6 +269,7 @@ opMOVLPS_f_xmm_MOVHLPS_xmm_xmm_a32(uint32_t fetchdat)
         XMM[cpu_reg].q[0] = dst;
         CLOCK_CYCLES(2);
     }
+
     return 0;
 }
 
@@ -268,6 +278,7 @@ opMOVLPS_xmm_f_a16(uint32_t fetchdat)
 {
     if ((cpu_features & CPU_FEATURE_SSE2) && sse_xmm)
         return opMOVLPD_xmm_f_a16(fetchdat);
+
     fetch_ea_16(fetchdat);
     if (cpu_mod == 3) {
         XMM[cpu_rm].q[0] = XMM[cpu_reg].q[0];
@@ -279,6 +290,7 @@ opMOVLPS_xmm_f_a16(uint32_t fetchdat)
             return 1;
         CLOCK_CYCLES(2);
     }
+
     return 0;
 }
 
@@ -287,6 +299,7 @@ opMOVLPS_xmm_f_a32(uint32_t fetchdat)
 {
     if ((cpu_features & CPU_FEATURE_SSE2) && sse_xmm)
         return opMOVLPD_xmm_f_a32(fetchdat);
+
     fetch_ea_32(fetchdat);
     if (cpu_mod == 3) {
         XMM[cpu_rm].q[0] = XMM[cpu_reg].q[0];
@@ -298,6 +311,7 @@ opMOVLPS_xmm_f_a32(uint32_t fetchdat)
             return 1;
         CLOCK_CYCLES(2);
     }
+
     return 0;
 }
 
@@ -306,6 +320,7 @@ opUNPCKLPS_f_xmm_a16(uint32_t fetchdat)
 {
     if ((cpu_features & CPU_FEATURE_SSE2) && sse_xmm)
         return opUNPCKLPD_f_xmm_a16(fetchdat);
+
     fetch_ea_16(fetchdat);
     if (cpu_mod == 3) {
         XMM[cpu_reg].l[0] = XMM[cpu_reg].l[0];
@@ -328,6 +343,7 @@ opUNPCKLPS_f_xmm_a16(uint32_t fetchdat)
         XMM[cpu_reg].l[3] = dst[1];
         CLOCK_CYCLES(2);
     }
+
     return 0;
 }
 
@@ -336,6 +352,7 @@ opUNPCKLPS_f_xmm_a32(uint32_t fetchdat)
 {
     if ((cpu_features & CPU_FEATURE_SSE2) && sse_xmm)
         return opUNPCKLPD_f_xmm_a32(fetchdat);
+
     fetch_ea_32(fetchdat);
     if (cpu_mod == 3) {
         XMM[cpu_reg].l[0] = XMM[cpu_reg].l[0];
@@ -358,6 +375,7 @@ opUNPCKLPS_f_xmm_a32(uint32_t fetchdat)
         XMM[cpu_reg].l[3] = dst[1];
         CLOCK_CYCLES(2);
     }
+
     return 0;
 }
 
@@ -366,6 +384,7 @@ opUNPCKHPS_f_xmm_a16(uint32_t fetchdat)
 {
     if ((cpu_features & CPU_FEATURE_SSE2) && sse_xmm)
         return opUNPCKHPD_f_xmm_a16(fetchdat);
+
     fetch_ea_16(fetchdat);
     if (cpu_mod == 3) {
         XMM[cpu_reg].l[0] = XMM[cpu_reg].l[2];
@@ -388,6 +407,7 @@ opUNPCKHPS_f_xmm_a16(uint32_t fetchdat)
         XMM[cpu_reg].l[3] = dst[1];
         CLOCK_CYCLES(2);
     }
+
     return 0;
 }
 
@@ -396,6 +416,7 @@ opUNPCKHPS_f_xmm_a32(uint32_t fetchdat)
 {
     if ((cpu_features & CPU_FEATURE_SSE2) && sse_xmm)
         return opUNPCKHPD_f_xmm_a32(fetchdat);
+
     fetch_ea_32(fetchdat);
     if (cpu_mod == 3) {
         XMM[cpu_reg].l[0] = XMM[cpu_reg].l[2];
@@ -426,6 +447,7 @@ opMOVHPS_f_xmm_MOVLHPS_xmm_xmm_a16(uint32_t fetchdat)
 {
     if ((cpu_features & CPU_FEATURE_SSE2) && sse_xmm)
         return opMOVHPD_f_xmm_a16(fetchdat);
+
     fetch_ea_16(fetchdat);
     if (cpu_mod == 3) {
         // MOVLHPS
@@ -442,6 +464,7 @@ opMOVHPS_f_xmm_MOVLHPS_xmm_xmm_a16(uint32_t fetchdat)
         XMM[cpu_reg].q[1] = dst;
         CLOCK_CYCLES(2);
     }
+
     return 0;
 }
 
@@ -450,6 +473,7 @@ opMOVHPS_f_xmm_MOVLHPS_xmm_xmm_a32(uint32_t fetchdat)
 {
     if ((cpu_features & CPU_FEATURE_SSE2) && sse_xmm)
         return opMOVHPD_f_xmm_a32(fetchdat);
+
     fetch_ea_32(fetchdat);
     if (cpu_mod == 3) {
         // MOVLHPS
@@ -466,6 +490,7 @@ opMOVHPS_f_xmm_MOVLHPS_xmm_xmm_a32(uint32_t fetchdat)
         XMM[cpu_reg].q[1] = dst;
         CLOCK_CYCLES(2);
     }
+
     return 0;
 }
 
@@ -474,6 +499,7 @@ opMOVHPS_xmm_f_a16(uint32_t fetchdat)
 {
     if ((cpu_features & CPU_FEATURE_SSE2) && sse_xmm)
         return opMOVHPD_xmm_f_a16(fetchdat);
+
     fetch_ea_16(fetchdat);
     if (cpu_mod == 3) {
         XMM[cpu_rm].q[1] = XMM[cpu_reg].q[0];
@@ -493,6 +519,7 @@ opMOVHPS_xmm_f_a32(uint32_t fetchdat)
 {
     if ((cpu_features & CPU_FEATURE_SSE2) && sse_xmm)
         return opMOVHPD_xmm_f_a32(fetchdat);
+
     fetch_ea_32(fetchdat);
     if (cpu_mod == 3) {
         XMM[cpu_rm].q[1] = XMM[cpu_reg].q[0];
@@ -504,6 +531,7 @@ opMOVHPS_xmm_f_a32(uint32_t fetchdat)
             return 1;
         CLOCK_CYCLES(2);
     }
+
     return 0;
 }
 
@@ -545,6 +573,7 @@ opMOVAPS_q_xmm_a16(uint32_t fetchdat)
 
         CLOCK_CYCLES(2);
     }
+
     return 0;
 }
 
@@ -586,6 +615,7 @@ opMOVAPS_q_xmm_a32(uint32_t fetchdat)
 
         CLOCK_CYCLES(2);
     }
+
     return 0;
 }
 
@@ -622,6 +652,7 @@ opMOVAPS_xmm_q_a16(uint32_t fetchdat)
 
         CLOCK_CYCLES(2);
     }
+
     return 0;
 }
 
@@ -658,6 +689,7 @@ opMOVAPS_xmm_q_a32(uint32_t fetchdat)
 
         CLOCK_CYCLES(2);
     }
+
     return 0;
 }
 
@@ -688,6 +720,7 @@ opMOVNTPS_xmm_q_a16(uint32_t fetchdat)
         return 1;
 
     CLOCK_CYCLES(2);
+
     return 0;
 }
 
@@ -718,6 +751,7 @@ opMOVNTPS_xmm_q_a32(uint32_t fetchdat)
         return 1;
 
     CLOCK_CYCLES(2);
+
     return 0;
 }
 
@@ -726,6 +760,7 @@ opMOVMSKPS_l_xmm_a16(uint32_t fetchdat)
 {
     if ((cpu_features & CPU_FEATURE_SSE2) && sse_xmm)
         return opMOVMSKPD_l_xmm_a16(fetchdat);
+
     fetch_ea_16(fetchdat);
     ILLEGAL_ON(cpu_mod != 3);
     if (cpu_mod == 3) {
@@ -741,6 +776,7 @@ opMOVMSKPS_l_xmm_a16(uint32_t fetchdat)
         setr32(cpu_rm, result);
         CLOCK_CYCLES(1);
     }
+
     return 0;
 }
 
@@ -749,6 +785,7 @@ opMOVMSKPS_l_xmm_a32(uint32_t fetchdat)
 {
     if ((cpu_features & CPU_FEATURE_SSE2) && sse_xmm)
         return opMOVMSKPD_l_xmm_a32(fetchdat);
+
     fetch_ea_32(fetchdat);
     ILLEGAL_ON(cpu_mod != 3);
     if (cpu_mod == 3) {
@@ -764,21 +801,25 @@ opMOVMSKPS_l_xmm_a32(uint32_t fetchdat)
         setr32(cpu_rm, result);
         CLOCK_CYCLES(1);
     }
+
     return 0;
 }
 
 static int
 opPSHUFW_mm_mm_a16(uint32_t fetchdat)
 {
-    MMX_REG src;
+    MMX_REG  src;
     MMX_REG *dst;
+
     if ((cpu_features & CPU_FEATURE_SSE2) && sse_xmm)
         return opPSHUFD_a16(fetchdat);
+
     MMX_ENTER();
     fetch_ea_16(fetchdat);
     uint8_t imm = getbyte();
     if (cpu_state.abrt)
         return 1;
+
     src = MMX_GETREG(cpu_rm);
     dst = MMX_GETREGP(cpu_reg);
 
@@ -787,21 +828,25 @@ opPSHUFW_mm_mm_a16(uint32_t fetchdat)
     dst->w[2] = src.w[(imm >> 4) & 3];
     dst->w[3] = src.w[(imm >> 6) & 3];
     CLOCK_CYCLES(1);
+
     return 0;
 }
 
 static int
 opPSHUFW_mm_mm_a32(uint32_t fetchdat)
 {
-    MMX_REG src;
+    MMX_REG  src;
     MMX_REG *dst;
+
     if ((cpu_features & CPU_FEATURE_SSE2) && sse_xmm)
         return opPSHUFD_a32(fetchdat);
+
     MMX_ENTER();
     fetch_ea_32(fetchdat);
     uint8_t imm = getbyte();
     if (cpu_state.abrt)
         return 1;
+
     src = MMX_GETREG(cpu_rm);
     dst = MMX_GETREGP(cpu_reg);
 
@@ -810,6 +855,7 @@ opPSHUFW_mm_mm_a32(uint32_t fetchdat)
     dst->w[2] = src.w[(imm >> 4) & 3];
     dst->w[3] = src.w[(imm >> 6) & 3];
     CLOCK_CYCLES(1);
+
     return 0;
 }
 
@@ -848,6 +894,7 @@ opPINSRW_xmm_w_a16(uint32_t fetchdat)
         }
         CLOCK_CYCLES(2);
     }
+
     return 0;
 }
 
@@ -886,6 +933,7 @@ opPINSRW_xmm_w_a32(uint32_t fetchdat)
         }
         CLOCK_CYCLES(2);
     }
+
     return 0;
 }
 
@@ -908,6 +956,7 @@ opPEXTRW_xmm_w_a16(uint32_t fetchdat)
         }
         CLOCK_CYCLES(1);
     }
+
     return 0;
 }
 
@@ -930,6 +979,7 @@ opPEXTRW_xmm_w_a32(uint32_t fetchdat)
         }
         CLOCK_CYCLES(1);
     }
+
     return 0;
 }
 
@@ -938,6 +988,7 @@ opSHUFPS_xmm_w_a16(uint32_t fetchdat)
 {
     if ((cpu_features & CPU_FEATURE_SSE2) && sse_xmm)
         return opSHUFPD_xmm_w_a16(fetchdat);
+
     fetch_ea_16(fetchdat);
     uint8_t imm = getbyte();
     if (cpu_mod == 3) {
@@ -974,6 +1025,7 @@ opSHUFPS_xmm_w_a16(uint32_t fetchdat)
         XMM[cpu_reg].q[1] = tmp.q[1];
         CLOCK_CYCLES(2);
     }
+
     return 0;
 }
 
@@ -982,6 +1034,7 @@ opSHUFPS_xmm_w_a32(uint32_t fetchdat)
 {
     if ((cpu_features & CPU_FEATURE_SSE2) && sse_xmm)
         return opSHUFPD_xmm_w_a32(fetchdat);
+
     fetch_ea_32(fetchdat);
     uint8_t imm = getbyte();
     if (cpu_mod == 3) {
@@ -1018,6 +1071,7 @@ opSHUFPS_xmm_w_a32(uint32_t fetchdat)
         XMM[cpu_reg].q[1] = tmp.q[1];
         CLOCK_CYCLES(2);
     }
+
     return 0;
 }
 
@@ -1085,6 +1139,7 @@ opPMOVMSKB_l_xmm_a16(uint32_t fetchdat)
         setr32(cpu_reg, result);
         CLOCK_CYCLES(1);
     }
+
     return 0;
 }
 
@@ -1152,6 +1207,7 @@ opPMOVMSKB_l_xmm_a32(uint32_t fetchdat)
         setr32(cpu_reg, result);
         CLOCK_CYCLES(1);
     }
+
     return 0;
 }
 
@@ -1160,6 +1216,7 @@ opMOVNTQ_q_mm_a16(uint32_t fetchdat)
 {
     if ((cpu_features & CPU_FEATURE_SSE2) && sse_xmm)
         return opMOVNTDQ_a16(fetchdat);
+
     MMX_ENTER();
 
     fetch_ea_16(fetchdat);
@@ -1174,7 +1231,9 @@ opMOVNTQ_q_mm_a16(uint32_t fetchdat)
     writememq(easeg, cpu_state.eaaddr, src.q);
     if (cpu_state.abrt)
         return 1;
+
     CLOCK_CYCLES(2);
+
     return 0;
 }
 
@@ -1183,6 +1242,7 @@ opMOVNTQ_q_mm_a32(uint32_t fetchdat)
 {
     if ((cpu_features & CPU_FEATURE_SSE2) && sse_xmm)
         return opMOVNTDQ_a32(fetchdat);
+
     MMX_ENTER();
 
     fetch_ea_32(fetchdat);
@@ -1197,7 +1257,9 @@ opMOVNTQ_q_mm_a32(uint32_t fetchdat)
     writememq(easeg, cpu_state.eaaddr, src.q);
     if (cpu_state.abrt)
         return 1;
+
     CLOCK_CYCLES(2);
+
     return 0;
 }
 
@@ -1206,6 +1268,7 @@ opMASKMOVQ_l_mm_a16(uint32_t fetchdat)
 {
     if ((cpu_features & CPU_FEATURE_SSE2) && sse_xmm)
         return opMASKMOVDQU_a16(fetchdat);
+
     MMX_ENTER();
     fetch_ea_16(fetchdat);
     ILLEGAL_ON(cpu_mod != 3);
@@ -1257,6 +1320,7 @@ opMASKMOVQ_l_mm_a16(uint32_t fetchdat)
         }
         CLOCK_CYCLES(1);
     }
+
     return 0;
 }
 
@@ -1265,6 +1329,7 @@ opMASKMOVQ_l_mm_a32(uint32_t fetchdat)
 {
     if ((cpu_features & CPU_FEATURE_SSE2) && sse_xmm)
         return opMASKMOVDQU_a32(fetchdat);
+
     MMX_ENTER();
     fetch_ea_32(fetchdat);
     ILLEGAL_ON(cpu_mod != 3);
@@ -1316,5 +1381,6 @@ opMASKMOVQ_l_mm_a32(uint32_t fetchdat)
         }
         CLOCK_CYCLES(1);
     }
+
     return 0;
 }

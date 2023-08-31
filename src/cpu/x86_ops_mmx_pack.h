@@ -71,7 +71,7 @@ opPUNPCKHDQ_a16(uint32_t fetchdat)
     if ((cpu_features & CPU_FEATURE_SSE2) && sse_xmm)
         return opPUNPCKHDQ_xmm_a16(fetchdat);
 
-    MMX_REG src;
+    MMX_REG  src;
     MMX_REG *dst;
     MMX_ENTER();
 
@@ -94,7 +94,7 @@ opPUNPCKHDQ_a32(uint32_t fetchdat)
     if ((cpu_features & CPU_FEATURE_SSE2) && sse_xmm)
         return opPUNPCKHDQ_xmm_a32(fetchdat);
 
-    MMX_REG src;
+    MMX_REG  src;
     MMX_REG *dst;
     MMX_ENTER();
 
@@ -118,7 +118,7 @@ opPUNPCKLBW_a16(uint32_t fetchdat)
     if ((cpu_features & CPU_FEATURE_SSE2) && sse_xmm)
         return opPUNPCKLBW_xmm_a16(fetchdat);
 
-    MMX_REG src;
+    MMX_REG  src;
     MMX_REG *dst;
     MMX_ENTER();
 
@@ -147,7 +147,7 @@ opPUNPCKLBW_a32(uint32_t fetchdat)
     if ((cpu_features & CPU_FEATURE_SSE2) && sse_xmm)
         return opPUNPCKLBW_xmm_a32(fetchdat);
 
-    MMX_REG src;
+    MMX_REG  src;
     MMX_REG *dst;
     MMX_ENTER();
 
@@ -177,7 +177,7 @@ opPUNPCKHBW_a16(uint32_t fetchdat)
     if ((cpu_features & CPU_FEATURE_SSE2) && sse_xmm)
         return opPUNPCKHBW_xmm_a16(fetchdat);
 
-    MMX_REG src;
+    MMX_REG  src;
     MMX_REG *dst;
     MMX_ENTER();
 
@@ -206,7 +206,7 @@ opPUNPCKHBW_a32(uint32_t fetchdat)
     if ((cpu_features & CPU_FEATURE_SSE2) && sse_xmm)
         return opPUNPCKHBW_xmm_a32(fetchdat);
 
-    MMX_REG src;
+    MMX_REG  src;
     MMX_REG *dst;
     MMX_ENTER();
 
@@ -236,7 +236,7 @@ opPUNPCKLWD_a16(uint32_t fetchdat)
     if ((cpu_features & CPU_FEATURE_SSE2) && sse_xmm)
         return opPUNPCKLWD_xmm_a16(fetchdat);
 
-    MMX_REG src;
+    MMX_REG  src;
     MMX_REG *dst;
     MMX_ENTER();
 
@@ -261,7 +261,7 @@ opPUNPCKLWD_a32(uint32_t fetchdat)
     if ((cpu_features & CPU_FEATURE_SSE2) && sse_xmm)
         return opPUNPCKLWD_xmm_a32(fetchdat);
 
-    MMX_REG src;
+    MMX_REG  src;
     MMX_REG *dst;
     MMX_ENTER();
 
@@ -287,7 +287,7 @@ opPUNPCKHWD_a16(uint32_t fetchdat)
     if ((cpu_features & CPU_FEATURE_SSE2) && sse_xmm)
         return opPUNPCKHWD_xmm_a16(fetchdat);
 
-    MMX_REG src;
+    MMX_REG  src;
     MMX_REG *dst;
     MMX_ENTER();
 
@@ -312,7 +312,7 @@ opPUNPCKHWD_a32(uint32_t fetchdat)
     if ((cpu_features & CPU_FEATURE_SSE2) && sse_xmm)
         return opPUNPCKHWD_xmm_a32(fetchdat);
 
-    MMX_REG src;
+    MMX_REG  src;
     MMX_REG *dst;
     MMX_ENTER();
 
@@ -338,7 +338,7 @@ opPACKSSWB_a16(uint32_t fetchdat)
     if ((cpu_features & CPU_FEATURE_SSE2) && sse_xmm)
         return opPACKSSWB_xmm_a16(fetchdat);
 
-    MMX_REG src;
+    MMX_REG  src;
     MMX_REG *dst;
     MMX_ENTER();
 
@@ -367,7 +367,7 @@ opPACKSSWB_a32(uint32_t fetchdat)
     if ((cpu_features & CPU_FEATURE_SSE2) && sse_xmm)
         return opPACKSSWB_xmm_a32(fetchdat);
 
-    MMX_REG src;
+    MMX_REG  src;
     MMX_REG *dst;
     MMX_ENTER();
 
@@ -397,7 +397,7 @@ opPACKUSWB_a16(uint32_t fetchdat)
     if ((cpu_features & CPU_FEATURE_SSE2) && sse_xmm)
         return opPACKUSWB_xmm_a16(fetchdat);
 
-    MMX_REG src;
+    MMX_REG  src;
     MMX_REG *dst;
     MMX_ENTER();
 
@@ -426,7 +426,7 @@ opPACKUSWB_a32(uint32_t fetchdat)
     if ((cpu_features & CPU_FEATURE_SSE2) && sse_xmm)
         return opPACKUSWB_xmm_a32(fetchdat);
 
-    MMX_REG src;
+    MMX_REG  src;
     MMX_REG *dst;
     MMX_ENTER();
 
@@ -456,7 +456,7 @@ opPACKSSDW_a16(uint32_t fetchdat)
     if ((cpu_features & CPU_FEATURE_SSE2) && sse_xmm)
         return opPACKSSDW_xmm_a16(fetchdat);
 
-    MMX_REG src;
+    MMX_REG  src;
     MMX_REG *dst;
     MMX_REG  dst2;
     MMX_ENTER();
@@ -484,7 +484,7 @@ opPACKSSDW_a32(uint32_t fetchdat)
     if ((cpu_features & CPU_FEATURE_SSE2) && sse_xmm)
         return opPACKSSDW_xmm_a32(fetchdat);
 
-    MMX_REG src;
+    MMX_REG  src;
     MMX_REG *dst;
     MMX_REG  dst2;
     MMX_ENTER();

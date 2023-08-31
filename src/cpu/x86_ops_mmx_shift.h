@@ -16,9 +16,9 @@ opPSxxW_imm(uint32_t fetchdat)
     if ((cpu_features & CPU_FEATURE_SSE2) && sse_xmm)
         return opPSxxW_xmm_imm(fetchdat);
 
-    int reg   = fetchdat & 7;
-    int op    = fetchdat & 0x38;
-    int shift = (fetchdat >> 8) & 0xff;
+    int      reg   = fetchdat & 7;
+    int      op    = fetchdat & 0x38;
+    int      shift = (fetchdat >> 8) & 0xff;
     MMX_REG *dst;
 
     cpu_state.pc += 2;
@@ -253,9 +253,9 @@ opPSxxD_imm(uint32_t fetchdat)
     if ((cpu_features & CPU_FEATURE_SSE2) && sse_xmm)
         return opPSxxD_xmm_imm(fetchdat);
 
-    int reg   = fetchdat & 7;
-    int op    = fetchdat & 0x38;
-    int shift = (fetchdat >> 8) & 0xff;
+    int      reg   = fetchdat & 7;
+    int      op    = fetchdat & 0x38;
+    int      shift = (fetchdat >> 8) & 0xff;
     MMX_REG *dst;
 
     cpu_state.pc += 2;
@@ -473,9 +473,9 @@ opPSxxQ_imm(uint32_t fetchdat)
     if ((cpu_features & CPU_FEATURE_SSE2) && sse_xmm)
         return opPSxxQ_xmm_imm(fetchdat);
 
-    int reg   = fetchdat & 7;
-    int op    = fetchdat & 0x38;
-    int shift = (fetchdat >> 8) & 0xff;
+    int      reg   = fetchdat & 7;
+    int      op    = fetchdat & 0x38;
+    int      shift = (fetchdat >> 8) & 0xff;
     MMX_REG *dst;
 
     cpu_state.pc += 2;

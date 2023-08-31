@@ -519,14 +519,12 @@ pci_bridge_reset(void *priv)
     /* IO BARs */
     if (AGP_BRIDGE(dev->local) && dev->local != AGP_BRIDGE_AMD_751)
         dev->regs[0x1c] = 0xf0;
-    else if (dev->local == AGP_BRIDGE_AMD_751)
-    {
+    else if (dev->local == AGP_BRIDGE_AMD_751) {
         dev->regs[0x1c] = 0xff;
         dev->regs[0x1d] = 0x0f;
         dev->regs[0x1e] = 0x20;
         dev->regs[0x1f] = 0x02;
-    }
-    else
+    } else
         dev->regs[0x1c] = dev->regs[0x1d] = 0x01;
 
     if (dev->local == AGP_BRIDGE_ALI_M5247)
