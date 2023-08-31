@@ -1802,70 +1802,6 @@ cpu_set(void)
 #endif
             break;
 
-        case CPU_ATHLON:
-#ifdef USE_DYNAREC
-            x86_setopcodes(ops_386, ops_k62_0f, dynarec_ops_386, dynarec_ops_k62_0f);
-            x86_dynarec_opcodes_da_a16  = dynarec_ops_fpu_686_da_a16;
-            x86_dynarec_opcodes_da_a32  = dynarec_ops_fpu_686_da_a32;
-            x86_dynarec_opcodes_db_a16  = dynarec_ops_fpu_686_db_a16;
-            x86_dynarec_opcodes_db_a32  = dynarec_ops_fpu_686_db_a32;
-            x86_dynarec_opcodes_df_a16  = dynarec_ops_fpu_686_df_a16;
-            x86_dynarec_opcodes_df_a32  = dynarec_ops_fpu_686_df_a32;
-            x86_dynarec_opcodes_3DNOW = dynarec_ops_3DNOWE;
-#else
-            x86_setopcodes(ops_386, ops_k62_0f);
-#endif
-            x86_opcodes_3DNOW = ops_3DNOWE;
-            x86_opcodes_da_a16  = ops_fpu_686_da_a16;
-            x86_opcodes_da_a32  = ops_fpu_686_da_a32;
-            x86_opcodes_db_a16  = ops_fpu_686_db_a16;
-            x86_opcodes_db_a32  = ops_fpu_686_db_a32;
-            x86_opcodes_df_a16  = ops_fpu_686_df_a16;
-            x86_opcodes_df_a32  = ops_fpu_686_df_a32;
-
-            timing_rr  = 1; /* register dest - register src */
-            timing_rm  = 2; /* register dest - memory src */
-            timing_mr  = 3; /* memory dest   - register src */
-            timing_mm  = 3;
-            timing_rml = 2; /* register dest - memory src long */
-            timing_mrl = 3; /* memory dest   - register src long */
-            timing_mml = 3;
-            timing_bt  = 0; /* branch taken */
-            timing_bnt = 1; /* branch not taken */
-
-            timing_int                = 6;
-            timing_int_rm             = 11;
-            timing_int_v86            = 54;
-            timing_int_pm             = 25;
-            timing_int_pm_outer       = 42;
-            timing_iret_rm            = 7;
-            timing_iret_v86           = 27; /* unknown */
-            timing_iret_pm            = 10;
-            timing_iret_pm_outer      = 27;
-            timing_call_rm            = 4;
-            timing_call_pm            = 4;
-            timing_call_pm_gate       = 22;
-            timing_call_pm_gate_inner = 44;
-            timing_retf_rm            = 4;
-            timing_retf_pm            = 4;
-            timing_retf_pm_outer      = 23;
-            timing_jmp_rm             = 3;
-            timing_jmp_pm             = 3;
-            timing_jmp_pm_gate        = 18;
-
-            timing_misaligned = 3;
-
-            cpu_features = CPU_FEATURE_RDTSC | CPU_FEATURE_MSR | CPU_FEATURE_CR4 | CPU_FEATURE_VME | CPU_FEATURE_MMX | CPU_FEATURE_3DNOW | CPU_FEATURE_3DNOWE;
-            msr.fcr = (1 << 8) | (1 << 9) | (1 << 12) | (1 << 16) | (1 << 19) | (1 << 21);
-            cpu_CR4_mask = CR4_VME | CR4_PVI | CR4_TSD | CR4_DE | CR4_PSE | CR4_MCE;
-
-#ifdef USE_DYNAREC
-            codegen_timing_set(&codegen_timing_k6);
-#endif
-            amd_k7_smram_aseg = smram_add();
-            amd_k7_smram_tseg = smram_add();
-            break;
-
         case CPU_GENERICINTEL:
 #ifdef USE_DYNAREC
             x86_setopcodes(ops_386, ops_genericintel_0f, dynarec_ops_386, dynarec_ops_genericintel_0f);
@@ -1929,6 +1865,70 @@ cpu_set(void)
 #ifdef USE_DYNAREC
             codegen_timing_set(&codegen_timing_p6);
 #endif
+            break;
+
+        case CPU_ATHLON:
+#ifdef USE_DYNAREC
+            x86_setopcodes(ops_386, ops_k62_0f, dynarec_ops_386, dynarec_ops_k62_0f);
+            x86_dynarec_opcodes_da_a16  = dynarec_ops_fpu_686_da_a16;
+            x86_dynarec_opcodes_da_a32  = dynarec_ops_fpu_686_da_a32;
+            x86_dynarec_opcodes_db_a16  = dynarec_ops_fpu_686_db_a16;
+            x86_dynarec_opcodes_db_a32  = dynarec_ops_fpu_686_db_a32;
+            x86_dynarec_opcodes_df_a16  = dynarec_ops_fpu_686_df_a16;
+            x86_dynarec_opcodes_df_a32  = dynarec_ops_fpu_686_df_a32;
+            x86_dynarec_opcodes_3DNOW = dynarec_ops_3DNOWE;
+#else
+            x86_setopcodes(ops_386, ops_k62_0f);
+#endif
+            x86_opcodes_3DNOW = ops_3DNOWE;
+            x86_opcodes_da_a16  = ops_fpu_686_da_a16;
+            x86_opcodes_da_a32  = ops_fpu_686_da_a32;
+            x86_opcodes_db_a16  = ops_fpu_686_db_a16;
+            x86_opcodes_db_a32  = ops_fpu_686_db_a32;
+            x86_opcodes_df_a16  = ops_fpu_686_df_a16;
+            x86_opcodes_df_a32  = ops_fpu_686_df_a32;
+
+            timing_rr  = 1; /* register dest - register src */
+            timing_rm  = 2; /* register dest - memory src */
+            timing_mr  = 3; /* memory dest   - register src */
+            timing_mm  = 3;
+            timing_rml = 2; /* register dest - memory src long */
+            timing_mrl = 3; /* memory dest   - register src long */
+            timing_mml = 3;
+            timing_bt  = 0; /* branch taken */
+            timing_bnt = 1; /* branch not taken */
+
+            timing_int                = 6;
+            timing_int_rm             = 11;
+            timing_int_v86            = 54;
+            timing_int_pm             = 25;
+            timing_int_pm_outer       = 42;
+            timing_iret_rm            = 7;
+            timing_iret_v86           = 27; /* unknown */
+            timing_iret_pm            = 10;
+            timing_iret_pm_outer      = 27;
+            timing_call_rm            = 4;
+            timing_call_pm            = 4;
+            timing_call_pm_gate       = 22;
+            timing_call_pm_gate_inner = 44;
+            timing_retf_rm            = 4;
+            timing_retf_pm            = 4;
+            timing_retf_pm_outer      = 23;
+            timing_jmp_rm             = 3;
+            timing_jmp_pm             = 3;
+            timing_jmp_pm_gate        = 18;
+
+            timing_misaligned = 3;
+
+            cpu_features = CPU_FEATURE_RDTSC | CPU_FEATURE_MSR | CPU_FEATURE_CR4 | CPU_FEATURE_VME | CPU_FEATURE_MMX | CPU_FEATURE_3DNOW | CPU_FEATURE_3DNOWE;
+            msr.fcr = (1 << 8) | (1 << 9) | (1 << 12) | (1 << 16) | (1 << 19) | (1 << 21);
+            cpu_CR4_mask = CR4_VME | CR4_PVI | CR4_TSD | CR4_DE | CR4_PSE | CR4_MCE;
+
+#ifdef USE_DYNAREC
+            codegen_timing_set(&codegen_timing_k6);
+#endif
+            amd_k7_smram_aseg = smram_add();
+            amd_k7_smram_tseg = smram_add();
             break;
 
         case CPU_CYRIX3S:
