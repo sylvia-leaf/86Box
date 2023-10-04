@@ -685,7 +685,8 @@ picint_common(uint16_t num, int level, int set, uint8_t *irq_state)
                 if ((!!*irq_state) != !!set)
                     set ? dev->lines[b]++ : dev->lines[b]--;
 
-                if ((!pic_level_triggered(dev, b) || ((!!*irq_state) != !!set)))
+                if (!pic_level_triggered(dev, b) ||
+                    (((!!*irq_state) != !!set) && (dev->lines[b] == (!!set))))
                     lines |= w;
             }
         }
@@ -732,8 +733,7 @@ picint_common(uint16_t num, int level, int set, uint8_t *irq_state)
                 if ((num & 0x1000) && mouse_latch)
                     latched_irqs &= 0xefff;
 
-                if (!level || lines)
-                    pic2.irr &= ~(num >> 8);
+                pic2.irr &= ~(num >> 8);
             }
 
             if (num & 0x00ff) {
@@ -741,8 +741,7 @@ picint_common(uint16_t num, int level, int set, uint8_t *irq_state)
                 if (kbd_latch && (num & 0x0002))
                     latched_irqs &= 0xfffd;
 
-                if (!level || lines)
-                    pic.irr &= ~(num & 0x00ff);
+                pic.irr &= ~(num & 0x00ff);
             }
         }
 
