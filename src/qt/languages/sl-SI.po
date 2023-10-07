@@ -203,7 +203,7 @@ msgid "&Documentation..."
 msgstr "&Dokumentacija..."
 
 msgid "&About 86Box..."
-msgstr "&O programu 86Box..."
+msgstr "&O programu PCBox..."
 
 msgid "&New image..."
 msgstr "&Nova slika..."
@@ -625,8 +625,8 @@ msgstr "9"
 msgid "FONT_NAME"
 msgstr "Segoe UI"
 
-msgid "86Box"
-msgstr "86Box"
+msgid "PCBox"
+msgstr "PCBox"
 
 msgid "Error"
 msgstr "Napaka"
@@ -649,8 +649,8 @@ msgstr "ZIP %03i %i (%s): %ls"
 msgid "ZIP images"
 msgstr "ZIP slike"
 
-msgid "86Box could not find any usable ROM images.\n\nPlease <a href=\"https://github.com/86Box/roms/releases/latest\">download</a> a ROM set and extract it into the \"roms\" directory."
-msgstr "86Box ni našel nobenih uporabnih ROM slik.\n\nProsim <a href=\"https://github.com/86Box/roms/releases/latest\">prenesite</a> set ROM-ov in ga razširite v mapo \"roms\"."
+msgid "PCBox could not find any usable ROM images.\n\nPlease <a href=\"https://github.com/PCBox/roms/releases/latest\">download</a> a ROM set and extract it into the \"roms\" directory."
+msgstr "PCBox ni našel nobenih uporabnih ROM slik.\n\nProsim <a href=\"https://github.com/PCBox/roms/releases/latest\">prenesite</a> set ROM-ov in ga razširite v mapo \"roms\"."
 
 msgid "(empty)"
 msgstr "(prazno)"
@@ -814,8 +814,8 @@ msgstr "Ne morem inicializirati SDL, potrebna je knjižica SDL2.dll"
 msgid "Are you sure you want to hard reset the emulated machine?"
 msgstr "Ste prepričani, da želite ponovno zagnati emulirani sistem?"
 
-msgid "Are you sure you want to exit 86Box?"
-msgstr "Ste prepričani, da želite zapreti 86Box?"
+msgid "Are you sure you want to exit PCBox?"
+msgstr "Ste prepričani, da želite zapreti PCBox?"
 
 msgid "Unable to initialize Ghostscript"
 msgstr "Ne morem inicializirati Ghostscript"
@@ -826,8 +826,8 @@ msgstr "MO %i (%ls): %ls"
 msgid "MO images"
 msgstr "Slike MO"
 
-msgid "Welcome to 86Box!"
-msgstr "Dobrodošli v 86Box!"
+msgid "Welcome to PCBox!"
+msgstr "Dobrodošli v PCBox!"
 
 msgid "Internal controller"
 msgstr "Notranji krmilnik"
@@ -848,10 +848,10 @@ msgid "Save"
 msgstr "Shrani"
 
 msgid "About 86Box"
-msgstr "O programu 86Box"
+msgstr "O programu PCBox"
 
-msgid "86Box v"
-msgstr "86Box v"
+msgid "PCBox v"
+msgstr "PCBox v"
 
 msgid "An emulator of old computers\n\nAuthors: Miran Grča (OBattler), RichardG867, Jasmine Iwanek, TC1995, coldbrewed, Teemu Korhonen (Manaatti), Joakim L. Gilje, Adrien Moulin (elyosh), Daniel Balsom (gloriouscow), Cacodemon345, Fred N. van Kempen (waltje), Tiseno100, reenigne, and others.\n\nWith previous core contributions from Sarah Walker, leilei, JohnElliott, greatpsycho, and others.\n\nReleased under the GNU General Public License version 2 or later. See LICENSE for more information."
 msgstr "Emulator starih računalnikov\n\nAvtorji: Miran Grča (OBattler), RichardG867, Jasmine Iwanek, TC1995, coldbrewed, Teemu Korhonen (Manaatti), Joakim L. Gilje, Adrien Moulin (elyosh), Daniel Balsom (gloriouscow), Cacodemon345, Fred N. van Kempen (waltje), Tiseno100, reenigne in drugi.\n\nWith previous core contributions from Sarah Walker, leilei, JohnElliott, greatpsycho in drugi.\n\nIzdano pod licenco GNU General Public License različica 2 ali novejša. Glej datoteko LICENSE za več informacij."

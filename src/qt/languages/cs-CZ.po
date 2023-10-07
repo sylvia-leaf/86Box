@@ -203,7 +203,7 @@ msgid "&Documentation..."
 msgstr "&Dokumentace"
 
 msgid "&About 86Box..."
-msgstr "&O programu 86Box"
+msgstr "&O programu PCBox"
 
 msgid "&New image..."
 msgstr "&Nový obraz..."
@@ -625,8 +625,8 @@ msgstr "9"
 msgid "FONT_NAME"
 msgstr "Segoe UI"
 
-msgid "86Box"
-msgstr "86Box"
+msgid "PCBox"
+msgstr "PCBox"
 
 msgid "Error"
 msgstr "Chyba"
@@ -649,8 +649,8 @@ msgstr "ZIP %03i %i (%s): %ls"
 msgid "ZIP images"
 msgstr "Obrazy ZIP disků"
 
-msgid "86Box could not find any usable ROM images.\n\nPlease <a href=\"https://github.com/86Box/roms/releases/latest\">download</a> a ROM set and extract it into the \"roms\" directory."
-msgstr "86Box nenalezl žádné použitelné image pamětí ROM.\n\n<a href=\"https://github.com/86Box/roms/releases/latest\">Stáhněte</a> sadu obrazů ROM a extrahujte ji do složky \"roms\"."
+msgid "PCBox could not find any usable ROM images.\n\nPlease <a href=\"https://github.com/PCBox/roms/releases/latest\">download</a> a ROM set and extract it into the \"roms\" directory."
+msgstr "PCBox nenalezl žádné použitelné image pamětí ROM.\n\n<a href=\"https://github.com/PCBox/roms/releases/latest\">Stáhněte</a> sadu obrazů ROM a extrahujte ji do složky \"roms\"."
 
 msgid "(empty)"
 msgstr "(prázdné)"
@@ -814,8 +814,8 @@ msgstr "Nastala chyba při inicializaci knihovny SDL, je potřeba SDL2.dll"
 msgid "Are you sure you want to hard reset the emulated machine?"
 msgstr "Opravdu chcete resetovat emulovaný počítač?"
 
-msgid "Are you sure you want to exit 86Box?"
-msgstr "Opravdu chcete ukončit 86Box?"
+msgid "Are you sure you want to exit PCBox?"
+msgstr "Opravdu chcete ukončit PCBox?"
 
 msgid "Unable to initialize Ghostscript"
 msgstr "Nastala chyba při inicializaci knihovny Ghostscript"
@@ -826,8 +826,8 @@ msgstr "MO %i (%ls): %ls"
 msgid "MO images"
 msgstr "Obrazy MO"
 
-msgid "Welcome to 86Box!"
-msgstr "Vítejte v programu 86Box!"
+msgid "Welcome to PCBox!"
+msgstr "Vítejte v programu PCBox!"
 
 msgid "Internal controller"
 msgstr "Vestavěný řadič"
@@ -848,10 +848,10 @@ msgid "Save"
 msgstr "Uložit"
 
 msgid "About 86Box"
-msgstr "O programu 86Box"
+msgstr "O programu PCBox"
 
-msgid "86Box v"
-msgstr "86Box v"
+msgid "PCBox v"
+msgstr "PCBox v"
 
 msgid "An emulator of old computers\n\nAuthors: Miran Grča (OBattler), RichardG867, Jasmine Iwanek, TC1995, coldbrewed, Teemu Korhonen (Manaatti), Joakim L. Gilje, Adrien Moulin (elyosh), Daniel Balsom (gloriouscow), Cacodemon345, Fred N. van Kempen (waltje), Tiseno100, reenigne, and others.\n\nWith previous core contributions from Sarah Walker, leilei, JohnElliott, greatpsycho, and others.\n\nReleased under the GNU General Public License version 2 or later. See LICENSE for more information."
 msgstr "Emulátor starých počítačů\n\nAutoři: Miran Grča (OBattler), RichardG867, Jasmine Iwanek, TC1995, coldbrewed, Teemu Korhonen (Manaatti), Joakim L. Gilje, Adrien Moulin (elyosh), Daniel Balsom (gloriouscow), Cacodemon345, Fred N. van Kempen (waltje), Tiseno100, reenigne, and others.\n\nWith previous core contributions from Sarah Walker, leilei, JohnElliott, greatpsycho, and others.\n\nZveřejněno pod licencí GNU General Public License verze 2 nebo novější. Viz soubor LICENSE pro více informací."

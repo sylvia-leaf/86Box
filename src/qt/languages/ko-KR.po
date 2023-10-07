@@ -203,7 +203,7 @@ msgid "&Documentation..."
 msgstr "문서(&D)..."
 
 msgid "&About 86Box..."
-msgstr "86Box에 대해(&A)..."
+msgstr "PCBox에 대해(&A)..."
 
 msgid "&New image..."
 msgstr "새 이미지(&N)..."
@@ -625,8 +625,8 @@ msgstr "9"
 msgid "FONT_NAME"
 msgstr "Malgun Gothic"
 
-msgid "86Box"
-msgstr "86Box"
+msgid "PCBox"
+msgstr "PCBox"
 
 msgid "Error"
 msgstr "오류"
@@ -649,8 +649,8 @@ msgstr "ZIP %03i %i (%s): %ls"
 msgid "ZIP images"
 msgstr "ZIP 이미지"
 
-msgid "86Box could not find any usable ROM images.\n\nPlease <a href=\"https://github.com/86Box/roms/releases/latest\">download</a> a ROM set and extract it into the \"roms\" directory."
-msgstr "86Box에서 사용 가능한 ROM 이미지를 찾을 수 없습니다.\n\nROM 세트를<a href=\"https://github.com/86Box/roms/releases/latest\">다운로드</a> 후 \"roms\" 디렉토리에 압축을 풀어 주세요."
+msgid "PCBox could not find any usable ROM images.\n\nPlease <a href=\"https://github.com/PCBox/roms/releases/latest\">download</a> a ROM set and extract it into the \"roms\" directory."
+msgstr "PCBox에서 사용 가능한 ROM 이미지를 찾을 수 없습니다.\n\nROM 세트를<a href=\"https://github.com/PCBox/roms/releases/latest\">다운로드</a> 후 \"roms\" 디렉토리에 압축을 풀어 주세요."
 
 msgid "(empty)"
 msgstr "(비었음)"
@@ -814,8 +814,8 @@ msgstr "SDL을 초기화할 수 없습니다. SDL2.dll이 필요합니다"
 msgid "Are you sure you want to hard reset the emulated machine?"
 msgstr "실행중인 머신을 재시작하시겠습니까?"
 
-msgid "Are you sure you want to exit 86Box?"
-msgstr "86Box를 끝내시겠습니까?"
+msgid "Are you sure you want to exit PCBox?"
+msgstr "PCBox를 끝내시겠습니까?"
 
 msgid "Unable to initialize Ghostscript"
 msgstr "Ghostscript를 초기화할 수 없습니다"
@@ -826,8 +826,8 @@ msgstr "광자기 %i (%ls): %ls"
 msgid "MO images"
 msgstr "광자기 이미지"
 
-msgid "Welcome to 86Box!"
-msgstr "86Box에 어서오세요!"
+msgid "Welcome to PCBox!"
+msgstr "PCBox에 어서오세요!"
 
 msgid "Internal controller"
 msgstr "내부 컨트롤러"
@@ -848,10 +848,10 @@ msgid "Save"
 msgstr "저장"
 
 msgid "About 86Box"
-msgstr "86Box에 대해"
+msgstr "PCBox에 대해"
 
-msgid "86Box v"
-msgstr "86Box v"
+msgid "PCBox v"
+msgstr "PCBox v"
 
 msgid "An emulator of old computers\n\nAuthors: Miran Grča (OBattler), RichardG867, Jasmine Iwanek, TC1995, coldbrewed, Teemu Korhonen (Manaatti), Joakim L. Gilje, Adrien Moulin (elyosh), Daniel Balsom (gloriouscow), Cacodemon345, Fred N. van Kempen (waltje), Tiseno100, reenigne, and others.\n\nWith previous core contributions from Sarah Walker, leilei, JohnElliott, greatpsycho, and others.\n\nReleased under the GNU General Public License version 2 or later. See LICENSE for more information."
 msgstr "고전 컴퓨터 에뮬레이터\n\n저자: Miran Grča (OBattler), RichardG867, Jasmine Iwanek, TC1995, coldbrewed, Teemu Korhonen (Manaatti), Joakim L. Gilje, Adrien Moulin (elyosh), Daniel Balsom (gloriouscow), Cacodemon345, Fred N. van Kempen (waltje), Tiseno100, reenigne, and others.\n\nWith previous core contributions from Sarah Walker, leilei, JohnElliott, greatpsycho, and others.\n\nGNU General Public 라이선스 (버전 2 이상)에 의해 배포되었습니다. 자세한 내용은 LICENSE 파일을 읽어 주세요."

@@ -203,7 +203,7 @@ msgid "&Documentation..."
 msgstr "&Documentação..."
 
 msgid "&About 86Box..."
-msgstr "&Sobre o 86Box..."
+msgstr "&Sobre o PCBox..."
 
 msgid "&New image..."
 msgstr "&Nova imagem..."
@@ -625,8 +625,8 @@ msgstr "9"
 msgid "FONT_NAME"
 msgstr "Segoe UI"
 
-msgid "86Box"
-msgstr "86Box"
+msgid "PCBox"
+msgstr "PCBox"
 
 msgid "Error"
 msgstr "Erro"
@@ -649,8 +649,8 @@ msgstr "ZIP %03i %i (%s): %ls"
 msgid "ZIP images"
 msgstr "Imagens ZIP"
 
-msgid "86Box could not find any usable ROM images.\n\nPlease <a href=\"https://github.com/86Box/roms/releases/latest\">download</a> a ROM set and extract it into the \"roms\" directory."
-msgstr "O 86Box não conseguiu encontrar nenhuma imagem de ROM utilizável.\n\nPor favor, <a href=\"https://github.com/86Box/roms/releases/latest\">baixe</a> um conjunto de ROM e extraia no diretório \"roms\"."
+msgid "PCBox could not find any usable ROM images.\n\nPlease <a href=\"https://github.com/PCBox/roms/releases/latest\">download</a> a ROM set and extract it into the \"roms\" directory."
+msgstr "O PCBox não conseguiu encontrar nenhuma imagem de ROM utilizável.\n\nPor favor, <a href=\"https://github.com/PCBox/roms/releases/latest\">baixe</a> um conjunto de ROM e extraia no diretório \"roms\"."
 
 msgid "(empty)"
 msgstr "(vazio)"
@@ -814,8 +814,8 @@ msgstr "Não é possível inicializar o SDL, é necessário o SDL2.dll"
 msgid "Are you sure you want to hard reset the emulated machine?"
 msgstr "Tem certeza de que deseja reiniciar completamente a máquina emulada?"
 
-msgid "Are you sure you want to exit 86Box?"
-msgstr "Tem certeza de que deseja sair do 86Box?"
+msgid "Are you sure you want to exit PCBox?"
+msgstr "Tem certeza de que deseja sair do PCBox?"
 
 msgid "Unable to initialize Ghostscript"
 msgstr "Não é possível inicializar o Ghostscript"
@@ -826,8 +826,8 @@ msgstr "Magneto-óptico %i (%ls): %ls"
 msgid "MO images"
 msgstr "Imagens magneto-ópticas"
 
-msgid "Welcome to 86Box!"
-msgstr "Bem-vindo ao 86Box!"
+msgid "Welcome to PCBox!"
+msgstr "Bem-vindo ao PCBox!"
 
 msgid "Internal controller"
 msgstr "Controlador interno"
@@ -848,10 +848,10 @@ msgid "Save"
 msgstr "Salvar"
 
 msgid "About 86Box"
-msgstr "Sobre o 86Box"
+msgstr "Sobre o PCBox"
 
-msgid "86Box v"
-msgstr "86Box versão"
+msgid "PCBox v"
+msgstr "PCBox versão"
 
 msgid "An emulator of old computers\n\nAuthors: Miran Grča (OBattler), RichardG867, Jasmine Iwanek, TC1995, coldbrewed, Teemu Korhonen (Manaatti), Joakim L. Gilje, Adrien Moulin (elyosh), Daniel Balsom (gloriouscow), Cacodemon345, Fred N. van Kempen (waltje), Tiseno100, reenigne, and others.\n\nWith previous core contributions from Sarah Walker, leilei, JohnElliott, greatpsycho, and others.\n\nReleased under the GNU General Public License version 2 or later. See LICENSE for more information."
 msgstr "Um emulador de computadores antigos\n\nAutores: Miran Grča (OBattler), RichardG867, Jasmine Iwanek, TC1995, coldbrewed, Teemu Korhonen (Manaatti), Joakim L. Gilje, Adrien Moulin (elyosh), Daniel Balsom (gloriouscow), Cacodemon345, Fred N. van Kempen (waltje), Tiseno100, reenigne, e outros.\n\nWith previous core contributions from Sarah Walker, leilei, JohnElliott, greatpsycho, e outros.\n\nTraduzido por: Altieres Lima da Silva\n\nLançado sob a Licença Pública Geral GNU versão 2 ou posterior. Veja o arquivo LICENSE para mais informações."

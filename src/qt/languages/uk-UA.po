@@ -203,7 +203,7 @@ msgid "&Documentation..."
 msgstr "&Документація..."
 
 msgid "&About 86Box..."
-msgstr "&Про програму 86Box..."
+msgstr "&Про програму PCBox..."
 
 msgid "&New image..."
 msgstr "&Новий образ..."
@@ -625,8 +625,8 @@ msgstr "9"
 msgid "FONT_NAME"
 msgstr "Segoe UI"
 
-msgid "86Box"
-msgstr "86Box"
+msgid "PCBox"
+msgstr "PCBox"
 
 msgid "Error"
 msgstr "Помилка"
@@ -649,8 +649,8 @@ msgstr "ZIP %03i %i (%s): %ls"
 msgid "ZIP images"
 msgstr "Образи ZIP"
 
-msgid "86Box could not find any usable ROM images.\n\nPlease <a href=\"https://github.com/86Box/roms/releases/latest\">download</a> a ROM set and extract it into the \"roms\" directory."
-msgstr "86Box не зміг знайти жодного відповідного для використання файлу з ПЗУ.\n\nБудь ласка <a href=\"https://github.com/86Box/roms/releases/latest\">завантажте</a> набір ПЗУ і витягніть його в каталог \"roms\"."
+msgid "PCBox could not find any usable ROM images.\n\nPlease <a href=\"https://github.com/PCBox/roms/releases/latest\">download</a> a ROM set and extract it into the \"roms\" directory."
+msgstr "PCBox не зміг знайти жодного відповідного для використання файлу з ПЗУ.\n\nБудь ласка <a href=\"https://github.com/PCBox/roms/releases/latest\">завантажте</a> набір ПЗУ і витягніть його в каталог \"roms\"."
 
 msgid "(empty)"
 msgstr "(порожньо)"
@@ -814,8 +814,8 @@ msgstr "Неможливо ініціалізувати SDL, потрібно SD
 msgid "Are you sure you want to hard reset the emulated machine?"
 msgstr "Ви впевнені, що хочете виконати холодне перезавантаження емульованої машини?"
 
-msgid "Are you sure you want to exit 86Box?"
-msgstr "Ви впевнені, що хочете вийти з 86Box?"
+msgid "Are you sure you want to exit PCBox?"
+msgstr "Ви впевнені, що хочете вийти з PCBox?"
 
 msgid "Unable to initialize Ghostscript"
 msgstr "Неможливо ініціалізувати Ghostscript"
@@ -826,8 +826,8 @@ msgstr "Магнітооптичний %i (%ls): %ls"
 msgid "MO images"
 msgstr "Образи магнітооптичних дисків"
 
-msgid "Welcome to 86Box!"
-msgstr "Ласкаво просимо в 86Box!"
+msgid "Welcome to PCBox!"
+msgstr "Ласкаво просимо в PCBox!"
 
 msgid "Internal controller"
 msgstr "Вбудований контролер"
@@ -848,10 +848,10 @@ msgid "Save"
 msgstr "Зберегти"
 
 msgid "About 86Box"
-msgstr "Про 86Box"
+msgstr "Про PCBox"
 
-msgid "86Box v"
-msgstr "86Box v."
+msgid "PCBox v"
+msgstr "PCBox v."
 
 msgid "An emulator of old computers\n\nAuthors: Miran Grča (OBattler), RichardG867, Jasmine Iwanek, TC1995, coldbrewed, Teemu Korhonen (Manaatti), Joakim L. Gilje, Adrien Moulin (elyosh), Daniel Balsom (gloriouscow), Cacodemon345, Fred N. van Kempen (waltje), Tiseno100, reenigne, and others.\n\nWith previous core contributions from Sarah Walker, leilei, JohnElliott, greatpsycho, and others.\n\nReleased under the GNU General Public License version 2 or later. See LICENSE for more information."
 msgstr "Емулятор старих комп'ютерів\n\nАвтори: Miran Grča (OBattler), RichardG867, Jasmine Iwanek, TC1995, coldbrewed, Teemu Korhonen (Manaatti), Joakim L. Gilje, Adrien Moulin (elyosh), Daniel Balsom (gloriouscow), Cacodemon345, Fred N. van Kempen (waltje), Tiseno100, reenigne, and others.\n\nWith previous core contributions from Sarah Walker, leilei, JohnElliott, greatpsycho, and others.\n\nВипускаєтся під ліцензією GNU General Public License версії 2 або більше пізніше. Додадкову інформацію см. у файлі LICENSE."

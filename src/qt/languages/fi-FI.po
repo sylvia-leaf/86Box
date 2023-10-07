@@ -203,7 +203,7 @@ msgid "&Documentation..."
 msgstr "&Ohjekirja..."
 
 msgid "&About 86Box..."
-msgstr "&Tietoja 86Boxista..."
+msgstr "&Tietoja PCBoxista..."
 
 msgid "&New image..."
 msgstr "&Uusi kasettikuva..."
@@ -625,8 +625,8 @@ msgstr "9"
 msgid "FONT_NAME"
 msgstr "Segoe UI"
 
-msgid "86Box"
-msgstr "86Box"
+msgid "PCBox"
+msgstr "PCBox"
 
 msgid "Error"
 msgstr "Virhe"
@@ -649,8 +649,8 @@ msgstr "ZIP %03i %i (%s): %ls"
 msgid "ZIP images"
 msgstr "ZIP-levykuvat"
 
-msgid "86Box could not find any usable ROM images.\n\nPlease <a href=\"https://github.com/86Box/roms/releases/latest\">download</a> a ROM set and extract it into the \"roms\" directory."
-msgstr "86Box ei löytänyt käyttökelpoisia ROM-tiedostoja.\n\nVoit <a href=\"https://github.com/86Box/roms/releases/latest\">ladata</a> ROM-paketin ja purkaa sen \"roms\"-hakemistoon."
+msgid "PCBox could not find any usable ROM images.\n\nPlease <a href=\"https://github.com/PCBox/roms/releases/latest\">download</a> a ROM set and extract it into the \"roms\" directory."
+msgstr "PCBox ei löytänyt käyttökelpoisia ROM-tiedostoja.\n\nVoit <a href=\"https://github.com/PCBox/roms/releases/latest\">ladata</a> ROM-paketin ja purkaa sen \"roms\"-hakemistoon."
 
 msgid "(empty)"
 msgstr "(tyhjä)"
@@ -814,8 +814,8 @@ msgstr "SDL:n alustus epäonnistui. Tarvitaan SDL2.dll"
 msgid "Are you sure you want to hard reset the emulated machine?"
 msgstr "Haluatko varmasti käynnistää emuloidun tietokoneen uudelleen?"
 
-msgid "Are you sure you want to exit 86Box?"
-msgstr "Haluatko varmasti sulkea 86Boxin?"
+msgid "Are you sure you want to exit PCBox?"
+msgstr "Haluatko varmasti sulkea PCBoxin?"
 
 msgid "Unable to initialize Ghostscript"
 msgstr "Ghostscriptin alustus epäonnistui"
@@ -826,8 +826,8 @@ msgstr "MO %i (%ls): %ls"
 msgid "MO images"
 msgstr "MO-levykuvat"
 
-msgid "Welcome to 86Box!"
-msgstr "Tervetuloa 86Boxiin!"
+msgid "Welcome to PCBox!"
+msgstr "Tervetuloa PCBoxiin!"
 
 msgid "Internal controller"
 msgstr "Sisäinen ohjain"
@@ -848,10 +848,10 @@ msgid "Save"
 msgstr "Tallenna"
 
 msgid "About 86Box"
-msgstr "Tietoja 86Box:sta"
+msgstr "Tietoja PCBox:sta"
 
-msgid "86Box v"
-msgstr "86Box v"
+msgid "PCBox v"
+msgstr "PCBox v"
 
 msgid "An emulator of old computers\n\nAuthors: Miran Grča (OBattler), RichardG867, Jasmine Iwanek, TC1995, coldbrewed, Teemu Korhonen (Manaatti), Joakim L. Gilje, Adrien Moulin (elyosh), Daniel Balsom (gloriouscow), Cacodemon345, Fred N. van Kempen (waltje), Tiseno100, reenigne, and others.\n\nWith previous core contributions from Sarah Walker, leilei, JohnElliott, greatpsycho, and others.\n\nReleased under the GNU General Public License version 2 or later. See LICENSE for more information."
 msgstr "Vanhojen tietokoneiden emulaattori\n\nTekijät: Miran Grča (OBattler), RichardG867, Jasmine Iwanek, TC1995, coldbrewed, Teemu Korhonen (Manaatti), Joakim L. Gilje, Adrien Moulin (elyosh), Daniel Balsom (gloriouscow), Cacodemon345, Fred N. van Kempen (waltje), Tiseno100, reenigne ja muut.\n\nWith previous core contributions from Sarah Walker, leilei, JohnElliott, greatpsycho ja muut.\n\nJulkaistu GNU General Public License 2. version tai myöhemmän alaisena. Tarkempia tietoja LICENSE-tiedostossa."

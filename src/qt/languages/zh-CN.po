@@ -203,7 +203,7 @@ msgid "&Documentation..."
 msgstr "文档(&D)..."
 
 msgid "&About 86Box..."
-msgstr "关于 86Box(&A)..."
+msgstr "关于 PCBox(&A)..."
 
 msgid "&New image..."
 msgstr "新建映像(&N)..."
@@ -625,8 +625,8 @@ msgstr "9"
 msgid "FONT_NAME"
 msgstr "Microsoft YaHei"
 
-msgid "86Box"
-msgstr "86Box"
+msgid "PCBox"
+msgstr "PCBox"
 
 msgid "Error"
 msgstr "错误"
@@ -649,8 +649,8 @@ msgstr "ZIP %03i %i (%s): %ls"
 msgid "ZIP images"
 msgstr "ZIP 映像"
 
-msgid "86Box could not find any usable ROM images.\n\nPlease <a href=\"https://github.com/86Box/roms/releases/latest\">download</a> a ROM set and extract it into the \"roms\" directory."
-msgstr "86Box 找不到任何可用的 ROM 映像。\n\n请<a href=\"https://github.com/86Box/roms/releases/latest\">下载</a>ROM 包并将其解压到 \"roms\" 文件夹中。"
+msgid "PCBox could not find any usable ROM images.\n\nPlease <a href=\"https://github.com/PCBox/roms/releases/latest\">download</a> a ROM set and extract it into the \"roms\" directory."
+msgstr "PCBox 找不到任何可用的 ROM 映像。\n\n请<a href=\"https://github.com/PCBox/roms/releases/latest\">下载</a>ROM 包并将其解压到 \"roms\" 文件夹中。"
 
 msgid "(empty)"
 msgstr "(空)"
@@ -814,8 +814,8 @@ msgstr "无法初始化 SDL，需要 SDL2.dll"
 msgid "Are you sure you want to hard reset the emulated machine?"
 msgstr "确定要硬重置模拟器吗？"
 
-msgid "Are you sure you want to exit 86Box?"
-msgstr "确定要退出 86Box 吗？"
+msgid "Are you sure you want to exit PCBox?"
+msgstr "确定要退出 PCBox 吗？"
 
 msgid "Unable to initialize Ghostscript"
 msgstr "无法初始化 Ghostscript"
@@ -826,8 +826,8 @@ msgstr "磁光盘 %i (%ls): %ls"
 msgid "MO images"
 msgstr "磁光盘映像"
 
-msgid "Welcome to 86Box!"
-msgstr "欢迎使用 86Box！"
+msgid "Welcome to PCBox!"
+msgstr "欢迎使用 PCBox！"
 
 msgid "Internal controller"
 msgstr "内部控制器"
@@ -848,10 +848,10 @@ msgid "Save"
 msgstr "保存"
 
 msgid "About 86Box"
-msgstr "关于 86Box"
+msgstr "关于 PCBox"
 
-msgid "86Box v"
-msgstr "86Box v"
+msgid "PCBox v"
+msgstr "PCBox v"
 
 msgid "An emulator of old computers\n\nAuthors: Miran Grča (OBattler), RichardG867, Jasmine Iwanek, TC1995, coldbrewed, Teemu Korhonen (Manaatti), Joakim L. Gilje, Adrien Moulin (elyosh), Daniel Balsom (gloriouscow), Cacodemon345, Fred N. van Kempen (waltje), Tiseno100, reenigne, and others.\n\nWith previous core contributions from Sarah Walker, leilei, JohnElliott, greatpsycho, and others.\n\nReleased under the GNU General Public License version 2 or later. See LICENSE for more information."
 msgstr "一个旧式计算机模拟器\n\n作者: Miran Grča (OBattler)、RichardG867、Jasmine Iwanek、TC1995、coldbrewed、Teemu Korhonen (Manaatti)、Joakim L. Gilje、Adrien Moulin (elyosh)、Daniel Balsom (gloriouscow)、Cacodemon345、Fred N. van Kempen (waltje)、Tiseno100、reenigne 等人。\n\nWith previous core contributions from Sarah Walker, leilei, JohnElliott, greatpsycho, and others.\n\n本软件依据 GNU 通用公共许可证第二版或更新版本发布。详情见 LICENSE 文件。"

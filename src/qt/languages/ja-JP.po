@@ -203,7 +203,7 @@ msgid "&Documentation..."
 msgstr "文書(&D)..."
 
 msgid "&About 86Box..."
-msgstr "86Boxのバージョン情報(&A)..."
+msgstr "PCBoxのバージョン情報(&A)..."
 
 msgid "&New image..."
 msgstr "新規イメージ(&N)..."
@@ -625,8 +625,8 @@ msgstr "9"
 msgid "FONT_NAME"
 msgstr "Meiryo UI"
 
-msgid "86Box"
-msgstr "86Box"
+msgid "PCBox"
+msgstr "PCBox"
 
 msgid "Error"
 msgstr "エラー"
@@ -649,8 +649,8 @@ msgstr "ZIP %03i %i (%s): %ls"
 msgid "ZIP images"
 msgstr "ZIPイメージ"
 
-msgid "86Box could not find any usable ROM images.\n\nPlease <a href=\"https://github.com/86Box/roms/releases/latest\">download</a> a ROM set and extract it into the \"roms\" directory."
-msgstr "86Boxで使用可能なROMイメージが見つかりませんでした。\n\nROMセットを<a href=\"https://github.com/86Box/roms/releases/latest\">ダウンロード</a>して、「roms」ディレクトリに解凍してください。"
+msgid "PCBox could not find any usable ROM images.\n\nPlease <a href=\"https://github.com/PCBox/roms/releases/latest\">download</a> a ROM set and extract it into the \"roms\" directory."
+msgstr "PCBoxで使用可能なROMイメージが見つかりませんでした。\n\nROMセットを<a href=\"https://github.com/PCBox/roms/releases/latest\">ダウンロード</a>して、「roms」ディレクトリに解凍してください。"
 
 msgid "(empty)"
 msgstr "(空)"
@@ -814,8 +814,8 @@ msgstr "SDLが初期化できません。SDL2.dllが必要です"
 msgid "Are you sure you want to hard reset the emulated machine?"
 msgstr "使用中のマシンをハード リセットしますか？"
 
-msgid "Are you sure you want to exit 86Box?"
-msgstr "86Boxを終了しますか？"
+msgid "Are you sure you want to exit PCBox?"
+msgstr "PCBoxを終了しますか？"
 
 msgid "Unable to initialize Ghostscript"
 msgstr "Ghostscriptが初期化できません"
@@ -826,8 +826,8 @@ msgstr "光磁気 %i (%ls): %ls"
 msgid "MO images"
 msgstr "光磁気イメージ"
 
-msgid "Welcome to 86Box!"
-msgstr "86Boxへようこそ！"
+msgid "Welcome to PCBox!"
+msgstr "PCBoxへようこそ！"
 
 msgid "Internal controller"
 msgstr "内蔵コントローラー"
@@ -848,10 +848,10 @@ msgid "Save"
 msgstr "保存"
 
 msgid "About 86Box"
-msgstr "86Boxのバージョン情報"
+msgstr "PCBoxのバージョン情報"
 
-msgid "86Box v"
-msgstr "86Box v"
+msgid "PCBox v"
+msgstr "PCBox v"
 
 msgid "An emulator of old computers\n\nAuthors: Miran Grča (OBattler), RichardG867, Jasmine Iwanek, TC1995, coldbrewed, Teemu Korhonen (Manaatti), Joakim L. Gilje, Adrien Moulin (elyosh), Daniel Balsom (gloriouscow), Cacodemon345, Fred N. van Kempen (waltje), Tiseno100, reenigne, and others.\n\nWith previous core contributions from Sarah Walker, leilei, JohnElliott, greatpsycho, and others.\n\nReleased under the GNU General Public License version 2 or later. See LICENSE for more information."
 msgstr "古いパソコンのエミュレーター\n\n著者: Miran Grča (OBattler), RichardG867, Jasmine Iwanek, TC1995, coldbrewed, Teemu Korhonen (Manaatti), Joakim L. Gilje, Adrien Moulin (elyosh), Daniel Balsom (gloriouscow), Cacodemon345, Fred N. van Kempen (waltje), Tiseno100, reenigne, and others.\n\nWith previous core contributions from Sarah Walker, leilei, JohnElliott, greatpsycho, and others.\n\nGNU General Public License version 2以降でリリースされています。詳しくは LICENSE をご覧ください。"
