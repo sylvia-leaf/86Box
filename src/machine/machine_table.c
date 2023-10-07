@@ -507,7 +507,7 @@ const machine_t machines[] = {
         },
         .nvrmask = 0,
         .kbc_device = &keyboard_xtclone_device,
-        .kbc_p1 = 0xff00,
+        .kbc_p1 = 0xff,
         .gpio = 0xffffffff,
         .device = NULL,
         .fdc_device = NULL,
