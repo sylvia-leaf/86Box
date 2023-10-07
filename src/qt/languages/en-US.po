@@ -203,7 +203,7 @@ msgid "&Documentation..."
 msgstr "&Documentation..."
 
 msgid "&About 86Box..."
-msgstr "&About 86Box..."
+msgstr "&About PCBox..."
 
 msgid "&New image..."
 msgstr "&New image..."
@@ -626,7 +626,7 @@ msgid "FONT_NAME"
 msgstr "Segoe UI"
 
 msgid "86Box"
-msgstr "86Box"
+msgstr "PCBox"
 
 msgid "Error"
 msgstr "Error"
@@ -650,7 +650,7 @@ msgid "ZIP images"
 msgstr "ZIP images"
 
 msgid "86Box could not find any usable ROM images.\n\nPlease <a href=\"https://github.com/86Box/roms/releases/latest\">download</a> a ROM set and extract it into the \"roms\" directory."
-msgstr "86Box could not find any usable ROM images.\n\nPlease <a href=\"https://github.com/86Box/roms/releases/latest\">download</a> a ROM set and extract it into the \"roms\" directory."
+msgstr "PCBox could not find any usable ROM images.\n\nPlease <a href=\"https://github.com/PCBox/roms/releases/latest\">download</a> a ROM set and extract it into the \"roms\" directory."
 
 msgid "(empty)"
 msgstr "(empty)"
@@ -815,7 +815,7 @@ msgid "Are you sure you want to hard reset the emulated machine?"
 msgstr "Are you sure you want to hard reset the emulated machine?"
 
 msgid "Are you sure you want to exit 86Box?"
-msgstr "Are you sure you want to exit 86Box?"
+msgstr "Are you sure you want to exit PCBox?"
 
 msgid "Unable to initialize Ghostscript"
 msgstr "Unable to initialize Ghostscript"
@@ -827,7 +827,7 @@ msgid "MO images"
 msgstr "MO images"
 
 msgid "Welcome to 86Box!"
-msgstr "Welcome to 86Box!"
+msgstr "Welcome to PCBox!"
 
 msgid "Internal controller"
 msgstr "Internal controller"
@@ -848,10 +848,10 @@ msgid "Save"
 msgstr "Save"
 
 msgid "About 86Box"
-msgstr "About 86Box"
+msgstr "About PCBox"
 
 msgid "86Box v"
-msgstr "86Box v"
+msgstr "PCBox v"
 
 msgid "An emulator of old computers\n\nAuthors: Miran Grča (OBattler), RichardG867, Jasmine Iwanek, TC1995, coldbrewed, Teemu Korhonen (Manaatti), Joakim L. Gilje, Adrien Moulin (elyosh), Daniel Balsom (gloriouscow), Cacodemon345, Fred N. van Kempen (waltje), Tiseno100, reenigne, and others.\n\nWith previous core contributions from Sarah Walker, leilei, JohnElliott, greatpsycho, and others.\n\nReleased under the GNU General Public License version 2 or later. See LICENSE for more information."
 msgstr "An emulator of old computers\n\nAuthors: Miran Grča (OBattler), RichardG867, Jasmine Iwanek, TC1995, coldbrewed, Teemu Korhonen (Manaatti), Joakim L. Gilje, Adrien Moulin (elyosh), Daniel Balsom (gloriouscow), Cacodemon345, Fred N. van Kempen (waltje), Tiseno100, reenigne, and others.\n\nWith previous core contributions from Sarah Walker, leilei, JohnElliott, greatpsycho, and others.\n\nReleased under the GNU General Public License version 2 or later. See LICENSE for more information."
