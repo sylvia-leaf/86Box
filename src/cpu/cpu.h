@@ -576,7 +576,6 @@ extern const cpu_legacy_machine_t cpu_legacy_table[];
 extern cpu_family_t              *cpu_f;
 extern CPU                       *cpu_s;
 extern int                        cpu_override;
-extern int                        bochs_timing;
 
 extern int    cpu_isintel;
 extern int    cpu_iscyrix;

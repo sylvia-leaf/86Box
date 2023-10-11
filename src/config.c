@@ -405,7 +405,6 @@ load_machine(void)
     }
 
     cpu_override = ini_section_get_int(cat, "cpu_override", 0);
-    bochs_timing = ini_section_get_int(cat, "bochs_timing", 0);
     cpu_f        = NULL;
     p            = ini_section_get_string(cat, "cpu_family", NULL);
     if (p) {
@@ -2260,11 +2259,6 @@ save_machine(void)
         ini_section_set_int(cat, "cpu_override", cpu_override);
     else
         ini_section_delete_var(cat, "cpu_override");
-
-    if (bochs_timing)
-        ini_section_set_int(cat, "bochs_timing", bochs_timing);
-    else
-        ini_section_delete_var(cat, "bochs_timing");
 
     /* Downgrade compatibility with the previous CPU model system. */
     ini_section_delete_var(cat, "cpu_manufacturer");
