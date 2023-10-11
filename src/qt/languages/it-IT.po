@@ -202,7 +202,7 @@ msgstr "&?"
 msgid "&Documentation..."
 msgstr "&Documentazione..."
 
-msgid "&About 86Box..."
+msgid "&About PCBox..."
 msgstr "&Informazioni su PCBox..."
 
 msgid "&New image..."
@@ -847,7 +847,7 @@ msgstr "Questo riavvierà la macchina emulata."
 msgid "Save"
 msgstr "Salva"
 
-msgid "About 86Box"
+msgid "About PCBox"
 msgstr "Informazioni su PCBox"
 
 msgid "PCBox v"

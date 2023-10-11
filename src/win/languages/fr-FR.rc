@@ -466,19 +466,19 @@ BEGIN
     IDS_2110    "Toutes les images (*.0??;*.1??;*.??0;*.86F;*.BIN;*.CQ?;*.D??;*.FLP;*.HDM;*.IM?;*.JSON;*.TD0;*.*FD?;*.MFM;*.XDF)\0*.0??;*.1??;*.??0;*.86F;*.BIN;*.CQ?;*.D??;*.FLP;*.HDM;*.IM?;*.JSON;*.TD0;*.*FD?;*.MFM;*.XDF\0Images du secteur avancés (*.IMD;*.JSON;*.TD0)\0*.IMD;*.JSON;*.TD0\0Images du secteur basiques (*.0??;*.1??;*.??0;*.BIN;*.CQ?;*.D??;*.FLP;*.HDM;*.IM?;*.XDF;*.*FD?)\0*.0??;*.1??;*.??0;*.BIN;*.CQ?;*.D??;*.FLP;*.HDM;*.IM?;*.XDF;*.*FD?\0Images du flux (*.FDI)\0*.FDI\0Images de surface (*.86F;*.MFM)\0*.86F;*.MFM\0Tous les fichiers (*.*)\0*.*\0"
     IDS_2112    "Impossible d'initialiser SDL, SDL2.dll est nécessaire"
     IDS_2113    "Etes-vous sûr de vouloir réinitialiser la machine émulée ?"
-    IDS_2114    "Etes-vous sûr de vouloir quitter 86Box?"
+    IDS_2114    "Etes-vous sûr de vouloir quitter PCBox?"
     IDS_2115    "Impossible d'initialiser Ghostscript"
     IDS_2116    "Magnéto-optique %i (%ls): %ls"
     IDS_2117    "Images magnéto-optiques (*.IM?;*.MDI)\0*.IM?;*.MDI\0Tous les fichiers (*.*)\0*.*\0"
-    IDS_2118    "Bienvenue dans 86Box !"
+    IDS_2118    "Bienvenue dans PCBox !"
     IDS_2119    "Côntrolleur interne"
     IDS_2120    "Sortir"
     IDS_2121    "Pas de ROMs trouvées"
     IDS_2122    "Voulez-vous sauvegarder les paramètres ?"
     IDS_2123    "Cela entraînera la réinitialisation complète de la machine émulée."
     IDS_2124    "Sauvegarder"
-    IDS_2125    "À propos de 86Box"
-    IDS_2126    "86Box v" EMU_VERSION
+    IDS_2125    "À propos de PCBox"
+    IDS_2126    "PCBox v" EMU_VERSION
 
     IDS_2127    "Un émulateur de vieux ordinateurs\n\nAuteurs: Miran Grča (OBattler), RichardG867, Jasmine Iwanek, TC1995, coldbrewed, Teemu Korhonen (Manaatti), Joakim L. Gilje, Adrien Moulin (elyosh), Daniel Balsom (gloriouscow), Cacodemon345, Fred N. van Kempen (waltje), Tiseno100, reenigne, and others.\n\nWith previous core contributions from Sarah Walker, leilei, JohnElliott, greatpsycho, and others.\n\nLibéré sous la licence GNU General Public License version 2 ou ultérieure. Pour plus d'informations, voir le fichier LICENSE."
     IDS_2128    "OK"

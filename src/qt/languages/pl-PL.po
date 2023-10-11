@@ -202,7 +202,7 @@ msgstr "&Pomoc"
 msgid "&Documentation..."
 msgstr "&Dokumentacja..."
 
-msgid "&About 86Box..."
+msgid "&About PCBox..."
 msgstr "&O PCBox..."
 
 msgid "&New image..."
@@ -847,7 +847,7 @@ msgstr "To spowoduje twardy reset wirtualnej maszyny."
 msgid "Save"
 msgstr "Zapisz"
 
-msgid "About 86Box"
+msgid "About PCBox"
 msgstr "O PCBox"
 
 msgid "PCBox v"

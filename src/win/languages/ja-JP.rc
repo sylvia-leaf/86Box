@@ -466,19 +466,19 @@ BEGIN
     IDS_2110    "すべてのイメージ (*.0??;*.1??;*.??0;*.86F;*.BIN;*.CQ?;*.D??;*.FLP;*.HDM;*.IM?;*.JSON;*.TD0;*.*FD?;*.MFM;*.XDF)\0*.0??;*.1??;*.??0;*.86F;*.BIN;*.CQ?;*.D??;*.FLP;*.HDM;*.IM?;*.JSON;*.TD0;*.*FD?;*.MFM;*.XDF\0アドバンスド セクター イメージ (*.IMD;*.JSON;*.TD0)\0*.IMD;*.JSON;*.TD0\0ベーシック セクター イメージ (*.0??;*.1??;*.??0;*.BIN;*.CQ?;*.D??;*.FLP;*.HDM;*.IM?;*.XDF;*.*FD?)\0*.0??;*.1??;*.??0;*.BIN;*.CQ?;*.D??;*.FLP;*.HDM;*.IM?;*.XDF;*.*FD?\0フラックスイメージ (*.FDI)\0*.FDI\0サーフェス イメージ (*.86F;*.MFM)\0*.86F;*.MFM\0すべてのファイル (*.*)\0*.*\0"
     IDS_2112    "SDLが初期化できません。SDL2.dllが必要です"
     IDS_2113    "使用中のマシンをハードリ セットしますか？"
-    IDS_2114    "86Boxを終了しますか？"
+    IDS_2114    "PCBoxを終了しますか？"
     IDS_2115    "Ghostscriptが初期化できません"
     IDS_2116    "光磁気 %i (%ls): %ls"
     IDS_2117    "光磁気イメージ (*.IM?;*.MDI)\0*.IM?;*.MDI\0すべてのファイル (*.*)\0*.*\0"
-    IDS_2118    "86Boxへようこそ！"
+    IDS_2118    "PCBoxへようこそ！"
     IDS_2119    "内蔵コントローラー"
     IDS_2120    "終了"
     IDS_2121    "ROMが見つかりません"
     IDS_2122    "設定を保存しますか？"
     IDS_2123    "使用中のマシンがハードリ セットされます。"
     IDS_2124    "保存"
-    IDS_2125    "86Boxのバージョン情報"
-    IDS_2126    "86Box v" EMU_VERSION
+    IDS_2125    "PCBoxのバージョン情報"
+    IDS_2126    "PCBox v" EMU_VERSION
 
     IDS_2127    "古いパソコンのエミュレーター\n\n著者: Miran Grča (OBattler), RichardG867, Jasmine Iwanek, TC1995, coldbrewed, Teemu Korhonen (Manaatti), Joakim L. Gilje, Adrien Moulin (elyosh), Daniel Balsom (gloriouscow), Cacodemon345, Fred N. van Kempen (waltje), Tiseno100, reenigne, and others.\n\nWith previous core contributions from Sarah Walker, leilei, JohnElliott, greatpsycho, and others.\n\nGNU General Public License version 2以降でリリースされています。詳しくは LICENSE をご覧ください。"
     IDS_2128    "OK"

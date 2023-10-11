@@ -466,19 +466,19 @@ BEGIN
     IDS_2110    "Alle Images (*.0??;*.1??;*.??0;*.86F;*.BIN;*.CQ?;*.D??;*.FLP;*.HDM;*.IM?;*.JSON;*.TD0;*.*FD?;*.MFM;*.XDF)\0*.0??;*.1??;*.??0;*.86F;*.BIN;*.CQ?;*.D??;*.FLP;*.HDM;*.IM?;*.JSON;*.TD0;*.*FD?;*.MFM;*.XDF\0Fortgeschrittene Sektorimages (*.IMD;*.JSON;*.TD0)\0*.IMD;*.JSON;*.TD0\0Basissektorimages (*.0??;*.1??;*.??0;*.BIN;*.CQ?;*.D??;*.FLP;*.HDM;*.IM?;*.XDF;*.*FD?)\0*.0??;*.1??;*.??0;*.BIN;*.CQ?;*.D??;*.FLP;*.HDM;*.IM?;*.XDF;*.*FD?\0Fluximages (*.FDI)\0*.FDI\0Oberflächenimages (*.86F;*.MFM)\0*.86F;*.MFM\0Alle Dateien (*.*)\0*.*\0"
     IDS_2112    "SDL konnte nicht initialisiert werden, die Datei SDL2.dll wird benötigt"
     IDS_2113    "Sind Sie sich sicher, dass Sie einen Hard-Reset für das emulierte System durchführen wollen?"
-    IDS_2114    "Sind Sie sich sicher, dass Sie 86Box beenden wollen?"
+    IDS_2114    "Sind Sie sich sicher, dass Sie PCBox beenden wollen?"
     IDS_2115    "Ghostscript konnte nicht initialisiert werden"
     IDS_2116    "MO %i (%ls): %ls"
     IDS_2117    "MO-Images (*.IM?;*.MDI)\0*.IM?;*.MDI\0Alle Dateien (*.*)\0*.*\0"
-    IDS_2118    "Willkommen bei 86Box!"
+    IDS_2118    "Willkommen bei PCBox!"
     IDS_2119    "Interner Controller"
     IDS_2120    "Beenden"
     IDS_2121    "Keine ROMs gefunden"
     IDS_2122    "Möchten Sie die Einstellungen speichern?"
     IDS_2123    "Dies wird zu einem Hard-Reset des emulierten Systems führen."
     IDS_2124    "Speichern"
-    IDS_2125    "Über 86Box"
-    IDS_2126    "86Box Version " EMU_VERSION
+    IDS_2125    "Über PCBox"
+    IDS_2126    "PCBox Version " EMU_VERSION
 
     IDS_2127    "Ein Emulator für alte Computer\n\nAutoren: Miran Grča (OBattler), RichardG867, Jasmine Iwanek, TC1995, coldbrewed, Teemu Korhonen (Manaatti), Joakim L. Gilje, Adrien Moulin (elyosh), Daniel Balsom (gloriouscow), Cacodemon345, Fred N. van Kempen (waltje), Tiseno100, reenigne sowie andere.\n\nWith previous core contributions from Sarah Walker, leilei, JohnElliott, greatpsycho sowie andere.\n\nÜbersetzt von: dob205\n\nVeröffentlicht unter der GNU General Public License in der Version 2 oder neuer. Siehe LICENSE für mehr Informationen."
     IDS_2128    "OK"

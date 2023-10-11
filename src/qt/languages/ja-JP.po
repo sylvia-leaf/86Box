@@ -202,7 +202,7 @@ msgstr "ヘルプ(&H)"
 msgid "&Documentation..."
 msgstr "文書(&D)..."
 
-msgid "&About 86Box..."
+msgid "&About PCBox..."
 msgstr "PCBoxのバージョン情報(&A)..."
 
 msgid "&New image..."
@@ -649,7 +649,7 @@ msgstr "ZIP %03i %i (%s): %ls"
 msgid "ZIP images"
 msgstr "ZIPイメージ"
 
-msgid "86Box could not find any usable ROM images.\n\nPlease <a href=\"https://github.com/86Box/roms/releases/latest\">download</a> a ROM set and extract it into the \"roms\" directory."
+msgid "PCBox could not find any usable ROM images.\n\nPlease <a href=\"https://github.com/PCBox/roms/releases/latest\">download</a> a ROM set and extract it into the \"roms\" directory."
 msgstr "PCBoxで使用可能なROMイメージが見つかりません。\n\nROMセットを<a href=\"https://github.com/PCBox/roms/releases/latest\">ダウンロード</a>して、roms ディレクトリに解凍してください。"
 
 msgid "(empty)"
@@ -847,7 +847,7 @@ msgstr "使用中のマシンがハードリセットされます。"
 msgid "Save"
 msgstr "保存"
 
-msgid "About 86Box"
+msgid "About PCBox"
 msgstr "PCBoxのバージョン情報"
 
 msgid "PCBox v"

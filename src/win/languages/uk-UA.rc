@@ -466,19 +466,19 @@ BEGIN
     IDS_2110    "Усі образи (*.0??;*.1??;*.??0;*.86F;*.BIN;*.CQ?;*.D??;*.FLP;*.HDM;*.IM?;*.JSON;*.TD0;*.*FD?;*.MFM;*.XDF)\0*.0??;*.1??;*.??0;*.86F;*.BIN;*.CQ?;*.D??;*.FLP;*.HDM;*.IM?;*.JSON;*.TD0;*.*FD?;*.MFM;*.XDF\0Розширені образи секторів (*.IMD;*.JSON;*.TD0)\0*.IMD;*.JSON;*.TD0\0Основні образи секторів (*.0??;*.1??;*.??0;*.BIN;*.CQ?;*.D??;*.FLP;*.HDM;*.IM?;*.XDF;*.*FD?)\0*.0??;*.1??;*.??0;*.BIN;*.CQ?;*.D??;*.FLP;*.HDM;*.IM?;*.XDF;*.*FD?\0Образи Flux (*.FDI)\0*.FDI\0Образи Surface (*.86F;*.MFM)\0*.86F;*.MFM\0Усі файли (*.*)\0*.*\0"
     IDS_2112    "Неможливо ініціалізувати SDL, потрібно SDL2.dll"
     IDS_2113    "Ви впевнені, що хочете виконати холодне перезавантаження емульованої машини?"
-    IDS_2114    "Ви впевнені, що хочете вийти з 86Box?"
+    IDS_2114    "Ви впевнені, що хочете вийти з PCBox?"
     IDS_2115    "Неможливо ініціалізувати Ghostscript"
     IDS_2116    "Магнітооптичний %i (%ls): %ls"
     IDS_2117    "Образи магнітооптичних дисків (*.IM?;*.MDI)\0*.IM?;*.MDI\0Усі файлі (*.*)\0*.*\0"
-    IDS_2118    "Ласкаво просимо в 86Box!"
+    IDS_2118    "Ласкаво просимо в PCBox!"
     IDS_2119    "Вбудований контролер"
     IDS_2120    "Вихід"
     IDS_2121    "ПЗУ не знайдені"
     IDS_2122    "Чи бажаєте ви зберегти налаштування?"
     IDS_2123    "Це призведе до холодної перезагрузки емульованої машини."
     IDS_2124    "Зберегти"
-    IDS_2125    "Про 86Box"
-    IDS_2126    "86Box v." EMU_VERSION
+    IDS_2125    "Про PCBox"
+    IDS_2126    "PCBox v." EMU_VERSION
 
     IDS_2127    "Емулятор старих комп'ютерів\n\nАвтори: Miran Grča (OBattler), RichardG867, Jasmine Iwanek, TC1995, coldbrewed, Teemu Korhonen (Manaatti), Joakim L. Gilje, Adrien Moulin (elyosh), Daniel Balsom (gloriouscow), Cacodemon345, Fred N. van Kempen (waltje), Tiseno100, reenigne, and others.\n\nWith previous core contributions from Sarah Walker, leilei, JohnElliott, greatpsycho, and others.\n\nВипускаєтся під ліцензією GNU General Public License версії 2 або більше пізніше. Додадкову інформацію см. у файлі LICENSE."
     IDS_2128    "OK"

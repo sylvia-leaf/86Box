@@ -466,19 +466,19 @@ BEGIN
     IDS_2110    "Wszystkie obrazy (*.0??;*.1??;*.??0;*.86F;*.BIN;*.CQ?;*.D??;*.FLP;*.HDM;*.IM?;*.JSON;*.TD0;*.*FD?;*.MFM;*.XDF)\0*.0??;*.1??;*.??0;*.86F;*.BIN;*.CQ?;*.D??;*.FLP;*.HDM;*.IM?;*.JSON;*.TD0;*.*FD?;*.MFM;*.XDF\0Zaawansowane obrazy sektorów (*.IMD;*.JSON;*.TD0)\0*.IMD;*.JSON;*.TD0\0Podstawowe obrazy sektorów (*.0??;*.1??;*.??0;*.BIN;*.CQ?;*.D??;*.FLP;*.HDM;*.IM?;*.XDF;*.*FD?)\0*.0??;*.1??;*.??0;*.BIN;*.CQ?;*.D??;*.FLP;*.HDM;*.IM?;*.XDF;*.*FD?\0Flux images (*.FDI)\0*.FDI\0Obrazy powierzchniowe (*.86F;*.MFM)\0*.86F;*.MFM\0All files (*.*)\0*.*\0"
     IDS_2112    "Nie można zainicjować SDL, wymagany SDL2.dll"
     IDS_2113    "Jesteś pewien że chcesz wykonać twardy reset emulowanej maszyny?"
-    IDS_2114    "Jesteś pewien że chcesz zakończyć 86Box?"
+    IDS_2114    "Jesteś pewien że chcesz zakończyć PCBox?"
     IDS_2115    "Nie można zainicjować Ghostscript"
     IDS_2116    "MO %i (%ls): %ls"
     IDS_2117    "Obrazy MO (*.IM?;*.MDI)\0*.IM?;*.MDI\0All files (*.*)\0*.*\0"
-    IDS_2118    "Witamy w 86Box!"
+    IDS_2118    "Witamy w PCBox!"
     IDS_2119    "Kontroler wewnętrzny"
     IDS_2120    "Zakończ"
     IDS_2121    "Nie znaleziono obrazów ROM"
     IDS_2122    "Czy chcesz zapisać ustawienia?"
     IDS_2123    "To spowoduje twardy reset wirtualnej maszyny."
     IDS_2124    "Zapisz"
-    IDS_2125    "O 86Box"
-    IDS_2126    "86Box v" EMU_VERSION
+    IDS_2125    "O PCBox"
+    IDS_2126    "PCBox v" EMU_VERSION
 
     IDS_2127    "Emulator starych komputerów\n\nAutorzy: Miran Grča (OBattler), RichardG867, Jasmine Iwanek, TC1995, coldbrewed, Teemu Korhonen (Manaatti), Joakim L. Gilje, Adrien Moulin (elyosh), Daniel Balsom (gloriouscow), Cacodemon345, Fred N. van Kempen (waltje), Tiseno100, reenigne, i inni.\n\nWith previous core contributions from Sarah Walker, leilei, JohnElliott, greatpsycho, i inni.\n\nPrzetłumaczony przez: Fanta-Shokata\n\nWydany na licencji GNU General Public License w wersji 2 lub nowszej. Zobacz LICENSE aby uzyskać więcej informacji."
     IDS_2128    "OK"

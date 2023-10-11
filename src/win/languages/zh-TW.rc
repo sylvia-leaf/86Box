@@ -466,19 +466,19 @@ BEGIN
     IDS_2110    "所有映像 (*.0??;*.1??;*.??0;*.86F;*.BIN;*.CQ?;*.D??;*.FLP;*.HDM;*.IM?;*.JSON;*.TD0;*.*FD?;*.MFM;*.XDF)\0*.0??;*.1??;*.??0;*.86F;*.BIN;*.CQ?;*.D??;*.FLP;*.HDM;*.IM?;*.JSON;*.TD0;*.*FD?;*.MFM;*.XDF\0進階磁區映像 (*.IMD;*.JSON;*.TD0)\0*.IMD;*.JSON;*.TD0\0基本磁區映像 (*.0??;*.1??;*.??0;*.BIN;*.CQ?;*.D??;*.FLP;*.HDM;*.IM?;*.XDF;*.*FD?)\0*.0??;*.1??;*.??0;*.BIN;*.CQ?;*.D??;*.FLP;*.HDM;*.IM?;*.XDF;*.*FD?\0Flux 映像 (*.FDI)\0*.FDI\0表面映像 (*.86F;*.MFM)\0*.86F;*.MFM\0所有檔案 (*.*)\0*.*\0"
     IDS_2112    "無法初始化 SDL，需要 SDL2.dll"
     IDS_2113    "確定要硬重設模擬器嗎？"
-    IDS_2114    "確定要退出 86Box 嗎？"
+    IDS_2114    "確定要退出 PCBox 嗎？"
     IDS_2115    "無法初始化 Ghostscript"
     IDS_2116    "磁光碟 %i (%ls): %ls"
     IDS_2117    "磁光碟映像 (*.IM?;*.MDI)\0*.IM?;*.MDI\0所有檔案 (*.*)\0*.*\0"
-    IDS_2118    "歡迎使用 86Box！"
+    IDS_2118    "歡迎使用 PCBox！"
     IDS_2119    "內部控制器"
     IDS_2120    "退出"
     IDS_2121    "找不到 ROM"
     IDS_2122    "要儲存設定嗎？"
     IDS_2123    "此操作將硬重設模擬器。"
     IDS_2124    "儲存"
-    IDS_2125    "關於 86Box"
-    IDS_2126    "86Box v" EMU_VERSION
+    IDS_2125    "關於 PCBox"
+    IDS_2126    "PCBox v" EMU_VERSION
 
     IDS_2127    "一個舊式電腦模擬器\n\n作者: Miran Grča (OBattler)、RichardG867、Jasmine Iwanek、TC1995、coldbrewed、Teemu Korhonen (Manaatti)、Joakim L. Gilje、Adrien Moulin (elyosh)、Daniel Balsom (gloriouscow)、Cacodemon345、Fred N. van Kempen (waltje)、Tiseno100、reenigne 等人。\n\nWith previous core contributions from Sarah Walker, leilei, JohnElliott, greatpsycho, and others.\n\n本軟體依據 GNU 通用公共授權第二版或更新版本發布。詳情見 LICENSE 檔案。"
     IDS_2128    "確定"

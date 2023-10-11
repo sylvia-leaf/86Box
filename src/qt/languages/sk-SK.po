@@ -202,7 +202,7 @@ msgstr "&Pomoc"
 msgid "&Documentation..."
 msgstr "&Dokumentácia"
 
-msgid "&About 86Box..."
+msgid "&About PCBox..."
 msgstr "&O programu PCBox"
 
 msgid "&New image..."
@@ -847,7 +847,7 @@ msgstr "Pokračovaním sa resetuje emulovaný počítač."
 msgid "Save"
 msgstr "Uložiť"
 
-msgid "About 86Box"
+msgid "About PCBox"
 msgstr "O programe PCBox"
 
 msgid "PCBox v"

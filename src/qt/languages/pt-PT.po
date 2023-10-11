@@ -202,7 +202,7 @@ msgstr "&Ajuda"
 msgid "&Documentation..."
 msgstr "&Documentação..."
 
-msgid "&About 86Box..."
+msgid "&About PCBox..."
 msgstr "&Acerca do PCBox..."
 
 msgid "&New image..."
@@ -847,7 +847,7 @@ msgstr "Isto irá causar um reinício completo da máquina emulada."
 msgid "Save"
 msgstr "Guardar"
 
-msgid "About 86Box"
+msgid "About PCBox"
 msgstr "Acerca do PCBox"
 
 msgid "PCBox v"

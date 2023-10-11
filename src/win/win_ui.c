@@ -1223,7 +1223,7 @@ ui_init(int nCmdShow)
     /* Set the application ID for the taskbar. */
     shell32_handle = dynld_module("shell32.dll", shell32_imports);
     if (shell32_handle)
-        pSetCurrentProcessExplicitAppUserModelID(L"86Box.86Box");
+        pSetCurrentProcessExplicitAppUserModelID(L"PCBox.PCBox");
 
     /* Set up TaskDialog configuration. */
     tdconfig.cbSize             = sizeof(tdconfig);

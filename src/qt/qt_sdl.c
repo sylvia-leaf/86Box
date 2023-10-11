@@ -487,7 +487,7 @@ sdl_init_common(void *win, int flags)
     sdl_h     = dm.h;
     sdl_flags = flags;
 
-    sdl_win = SDL_CreateWindow("86Box renderer", 640, 480, 100, 100, sdl_flags);
+    sdl_win = SDL_CreateWindow("PCBox renderer", 640, 480, 100, 100, sdl_flags);
     if (sdl_win == NULL) {
         sdl_log("SDL: unable to CreateWindowFrom (%s)\n", SDL_GetError());
     }

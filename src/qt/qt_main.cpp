@@ -190,7 +190,7 @@ main(int argc, char *argv[])
     auto font_name = QObject::tr("FONT_NAME");
     auto font_size = QObject::tr("FONT_SIZE");
     QApplication::setFont(QFont(font_name, font_size.toInt()));
-    SetCurrentProcessExplicitAppUserModelID(L"86Box.86Box");
+    SetCurrentProcessExplicitAppUserModelID(L"PCBox.PCBox");
 #endif
     if (!pc_init_modules()) {
         ui_msgbox_header(MBX_FATAL, (void *) IDS_2121, (void *) IDS_2056);
@@ -263,7 +263,7 @@ main(int argc, char *argv[])
 #endif
 
     UnixManagerSocket socket;
-    if (qgetenv("86BOX_MANAGER_SOCKET").size()) {
+    if (qgetenv("PCBOX_MANAGER_SOCKET").size()) {
         QObject::connect(&socket, &UnixManagerSocket::showsettings, main_window, &MainWindow::showSettings);
         QObject::connect(&socket, &UnixManagerSocket::pause, main_window, &MainWindow::togglePause);
         QObject::connect(&socket, &UnixManagerSocket::resetVM, main_window, &MainWindow::hardReset);
@@ -274,7 +274,7 @@ main(int argc, char *argv[])
         });
         QObject::connect(&socket, &UnixManagerSocket::ctrlaltdel, []() { pc_send_cad(); });
         main_window->installEventFilter(&socket);
-        socket.connectToServer(qgetenv("86BOX_MANAGER_SOCKET"));
+        socket.connectToServer(qgetenv("PCBOX_MANAGER_SOCKET"));
     }
 
     /* Warn the user about unsupported configs */
