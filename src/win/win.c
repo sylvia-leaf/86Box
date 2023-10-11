@@ -917,7 +917,7 @@ plat_get_global_config_dir(char *strptr)
             appdata_dir[len]     = L'\\';
             appdata_dir[len + 1] = L'\0';
         }
-        wcscat(appdata_dir, L"86box");
+        wcscat(appdata_dir, L"pcbox");
         CreateDirectoryW(appdata_dir, NULL);
         wcscat(appdata_dir, L"\\");
         c16stombs(strptr, appdata_dir, 1024);
@@ -938,7 +938,7 @@ plat_init_rom_paths(void)
             appdata_dir[len]     = L'\\';
             appdata_dir[len + 1] = L'\0';
         }
-        wcscat(appdata_dir, L"86box");
+        wcscat(appdata_dir, L"pcbox");
         CreateDirectoryW(appdata_dir, NULL);
         wcscat(appdata_dir, L"\\roms");
         CreateDirectoryW(appdata_dir, NULL);

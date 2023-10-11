@@ -195,7 +195,6 @@ int cpu_16bitbus;
 int cpu_64bitbus;
 int cpu_cyrix_alignment;
 int CPUID;
-int bochs_timing;
 
 int is186;
 int is_nec;
@@ -2076,12 +2075,6 @@ cpu_set(void)
         cpu_exec = exec386_2386;
     else
         cpu_exec = execx86;
-
-#ifdef USE_DYNAREC
-    if (bochs_timing)
-        codegen_timing_set(&codegen_timing_486);
-#endif
-
     mmx_init();
     gdbstub_cpu_init();
 }

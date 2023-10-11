@@ -202,8 +202,8 @@ msgstr "&Help"
 msgid "&Documentation..."
 msgstr "&Documentation..."
 
-msgid "&About 86Box..."
-msgstr "&About 86Box..."
+msgid "&About PCBox..."
+msgstr "&About PCBox..."
 
 msgid "&New image..."
 msgstr "&New image..."
@@ -847,8 +847,8 @@ msgstr "This will hard reset the emulated machine."
 msgid "Save"
 msgstr "Save"
 
-msgid "About 86Box"
-msgstr "About 86Box"
+msgid "About PCBox"
+msgstr "About PCBox"
 
 msgid "PCBox v"
 msgstr "PCBox v"

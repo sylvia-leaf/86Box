@@ -466,19 +466,19 @@ BEGIN
     IDS_2110    "Sve slike (*.0??;*.1??;*.??0;*.86F;*.BIN;*.CQ?;*.D??;*.FLP;*.HDM;*.IM?;*.JSON;*.TD0;*.*FD?;*.MFM;*.XDF)\0*.0??;*.1??;*.??0;*.86F;*.BIN;*.CQ?;*.D??;*.FLP;*.HDM;*.IM?;*.JSON;*.TD0;*.*FD?;*.MFM;*.XDF\0Napredne sektorske slike (*.IMD;*.JSON;*.TD0)\0*.IMD;*.JSON;*.TD0\0Osnovne sektorske slike (*.0??;*.1??;*.??0;*.BIN;*.CQ?;*.D??;*.FLP;*.HDM;*.IM?;*.XDF;*.*FD?)\0*.0??;*.1??;*.??0;*.BIN;*.CQ?;*.D??;*.FLP;*.HDM;*.IM?;*.XDF;*.*FD?\0Flux slike (*.FDI)\0*.FDI\0Površinske slike (*.86F;*.MFM)\0*.86F;*.MFM\0Sve datoteke (*.*)\0*.*\0"
     IDS_2112    "Nije moguće inicijalizirati SDL, SDL2.dll je potrebno"
     IDS_2113    "Jeste li sigurni da želite hard resetirati emulirani sistem?"
-    IDS_2114    "Jeste li sigurni da želite zatvoriti 86Box?"
+    IDS_2114    "Jeste li sigurni da želite zatvoriti PCBox?"
     IDS_2115    "Nije moguće inicijalizirati GhostScript"
     IDS_2116    "MO %i (%ls): %ls"
     IDS_2117    "MO slike (*.IM?;*.MDI)\0*.IM?;*.MDI\0Svi datoteke (*.*)\0*.*\0"
-    IDS_2118    "Dobrodošli u 86Box!"
+    IDS_2118    "Dobrodošli u PCBox!"
     IDS_2119    "Uunutarnji kontroler"
     IDS_2120    "Izlazi"
     IDS_2121    "Nisu pronađene ROM datoteke"
     IDS_2122    "Želite li spremiti postavke?"
     IDS_2123    "Ovo će napraviti hard resetiranje emuliranog sistema."
     IDS_2124    "Spremaj"
-    IDS_2125    "O programu 86Box"
-    IDS_2126    "86Box verzija " EMU_VERSION
+    IDS_2125    "O programu PCBox"
+    IDS_2126    "PCBox verzija " EMU_VERSION
 
     IDS_2127    "Emulator starih računala\n\nAutori: Miran Grča (OBattler), RichardG867, Jasmine Iwanek, TC1995, coldbrewed, Teemu Korhonen (Manaatti), Joakim L. Gilje, Adrien Moulin (elyosh), Daniel Balsom (gloriouscow), Cacodemon345, Fred N. van Kempen (waltje), Tiseno100, reenigne, i drugi.\n\nWith previous core contributions from Sarah Walker, leilei, JohnElliott, greatpsycho, i drugi.\n\nPreveo: dob205\n\nObjavljeno pod licencom GNU General Public License, verzija 2 ili novije. Za više informacija pogledajte datoteku LICENCE."
     IDS_2128    "U redu"

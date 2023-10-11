@@ -202,7 +202,7 @@ msgstr "&Súgó"
 msgid "&Documentation..."
 msgstr "&Dokumentáció..."
 
-msgid "&About 86Box..."
+msgid "&About PCBox..."
 msgstr "A PCBox &névjegye..."
 
 msgid "&New image..."
@@ -847,7 +847,7 @@ msgstr "Ezzel hardveresen újraindítja az emulált gépet."
 msgid "Save"
 msgstr "Mentés"
 
-msgid "About 86Box"
+msgid "About PCBox"
 msgstr "A PCBox névjegye"
 
 msgid "PCBox v"

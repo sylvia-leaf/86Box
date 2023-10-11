@@ -35,7 +35,7 @@ if(DYNAREC)
 endif()
 
 add_subdirectory(softfloat)
-target_link_libraries(86Box softfloat)
+target_link_libraries(PCBox softfloat)
 
 add_subdirectory(808x)
-target_link_libraries(86Box 808x)
+target_link_libraries(PCBox 808x)

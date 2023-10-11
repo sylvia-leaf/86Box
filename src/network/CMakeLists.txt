@@ -18,18 +18,18 @@ list(APPEND net_sources network.c net_pcap.c net_slirp.c net_dp8390.c net_3c501.
 
 find_package(PkgConfig REQUIRED)
 pkg_check_modules(SLIRP REQUIRED IMPORTED_TARGET slirp)
-target_link_libraries(86Box PkgConfig::SLIRP)
+target_link_libraries(PCBox PkgConfig::SLIRP)
 
 if(WIN32)
     target_link_libraries(PkgConfig::SLIRP INTERFACE wsock32 ws2_32 iphlpapi iconv)
 endif()
 
 if (HAIKU)
-    target_link_libraries(86Box network)
+    target_link_libraries(PCBox network)
 endif()
 
 if(WIN32)
-    target_link_libraries(86Box ws2_32)
+    target_link_libraries(PCBox ws2_32)
 endif()
 
 if (UNIX)

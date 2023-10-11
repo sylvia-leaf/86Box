@@ -39,7 +39,7 @@ if(MSVC OR (NOT MINGW AND CMAKE_VERSION VERSION_GREATER_EQUAL 3.22))
     # we include ours in 86Box.rc. We therefore need to pass the manifest
     # directly as as a source file, so the linker can use that instead.
     set_property(SOURCE 86Box.rc PROPERTY COMPILE_DEFINITIONS NO_INCLUDE_MANIFEST)
-    target_sources(86Box PRIVATE 86Box.manifest)
+    target_sources(PCBox PRIVATE 86Box.manifest)
 endif()
 
 if(NOT MINGW)
@@ -53,10 +53,10 @@ endif()
 
 if(DINPUT)
     target_sources(plat PRIVATE win_joystick.cpp)
-    target_link_libraries(86Box dinput8)
+    target_link_libraries(PCBox dinput8)
 else()
     target_sources(plat PRIVATE win_joystick_rawinput.c)
 endif()
 
-target_link_libraries(86Box advapi32 comctl32 comdlg32 gdi32 shell32 iphlpapi
+target_link_libraries(PCBox advapi32 comctl32 comdlg32 gdi32 shell32 iphlpapi
     dxguid imm32 hid setupapi uxtheme version winmm psapi ws2_32)

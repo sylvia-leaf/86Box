@@ -189,16 +189,16 @@ endif()
 
 if(WIN32)
     enable_language(RC)
-    target_sources(86Box PUBLIC ../win/86Box-qt.rc)
+    target_sources(PCBox PUBLIC ../win/86Box-qt.rc)
     target_sources(plat PRIVATE win_dynld.c)
     if(DINPUT)
         target_sources(plat PRIVATE win_joystick.cpp)
-        target_link_libraries(86Box dinput8)
+        target_link_libraries(PCBox dinput8)
     else()
         target_sources(plat PRIVATE win_joystick_rawinput.c)
     endif()
     target_sources(ui PRIVATE qt_d3d9renderer.hpp qt_d3d9renderer.cpp)
-    target_link_libraries(86Box hid d3d9)
+    target_link_libraries(PCBox hid d3d9)
 
     # CMake 3.22 messed this up for clang/clang++
     # See https://gitlab.kitware.com/cmake/cmake/-/issues/22611
@@ -207,7 +207,7 @@ if(WIN32)
         # we include ours in 86Box.rc. We therefore need to pass the manifest
         # directly as as a source file, so the linker can use that instead.
         set_property(SOURCE ../win/86Box-qt.rc DIRECTORY .. PROPERTY COMPILE_DEFINITIONS NO_INCLUDE_MANIFEST)
-        target_sources(86Box PRIVATE ../win/86Box.manifest)
+        target_sources(PCBox PRIVATE ../win/86Box.manifest)
     endif()
 
     if (MINGW)
@@ -280,7 +280,7 @@ if(WIN32)
                 get_filename_component(CMAKE_INSTALL_PREFIX_ABSOLUTE \${CMAKE_INSTALL_PREFIX} ABSOLUTE)
                 execute_process(
                     COMMAND $<TARGET_FILE:Qt${QT_MAJOR}::windeployqt>
-                    \"\${CMAKE_INSTALL_PREFIX_ABSOLUTE}/$<TARGET_FILE_NAME:86Box>\")
+                    \"\${CMAKE_INSTALL_PREFIX_ABSOLUTE}/$<TARGET_FILE_NAME:PCBox>\")
             ")
         else()
             find_program(WINDEPLOYQT_EXECUTABLE windeployqt)
@@ -289,7 +289,7 @@ if(WIN32)
                     get_filename_component(CMAKE_INSTALL_PREFIX_ABSOLUTE \${CMAKE_INSTALL_PREFIX} ABSOLUTE)
                     execute_process(
                         COMMAND ${WINDEPLOYQT_EXECUTABLE}
-                        \"\${CMAKE_INSTALL_PREFIX_ABSOLUTE}/$<TARGET_FILE_NAME:86Box>\")
+                        \"\${CMAKE_INSTALL_PREFIX_ABSOLUTE}/$<TARGET_FILE_NAME:PCBox>\")
                 ")
             endif()
         endif()
@@ -327,7 +327,7 @@ macro(install_bundle_library _library_path _installed_name _runtime_plugins_var 
 endmacro()
 
 if (APPLE AND CMAKE_MACOSX_BUNDLE)
-    set(prefix "86Box.app/Contents")
+    set(prefix "PCBox.app/Contents")
     set(INSTALL_RUNTIME_DIR "${prefix}/MacOS")
     set(INSTALL_CMAKE_DIR "${prefix}/Resources")
     set(INSTALL_LIB_DIR "${prefix}/Frameworks")
@@ -363,10 +363,10 @@ if (APPLE AND CMAKE_MACOSX_BUNDLE)
     install(CODE "
         include(BundleUtilities)
         get_filename_component(CMAKE_INSTALL_PREFIX_ABSOLUTE \$ENV{DESTDIR}\${CMAKE_INSTALL_PREFIX} ABSOLUTE)
-        fixup_bundle(\"\${CMAKE_INSTALL_PREFIX_ABSOLUTE}/86Box.app\" \"${RUNTIME_PLUGINS}\" \"${DIRS}\")
+        fixup_bundle(\"\${CMAKE_INSTALL_PREFIX_ABSOLUTE}/PCBox.app\" \"${RUNTIME_PLUGINS}\" \"${DIRS}\")
         execute_process(
             COMMAND ${CMAKE_INSTALL_NAME_TOOL} -add_rpath \"@executable_path/../Frameworks/\"
-            \"\${CMAKE_INSTALL_PREFIX_ABSOLUTE}/${INSTALL_RUNTIME_DIR}/86Box\")
+            \"\${CMAKE_INSTALL_PREFIX_ABSOLUTE}/${INSTALL_RUNTIME_DIR}/PCBox\")
         ")
 endif()
 
@@ -432,11 +432,11 @@ set(QM_FILES)
 file(GLOB po_files "${CMAKE_CURRENT_SOURCE_DIR}/languages/*.po")
 foreach(po_file ${po_files})
     get_filename_component(PO_FILE_NAME ${po_file} NAME_WE)
-    add_custom_command(OUTPUT "${CMAKE_CURRENT_BINARY_DIR}/86box_${PO_FILE_NAME}.qm"
-                       COMMAND "$<TARGET_FILE:Qt${QT_MAJOR}::lconvert>" -i ${po_file} -o ${CMAKE_CURRENT_BINARY_DIR}/86box_${PO_FILE_NAME}.qm
+    add_custom_command(OUTPUT "${CMAKE_CURRENT_BINARY_DIR}/pcbox_${PO_FILE_NAME}.qm"
+                       COMMAND "$<TARGET_FILE:Qt${QT_MAJOR}::lconvert>" -i ${po_file} -o ${CMAKE_CURRENT_BINARY_DIR}/pcbox_${PO_FILE_NAME}.qm
                        WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}"
                        DEPENDS "${po_file}")
-    list(APPEND QM_FILES "${CMAKE_CURRENT_BINARY_DIR}/86box_${PO_FILE_NAME}.qm")
+    list(APPEND QM_FILES "${CMAKE_CURRENT_BINARY_DIR}/pcbox_${PO_FILE_NAME}.qm")
     list(APPEND QM_FILES "${po_file}")
 endforeach()
 configure_file(qt_translations.qrc ${CMAKE_CURRENT_BINARY_DIR} COPYONLY)

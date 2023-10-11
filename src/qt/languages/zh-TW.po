@@ -202,7 +202,7 @@ msgstr "說明(&H)"
 msgid "&Documentation..."
 msgstr "文件(&D)..."
 
-msgid "&About 86Box..."
+msgid "&About PCBox..."
 msgstr "關於 PCBox(&A)..."
 
 msgid "&New image..."
@@ -847,7 +847,7 @@ msgstr "此操作將硬重設模擬器。"
 msgid "Save"
 msgstr "儲存"
 
-msgid "About 86Box"
+msgid "About PCBox"
 msgstr "關於 PCBox"
 
 msgid "PCBox v"

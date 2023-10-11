@@ -202,7 +202,7 @@ msgstr "&Помощь"
 msgid "&Documentation..."
 msgstr "&Документация..."
 
-msgid "&About 86Box..."
+msgid "&About PCBox..."
 msgstr "&О программе PCBox..."
 
 msgid "&New image..."
@@ -847,7 +847,7 @@ msgstr "Это приведет к холодной перезагрузке э�
 msgid "Save"
 msgstr "Сохранить"
 
-msgid "About 86Box"
+msgid "About PCBox"
 msgstr "О PCBox"
 
 msgid "PCBox v"

@@ -202,7 +202,7 @@ msgstr "&Pomoč"
 msgid "&Documentation..."
 msgstr "&Dokumentacija..."
 
-msgid "&About 86Box..."
+msgid "&About PCBox..."
 msgstr "&O programu PCBox..."
 
 msgid "&New image..."
@@ -847,7 +847,7 @@ msgstr "To bo ponovno zagnalo emuliran sistem."
 msgid "Save"
 msgstr "Shrani"
 
-msgid "About 86Box"
+msgid "About PCBox"
 msgstr "O programu PCBox"
 
 msgid "PCBox v"

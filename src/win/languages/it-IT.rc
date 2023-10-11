@@ -467,19 +467,19 @@ BEGIN
     IDS_2110    "Tutte le immagini (*.0??;*.1??;*.??0;*.86F;*.BIN;*.CQ?;*.D??;*.FLP;*.HDM;*.IM?;*.JSON;*.TD0;*.*FD?;*.MFM;*.XDF)\0*.0??;*.1??;*.??0;*.86F;*.BIN;*.CQ?;*.D??;*.FLP;*.HDM;*.IM?;*.JSON;*.TD0;*.*FD?;*.MFM;*.XDF\0Immagini da settori avanzati (*.IMD;*.JSON;*.TD0)\0*.IMD;*.JSON;*.TD0\0Imagini da settori basilari (*.0??;*.1??;*.??0;*.BIN;*.CQ?;*.D??;*.FLP;*.HDM;*.IM?;*.XDF;*.*FD?)\0*.0??;*.1??;*.??0;*.BIN;*.CQ?;*.D??;*.FLP;*.HDM;*.IM?;*.XDF;*.*FD?\0Immagini flusso (*.FDI)\0*.FDI\0Immagini da superficie (*.86F;*.MFM)\0*.86F;*.MFM\0Tutti i file (*.*)\0*.*\0"
     IDS_2112    "Impossibile inizializzare SDL, SDL2.dll è necessario"
     IDS_2113    "Sei sicuro di voler riavviare la macchina emulata?"
-    IDS_2114    "Sei sicuro di voler uscire da 86Box?"
+    IDS_2114    "Sei sicuro di voler uscire da PCBox?"
     IDS_2115    "Impossibile inizializzare Ghostscript"
     IDS_2116    "MO %i (%ls): %ls"
     IDS_2117    "Immagini MO (*.IM?;*.MDI)\0*.IM?;*.MDI\0Tutti i file (*.*)\0*.*\0"
-    IDS_2118    "Benvenuti in 86Box!"
+    IDS_2118    "Benvenuti in PCBox!"
     IDS_2119    "Controller interno"
     IDS_2120    "Esci"
     IDS_2121    "Nessune immagini ROM trovate"
     IDS_2122    "Vuole salvare queste impostazioni?"
     IDS_2123    "Questo riavvierà la macchina emulata."
     IDS_2124    "Salva"
-    IDS_2125    "Informazioni su 86Box"
-    IDS_2126    "86Box v" EMU_VERSION
+    IDS_2125    "Informazioni su PCBox"
+    IDS_2126    "PCBox v" EMU_VERSION
 
     IDS_2127    "Un emulatore di computer vecchi\n\nAutori: Miran Grča (OBattler), RichardG867, Jasmine Iwanek, TC1995, coldbrewed, Teemu Korhonen (Manaatti), Joakim L. Gilje, Adrien Moulin (elyosh), Daniel Balsom (gloriouscow), Cacodemon345, Fred N. van Kempen (waltje), Tiseno100, reenigne, and others.\n\nWith previous core contributions from Sarah Walker, leilei, JohnElliott, greatpsycho, and others.\n\nTradotto da: explorerdotexe\n\nRilasciato sotto la Licenza Pubblica GNU versione 2 o dopo. Vedi LICENSE per maggior informazioni."
     IDS_2128    "OK"
