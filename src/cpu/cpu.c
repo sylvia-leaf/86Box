@@ -3751,11 +3751,12 @@ cpu_WRMSR(void)
                     if (ECX & 1) {
                         cpu_log("MTRR physmask[%d] = %08llx\n", temp2, temp);
 
-                        if ((msr.mtrr_physmask[temp2] >> 11) & 0x1)
+                        //Disabled for now as upstream changes, when combined with this, break Win2k Setup.
+                        /*if ((msr.mtrr_physmask[temp2] >> 11) & 0x1)
                             mem_del_mtrr(msr.mtrr_physbase[temp2] & ~(0xFFF), msr.mtrr_physmask[temp2] & ~(0xFFF));
 
                         if ((temp >> 11) & 0x1)
-                            mem_add_mtrr(msr.mtrr_physbase[temp2] & ~(0xFFF), temp & ~(0xFFF), msr.mtrr_physbase[temp2] & 0xFF);
+                            mem_add_mtrr(msr.mtrr_physbase[temp2] & ~(0xFFF), temp & ~(0xFFF), msr.mtrr_physbase[temp2] & 0xFF);*/
 
                         msr.mtrr_physmask[temp2] = temp;
                     } else {
@@ -3864,11 +3865,12 @@ cpu_WRMSR(void)
                     if (ECX & 1) {
                         cpu_log("MTRR physmask[%d] = %08llx\n", temp2, temp);
 
-                        if ((msr.mtrr_physmask[temp2] >> 11) & 0x1)
+                        //Disabled for now as upstream changes, when combined with this, break Win2k Setup.
+                        /*if ((msr.mtrr_physmask[temp2] >> 11) & 0x1)
                             mem_del_mtrr(msr.mtrr_physbase[temp2] & ~(0xFFF), msr.mtrr_physmask[temp2] & ~(0xFFF));
 
                         if ((temp >> 11) & 0x1)
-                            mem_add_mtrr(msr.mtrr_physbase[temp2] & ~(0xFFF), temp & ~(0xFFF), msr.mtrr_physbase[temp2] & 0xFF);
+                            mem_add_mtrr(msr.mtrr_physbase[temp2] & ~(0xFFF), temp & ~(0xFFF), msr.mtrr_physbase[temp2] & 0xFF);*/
 
                         msr.mtrr_physmask[temp2] = temp;
                     } else {
@@ -4228,11 +4230,12 @@ amd_k_invalid_wrmsr:
                     if (ECX & 1) {
                         cpu_log("MTRR physmask[%d] = %08llx\n", temp2, temp);
 
-                        if ((msr.mtrr_physmask[temp2] >> 11) & 0x1)
+                        //Disabled for now as upstream changes, when combined with this, break Win2k Setup.
+                        /*if ((msr.mtrr_physmask[temp2] >> 11) & 0x1)
                             mem_del_mtrr(msr.mtrr_physbase[temp2] & ~(0xFFF), msr.mtrr_physmask[temp2] & ~(0xFFF));
 
                         if ((temp >> 11) & 0x1)
-                            mem_add_mtrr(msr.mtrr_physbase[temp2] & ~(0xFFF), temp & ~(0xFFF), msr.mtrr_physbase[temp2] & 0xFF);
+                            mem_add_mtrr(msr.mtrr_physbase[temp2] & ~(0xFFF), temp & ~(0xFFF), msr.mtrr_physbase[temp2] & 0xFF);*/
 
                         msr.mtrr_physmask[temp2] = temp;
                     } else {
