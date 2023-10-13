@@ -66,6 +66,7 @@ typedef struct acpi_regs_t {
     uint8_t  acpitst;
     uint8_t  auxen;
     uint8_t  auxsts;
+    uint8_t  bus_cyc_track;
     uint8_t  plvl2;
     uint8_t  plvl3;
     uint8_t  smicmd;
@@ -79,10 +80,12 @@ typedef struct acpi_regs_t {
     uint8_t  gporeg[4];
     uint8_t  extiotrapsts;
     uint8_t  extiotrapen;
-    uint8_t  bus_cyc_track;
     uint16_t pmsts;
     uint16_t pmen;
     uint16_t pmcntrl;
+    uint16_t bus_addr_track;
+    uint16_t devact_sts;
+    uint16_t devtrap_en;
     uint16_t gpsts;
     uint16_t gpsts1;
     uint16_t gpen;
@@ -96,9 +99,6 @@ typedef struct acpi_regs_t {
     uint16_t pscntrl;
     uint16_t gpscists;
     uint16_t mon_smi;
-    uint16_t devact_sts;
-    uint16_t devtrap_en;
-    uint16_t bus_addr_track;
     int      smi_lock;
     int      smi_active;
     uint32_t pcntrl;
