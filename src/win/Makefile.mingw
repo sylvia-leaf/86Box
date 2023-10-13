@@ -418,7 +418,7 @@ ifeq ($(DYNAREC), y)
  endif
 
   CGTOBJ := codegen_timing_486.o \
-            codegen_timing_686.o codegen_timing_common.o codegen_timing_k6.o codegen_timing_k7.o \
+            codegen_timing_686.o codegen_timing_common.o codegen_timing_k6.o \
             codegen_timing_pentium.o codegen_timing_p6.o codegen_timing_winchip.o codegen_timing_winchip2.o
 else
  ifeq ($(NEW_DYNAREC), y)
