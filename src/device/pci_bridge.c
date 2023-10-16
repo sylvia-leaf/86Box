@@ -589,7 +589,6 @@ pci_bridge_init(const device_t *info)
                    interrupts[1], interrupts[2], interrupts[3]);
 
         pci_bridge_log("PCI Bridge %d: upstream bus %02X slot %02X interrupts %02X %02X %02X %02X\n", dev->bus_index, (dev->slot >> 5) & 0xff, dev->slot & 31, interrupts[0], interrupts[1], interrupts[2], interrupts[3]);
-    }
 
         if (info->local == PCI_BRIDGE_DEC_21150)
             slot_count = 9; /* 9 bus masters */
