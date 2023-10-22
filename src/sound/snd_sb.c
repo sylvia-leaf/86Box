@@ -1143,8 +1143,6 @@ sb_ct1745_mixer_read(uint16_t addr, void *priv)
                     ret |= 0x01;
                 break;
 
-            case 0x0c:    /* Sound Blaster Pro Input Filter. */
-
             case 0x49:    /* Undocumented register used by some Creative drivers. */
             case 0x4a:    /* Undocumented register used by some Creative drivers. */
             case 0x8c:    /* Undocumented register used by some Creative drivers. */
@@ -1166,7 +1164,6 @@ sb_ct1745_mixer_read(uint16_t addr, void *priv)
                 break;
 
             default:
-                fatal("Unknown register: %02X\n", mixer->index);
                 sb_log("sb_ct1745: Unknown register READ: %02X\t%02X\n", mixer->index, mixer->regs[mixer->index]);
                 break;
         }
