@@ -138,7 +138,7 @@ acpi_update_irq(acpi_t *dev)
     if (dev->vendor == VEN_SMC)
         sci_level |= (dev->regs.pmsts & BM_STS);
 
-    if (sci_level) {
+    if ((dev->regs.pmcntrl & 0x01) && sci_level) {
         if (dev->irq_mode == 1)
             pci_set_irq(dev->slot, dev->irq_pin, &dev->irq_state);
         else if (dev->irq_mode == 2)
@@ -779,6 +779,7 @@ acpi_reg_write_common_regs(UNUSED(int size), uint16_t addr, uint8_t val, void *p
     acpi_t *dev = (acpi_t *) priv;
     int     shift16;
     int     sus_typ;
+    uint8_t old;
 
     addr &= 0x3f;
 #ifdef ENABLE_ACPI_LOG
@@ -805,6 +806,7 @@ acpi_reg_write_common_regs(UNUSED(int size), uint16_t addr, uint8_t val, void *p
         case 0x04:
         case 0x05:
             /* PMCNTRL - Power Management Control Register (IO) */
+            old = dev->regs.pmcntrl & 0xff;
             if ((addr == 0x05) && !!(val & 0x20) && !!(val & 4) && !!(dev->regs.smi_en & 0x00000010) && (dev->vendor == VEN_INTEL_ICH2)) {
                 dev->regs.smi_sts |= 0x00000010; /* ICH2 Specific. Trigger an SMI if SLP_SMI_EN bit is set instead of transistioning to a Sleep State. */
                 acpi_raise_smi(dev, 1);
@@ -850,6 +852,8 @@ acpi_reg_write_common_regs(UNUSED(int size), uint16_t addr, uint8_t val, void *p
                 }
             }
             dev->regs.pmcntrl = ((dev->regs.pmcntrl & ~(0xff << shift16)) | (val << shift16)) & 0x3f07 /* 0x3c07 */;
+            if ((addr == 0x04) && ((old ^ val) & 0x01))
+                acpi_update_irq(dev);
             break;
 
         default:
@@ -913,7 +917,7 @@ acpi_reg_write_ali(int size, uint16_t addr, uint8_t val, void *priv)
             dev->regs.gpcntrl = ((dev->regs.gpcntrl & ~(0xff << shift32)) | (val << shift32)) & 0x00000001;
             break;
         case 0x30:
-            /* PM2_CNTRL - Power Management 2 Control Register( */
+            /* PM2_CNTRL - Power Management 2 Control Register */
             dev->regs.pmcntrl = val & 1;
             break;
         default:
