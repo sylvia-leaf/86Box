@@ -22,12 +22,12 @@
 #define EMU_NAME    "PCBox"
 #define EMU_NAME_W  LSTR(EMU_NAME)
 
-#define EMU_VERSION       "4.0.2"
+#define EMU_VERSION       "4.1"
 #define EMU_VERSION_W     LSTR(EMU_VERSION)
 #define EMU_VERSION_EX    "3.50" /* frozen due to IDE re-detection behavior on Windows */
 #define EMU_VERSION_MAJ   4
-#define EMU_VERSION_MIN   0
-#define EMU_VERSION_PATCH 2
+#define EMU_VERSION_MIN   1
+#define EMU_VERSION_PATCH 0
 
 #define EMU_BUILD_NUM 0
 
@@ -37,9 +37,13 @@
 #define COPYRIGHT_YEAR "2022"
 
 /* Web URL info. */
-#define EMU_SITE       "pcbox.github.io"
+#define EMU_SITE       "https://pcbox-emu.xyz"
 #define EMU_SITE_W     LSTR(EMU_SITE)
 #define EMU_ROMS_URL   "https://github.com/PCBox/roms/releases/latest"
 #define EMU_ROMS_URL_W LSTR(EMU_ROMS_URL)
-# define EMU_DOCS_URL  "https://pcbox.readthedocs.io"
+#ifdef RELEASE_BUILD
+# define EMU_DOCS_URL  "https://86box.readthedocs.io/en/v4.1/"
+#else
+# define EMU_DOCS_URL  "https://86box.readthedocs.io"
+#endif
 #define EMU_DOCS_URL_W LSTR(EMU_DOCS_URL)
