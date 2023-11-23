@@ -455,32 +455,38 @@ svga_render_indexed_gfx(svga_t *svga, bool highres, bool combine8bits)
     uint32_t  addr;
     uint32_t *p;
     uint8_t   edat[4];
-    uint8_t   dat;
     uint32_t  changed_offset;
 
     const bool    blinked     = svga->blink & 0x10;
     const bool    attrblink   = ((svga->attrregs[0x10] & 0x08) != 0);
 
     // The following is likely how it works on an IBM VGA - that is, it works with its BIOS.
-    // But on an S3 Trio, mode 13h is broken - seemingly accepting the address shift but ignoring the increment.
-    // Forcing it to use incbypow2=0, incevery=1, loadevery=1 makes it behave.
+    // But on some cards, certain modes are broken.
+    // - S3 Trio: mode 13h (320x200x8), incbypow2 given as 2 treated as 0
+    // - ET4000/W32i: mode 2Eh (640x480x8), incevery given as 2 treated as 1
+    const bool    forcepacked = combine8bits && (svga->force_old_addr || svga->packed_chain4);
+
+    // SVGA cards with a high-resolution 8bpp mode may actually bypass the VGA shifter logic.
+    // - HT-216 (+ other Video7 chipsets?) has 0x3C4.0xC8 bit 4 which, when set to 1, loads bytes directly, bypassing the shifters.
+    const bool    highres8bpp = combine8bits && highres;
+
     const bool    dwordload   = ((svga->seqregs[0x01] & 0x10) != 0);
     const bool    wordload    = ((svga->seqregs[0x01] & 0x04) != 0) && !dwordload;
     const bool    wordincr    = ((svga->crtc[0x17] & 0x08) != 0);
     const bool    dwordincr   = ((svga->crtc[0x14] & 0x20) != 0) && !wordincr;
     const bool    dwordshift  = ((svga->crtc[0x14] & 0x40) != 0);
     const bool    wordshift   = ((svga->crtc[0x17] & 0x40) == 0) && !dwordshift;
-    const uint32_t incbypow2  = (combine8bits && (svga->force_old_addr || svga->packed_chain4)) ? 0 : (dwordshift ? 2 : wordshift ? 1 : 0);
-    const uint32_t incevery   = (combine8bits && (svga->force_old_addr || svga->packed_chain4)) ? 1 : (dwordincr  ? 4 : wordincr  ? 2 : 1);
-    const uint32_t loadevery  = (combine8bits && (svga->force_old_addr || svga->packed_chain4)) ? 1 : (dwordload  ? 4 : wordload  ? 2 : 1);
+    const uint32_t incbypow2  = forcepacked ? 0 : (dwordshift ? 2 : wordshift ? 1 : 0);
+    const uint32_t incevery   = forcepacked ? 1 : (dwordincr  ? 4 : wordincr  ? 2 : 1);
+    const uint32_t loadevery  = forcepacked ? 1 : (dwordload  ? 4 : wordload  ? 2 : 1);
 
-    const bool    shift2bit   = ((svga->gdcreg[0x05] & 0x60) == 0x20 );
-    const bool    shift4bit   = ((svga->gdcreg[0x05] & 0x40) == 0x40 );
+    const bool    shift4bit   = ((svga->gdcreg[0x05] & 0x40) == 0x40 ) || highres8bpp;
+    const bool    shift2bit   = ((svga->gdcreg[0x05] & 0x60) == 0x20 ) && !shift4bit;
 
     const int     dwshift     = highres ? 0 : 1;
     const int     dotwidth    = 1 << dwshift;
     const int     charwidth   = dotwidth * (combine8bits ? 4 : 8);
-    const uint8_t blinkmask   = (attrblink ? 0x7 : 0xF);
+    const uint8_t blinkmask   = (attrblink ? 0x8 : 0x0);
     const uint8_t blinkval    = (attrblink && blinked ? 0x8 : 0x0);
 
     if ((svga->displine + svga->y_add) < 0)
@@ -588,12 +594,24 @@ svga_render_indexed_gfx(svga_t *svga, bool highres, bool combine8bits)
                 | (edatlookup[(edat[2] >> inshift) & 3][(edat[3] >> inshift) & 3] << 2);
 
             // FIXME: Confirm blink behaviour on real hardware
-            // This is how it behaves on an Intel GMA 4500MHD (2008).
-            // That includes 8bpp modes.
-            // However, an AMD Stoney Ridge (2016) seems to ignore blink in 8bpp modes.
 
-            uint32_t c0 = ((dat >> 4) & svga->plane_mask & blinkmask) | blinkval;
-            uint32_t c1 = (dat & svga->plane_mask & blinkmask) | blinkval;
+            // The VGA 4bpp graphics blink logic was a pain to work out.
+            //
+            // If plane 3 is enabled in the attribute controller, then:
+            // - if bit 3 is 0, then we force the output of it to be 1.
+            // - if bit 3 is 1, then the output blinks.
+            // This can be tested with Lotus 1-2-3 release 2.3 with the WYSIWYG addon.
+            //
+            // If plane 3 is disabled in the attribute controller, then the output blinks.
+            // This can be tested with QBASIC SCREEN 10 - anything using color #2 should blink and nothing else.
+            //
+            // If you can simplify the following and have it still work, give yourself a medal.
+            //
+            uint32_t c0 = (dat >> 4) & 0xF;
+            uint32_t c1 = dat & 0xF;
+            c0 = ((c0 & svga->plane_mask & ~blinkmask) | ((c0 | ~svga->plane_mask) & blinkmask & blinkval)) ^ blinkmask;
+            c1 = ((c1 & svga->plane_mask & ~blinkmask) | ((c1 | ~svga->plane_mask) & blinkmask & blinkval)) ^ blinkmask;
+
             if (combine8bits) {
                 uint32_t ccombined = (c0 << 4) | c1;
                 uint32_t p0 = svga->map8[ccombined];
