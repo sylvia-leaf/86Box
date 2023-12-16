@@ -246,6 +246,11 @@ typedef struct svga_t {
       addresses are shifted to match*/
     int packed_chain4;
 
+    /*Disable 8bpp blink mode - some cards support it, some don't, it's a weird mode
+      If mode 13h appears in a reddish-brown background (0x88) with dark green text (0x8F),
+      you should set this flag when entering that mode*/
+    int disable_blink;
+
     /*Force CRTC to dword mode, regardless of CR14/CR17. Required for S3 enhanced mode*/
     int force_dword_mode;
 
@@ -393,6 +398,7 @@ extern uint8_t tvp3026_ramdac_in(uint16_t addr, int rs2, int rs3, void *priv, sv
 extern void    tvp3026_recalctimings(void *priv, svga_t *svga);
 extern void    tvp3026_hwcursor_draw(svga_t *svga, int displine);
 extern float   tvp3026_getclock(int clock, void *priv);
+extern void    tvp3026_gpio(uint8_t (*read)(uint8_t cntl, void *priv), void (*write)(uint8_t cntl, uint8_t data, void *priv), void *cb_priv, void *priv);
 
 #    ifdef EMU_DEVICE_H
 extern const device_t ati68860_ramdac_device;
