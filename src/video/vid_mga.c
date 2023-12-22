@@ -805,7 +805,7 @@ mystique_line_compare(svga_t *svga)
     mystique->status |= STATUS_VLINEPEN;
     mystique_update_irqs(mystique);
 
-    return 0;
+    return 1;
 }
 
 static void
@@ -886,6 +886,7 @@ mystique_recalctimings(svga_t *svga)
         if (mystique->type >= MGA_1064SG) {
             /*Mystique, unlike most SVGA cards, allows display start to take
               effect mid-screen*/
+#ifdef CHANGE_MA
             if (svga->ma_latch != mystique->ma_latch_old) {
                 if (svga->interlace && svga->oddeven)
                     svga->ma = svga->maback = (svga->maback - (mystique->ma_latch_old << 2)) + (svga->ma_latch << 2) + (svga->rowoffset << 1);
@@ -893,6 +894,17 @@ mystique_recalctimings(svga_t *svga)
                     svga->ma = svga->maback = (svga->maback - (mystique->ma_latch_old << 2)) + (svga->ma_latch << 2);
                 mystique->ma_latch_old = svga->ma_latch;
             }
+#else
+            /* Only change maback so the new display start will take effect on the next
+               horizontal retrace. */
+            if (svga->ma_latch != mystique->ma_latch_old) {
+                if (svga->interlace && svga->oddeven)
+                    svga->maback = (svga->maback - (mystique->ma_latch_old << 2)) + (svga->ma_latch << 2) + (svga->rowoffset << 1);
+                else
+                    svga->maback = (svga->maback - (mystique->ma_latch_old << 2)) + (svga->ma_latch << 2);
+                mystique->ma_latch_old = svga->ma_latch;
+            }
+#endif
 
             svga->rowoffset <<= 1;
             switch (mystique->xmulctrl & XMULCTRL_DEPTH_MASK) {
@@ -953,7 +965,6 @@ mystique_recalctimings(svga_t *svga)
 
     svga->fb_only       = svga->packed_chain4;
     svga->disable_blink = (svga->bpp > 4);
-    reset_screen_size();
     video_force_resize_set_monitor(1, svga->monitor_index);
 #if 0
     pclog("PackedChain4=%d, chain4=%x, fast=%x, bit6 attrreg10=%02x, bits 5-6 gdcreg5=%02x, extmode=%02x.\n", svga->packed_chain4, svga->chain4, svga->fast, svga->attrregs[0x10] & 0x40, svga->gdcreg[5] & 0x60, mystique->pci_regs[0x41] & 1, mystique->crtcext_regs[3] & CRTCX_R3_MGAMODE);
