@@ -101,10 +101,10 @@ jobs:
         run: >
           & (C:/vcpkg/vcpkg --vcpkg-root "${{ env.VCPKG_ROOT }}" fetch nuget | tail -n 2)
           sources add
-          -source "https://nuget.pkg.github.com/86Box/index.json"
+          -source "https://nuget.pkg.github.com/PCBox/index.json"
           -storepasswordincleartext
           -name "GitHub"
-          -username "86Box"
+          -username "PCBox"
           -password "${{ secrets.GITHUB_TOKEN }}"
 
       - name: Fix MSVC atomic headers
@@ -159,5 +159,5 @@ jobs:
       - name: Upload artifact
         uses: actions/upload-artifact@v3
         with:
-          name: '86Box${{ matrix.ui.slug }}${{ matrix.dynarec.slug }}${{ matrix.build.slug }}-Windows-LLVM-${{ matrix.target.name }}-gha${{ github.run_number }}'
+          name: 'PCBox${{ matrix.ui.slug }}${{ matrix.dynarec.slug }}${{ matrix.build.slug }}-Windows-LLVM-${{ matrix.target.name }}-gha${{ github.run_number }}'
           path: build/artifacts/**
