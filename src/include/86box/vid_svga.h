@@ -268,6 +268,9 @@ typedef struct svga_t {
     /* Pointer to monitor */
     monitor_t *monitor;
 
+    /* Enable LUT mapping of >= 24 bpp modes. */
+    int lut_map;
+
     void *  dev8514;
     void *  xga;
 } svga_t;
@@ -333,6 +336,8 @@ enum {
     RAMDAC_6BIT = 0,
     RAMDAC_8BIT
 };
+
+uint32_t svga_lookup_lut_ram(svga_t* svga, uint32_t val);
 
 /* We need a way to add a device with a pointer to a parent device so it can attach itself to it, and
    possibly also a second ATi 68860 RAM DAC type that auto-sets SVGA render on RAM DAC render change. */

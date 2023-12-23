@@ -722,7 +722,31 @@ mystique_out(uint16_t addr, uint8_t val, void *priv)
             if (mystique->crtcext_idx < 6)
                 mystique->crtcext_regs[mystique->crtcext_idx] = val;
 
-            if (mystique->crtcext_idx == 4) {
+            if ((mystique->type >= MGA_1064SG) && (mystique->crtcext_idx == 0) &&
+                (mystique->crtcext_regs[3] & CRTCX_R3_MGAMODE)) {
+                svga->rowoffset     = svga->crtc[0x13] |
+                                      ((mystique->crtcext_regs[0] & CRTCX_R0_OFFSET_MASK) << 4);
+                svga->rowoffset <<= 1;
+                svga->ma_latch      = ((mystique->crtcext_regs[0] & CRTCX_R0_STARTADD_MASK) << 16) |
+                                      (svga->crtc[0xc] << 8) | svga->crtc[0xd];
+                if (mystique->pci_regs[0x41] & (OPTION_INTERLEAVE >> 8)) {
+                    svga->rowoffset <<= 1;
+                    svga->ma_latch <<= 1;
+                }
+
+                svga->ma_latch <<= 1;
+                if (svga->ma_latch != mystique->ma_latch_old) {
+                    if (svga->interlace && svga->oddeven)
+                        svga->maback = (svga->maback - (mystique->ma_latch_old << 2)) +
+                                       (svga->ma_latch << 2) + (svga->rowoffset << 1);
+                    else
+                        svga->maback = (svga->maback - (mystique->ma_latch_old << 2)) +
+                                       (svga->ma_latch << 2);
+                    mystique->ma_latch_old = svga->ma_latch;
+                }
+            }
+
+           if (mystique->crtcext_idx == 4) {
                 if (svga->gdcreg[6] & 0xc) {
                     /*64k banks*/
                     svga->read_bank  = (val & 0x7f) << 16;
@@ -809,6 +833,18 @@ mystique_line_compare(svga_t *svga)
 }
 
 static void
+mystique_vblank_start(svga_t *svga)
+{
+    mystique_t *mystique = (mystique_t *) svga->priv;
+
+    if (mystique->crtcext_regs[3] & CRTCX_R3_MGAMODE) {
+        svga->ma_latch      = ((mystique->crtcext_regs[0] & CRTCX_R0_STARTADD_MASK) << 16) | (svga->crtc[0xc] << 8) | svga->crtc[0xd];
+        if (mystique->pci_regs[0x41] & (OPTION_INTERLEAVE >> 8))
+            svga->ma_latch <<= 1;
+    }
+}
+
+static void
 mystique_vsync_callback(svga_t *svga)
 {
     mystique_t *mystique = (mystique_t *) svga->priv;
@@ -866,45 +902,41 @@ mystique_recalctimings(svga_t *svga)
     if (mystique->crtcext_regs[2] & CRTCX_R2_LINECOMP10)
         svga->split |= 0x400;
 
-    if (mystique->type == MGA_2064W)
+    if (mystique->type == MGA_2064W) {
         tvp3026_recalctimings(svga->ramdac, svga);
-    else
+        svga->interlace |= !!(mystique->crtcext_regs[0] & 0x80);
+    } else
         svga->interlace = !!(mystique->crtcext_regs[0] & 0x80);
 
     if (mystique->crtcext_regs[3] & CRTCX_R3_MGAMODE) {
         svga->lowres        = 0;
         svga->char_width    = 8;
-        svga->hdisp         = (svga->crtc[1] + 1) * 8;
+        svga->hdisp         = (svga->crtc[1] + 1) << 3;
         svga->hdisp_time    = svga->hdisp;
         svga->rowoffset     = svga->crtc[0x13] | ((mystique->crtcext_regs[0] & CRTCX_R0_OFFSET_MASK) << 4);
-        svga->ma_latch      = ((mystique->crtcext_regs[0] & CRTCX_R0_STARTADD_MASK) << 16) | (svga->crtc[0xc] << 8) | svga->crtc[0xd];
+        svga->lut_map       = 1;
+
         if (mystique->pci_regs[0x41] & (OPTION_INTERLEAVE >> 8)) {
             svga->rowoffset <<= 1;
-            svga->ma_latch <<= 1;
+            if (mystique->type >= MGA_1064SG)
+                svga->ma_latch <<= 1;
         }
 
         if (mystique->type >= MGA_1064SG) {
             /*Mystique, unlike most SVGA cards, allows display start to take
               effect mid-screen*/
-#ifdef CHANGE_MA
-            if (svga->ma_latch != mystique->ma_latch_old) {
-                if (svga->interlace && svga->oddeven)
-                    svga->ma = svga->maback = (svga->maback - (mystique->ma_latch_old << 2)) + (svga->ma_latch << 2) + (svga->rowoffset << 1);
-                else
-                    svga->ma = svga->maback = (svga->maback - (mystique->ma_latch_old << 2)) + (svga->ma_latch << 2);
-                mystique->ma_latch_old = svga->ma_latch;
-            }
-#else
+            svga->ma_latch <<= 1;
             /* Only change maback so the new display start will take effect on the next
                horizontal retrace. */
             if (svga->ma_latch != mystique->ma_latch_old) {
                 if (svga->interlace && svga->oddeven)
-                    svga->maback = (svga->maback - (mystique->ma_latch_old << 2)) + (svga->ma_latch << 2) + (svga->rowoffset << 1);
+                    svga->maback = (svga->maback - (mystique->ma_latch_old << 2)) +
+                                   (svga->ma_latch << 2) + (svga->rowoffset << 1);
                 else
-                    svga->maback = (svga->maback - (mystique->ma_latch_old << 2)) + (svga->ma_latch << 2);
+                    svga->maback = (svga->maback - (mystique->ma_latch_old << 2)) +
+                                   (svga->ma_latch << 2);
                 mystique->ma_latch_old = svga->ma_latch;
             }
-#endif
 
             svga->rowoffset <<= 1;
             switch (mystique->xmulctrl & XMULCTRL_DEPTH_MASK) {
@@ -956,11 +988,16 @@ mystique_recalctimings(svga_t *svga)
         }
         svga->packed_chain4 = 1;
         svga->line_compare = mystique_line_compare;
+        if (mystique->type < MGA_1064SG)
+            svga->vblank_start = mystique_vblank_start;
     } else {
         svga->packed_chain4 = 0;
         svga->line_compare  = NULL;
+        svga->lut_map       = 0;
         if (mystique->type >= MGA_1064SG)
             svga->bpp = 8;
+        else
+            svga->vblank_start  = NULL;
     }
 
     svga->fb_only       = svga->packed_chain4;
@@ -2767,7 +2804,7 @@ run_dma(mystique_t *mystique)
             case DMA_STATE_SEC:
                 switch (mystique->dma.secaddress & DMA_MODE_MASK) {
                     case DMA_MODE_REG:
-                        if ((mystique->dma.secaddress & DMA_ADDR_MASK) == (mystique->dma.secend & DMA_ADDR_MASK)) {
+                        if ((mystique->dma.secaddress & DMA_ADDR_MASK) >= (mystique->dma.secend & DMA_ADDR_MASK)) {
                             if ((mystique->dma.primaddress & DMA_ADDR_MASK) == (mystique->dma.primend & DMA_ADDR_MASK)) {
                                 mystique->endprdmasts_pending = 1;
                                 mystique->dma.state           = DMA_STATE_IDLE;
@@ -2786,7 +2823,7 @@ run_dma(mystique_t *mystique)
                             words_transferred++;
                         }
 
-                        if ((mystique->dma.secaddress & DMA_ADDR_MASK) == (mystique->dma.secend & DMA_ADDR_MASK)) {
+                        if ((mystique->dma.secaddress & DMA_ADDR_MASK) >= (mystique->dma.secend & DMA_ADDR_MASK)) {
                             if ((mystique->dma.primaddress & DMA_ADDR_MASK) == (mystique->dma.primend & DMA_ADDR_MASK)) {
                                 mystique->endprdmasts_pending = 1;
                                 mystique->dma.state           = DMA_STATE_IDLE;
@@ -2820,7 +2857,7 @@ run_dma(mystique_t *mystique)
                         mystique->dma.sec_state = (mystique->dma.sec_state + 1) & 3;
 
                         words_transferred++;
-                        if ((mystique->dma.secaddress & DMA_ADDR_MASK) == (mystique->dma.secend & DMA_ADDR_MASK)) {
+                        if ((mystique->dma.secaddress & DMA_ADDR_MASK) >= (mystique->dma.secend & DMA_ADDR_MASK)) {
                             if ((mystique->dma.primaddress & DMA_ADDR_MASK) == (mystique->dma.primend & DMA_ADDR_MASK)) {
                                 mystique->endprdmasts_pending = 1;
                                 mystique->dma.state           = DMA_STATE_IDLE;
@@ -2837,7 +2874,7 @@ run_dma(mystique_t *mystique)
                     case DMA_MODE_BLIT:
                         {
                             uint32_t val;
-                            if ((mystique->dma.secaddress & DMA_ADDR_MASK) == (mystique->dma.secend & DMA_ADDR_MASK)) {
+                            if ((mystique->dma.secaddress & DMA_ADDR_MASK) >= (mystique->dma.secend & DMA_ADDR_MASK)) {
                                 if ((mystique->dma.primaddress & DMA_ADDR_MASK) == (mystique->dma.primend & DMA_ADDR_MASK)) {
                                     mystique->endprdmasts_pending = 1;
                                     mystique->dma.state           = DMA_STATE_IDLE;
@@ -2857,7 +2894,7 @@ run_dma(mystique_t *mystique)
                                 blit_iload_write(mystique, val, 32);
 
                             words_transferred++;
-                            if ((mystique->dma.secaddress & DMA_ADDR_MASK) == (mystique->dma.secend & DMA_ADDR_MASK)) {
+                            if ((mystique->dma.secaddress & DMA_ADDR_MASK) >= (mystique->dma.secend & DMA_ADDR_MASK)) {
                                 if ((mystique->dma.primaddress & DMA_ADDR_MASK) == (mystique->dma.primend & DMA_ADDR_MASK)) {
                                     mystique->endprdmasts_pending = 1;
                                     mystique->dma.state           = DMA_STATE_IDLE;
@@ -5367,7 +5404,7 @@ mystique_hwcursor_draw(svga_t *svga, int displine)
         case XCURCTRL_CURMODE_XGA:
             for (uint8_t x = 0; x < 64; x++) {
                 if (!(dat[1] & (1ULL << 63)))
-                    svga->monitor->target_buffer->line[displine][offset + svga->x_add] = (dat[0] & (1ULL << 63)) ? mystique->cursor.col[1] : mystique->cursor.col[0];
+                    svga->monitor->target_buffer->line[displine][offset + svga->x_add] = (dat[0] & (1ULL << 63)) ? svga_lookup_lut_ram(svga, mystique->cursor.col[1]) : svga_lookup_lut_ram(svga, mystique->cursor.col[0]);
                 else if (dat[0] & (1ULL << 63))
                     svga->monitor->target_buffer->line[displine][offset + svga->x_add] ^= 0xffffff;
 
@@ -5910,7 +5947,6 @@ const device_t millennium_device = {
     .config        = mystique_config
 };
 
-#if defined(DEV_BRANCH) && defined(USE_MGA)
 const device_t mystique_device = {
     .name          = "Matrox Mystique",
     .internal_name = "mystique",
@@ -5938,4 +5974,3 @@ const device_t mystique_220_device = {
     .force_redraw  = mystique_force_redraw,
     .config        = mystique_config
 };
-#endif
