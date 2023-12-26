@@ -440,7 +440,10 @@ typedef struct mystique_t {
     uint32_t vram_mask, vram_mask_w, vram_mask_l,
         lfb_base, ctrl_base, iload_base,
         ma_latch_old, maccess, mctlwtst, maccess_running,
-        status, softrap_pending_val;
+        softrap_pending_val;
+    
+    atomic_uint status;
+    atomic_bool softrap_status_read;
 
     uint64_t blitter_time, status_time;
 
@@ -1483,13 +1486,16 @@ mystique_ctrl_read_b(uint32_t addr, void *priv)
                 ret = mystique->status & 0xff;
                 if (svga->cgastat & 8)
                     ret |= REG_STATUS_VSYNCSTS;
+                if (ret & 1)
+                    mystique->softrap_status_read = 1;
                 break;
             case REG_STATUS + 1:
                 ret = (mystique->status >> 8) & 0xff;
                 break;
             case REG_STATUS + 2:
                 ret = (mystique->status >> 16) & 0xff;
-                if (mystique->busy || ((mystique->blitter_submit_refcount + mystique->blitter_submit_dma_refcount) != mystique->blitter_complete_refcount) || !FIFO_EMPTY)
+                if (mystique->busy || ((mystique->blitter_submit_refcount + mystique->blitter_submit_dma_refcount) != mystique->blitter_complete_refcount) || !FIFO_EMPTY
+                || mystique->dma.state != DMA_STATE_IDLE || mystique->softrap_pending || mystique->endprdmasts_pending)
                     ret |= (STATUS_DWGENGSTS >> 16);
                 break;
             case REG_STATUS + 3:
@@ -2724,6 +2730,12 @@ run_dma(mystique_t *mystique)
 
     thread_wait_mutex(mystique->dma.lock);
 
+    if (mystique->softrap_pending || mystique->endprdmasts_pending || !mystique->softrap_status_read)
+    {
+        thread_release_mutex(mystique->dma.lock);
+        return;
+    }
+
     if (mystique->dma.state == DMA_STATE_IDLE) {
         if (!(mystique->status & STATUS_ENDPRDMASTS))
         {
@@ -3025,16 +3037,14 @@ mystique_softrap_pending_timer(void *priv)
         mystique->status |= STATUS_ENDPRDMASTS;
     }
     if (mystique->softrap_pending) {
-        mystique->softrap_pending--;
-
         mystique->dma.secaddress = mystique->softrap_pending_val;
         mystique->status |= STATUS_SOFTRAPEN;
+        mystique->softrap_status_read = 0;
         //pclog("softrapen\n");
         mystique_update_irqs(mystique);
+        mystique->softrap_pending--;
     }
-    /* Force ENDPRDMASTS flag to be set. */
-    if (mystique->dma.state == DMA_STATE_IDLE && !(mystique->status & STATUS_ENDPRDMASTS))
-        mystique->status |= STATUS_ENDPRDMASTS;
+    
 }
 
 static void
@@ -5718,6 +5728,32 @@ mystique_pci_write(UNUSED(int func), int addr, uint8_t val, void *priv)
     }
 }
 
+static uint32_t
+mystique_conv_16to32(svga_t* svga, uint16_t color, uint8_t bpp)
+{
+    mystique_t *mystique = (mystique_t*)svga->priv;
+    uint32_t ret = 0x00000000;
+
+    if (svga->lut_map) {
+        if (bpp == 15) {
+            if (mystique->xgenctrl & (1 << 2))
+                color &= 0x7FFF;
+            uint8_t b = getcolr(svga->pallook[(color & 0x1F) | (!!(color & 0x8000) >> 8)]);
+            uint8_t g = getcolg(svga->pallook[((color & 0x3E0) >> 5) | (!!(color & 0x8000) >> 8)]);
+            uint8_t r = getcolb(svga->pallook[((color & 0x7C00) >> 10) | (!!(color & 0x8000) >> 8)]);
+            ret = (video_15to32[color] & 0xFF000000) | makecol(r, g, b);
+        } else {
+            uint8_t b = getcolr(svga->pallook[color & 0x1f]);
+            uint8_t g = getcolg(svga->pallook[(color & 0x7e0) >> 5]);
+            uint8_t r = getcolb(svga->pallook[(color & 0xf800) >> 11]);
+            ret = (video_16to32[color] & 0xFF000000) | makecol(r, g, b);
+        }
+    } else
+        ret = (bpp == 15) ? video_15to32[color] : video_16to32[color];
+
+    return ret;
+}
+
 static void *
 mystique_init(const device_t *info)
 {
@@ -5838,8 +5874,11 @@ mystique_init(const device_t *info)
     timer_add(&mystique->softrap_pending_timer, mystique_softrap_pending_timer, (void *) mystique, 1);
 
     mystique->status = STATUS_ENDPRDMASTS;
+    
+    mystique->softrap_status_read = 1;
 
     mystique->svga.vsync_callback = mystique_vsync_callback;
+    mystique->svga.conv_16to32    = mystique_conv_16to32;
 
     mystique->i2c     = i2c_gpio_init("i2c_mga");
     mystique->i2c_ddc = i2c_gpio_init("ddc_mga");
