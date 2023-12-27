@@ -128,6 +128,8 @@ typedef struct svga_t {
     int hblank_sub;
     int hblank_end_val;
     int hblank_end_len;
+    int packed_4bpp;
+    int ati_4color;
 
     /*The three variables below allow us to implement memory maps like that seen on a 1MB Trio64 :
       0MB-1MB - VRAM
@@ -231,6 +233,7 @@ typedef struct svga_t {
     uint8_t dac_status;
     uint8_t dpms;
     uint8_t dpms_ui;
+    uint8_t color_2bpp;
     uint8_t ksc5601_sbyte_mask;
     uint8_t ksc5601_udc_area_msb[2];
 
@@ -286,7 +289,7 @@ extern uint8_t ibm8514_ramdac_in(uint16_t port, void *priv);
 extern void    ibm8514_ramdac_out(uint16_t port, uint8_t val, void *priv);
 extern int     ibm8514_cpu_src(svga_t *svga);
 extern int     ibm8514_cpu_dest(svga_t *svga);
-extern void    ibm8514_accel_out_pixtrans(svga_t *svga, uint16_t port, uint16_t val, int len);
+extern void    ibm8514_accel_out_pixtrans(svga_t *svga, uint16_t port, uint32_t val, int len);
 extern void    ibm8514_short_stroke_start(int count, int cpu_input, uint32_t mix_dat, uint32_t cpu_dat, svga_t *svga, uint8_t ssv, int len);
 extern void    ibm8514_accel_start(int count, int cpu_input, uint32_t mix_dat, uint32_t cpu_dat, svga_t *svga, int len);
 

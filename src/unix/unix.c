@@ -762,10 +762,13 @@ plat_pause(int p)
     static wchar_t oldtitle[512];
     wchar_t        title[512];
 
+    if ((!!p) == dopause)
+        return;
+
     if ((p == 0) && (time_sync & TIME_SYNC_ENABLED))
         nvr_time_sync();
 
-    dopause = p;
+    do_pause(p);
     if (p) {
         wcsncpy(oldtitle, ui_window_title(NULL), sizeof_w(oldtitle) - 1);
         wcscpy(title, oldtitle);
@@ -816,7 +819,7 @@ plat_init_rom_paths(void)
             while (xdg_rom_paths[strlen(xdg_rom_paths) - 1] == ':') {
                 xdg_rom_paths[strlen(xdg_rom_paths) - 1] = '\0';
             }
-            while ((cur_xdg_rom_path = local_strsep(&xdg_rom_paths, ";")) != NULL) {
+            while ((cur_xdg_rom_path = local_strsep(&xdg_rom_paths, ":")) != NULL) {
                 char real_xdg_rom_path[1024] = { '\0' };
                 strcat(real_xdg_rom_path, cur_xdg_rom_path);
                 path_slash(real_xdg_rom_path);
@@ -1160,9 +1163,12 @@ main(int argc, char **argv)
 {
     SDL_Event event;
     void     *libedithandle;
+    int      ret = 0;
 
     SDL_Init(0);
-    pc_init(argc, argv);
+    ret = pc_init(argc, argv);
+    if (ret == 0)
+        return 0;
     if (!pc_init_modules()) {
         ui_msgbox_header(MBX_FATAL, L"No ROMs found.", L"86Box could not find any usable ROM images.\n\nPlease download a ROM set and extract it into the \"roms\" directory.");
         SDL_Quit();
@@ -1197,7 +1203,7 @@ main(int argc, char **argv)
     pc_reset_hard_init();
 
     /* Set the PAUSE mode depending on the renderer. */
-    // plat_pause(0);
+    plat_pause(0);
 
     /* Initialize the rendering window, or fullscreen. */
 
