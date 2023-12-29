@@ -192,6 +192,7 @@ video_cards[] = {
     { &s3_spea_mercury_p64v_pci_device               },
     { &s3_9fx_531_pci_device                         },
     { &s3_phoenix_vision868_pci_device               },
+    { &s3_cardex_trio64vplus_pci_device              },
     { &s3_phoenix_trio64vplus_pci_device             },
     { &s3_trio64v2_dx_pci_device                     },
     { &s3_virge_325_pci_device                       },
@@ -205,6 +206,7 @@ video_cards[] = {
     { &s3_diamond_stealth_4000_pci_device            },
     { &s3_trio3d2x_pci_device                        },
     { &millennium_device                             },
+    { &millennium_ii_device                          },
     { &mystique_device                               },
     { &mystique_220_device                           },
 #if defined(DEV_BRANCH) && defined(USE_RIVA128)
