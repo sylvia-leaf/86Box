@@ -750,42 +750,13 @@ mystique_out(uint16_t addr, uint8_t val, void *priv)
 
                 svga->ma_latch      = ((mystique->crtcext_regs[0] & CRTCX_R0_STARTADD_MASK) << 16) |
                                       (svga->crtc[0xc] << 8) | svga->crtc[0xd];
-                if ((mystique->pci_regs[0x41] & (OPTION_INTERLEAVE >> 8)) && !(mystique->type >= MGA_2164W)) {
+                if ((mystique->pci_regs[0x41] & (OPTION_INTERLEAVE >> 8))) {
                     svga->rowoffset <<= 1;
                     svga->ma_latch <<= 1;
                 }
 
                 if (!(mystique->type >= MGA_2164W))
                     svga->ma_latch <<= 1;
-                
-                if (mystique->type == MGA_2164W)
-                {
-                    switch (svga->bpp) {
-                        case 8:
-                            svga->render = svga_render_8bpp_highres;
-                            break;
-                        case 15:
-                            svga->render = svga_render_15bpp_highres;
-                            break;
-                        case 16:
-                            svga->render = svga_render_16bpp_highres;
-                            if (svga->dispend >= 1024)
-                                svga->rowoffset <<= 1;
-                            break;
-                        case 24:
-                            svga->render = svga_render_24bpp_highres;
-                            if (svga->hdisp >= 1024)
-                                svga->rowoffset <<= 1;
-                            break;
-                        case 32:
-                            svga->render = svga_render_32bpp_highres;
-                            svga->rowoffset <<= 1;
-                            if (svga->hdisp >= 1024) {
-                                svga->ma_latch <<= 1;
-                            }
-                            break;
-                    }
-                }
 
                 if (svga->ma_latch != mystique->ma_latch_old) {
                     if (svga->interlace && svga->oddeven)
@@ -976,18 +947,21 @@ mystique_recalctimings(svga_t *svga)
         svga->hdisp         = (svga->crtc[1] + 1) << 3;
         svga->hdisp_time    = svga->hdisp;
         svga->rowoffset     = svga->crtc[0x13] | ((mystique->crtcext_regs[0] & CRTCX_R0_OFFSET_MASK) << 4);
-        svga->lut_map       = !!(mystique->xmiscctrl & XMISCCTRL_RAMCS);
-        if (mystique->type >= MGA_1064SG)
-            svga->ma_latch      = ((mystique->crtcext_regs[0] & CRTCX_R0_STARTADD_MASK) << 16) | (svga->crtc[0xc] << 8) | svga->crtc[0xd];
 
-        if ((mystique->pci_regs[0x41] & (OPTION_INTERLEAVE >> 8)) && !(mystique->type >= MGA_2164W)) {
+        if (mystique->type != MGA_2164W && mystique->type != MGA_2064W)
+            svga->lut_map = !!(mystique->xmiscctrl & XMISCCTRL_RAMCS);
+
+        if (mystique->type >= MGA_1064SG)
+            svga->ma_latch = ((mystique->crtcext_regs[0] & CRTCX_R0_STARTADD_MASK) << 16) | (svga->crtc[0xc] << 8) | svga->crtc[0xd];
+
+        if ((mystique->pci_regs[0x41] & (OPTION_INTERLEAVE >> 8))) {
             svga->rowoffset <<= 1;
             if (mystique->type >= MGA_1064SG)
                 svga->ma_latch <<= 1;
         }
 
         if (mystique->type >= MGA_1064SG) {
-            /*Mystique, unlike most SVGA cards, allows display start to take
+            /*Mystique and later, unlike most SVGA cards, allows display start to take
               effect mid-screen*/
             if (!(mystique->type >= MGA_2164W))
                 svga->ma_latch <<= 1;
@@ -1044,20 +1018,12 @@ mystique_recalctimings(svga_t *svga)
                         break;
                     case 16:
                         svga->render = svga_render_16bpp_highres;
-                        if (svga->dispend >= 1024)
-                            svga->rowoffset <<= 1;
                         break;
                     case 24:
                         svga->render = svga_render_24bpp_highres;
-                        if (svga->hdisp >= 1024)
-                            svga->rowoffset <<= 1;
                         break;
                     case 32:
                         svga->render = svga_render_32bpp_highres;
-                        svga->rowoffset <<= 1;
-                        if (svga->hdisp >= 1024) {
-                            svga->ma_latch <<= 1;
-                        }
                         break;
                 }
             }
@@ -5713,9 +5679,9 @@ mystique_pci_read(UNUSED(int func), int addr, void *priv)
     mystique_t *mystique = (mystique_t *) priv;
     uint8_t     ret      = 0x00;
 
-    if (mystique->type >= MGA_2164W)
+    if (mystique->type >= MGA_1164SG)
     {
-        /* Millennium II and later Matrox cards swap MGABASE1 and 2. */
+        /* Mystique 220, Millennium II and later Matrox cards swap MGABASE1 and 2. */
         if (addr >= 0x10 && addr <= 0x13)
             addr += 0x4;
         else if (addr >= 0x14 && addr <= 0x17)
@@ -5755,7 +5721,7 @@ mystique_pci_read(UNUSED(int func), int addr, void *priv)
                 break; /*Fast DEVSEL timing*/
 
             case 0x08:
-                ret = 0;
+                ret = (mystique->type == MGA_1164SG) ? 3 : 0;
                 break; /*Revision ID*/
             case 0x09:
                 ret = 0;
@@ -5874,9 +5840,9 @@ mystique_pci_write(UNUSED(int func), int addr, uint8_t val, void *priv)
 {
     mystique_t *mystique = (mystique_t *) priv;
 
-    if (mystique->type >= MGA_2164W)
+    if (mystique->type >= MGA_1164SG)
     {
-        /* Millennium II and later Matrox cards swap MGABASE1 and 2. */
+        /* Mystique 220, Millennium II and later Matrox cards swap MGABASE1 and 2. */
         if (addr >= 0x10 && addr <= 0x13)
             addr += 0x4;
         else if (addr >= 0x14 && addr <= 0x17)
@@ -6072,6 +6038,7 @@ mystique_init(const device_t *info)
         mystique->svga.ramdac            = device_add(&tvp3026_ramdac_device);
         mystique->svga.clock_gen         = mystique->svga.ramdac;
         mystique->svga.getclock          = tvp3026_getclock;
+        mystique->svga.conv_16to32       = tvp3026_conv_16to32;
         if (mystique->vram_size >= 16)
             mystique->svga.decode_mask = mystique->svga.vram_mask;
         tvp3026_gpio(mystique_tvp3026_gpio_read, mystique_tvp3026_gpio_write, mystique, mystique->svga.ramdac);
@@ -6160,7 +6127,9 @@ mystique_init(const device_t *info)
     mystique->softrap_status_read = 1;
 
     mystique->svga.vsync_callback = mystique_vsync_callback;
-    mystique->svga.conv_16to32    = mystique_conv_16to32;
+
+    if (mystique->type != MGA_2064W && mystique->type != MGA_2164W)
+        mystique->svga.conv_16to32    = mystique_conv_16to32;
 
     mystique->i2c     = i2c_gpio_init("i2c_mga");
     mystique->i2c_ddc = i2c_gpio_init("ddc_mga");
