@@ -195,18 +195,20 @@ main(int argc, char *argv[])
     SetCurrentProcessExplicitAppUserModelID(L"PCBox.PCBox");
 #endif
 
-#ifdef RELEASE_BUILD
+#ifndef Q_OS_MACOS
+#    ifdef RELEASE_BUILD
     app.setWindowIcon(QIcon(":/settings/win/icons/86Box-green.ico"));
-#elif defined ALPHA_BUILD
+#    elif defined ALPHA_BUILD
     app.setWindowIcon(QIcon(":/settings/win/icons/86Box-red.ico"));
-#elif defined BETA_BUILD
+#    elif defined BETA_BUILD
     app.setWindowIcon(QIcon(":/settings/win/icons/86Box-yellow.ico"));
-#else
+#    else
     app.setWindowIcon(QIcon(":/settings/win/icons/86Box-gray.ico"));
-#endif
+#    endif
 
-#if (!defined(Q_OS_WINDOWS) && !defined(__APPLE__))
+#    ifdef Q_OS_UNIX
     app.setDesktopFileName("net.86box.86Box");
+#    endif
 #endif
 
     if (!pc_init_modules()) {
