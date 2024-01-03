@@ -77,22 +77,22 @@ static const device_t vid_internal_device = {
 static const VIDEO_CARD
 video_cards[] = {
   // clang-format off
-    { &vid_none_device                               },
-    { &vid_internal_device                           },
-    { &atiega800p_device                             },
-    { &mach8_isa_device,        VIDEO_FLAG_TYPE_8514 },
-    { &mach32_isa_device,       VIDEO_FLAG_TYPE_8514 },
-    { &mach64gx_isa_device                           },
-    { &ati28800k_device                              },
-    { &ati18800_vga88_device                         },
-    { &ati28800_device                               },
-    { &compaq_ati28800_device                        },
+    { &vid_none_device                                 },
+    { &vid_internal_device                             },
+    { &atiega800p_device                               },
+    { &mach8_isa_device,          VIDEO_FLAG_TYPE_8514 },
+    { &mach32_isa_device,         VIDEO_FLAG_TYPE_8514 },
+    { &mach64gx_isa_device                             },
+    { &ati28800k_device                                },
+    { &ati18800_vga88_device                           },
+    { &ati28800_device                                 },
+    { &compaq_ati28800_device                          },
 #if defined(DEV_BRANCH) && defined(USE_XL24)
-    { &ati28800_wonderxl24_device                    },
+    { &ati28800_wonderxl24_device                      },
 #endif
-    { &ati18800_device                               },
+    { &ati18800_device                                 },
 #if defined(DEV_BRANCH) && defined(USE_VGAWONDER)
-    { &ati18800_wonder_device                        },
+    { &ati18800_wonder_device                          },
 #endif
     { &cga_device                                    },
     { &sega_device                                   },
@@ -266,7 +266,7 @@ video_cards[] = {
     { &s3_virge_357_agp_device                       },
     { &s3_diamond_stealth_4000_agp_device            },
     { &s3_trio3d2x_agp_device                        },
-    { &productiva_g100_device                        },
+    { &productiva_g100_device, VIDEO_FLAG_TYPE_SPECIAL },
     { &velocity_100_agp_device                       },
     { &velocity_200_agp_device                       },
     { &voodoo_3_1000_agp_device                      },
