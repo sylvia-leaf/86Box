@@ -344,6 +344,7 @@ reset_common(int hard)
         reset_808x(hard);
 
     mxcsr = 0x1f80;
+    cpu_cpurst_on_sr = 0;
 }
 
 /* Hard reset. */
