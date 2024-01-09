@@ -1397,6 +1397,7 @@ ide_write_devctl(UNUSED(uint16_t addr), uint8_t val, void *priv)
             } else
                 ide->tf->atastat = DRDY_STAT | DSC_STAT;
             ide->tf->error   = 1;
+            ide_other->tf->error   = 1;    /* Assert PDIAG-. */
             dev->cur_dev &= ~1;
             ch = dev->cur_dev;
 
@@ -1410,7 +1411,8 @@ ide_write_devctl(UNUSED(uint16_t addr), uint8_t val, void *priv)
 
     old         = dev->devctl;
     dev->devctl = val;
-    if (!(val & 0x02) && (old & 0x02))
+    // if (!(val & 0x02) && (old & 0x02))
+    if ((old ^ val) & 0x02)
         ide_irq_update(ide_boards[ide->board], 1);
 }
 
@@ -2459,6 +2461,7 @@ ide_callback(void *priv)
             else {
                 ide->blocksize     = ide->tf->secount;
                 ide->tf->atastat   = DRDY_STAT | DSC_STAT;
+
                 ide_irq_raise(ide);
             }
             break;
@@ -2972,6 +2975,22 @@ ide_board_reset(int board)
 
     for (int d = min; d < max; d++)
         ide_drive_reset(d);
+}
+
+void
+ide_drives_set_shadow(void)
+{
+    for (uint8_t d = 0; d < IDE_NUM; d++) {
+        if (ide_drives[d] == NULL)
+            continue;
+
+        if ((d & 1) && (ide_drives[d]->type == IDE_NONE) && (ide_drives[d ^ 1]->type != IDE_NONE)) {
+            ide_drives[d]->type = ide_drives[d ^ 1]->type | IDE_SHADOW;
+            if (ide_drives[d]->tf != NULL)
+                free(ide_drives[d]->tf);
+            ide_drives[d]->tf = ide_drives[d ^ 1]->tf;
+        }
+    }
 }
 
 /* Reset a standalone IDE unit. */

@@ -657,7 +657,8 @@ DEVOBJ := bugger.o cartridge.o cassette.o hasp.o hwm.o hwm_lm75.o hwm_lm78.o hwm
           serial_passthrough.o \
           intel_ich2_gpio.o \
           intel_ich2_trap.o \
-          tco.o
+          tco.o \
+          unittester.o
 
 SIOOBJ := sio_acc3221.o sio_ali5123.o \
           sio_f82c710.o sio_82091aa.o sio_fdc37c6xx.o \
@@ -689,6 +690,7 @@ HDDOBJ := hdd.o \
           hdc_xta.o \
           hdc_esdi_at.o hdc_esdi_mca.o \
           hdc_xtide.o hdc_ide.o \
+          hdc_ide_ali5213.o \
           hdc_ide_opti611.o \
           hdc_ide_cmd640.o hdc_ide_cmd646.o \
           hdc_ide_sff8038i.o
