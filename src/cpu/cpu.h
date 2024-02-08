@@ -330,10 +330,6 @@ typedef struct {
     /* Pentium Pro, Pentium II Klamath, and Pentium II Deschutes MSR's */
     uint64_t pat; /* 0x00000277 */
 
-    /* Pentium Pro, Pentium II Klamath, and Pentium II Deschutes MSR's that are also
-       on the VIA Cyrix III */
-    uint64_t mtrr_deftype; /* 0x000002ff */
-
     /* Pentium II/III/IV MSR's needed for late BIOS */
     uint64_t ecx1a0; /* 0x000001a0 */
     uint64_t ecx198; /* 0x00000198 */
@@ -347,7 +343,7 @@ typedef struct {
     /* K7 MSRs */
     uint64_t amd_syscfg; /* 0xc0010010 */
 
-    uint64_t amd_hwcr;      /* 0xc0010015 */
+    uint64_t amd_hwcr_athlon;      /* 0xc0010015 */
     uint64_t amd_iorrbase1; /* 0xc0010016 */
     uint64_t amd_iorrmask1; /* 0xc0010017 */
     uint64_t amd_iorrbase2; /* 0xc0010018 */

@@ -3443,8 +3443,8 @@ cpu_RDMSR(void)
                 case 0xc0010015:
                     if (cpu_s->cpu_type < CPU_ATHLON)
                         goto amd_k_invalid_rdmsr;
-                    EAX = msr.amd_hwcr & 0xffffffff;
-                    EDX = msr.amd_hwcr >> 32;
+                    EAX = msr.amd_hwcr_athlon & 0xffffffff;
+                    EDX = msr.amd_hwcr_athlon >> 32;
                     break;
                 case 0xc0010016:
                     if (cpu_s->cpu_type < CPU_ATHLON)
@@ -4507,7 +4507,7 @@ cpu_WRMSR(void)
                 case 0xc0010015:
                     if (cpu_s->cpu_type < CPU_ATHLON)
                         goto amd_k_invalid_wrmsr;
-                    msr.amd_hwcr = EAX | ((uint64_t) EDX << 32);
+                    msr.amd_hwcr_athlon = EAX | ((uint64_t) EDX << 32);
                     break;
                 case 0xc0010016:
                     if (cpu_s->cpu_type < CPU_ATHLON)
