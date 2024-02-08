@@ -114,7 +114,8 @@ enum {
     CPU_PKG_SOCKET8          = (1 << 21),
     CPU_PKG_SLOT1            = (1 << 22),
     CPU_PKG_SLOT2            = (1 << 23),
-    CPU_PKG_SOCKET370        = (1 << 24)
+    CPU_PKG_SOCKET370        = (1 << 24),
+    CPU_PKG_SLOTA            = (1 << 25)
 };
 
 #define CPU_SUPPORTS_DYNAREC 1
