@@ -3238,10 +3238,6 @@ cpu_RDMSR(void)
                     EDX = msr.apic_base >> 32;
                     cpu_log("APIC_BASE read : %08X%08X\n", EDX, EAX);
                     break;
-                case 0x00000083:
-                    EAX = msr.ecx83 & 0xffffffff;
-                    EDX = msr.ecx83 >> 32;
-                    break;
                 case 0x8b:
                     break;
                 case 0x17a:
@@ -4300,9 +4296,6 @@ cpu_WRMSR(void)
                         goto amd_k_invalid_wrmsr;
                     cpu_log("APIC_BASE write: %08X%08X\n", EDX, EAX);
                     // msr.apic_base = EAX | ((uint64_t) EDX << 32);
-                    break;
-                case 0x83:
-                    msr.ecx83 = EAX | ((uint64_t) EDX << 32);
                     break;
                 case 0x8b:
                     break;
