@@ -120,6 +120,53 @@ int opcode_length[256] = { 3, 3, 3, 3, 3, 3, 1, 1, 3, 3, 3, 3, 3, 3, 1, 3,   /* 
                            2, 2, 2, 2, 2, 2, 2, 2, 3, 3, 3, 2, 1, 1, 1, 1,   /* 0xex */
                            1, 1, 1, 1, 1, 1, 3, 3, 1, 1, 1, 1, 1, 1, 3, 3 }; /* 0xfx */
 
+/* 0 = no, 1 = always, 2 = depends on second opcode, 3 = depends on mod/rm */
+int lock_legal[256]    = { 1, 1, 1, 1, 1, 1, 0, 0, 1, 1, 1, 1, 1, 1, 0, 2,   /* 0x0x */
+                           1, 1, 1, 1, 1, 1, 0, 0, 1, 1, 1, 1, 1, 1, 0, 0,   /* 0x1x */
+                           1, 1, 1, 1, 1, 1, 0, 0, 1, 1, 1, 1, 1, 1, 0, 0,   /* 0x2x */
+                           1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,   /* 0x3x */
+                           0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,   /* 0x4x */
+                           0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,   /* 0x5x */
+                           0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,   /* 0x6x */
+                           0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,   /* 0x7x */
+                           3, 3, 3, 3, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0,   /* 0x8x */
+                           0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,   /* 0x9x */
+                           0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,   /* 0xax */
+                           0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,   /* 0xbx */
+                           0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,   /* 0xcx */
+                           0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,   /* 0xdx */
+                           0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,   /* 0xex */
+                           0, 0, 0, 0, 0, 0, 3, 3, 0, 0, 0, 0, 0, 0, 3, 3 }; /* 0xfx */
+
+int lock_legal_0f[256] = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,   /* 0x0x */
+                           0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,   /* 0x1x */
+                           0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,   /* 0x2x */
+                           0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,   /* 0x3x */
+                           0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,   /* 0x4x */
+                           0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,   /* 0x5x */
+                           0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,   /* 0x6x */
+                           0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,   /* 0x7x */
+                           0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,   /* 0x8x */
+                           0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,   /* 0x9x */
+                           0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0,   /* 0xax */
+                           0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 3, 1, 0, 0, 0, 0,   /* 0xbx */
+                           0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,   /* 0xcx */
+                           0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,   /* 0xdx */
+                           0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,   /* 0xex */
+                           0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }; /* 0xfx */
+
+/* (modrm >> 3) & 0x07 */
+int lock_legal_ba[8]   = { 0, 0, 0, 0, 1, 1, 1, 1 };
+
+/* Also applies to 81, 82, and 83 */
+int lock_legal_80[8]   = { 1, 1, 1, 1, 1, 1, 1, 0 };
+
+/* Also applies to F7 */
+int lock_legal_f6[8]   = { 0, 0, 1, 1, 0, 0, 0, 0 };
+
+/* Also applies to FF */
+int lock_legal_fe[8]   = { 1, 1, 0, 0, 0, 0, 0, 0 };
+
 uint32_t addr64;
 uint32_t addr64_2;
 uint32_t addr64a[8];
@@ -1412,7 +1459,7 @@ x86_int(int num)
     cpu_state.pc = cpu_state.oldpc;
 
     if (msw & 1)
-        is486 ? pmodeint(num, 0) : pmodeint_2386(num, 0);
+        cpu_use_exec ? pmodeint(num, 0) : pmodeint_2386(num, 0);
     else {
         addr = (num << 2) + idt.base;
 
@@ -1445,7 +1492,7 @@ x86_int(int num)
             oxpc = cpu_state.pc;
 #endif
             cpu_state.pc = readmemw(0, addr);
-            is486 ? loadcs(readmemw(0, addr + 2)) : loadcs_2386(readmemw(0, addr + 2));
+            cpu_use_exec ? loadcs(readmemw(0, addr + 2)) : loadcs_2386(readmemw(0, addr + 2));
         }
     }
 
@@ -1462,7 +1509,7 @@ x86_int_sw(int num)
     cycles -= timing_int;
 
     if (msw & 1)
-        is486 ? pmodeint(num, 1) : pmodeint_2386(num, 1);
+        cpu_use_exec ? pmodeint(num, 1) : pmodeint_2386(num, 1);
     else {
         addr = (num << 2) + idt.base;
 
@@ -1487,7 +1534,7 @@ x86_int_sw(int num)
             oxpc = cpu_state.pc;
 #endif
             cpu_state.pc = readmemw(0, addr);
-            is486 ? loadcs(readmemw(0, addr + 2)) : loadcs_2386(readmemw(0, addr + 2));
+            cpu_use_exec ? loadcs(readmemw(0, addr + 2)) : loadcs_2386(readmemw(0, addr + 2));
             cycles -= timing_int_rm;
         }
     }
@@ -1529,7 +1576,7 @@ x86_int_sw_rm(int num)
     cpu_state.eflags &= ~VIF_FLAG;
     cpu_state.flags &= ~T_FLAG;
     cpu_state.pc = new_pc;
-    is486 ? loadcs(new_cs) : loadcs_2386(new_cs);
+    cpu_use_exec ? loadcs(new_cs) : loadcs_2386(new_cs);
 #ifndef USE_NEW_DYNAREC
     oxpc = cpu_state.pc;
 #endif

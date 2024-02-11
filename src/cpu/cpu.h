@@ -179,6 +179,7 @@ typedef struct {
 #define VIP_FLAG   0x0010 /* in EFLAGS */
 #define VID_FLAG   0x0020 /* in EFLAGS */
 
+#define EM_FLAG    0x00004 /* in CR0 */
 #define WP_FLAG    0x10000 /* in CR0 */
 
 #define CR4_VME    (1 << 0) /* Virtual 8086 Mode Extensions */
@@ -817,6 +818,11 @@ void cyrix_write_seg_descriptor(uint32_t addr, x86seg *seg);
 #define SMHR_VALID     (1 << 0)
 #define SMHR_ADDR_MASK (0xfffffffc)
 
+typedef union {
+    uint32_t fd;
+    uint8_t  b[4];
+} fetch_dat_t;
+
 typedef struct {
     struct {
         uint32_t base;
@@ -870,5 +876,12 @@ extern void mmx_init(void);
 extern void prefetch_flush(void);
 
 extern void prefetch_run(int instr_cycles, int bytes, int modrm, int reads, int reads_l, int writes, int writes_l, int ea32);
+
+extern int lock_legal[256];
+extern int lock_legal_0f[256];
+extern int lock_legal_ba[8];
+extern int lock_legal_80[8];
+extern int lock_legal_f6[8];
+extern int lock_legal_fe[8];
 
 #endif /*EMU_CPU_H*/
