@@ -12347,7 +12347,7 @@ const machine_t machines[] = {
         .bus_flags = MACHINE_PS2_AGP,
         .flags = MACHINE_IDE_DUAL | MACHINE_APM | MACHINE_ACPI | MACHINE_GAMEPORT | MACHINE_USB,
         .ram = {
-            .min = 1024,
+            .min = 8192,
             .max = 1572864,
             .step = 8192
         },
@@ -14498,7 +14498,7 @@ const machine_t machines[] = {
             .max_multi = 15.0 /* limits assumed */
         },
         .bus_flags = MACHINE_PS2_PCI, /* Machine has EISA, possibly for a riser? */
-        .flags = MACHINE_IDE_DUAL | MACHINE_APM | MACHINE_ACPI | MACHINE_USB, /* Machine has internal video: C&T B69000, sound: ESS ES1938S and NIC: Realtek RTL8139C */
+        .flags = MACHINE_IDE_DUAL | MACHINE_APM | MACHINE_ACPI | MACHINE_USB | MACHINE_VIDEO, /* Machine has internal video: C&T B69000, sound: ESS ES1938S and NIC: Realtek RTL8139C */
         .ram = {
             .min = 8192,
             .max = 524288,

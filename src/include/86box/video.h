@@ -443,8 +443,10 @@ extern const device_t pgc_device;
 extern const device_t millennium_device;
 extern const device_t mystique_device;
 extern const device_t mystique_220_device;
+#    if defined(DEV_BRANCH) && defined(USE_MGA2)
 extern const device_t millennium_ii_device;
 extern const device_t productiva_g100_device;
+#    endif
 
 /* nVidia RIVA 128 */
 #if defined(DEV_BRANCH) && defined(USE_RIVA128)
@@ -590,6 +592,10 @@ extern const device_t velocity_200_agp_device;
 
 /* Wyse 700 */
 extern const device_t wy700_device;
+
+/* Chips & Technologies */
+extern const device_t chips_69000_device;
+extern const device_t chips_69000_onboard_device;
 
 #endif
 
