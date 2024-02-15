@@ -207,6 +207,7 @@ video_cards[] = {
     { &s3_diamond_stealth_4000_pci_device            },
     { &s3_trio3d2x_pci_device                        },
     { &millennium_device                             },
+    { &chips_69000_device                            },
 #if defined(DEV_BRANCH) && defined(USE_MGA2)
     { &millennium_ii_device                          },
 #endif

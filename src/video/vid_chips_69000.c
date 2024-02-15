@@ -1529,16 +1529,14 @@ chips_69000_write_ext_reg(chips_69000_t* chips, uint8_t val)
             chips->ext_regs[chips->ext_index] = val;
             chips->svga.hwcursor.y = val | (chips->ext_regs[0xA7] & 7) << 8;
             if (chips->ext_regs[0xA7] & 0x80) {
-                chips->svga.hwcursor.yoff = chips->svga.hwcursor.y;
-                chips->svga.hwcursor.y = 0;
+                chips->svga.hwcursor.y = -chips->svga.hwcursor.y;
             }
             break;
         case 0xA7:
             chips->ext_regs[chips->ext_index] = val;
             chips->svga.hwcursor.y = chips->ext_regs[0xA6] | (val & 7) << 8;
-            if (chips->ext_regs[0xA7] & 0x80){
-                chips->svga.hwcursor.yoff = chips->svga.hwcursor.y;
-                chips->svga.hwcursor.y = 0;
+            if (chips->ext_regs[0xA7] & 0x80) {
+                chips->svga.hwcursor.y = -chips->svga.hwcursor.y;
             }
             break;
         case 0xC8:
@@ -1988,7 +1986,7 @@ chips_69000_writeb_mmio(uint32_t addr, uint8_t val, chips_69000_t* chips)
                 case 0x600 ... 0x603:
                 {
                     chips->mem_regs_b[addr & 0xF] = val;
-                    chips->mem_regs[addr >> 2] &= 0x80004040;
+                    chips->mem_regs[(addr >> 2) & 0x3] &= 0x80004040;
                     if (addr == 0x605 || addr == 0x607)
                         chips_69000_interrupt(chips);
                     break;
@@ -1997,7 +1995,7 @@ chips_69000_writeb_mmio(uint32_t addr, uint8_t val, chips_69000_t* chips)
                 case 0x604 ... 0x607:
                 {
                     chips->mem_regs_b[addr & 0xF] &= ~val;
-                    chips->mem_regs[addr >> 2] &= 0x80004040;
+                    chips->mem_regs[(addr >> 2) & 0x3] &= 0x80004040;
                     if (addr == 0x605 || addr == 0x607)
                         chips_69000_interrupt(chips);
                     break;
