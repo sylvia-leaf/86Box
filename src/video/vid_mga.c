@@ -945,7 +945,7 @@ mystique_recalctimings(svga_t *svga)
     if (mystique->crtcext_regs[1] & CRTCX_R1_HTOTAL8)
         svga->htotal |= 0x100;
 
-    svga->hblankstart    = (((mystique->crtcext_regs[1] & 0x02) >> 2) << 8) + svga->crtc[2] + 1;
+    svga->hblankstart    = (((mystique->crtcext_regs[1] & 0x02) >> 2) << 8) + svga->crtc[2];
 
     if (mystique->crtcext_regs[2] & CRTCX_R2_VTOTAL10)
         svga->vtotal |= 0x400;
@@ -2811,7 +2811,6 @@ static uint8_t
 mystique_readb_linear(uint32_t addr, void *priv)
 {
     const svga_t *svga = (svga_t *) priv;
-    mystique_t *mystique = (mystique_t *) svga->priv;
 
     cycles -= svga->monitor->mon_video_timing_read_b;
 
@@ -2861,7 +2860,6 @@ static void
 mystique_writeb_linear(uint32_t addr, uint8_t val, void *priv)
 {
     svga_t *svga = (svga_t *) priv;
-    mystique_t *mystique = (mystique_t *) svga->priv;
 
     cycles -= svga->monitor->mon_video_timing_write_b;
 

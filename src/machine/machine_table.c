@@ -34,7 +34,9 @@
 #include <86box/snd_ac97.h>
 #include <86box/video.h>
 #include <86box/plat_unused.h>
-#include <86box/net_pcnet.h>
+#include <86box/thread.h>
+#include <86box/timer.h>
+#include <86box/network.h>
 
 // Temporarily here till we move everything out into the right files
 extern const device_t pcjr_device;

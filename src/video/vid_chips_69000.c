@@ -351,7 +351,7 @@ chips_69000_do_rop_16bpp(uint16_t *dst, uint16_t src, uint8_t rop)
             *dst |= src;
             break;
         case 0xFF:
-            *dst = 0xFF;
+            *dst = 0xFFFF;
             break;
     }
 }
@@ -405,7 +405,7 @@ chips_69000_do_rop_24bpp(uint32_t *dst, uint32_t src, uint8_t rop)
             *dst |= src;
             break;
         case 0xFF:
-            *dst = 0xFF;
+            *dst = 0xFFFFFF;
             break;
     }
 }
@@ -817,7 +817,10 @@ chips_69000_recalctimings(svga_t *svga)
                 svga->hdisp = ((chips->flat_panel_regs[0x20] | ((chips->flat_panel_regs[0x25] & 0xF) << 8)) + 1) << 3;
                 //svga->htotal = ((chips->flat_panel_regs[0x23] | ((chips->flat_panel_regs[0x26] & 0xF) << 8)) + 5) << 3;
                 //svga->hblank_end_val = svga->htotal - 1;
-            }
+                svga->hoverride = 1;
+            } else
+                svga->hoverride = 0;
+
             if (svga->dispend > (((chips->flat_panel_regs[0x30] | ((chips->flat_panel_regs[0x35] & 0xF) << 8)) + 1))) {
                 svga->dispend = svga->vsyncstart = svga->vblankstart = ((chips->flat_panel_regs[0x30] | ((chips->flat_panel_regs[0x35] & 0xF) << 8)) + 1);
             }
@@ -828,7 +831,6 @@ chips_69000_recalctimings(svga_t *svga)
             //svga->vsyncstart = ((chips->flat_panel_regs[0x31] | ((chips->flat_panel_regs[0x35] & 0xF0) << 4)) + 1);
             //svga->vtotal = ((chips->flat_panel_regs[0x33] | ((chips->flat_panel_regs[0x36] & 0xF) << 8)) + 2);
             svga->clock = (cpuclock * (double) (1ULL << 32)) / svga->getclock((chips->flat_panel_regs[0x03] >> 2) & 3, svga->priv);
-            svga->hoverride = 1;
         } else {
             svga->hoverride = 0;
         }
@@ -910,7 +912,7 @@ chips_69000_process_pixel(chips_69000_t* chips, uint32_t pixel)
         else
             pattern_data = chips_69000_readb_linear(chips->bitblt_running.bitblt.pat_addr + ((vert_pat_alignment + (chips->bitblt_running.y & 7)) & 7), chips);
 
-        is_true = !!(pattern_data & (1 << (((chips->bitblt_running.bitblt.destination_addr & 7) + chips->bitblt_running.x) & 7)));
+        is_true = !!(pattern_data & (1 << (7 - ((chips->bitblt_running.bitblt.destination_addr + chips->bitblt_running.x) & 7))));
 
         if (!is_true && (chips->bitblt_running.bitblt.bitblt_control & (1 << 17))) {
             return;
@@ -1884,10 +1886,10 @@ chips_69000_pci_write(int func, int addr, uint8_t val, void *p)
                 }
             case 0x13:
                 {
-                    if (!(chips->pci_conf_status & PCI_COMMAND_MEM)) {
+                    // if (!(chips->pci_conf_status & PCI_COMMAND_MEM)) {
                         chips->linear_mapping.base = val << 24;
-                        break;
-                    }
+                        // break;
+                    // }
                     mem_mapping_set_addr(&chips->linear_mapping, val << 24, (1 << 24));
                     break;
                 }
