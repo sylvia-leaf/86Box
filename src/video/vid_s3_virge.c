@@ -835,6 +835,7 @@ s3_virge_recalctimings(svga_t *svga)
 
         /* Also make sure vertical blanking starts on display end. */
         svga->vblankstart = svga->dispend;
+        video_force_resize_set_monitor(1, svga->monitor_index);
     } else {
         svga->hblankstart    = (((svga->crtc[0x5d] & 0x04) >> 2) << 8) + svga->crtc[2];
 
@@ -893,6 +894,7 @@ s3_virge_recalctimings(svga_t *svga)
             }
         }
         svga->vram_display_mask = (!(svga->crtc[0x31] & 0x08) && (svga->crtc[0x32] & 0x40)) ? 0x3ffff : virge->vram_mask;
+        svga->overlay.ena       = 0;
         s3_virge_log("VGA mode\n");
     } else /*Streams mode*/
     {
@@ -923,7 +925,7 @@ s3_virge_recalctimings(svga_t *svga)
         } else if (virge->chip == S3_VIRGEGX2 && svga->overlay.ena) {
             /* 0x20 = Secondary Stream enabled */
             /* 0x2000 = Primary Stream enabled */
-            svga->overlay.ena = !!(virge->streams.blend_ctrl & 0x20) && (svga->crtc[0x67] & 0xC);
+            svga->overlay.ena = !!(virge->streams.blend_ctrl & 0x20);
         }
 
         switch ((virge->streams.pri_ctrl >> 24) & 0x7) {
@@ -956,6 +958,27 @@ s3_virge_recalctimings(svga_t *svga)
         }
         svga->vram_display_mask = virge->vram_mask;
     }
+}
+
+static void
+s3_virge_update_buffer(virge_t *virge)
+{
+    svga_t *svga = &virge->svga;
+    
+    if ((svga->crtc[0x67] & 0xc) != 0xc)
+        return;
+
+    if (virge->streams.buffer_ctrl & 1)
+        svga->ma_latch = virge->streams.pri_fb1 >> 2;
+    else
+        svga->ma_latch = virge->streams.pri_fb0 >> 2;
+
+    if (virge->streams.buffer_ctrl & 2)
+        svga->overlay.addr = virge->streams.sec_fb1;
+    else
+        svga->overlay.addr = virge->streams.sec_fb0;
+    
+    svga->rowoffset = virge->streams.pri_stride >> 3;
 }
 
 static void
@@ -1975,37 +1998,36 @@ s3_virge_mmio_write_l(uint32_t addr, uint32_t val, void *priv)
                 break;
             case 0x81c0:
                 virge->streams.pri_fb0 = val & 0x7fffff;
-                svga_recalctimings(svga);
+                s3_virge_update_buffer(virge);
                 svga->fullchange = changeframecount;
                 break;
             case 0x81c4:
                 virge->streams.pri_fb1 = val & 0x7fffff;
-                svga_recalctimings(svga);
+                s3_virge_update_buffer(virge);
                 svga->fullchange = changeframecount;
                 break;
             case 0x81c8:
                 virge->streams.pri_stride = val & 0xfff;
-                svga_recalctimings(svga);
+                s3_virge_update_buffer(virge);
                 svga->fullchange = changeframecount;
                 break;
             case 0x81cc:
                 virge->streams.buffer_ctrl = val;
-                svga_recalctimings(svga);
+                s3_virge_update_buffer(virge);
                 svga->fullchange = changeframecount;
                 break;
             case 0x81d0:
                 virge->streams.sec_fb0 = val;
-                svga_recalctimings(svga);
+                s3_virge_update_buffer(virge);
                 svga->fullchange = changeframecount;
                 break;
             case 0x81d4:
                 virge->streams.sec_fb1 = val;
-                svga_recalctimings(svga);
+                s3_virge_update_buffer(virge);
                 svga->fullchange = changeframecount;
                 break;
             case 0x81d8:
                 virge->streams.sec_stride = val;
-                svga_recalctimings(svga);
                 svga->fullchange = changeframecount;
                 break;
             case 0x81dc:
