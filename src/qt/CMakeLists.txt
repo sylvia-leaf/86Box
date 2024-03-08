@@ -211,7 +211,7 @@ endif()
 
 if(WIN32 AND NOT SDL_JOYSTICK)
     target_sources(plat PRIVATE win_joystick_rawinput.c)
-    target_link_libraries(86Box hid)
+    target_link_libraries(PCBox hid)
 else()
     target_sources(plat PRIVATE sdl_joystick.c)
 endif()
