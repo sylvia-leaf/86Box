@@ -7268,6 +7268,46 @@ const machine_t machines[] = {
     },
     /* Has IBM PS/2 Type 1 KBC firmware. */
     {
+        .name = "[OPTi 802G] IBM Aptiva CM",
+        .internal_name = "aptiva_cm",
+        .type = MACHINE_TYPE_486_S3,
+        .chipset = MACHINE_CHIPSET_OPTI_895_802G,
+        .init = machine_at_aptiva_cm_init,
+        .p1_handler = NULL,
+        .gpio_handler = NULL,
+        .available_flag = MACHINE_AVAILABLE,
+        .gpio_acpi_handler = NULL,
+        .cpu = {
+            .package = CPU_PKG_SOCKET3_PC330,
+            .block = CPU_BLOCK_NONE,
+            .min_bus = 25000000,
+            .max_bus = 33333333,
+            .min_voltage = 0,
+            .max_voltage = 0,
+            .min_multi = 2.0,
+            .max_multi = 3.0
+        },
+        .bus_flags = MACHINE_PS2_PCI,
+        .flags = MACHINE_IDE | MACHINE_VIDEO | MACHINE_APM,
+        .ram = {
+            .min = 1024,
+            .max = 65536,
+            .step = 1024
+        },
+        .nvrmask = 255,
+        .kbc_device = NULL,
+        .kbc_p1 = 0xff,
+        .gpio = 0xffffffff,
+        .gpio_acpi = 0xffffffff,
+        .device = NULL,
+        .fdc_device = NULL,
+        .sio_device = NULL,
+        .vid_device = &gd5430_onboard_pci_device,
+        .snd_device = NULL,
+        .net_device = NULL
+    },
+    /* Has IBM PS/2 Type 1 KBC firmware. */
+    {
         .name = "[OPTi 802G] IBM PC 330 (type 6573)",
         .internal_name = "pc330_6573",
         .type = MACHINE_TYPE_486_S3,
@@ -12039,6 +12079,47 @@ const machine_t machines[] = {
         .snd_device = NULL,
         .net_device = NULL
     },
+    /* Has a SM(S)C FDC37C67x Super I/O chip with on-chip KBC with Phoenix or
+       AMIKey-2 KBC firmware. */
+    {
+        .name = "[i430TX] NEC Mate NX MA23C",
+        .internal_name = "ma23c",
+        .type = MACHINE_TYPE_SOCKET7,
+        .chipset = MACHINE_CHIPSET_INTEL_430TX,
+        .init = machine_at_ma23c_init,
+        .p1_handler = NULL,
+        .gpio_handler = NULL,
+        .available_flag = MACHINE_AVAILABLE,
+        .gpio_acpi_handler = NULL,
+        .cpu = {
+            .package = CPU_PKG_SOCKET5_7,
+            .block = CPU_BLOCK_NONE,
+            .min_bus = 60000000,
+            .max_bus = 66666667,
+            .min_voltage = 2700,
+            .max_voltage = 3520,
+            .min_multi = 1.5,
+            .max_multi = 3.0
+        },
+        .bus_flags = MACHINE_PS2_PCI,
+        .flags = MACHINE_IDE_DUAL | MACHINE_APM | MACHINE_ACPI | MACHINE_USB,
+        .ram = {
+            .min = 8192,
+            .max = 786432,
+            .step = 8192
+        },
+        .nvrmask = 255,
+        .kbc_device = NULL,
+        .kbc_p1 = 0xff,
+        .gpio = 0xffffffff,
+        .gpio_acpi = 0xffffffff,
+        .device = NULL,
+        .fdc_device = NULL,
+        .sio_device = NULL,
+        .vid_device = NULL,
+        .snd_device = NULL,
+        .net_device = NULL
+    },
     /* The BIOS sends KBC command BB and expects it to output a byte, which is AMI KBC behavior.
        A picture shows a VIA VT82C42N KBC though, so it could be a case of that KBC with AMI firmware. */
     {
@@ -13725,7 +13806,7 @@ const machine_t machines[] = {
         .snd_device = NULL,
         .net_device = NULL
     },
-    /* Has a SM(S)C FDC37M60x Super I/O chip with on-chip KBC with Phoenix or
+    /* Has a SM(S)C FDC37C67x Super I/O chip with on-chip KBC with Phoenix or
        AMIKey-2 KBC firmware. */
     {
         .name = "[i440LX] NEC Mate NX MA30D/23D",
