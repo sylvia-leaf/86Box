@@ -191,30 +191,32 @@ main(int argc, char *argv[])
     fprintf(stderr, "Qt: version %s, platform \"%s\"\n", qVersion(), QApplication::platformName().toUtf8().data());
     ProgSettings::loadTranslators(&app);
 #ifdef Q_OS_WINDOWS
-    auto font_name = QObject::tr("FONT_NAME");
-    auto font_size = QObject::tr("FONT_SIZE");
-    QApplication::setFont(QFont(font_name, font_size.toInt()));
+    QApplication::setFont(QFont(ProgSettings::getFontName(lang_id), 9));
     SetCurrentProcessExplicitAppUserModelID(L"PCBox.PCBox");
 #endif
 
 #ifndef Q_OS_MACOS
 #    ifdef RELEASE_BUILD
-    app.setWindowIcon(QIcon(":/settings/win/icons/86Box-green.ico"));
+    app.setWindowIcon(QIcon(":/settings/qt/icons/86Box-green.ico"));
 #    elif defined ALPHA_BUILD
-    app.setWindowIcon(QIcon(":/settings/win/icons/86Box-red.ico"));
+    app.setWindowIcon(QIcon(":/settings/qt/icons/86Box-red.ico"));
 #    elif defined BETA_BUILD
-    app.setWindowIcon(QIcon(":/settings/win/icons/86Box-yellow.ico"));
+    app.setWindowIcon(QIcon(":/settings/qt/icons/86Box-yellow.ico"));
 #    else
-    app.setWindowIcon(QIcon(":/settings/win/icons/86Box-gray.ico"));
+    app.setWindowIcon(QIcon(":/settings/qt/icons/86Box-gray.ico"));
 #    endif
 
 #    ifdef Q_OS_UNIX
-    app.setDesktopFileName("net.86box.86Box");
+    app.setDesktopFileName("net.pcbox.PCBox");
 #    endif
 #endif
 
     if (!pc_init_modules()) {
-        ui_msgbox_header(MBX_FATAL, (void *) IDS_2121, (void *) IDS_2056);
+        QMessageBox fatalbox(QMessageBox::Icon::Critical, QObject::tr("No ROMs found"),
+                             QObject::tr("PCBox could not find any usable ROM images.\n\nPlease <a href=\"https://github.com/PCBox/roms/releases/latest\">download</a> a ROM set and extract it into the \"roms\" directory."),
+                             QMessageBox::Ok);
+        fatalbox.setTextFormat(Qt::TextFormat::RichText);
+        fatalbox.exec();
         return 6;
     }
 
@@ -230,7 +232,7 @@ main(int argc, char *argv[])
 #    endif
     {
         QMessageBox warningbox(QMessageBox::Icon::Warning, QObject::tr("WinBox is no longer supported"),
-                               QObject::tr("Development of the WinBox manager stopped in 2022 due to a lack of maintainers. As we direct our efforts towards making 86Box even better, we have made the decision to no longer support WinBox as a manager.\n\nNo further updates will be provided through WinBox, and you may encounter incorrect behavior should you continue using it with newer versions of 86Box. Any bug reports related to WinBox behavior will be closed as invalid.\n\nGo to 86box.net for a list of other managers you can use."),
+                               QObject::tr("Development of the WinBox manager stopped in 2022 due to a lack of maintainers. As we direct our efforts towards making PCBox even better, we have made the decision to no longer support WinBox as a manager.\n\nNo further updates will be provided through WinBox, and you may encounter incorrect behavior should you continue using it with newer versions of PCBox. Any bug reports related to WinBox behavior will be closed as invalid.\n\nGo to PCBox.net for a list of other managers you can use."),
                                QMessageBox::NoButton);
         warningbox.addButton(QObject::tr("Continue"), QMessageBox::AcceptRole);
         warningbox.addButton(QObject::tr("Exit"), QMessageBox::RejectRole);
