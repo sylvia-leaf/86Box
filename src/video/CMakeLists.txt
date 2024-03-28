@@ -43,10 +43,6 @@ if(RIVATNT)
     target_sources(vid PRIVATE vid_rivatnt.c)
 endif()
 
-if(VGAWONDER)
-    target_compile_definitions(vid PRIVATE USE_VGAWONDER)
-endif()
-
 if(XL24)
     target_compile_definitions(vid PRIVATE USE_XL24)
 endif()
