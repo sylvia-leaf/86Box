@@ -4335,7 +4335,7 @@ const machine_t machines[] = {
        for me to read what's on the KBC chip, so I'm going to assume AMI 'F'
        based on the other known HT18 AMI BIOS strings. */
     {
-        .name = "[HT18] AMA-932J",
+        .name = "[HT18] Arche AMA-932J",
         .internal_name = "ama932j",
         .type = MACHINE_TYPE_386SX,
         .chipset = MACHINE_CHIPSET_HT18,
@@ -4498,7 +4498,7 @@ const machine_t machines[] = {
     },
     /* Has IBM AT KBC firmware. */
     {
-        .name = "[NEAT] DTK 386SX clone",
+        .name = "[NEAT] DTK PM-1630C",
         .internal_name = "dtk386",
         .type = MACHINE_TYPE_386SX,
         .chipset = MACHINE_CHIPSET_NEAT,
@@ -10595,7 +10595,7 @@ const machine_t machines[] = {
             .max = 196608,
             .step = 8192
         },
-        .nvrmask = 127,
+        .nvrmask = 511,
         .kbc_device = NULL,
         .kbc_p1 = 0xff,
         .gpio = 0xffffffff,
@@ -10760,7 +10760,7 @@ const machine_t machines[] = {
             .max = 131072,
             .step = 8192
         },
-        .nvrmask = 127,
+        .nvrmask = 511,
         .kbc_device = NULL,
         .kbc_p1 = 0xff,
         .gpio = 0xffffffff,
@@ -10842,7 +10842,7 @@ const machine_t machines[] = {
             .max = 131072,
             .step = 8192
         },
-        .nvrmask = 127,
+        .nvrmask = 511,
         .kbc_device = NULL,
         .kbc_p1 = 0xff,
         .gpio = 0xffffffff,
@@ -11049,7 +11049,7 @@ const machine_t machines[] = {
             .max = 196608,
             .step = 8192
         },
-        .nvrmask = 127,
+        .nvrmask = 511,
         .kbc_device = NULL,
         .kbc_p1 = 0xff,
         .gpio = 0xffffffff,
@@ -11698,7 +11698,7 @@ const machine_t machines[] = {
             .max = 131072,
             .step = 8192
         },
-        .nvrmask = 127,
+        .nvrmask = 511,
         .kbc_device = NULL,
         .kbc_p1 = 0xff,
         .gpio = 0xffffffff,
@@ -11738,7 +11738,7 @@ const machine_t machines[] = {
             .max = 131072,
             .step = 8192
         },
-        .nvrmask = 127,
+        .nvrmask = 511,
         .kbc_device = NULL,
         .kbc_p1 = 0xff,
         .gpio = 0xffffffff,
@@ -11820,7 +11820,7 @@ const machine_t machines[] = {
             .max = 131072,
             .step = 8192
         },
-        .nvrmask = 127,
+        .nvrmask = 511,
         .kbc_device = NULL,
         .kbc_p1 = 0xff,
         .gpio = 0xffffffff,
@@ -13299,7 +13299,7 @@ const machine_t machines[] = {
             .max = 524288,
             .step = 8192
         },
-        .nvrmask = 127,
+        .nvrmask = 511,
         .kbc_device = NULL,
         .kbc_p1 = 0xff,
         .gpio = 0xffffffff,
@@ -13623,7 +13623,7 @@ const machine_t machines[] = {
             .max = 786432,
             .step = 8192
         },
-        .nvrmask = 127,
+        .nvrmask = 511,
         .kbc_device = NULL,
         .kbc_p1 = 0xff,
         .gpio = 0xffffffff,
