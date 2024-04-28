@@ -1,0 +1,16 @@
+name: "Push Notification"
+on: push
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: irc push
+        uses: rectalogic/notify-irc@v1
+        with:
+          channel: "#pcbox"
+          server: "irc.libera.chat"
+          nickname: pcbox-github
+          message: |
+            ${{ github.actor }} pushed ${{ github.event.ref }} ${{ github.event.compare }}
+            ${{ join(github.event.commits.*.message) }}
