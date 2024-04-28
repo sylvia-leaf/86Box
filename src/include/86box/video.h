@@ -223,7 +223,7 @@ extern void video_screenshot_monitor(uint32_t *buf, int start_x, int start_y, in
 extern void video_screenshot(uint32_t *buf, int start_x, int start_y, int row_len);
 
 #ifdef _WIN32
-extern void *__cdecl (*video_copy)(void *_Dst, const void *_Src, size_t _Size);
+extern void * (__cdecl *video_copy)(void *_Dst, const void *_Src, size_t _Size);
 extern void *__cdecl video_transform_copy(void *_Dst, const void *_Src, size_t _Size);
 #else
 extern void *(*video_copy)(void *__restrict _Dst, const void *__restrict _Src, size_t _Size);
@@ -337,6 +337,12 @@ extern const device_t ati28800_wonderxl24_device;
 #if defined(DEV_BRANCH) && defined(USE_R100)
 extern const device_t ati_r100_device;
 #endif
+/* Bochs */
+extern const device_t bochs_svga_device;
+
+/* Chips & Technologies */
+extern const device_t chips_69000_device;
+extern const device_t chips_69000_onboard_device;
 
 /* Cirrus Logic GD54xx */
 extern const device_t gd5401_isa_device;
@@ -592,10 +598,6 @@ extern const device_t velocity_200_agp_device;
 
 /* Wyse 700 */
 extern const device_t wy700_device;
-
-/* Chips & Technologies */
-extern const device_t chips_69000_device;
-extern const device_t chips_69000_onboard_device;
 
 #endif
 
