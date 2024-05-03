@@ -1292,6 +1292,7 @@ sb_ct1745_mixer_read(uint16_t addr, void *priv)
                 break;
 
             case 0x82:
+            {
                 /* The Interrupt status register, addressed as register 82h on the Mixer register map,
                    is used by the ISR to determine whether the interrupt is meant for it or for some
                    other ISR, in which case it should chain to the previous routine. */
@@ -1307,6 +1308,7 @@ sb_ct1745_mixer_read(uint16_t addr, void *priv)
                 else
                     ret  = temp | 0x40;
                 break;
+            }
 
             case 0x83:
                 /* Interrupt mask. */
