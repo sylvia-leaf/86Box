@@ -88,6 +88,7 @@
 #define KBC_VEN_ALI        0x28
 #define KBC_VEN_SIEMENS    0x2c
 #define KBC_VEN_COMPAQ     0x30
+#define KBC_VEN_IBM        0x34
 #define KBC_VEN_MASK       0x7c
 
 #define FLAG_CLOCK         0x01
@@ -108,7 +109,11 @@ enum {
     STATE_SEND_KBD,        /* KBC is sending command to the keyboard. */
     STATE_SCAN_KBD,        /* KBC is waiting for the keyboard command response. */
     STATE_SEND_AUX,        /* KBC is sending command to the auxiliary device. */
-    STATE_SCAN_AUX         /* KBC is waiting for the auxiliary command response. */
+    STATE_SCAN_AUX,        /* KBC is waiting for the auxiliary command response. */
+    STATE_IRQ,             /* KBC is raising the IRQ. */
+    STATE_KBC_IRQ,
+    STATE_AUX_IRQ,
+    STATE_KBC_DELAY_IRQ
 };
 
 typedef struct atkbc_t {
@@ -133,9 +138,9 @@ typedef struct atkbc_t {
     uint8_t stat_hi;
     uint8_t pending;
     uint8_t irq_state;
-    uint8_t suppress_cmd_intr;
     uint8_t pad;
     uint8_t pad0;
+    uint8_t pad1;
 
     uint8_t mem[0x100];
 
@@ -352,8 +357,10 @@ kbc_send_to_ob(atkbc_t *dev, uint8_t val, uint8_t channel, uint8_t stat_hi)
     uint8_t kbc_ven = dev->flags & KBC_VEN_MASK;
     int temp = (channel == 1) ? kbc_translate(dev, val) : ((int) val);
 
-    if (temp == -1)
+    if (temp == -1) {
+        dev->state = STATE_MAIN_IBF;
         return;
+    }
 
     if ((kbc_ven == KBC_VEN_AMI) || (kbc_ven == KBC_VEN_TRIGEM_AMI) ||
         (dev->misc_flags & FLAG_PS2))
@@ -369,14 +376,21 @@ kbc_send_to_ob(atkbc_t *dev, uint8_t val, uint8_t channel, uint8_t stat_hi)
     if (dev->misc_flags & FLAG_PS2) {
         if (channel >= 2) {
             dev->status |= STAT_MFULL;
-
-            if (dev->mem[0x20] & 0x02)
-                picint_common(1 << 12, 0, 1, NULL);
-            picint_common(1 << 1, 0, 0, NULL);
-        } else {
-            if ((!dev->suppress_cmd_intr || (dev->channel == 1)) && (dev->mem[0x20] & 0x01))
-                picint_common(1 << 1, 0, 1, NULL);
-            picint_common(1 << 12, 0, 0, NULL);
+            if ((kbc_ven == KBC_VEN_IBM_PS1) || (kbc_ven == KBC_VEN_IBM)) {
+                if (dev->mem[0x20] & 0x02)
+                    picint_common(1 << 12, 0, 1, NULL);
+                picint_common(1 << 1, 0, 0, NULL);
+                dev->state = STATE_MAIN_IBF;
+            } else
+                dev->state   = STATE_AUX_IRQ;
+        } else if (channel == 1) {
+            if ((kbc_ven == KBC_VEN_IBM_PS1) || (kbc_ven == KBC_VEN_IBM)) {
+                if (dev->mem[0x20] & 0x01)
+                    picint_common(1 << 1, 0, 1, NULL);
+                picint_common(1 << 12, 0, 0, NULL);
+                dev->state = STATE_MAIN_IBF;
+            } else
+                dev->state   = STATE_IRQ;
         }
     } else if (dev->mem[0x20] & 0x01)
         picintlevel(1 << 1, &dev->irq_state); /* AT KBC: IRQ 1 is level-triggered because it is tied to OBF. */
@@ -575,7 +589,6 @@ kbc_scan_kbd_ps2(atkbc_t *dev)
         kbc_at_log("ATkbc: %02X coming from channel 1\n", dev->ports[0]->out_new & 0xff);
         kbc_send_to_ob(dev, dev->ports[0]->out_new, 1, 0x00);
         dev->ports[0]->out_new = -1;
-        dev->state             = STATE_MAIN_IBF;
         return 1;
     }
 
@@ -589,7 +602,6 @@ kbc_scan_aux_ps2(atkbc_t *dev)
         kbc_at_log("ATkbc: %02X coming from channel 2\n", dev->ports[1]->out_new & 0xff);
         kbc_send_to_ob(dev, dev->ports[1]->out_new, 2, 0x00);
         dev->ports[1]->out_new = -1;
-        dev->state             = STATE_MAIN_IBF;
         return 1;
     }
 
@@ -637,22 +649,20 @@ ps2_main_ibf:
             if (dev->status & STAT_IFULL)
                 kbc_ibf_process(dev);
             else {
-                (void) kbc_scan_kbd_ps2(dev);
-                dev->state = STATE_MAIN_IBF;
+                if (!kbc_scan_kbd_ps2(dev))
+                    dev->state = STATE_MAIN_IBF;
             }
             break;
         case STATE_MAIN_AUX:
             if (dev->status & STAT_IFULL)
                 kbc_ibf_process(dev);
             else {
-                (void) kbc_scan_aux_ps2(dev);
-                dev->state = STATE_MAIN_IBF;
+                if (!kbc_scan_aux_ps2(dev))
+                    dev->state = STATE_MAIN_IBF;
             }
             break;
         case STATE_MAIN_BOTH:
-            if (kbc_scan_kbd_ps2(dev))
-                dev->state = STATE_MAIN_IBF;
-            else
+            if (!kbc_scan_kbd_ps2(dev))
                 dev->state = STATE_MAIN_AUX;
             break;
         case STATE_KBC_DELAY_OUT:
@@ -662,8 +672,29 @@ ps2_main_ibf:
 #if 0
             dev->state = (dev->pending == 2) ? STATE_KBC_AMI_OUT : STATE_MAIN_IBF;
 #endif
-            dev->state = STATE_MAIN_IBF;
             dev->pending = 0;
+            dev->state = STATE_KBC_DELAY_IRQ;
+            break;
+        case STATE_IRQ:
+            kbc_at_log("ATkbc: Raising IRQ 1  (keyboard)...\n");
+            if (dev->mem[0x20] & 0x01)
+                picint_common(1 << 1, 0, 1, NULL);
+            picint_common(1 << 12, 0, 0, NULL);
+            dev->state = STATE_MAIN_IBF;
+            break;
+        case STATE_AUX_IRQ:
+            kbc_at_log("ATkbc: Raising IRQ 12 (mouse)...\n");
+            if (dev->mem[0x20] & 0x02)
+                picint_common(1 << 12, 0, 1, NULL);
+            picint_common(1 << 1, 0, 0, NULL);
+            dev->state = STATE_MAIN_IBF;
+            break;
+        case STATE_KBC_DELAY_IRQ:
+            kbc_at_log("ATkbc: Raising IRQ 1  (KBC delay)...\n");
+            if (dev->mem[0x20] & 0x01)
+                picint_common(1 << 1, 0, 1, NULL);
+            picint_common(1 << 12, 0, 0, NULL);
+            dev->state = STATE_MAIN_IBF;
             goto ps2_main_ibf;
         case STATE_KBC_OUT:
             /* Keyboard controller command want to output multiple bytes. */
@@ -676,10 +707,17 @@ ps2_main_ibf:
             if (!(dev->status & STAT_OFULL)) {
                 kbc_at_log("ATkbc: %02X coming from channel 0\n", dev->key_ctrl_queue[dev->key_ctrl_queue_start] & 0xff);
                 kbc_send_to_ob(dev, dev->key_ctrl_queue[dev->key_ctrl_queue_start], 0, 0x00);
-                dev->key_ctrl_queue_start = (dev->key_ctrl_queue_start + 1) & 0x3f;
-                if (dev->key_ctrl_queue_start == dev->key_ctrl_queue_end)
-                    dev->state = STATE_MAIN_IBF;
+                dev->state = STATE_KBC_IRQ;
             }
+            break;
+        case STATE_KBC_IRQ:
+            kbc_at_log("ATkbc: Raising IRQ 1  (KBC)...\n");
+            if (dev->mem[0x20] & 0x01)
+                picint_common(1 << 1, 0, 1, NULL);
+            picint_common(1 << 12, 0, 0, NULL);
+            dev->key_ctrl_queue_start = (dev->key_ctrl_queue_start + 1) & 0x3f;
+            if (dev->key_ctrl_queue_start == dev->key_ctrl_queue_end)
+                dev->state = STATE_MAIN_IBF;
             break;
         case STATE_KBC_PARAM:
             /* Keyboard controller command wants data, wait for said data. */
@@ -1394,8 +1432,6 @@ write60_phoenix(void *priv, uint8_t val)
             kbc_at_log("ATkbc: Phoenix - Set MultiKey Variable\n");
             if ((dev->mem_addr > 0) && (dev->mem_addr <= multikey_vars[0x00]))
                 dev->mem[multikey_vars[dev->mem_addr]] = val;
-            else if (dev->mem_addr == 0x29)
-                dev->suppress_cmd_intr = !val;
             dev->command_phase      = 0;
             return 0;
 
@@ -2006,7 +2042,7 @@ kbc_at_process_cmd(void *priv)
                 if (dev->ib == 0xbb)
                     break;
 
-                if (strstr(machine_get_internal_name(), "pb") != NULL)
+                if (strstr(machine_get_internal_name(), "pb41") != NULL)
                     cpu_override_dynarec = 1;
 
                 if (dev->misc_flags & FLAG_PS2) {
@@ -2103,11 +2139,8 @@ kbc_at_read(uint16_t port, void *priv)
             if (!(dev->misc_flags & FLAG_PS2))
                 picintclevel(1 << 1, &dev->irq_state);
             /* I"m not even sure if this is correct but the PB450 absolutely requires this. */
-            if (dev->suppress_cmd_intr) {
-                picint_common(1 << 1, 0, 1, NULL);
-                dev->suppress_cmd_intr = 0;
-            }
-            if ((strstr(machine_get_internal_name(), "pb") != NULL) && (cpu_override_dynarec == 1))
+            if ((strstr(machine_get_internal_name(), "pb41") != NULL) &&
+                (cpu_override_dynarec == 1))
                 cpu_override_dynarec = 0;
             break;
 
@@ -2148,8 +2181,6 @@ kbc_at_reset(void *priv)
     set_enable_aux(dev, 0);
 
     kbc_at_queue_reset(dev);
-
-    dev->suppress_cmd_intr = 0;
 
     dev->sc_or = 0;
 
@@ -2258,6 +2289,7 @@ kbc_at_init(const device_t *info)
 
         case KBC_VEN_ACER:
         case KBC_VEN_GENERIC:
+        case KBC_VEN_IBM:
         case KBC_VEN_NCR:
         case KBC_VEN_IBM_PS1:
         case KBC_VEN_COMPAQ:
@@ -2553,11 +2585,25 @@ const device_t keyboard_ps2_tg_ami_device = {
     .config        = NULL
 };
 
+const device_t keyboard_ps2_mca_1_device = {
+    .name          = "PS/2 Keyboard",
+    .internal_name = "keyboard_ps2",
+    .flags         = DEVICE_KBC,
+    .local         = KBC_TYPE_PS2_1 | KBC_VEN_IBM,
+    .init          = kbc_at_init,
+    .close         = kbc_at_close,
+    .reset         = kbc_at_reset,
+    { .available = NULL },
+    .speed_changed = NULL,
+    .force_redraw  = NULL,
+    .config        = NULL
+};
+
 const device_t keyboard_ps2_mca_2_device = {
     .name          = "PS/2 Keyboard",
     .internal_name = "keyboard_ps2_mca_2",
     .flags         = DEVICE_KBC,
-    .local         = KBC_TYPE_PS2_2 | KBC_VEN_GENERIC,
+    .local         = KBC_TYPE_PS2_2 | KBC_VEN_IBM,
     .init          = kbc_at_init,
     .close         = kbc_at_close,
     .reset         = kbc_at_reset,
