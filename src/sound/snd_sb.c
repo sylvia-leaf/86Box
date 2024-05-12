@@ -1493,7 +1493,8 @@ ess_mixer_write(uint16_t addr, uint8_t val, void *priv)
                     break;
 
                 case 0x64:
-                    mixer->regs[mixer->index] &= ~0x8;
+                    mixer->regs[mixer->index] = (mixer->regs[mixer->index] & 0xf7) | 0x20;
+                    // mixer->regs[mixer->index] &= ~0x8;
                     break;
 
                 case 0x40:
@@ -1616,9 +1617,13 @@ ess_mixer_read(uint16_t addr, void *priv)
                 ret = 0x0a;
             break;
 
+        case 0x48:
+            ret = mixer->regs[mixer->index];
+        break;
+
         /* Return 0x00 so it has bit 3 clear, so NT 5.x drivers don't misdetect it as ES1788. */
         case 0x64:
-            ret = 0x00;
+            ret = (mixer->regs[mixer->index] & 0xf7) | 0x20;
             break;
 
         default:
@@ -3464,6 +3469,7 @@ ess_x688_init(UNUSED(const device_t *info))
     }
 
     ess->mixer_enabled = 1;
+    ess->mixer_ess.regs[0x40] = 0x0a;
     io_sethandler(addr + 4, 0x0002,
                   ess_mixer_read, NULL, NULL,
                   ess_mixer_write, NULL, NULL,
