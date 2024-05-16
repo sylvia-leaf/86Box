@@ -6,7 +6,7 @@ It is licensed under GPLv2 or later.
 
 You can find CI builds under our Actions tab.
 
-Visit our Discord! https://discord.gg/mWStgCdXus
+Visit our Discord! https://discord.gg/ep8PPMhUPy
 
 Or, visit our IRC channel on Libera.chat! #pcbox
 
