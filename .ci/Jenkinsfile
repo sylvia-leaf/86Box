@@ -174,7 +174,7 @@ pipeline {
 					   can be used to avoid JENKINS-20518 race conditions caused by the
 					   webhook being triggered more than once in a short period of time.
 					   This is a backup strategy for FilterProxy's webhook queuing. */
-					node('master') { /* must run on master node to read polling log */
+					node('Built-In Node') { /* must run on master node to read polling log */
 						/* Ignore exceptions as this is not really critical. */
 						try {
 							/* Switch to this build's directory. */
