@@ -193,6 +193,7 @@ pipeline {
 									combinations[combination] = {
 										catchError(buildResult: 'FAILURE', stageResult: 'SUCCESS') {
 											retry(10) {
+												node('built-in') {
 													stage(combination) {
 														/* Run git clone. */
 														gitClone(repository[buildBranch], branch[buildBranch])
@@ -203,8 +204,6 @@ pipeline {
 															def packageName = "${env.JOB_BASE_NAME}${dynarecSlugs[dynarec]}${presetSlugs[preset]}-$os-$archSlug$buildSuffix"
 															def ret = -1
 															def archName = archNames[archSlug]
-															if (os == 'macOS')
-																archName = archNamesMac[archSlug]
 															dir(dynarecNames[dynarec]) {
 																dir("$os - $archName") {
 																	ret = runBuild("-b \"$packageName\" \"$arch\" ${presetFlags[preset]} ${dynarecFlags[dynarec]} ${osFlags[os]} $buildFlags")
@@ -228,6 +227,7 @@ pipeline {
 														removeDir("${env.WORKSPACE_TMP}/output")
 													}
 												}
+											}
 										}
 									}
 								}
