@@ -170,38 +170,6 @@ pipeline {
 
 			steps {
 				script {
-					/* Extract the polled commit from the polling log, so that git checkout
-					   can be used to avoid JENKINS-20518 race conditions caused by the
-					   webhook being triggered more than once in a short period of time.
-					   This is a backup strategy for FilterProxy's webhook queuing. */
-					node('Built-In Node') { /* must run on master node to read polling log */
-						/* Ignore exceptions as this is not really critical. */
-						try {
-							/* Switch to this build's directory. */
-							dir("${env.JENKINS_HOME}/jobs/${env.JOB_NAME}/builds/${env.BUILD_NUMBER}") {
-								/* Parse polling log. */
-								def pollingLog = readFile file: 'polling.log'
-								def match = pollingLog =~ /Latest remote head revision on [^ ]+ is: ([a-zA-Z0-9]+)/
-								if (match && match[0]) {
-									env.GIT_COMMIT = match[0][1]
-									println "[-] Read git commit [${env.GIT_COMMIT}] from polling log"
-								}
-							}
-						} catch (e) {}
-					}
-
-					/* Adding to the above, run a git clone as soon as possible on any node
-					   to further avoid race conditions caused by busy node executor delays. */
-					retry(10) {
-						node('!Windows') {
-							/* Run git clone. */
-							gitClone(repository[buildBranch], branch[buildBranch])
-
-							/* Clean workspace, in case this is running in a non-build node. */
-							cleanWs()
-						}
-					}
-
 					/* Determine build metadata. */
 					def buildFlags = "-D \"BUILD_TYPE=$BUILD_TYPE\" -D \"EMU_BUILD=build ${env.BUILD_NUMBER}\" -D \"EMU_BUILD_NUM=${env.BUILD_NUMBER}\""
 					def buildSuffix = "-b${env.BUILD_NUMBER}"
@@ -209,35 +177,6 @@ pipeline {
 						def date = new Date().format("yyyyMMdd")
 						buildFlags = "-D \"BUILD_TYPE=${buildType[buildBranch]}\" -D \"EMU_BUILD=${env.JOB_BASE_NAME.split('-')[1]} build $date.$BUILD_TYPE\""
 						buildSuffix = "-$date-$BUILD_TYPE"
-					}
-
-					/* Create source tarball. */
-					try {
-						retry(10) {
-							node('Linux || macOS') {
-								/* Run git clone. */
-								gitClone(repository[buildBranch], branch[buildBranch])
-
-								/* Switch to temp directory. */
-								dir("${env.WORKSPACE_TMP}/output") {
-									/* Run source tarball creation process. */
-									def packageName = "${env.JOB_BASE_NAME}-Source$buildSuffix"
-									if (runBuild("-s \"$packageName\"") == 0) {
-										/* Archive resulting artifacts. */
-										archiveArtifacts artifacts: "$packageName*"
-									} else {
-										/* Fail this stage. */
-										failStage()
-									}
-								}
-
-								/* Clean up. */
-								removeDir("${env.WORKSPACE_TMP}/output")
-							}
-						}
-					} catch (e) {
-						/* Fail this stage. */
-						failStage()
 					}
 
 					/* Build here to avoid creating a redundant parent stage on the stage view. */
