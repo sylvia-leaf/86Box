@@ -153,10 +153,6 @@ def failStage() {
 pipeline {
 	agent none
 
-	environment {
-		DISCORD_WEBHOOK_URL = credentials('discord-webhook-url')
-	}
-
 	options {
 		quietPeriod(0)
 	}
