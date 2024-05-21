@@ -193,7 +193,6 @@ pipeline {
 									combinations[combination] = {
 										catchError(buildResult: 'FAILURE', stageResult: 'SUCCESS') {
 											retry(10) {
-												node(os) {
 													stage(combination) {
 														/* Run git clone. */
 														gitClone(repository[buildBranch], branch[buildBranch])
@@ -229,7 +228,6 @@ pipeline {
 														removeDir("${env.WORKSPACE_TMP}/output")
 													}
 												}
-											}
 										}
 									}
 								}
