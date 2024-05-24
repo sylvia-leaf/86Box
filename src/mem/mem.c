@@ -169,6 +169,46 @@ mem_log(const char *fmt, ...)
 #    define mem_log(fmt, ...)
 #endif
 
+#ifdef USE_DEBUG_REGS_486
+/* As below, 1 = exec, 4 = read. */
+int    read_type = 4;
+
+/* Set trap for data address breakpoints - 1 = exec, 2 = write, 4 = read. */
+void
+mem_debug_check_addr(uint32_t addr, int flags)
+{
+    uint32_t bp_addr;
+    uint32_t bp_mask;
+    uint32_t len_type_pair;
+    int bp_enabled;
+    uint8_t match_flags[4] = { 0, 2, 0, 6 };
+
+    if (cpu_state.abrt || ((flags == 1) && (cpu_state.eflags & RF_FLAG)))
+        return;
+
+    if (dr[7] & 0x000000ff)  for (uint8_t i = 0; i < 4; i++) {
+        bp_addr = dr[i];
+        bp_enabled = (dr[7] >> (i << 1)) & 0x03;
+        len_type_pair = (dr[7] >> (16 + (i << 2))) & 0x0f;
+        bp_mask = ~((len_type_pair >> 2) & 0x03);
+
+        if ((flags & match_flags[len_type_pair & 0x03]) && ((bp_addr & bp_mask) == (addr & bp_mask))) {
+            /*
+               From the Intel i386 documemntation:
+
+               (Note that the processor sets Bn regardless of whether Gn or
+               Ln is set. If more than one breakpoint condition occurs at one time and if
+               the breakpoint trap occurs due to an enabled condition other than n, Bn may
+               be set, even though neither Gn nor Ln is set.)
+             */
+            dr[6] |= (1 << i);
+            if (bp_enabled)
+                trap |= (read_type == 1) ? 8 : 4;
+        }
+    }
+}
+#endif
+
 int
 mem_addr_is_ram(uint32_t addr)
 {
@@ -800,6 +840,9 @@ readmembl(uint32_t addr)
     uint8_t       *mtrr;
 
     GDBSTUB_MEM_ACCESS(addr, GDBSTUB_MEM_READ, 1);
+#ifdef USE_DEBUG_REGS_486
+    mem_debug_check_addr(addr, read_type);
+#endif
 
     addr64           = (uint64_t) addr;
     mem_logical_addr = addr;
@@ -836,6 +879,9 @@ writemembl(uint32_t addr, uint8_t val)
     uint64_t       a;
 
     GDBSTUB_MEM_ACCESS(addr, GDBSTUB_MEM_WRITE, 1);
+#ifdef USE_DEBUG_REGS_486
+    mem_debug_check_addr(addr, 2);
+#endif
 
     addr64           = (uint64_t) addr;
     mem_logical_addr = addr;
@@ -947,6 +993,10 @@ readmemwl(uint32_t addr)
 
     addr64a[0] = addr;
     addr64a[1] = addr + 1;
+#ifdef USE_DEBUG_REGS_486
+    mem_debug_check_addr(addr, read_type);
+    mem_debug_check_addr(addr + 1, read_type);
+#endif
     GDBSTUB_MEM_ACCESS_FAST(addr64a, GDBSTUB_MEM_READ, 2);
 
     mem_logical_addr = addr;
@@ -1012,6 +1062,10 @@ writememwl(uint32_t addr, uint16_t val)
 
     addr64a[0] = addr;
     addr64a[1] = addr + 1;
+#ifdef USE_DEBUG_REGS_486
+    mem_debug_check_addr(addr, 2);
+    mem_debug_check_addr(addr + 1, 2);
+#endif
     GDBSTUB_MEM_ACCESS_FAST(addr64a, GDBSTUB_MEM_WRITE, 2);
 
     mem_logical_addr = addr;
@@ -1215,8 +1269,12 @@ readmemll(uint32_t addr)
     int            i;
     uint64_t       a = 0x0000000000000000ULL;
 
-    for (i = 0; i < 4; i++)
+    for (i = 0; i < 4; i++) {
         addr64a[i] = (uint64_t) (addr + i);
+#ifdef USE_DEBUG_REGS_486
+        mem_debug_check_addr(addr + i, read_type);
+#endif
+    }
     GDBSTUB_MEM_ACCESS_FAST(addr64a, GDBSTUB_MEM_READ, 4);
 
     mem_logical_addr = addr;
@@ -1296,8 +1354,12 @@ writememll(uint32_t addr, uint32_t val)
     int            i;
     uint64_t       a = 0x0000000000000000ULL;
 
-    for (i = 0; i < 4; i++)
+    for (i = 0; i < 4; i++) {
         addr64a[i] = (uint64_t) (addr + i);
+#ifdef USE_DEBUG_REGS_486
+        mem_debug_check_addr(addr + i, 2);
+#endif
+    }
     GDBSTUB_MEM_ACCESS_FAST(addr64a, GDBSTUB_MEM_WRITE, 4);
 
     mem_logical_addr = addr;
@@ -1531,8 +1593,12 @@ readmemql(uint32_t addr)
     uint8_t       *mtrr;
     uint64_t       a = 0x0000000000000000ULL;
 
-    for (i = 0; i < 8; i++)
+    for (i = 0; i < 8; i++) {
         addr64a[i] = (uint64_t) (addr + i);
+#ifdef USE_DEBUG_REGS_486
+        mem_debug_check_addr(addr + i, read_type);
+#endif
+    }
     GDBSTUB_MEM_ACCESS_FAST(addr64a, GDBSTUB_MEM_READ, 8);
 
     mem_logical_addr = addr;
@@ -1604,8 +1670,12 @@ writememql(uint32_t addr, uint64_t val)
     uint8_t       *mtrr;
     uint64_t       a = 0x0000000000000000ULL;
 
-    for (i = 0; i < 8; i++)
+    for (i = 0; i < 8; i++) {
         addr64a[i] = (uint64_t) (addr + i);
+#ifdef USE_DEBUG_REGS_486
+        mem_debug_check_addr(addr + i, 2);
+#endif
+    }
     GDBSTUB_MEM_ACCESS_FAST(addr64a, GDBSTUB_MEM_WRITE, 8);
 
     mem_logical_addr = addr;
@@ -1716,7 +1786,9 @@ do_mmutranslate(uint32_t addr, uint32_t *a64, int num, int write)
     int      cond = 1;
     uint32_t last_addr = addr + (num - 1);
     uint64_t a         = 0x0000000000000000ULL;
-
+#ifdef USE_DEBUG_REGS_486
+    mem_debug_check_addr(addr, write ? 2 : read_type);
+#endif
     for (i = 0; i < num; i++)
         a64[i] = (uint64_t) addr;
 
