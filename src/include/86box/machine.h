@@ -485,6 +485,7 @@ extern int machine_at_325ax_init(const machine_t *);
 extern int machine_at_mr1217_init(const machine_t *);
 extern int machine_at_pja511m_init(const machine_t *);
 extern int machine_at_prox1332_init(const machine_t *);
+extern int machine_at_acer100t_init(const machine_t *);
 
 extern int machine_at_awardsx_init(const machine_t *);
 
