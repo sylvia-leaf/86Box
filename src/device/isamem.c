@@ -90,11 +90,12 @@
 #define ISAMEM_GENXT_CARD      1
 #define ISAMEM_RAMCARD_CARD    2
 #define ISAMEM_SYSTEMCARD_CARD 3
-#define ISAMEM_IBMAT_CARD      4
-#define ISAMEM_GENAT_CARD      5
-#define ISAMEM_P5PAK_CARD      6
-#define ISAMEM_A6PAK_CARD      7
-#define ISAMEM_EMS5150_CARD    8
+#define ISAMEM_IBMAT_128K_CARD 4
+#define ISAMEM_IBMAT_CARD      5
+#define ISAMEM_GENAT_CARD      6
+#define ISAMEM_P5PAK_CARD      7
+#define ISAMEM_A6PAK_CARD      8
+#define ISAMEM_EMS5150_CARD    9
 #define ISAMEM_EV159_CARD      10
 #define ISAMEM_RAMPAGEXT_CARD  11
 #define ISAMEM_ABOVEBOARD_CARD 12
@@ -109,7 +110,9 @@
 #define RAM_UMAMEM             (384 << 10)  /* upper memory block */
 #define RAM_EXTMEM             (1024 << 10) /* start of high memory */
 
-#define EMS_MAXSIZE            (4096 << 10) /* max EMS memory size */
+#define EMS_MAXSIZE            (2048 << 10) /* max EMS memory size */
+#define EMS_EV159_MAXSIZE      (3072 << 10) /* max EMS memory size for EV-159 cards */
+#define EMS_LOTECH_MAXSIZE     (4096 << 10) /* max EMS memory size for lotech cards */
 #define EMS_PGSIZE             (16 << 10)   /* one page is this big */
 #define EMS_MAXPAGE            4            /* number of viewport pages */
 
@@ -500,6 +503,13 @@ isamem_init(const device_t *info)
             tot             = dev->total_size;
             break;
 
+        case ISAMEM_IBMAT_128K_CARD: /* IBM PC/AT 128K Memory Expansion Option */
+            dev->total_size = 128;
+            dev->start_addr = 512;
+            tot             = dev->total_size;
+            dev->flags |= FLAG_WIDE;
+            break;
+
         case ISAMEM_IBMAT_CARD: /* IBM PC/AT Memory Expansion Card */
         case ISAMEM_GENAT_CARD: /* Generic PC/AT Memory Expansion Card */
             dev->total_size = device_get_config_int("size");
@@ -558,15 +568,15 @@ isamem_init(const device_t *info)
             if (!!device_get_config_int("start"))
                 dev->start_addr = device_get_config_int("start");
             dev->frame_addr[0]  = device_get_config_hex20("frame");
-            dev->flags         |= (FLAG_EMS);
+            dev->flags         |= FLAG_EMS;
             if (!!device_get_config_int("width"))
                 dev->flags     |= FLAG_WIDE;
             if (!!device_get_config_int("speed"))
                 dev->flags     |= FLAG_FAST;
             break;
 
-        case ISAMEM_BRXT_CARD:       /* BocaRAM/XT */
-        case ISAMEM_LOTECH_CARD:
+        case ISAMEM_BRXT_CARD:   /* BocaRAM/XT */
+        case ISAMEM_LOTECH_CARD: /* Lotech EMS */
             dev->base_addr[0]   = device_get_config_hex16("base");
             dev->total_size     = device_get_config_int("size");
             dev->start_addr     = 0;
@@ -722,9 +732,15 @@ isamem_init(const device_t *info)
 
     /* If EMS is enabled, use the remainder for EMS. */
     if (dev->flags & FLAG_EMS) {
-        /* EMS 3.2 cannot have more than 4096KB per board. */
         t = k;
-        if (t > EMS_MAXSIZE)
+        if ((dev->board == ISAMEM_LOTECH_CARD) && (t > EMS_LOTECH_MAXSIZE))
+            /* The Lotech EMS cannot have more than 4096KB per board. */
+            t = EMS_LOTECH_MAXSIZE;
+        else if ((dev->board == ISAMEM_EV159_CARD) && (t > EMS_EV159_MAXSIZE))
+            /* The EV-159 cannot have more than 3072KB per board. */
+            t = EMS_EV159_MAXSIZE;
+        else if (t > EMS_MAXSIZE)
+            /* EMS 3.2 cannot have more than 2048KB per board. */
             t = EMS_MAXSIZE;
 
         /* Set up where EMS begins in local RAM, and how much we have. */
@@ -835,6 +851,102 @@ isamem_close(void *priv)
     free(dev);
 }
 
+static const device_config_t ibmxt_32k_config[] = {
+  // clang-format off
+    {
+        .name = "size",
+        .description = "Memory Size",
+        .type = CONFIG_SPINNER,
+        .default_string = "",
+        .default_int = 32,
+        .file_filter = "",
+        .spinner = {
+            .min = 32,
+            .max = 576,
+            .step = 32
+        },
+        .selection = { { 0 } }
+    },
+    {
+        .name = "start",
+        .description = "Start Address",
+        .type = CONFIG_SPINNER,
+        .default_string = "",
+        .default_int = 64,
+        .file_filter = "",
+        .spinner = {
+            .min = 0,
+            .max = 608,
+            .step = 32
+        },
+        .selection = { { 0 } }
+    },
+    { .name = "", .description = "", .type = CONFIG_END }
+  // clang-format on
+};
+
+static const device_t ibmxt_32k_device = {
+    .name          = "IBM PC/XT 32K Memory Expansion Option",
+    .internal_name = "ibmxt_32k",
+    .flags         = DEVICE_ISA,
+    .local         = ISAMEM_IBMXT_CARD,
+    .init          = isamem_init,
+    .close         = isamem_close,
+    .reset         = NULL,
+    { .available = NULL },
+    .speed_changed = NULL,
+    .force_redraw  = NULL,
+    .config        = ibmxt_32k_config
+};
+
+static const device_config_t ibmxt_64k_config[] = {
+  // clang-format off
+    {
+        .name = "size",
+        .description = "Memory Size",
+        .type = CONFIG_SPINNER,
+        .default_string = "",
+        .default_int = 64,
+        .file_filter = "",
+        .spinner = {
+            .min = 64,
+            .max = 576,
+            .step = 64
+        },
+        .selection = { { 0 } }
+    },
+    {
+        .name = "start",
+        .description = "Start Address",
+        .type = CONFIG_SPINNER,
+        .default_string = "",
+        .default_int = 64,
+        .file_filter = "",
+        .spinner = {
+            .min = 0,
+            .max = 576,
+            .step = 64
+        },
+        .selection = { { 0 } }
+    },
+    { .name = "", .description = "", .type = CONFIG_END }
+  // clang-format on
+};
+
+static const device_t ibmxt_64k_device = {
+    .name          = "IBM PC/XT 64K Memory Expansion Option",
+    .internal_name = "ibmxt_64k",
+    .flags         = DEVICE_ISA,
+    .local         = ISAMEM_IBMXT_CARD,
+    .init          = isamem_init,
+    .close         = isamem_close,
+    .reset         = NULL,
+    { .available = NULL },
+    .speed_changed = NULL,
+    .force_redraw  = NULL,
+    .config        = ibmxt_64k_config
+};
+
 static const device_config_t ibmxt_config[] = {
   // clang-format off
     {
@@ -845,9 +957,9 @@ static const device_config_t ibmxt_config[] = {
         .default_int = 128,
         .file_filter = "",
         .spinner = {
-            .min = 0,
-            .max = 512,
-            .step = 16
+            .min = 64,
+            .max = 576,
+            .step = 64
         },
         .selection = { { 0 } }
     },
@@ -870,7 +982,7 @@ static const device_config_t ibmxt_config[] = {
 };
 
 static const device_t ibmxt_device = {
-    .name          = "IBM PC/XT Memory Expansion",
+    .name          = "IBM PC/XT 64/256K Memory Expansion Option",
     .internal_name = "ibmxt",
     .flags         = DEVICE_ISA,
     .local         = ISAMEM_IBMXT_CARD,
@@ -1025,6 +1137,20 @@ static const device_t mssystemcard_device = {
     .speed_changed = NULL,
     .force_redraw  = NULL,
     .config        = mssystemcard_config
+};
+
+static const device_t ibmat_128k_device = {
+    .name          = "IBM PC/AT 128KB Memory Expansion Option",
+    .internal_name = "ibmat_128k",
+    .flags         = DEVICE_ISA,
+    .local         = ISAMEM_IBMAT_128K_CARD,
+    .init          = isamem_init,
+    .close         = isamem_close,
+    .reset         = NULL,
+    { .available = NULL },
+    .speed_changed = NULL,
+    .force_redraw  = NULL,
+    .config        = NULL
 };
 
 static const device_config_t ibmat_config[] = {
@@ -1931,12 +2057,18 @@ static const struct {
 } boards[] = {
     // clang-format off
     { &isa_none_device     },
+    // XT Ram Expansion Cards
+    { &ibmxt_32k_device    },
+    { &ibmxt_64k_device    },
     { &ibmxt_device        },
     { &genericxt_device    },
     { &msramcard_device    },
     { &mssystemcard_device },
+    // AT RAM Expansion Cards
+    { &ibmat_128k_device   },
     { &ibmat_device        },
     { &genericat_device    },
+    // EMS Cards
     { &p5pak_device        },
     { &a6pak_device        },
     { &ems5150_device      },
