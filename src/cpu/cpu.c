@@ -40,11 +40,8 @@
 #include <86box/nmi.h>
 #include <86box/pic.h>
 #include <86box/pci.h>
-<<<<<<< HEAD
 #include <86box/smram.h>
-=======
 #include <86box/timer.h>
->>>>>>> f3b71651a57715fd48dd5bf4afde219ce88843fa
 #include <86box/gdbstub.h>
 #include <86box/plat_fallthrough.h>
 #include <86box/plat_unused.h>
