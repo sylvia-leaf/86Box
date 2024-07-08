@@ -28,6 +28,7 @@
 #include <86box/mem.h>
 #include <86box/rom.h>
 #include <86box/device.h>
+#include <86box/chipset.h>
 #include <86box/machine.h>
 #include <86box/keyboard.h>
 #include <86box/sound.h>
@@ -518,7 +519,7 @@ const machine_t machines[] = {
         .gpio = 0xffffffff,
         .gpio_acpi = 0xffffffff,
         .device = NULL,
-        .fdc_device = &fdc_xt_device,
+        .fdc_device = NULL, //&fdc_xt_device,
         .sio_device = NULL,
         .vid_device = NULL,
         .snd_device = NULL,
@@ -3309,7 +3310,7 @@ const machine_t machines[] = {
             .max_multi = 0
         },
         .bus_flags = MACHINE_AT,
-        .flags = MACHINE_FDC,
+        .flags = MACHINE_FDC                ,
         .ram = {
             .min = 512,
             .max = 8192,
@@ -3321,7 +3322,7 @@ const machine_t machines[] = {
         .gpio = 0xffffffff,
         .gpio_acpi = 0xffffffff,
         .device = NULL,
-        .fdc_device = &fdc_at_device,
+        .fdc_device = NULL, //&fdc_at_device,
         .sio_device = NULL,
         .vid_device = NULL,
         .snd_device = NULL,
