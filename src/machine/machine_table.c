@@ -506,7 +506,7 @@ const machine_t machines[] = {
             .max_multi = 0
         },
         .bus_flags = MACHINE_PC,
-        .flags = MACHINE_FLAGS_NONE,
+        .flags = MACHINE_FDC,
         .ram = {
             .min = 64,
             .max = 640,
@@ -3309,7 +3309,7 @@ const machine_t machines[] = {
             .max_multi = 0
         },
         .bus_flags = MACHINE_AT,
-        .flags = MACHINE_FLAGS_NONE,
+        .flags = MACHINE_FDC,
         .ram = {
             .min = 512,
             .max = 8192,
