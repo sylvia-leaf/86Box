@@ -222,7 +222,7 @@ machine_xt_ataripc3_init(const machine_t *model)
     if (bios_only || !ret)
         return ret;
 
-    machine_xt_clone_init(model);
+    machine_xt_clone_init(model, 0);
 
     return ret;
 }
