@@ -228,7 +228,7 @@ machine_at_ataripc4_init(const machine_t *model)
 
     device_add(&neat_device);
 
-    if (fdc_type == FDC_INTERNAL)
+    if (fdc_current[0] == FDC_INTERNAL)
         device_add(&fdc_at_device);
 
     device_add(&keyboard_at_ami_device);
