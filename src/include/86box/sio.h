@@ -96,6 +96,7 @@ extern const device_t um8669f_device;
 extern const device_t um8669f_ide_device;
 extern const device_t um8669f_ide_sec_device;
 extern const device_t via_vt82c686_sio_device;
+extern const device_t vl82c113_device;
 extern const device_t w83627hf_device;
 extern const device_t w83627hf_no_hwm_device;
 extern const device_t w83787f_88h_device;
