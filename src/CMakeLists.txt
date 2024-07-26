@@ -28,7 +28,7 @@ if(CMAKE_SYSTEM_NAME MATCHES "Linux")
 endif()
 
 if(PCL)
-    target_compile_definitions(86Box PRIVATE USE_PCL)
+    target_compile_definitions(PCBox PRIVATE USE_PCL)
 endif()
 
 if(CPPTHREADS)
