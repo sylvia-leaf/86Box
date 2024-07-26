@@ -575,14 +575,6 @@ modem_send_res(modem_t *modem, const ResTypes response)
         } else if (response_str != NULL) {
             modem_send_line(modem, response_str);
         }
-
-        // if(CSerial::CanReceiveByte())	// very fast response
-        //	if(rqueue->inuse() && CSerial::getRTS())
-        //	{ uint8_t rbyte =rqueue->getb();
-        //		CSerial::receiveByte(rbyte);
-        //	LOG_MSG("SERIAL: Port %" PRIu8 " modem sending byte %2x back to UART2",
-        //	        GetPortNumber(), rbyte);
-        //	}
     }
 }
 
@@ -1099,6 +1091,10 @@ modem_do_command(modem_t *modem, int repeat)
                     }
                     break;
                 }
+            case '%': // % escaped commands
+                // Windows 98 modem prober sends unknown command AT%V
+                modem_send_res(modem, ResERROR);
+                return;
             case '\0':
                 modem_send_res(modem, ResOK);
                 return;
