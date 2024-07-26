@@ -240,21 +240,23 @@ video_cards[] = {
     { &s3_virge_357_agp_device                         },
     { &s3_diamond_stealth_4000_agp_device              },
     { &s3_trio3d2x_agp_device                          },
+#ifdef USE_G100
     { &productiva_g100_device, VIDEO_FLAG_TYPE_SPECIAL },
-    { &velocity_100_agp_device                       },
-    { &velocity_200_agp_device                       },
-    { &voodoo_3_1000_agp_device                      },
-    { &voodoo_3_2000_agp_device                      },
-    { &voodoo_3_3000_agp_device                      },
-    { &voodoo_3_3500_agp_ntsc_device                 },
-    { &voodoo_3_3500_agp_pal_device                  },
-    { &compaq_voodoo_3_3500_agp_device               },
-    { &voodoo_3_3500_se_agp_device                   },
-    { &voodoo_3_3500_si_agp_device                   },
-#if defined(DEV_BRANCH) && defined(USE_R100)
-    { &ati_r100_device                               },
 #endif
-    { NULL                                           }
+    { &velocity_100_agp_device                         },
+    { &velocity_200_agp_device                         },
+    { &voodoo_3_1000_agp_device                        },
+    { &voodoo_3_2000_agp_device                        },
+    { &voodoo_3_3000_agp_device                        },
+    { &voodoo_3_3500_agp_ntsc_device                   },
+    { &voodoo_3_3500_agp_pal_device                    },
+    { &compaq_voodoo_3_3500_agp_device                 },
+    { &voodoo_3_3500_se_agp_device                     },
+    { &voodoo_3_3500_si_agp_device                     },
+#if defined(DEV_BRANCH) && defined(USE_R100)
+    { &ati_r100_device                                 },
+#endif
+    { NULL                                             }
   // clang-format on
 };
 

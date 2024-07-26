@@ -449,7 +449,9 @@ extern const device_t millennium_device;
 extern const device_t mystique_device;
 extern const device_t mystique_220_device;
 extern const device_t millennium_ii_device;
+#ifdef USE_G100
 extern const device_t productiva_g100_device;
+#endif
 
 /* nVidia RIVA 128 */
 #if defined(DEV_BRANCH) && defined(USE_RIVA128)
