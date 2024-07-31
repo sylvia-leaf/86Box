@@ -6,6 +6,7 @@
 static int
 opSQRTPS_xmm_xmm_a16(uint32_t fetchdat)
 {
+    feclearexcept(FE_ALL_EXCEPT);
     if ((cpu_features & CPU_FEATURE_SSE2) && sse_xmm)
         return opSQRTPD_xmm_xmm_a16(fetchdat);
 
@@ -62,6 +63,7 @@ opSQRTPS_xmm_xmm_a16(uint32_t fetchdat)
 static int
 opSQRTPS_xmm_xmm_a32(uint32_t fetchdat)
 {
+    feclearexcept(FE_ALL_EXCEPT);
     if ((cpu_features & CPU_FEATURE_SSE2) && sse_xmm)
         return opSQRTPD_xmm_xmm_a32(fetchdat);
 
@@ -118,6 +120,7 @@ opSQRTPS_xmm_xmm_a32(uint32_t fetchdat)
 static int
 opSQRTSS_xmm_xmm_a16(uint32_t fetchdat)
 {
+    feclearexcept(FE_ALL_EXCEPT);
     fetch_ea_16(fetchdat);
     if (cpu_mod == 3) {
         fesetround(rounding_modes[(mxcsr >> 14) & 3]);
@@ -147,6 +150,7 @@ opSQRTSS_xmm_xmm_a16(uint32_t fetchdat)
 static int
 opSQRTSS_xmm_xmm_a32(uint32_t fetchdat)
 {
+    feclearexcept(FE_ALL_EXCEPT);
     fetch_ea_32(fetchdat);
     if (cpu_mod == 3) {
         fesetround(rounding_modes[(mxcsr >> 14) & 3]);
@@ -176,6 +180,7 @@ opSQRTSS_xmm_xmm_a32(uint32_t fetchdat)
 static int
 opRSQRTPS_xmm_xmm_a16(uint32_t fetchdat)
 {
+    feclearexcept(FE_ALL_EXCEPT);
     if ((cpu_features & CPU_FEATURE_SSE2) && sse_xmm)
         return opRSQRTPD_xmm_xmm_a16(fetchdat);
 
@@ -231,6 +236,7 @@ opRSQRTPS_xmm_xmm_a16(uint32_t fetchdat)
 static int
 opRSQRTPS_xmm_xmm_a32(uint32_t fetchdat)
 {
+    feclearexcept(FE_ALL_EXCEPT);
     if ((cpu_features & CPU_FEATURE_SSE2) && sse_xmm)
         return opRSQRTPD_xmm_xmm_a32(fetchdat);
 
@@ -287,6 +293,7 @@ opRSQRTPS_xmm_xmm_a32(uint32_t fetchdat)
 static int
 opRSQRTSS_xmm_xmm_a16(uint32_t fetchdat)
 {
+    feclearexcept(FE_ALL_EXCEPT);
     fetch_ea_16(fetchdat);
     if (cpu_mod == 3) {
         fesetround(rounding_modes[(mxcsr >> 14) & 3]);
@@ -316,6 +323,7 @@ opRSQRTSS_xmm_xmm_a16(uint32_t fetchdat)
 static int
 opRSQRTSS_xmm_xmm_a32(uint32_t fetchdat)
 {
+    feclearexcept(FE_ALL_EXCEPT);
     fetch_ea_32(fetchdat);
     if (cpu_mod == 3) {
         fesetround(rounding_modes[(mxcsr >> 14) & 3]);
@@ -345,6 +353,7 @@ opRSQRTSS_xmm_xmm_a32(uint32_t fetchdat)
 static int
 opRCPSS_xmm_xmm_a16(uint32_t fetchdat)
 {
+    feclearexcept(FE_ALL_EXCEPT);
     fetch_ea_16(fetchdat);
     if (cpu_mod == 3) {
         fesetround(rounding_modes[(mxcsr >> 14) & 3]);
@@ -374,6 +383,7 @@ opRCPSS_xmm_xmm_a16(uint32_t fetchdat)
 static int
 opRCPSS_xmm_xmm_a32(uint32_t fetchdat)
 {
+    feclearexcept(FE_ALL_EXCEPT);
     fetch_ea_32(fetchdat);
     if (cpu_mod == 3) {
         fesetround(rounding_modes[(mxcsr >> 14) & 3]);
@@ -403,6 +413,7 @@ opRCPSS_xmm_xmm_a32(uint32_t fetchdat)
 static int
 opRCPPS_xmm_xmm_a16(uint32_t fetchdat)
 {
+    feclearexcept(FE_ALL_EXCEPT);
     if ((cpu_features & CPU_FEATURE_SSE2) && sse_xmm)
         return opRCPPD_xmm_xmm_a16(fetchdat);
 
@@ -454,6 +465,7 @@ opRCPPS_xmm_xmm_a16(uint32_t fetchdat)
 static int
 opRCPPS_xmm_xmm_a32(uint32_t fetchdat)
 {
+    feclearexcept(FE_ALL_EXCEPT);
     if ((cpu_features & CPU_FEATURE_SSE2) && sse_xmm)
         return opRCPPD_xmm_xmm_a32(fetchdat);
 
@@ -509,6 +521,7 @@ opRCPPS_xmm_xmm_a32(uint32_t fetchdat)
 static int
 opADDPS_xmm_xmm_a16(uint32_t fetchdat)
 {
+    feclearexcept(FE_ALL_EXCEPT);
     if ((cpu_features & CPU_FEATURE_SSE2) && sse_xmm)
         return opADDPD_xmm_xmm_a16(fetchdat);
 
@@ -564,6 +577,7 @@ opADDPS_xmm_xmm_a16(uint32_t fetchdat)
 static int
 opADDPS_xmm_xmm_a32(uint32_t fetchdat)
 {
+    feclearexcept(FE_ALL_EXCEPT);
     if ((cpu_features & CPU_FEATURE_SSE2) && sse_xmm)
         return opADDPD_xmm_xmm_a32(fetchdat);
 
@@ -619,6 +633,7 @@ opADDPS_xmm_xmm_a32(uint32_t fetchdat)
 static int
 opADDSS_xmm_xmm_a16(uint32_t fetchdat)
 {
+    feclearexcept(FE_ALL_EXCEPT);
     fetch_ea_16(fetchdat);
     if (cpu_mod == 3) {
         fesetround(rounding_modes[(mxcsr >> 14) & 3]);
@@ -647,6 +662,7 @@ opADDSS_xmm_xmm_a16(uint32_t fetchdat)
 static int
 opADDSS_xmm_xmm_a32(uint32_t fetchdat)
 {
+    feclearexcept(FE_ALL_EXCEPT);
     fetch_ea_32(fetchdat);
     if (cpu_mod == 3) {
         fesetround(rounding_modes[(mxcsr >> 14) & 3]);
@@ -675,6 +691,7 @@ opADDSS_xmm_xmm_a32(uint32_t fetchdat)
 static int
 opMULPS_xmm_xmm_a16(uint32_t fetchdat)
 {
+    feclearexcept(FE_ALL_EXCEPT);
     if ((cpu_features & CPU_FEATURE_SSE2) && sse_xmm)
         return opMULPD_xmm_xmm_a16(fetchdat);
 
@@ -730,6 +747,7 @@ opMULPS_xmm_xmm_a16(uint32_t fetchdat)
 static int
 opMULPS_xmm_xmm_a32(uint32_t fetchdat)
 {
+    feclearexcept(FE_ALL_EXCEPT);
     if ((cpu_features & CPU_FEATURE_SSE2) && sse_xmm)
         return opMULPD_xmm_xmm_a32(fetchdat);
 
@@ -785,6 +803,7 @@ opMULPS_xmm_xmm_a32(uint32_t fetchdat)
 static int
 opMULSS_xmm_xmm_a16(uint32_t fetchdat)
 {
+    feclearexcept(FE_ALL_EXCEPT);
     fetch_ea_16(fetchdat);
     if (cpu_mod == 3) {
         fesetround(rounding_modes[(mxcsr >> 14) & 3]);
@@ -813,6 +832,7 @@ opMULSS_xmm_xmm_a16(uint32_t fetchdat)
 static int
 opMULSS_xmm_xmm_a32(uint32_t fetchdat)
 {
+    feclearexcept(FE_ALL_EXCEPT);
     fetch_ea_32(fetchdat);
     if (cpu_mod == 3) {
         fesetround(rounding_modes[(mxcsr >> 14) & 3]);
@@ -841,6 +861,7 @@ opMULSS_xmm_xmm_a32(uint32_t fetchdat)
 static int
 opSUBPS_xmm_xmm_a16(uint32_t fetchdat)
 {
+    feclearexcept(FE_ALL_EXCEPT);
     if ((cpu_features & CPU_FEATURE_SSE2) && sse_xmm)
         return opSUBPD_xmm_xmm_a16(fetchdat);
 
@@ -896,6 +917,7 @@ opSUBPS_xmm_xmm_a16(uint32_t fetchdat)
 static int
 opSUBPS_xmm_xmm_a32(uint32_t fetchdat)
 {
+    feclearexcept(FE_ALL_EXCEPT);
     if ((cpu_features & CPU_FEATURE_SSE2) && sse_xmm)
         return opSUBPD_xmm_xmm_a32(fetchdat);
 
@@ -951,6 +973,7 @@ opSUBPS_xmm_xmm_a32(uint32_t fetchdat)
 static int
 opSUBSS_xmm_xmm_a16(uint32_t fetchdat)
 {
+    feclearexcept(FE_ALL_EXCEPT);
     fetch_ea_16(fetchdat);
     if (cpu_mod == 3) {
         fesetround(rounding_modes[(mxcsr >> 14) & 3]);
@@ -979,6 +1002,7 @@ opSUBSS_xmm_xmm_a16(uint32_t fetchdat)
 static int
 opSUBSS_xmm_xmm_a32(uint32_t fetchdat)
 {
+    feclearexcept(FE_ALL_EXCEPT);
     fetch_ea_32(fetchdat);
     if (cpu_mod == 3) {
         fesetround(rounding_modes[(mxcsr >> 14) & 3]);
@@ -1007,6 +1031,7 @@ opSUBSS_xmm_xmm_a32(uint32_t fetchdat)
 static int
 opMINPS_xmm_xmm_a16(uint32_t fetchdat)
 {
+    feclearexcept(FE_ALL_EXCEPT);
     if ((cpu_features & CPU_FEATURE_SSE2) && sse_xmm)
         return opMINPD_xmm_xmm_a16(fetchdat);
 
@@ -1058,6 +1083,7 @@ opMINPS_xmm_xmm_a16(uint32_t fetchdat)
 static int
 opMINPS_xmm_xmm_a32(uint32_t fetchdat)
 {
+    feclearexcept(FE_ALL_EXCEPT);
     if ((cpu_features & CPU_FEATURE_SSE2) && sse_xmm)
         return opMINPD_xmm_xmm_a32(fetchdat);
 
@@ -1109,6 +1135,7 @@ opMINPS_xmm_xmm_a32(uint32_t fetchdat)
 static int
 opMINSS_xmm_xmm_a16(uint32_t fetchdat)
 {
+    feclearexcept(FE_ALL_EXCEPT);
     fetch_ea_16(fetchdat);
     if (cpu_mod == 3) {
         XMM[cpu_reg].f[0] = fmin(XMM[cpu_rm].f[0], XMM[cpu_reg].f[0]);
@@ -1133,6 +1160,7 @@ opMINSS_xmm_xmm_a16(uint32_t fetchdat)
 static int
 opMINSS_xmm_xmm_a32(uint32_t fetchdat)
 {
+    feclearexcept(FE_ALL_EXCEPT);
     fetch_ea_32(fetchdat);
     if (cpu_mod == 3) {
         XMM[cpu_reg].f[0] = fmin(XMM[cpu_rm].f[0], XMM[cpu_reg].f[0]);
@@ -1157,6 +1185,7 @@ opMINSS_xmm_xmm_a32(uint32_t fetchdat)
 static int
 opDIVPS_xmm_xmm_a16(uint32_t fetchdat)
 {
+    feclearexcept(FE_ALL_EXCEPT);
     if ((cpu_features & CPU_FEATURE_SSE2) && sse_xmm)
         return opDIVPD_xmm_xmm_a16(fetchdat);
 
@@ -1212,6 +1241,7 @@ opDIVPS_xmm_xmm_a16(uint32_t fetchdat)
 static int
 opDIVPS_xmm_xmm_a32(uint32_t fetchdat)
 {
+    feclearexcept(FE_ALL_EXCEPT);
     if ((cpu_features & CPU_FEATURE_SSE2) && sse_xmm)
         return opDIVPD_xmm_xmm_a32(fetchdat);
 
@@ -1267,6 +1297,7 @@ opDIVPS_xmm_xmm_a32(uint32_t fetchdat)
 static int
 opDIVSS_xmm_xmm_a16(uint32_t fetchdat)
 {
+    feclearexcept(FE_ALL_EXCEPT);
     fetch_ea_16(fetchdat);
     if (cpu_mod == 3) {
         fesetround(rounding_modes[(mxcsr >> 14) & 3]);
@@ -1295,6 +1326,7 @@ opDIVSS_xmm_xmm_a16(uint32_t fetchdat)
 static int
 opDIVSS_xmm_xmm_a32(uint32_t fetchdat)
 {
+    feclearexcept(FE_ALL_EXCEPT);
     fetch_ea_32(fetchdat);
     if (cpu_mod == 3) {
         fesetround(rounding_modes[(mxcsr >> 14) & 3]);
@@ -1323,6 +1355,7 @@ opDIVSS_xmm_xmm_a32(uint32_t fetchdat)
 static int
 opMAXPS_xmm_xmm_a16(uint32_t fetchdat)
 {
+    feclearexcept(FE_ALL_EXCEPT);
     if ((cpu_features & CPU_FEATURE_SSE2) && sse_xmm)
         return opMAXPD_xmm_xmm_a16(fetchdat);
 
@@ -1374,6 +1407,7 @@ opMAXPS_xmm_xmm_a16(uint32_t fetchdat)
 static int
 opMAXPS_xmm_xmm_a32(uint32_t fetchdat)
 {
+    feclearexcept(FE_ALL_EXCEPT);
     if ((cpu_features & CPU_FEATURE_SSE2) && sse_xmm)
         return opMAXPD_xmm_xmm_a32(fetchdat);
 
@@ -1425,6 +1459,7 @@ opMAXPS_xmm_xmm_a32(uint32_t fetchdat)
 static int
 opMAXSS_xmm_xmm_a16(uint32_t fetchdat)
 {
+    feclearexcept(FE_ALL_EXCEPT);
     fetch_ea_16(fetchdat);
     if (cpu_mod == 3) {
         XMM[cpu_reg].f[0] = fmax(XMM[cpu_rm].f[0], XMM[cpu_reg].f[0]);
@@ -1449,6 +1484,7 @@ opMAXSS_xmm_xmm_a16(uint32_t fetchdat)
 static int
 opMAXSS_xmm_xmm_a32(uint32_t fetchdat)
 {
+    feclearexcept(FE_ALL_EXCEPT);
     fetch_ea_32(fetchdat);
     if (cpu_mod == 3) {
         XMM[cpu_reg].f[0] = fmax(XMM[cpu_rm].f[0], XMM[cpu_reg].f[0]);
@@ -1473,6 +1509,7 @@ opMAXSS_xmm_xmm_a32(uint32_t fetchdat)
 static int
 opCMPPS_xmm_xmm_a16(uint32_t fetchdat)
 {
+    feclearexcept(FE_ALL_EXCEPT);
     if ((cpu_features & CPU_FEATURE_SSE2) && sse_xmm)
         return opCMPPD_xmm_xmm_a16(fetchdat);
 
@@ -1657,6 +1694,7 @@ opCMPPS_xmm_xmm_a16(uint32_t fetchdat)
 static int
 opCMPPS_xmm_xmm_a32(uint32_t fetchdat)
 {
+    feclearexcept(FE_ALL_EXCEPT);
     if ((cpu_features & CPU_FEATURE_SSE2) && sse_xmm)
         return opCMPPD_xmm_xmm_a32(fetchdat);
 
@@ -1841,6 +1879,7 @@ opCMPPS_xmm_xmm_a32(uint32_t fetchdat)
 static int
 opCMPSS_xmm_xmm_a16(uint32_t fetchdat)
 {
+    feclearexcept(FE_ALL_EXCEPT);
     fetch_ea_16(fetchdat);
     uint8_t  imm = getbyte();
     uint32_t cmp = 0;
@@ -1956,6 +1995,7 @@ opCMPSS_xmm_xmm_a16(uint32_t fetchdat)
 static int
 opCMPSS_xmm_xmm_a32(uint32_t fetchdat)
 {
+    feclearexcept(FE_ALL_EXCEPT);
     fetch_ea_32(fetchdat);
     uint8_t  imm = getbyte();
     uint32_t cmp = 0;

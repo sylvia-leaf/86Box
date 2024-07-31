@@ -68,7 +68,6 @@ opEMMS(uint32_t fetchdat)
 static inline int
 check_sse_exceptions(double result)
 {
-    feclearexcept(FE_ALL_EXCEPT);
     int fperaised = fetestexcept(FE_ALL_EXCEPT);
     if (fperaised & FE_INVALID)
         mxcsr |= 1;
