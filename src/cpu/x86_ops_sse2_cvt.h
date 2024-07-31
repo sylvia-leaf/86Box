@@ -684,7 +684,7 @@ opCVTPD2DQ_mm_xmm_a16(uint32_t fetchdat)
 {
     fetch_ea_16(fetchdat);
     if (cpu_mod == 3) {
-        fesetround(rounding_modes[(mxcsr >> 14) & 3]);
+        fesetround(rounding_modes[(mxcsr >> 13) & 3]);
         XMM[cpu_reg].l[0] = XMM[cpu_rm].d[0];
         XMM[cpu_reg].l[1] = XMM[cpu_rm].d[1];
         XMM[cpu_reg].q[1] = 0;
@@ -703,7 +703,7 @@ opCVTPD2DQ_mm_xmm_a16(uint32_t fetchdat)
         double dst_real[2];
         dst_real[0] = *(double *) &dst[0];
         dst_real[1] = *(double *) &dst[1];
-        fesetround(rounding_modes[(mxcsr >> 14) & 3]);
+        fesetround(rounding_modes[(mxcsr >> 13) & 3]);
         XMM[cpu_reg].l[0] = dst_real[0];
         XMM[cpu_reg].l[1] = dst_real[1];
         XMM[cpu_reg].q[1] = 0;
@@ -718,7 +718,7 @@ opCVTPD2DQ_mm_xmm_a32(uint32_t fetchdat)
 {
     fetch_ea_32(fetchdat);
     if (cpu_mod == 3) {
-        fesetround(rounding_modes[(mxcsr >> 14) & 3]);
+        fesetround(rounding_modes[(mxcsr >> 13) & 3]);
         XMM[cpu_reg].l[0] = XMM[cpu_rm].d[0];
         XMM[cpu_reg].l[1] = XMM[cpu_rm].d[1];
         XMM[cpu_reg].q[1] = 0;
@@ -737,7 +737,7 @@ opCVTPD2DQ_mm_xmm_a32(uint32_t fetchdat)
         double dst_real[2];
         dst_real[0] = *(double *) &dst[0];
         dst_real[1] = *(double *) &dst[1];
-        fesetround(rounding_modes[(mxcsr >> 14) & 3]);
+        fesetround(rounding_modes[(mxcsr >> 13) & 3]);
         XMM[cpu_reg].l[0] = dst_real[0];
         XMM[cpu_reg].l[1] = dst_real[1];
         XMM[cpu_reg].q[1] = 0;
@@ -814,7 +814,7 @@ opCVTDQ2PD_mm_xmm_a16(uint32_t fetchdat)
 {
     fetch_ea_16(fetchdat);
     if (cpu_mod == 3) {
-        fesetround(rounding_modes[(mxcsr >> 14) & 3]);
+        fesetround(rounding_modes[(mxcsr >> 13) & 3]);
         XMM[cpu_reg].d[0] = XMM[cpu_rm].l[0];
         XMM[cpu_reg].d[1] = XMM[cpu_rm].l[1];
         fesetround(FE_TONEAREST);
@@ -829,7 +829,7 @@ opCVTDQ2PD_mm_xmm_a16(uint32_t fetchdat)
         dst[1] = readmeml(easeg, cpu_state.eaaddr + 4);
         if (cpu_state.abrt)
             return 1;
-        fesetround(rounding_modes[(mxcsr >> 14) & 3]);
+        fesetround(rounding_modes[(mxcsr >> 13) & 3]);
         XMM[cpu_reg].d[0] = dst[0];
         XMM[cpu_reg].d[1] = dst[1];
         fesetround(FE_TONEAREST);
@@ -843,7 +843,7 @@ opCVTDQ2PD_mm_xmm_a32(uint32_t fetchdat)
 {
     fetch_ea_32(fetchdat);
     if (cpu_mod == 3) {
-        fesetround(rounding_modes[(mxcsr >> 14) & 3]);
+        fesetround(rounding_modes[(mxcsr >> 13) & 3]);
         XMM[cpu_reg].d[0] = XMM[cpu_rm].l[0];
         XMM[cpu_reg].d[1] = XMM[cpu_rm].l[1];
         fesetround(FE_TONEAREST);
@@ -858,7 +858,7 @@ opCVTDQ2PD_mm_xmm_a32(uint32_t fetchdat)
         dst[1] = readmeml(easeg, cpu_state.eaaddr + 4);
         if (cpu_state.abrt)
             return 1;
-        fesetround(rounding_modes[(mxcsr >> 14) & 3]);
+        fesetround(rounding_modes[(mxcsr >> 13) & 3]);
         XMM[cpu_reg].d[0] = dst[0];
         XMM[cpu_reg].d[1] = dst[1];
         fesetround(FE_TONEAREST);

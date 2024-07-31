@@ -12,7 +12,7 @@ opSQRTPS_xmm_xmm_a16(uint32_t fetchdat)
 
     fetch_ea_16(fetchdat);
     if (cpu_mod == 3) {
-        fesetround(rounding_modes[(mxcsr >> 14) & 3]);
+        fesetround(rounding_modes[(mxcsr >> 13) & 3]);
         XMM[cpu_reg].f[0] = sqrt(XMM[cpu_rm].f[0]);
         XMM[cpu_reg].f[1] = sqrt(XMM[cpu_rm].f[1]);
         XMM[cpu_reg].f[2] = sqrt(XMM[cpu_rm].f[2]);
@@ -44,7 +44,7 @@ opSQRTPS_xmm_xmm_a16(uint32_t fetchdat)
         src_real[1] = *(float *) &src[1];
         src_real[2] = *(float *) &src[2];
         src_real[3] = *(float *) &src[3];
-        fesetround(rounding_modes[(mxcsr >> 14) & 3]);
+        fesetround(rounding_modes[(mxcsr >> 13) & 3]);
         XMM[cpu_reg].f[0] = sqrt(src_real[0]);
         XMM[cpu_reg].f[1] = sqrt(src_real[1]);
         XMM[cpu_reg].f[2] = sqrt(src_real[2]);
@@ -69,7 +69,7 @@ opSQRTPS_xmm_xmm_a32(uint32_t fetchdat)
 
     fetch_ea_32(fetchdat);
     if (cpu_mod == 3) {
-        fesetround(rounding_modes[(mxcsr >> 14) & 3]);
+        fesetround(rounding_modes[(mxcsr >> 13) & 3]);
         XMM[cpu_reg].f[0] = sqrt(XMM[cpu_rm].f[0]);
         XMM[cpu_reg].f[1] = sqrt(XMM[cpu_rm].f[1]);
         XMM[cpu_reg].f[2] = sqrt(XMM[cpu_rm].f[2]);
@@ -101,7 +101,7 @@ opSQRTPS_xmm_xmm_a32(uint32_t fetchdat)
         src_real[1] = *(float *) &src[1];
         src_real[2] = *(float *) &src[2];
         src_real[3] = *(float *) &src[3];
-        fesetround(rounding_modes[(mxcsr >> 14) & 3]);
+        fesetround(rounding_modes[(mxcsr >> 13) & 3]);
         XMM[cpu_reg].f[0] = sqrt(src_real[0]);
         XMM[cpu_reg].f[1] = sqrt(src_real[1]);
         XMM[cpu_reg].f[2] = sqrt(src_real[2]);
@@ -123,7 +123,7 @@ opSQRTSS_xmm_xmm_a16(uint32_t fetchdat)
     feclearexcept(FE_ALL_EXCEPT);
     fetch_ea_16(fetchdat);
     if (cpu_mod == 3) {
-        fesetround(rounding_modes[(mxcsr >> 14) & 3]);
+        fesetround(rounding_modes[(mxcsr >> 13) & 3]);
         XMM[cpu_reg].f[0] = sqrt(XMM[cpu_rm].f[0]);
         fesetround(FE_TONEAREST);
         check_sse_exceptions(XMM[cpu_reg].f[0]);
@@ -137,7 +137,7 @@ opSQRTSS_xmm_xmm_a16(uint32_t fetchdat)
             return 1;
         float src_real;
         src_real = *(float *) &src;
-        fesetround(rounding_modes[(mxcsr >> 14) & 3]);
+        fesetround(rounding_modes[(mxcsr >> 13) & 3]);
         XMM[cpu_reg].f[0] = sqrt(src_real);
         fesetround(FE_TONEAREST);
         check_sse_exceptions(XMM[cpu_reg].f[0]);
@@ -153,7 +153,7 @@ opSQRTSS_xmm_xmm_a32(uint32_t fetchdat)
     feclearexcept(FE_ALL_EXCEPT);
     fetch_ea_32(fetchdat);
     if (cpu_mod == 3) {
-        fesetround(rounding_modes[(mxcsr >> 14) & 3]);
+        fesetround(rounding_modes[(mxcsr >> 13) & 3]);
         XMM[cpu_reg].f[0] = sqrt(XMM[cpu_rm].f[0]);
         fesetround(FE_TONEAREST);
         check_sse_exceptions(XMM[cpu_reg].f[0]);
@@ -167,7 +167,7 @@ opSQRTSS_xmm_xmm_a32(uint32_t fetchdat)
             return 1;
         float src_real;
         src_real = *(float *) &src;
-        fesetround(rounding_modes[(mxcsr >> 14) & 3]);
+        fesetround(rounding_modes[(mxcsr >> 13) & 3]);
         XMM[cpu_reg].f[0] = sqrt(src_real);
         fesetround(FE_TONEAREST);
         check_sse_exceptions(XMM[cpu_reg].f[0]);
@@ -186,7 +186,7 @@ opRSQRTPS_xmm_xmm_a16(uint32_t fetchdat)
 
     fetch_ea_16(fetchdat);
     if (cpu_mod == 3) {
-        fesetround(rounding_modes[(mxcsr >> 14) & 3]);
+        fesetround(rounding_modes[(mxcsr >> 13) & 3]);
         XMM[cpu_reg].f[0] = 1.0 / sqrt(XMM[cpu_rm].f[0]);
         XMM[cpu_reg].f[1] = 1.0 / sqrt(XMM[cpu_rm].f[1]);
         XMM[cpu_reg].f[2] = 1.0 / sqrt(XMM[cpu_rm].f[2]);
@@ -218,7 +218,7 @@ opRSQRTPS_xmm_xmm_a16(uint32_t fetchdat)
         src_real[1] = *(float *) &src[1];
         src_real[2] = *(float *) &src[2];
         src_real[3] = *(float *) &src[3];
-        fesetround(rounding_modes[(mxcsr >> 14) & 3]);
+        fesetround(rounding_modes[(mxcsr >> 13) & 3]);
         XMM[cpu_reg].f[0] = 1.0 / sqrt(src_real[0]);
         XMM[cpu_reg].f[1] = 1.0 / sqrt(src_real[1]);
         XMM[cpu_reg].f[2] = 1.0 / sqrt(src_real[2]);
@@ -242,7 +242,7 @@ opRSQRTPS_xmm_xmm_a32(uint32_t fetchdat)
 
     fetch_ea_32(fetchdat);
     if (cpu_mod == 3) {
-        fesetround(rounding_modes[(mxcsr >> 14) & 3]);
+        fesetround(rounding_modes[(mxcsr >> 13) & 3]);
         XMM[cpu_reg].f[0] = 1.0 / sqrt(XMM[cpu_rm].f[0]);
         XMM[cpu_reg].f[1] = 1.0 / sqrt(XMM[cpu_rm].f[1]);
         XMM[cpu_reg].f[2] = 1.0 / sqrt(XMM[cpu_rm].f[2]);
@@ -274,7 +274,7 @@ opRSQRTPS_xmm_xmm_a32(uint32_t fetchdat)
         src_real[1] = *(float *) &src[1];
         src_real[2] = *(float *) &src[2];
         src_real[3] = *(float *) &src[3];
-        fesetround(rounding_modes[(mxcsr >> 14) & 3]);
+        fesetround(rounding_modes[(mxcsr >> 13) & 3]);
         XMM[cpu_reg].f[0] = 1.0 / sqrt(src_real[0]);
         XMM[cpu_reg].f[1] = 1.0 / sqrt(src_real[1]);
         XMM[cpu_reg].f[2] = 1.0 / sqrt(src_real[2]);
@@ -296,7 +296,7 @@ opRSQRTSS_xmm_xmm_a16(uint32_t fetchdat)
     feclearexcept(FE_ALL_EXCEPT);
     fetch_ea_16(fetchdat);
     if (cpu_mod == 3) {
-        fesetround(rounding_modes[(mxcsr >> 14) & 3]);
+        fesetround(rounding_modes[(mxcsr >> 13) & 3]);
         XMM[cpu_reg].f[0] = 1.0 / sqrt(XMM[cpu_rm].f[0]);
         fesetround(FE_TONEAREST);
         check_sse_exceptions(XMM[cpu_reg].f[0]);
@@ -310,7 +310,7 @@ opRSQRTSS_xmm_xmm_a16(uint32_t fetchdat)
             return 1;
         float src_real;
         src_real = *(float *) &src;
-        fesetround(rounding_modes[(mxcsr >> 14) & 3]);
+        fesetround(rounding_modes[(mxcsr >> 13) & 3]);
         XMM[cpu_reg].f[0] = 1.0 / sqrt(src_real);
         fesetround(FE_TONEAREST);
         check_sse_exceptions(XMM[cpu_reg].f[0]);
@@ -326,7 +326,7 @@ opRSQRTSS_xmm_xmm_a32(uint32_t fetchdat)
     feclearexcept(FE_ALL_EXCEPT);
     fetch_ea_32(fetchdat);
     if (cpu_mod == 3) {
-        fesetround(rounding_modes[(mxcsr >> 14) & 3]);
+        fesetround(rounding_modes[(mxcsr >> 13) & 3]);
         XMM[cpu_reg].f[0] = 1.0 / sqrt(XMM[cpu_rm].f[0]);
         fesetround(FE_TONEAREST);
         check_sse_exceptions(XMM[cpu_reg].f[0]);
@@ -340,7 +340,7 @@ opRSQRTSS_xmm_xmm_a32(uint32_t fetchdat)
             return 1;
         float src_real;
         src_real = *(float *) &src;
-        fesetround(rounding_modes[(mxcsr >> 14) & 3]);
+        fesetround(rounding_modes[(mxcsr >> 13) & 3]);
         XMM[cpu_reg].f[0] = 1.0 / sqrt(src_real);
         fesetround(FE_TONEAREST);
         check_sse_exceptions(XMM[cpu_reg].f[0]);
@@ -356,7 +356,7 @@ opRCPSS_xmm_xmm_a16(uint32_t fetchdat)
     feclearexcept(FE_ALL_EXCEPT);
     fetch_ea_16(fetchdat);
     if (cpu_mod == 3) {
-        fesetround(rounding_modes[(mxcsr >> 14) & 3]);
+        fesetround(rounding_modes[(mxcsr >> 13) & 3]);
         XMM[cpu_reg].f[0] = 1.0 / XMM[cpu_rm].f[0];
         fesetround(FE_TONEAREST);
         check_sse_exceptions(XMM[cpu_reg].f[0]);
@@ -370,7 +370,7 @@ opRCPSS_xmm_xmm_a16(uint32_t fetchdat)
             return 1;
         float src_real;
         src_real = *(float *) &src;
-        fesetround(rounding_modes[(mxcsr >> 14) & 3]);
+        fesetround(rounding_modes[(mxcsr >> 13) & 3]);
         XMM[cpu_reg].f[0] = 1.0 / src_real;
         fesetround(FE_TONEAREST);
         check_sse_exceptions(XMM[cpu_reg].f[0]);
@@ -386,7 +386,7 @@ opRCPSS_xmm_xmm_a32(uint32_t fetchdat)
     feclearexcept(FE_ALL_EXCEPT);
     fetch_ea_32(fetchdat);
     if (cpu_mod == 3) {
-        fesetround(rounding_modes[(mxcsr >> 14) & 3]);
+        fesetround(rounding_modes[(mxcsr >> 13) & 3]);
         XMM[cpu_reg].f[0] = 1.0 / XMM[cpu_rm].f[0];
         fesetround(FE_TONEAREST);
         check_sse_exceptions(XMM[cpu_reg].f[0]);
@@ -400,7 +400,7 @@ opRCPSS_xmm_xmm_a32(uint32_t fetchdat)
             return 1;
         float src_real;
         src_real = *(float *) &src;
-        fesetround(rounding_modes[(mxcsr >> 14) & 3]);
+        fesetround(rounding_modes[(mxcsr >> 13) & 3]);
         XMM[cpu_reg].f[0] = 1.0 / src_real;
         fesetround(FE_TONEAREST);
         check_sse_exceptions(XMM[cpu_reg].f[0]);
@@ -471,7 +471,7 @@ opRCPPS_xmm_xmm_a32(uint32_t fetchdat)
 
     fetch_ea_32(fetchdat);
     if (cpu_mod == 3) {
-        fesetround(rounding_modes[(mxcsr >> 14) & 3]);
+        fesetround(rounding_modes[(mxcsr >> 13) & 3]);
         XMM[cpu_reg].f[0] = 1.0 / XMM[cpu_rm].f[0];
         XMM[cpu_reg].f[1] = 1.0 / XMM[cpu_rm].f[1];
         XMM[cpu_reg].f[2] = 1.0 / XMM[cpu_rm].f[2];
@@ -503,7 +503,7 @@ opRCPPS_xmm_xmm_a32(uint32_t fetchdat)
         src_real[1] = *(float *) &src[1];
         src_real[2] = *(float *) &src[2];
         src_real[3] = *(float *) &src[3];
-        fesetround(rounding_modes[(mxcsr >> 14) & 3]);
+        fesetround(rounding_modes[(mxcsr >> 13) & 3]);
         XMM[cpu_reg].f[0] = 1.0 / src_real[0];
         XMM[cpu_reg].f[1] = 1.0 / src_real[1];
         XMM[cpu_reg].f[2] = 1.0 / src_real[2];
@@ -527,7 +527,7 @@ opADDPS_xmm_xmm_a16(uint32_t fetchdat)
 
     fetch_ea_16(fetchdat);
     if (cpu_mod == 3) {
-        fesetround(rounding_modes[(mxcsr >> 14) & 3]);
+        fesetround(rounding_modes[(mxcsr >> 13) & 3]);
         XMM[cpu_reg].f[0] += XMM[cpu_rm].f[0];
         XMM[cpu_reg].f[1] += XMM[cpu_rm].f[1];
         XMM[cpu_reg].f[2] += XMM[cpu_rm].f[2];
@@ -559,7 +559,7 @@ opADDPS_xmm_xmm_a16(uint32_t fetchdat)
         src_real[1] = *(float *) &src[1];
         src_real[2] = *(float *) &src[2];
         src_real[3] = *(float *) &src[3];
-        fesetround(rounding_modes[(mxcsr >> 14) & 3]);
+        fesetround(rounding_modes[(mxcsr >> 13) & 3]);
         XMM[cpu_reg].f[0] += src_real[0];
         XMM[cpu_reg].f[1] += src_real[1];
         XMM[cpu_reg].f[2] += src_real[2];
@@ -583,7 +583,7 @@ opADDPS_xmm_xmm_a32(uint32_t fetchdat)
 
     fetch_ea_32(fetchdat);
     if (cpu_mod == 3) {
-        fesetround(rounding_modes[(mxcsr >> 14) & 3]);
+        fesetround(rounding_modes[(mxcsr >> 13) & 3]);
         XMM[cpu_reg].f[0] += XMM[cpu_rm].f[0];
         XMM[cpu_reg].f[1] += XMM[cpu_rm].f[1];
         XMM[cpu_reg].f[2] += XMM[cpu_rm].f[2];
@@ -615,7 +615,7 @@ opADDPS_xmm_xmm_a32(uint32_t fetchdat)
         src_real[1] = *(float *) &src[1];
         src_real[2] = *(float *) &src[2];
         src_real[3] = *(float *) &src[3];
-        fesetround(rounding_modes[(mxcsr >> 14) & 3]);
+        fesetround(rounding_modes[(mxcsr >> 13) & 3]);
         XMM[cpu_reg].f[0] += src_real[0];
         XMM[cpu_reg].f[1] += src_real[1];
         XMM[cpu_reg].f[2] += src_real[2];
@@ -636,7 +636,7 @@ opADDSS_xmm_xmm_a16(uint32_t fetchdat)
     feclearexcept(FE_ALL_EXCEPT);
     fetch_ea_16(fetchdat);
     if (cpu_mod == 3) {
-        fesetround(rounding_modes[(mxcsr >> 14) & 3]);
+        fesetround(rounding_modes[(mxcsr >> 13) & 3]);
         XMM[cpu_reg].f[0] += XMM[cpu_rm].f[0];
         fesetround(FE_TONEAREST);
         check_sse_exceptions(XMM[cpu_reg].f[0]);
@@ -650,7 +650,7 @@ opADDSS_xmm_xmm_a16(uint32_t fetchdat)
             return 1;
         float src_real;
         src_real = *(float *) &src;
-        fesetround(rounding_modes[(mxcsr >> 14) & 3]);
+        fesetround(rounding_modes[(mxcsr >> 13) & 3]);
         XMM[cpu_reg].f[0] += src_real;
         fesetround(FE_TONEAREST);
         check_sse_exceptions(XMM[cpu_reg].f[0]);
@@ -665,7 +665,7 @@ opADDSS_xmm_xmm_a32(uint32_t fetchdat)
     feclearexcept(FE_ALL_EXCEPT);
     fetch_ea_32(fetchdat);
     if (cpu_mod == 3) {
-        fesetround(rounding_modes[(mxcsr >> 14) & 3]);
+        fesetround(rounding_modes[(mxcsr >> 13) & 3]);
         XMM[cpu_reg].f[0] += XMM[cpu_rm].f[0];
         fesetround(FE_TONEAREST);
         check_sse_exceptions(XMM[cpu_reg].f[0]);
@@ -679,7 +679,7 @@ opADDSS_xmm_xmm_a32(uint32_t fetchdat)
             return 1;
         float src_real;
         src_real = *(float *) &src;
-        fesetround(rounding_modes[(mxcsr >> 14) & 3]);
+        fesetround(rounding_modes[(mxcsr >> 13) & 3]);
         XMM[cpu_reg].f[0] += src_real;
         fesetround(FE_TONEAREST);
         check_sse_exceptions(XMM[cpu_reg].f[0]);
@@ -697,7 +697,7 @@ opMULPS_xmm_xmm_a16(uint32_t fetchdat)
 
     fetch_ea_16(fetchdat);
     if (cpu_mod == 3) {
-        fesetround(rounding_modes[(mxcsr >> 14) & 3]);
+        fesetround(rounding_modes[(mxcsr >> 13) & 3]);
         XMM[cpu_reg].f[0] *= XMM[cpu_rm].f[0];
         XMM[cpu_reg].f[1] *= XMM[cpu_rm].f[1];
         XMM[cpu_reg].f[2] *= XMM[cpu_rm].f[2];
@@ -729,7 +729,7 @@ opMULPS_xmm_xmm_a16(uint32_t fetchdat)
         src_real[1] = *(float *) &src[1];
         src_real[2] = *(float *) &src[2];
         src_real[3] = *(float *) &src[3];
-        fesetround(rounding_modes[(mxcsr >> 14) & 3]);
+        fesetround(rounding_modes[(mxcsr >> 13) & 3]);
         XMM[cpu_reg].f[0] *= src_real[0];
         XMM[cpu_reg].f[1] *= src_real[1];
         XMM[cpu_reg].f[2] *= src_real[2];
@@ -753,7 +753,7 @@ opMULPS_xmm_xmm_a32(uint32_t fetchdat)
 
     fetch_ea_32(fetchdat);
     if (cpu_mod == 3) {
-        fesetround(rounding_modes[(mxcsr >> 14) & 3]);
+        fesetround(rounding_modes[(mxcsr >> 13) & 3]);
         XMM[cpu_reg].f[0] *= XMM[cpu_rm].f[0];
         XMM[cpu_reg].f[1] *= XMM[cpu_rm].f[1];
         XMM[cpu_reg].f[2] *= XMM[cpu_rm].f[2];
@@ -785,7 +785,7 @@ opMULPS_xmm_xmm_a32(uint32_t fetchdat)
         src_real[1] = *(float *) &src[1];
         src_real[2] = *(float *) &src[2];
         src_real[3] = *(float *) &src[3];
-        fesetround(rounding_modes[(mxcsr >> 14) & 3]);
+        fesetround(rounding_modes[(mxcsr >> 13) & 3]);
         XMM[cpu_reg].f[0] *= src_real[0];
         XMM[cpu_reg].f[1] *= src_real[1];
         XMM[cpu_reg].f[2] *= src_real[2];
@@ -806,7 +806,7 @@ opMULSS_xmm_xmm_a16(uint32_t fetchdat)
     feclearexcept(FE_ALL_EXCEPT);
     fetch_ea_16(fetchdat);
     if (cpu_mod == 3) {
-        fesetround(rounding_modes[(mxcsr >> 14) & 3]);
+        fesetround(rounding_modes[(mxcsr >> 13) & 3]);
         XMM[cpu_reg].f[0] *= XMM[cpu_rm].f[0];
         fesetround(FE_TONEAREST);
         check_sse_exceptions(XMM[cpu_reg].f[0]);
@@ -820,7 +820,7 @@ opMULSS_xmm_xmm_a16(uint32_t fetchdat)
             return 1;
         float src_real;
         src_real = *(float *) &src;
-        fesetround(rounding_modes[(mxcsr >> 14) & 3]);
+        fesetround(rounding_modes[(mxcsr >> 13) & 3]);
         XMM[cpu_reg].f[0] *= src_real;
         fesetround(FE_TONEAREST);
         check_sse_exceptions(XMM[cpu_reg].f[0]);
@@ -835,7 +835,7 @@ opMULSS_xmm_xmm_a32(uint32_t fetchdat)
     feclearexcept(FE_ALL_EXCEPT);
     fetch_ea_32(fetchdat);
     if (cpu_mod == 3) {
-        fesetround(rounding_modes[(mxcsr >> 14) & 3]);
+        fesetround(rounding_modes[(mxcsr >> 13) & 3]);
         XMM[cpu_reg].f[0] *= XMM[cpu_rm].f[0];
         fesetround(FE_TONEAREST);
         check_sse_exceptions(XMM[cpu_reg].f[0]);
@@ -849,7 +849,7 @@ opMULSS_xmm_xmm_a32(uint32_t fetchdat)
             return 1;
         float src_real;
         src_real = *(float *) &src;
-        fesetround(rounding_modes[(mxcsr >> 14) & 3]);
+        fesetround(rounding_modes[(mxcsr >> 13) & 3]);
         XMM[cpu_reg].f[0] *= src_real;
         fesetround(FE_TONEAREST);
         check_sse_exceptions(XMM[cpu_reg].f[0]);
@@ -867,7 +867,7 @@ opSUBPS_xmm_xmm_a16(uint32_t fetchdat)
 
     fetch_ea_16(fetchdat);
     if (cpu_mod == 3) {
-        fesetround(rounding_modes[(mxcsr >> 14) & 3]);
+        fesetround(rounding_modes[(mxcsr >> 13) & 3]);
         XMM[cpu_reg].f[0] -= XMM[cpu_rm].f[0];
         XMM[cpu_reg].f[1] -= XMM[cpu_rm].f[1];
         XMM[cpu_reg].f[2] -= XMM[cpu_rm].f[2];
@@ -899,7 +899,7 @@ opSUBPS_xmm_xmm_a16(uint32_t fetchdat)
         src_real[1] = *(float *) &src[1];
         src_real[2] = *(float *) &src[2];
         src_real[3] = *(float *) &src[3];
-        fesetround(rounding_modes[(mxcsr >> 14) & 3]);
+        fesetround(rounding_modes[(mxcsr >> 13) & 3]);
         XMM[cpu_reg].f[0] -= src_real[0];
         XMM[cpu_reg].f[1] -= src_real[1];
         XMM[cpu_reg].f[2] -= src_real[2];
@@ -923,7 +923,7 @@ opSUBPS_xmm_xmm_a32(uint32_t fetchdat)
 
     fetch_ea_32(fetchdat);
     if (cpu_mod == 3) {
-        fesetround(rounding_modes[(mxcsr >> 14) & 3]);
+        fesetround(rounding_modes[(mxcsr >> 13) & 3]);
         XMM[cpu_reg].f[0] -= XMM[cpu_rm].f[0];
         XMM[cpu_reg].f[1] -= XMM[cpu_rm].f[1];
         XMM[cpu_reg].f[2] -= XMM[cpu_rm].f[2];
@@ -955,7 +955,7 @@ opSUBPS_xmm_xmm_a32(uint32_t fetchdat)
         src_real[1] = *(float *) &src[1];
         src_real[2] = *(float *) &src[2];
         src_real[3] = *(float *) &src[3];
-        fesetround(rounding_modes[(mxcsr >> 14) & 3]);
+        fesetround(rounding_modes[(mxcsr >> 13) & 3]);
         XMM[cpu_reg].f[0] -= src_real[0];
         XMM[cpu_reg].f[1] -= src_real[1];
         XMM[cpu_reg].f[2] -= src_real[2];
@@ -976,7 +976,7 @@ opSUBSS_xmm_xmm_a16(uint32_t fetchdat)
     feclearexcept(FE_ALL_EXCEPT);
     fetch_ea_16(fetchdat);
     if (cpu_mod == 3) {
-        fesetround(rounding_modes[(mxcsr >> 14) & 3]);
+        fesetround(rounding_modes[(mxcsr >> 13) & 3]);
         XMM[cpu_reg].f[0] -= XMM[cpu_rm].f[0];
         fesetround(FE_TONEAREST);
         check_sse_exceptions(XMM[cpu_reg].f[0]);
@@ -990,7 +990,7 @@ opSUBSS_xmm_xmm_a16(uint32_t fetchdat)
             return 1;
         float src_real;
         src_real = *(float *) &src;
-        fesetround(rounding_modes[(mxcsr >> 14) & 3]);
+        fesetround(rounding_modes[(mxcsr >> 13) & 3]);
         XMM[cpu_reg].f[0] -= src_real;
         fesetround(FE_TONEAREST);
         check_sse_exceptions(XMM[cpu_reg].f[0]);
@@ -1005,7 +1005,7 @@ opSUBSS_xmm_xmm_a32(uint32_t fetchdat)
     feclearexcept(FE_ALL_EXCEPT);
     fetch_ea_32(fetchdat);
     if (cpu_mod == 3) {
-        fesetround(rounding_modes[(mxcsr >> 14) & 3]);
+        fesetround(rounding_modes[(mxcsr >> 13) & 3]);
         XMM[cpu_reg].f[0] -= XMM[cpu_rm].f[0];
         fesetround(FE_TONEAREST);
         check_sse_exceptions(XMM[cpu_reg].f[0]);
@@ -1019,7 +1019,7 @@ opSUBSS_xmm_xmm_a32(uint32_t fetchdat)
             return 1;
         float src_real;
         src_real = *(float *) &src;
-        fesetround(rounding_modes[(mxcsr >> 14) & 3]);
+        fesetround(rounding_modes[(mxcsr >> 13) & 3]);
         XMM[cpu_reg].f[0] -= src_real;
         fesetround(FE_TONEAREST);
         check_sse_exceptions(XMM[cpu_reg].f[0]);
@@ -1191,7 +1191,7 @@ opDIVPS_xmm_xmm_a16(uint32_t fetchdat)
 
     fetch_ea_16(fetchdat);
     if (cpu_mod == 3) {
-        fesetround(rounding_modes[(mxcsr >> 14) & 3]);
+        fesetround(rounding_modes[(mxcsr >> 13) & 3]);
         XMM[cpu_reg].f[0] /= XMM[cpu_rm].f[0];
         XMM[cpu_reg].f[1] /= XMM[cpu_rm].f[1];
         XMM[cpu_reg].f[2] /= XMM[cpu_rm].f[2];
@@ -1223,7 +1223,7 @@ opDIVPS_xmm_xmm_a16(uint32_t fetchdat)
         src_real[1] = *(float *) &src[1];
         src_real[2] = *(float *) &src[2];
         src_real[3] = *(float *) &src[3];
-        fesetround(rounding_modes[(mxcsr >> 14) & 3]);
+        fesetround(rounding_modes[(mxcsr >> 13) & 3]);
         XMM[cpu_reg].f[0] /= src_real[0];
         XMM[cpu_reg].f[1] /= src_real[1];
         XMM[cpu_reg].f[2] /= src_real[2];
@@ -1247,7 +1247,7 @@ opDIVPS_xmm_xmm_a32(uint32_t fetchdat)
 
     fetch_ea_32(fetchdat);
     if (cpu_mod == 3) {
-        fesetround(rounding_modes[(mxcsr >> 14) & 3]);
+        fesetround(rounding_modes[(mxcsr >> 13) & 3]);
         XMM[cpu_reg].f[0] /= XMM[cpu_rm].f[0];
         XMM[cpu_reg].f[1] /= XMM[cpu_rm].f[1];
         XMM[cpu_reg].f[2] /= XMM[cpu_rm].f[2];
@@ -1279,7 +1279,7 @@ opDIVPS_xmm_xmm_a32(uint32_t fetchdat)
         src_real[1] = *(float *) &src[1];
         src_real[2] = *(float *) &src[2];
         src_real[3] = *(float *) &src[3];
-        fesetround(rounding_modes[(mxcsr >> 14) & 3]);
+        fesetround(rounding_modes[(mxcsr >> 13) & 3]);
         XMM[cpu_reg].f[0] /= src_real[0];
         XMM[cpu_reg].f[1] /= src_real[1];
         XMM[cpu_reg].f[2] /= src_real[2];
@@ -1300,7 +1300,7 @@ opDIVSS_xmm_xmm_a16(uint32_t fetchdat)
     feclearexcept(FE_ALL_EXCEPT);
     fetch_ea_16(fetchdat);
     if (cpu_mod == 3) {
-        fesetround(rounding_modes[(mxcsr >> 14) & 3]);
+        fesetround(rounding_modes[(mxcsr >> 13) & 3]);
         XMM[cpu_reg].f[0] /= XMM[cpu_rm].f[0];
         fesetround(FE_TONEAREST);
         check_sse_exceptions(XMM[cpu_reg].f[0]);
@@ -1314,7 +1314,7 @@ opDIVSS_xmm_xmm_a16(uint32_t fetchdat)
             return 1;
         float src_real;
         src_real = *(float *) &src;
-        fesetround(rounding_modes[(mxcsr >> 14) & 3]);
+        fesetround(rounding_modes[(mxcsr >> 13) & 3]);
         XMM[cpu_reg].f[0] /= src_real;
         fesetround(FE_TONEAREST);
         check_sse_exceptions(XMM[cpu_reg].f[0]);
@@ -1329,7 +1329,7 @@ opDIVSS_xmm_xmm_a32(uint32_t fetchdat)
     feclearexcept(FE_ALL_EXCEPT);
     fetch_ea_32(fetchdat);
     if (cpu_mod == 3) {
-        fesetround(rounding_modes[(mxcsr >> 14) & 3]);
+        fesetround(rounding_modes[(mxcsr >> 13) & 3]);
         XMM[cpu_reg].f[0] /= XMM[cpu_rm].f[0];
         fesetround(FE_TONEAREST);
         check_sse_exceptions(XMM[cpu_reg].f[0]);
@@ -1343,7 +1343,7 @@ opDIVSS_xmm_xmm_a32(uint32_t fetchdat)
             return 1;
         float src_real;
         src_real = *(float *) &src;
-        fesetround(rounding_modes[(mxcsr >> 14) & 3]);
+        fesetround(rounding_modes[(mxcsr >> 13) & 3]);
         XMM[cpu_reg].f[0] /= src_real;
         fesetround(FE_TONEAREST);
         check_sse_exceptions(XMM[cpu_reg].f[0]);
