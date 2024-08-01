@@ -702,7 +702,11 @@ generate_call:
 
     op = op_table[((opcode >> opcode_shift) | op_32) & opcode_mask];
 
-    if (!test_modrm || (op_table == x86_dynarec_opcodes && opcode_modrm[opcode]) || (op_table == x86_dynarec_opcodes_0f && opcode_0f_modrm[opcode]) || (op_table == x86_dynarec_opcodes_3DNOW)) {
+    if (!test_modrm || (op_table == x86_dynarec_opcodes && opcode_modrm[opcode])
+    || (op_table == x86_dynarec_opcodes_0f && opcode_0f_modrm[opcode])
+    || (op_table == x86_dynarec_opcodes_REPE_0f && opcode_0f_modrm[opcode])
+    || (op_table == x86_dynarec_opcodes_REPNE_0f && opcode_0f_modrm[opcode])
+    || (op_table == x86_dynarec_opcodes_3DNOW)) {
         int stack_offset = 0;
 
         if (op_table == x86_dynarec_opcodes && opcode == 0x8f) /*POP*/
