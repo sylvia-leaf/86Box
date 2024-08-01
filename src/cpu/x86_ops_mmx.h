@@ -84,9 +84,9 @@ check_sse_exceptions(double result)
 
     int unmasked = (mxcsr >> 7) & 0x3f;
     if (unmasked & 7) {
-        if ((cr4 >> 9) & 1)
+        if (cr4 & CR4_OSXMEX)
             x86_doabrt(0x13);
-        ILLEGAL_ON(!((cr4 >> 9) & 1));
+        ILLEGAL_ON(!(cr4 & CR4_OSXMEX));
     }
     return 0;
 }
