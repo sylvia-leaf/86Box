@@ -213,6 +213,7 @@ opCVTPS2PI_mm_xmm_a16(uint32_t fetchdat)
     else
         dst->l[1] = src.f[1];
     fesetround(FE_TONEAREST);
+    MMX_SETEXP(cpu_reg);
     CLOCK_CYCLES(1);
 
     return 0;
@@ -241,6 +242,7 @@ opCVTPS2PI_mm_xmm_a32(uint32_t fetchdat)
     else
         dst->l[1] = src.f[1];
     fesetround(FE_TONEAREST);
+    MMX_SETEXP(cpu_reg);
     CLOCK_CYCLES(1);
 
     return 0;

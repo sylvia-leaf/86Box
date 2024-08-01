@@ -877,6 +877,7 @@ opPINSRW_xmm_w_a16(uint32_t fetchdat)
             MMX_REG *dst;
             dst = MMX_GETREGP(cpu_reg);
             dst->w[imm & 3] = rm;
+            MMX_SETEXP(cpu_reg);
         }
         CLOCK_CYCLES(1);
     } else {
@@ -893,11 +894,10 @@ opPINSRW_xmm_w_a16(uint32_t fetchdat)
             MMX_REG *dst;
             dst = MMX_GETREGP(cpu_reg);
             dst->w[imm & 3] = src;
+            MMX_SETEXP(cpu_reg);
         }
         CLOCK_CYCLES(2);
     }
-
-    MMX_SETEXP(cpu_reg);
 
     return 0;
 }
@@ -918,6 +918,7 @@ opPINSRW_xmm_w_a32(uint32_t fetchdat)
             MMX_REG *dst;
             dst = MMX_GETREGP(cpu_reg);
             dst->w[imm & 3] = rm;
+            MMX_SETEXP(cpu_reg);
         }
         CLOCK_CYCLES(1);
     } else {
@@ -934,11 +935,10 @@ opPINSRW_xmm_w_a32(uint32_t fetchdat)
             MMX_REG *dst;
             dst = MMX_GETREGP(cpu_reg);
             dst->w[imm & 3] = src;
+            MMX_SETEXP(cpu_reg);
         }
         CLOCK_CYCLES(2);
     }
-    MMX_SETEXP(cpu_reg);
-
     return 0;
 }
 
