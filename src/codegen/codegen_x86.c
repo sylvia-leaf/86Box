@@ -1889,6 +1889,16 @@ codegen_generate_call(uint8_t opcode, OpFn op, uint32_t fetchdat, uint32_t new_p
             case 0x0f:
                 op_table        = x86_dynarec_opcodes_0f;
                 recomp_op_table = fpu_softfloat ? recomp_opcodes_0f_no_mmx : recomp_opcodes_0f;
+                if(is_repe)
+                {
+                    op_table        = x86_dynarec_opcodes_REPE_0f;
+                    recomp_op_table = NULL;
+                }
+                else if(is_repne)
+                {
+                    op_table        = x86_dynarec_opcodes_REPNE_0f;
+                    recomp_op_table = NULL;
+                }
                 over            = 1;
                 break;
 
@@ -1919,6 +1929,7 @@ codegen_generate_call(uint8_t opcode, OpFn op, uint32_t fetchdat, uint32_t new_p
 
             case 0x66: /*Data size select*/
                 op_32 = ((use32 & 0x100) ^ 0x100) | (op_32 & 0x200);
+                sse_xmm = 1;
                 break;
             case 0x67: /*Address size select*/
                 op_32 = ((use32 & 0x200) ^ 0x200) | (op_32 & 0x100);
@@ -2005,10 +2016,12 @@ codegen_generate_call(uint8_t opcode, OpFn op, uint32_t fetchdat, uint32_t new_p
             case 0xf2: /*REPNE*/
                 op_table        = x86_dynarec_opcodes_REPNE;
                 recomp_op_table = recomp_opcodes_REPNE;
+                is_repne = 1;
                 break;
             case 0xf3: /*REPE*/
                 op_table        = x86_dynarec_opcodes_REPE;
                 recomp_op_table = recomp_opcodes_REPE;
+                is_repe = 1;
                 break;
 
             default:

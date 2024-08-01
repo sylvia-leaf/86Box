@@ -301,6 +301,9 @@ static uint8_t ccr4;
 static uint8_t ccr5;
 static uint8_t ccr6;
 
+int is_repe;
+int is_repne;
+
 void
 cpu_INVD(uint8_t wb)
 {
