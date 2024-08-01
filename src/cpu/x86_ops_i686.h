@@ -125,7 +125,7 @@ sf_fx_save_stor_common(uint32_t fetchdat, int bits)
             fpu_state.swd &= ~(FPU_SW_Summary | FPU_SW_Backward);
         }
 
-        if (cpu_features & CPU_FEATURE_SSE) {
+        if ((cpu_features & CPU_FEATURE_SSE) && (cr4 & CR4_OSFXSR)) {
             if (!(cpu_features & CPU_FEATURE_SSE2))
                 mxcsr = readmeml(easeg, cpu_state.eaaddr + 24) & 0xffbf;
             else
@@ -198,7 +198,7 @@ sf_fx_save_stor_common(uint32_t fetchdat, int bits)
             writememw(easeg, cpu_state.eaaddr + (index * 16) + 40, fp.signExp);
         }
 
-        if (cpu_features & CPU_FEATURE_SSE) {
+        if ((cpu_features & CPU_FEATURE_SSE) && (cr4 & CR4_OSFXSR)) {
             writememl(easeg, cpu_state.eaaddr + 24, mxcsr);
             if (!(cpu_features & CPU_FEATURE_SSE2))
                 writememl(easeg, cpu_state.eaaddr + 28, 0xffbf);
@@ -422,7 +422,7 @@ fx_save_stor_common(uint32_t fetchdat, int bits)
 
         x87_settag(rec_ftw);
 
-        if (cpu_features & CPU_FEATURE_SSE) {
+        if ((cpu_features & CPU_FEATURE_SSE) && (cr4 & CR4_OSFXSR)) {
             if (!(cpu_features & CPU_FEATURE_SSE2))
                 mxcsr = readmeml(easeg, cpu_state.eaaddr + 24) & 0xffbf;
             else
@@ -508,7 +508,7 @@ fx_save_stor_common(uint32_t fetchdat, int bits)
             }
         }
 
-        if (cpu_features & CPU_FEATURE_SSE) {
+        if ((cpu_features & CPU_FEATURE_SSE) && (cr4 & CR4_OSFXSR)) {
             writememl(easeg, cpu_state.eaaddr + 24, mxcsr);
             if (!(cpu_features & CPU_FEATURE_SSE2))
                 writememl(easeg, cpu_state.eaaddr + 28, 0xffbf);
