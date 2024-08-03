@@ -2112,7 +2112,7 @@ cpu_set(void)
 
             timing_misaligned = 2;
 
-            cpu_features = CPU_FEATURE_RDTSC | CPU_FEATURE_MMX | CPU_FEATURE_MSR | CPU_FEATURE_CR4 | CPU_FEATURE_3DNOW | CPU_FEATURE_SSE;
+            cpu_features = CPU_FEATURE_RDTSC | CPU_FEATURE_MMX | CPU_FEATURE_MSR | CPU_FEATURE_CR4 | CPU_FEATURE_SSE;
             msr.fcr      = (1 << 8) | (1 << 9) | (1 << 12) | (1 << 16) | (1 << 18) | (1 << 19) | (1 << 20) | (1 << 21);
             cpu_CR4_mask = CR4_TSD | CR4_DE | CR4_MCE | CR4_PCE;
 
@@ -3005,7 +3005,7 @@ cpu_CPUID(void)
                     break;
                 case 0x80000001:
                     EAX = CPUID;
-                    EDX = CPUID_FPU | CPUID_TSC | CPUID_MSR | CPUID_MCE | CPUID_MMX | CPUID_MTRR | CPUID_FXSR | CPUID_3DNOW | CPUID_SSE;
+                    EDX = CPUID_FPU | CPUID_TSC | CPUID_MSR | CPUID_MCE | CPUID_MMX | CPUID_MTRR | CPUID_FXSR | CPUID_SSE;
                     if (cpu_has_feature(CPU_FEATURE_CX8))
                         EDX |= CPUID_CMPXCHG8B;
                     break;
