@@ -630,6 +630,8 @@ opPMULUDQ_mm_a16(uint32_t fetchdat)
 
     dst->q = (uint64_t) dst->l[0] * (uint64_t) src.l[0];
 
+    MMX_SETEXP(cpu_reg);
+
     return 0;
 }
 
@@ -645,6 +647,8 @@ opPMULUDQ_mm_a32(uint32_t fetchdat)
     dst = MMX_GETREGP(cpu_reg);
 
     dst->q = (uint64_t) dst->l[0] * (uint64_t) src.l[0];
+
+    MMX_SETEXP(cpu_reg);
 
     return 0;
 }
