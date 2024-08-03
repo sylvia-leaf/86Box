@@ -33,12 +33,15 @@ opPADDQ_a16(uint32_t fetchdat)
     if (sse_xmm)
         return opPADDQ_xmm_a16(fetchdat);
     MMX_REG src;
+    MMX_REG *dst;
     MMX_ENTER();
 
     fetch_ea_16(fetchdat);
     MMX_GETSRC();
+    dst = MMX_GETREGP(cpu_reg);
 
-    cpu_state.MM[cpu_reg].q += src.q;
+    dst->q += src.q;
+    MMX_SETEXP(cpu_reg);
 
     return 0;
 }
@@ -49,12 +52,15 @@ opPADDQ_a32(uint32_t fetchdat)
     if (sse_xmm)
         return opPADDQ_xmm_a32(fetchdat);
     MMX_REG src;
+    MMX_REG *dst;
     MMX_ENTER();
 
     fetch_ea_32(fetchdat);
     MMX_GETSRC();
+    dst = MMX_GETREGP(cpu_reg);
 
-    cpu_state.MM[cpu_reg].q += src.q;
+    dst->q += src.q;
+    MMX_SETEXP(cpu_reg);
 
     return 0;
 }
@@ -616,11 +622,13 @@ opPMULUDQ_mm_a16(uint32_t fetchdat)
     if (sse_xmm)
         return opPMULUDQ_xmm_a16(fetchdat);
     MMX_REG src;
+    MMX_REG* dst;
 
     fetch_ea_16(fetchdat);
     MMX_GETSRC();
+    dst = MMX_GETREGP(cpu_reg);
 
-    cpu_state.MM[cpu_reg].q = (uint64_t) cpu_state.MM[cpu_reg].l[0] * (uint64_t) src.l[0];
+    dst->q = (uint64_t) dst->l[0] * (uint64_t) src.l[0];
 
     return 0;
 }
@@ -631,11 +639,12 @@ opPMULUDQ_mm_a32(uint32_t fetchdat)
     if (sse_xmm)
         return opPMULUDQ_xmm_a32(fetchdat);
     MMX_REG src;
+    MMX_REG* dst;
 
     fetch_ea_32(fetchdat);
-    MMX_GETSRC();
+    dst = MMX_GETREGP(cpu_reg);
 
-    cpu_state.MM[cpu_reg].q = (uint64_t) cpu_state.MM[cpu_reg].l[0] * (uint64_t) src.l[0];
+    dst->q = (uint64_t) dst->l[0] * (uint64_t) src.l[0];
 
     return 0;
 }
