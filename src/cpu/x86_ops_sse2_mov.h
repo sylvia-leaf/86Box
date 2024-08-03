@@ -1248,8 +1248,8 @@ opSHUFPD_xmm_w_a16(uint32_t fetchdat)
     fetch_ea_16(fetchdat);
     uint8_t imm = getbyte();
     if (cpu_mod == 3) {
-        XMM[cpu_reg].d[0] = XMM[cpu_rm].f[imm & 1];
-        XMM[cpu_reg].d[1] = XMM[cpu_rm].f[(imm >> 1) & 1];
+        XMM[cpu_reg].q[0] = XMM[cpu_rm].q[imm & 1];
+        XMM[cpu_reg].q[1] = XMM[cpu_rm].q[(imm >> 1) & 1];
         CLOCK_CYCLES(1);
     } else {
         uint64_t src[2];
@@ -1274,8 +1274,8 @@ opSHUFPD_xmm_w_a32(uint32_t fetchdat)
     fetch_ea_32(fetchdat);
     uint8_t imm = getbyte();
     if (cpu_mod == 3) {
-        XMM[cpu_reg].d[0] = XMM[cpu_rm].f[imm & 1];
-        XMM[cpu_reg].d[1] = XMM[cpu_rm].f[(imm >> 1) & 1];
+        XMM[cpu_reg].q[0] = XMM[cpu_rm].q[imm & 1];
+        XMM[cpu_reg].q[1] = XMM[cpu_rm].q[(imm >> 1) & 1];
         CLOCK_CYCLES(1);
     } else {
         uint64_t src[2];
@@ -1337,11 +1337,13 @@ opMOVQ_q_xmm_a32(uint32_t fetchdat)
 static int
 opMOVQ2DQ_a16(uint32_t fetchdat)
 {
+    MMX_REG src;
     MMX_ENTER();
     fetch_ea_16(fetchdat);
     ILLEGAL_ON(cpu_mod != 3);
+    MMX_GETSRC();
 
-    XMM[cpu_rm].q[0] = cpu_state.MM[cpu_reg].q;
+    XMM[cpu_rm].q[0] = src.q;
     XMM[cpu_rm].q[1] = 0;
     CLOCK_CYCLES(1);
     return 0;
@@ -1350,11 +1352,13 @@ opMOVQ2DQ_a16(uint32_t fetchdat)
 static int
 opMOVQ2DQ_a32(uint32_t fetchdat)
 {
+    MMX_REG src;
     MMX_ENTER();
     fetch_ea_32(fetchdat);
     ILLEGAL_ON(cpu_mod != 3);
+    MMX_GETSRC();
 
-    XMM[cpu_rm].q[0] = cpu_state.MM[cpu_reg].q;
+    XMM[cpu_rm].q[0] = src.q;
     XMM[cpu_rm].q[1] = 0;
     CLOCK_CYCLES(1);
     return 0;
@@ -1363,11 +1367,14 @@ opMOVQ2DQ_a32(uint32_t fetchdat)
 static int
 opMOVDQ2Q_a16(uint32_t fetchdat)
 {
+    MMX_REG *dst;
     MMX_ENTER();
     fetch_ea_16(fetchdat);
     ILLEGAL_ON(cpu_mod != 3);
+    dst = MMX_GETREGP(cpu_rm);
 
-    cpu_state.MM[cpu_rm].q = XMM[cpu_reg].q[0];
+    dst->q = XMM[cpu_reg].q[0];
+    MMX_SETEXP(cpu_rm);
     CLOCK_CYCLES(1);
     return 0;
 }
@@ -1375,11 +1382,14 @@ opMOVDQ2Q_a16(uint32_t fetchdat)
 static int
 opMOVDQ2Q_a32(uint32_t fetchdat)
 {
+    MMX_REG *dst;
     MMX_ENTER();
     fetch_ea_32(fetchdat);
     ILLEGAL_ON(cpu_mod != 3);
+    dst = MMX_GETREGP(cpu_rm);
 
-    cpu_state.MM[cpu_rm].q = XMM[cpu_reg].q[0];
+    dst->q = XMM[cpu_reg].q[0];
+    MMX_SETEXP(cpu_rm);
     CLOCK_CYCLES(1);
     return 0;
 }
