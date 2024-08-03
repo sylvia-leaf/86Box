@@ -326,7 +326,6 @@ typedef struct {
     uint64_t mtrr_fix16k_8000; /* 0x00000258 */
     uint64_t mtrr_fix16k_a000; /* 0x00000259 */
     uint64_t mtrr_fix4k[8];    /* 0x00000268 - 0x0000026f */
-    uint64_t mtrr_deftype;     /* 0x000002ff */
 
     /* Pentium Pro, Pentium II Klamath, and Pentium II Deschutes MSR's */
     uint64_t pat; /* 0x00000277 - Pentium II Deschutes and later */
