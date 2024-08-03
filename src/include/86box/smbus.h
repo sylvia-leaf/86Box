@@ -98,9 +98,9 @@ typedef struct smbus_sis5595_t {
     void      *i2c;
 } smbus_sis5595_t;
 
-extern void smbus_piix4_get_acpi(smbus_piix4_t *dev, acpi_t *acpi);
-extern void smbus_piix4_get_irq(uint8_t irq, smbus_piix4_t *dev);
-extern void smbus_piix4_smi_en(uint8_t smi_en, smbus_piix4_t *dev);
+extern void    smbus_piix4_get_acpi(smbus_piix4_t *dev, acpi_t *acpi);
+extern void    smbus_piix4_get_irq(uint8_t irq, smbus_piix4_t *dev);
+extern void    smbus_piix4_smi_en(uint8_t smi_en, smbus_piix4_t *dev);
 
 extern void    smbus_piix4_remap(smbus_piix4_t *dev, uint16_t new_io_base, uint8_t enable);
 extern void    smbus_piix4_setclock(smbus_piix4_t *dev, int clock);
