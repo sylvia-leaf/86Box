@@ -278,8 +278,9 @@ opUNPCKLPD_f_xmm_a16(uint32_t fetchdat)
 {
     fetch_ea_16(fetchdat);
     if (cpu_mod == 3) {
+        uint64_t src = XMM[cpu_reg].q[0];
         XMM[cpu_reg].q[0] = XMM[cpu_rm].q[0];
-        XMM[cpu_reg].q[1] = XMM[cpu_reg].q[0];
+        XMM[cpu_reg].q[1] = src;
         CLOCK_CYCLES(1);
     } else {
         uint64_t dst[2];
@@ -303,8 +304,9 @@ opUNPCKLPD_f_xmm_a32(uint32_t fetchdat)
 {
     fetch_ea_32(fetchdat);
     if (cpu_mod == 3) {
+        uint64_t src = XMM[cpu_reg].q[0];
         XMM[cpu_reg].q[0] = XMM[cpu_rm].q[0];
-        XMM[cpu_reg].q[1] = XMM[cpu_reg].q[0];
+        XMM[cpu_reg].q[1] = src;
         CLOCK_CYCLES(1);
     } else {
         uint64_t dst[2];
