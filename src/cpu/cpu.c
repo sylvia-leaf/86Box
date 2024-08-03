@@ -2996,7 +2996,7 @@ cpu_CPUID(void)
                 case 1:
                     EAX = CPUID;
                     EBX = ECX = 0;
-                    EDX       = CPUID_FPU | CPUID_TSC | CPUID_MSR | CPUID_MCE | CPUID_MMX | CPUID_MTRR | CPUID_FXSR | CPUID_SSE;
+                    EDX       = CPUID_FPU | CPUID_TSC | CPUID_MSR | CPUID_MCE | CPUID_MMX | CPUID_MTRR | CPUID_CMOV | CPUID_FXSR | CPUID_SSE;
                     if (cpu_has_feature(CPU_FEATURE_CX8))
                         EDX |= CPUID_CMPXCHG8B;
                     break;
@@ -3005,7 +3005,7 @@ cpu_CPUID(void)
                     break;
                 case 0x80000001:
                     EAX = CPUID;
-                    EDX = CPUID_FPU | CPUID_TSC | CPUID_MSR | CPUID_MCE | CPUID_MMX | CPUID_MTRR | CPUID_FXSR | CPUID_SSE;
+                    EDX = CPUID_FPU | CPUID_TSC | CPUID_MSR | CPUID_MCE | CPUID_MMX | CPUID_MTRR | CPUID_CMOV | CPUID_FXSR | CPUID_SSE;
                     if (cpu_has_feature(CPU_FEATURE_CX8))
                         EDX |= CPUID_CMPXCHG8B;
                     break;
