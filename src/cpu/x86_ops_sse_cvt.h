@@ -4,7 +4,9 @@ opCVTPI2PS_xmm_mm_a16(uint32_t fetchdat)
 {
     MMX_REG src;
 
-    feclearexcept(FE_ALL_EXCEPT);
+    if ((cpu_features & CPU_FEATURE_SSE2) && sse_xmm)
+        return opCVTPI2PD_xmm_mm_a16(fetchdat);
+
     MMX_ENTER();
     fetch_ea_16(fetchdat);
     MMX_GETSRC();
@@ -24,7 +26,9 @@ opCVTPI2PS_xmm_mm_a32(uint32_t fetchdat)
 {
     MMX_REG src;
 
-    feclearexcept(FE_ALL_EXCEPT);
+    if ((cpu_features & CPU_FEATURE_SSE2) && sse_xmm)
+        return opCVTPI2PD_xmm_mm_a32(fetchdat);
+
     MMX_ENTER();
     fetch_ea_32(fetchdat);
     MMX_GETSRC();
@@ -42,7 +46,6 @@ opCVTPI2PS_xmm_mm_a32(uint32_t fetchdat)
 static int
 opCVTSI2SS_xmm_l_a16(uint32_t fetchdat)
 {
-    feclearexcept(FE_ALL_EXCEPT);
     fetch_ea_16(fetchdat);
     if (cpu_mod == 3) {
         fesetround(rounding_modes[(mxcsr >> 13) & 3]);
@@ -70,7 +73,6 @@ opCVTSI2SS_xmm_l_a16(uint32_t fetchdat)
 static int
 opCVTSI2SS_xmm_l_a32(uint32_t fetchdat)
 {
-    feclearexcept(FE_ALL_EXCEPT);
     fetch_ea_32(fetchdat);
     if (cpu_mod == 3) {
         fesetround(rounding_modes[(mxcsr >> 13) & 3]);
@@ -101,7 +103,9 @@ opCVTTPS2PI_mm_xmm_a16(uint32_t fetchdat)
     SSE_REG  src;
     MMX_REG *dst;
 
-    feclearexcept(FE_ALL_EXCEPT);
+    if ((cpu_features & CPU_FEATURE_SSE2) && sse_xmm)
+        return opCVTTPD2PI_mm_xmm_a16(fetchdat);
+
     MMX_ENTER();
     fetch_ea_16(fetchdat);
 
@@ -109,8 +113,6 @@ opCVTTPS2PI_mm_xmm_a16(uint32_t fetchdat)
     SSE_GETSRC();
     dst->l[0] = trunc(src.f[0]);
     dst->l[1] = trunc(src.f[1]);
-    check_sse_exceptions(src.f[0]);
-    check_sse_exceptions(src.f[1]);
     MMX_SETEXP(cpu_reg);
     CLOCK_CYCLES(1);
 
@@ -123,15 +125,15 @@ opCVTTPS2PI_mm_xmm_a32(uint32_t fetchdat)
     SSE_REG  src;
     MMX_REG *dst;
 
-    feclearexcept(FE_ALL_EXCEPT);
+    if ((cpu_features & CPU_FEATURE_SSE2) && sse_xmm)
+        return opCVTTPD2PI_mm_xmm_a32(fetchdat);
+
     MMX_ENTER();
     fetch_ea_32(fetchdat);
     dst = MMX_GETREGP(cpu_reg);
     SSE_GETSRC();
     dst->l[0] = trunc(src.f[0]);
     dst->l[1] = trunc(src.f[1]);
-    check_sse_exceptions(src.f[0]);
-    check_sse_exceptions(src.f[1]);
     MMX_SETEXP(cpu_reg);
     CLOCK_CYCLES(1);
 
@@ -141,7 +143,6 @@ opCVTTPS2PI_mm_xmm_a32(uint32_t fetchdat)
 static int
 opCVTTSS2SI_l_xmm_a16(uint32_t fetchdat)
 {
-    feclearexcept(FE_ALL_EXCEPT);
     fetch_ea_16(fetchdat);
     if (cpu_mod == 3) {
         setr32(cpu_reg, trunc(XMM[cpu_rm].f[0]));
@@ -167,7 +168,6 @@ opCVTTSS2SI_l_xmm_a16(uint32_t fetchdat)
 static int
 opCVTTSS2SI_l_xmm_a32(uint32_t fetchdat)
 {
-    feclearexcept(FE_ALL_EXCEPT);
     fetch_ea_32(fetchdat);
     if (cpu_mod == 3) {
         setr32(cpu_reg, trunc(XMM[cpu_rm].f[0]));
@@ -196,25 +196,23 @@ opCVTPS2PI_mm_xmm_a16(uint32_t fetchdat)
     SSE_REG  src;
     MMX_REG *dst;
 
-    feclearexcept(FE_ALL_EXCEPT);
+    if ((cpu_features & CPU_FEATURE_SSE2) && sse_xmm)
+        return opCVTPD2PI_mm_xmm_a16(fetchdat);
+
     MMX_ENTER();
     fetch_ea_16(fetchdat);
     dst = MMX_GETREGP(cpu_reg);
     SSE_GETSRC();
     fesetround(rounding_modes[(mxcsr >> 13) & 3]);
-    if (src.f[0] > 2147483647.0) {
+    if (src.f[0] > 2147483647.0)
         dst->l[0] = 0x80000000;
-        mxcsr |= 1;
-    } else
+    else
         dst->l[0] = src.f[0];
-    if (src.f[1] > 2147483647.0) {
+    if (src.f[1] > 2147483647.0)
         dst->l[1] = 0x80000000;
-        mxcsr |= 1;
-    } else
+    else
         dst->l[1] = src.f[1];
     fesetround(FE_TONEAREST);
-    check_sse_exceptions(src.f[0]);
-    check_sse_exceptions(src.f[1]);
     MMX_SETEXP(cpu_reg);
     CLOCK_CYCLES(1);
 
@@ -227,25 +225,23 @@ opCVTPS2PI_mm_xmm_a32(uint32_t fetchdat)
     SSE_REG  src;
     MMX_REG *dst;
 
-    feclearexcept(FE_ALL_EXCEPT);
+    if ((cpu_features & CPU_FEATURE_SSE2) && sse_xmm)
+        return opCVTPD2PI_mm_xmm_a32(fetchdat);
+
     MMX_ENTER();
     fetch_ea_32(fetchdat);
     dst = MMX_GETREGP(cpu_reg);
     SSE_GETSRC();
     fesetround(rounding_modes[(mxcsr >> 13) & 3]);
-    if (src.f[0] > 2147483647.0) {
+    if (src.f[0] > 2147483647.0)
         dst->l[0] = 0x80000000;
-        mxcsr |= 1;
-    } else
+    else
         dst->l[0] = src.f[0];
-    if (src.f[1] > 2147483647.0) {
+    if (src.f[1] > 2147483647.0)
         dst->l[1] = 0x80000000;
-        mxcsr |= 1;
-    } else
+    else
         dst->l[1] = src.f[1];
     fesetround(FE_TONEAREST);
-    check_sse_exceptions(src.f[0]);
-    check_sse_exceptions(src.f[1]);
     MMX_SETEXP(cpu_reg);
     CLOCK_CYCLES(1);
 
@@ -255,7 +251,6 @@ opCVTPS2PI_mm_xmm_a32(uint32_t fetchdat)
 static int
 opCVTSS2SI_l_xmm_a16(uint32_t fetchdat)
 {
-    feclearexcept(FE_ALL_EXCEPT);
     fetch_ea_16(fetchdat);
     if (cpu_mod == 3) {
         fesetround(rounding_modes[(mxcsr >> 13) & 3]);
@@ -285,7 +280,6 @@ opCVTSS2SI_l_xmm_a16(uint32_t fetchdat)
 static int
 opCVTSS2SI_l_xmm_a32(uint32_t fetchdat)
 {
-    feclearexcept(FE_ALL_EXCEPT);
     fetch_ea_32(fetchdat);
     if (cpu_mod == 3) {
         fesetround(rounding_modes[(mxcsr >> 13) & 3]);
