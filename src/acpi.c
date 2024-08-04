@@ -2786,7 +2786,7 @@ acpi_init(const device_t *info)
             dev->suspend_types[6] = SUS_POWER_OFF;
             dev->suspend_types[7] = SUS_POWER_OFF;
             break;
-        
+
         case VEN_SIS_5582:
             dev->suspend_types[0] = SUS_SUSPEND;      /* S1 */
             dev->suspend_types[4] = SUS_POWER_OFF;    /* S5 */
