@@ -7251,16 +7251,16 @@ const cpu_family_t cpu_families[] = {
         .name          = "Pentium III (Katmai)",
         .internal_name = "pentium3_katmai",
         .cpus          = (const CPU[]) {
-            { "100",     CPU_PENTIUM3, fpus_internal, 100000000, 1.0, 1600, 0x673, 0x673, 0, CPU_SUPPORTS_DYNAREC | CPU_REQUIRES_DYNAREC, 41, 41, 14, 14, 60 }, /* out of spec */
-            { "150",     CPU_PENTIUM3, fpus_internal, 150000000, 1.5, 1600, 0x673, 0x673, 0, CPU_SUPPORTS_DYNAREC | CPU_REQUIRES_DYNAREC, 41, 41, 14, 14, 60 }, /* out of spec */
-            { "200",     CPU_PENTIUM3, fpus_internal, 200000000, 2.0, 1600, 0x673, 0x673, 0, CPU_SUPPORTS_DYNAREC | CPU_REQUIRES_DYNAREC, 41, 41, 14, 14, 60 }, /* out of spec */
-            { "250",     CPU_PENTIUM3, fpus_internal, 250000000, 2.5, 1600, 0x673, 0x673, 0, CPU_SUPPORTS_DYNAREC | CPU_REQUIRES_DYNAREC, 41, 41, 14, 14, 60 }, /* out of spec */
-            { "300",     CPU_PENTIUM3, fpus_internal, 300000000, 3.0, 1600, 0x673, 0x673, 0, CPU_SUPPORTS_DYNAREC | CPU_REQUIRES_DYNAREC, 41, 41, 14, 14, 60 }, /* out of spec */
-            { "350",     CPU_PENTIUM3, fpus_internal, 350000000, 3.5, 1600, 0x673, 0x673, 0, CPU_SUPPORTS_DYNAREC | CPU_REQUIRES_DYNAREC, 41, 41, 14, 14, 60 }, /* out of spec */
-            { "400",     CPU_PENTIUM3, fpus_internal, 400000000, 4.0, 1600, 0x673, 0x673, 0, CPU_SUPPORTS_DYNAREC | CPU_REQUIRES_DYNAREC, 41, 41, 14, 14, 60 }, /* out of spec */
+            { "100",     CPU_PENTIUM3, fpus_internal, 100000000, 1.0, 1600, 0x673, 0x673, 0, CPU_SUPPORTS_DYNAREC | CPU_REQUIRES_DYNAREC, 41, 41, 14, 14, 12 }, /* out of spec */
+            { "150",     CPU_PENTIUM3, fpus_internal, 150000000, 1.5, 1600, 0x673, 0x673, 0, CPU_SUPPORTS_DYNAREC | CPU_REQUIRES_DYNAREC, 41, 41, 14, 14, 18 }, /* out of spec */
+            { "200",     CPU_PENTIUM3, fpus_internal, 200000000, 2.0, 1600, 0x673, 0x673, 0, CPU_SUPPORTS_DYNAREC | CPU_REQUIRES_DYNAREC, 41, 41, 14, 14, 24 }, /* out of spec */
+            { "250",     CPU_PENTIUM3, fpus_internal, 250000000, 2.5, 1600, 0x673, 0x673, 0, CPU_SUPPORTS_DYNAREC | CPU_REQUIRES_DYNAREC, 41, 41, 14, 14, 30 }, /* out of spec */
+            { "300",     CPU_PENTIUM3, fpus_internal, 300000000, 3.0, 1600, 0x673, 0x673, 0, CPU_SUPPORTS_DYNAREC | CPU_REQUIRES_DYNAREC, 41, 41, 14, 14, 36 }, /* out of spec */
+            { "350",     CPU_PENTIUM3, fpus_internal, 350000000, 3.5, 1600, 0x673, 0x673, 0, CPU_SUPPORTS_DYNAREC | CPU_REQUIRES_DYNAREC, 41, 41, 14, 14, 42 }, /* out of spec */
+            { "400",     CPU_PENTIUM3, fpus_internal, 400000000, 4.0, 1600, 0x673, 0x673, 0, CPU_SUPPORTS_DYNAREC | CPU_REQUIRES_DYNAREC, 41, 41, 14, 14, 48 }, /* out of spec */
             { "450",     CPU_PENTIUM3, fpus_internal, 450000000, 4.5, 2050, 0x673, 0x673, 0, CPU_SUPPORTS_DYNAREC | CPU_REQUIRES_DYNAREC, 41, 41, 14, 14, 54 },
             { "500",     CPU_PENTIUM3, fpus_internal, 500000000, 5.0, 2050, 0x673, 0x673, 0, CPU_SUPPORTS_DYNAREC | CPU_REQUIRES_DYNAREC, 41, 41, 14, 14, 60 },
-            { "533",     CPU_PENTIUM3, fpus_internal, 533333333, 4.0, 2050, 0x673, 0x673, 0, CPU_SUPPORTS_DYNAREC | CPU_REQUIRES_DYNAREC, 41, 41, 14, 14, 60 },
+            { "533",     CPU_PENTIUM3, fpus_internal, 533333333, 4.0, 2050, 0x673, 0x673, 0, CPU_SUPPORTS_DYNAREC | CPU_REQUIRES_DYNAREC, 41, 41, 14, 14, 64 },
             { "550",     CPU_PENTIUM3, fpus_internal, 550000000, 5.5, 2050, 0x673, 0x673, 0, CPU_SUPPORTS_DYNAREC | CPU_REQUIRES_DYNAREC, 41, 41, 14, 14, 66 },
             { "600",     CPU_PENTIUM3, fpus_internal, 600000000, 6.0, 2050, 0x673, 0x673, 0, CPU_SUPPORTS_DYNAREC | CPU_REQUIRES_DYNAREC, 41, 41, 14, 14, 72 },
             { "600/133", CPU_PENTIUM3, fpus_internal, 600000000, 4.5, 2050, 0x673, 0x673, 0, CPU_SUPPORTS_DYNAREC | CPU_REQUIRES_DYNAREC, 41, 41, 14, 14, 72 },
@@ -8219,6 +8219,7 @@ const cpu_family_t cpu_families[] = {
             { .name = "", 0 }
         }
     },
+#if defined(DEV_BRANCH) && defined(USE_GENERICINTEL)
     {
         .package       = CPU_PKG_SOCKET370,
         .manufacturer  = "Intel",
@@ -8243,6 +8244,7 @@ const cpu_family_t cpu_families[] = {
             { .name = "", 0 }
         }
     },
+#endif
     { .package = 0, 0 }
   // clang-format on
 };
