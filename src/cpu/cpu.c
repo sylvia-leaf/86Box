@@ -1837,7 +1837,7 @@ cpu_set(void)
             cpu_features = CPU_FEATURE_RDTSC | CPU_FEATURE_MSR | CPU_FEATURE_CR4 | CPU_FEATURE_VME | CPU_FEATURE_MMX | CPU_FEATURE_SSE;
             msr.fcr      = (1 << 8) | (1 << 9) | (1 << 12) | (1 << 16) | (1 << 19) | (1 << 21);
             cpu_CR4_mask = CR4_VME | CR4_PVI | CR4_TSD | CR4_DE | CR4_PSE | CR4_MCE | CR4_PAE | CR4_PCE | CR4_PGE;
-            cpu_CR4_mask |= CR4_OSFXSR | CR4_OSXMMEXCPT;
+            cpu_CR4_mask |= CR4_OSFXSR   | CR4_OSXMMEXCPT;
 
 #ifdef USE_DYNAREC
             codegen_timing_set(&codegen_timing_p6);
@@ -2897,104 +2897,19 @@ cpu_CPUID(void)
 
         case CPU_PENTIUM3:
             if (!EAX) {
-                EAX = (((CPUID >= 0x6b0) || (msr.bbl_cr_ctl & (1 << 21))) ? 0x00000002 : 0x00000003);
+                EAX = 0x00000002;
                 EBX = 0x756e6547;
                 EDX = 0x49656e69;
                 ECX = 0x6c65746e;
             } else if (EAX == 1) {
-                if (CPUID >= 0x680) { /* Brand ID (Coppermine+) */
-                    if (!strncmp(cpu_f->internal_name, "celeron", 7)) {
-                        if (CPUID == 0x6b1) /* Tualatin-256 stepping 1 */
-                            EBX = 0x3;
-                        else /* Other Celeron */
-                            EBX = 0x1;
-                    } else if ((CPUID >= 0x6b0) && ((cpu_s->rspeed == 1266666666) || (cpu_s->rspeed == 1400000000))) /* Tualatin-S */
-                        EBX = 0x4;
-                    else if (cpu_f->package == CPU_PKG_SLOT2) /* Pentium III Xeon */
-                        EBX = 0x3;
-                    else /* Other Pentium III's */
-                        EBX = 0x2;
-                } else
-                    EBX = 0;
-                ECX = 0;
-                EDX = CPUID_FPU | CPUID_VME | CPUID_DE | CPUID_PSE | CPUID_TSC | CPUID_MSR | CPUID_PAE | CPUID_MCE | CPUID_CMPXCHG8B | CPUID_MMX | CPUID_MTRR | CPUID_PGE | CPUID_MCA | CPUID_SEP | CPUID_FXSR | CPUID_CMOV | CPUID_SSE;
-                if ((CPUID < 0x6b0) && !(msr.bbl_cr_ctl & (1 << 21)))
-                    EDX |= CPUID_PSN;
-            } else if (EAX == 2) {
-                EAX = 0x03020101; /* Instruction TLB: 4 KB pages, 4-way set associative, 32 entries
-                                     Instruction TLB: 4 MB pages, fully associative, 2 entries
-                                     Data TLB: 4 KB pages, 4-way set associative, 64 entries */
+                EAX = CPUID;
                 EBX = ECX = 0;
-                                if (cpu_f->package == CPU_PKG_SLOT2) { /* Pentium III Xeon */
-                    if (CPUID >= 0x6a0) /* Cascades 2 MB */
-                        EDX = 0x0c040885; /* 2nd-level cache: 2 MB, 8-way set associative, 32-byte line size
-                                             1st-level data cache: 16 KB, 4-way set associative, 32-byte line size
-                                             Data TLB: 4 MB pages, 4-way set associative, 8 entries
-                                             1st-level instruction cache: 16 KB, 4-way set associative, 32-byte line size */
-                    else if (CPUID >= 0x680) /* Cascades */
-                        EDX = 0x0c040882; /* 2nd-level cache: 256 KB, 8-way set associative, 32-byte line size */
-                    else /* Tanner */
-                        EDX = 0x0c040845; /* 2nd-level cache: 2 MB, 4-way set associative, 32-byte line size */
-                } else if (!strncmp(cpu_f->internal_name, "celeron", 7)) { /* Celeron */
-                    if (CPUID >= 0x6b0) /* Tualatin-256 */
-                        EDX = 0x0c040882; /* 2nd-level cache: 256 KB, 8-way set associative, 32-byte line size */
-                    else /* Coppermine-128 */
-                        EDX = 0x0c040841; /* 2nd-level cache: 128 KB, 4-way set associative, 32-byte line size */
-                } else { /* Pentium III */
-                    if ((CPUID >= 0x6b0) && ((cpu_s->rspeed == 1266666666) || (cpu_s->rspeed == 1400000000))) /* Tualatin-S */
-                        EDX = 0x0c040883; /* 2nd-level cache: 512 KB, 8-way set associative, 32-byte line size */
-                    else if (CPUID >= 0x680) /* Coppermine and Tualatin */
-                        EDX = 0x0c040882; /* 2nd-level cache: 256 KB, 8-way set associative, 32-byte line size */
-                    else /* Katmai */
-                        EDX = 0x0c040843; /* 2nd-level cache: 512 KB, 4-way set associative, 32-byte line size */
-                }
-            }else if ((CPUID < 0x6b0) && (EAX == 3) && !(msr.bbl_cr_ctl & (1 << 21))) { /* Serial number (Katmai/Coppermine) */
-                EAX = EBX = 0;
-                ECX = 0x0000086b;
-                EDX = 0x00000000;
-            } else if ((CPUID >= 0x6b0) && (EAX == 0x80000000)) {
-                EAX = 0x80000004;
-                EBX = ECX = EDX = 0;
-            } else if ((CPUID >= 0x6b0) && (EAX == 0x80000002)) { /* Brand string (Tualatin+) */
-                EAX = 0x65746e49; /*Intel(R)*/
-                EBX = 0x2952286c;
-                if (!strncmp(cpu_f->internal_name, "celeron", 7)) {
-                    ECX = 0x6c654320; /* Celeron*/
-                    EDX = 0x6e6f7265;
-                } else {
-                    ECX = 0x6e655020; /* Pentium*/
-                    EDX = 0x6d756974;
-                }
-            } else if ((CPUID >= 0x6b0) && (EAX == 0x80000003)) { /* Brand string, continued */
-                if (!strncmp(cpu_f->internal_name, "celeron", 7)) {
-                    EAX = 0x294d5428; /*(TM) CPU        */
-                    EBX = 0x55504320;
-                    ECX = EDX = 0x20202020;
-                } else {
-                    EAX = 0x20295228; /*(R) III CPU */
-                    EBX = 0x20494949;
-                    ECX = 0x20555043;
-                    if (!((cpu_s->rspeed == 1266666666) || (cpu_s->rspeed == 1400000000)))
-                        EDX = 0x20202020; /*    */
-                    else if (CPUID < 0x6b4)
-                        EDX = 0x696d6166; /*fami*/
-                    else 
-                        EDX = 0x2053202d; /*- S */
-                }
-            } else if ((CPUID >= 0x6b0) && (EAX == 0x80000004)) { /* Brand string, continued */
-                if (((cpu_s->rspeed == 1266666666) || (cpu_s->rspeed == 1400000000)) && (CPUID < 0x6b4))
-                    EAX = 0x2020796c; /*ly  */
-                else
-                    EAX = 0x20202020; /*    */
-                EBX = 0x20202020; /*    */
-                ECX = 0x20303030;
-                uint32_t mhz = cpu_s->rspeed / 1000000;
-                if (mhz < 1000)
-                    ECX |= (((mhz % 10) << 16) | (((mhz / 10) % 10) << 8) | ((mhz / 100) % 10));
-                else
-                    ECX |= ((1 << 28) | ((mhz % 10) << 24) | (((mhz / 10) % 10) << 16) | (((mhz / 100) % 10) << 8) | (mhz / 1000));
-                EDX = 0x007a484d; /*MHz*/
-             } else
+                EDX       = CPUID_FPU | CPUID_VME | CPUID_PSE | CPUID_TSC | CPUID_MSR | CPUID_PAE | CPUID_MCE | CPUID_CMPXCHG8B | CPUID_MMX | CPUID_MTRR | CPUID_PGE | CPUID_MCA | CPUID_SEP | CPUID_FXSR | CPUID_CMOV | CPUID_SSE;
+            } else if (EAX == 2) {
+                EAX = 0x00000001;
+                EBX = ECX = 0;
+                EDX       = 0x00000000;
+            } else
                 EAX = EBX = ECX = EDX = 0;
             break;
 
