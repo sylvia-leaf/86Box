@@ -334,10 +334,6 @@ typedef struct {
        on the VIA Cyrix III */
     uint64_t mtrr_deftype; /* 0x000002ff */
 
-     /* Pentium Pro, Pentium II Klamath, and Pentium II Deschutes MSR's that are also
-       on the VIA Cyrix III */
-    uint64_t mtrr_deftype; /* 0x000002ff */
-
     /* Pentium II/III/IV MSR's needed for late BIOS */
     uint64_t ecx1a0; /* 0x000001a0 */
     uint64_t ecx198; /* 0x00000198 */
