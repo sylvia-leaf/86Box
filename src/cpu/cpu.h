@@ -328,7 +328,11 @@ typedef struct {
     uint64_t mtrr_fix4k[8];    /* 0x00000268 - 0x0000026f */
 
     /* Pentium Pro, Pentium II Klamath, and Pentium II Deschutes MSR's */
-    uint64_t pat; /* 0x00000277 */
+    uint64_t pat; /* 0x00000277 - Pentium II Deschutes and later */
+
+    /* Pentium Pro, Pentium II Klamath, and Pentium II Deschutes MSR's that are also
+       on the VIA Cyrix III */
+    uint64_t mtrr_deftype; /* 0x000002ff */
 
     /* Pentium II/III/IV MSR's needed for late BIOS */
     uint64_t ecx1a0; /* 0x000001a0 */
@@ -343,13 +347,13 @@ typedef struct {
     /* K7 MSRs */
     uint64_t amd_syscfg; /* 0xc0010010 */
 
-    uint64_t amd_hwcr_athlon;      /* 0xc0010015 */
-    uint64_t amd_iorrbase1; /* 0xc0010016 */
-    uint64_t amd_iorrmask1; /* 0xc0010017 */
-    uint64_t amd_iorrbase2; /* 0xc0010018 */
-    uint64_t amd_iorrmask2; /* 0xc0010019 */
-    uint64_t amd_topmem;    /* 0xc001001a */
-    uint64_t amd_clkctl;    /* 0xc001001b */
+    uint64_t amd_hwcr_athlon; /* 0xc0010015 */
+    uint64_t amd_iorrbase1;   /* 0xc0010016 */
+    uint64_t amd_iorrmask1;   /* 0xc0010017 */
+    uint64_t amd_iorrbase2;   /* 0xc0010018 */
+    uint64_t amd_iorrmask2;   /* 0xc0010019 */
+    uint64_t amd_topmem;      /* 0xc001001a */
+    uint64_t amd_clkctl;      /* 0xc001001b */
 
     uint64_t ecxc001001c; /* 0xc001001c */
 
