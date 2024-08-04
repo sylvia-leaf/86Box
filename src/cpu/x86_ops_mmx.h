@@ -86,7 +86,7 @@ check_sse_exceptions(double result)
     if (unmasked & 7) {
         if (cr4 & CR4_OSXMEX)
             x86_doabrt(0x13);
-        ILLEGAL_ON(!(cr4 & CR4_OSXMEX));
+        ILLEGAL_ON(!(cr4 & CR4_OSFXSR));
     }
     return 0;
 }
