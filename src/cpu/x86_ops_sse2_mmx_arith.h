@@ -70,14 +70,14 @@ opPMULLW_xmm_a16(uint32_t fetchdat)
 {
     fetch_ea_16(fetchdat);
     if (cpu_mod == 3) {
-        XMM[cpu_reg].w[0] *= XMM[cpu_rm].w[0];
-        XMM[cpu_reg].w[1] *= XMM[cpu_rm].w[1];
-        XMM[cpu_reg].w[2] *= XMM[cpu_rm].w[2];
-        XMM[cpu_reg].w[3] *= XMM[cpu_rm].w[3];
-        XMM[cpu_reg].w[4] *= XMM[cpu_rm].w[4];
-        XMM[cpu_reg].w[5] *= XMM[cpu_rm].w[5];
-        XMM[cpu_reg].w[6] *= XMM[cpu_rm].w[6];
-        XMM[cpu_reg].w[7] *= XMM[cpu_rm].w[7];
+        XMM[cpu_reg].sw[0] *= XMM[cpu_rm].sw[0];
+        XMM[cpu_reg].sw[1] *= XMM[cpu_rm].sw[1];
+        XMM[cpu_reg].sw[2] *= XMM[cpu_rm].sw[2];
+        XMM[cpu_reg].sw[3] *= XMM[cpu_rm].sw[3];
+        XMM[cpu_reg].sw[4] *= XMM[cpu_rm].sw[4];
+        XMM[cpu_reg].sw[5] *= XMM[cpu_rm].sw[5];
+        XMM[cpu_reg].sw[6] *= XMM[cpu_rm].sw[6];
+        XMM[cpu_reg].sw[7] *= XMM[cpu_rm].sw[7];
         CLOCK_CYCLES(1);
     } else {
         SSE_REG src;
@@ -87,14 +87,14 @@ opPMULLW_xmm_a16(uint32_t fetchdat)
         src.q[1] = readmemq(easeg, cpu_state.eaaddr + 8);
         if (cpu_state.abrt)
             return 0;
-        XMM[cpu_reg].w[0] *= src.w[0];
-        XMM[cpu_reg].w[1] *= src.w[1];
-        XMM[cpu_reg].w[2] *= src.w[2];
-        XMM[cpu_reg].w[3] *= src.w[3];
-        XMM[cpu_reg].w[4] *= src.w[4];
-        XMM[cpu_reg].w[5] *= src.w[5];
-        XMM[cpu_reg].w[6] *= src.w[6];
-        XMM[cpu_reg].w[7] *= src.w[7];
+        XMM[cpu_reg].sw[0] *= src.sw[0];
+        XMM[cpu_reg].sw[1] *= src.sw[1];
+        XMM[cpu_reg].sw[2] *= src.sw[2];
+        XMM[cpu_reg].sw[3] *= src.sw[3];
+        XMM[cpu_reg].sw[4] *= src.sw[4];
+        XMM[cpu_reg].sw[5] *= src.sw[5];
+        XMM[cpu_reg].sw[6] *= src.sw[6];
+        XMM[cpu_reg].sw[7] *= src.sw[7];
         CLOCK_CYCLES(2);
     }
     return 0;
@@ -105,14 +105,14 @@ opPMULLW_xmm_a32(uint32_t fetchdat)
 {
     fetch_ea_16(fetchdat);
     if (cpu_mod == 3) {
-        XMM[cpu_reg].w[0] *= XMM[cpu_rm].w[0];
-        XMM[cpu_reg].w[1] *= XMM[cpu_rm].w[1];
-        XMM[cpu_reg].w[2] *= XMM[cpu_rm].w[2];
-        XMM[cpu_reg].w[3] *= XMM[cpu_rm].w[3];
-        XMM[cpu_reg].w[4] *= XMM[cpu_rm].w[4];
-        XMM[cpu_reg].w[5] *= XMM[cpu_rm].w[5];
-        XMM[cpu_reg].w[6] *= XMM[cpu_rm].w[6];
-        XMM[cpu_reg].w[7] *= XMM[cpu_rm].w[7];
+        XMM[cpu_reg].sw[0] *= XMM[cpu_rm].sw[0];
+        XMM[cpu_reg].sw[1] *= XMM[cpu_rm].sw[1];
+        XMM[cpu_reg].sw[2] *= XMM[cpu_rm].sw[2];
+        XMM[cpu_reg].sw[3] *= XMM[cpu_rm].sw[3];
+        XMM[cpu_reg].sw[4] *= XMM[cpu_rm].sw[4];
+        XMM[cpu_reg].sw[5] *= XMM[cpu_rm].sw[5];
+        XMM[cpu_reg].sw[6] *= XMM[cpu_rm].sw[6];
+        XMM[cpu_reg].sw[7] *= XMM[cpu_rm].sw[7];
         CLOCK_CYCLES(1);
     } else {
         SSE_REG src;
@@ -122,14 +122,14 @@ opPMULLW_xmm_a32(uint32_t fetchdat)
         src.q[1] = readmemq(easeg, cpu_state.eaaddr + 8);
         if (cpu_state.abrt)
             return 0;
-        XMM[cpu_reg].w[0] *= src.w[0];
-        XMM[cpu_reg].w[1] *= src.w[1];
-        XMM[cpu_reg].w[2] *= src.w[2];
-        XMM[cpu_reg].w[3] *= src.w[3];
-        XMM[cpu_reg].w[4] *= src.w[4];
-        XMM[cpu_reg].w[5] *= src.w[5];
-        XMM[cpu_reg].w[6] *= src.w[6];
-        XMM[cpu_reg].w[7] *= src.w[7];
+        XMM[cpu_reg].sw[0] *= src.sw[0];
+        XMM[cpu_reg].sw[1] *= src.sw[1];
+        XMM[cpu_reg].sw[2] *= src.sw[2];
+        XMM[cpu_reg].sw[3] *= src.sw[3];
+        XMM[cpu_reg].sw[4] *= src.sw[4];
+        XMM[cpu_reg].sw[5] *= src.sw[5];
+        XMM[cpu_reg].sw[6] *= src.sw[6];
+        XMM[cpu_reg].sw[7] *= src.sw[7];
         CLOCK_CYCLES(2);
     }
     return 0;
@@ -331,14 +331,14 @@ opPMULHW_xmm_a16(uint32_t fetchdat)
 {
     fetch_ea_16(fetchdat);
     if (cpu_mod == 3) {
-        XMM[cpu_reg].w[0] = ((int32_t) XMM[cpu_reg].sw[0] * (int32_t) XMM[cpu_rm].sw[0]) >> 16;
-        XMM[cpu_reg].w[1] = ((int32_t) XMM[cpu_reg].sw[1] * (int32_t) XMM[cpu_rm].sw[1]) >> 16;
-        XMM[cpu_reg].w[2] = ((int32_t) XMM[cpu_reg].sw[2] * (int32_t) XMM[cpu_rm].sw[2]) >> 16;
-        XMM[cpu_reg].w[3] = ((int32_t) XMM[cpu_reg].sw[3] * (int32_t) XMM[cpu_rm].sw[3]) >> 16;
-        XMM[cpu_reg].w[4] = ((int32_t) XMM[cpu_reg].sw[4] * (int32_t) XMM[cpu_rm].sw[4]) >> 16;
-        XMM[cpu_reg].w[5] = ((int32_t) XMM[cpu_reg].sw[5] * (int32_t) XMM[cpu_rm].sw[5]) >> 16;
-        XMM[cpu_reg].w[6] = ((int32_t) XMM[cpu_reg].sw[6] * (int32_t) XMM[cpu_rm].sw[6]) >> 16;
-        XMM[cpu_reg].w[7] = ((int32_t) XMM[cpu_reg].sw[7] * (int32_t) XMM[cpu_rm].sw[7]) >> 16;
+        XMM[cpu_reg].sw[0] = ((int32_t) XMM[cpu_reg].sw[0] * (int32_t) XMM[cpu_rm].sw[0]) >> 16;
+        XMM[cpu_reg].sw[1] = ((int32_t) XMM[cpu_reg].sw[1] * (int32_t) XMM[cpu_rm].sw[1]) >> 16;
+        XMM[cpu_reg].sw[2] = ((int32_t) XMM[cpu_reg].sw[2] * (int32_t) XMM[cpu_rm].sw[2]) >> 16;
+        XMM[cpu_reg].sw[3] = ((int32_t) XMM[cpu_reg].sw[3] * (int32_t) XMM[cpu_rm].sw[3]) >> 16;
+        XMM[cpu_reg].sw[4] = ((int32_t) XMM[cpu_reg].sw[4] * (int32_t) XMM[cpu_rm].sw[4]) >> 16;
+        XMM[cpu_reg].sw[5] = ((int32_t) XMM[cpu_reg].sw[5] * (int32_t) XMM[cpu_rm].sw[5]) >> 16;
+        XMM[cpu_reg].sw[6] = ((int32_t) XMM[cpu_reg].sw[6] * (int32_t) XMM[cpu_rm].sw[6]) >> 16;
+        XMM[cpu_reg].sw[7] = ((int32_t) XMM[cpu_reg].sw[7] * (int32_t) XMM[cpu_rm].sw[7]) >> 16;
         CLOCK_CYCLES(1);
     } else {
         SSE_REG src;
@@ -348,14 +348,14 @@ opPMULHW_xmm_a16(uint32_t fetchdat)
         src.q[1] = readmemq(easeg, cpu_state.eaaddr + 8);
         if (cpu_state.abrt)
             return 0;
-        XMM[cpu_reg].w[0] = ((int32_t) XMM[cpu_reg].sw[0] * (int32_t) src.sw[0]) >> 16;
-        XMM[cpu_reg].w[1] = ((int32_t) XMM[cpu_reg].sw[1] * (int32_t) src.sw[1]) >> 16;
-        XMM[cpu_reg].w[2] = ((int32_t) XMM[cpu_reg].sw[2] * (int32_t) src.sw[2]) >> 16;
-        XMM[cpu_reg].w[3] = ((int32_t) XMM[cpu_reg].sw[3] * (int32_t) src.sw[3]) >> 16;
-        XMM[cpu_reg].w[4] = ((int32_t) XMM[cpu_reg].sw[4] * (int32_t) src.sw[4]) >> 16;
-        XMM[cpu_reg].w[5] = ((int32_t) XMM[cpu_reg].sw[5] * (int32_t) src.sw[5]) >> 16;
-        XMM[cpu_reg].w[6] = ((int32_t) XMM[cpu_reg].sw[6] * (int32_t) src.sw[6]) >> 16;
-        XMM[cpu_reg].w[7] = ((int32_t) XMM[cpu_reg].sw[7] * (int32_t) src.sw[7]) >> 16;
+        XMM[cpu_reg].sw[0] = ((int32_t) XMM[cpu_reg].sw[0] * (int32_t) src.sw[0]) >> 16;
+        XMM[cpu_reg].sw[1] = ((int32_t) XMM[cpu_reg].sw[1] * (int32_t) src.sw[1]) >> 16;
+        XMM[cpu_reg].sw[2] = ((int32_t) XMM[cpu_reg].sw[2] * (int32_t) src.sw[2]) >> 16;
+        XMM[cpu_reg].sw[3] = ((int32_t) XMM[cpu_reg].sw[3] * (int32_t) src.sw[3]) >> 16;
+        XMM[cpu_reg].sw[4] = ((int32_t) XMM[cpu_reg].sw[4] * (int32_t) src.sw[4]) >> 16;
+        XMM[cpu_reg].sw[5] = ((int32_t) XMM[cpu_reg].sw[5] * (int32_t) src.sw[5]) >> 16;
+        XMM[cpu_reg].sw[6] = ((int32_t) XMM[cpu_reg].sw[6] * (int32_t) src.sw[6]) >> 16;
+        XMM[cpu_reg].sw[7] = ((int32_t) XMM[cpu_reg].sw[7] * (int32_t) src.sw[7]) >> 16;
         CLOCK_CYCLES(2);
     }
     return 0;
@@ -366,14 +366,14 @@ opPMULHW_xmm_a32(uint32_t fetchdat)
 {
     fetch_ea_32(fetchdat);
     if (cpu_mod == 3) {
-        XMM[cpu_reg].w[0] = ((int32_t) XMM[cpu_reg].sw[0] * (int32_t) XMM[cpu_rm].sw[0]) >> 16;
-        XMM[cpu_reg].w[1] = ((int32_t) XMM[cpu_reg].sw[1] * (int32_t) XMM[cpu_rm].sw[1]) >> 16;
-        XMM[cpu_reg].w[2] = ((int32_t) XMM[cpu_reg].sw[2] * (int32_t) XMM[cpu_rm].sw[2]) >> 16;
-        XMM[cpu_reg].w[3] = ((int32_t) XMM[cpu_reg].sw[3] * (int32_t) XMM[cpu_rm].sw[3]) >> 16;
-        XMM[cpu_reg].w[4] = ((int32_t) XMM[cpu_reg].sw[4] * (int32_t) XMM[cpu_rm].sw[4]) >> 16;
-        XMM[cpu_reg].w[5] = ((int32_t) XMM[cpu_reg].sw[5] * (int32_t) XMM[cpu_rm].sw[5]) >> 16;
-        XMM[cpu_reg].w[6] = ((int32_t) XMM[cpu_reg].sw[6] * (int32_t) XMM[cpu_rm].sw[6]) >> 16;
-        XMM[cpu_reg].w[7] = ((int32_t) XMM[cpu_reg].sw[7] * (int32_t) XMM[cpu_rm].sw[7]) >> 16;
+        XMM[cpu_reg].sw[0] = ((int32_t) XMM[cpu_reg].sw[0] * (int32_t) XMM[cpu_rm].sw[0]) >> 16;
+        XMM[cpu_reg].sw[1] = ((int32_t) XMM[cpu_reg].sw[1] * (int32_t) XMM[cpu_rm].sw[1]) >> 16;
+        XMM[cpu_reg].sw[2] = ((int32_t) XMM[cpu_reg].sw[2] * (int32_t) XMM[cpu_rm].sw[2]) >> 16;
+        XMM[cpu_reg].sw[3] = ((int32_t) XMM[cpu_reg].sw[3] * (int32_t) XMM[cpu_rm].sw[3]) >> 16;
+        XMM[cpu_reg].sw[4] = ((int32_t) XMM[cpu_reg].sw[4] * (int32_t) XMM[cpu_rm].sw[4]) >> 16;
+        XMM[cpu_reg].sw[5] = ((int32_t) XMM[cpu_reg].sw[5] * (int32_t) XMM[cpu_rm].sw[5]) >> 16;
+        XMM[cpu_reg].sw[6] = ((int32_t) XMM[cpu_reg].sw[6] * (int32_t) XMM[cpu_rm].sw[6]) >> 16;
+        XMM[cpu_reg].sw[7] = ((int32_t) XMM[cpu_reg].sw[7] * (int32_t) XMM[cpu_rm].sw[7]) >> 16;
         CLOCK_CYCLES(1);
     } else {
         SSE_REG src;
@@ -383,14 +383,14 @@ opPMULHW_xmm_a32(uint32_t fetchdat)
         src.q[1] = readmemq(easeg, cpu_state.eaaddr + 8);
         if (cpu_state.abrt)
             return 0;
-        XMM[cpu_reg].w[0] = ((int32_t) XMM[cpu_reg].sw[0] * (int32_t) src.sw[0]) >> 16;
-        XMM[cpu_reg].w[1] = ((int32_t) XMM[cpu_reg].sw[1] * (int32_t) src.sw[1]) >> 16;
-        XMM[cpu_reg].w[2] = ((int32_t) XMM[cpu_reg].sw[2] * (int32_t) src.sw[2]) >> 16;
-        XMM[cpu_reg].w[3] = ((int32_t) XMM[cpu_reg].sw[3] * (int32_t) src.sw[3]) >> 16;
-        XMM[cpu_reg].w[4] = ((int32_t) XMM[cpu_reg].sw[4] * (int32_t) src.sw[4]) >> 16;
-        XMM[cpu_reg].w[5] = ((int32_t) XMM[cpu_reg].sw[5] * (int32_t) src.sw[5]) >> 16;
-        XMM[cpu_reg].w[6] = ((int32_t) XMM[cpu_reg].sw[6] * (int32_t) src.sw[6]) >> 16;
-        XMM[cpu_reg].w[7] = ((int32_t) XMM[cpu_reg].sw[7] * (int32_t) src.sw[7]) >> 16;
+        XMM[cpu_reg].sw[0] = ((int32_t) XMM[cpu_reg].sw[0] * (int32_t) src.sw[0]) >> 16;
+        XMM[cpu_reg].sw[1] = ((int32_t) XMM[cpu_reg].sw[1] * (int32_t) src.sw[1]) >> 16;
+        XMM[cpu_reg].sw[2] = ((int32_t) XMM[cpu_reg].sw[2] * (int32_t) src.sw[2]) >> 16;
+        XMM[cpu_reg].sw[3] = ((int32_t) XMM[cpu_reg].sw[3] * (int32_t) src.sw[3]) >> 16;
+        XMM[cpu_reg].sw[4] = ((int32_t) XMM[cpu_reg].sw[4] * (int32_t) src.sw[4]) >> 16;
+        XMM[cpu_reg].sw[5] = ((int32_t) XMM[cpu_reg].sw[5] * (int32_t) src.sw[5]) >> 16;
+        XMM[cpu_reg].sw[6] = ((int32_t) XMM[cpu_reg].sw[6] * (int32_t) src.sw[6]) >> 16;
+        XMM[cpu_reg].sw[7] = ((int32_t) XMM[cpu_reg].sw[7] * (int32_t) src.sw[7]) >> 16;
         CLOCK_CYCLES(2);
     }
     return 0;
