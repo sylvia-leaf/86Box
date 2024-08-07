@@ -156,7 +156,7 @@ opPUNPCKLWD_xmm_a16(uint32_t fetchdat)
         XMM[cpu_reg].w[4] = XMM[cpu_reg].w[2];
         XMM[cpu_reg].w[3] = (src[0] >> 16);
         XMM[cpu_reg].w[2] = XMM[cpu_reg].w[1];
-        XMM[cpu_reg].w[1] = (src[0] >> 16);
+        XMM[cpu_reg].w[1] = (src[0] & 0xffff);
         XMM[cpu_reg].w[0] = XMM[cpu_reg].w[0];
         CLOCK_CYCLES(2);
     }
@@ -200,7 +200,7 @@ opPUNPCKLWD_xmm_a32(uint32_t fetchdat)
         XMM[cpu_reg].w[4] = XMM[cpu_reg].w[2];
         XMM[cpu_reg].w[3] = (src[0] >> 16);
         XMM[cpu_reg].w[2] = XMM[cpu_reg].w[1];
-        XMM[cpu_reg].w[1] = (src[0] >> 16);
+        XMM[cpu_reg].w[1] = (src[0] & 0xffff);
         XMM[cpu_reg].w[0] = XMM[cpu_reg].w[0];
         CLOCK_CYCLES(2);
     }

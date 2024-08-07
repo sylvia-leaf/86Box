@@ -292,8 +292,8 @@ opUNPCKLPD_f_xmm_a16(uint32_t fetchdat)
         if (cpu_state.abrt)
             return 1;
         uint64_t src = XMM[cpu_reg].q[0];
-        XMM[cpu_reg].q[0] = dst[0];
-        XMM[cpu_reg].q[1] = src;
+        XMM[cpu_reg].q[0] = src;
+        XMM[cpu_reg].q[1] = dst[0];
         CLOCK_CYCLES(2);
     }
     return 0;
@@ -318,8 +318,8 @@ opUNPCKLPD_f_xmm_a32(uint32_t fetchdat)
         if (cpu_state.abrt)
             return 1;
         uint64_t src = XMM[cpu_reg].q[0];
-        XMM[cpu_reg].q[0] = dst[0];
-        XMM[cpu_reg].q[1] = src;
+        XMM[cpu_reg].q[0] = src;
+        XMM[cpu_reg].q[1] = dst[0];
         CLOCK_CYCLES(2);
     }
     return 0;
@@ -343,8 +343,8 @@ opUNPCKHPD_f_xmm_a16(uint32_t fetchdat)
         if (cpu_state.abrt)
             return 1;
         //uint64_t src = XMM[cpu_reg].q[1];
-        XMM[cpu_reg].q[0] = dst[1];
-        //XMM[cpu_reg].q[1] = src;
+        XMM[cpu_reg].q[0] = XMM[cpu_reg].q[1];
+        XMM[cpu_reg].q[1] = dst[1];
         CLOCK_CYCLES(2);
     }
     return 0;
@@ -368,8 +368,8 @@ opUNPCKHPD_f_xmm_a32(uint32_t fetchdat)
         if (cpu_state.abrt)
             return 1;
         //uint64_t src = XMM[cpu_reg].q[1];
-        XMM[cpu_reg].q[0] = dst[1];
-        //XMM[cpu_reg].q[1] = src;
+        XMM[cpu_reg].q[0] = XMM[cpu_reg].q[1];
+        XMM[cpu_reg].q[1] = dst[1];
         CLOCK_CYCLES(2);
     }
     return 0;

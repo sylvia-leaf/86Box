@@ -247,6 +247,8 @@ sf_fx_save_stor_common(uint32_t fetchdat, int bits)
             x86gpf(NULL, 0);
 #endif
         mxcsr = src & mxcsr_mask;
+        if(mxcsr & 0x8000) pclog("MXCSR FTZ active!\n");
+        if(mxcsr & 0x0040) pclog("MXCSR DAZ active!\n");
     } else if (fxinst == 3) {
         if (cpu_mod == 3) {
             x86illegal();
