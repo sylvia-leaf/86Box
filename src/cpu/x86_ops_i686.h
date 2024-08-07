@@ -569,13 +569,17 @@ fx_save_stor_common(uint32_t fetchdat, int bits)
         if (cpu_state.abrt)
             return 1;
     }
-#if 0
+#if 1
     else if (fxinst == 5 || fxinst == 6)
         CPU_BLOCK_END();
     else if (fxinst == 7) {
         CPU_BLOCK_END();
         if((cpu_features & CPU_FEATURE_CLFLUSH) && cpu_mod != 3)
-            flushmmucache();
+        {
+            //Emulate CLFLUSH as a single byte read.
+            SEG_CHECK_READ(cpu_state.ea_seg);
+            (void)readmemb(easeg, cpu_state.eaaddr);
+        }
     }
 #endif
 

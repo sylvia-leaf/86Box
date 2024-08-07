@@ -728,11 +728,11 @@ opMOVDQA_l_xmm_a16(uint32_t fetchdat)
     } else {
         uint64_t dst[2];
 
-        if (cpu_state.eaaddr & 0xf) {
+        /*if (cpu_state.eaaddr & 0xf) {
             x86gpf(NULL, 0);
             if (cpu_state.abrt)
                 return 1;
-        }
+        }*/
 
         SEG_CHECK_READ(cpu_state.ea_seg);
         dst[0] = readmemq(easeg, cpu_state.eaaddr);
@@ -760,11 +760,11 @@ opMOVDQA_l_xmm_a32(uint32_t fetchdat)
     } else {
         uint64_t dst[2];
 
-        if (cpu_state.eaaddr & 0xf) {
+        /*if (cpu_state.eaaddr & 0xf) {
             x86gpf(NULL, 0);
             if (cpu_state.abrt)
                 return 1;
-        }
+        }*/
 
         SEG_CHECK_READ(cpu_state.ea_seg);
         dst[0] = readmemq(easeg, cpu_state.eaaddr);
