@@ -3970,14 +3970,20 @@ opPSADBW_xmm_xmm_a32(uint32_t fetchdat)
         temp[14]        = abs((int8_t)(XMM[cpu_rm].b[14] - XMM[cpu_reg].b[14]));
         temp[15]        = abs((int8_t)(XMM[cpu_rm].b[15] - XMM[cpu_reg].b[15]));
         uint16_t result = 0;
-        for (int i = 0; i < 16; i++) {
+        for (int i = 0; i < 8; i++) {
             result += temp[i];
         }
         XMM[cpu_reg].w[0] = result;
         XMM[cpu_reg].w[1] = 0;
         XMM[cpu_reg].w[2] = 0;
         XMM[cpu_reg].w[3] = 0;
-        XMM[cpu_reg].w[4] = 0;
+
+        result = 0;
+        for (int i = 8; i < 16; i++) {
+            result += temp[i];
+        }
+
+        XMM[cpu_reg].w[4] = result;
         XMM[cpu_reg].w[5] = 0;
         XMM[cpu_reg].w[6] = 0;
         XMM[cpu_reg].w[7] = 0;
@@ -4059,7 +4065,13 @@ opPSADBW_xmm_xmm_a32(uint32_t fetchdat)
         XMM[cpu_reg].w[1] = 0;
         XMM[cpu_reg].w[2] = 0;
         XMM[cpu_reg].w[3] = 0;
-        XMM[cpu_reg].w[4] = 0;
+
+        result = 0;
+        for (int i = 8; i < 16; i++) {
+            result += temp[i];
+        }
+
+        XMM[cpu_reg].w[4] = result;
         XMM[cpu_reg].w[5] = 0;
         XMM[cpu_reg].w[6] = 0;
         XMM[cpu_reg].w[7] = 0;
