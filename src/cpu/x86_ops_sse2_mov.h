@@ -1125,11 +1125,11 @@ opMOVDQA_xmm_q_a16(uint32_t fetchdat)
         XMM[cpu_rm].q[1] = XMM[cpu_reg].q[1];
         CLOCK_CYCLES(1);
     } else {
-        if (cpu_state.eaaddr & 0xf) {
+        /*if (cpu_state.eaaddr & 0xf) {
             x86gpf(NULL, 0);
             if (cpu_state.abrt)
                 return 1;
-        }
+        }*/
 
         SEG_CHECK_WRITE(cpu_state.ea_seg);
         CHECK_WRITE_COMMON(cpu_state.ea_seg, cpu_state.eaaddr, cpu_state.eaaddr + 15);
@@ -1153,11 +1153,11 @@ opMOVDQA_xmm_q_a32(uint32_t fetchdat)
         XMM[cpu_rm].q[1] = XMM[cpu_reg].q[1];
         CLOCK_CYCLES(1);
     } else {
-        if (cpu_state.eaaddr & 0xf) {
+        /*if (cpu_state.eaaddr & 0xf) {
             x86gpf(NULL, 0);
             if (cpu_state.abrt)
                 return 1;
-        }
+        }*/
 
         SEG_CHECK_WRITE(cpu_state.ea_seg);
         CHECK_WRITE_COMMON(cpu_state.ea_seg, cpu_state.eaaddr, cpu_state.eaaddr + 15);
