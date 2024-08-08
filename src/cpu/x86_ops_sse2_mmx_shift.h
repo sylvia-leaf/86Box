@@ -132,10 +132,22 @@ opPSxxQ_xmm_imm(uint32_t fetchdat)
             break;
         case 0x18: /*PSRLDQ*/
             {
-                XMM[reg].q[0] >>= shift;
-                uint64_t temp = XMM[reg].q[1] & ((1 << shift) - 1);
-                XMM[reg].q[1] >>= shift;
-                XMM[reg].q[0] |= temp << shift;
+                if(shift == 64)
+                {
+                    XMM[reg].q[0] = XMM[reg].q[1];
+                    XMM[reg].q[1] = 0;
+                }
+                else if (shift > 64)
+                {
+                    XMM[reg].q[0] = XMM[reg].q[1] >> (shift - 64);
+                    XMM[reg].q[1] = 0;
+                }
+                else if (shift < 64)
+                {
+                    XMM[reg].q[0] >>= shift;
+                    XMM[reg].q[0] |= XMM[reg].q[1] << (64 - shift);
+                    XMM[reg].q[1] >>= shift;
+                }
             }
             break;
         case 0x20: /*PSRAQ*/
@@ -155,10 +167,22 @@ opPSxxQ_xmm_imm(uint32_t fetchdat)
             break;
         case 0x38: /*PSLLDQ*/
             {
-                XMM[reg].q[1] <<= shift;
-                uint64_t temp = XMM[reg].q[0] & ~((1 << shift) - 1);
-                XMM[reg].q[0] <<= shift;
-                XMM[reg].q[1] |= temp >> shift;
+                if(shift == 64)
+                {
+                    XMM[reg].q[1] = XMM[reg].q[0];
+                    XMM[reg].q[0] = 0;
+                }
+                else if(shift > 64)
+                {
+                    XMM[reg].q[1] = XMM[reg].q[0] << (shift - 64);
+                    XMM[reg].q[0] = 0;
+                }
+                else if(shift < 64)
+                {
+                    XMM[reg].q[0] <<= shift;
+                    XMM[reg].q[0] |= XMM[reg].q[1] >> (64 - shift);
+                    XMM[reg].q[1] <<= shift;
+                }
             }
             break;
         default:
