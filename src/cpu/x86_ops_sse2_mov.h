@@ -1263,8 +1263,8 @@ opSHUFPD_xmm_w_a16(uint32_t fetchdat)
     uint8_t imm = getbyte();
     if (cpu_mod == 3) {
         SSE_REG tmp;
-        tmp.q[0] = XMM[cpu_rm].q[imm & 1];
-        tmp.q[1] = XMM[cpu_reg].q[(imm >> 1) & 1];
+        tmp.q[0] = XMM[cpu_reg].q[imm & 1];
+        tmp.q[1] = XMM[cpu_rm].q[(imm >> 1) & 1];
         XMM[cpu_reg].q[0] = tmp.q[0];
         XMM[cpu_reg].q[1] = tmp.q[1];
         CLOCK_CYCLES(1);
@@ -1279,8 +1279,8 @@ opSHUFPD_xmm_w_a16(uint32_t fetchdat)
         src[1] = readmemq(easeg, cpu_state.eaaddr + 8);
         if (cpu_state.abrt)
             return 1;
-        tmp.q[0] = src[imm & 1];
-        tmp.q[1] = XMM[cpu_reg].q[(imm >> 1) & 1];
+        tmp.q[0] = XMM[cpu_reg].q[imm & 1];
+        tmp.q[1] = src[(imm >> 1) & 1];
         XMM[cpu_reg].q[0] = tmp.q[0];
         XMM[cpu_reg].q[1] = tmp.q[1];
         CLOCK_CYCLES(2);
@@ -1295,8 +1295,8 @@ opSHUFPD_xmm_w_a32(uint32_t fetchdat)
     uint8_t imm = getbyte();
     if (cpu_mod == 3) {
         SSE_REG tmp;
-        tmp.q[0] = XMM[cpu_rm].q[imm & 1];
-        tmp.q[1] = XMM[cpu_reg].q[(imm >> 1) & 1];
+        tmp.q[0] = XMM[cpu_reg].q[imm & 1];
+        tmp.q[1] = XMM[cpu_rm].q[(imm >> 1) & 1];
         XMM[cpu_reg].q[0] = tmp.q[0];
         XMM[cpu_reg].q[1] = tmp.q[1];
         CLOCK_CYCLES(1);
@@ -1311,8 +1311,8 @@ opSHUFPD_xmm_w_a32(uint32_t fetchdat)
         src[1] = readmemq(easeg, cpu_state.eaaddr + 8);
         if (cpu_state.abrt)
             return 1;
-        tmp.q[0] = src[imm & 1];
-        tmp.q[1] = XMM[cpu_reg].q[(imm >> 1) & 1];
+        tmp.q[0] = XMM[cpu_reg].q[imm & 1];
+        tmp.q[1] = src[(imm >> 1) & 1];
         XMM[cpu_reg].q[0] = tmp.q[0];
         XMM[cpu_reg].q[1] = tmp.q[1];
         CLOCK_CYCLES(2);
