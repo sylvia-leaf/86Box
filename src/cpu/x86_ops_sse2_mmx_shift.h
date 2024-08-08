@@ -132,6 +132,13 @@ opPSxxQ_xmm_imm(uint32_t fetchdat)
             break;
         case 0x18: /*PSRLDQ*/
             {
+                if(shift > 15)
+                {
+                    XMM[reg].q[0] = 0;
+                    XMM[reg].q[1] = 0;
+                    break;
+                }
+                shift *= 8;
                 if(shift == 64)
                 {
                     XMM[reg].q[0] = XMM[reg].q[1];
@@ -167,6 +174,13 @@ opPSxxQ_xmm_imm(uint32_t fetchdat)
             break;
         case 0x38: /*PSLLDQ*/
             {
+                if(shift > 15)
+                {
+                    XMM[reg].q[0] = 0;
+                    XMM[reg].q[1] = 0;
+                    break;
+                }
+                shift *= 8;
                 if(shift == 64)
                 {
                     XMM[reg].q[1] = XMM[reg].q[0];
