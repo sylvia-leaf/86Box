@@ -27,7 +27,7 @@ opUCOMISD_xmm_xmm_a16(uint32_t fetchdat)
             return 1;
         double src_real;
         src_real = *(double *) &src;
-        if (isunordered(XMM[cpu_reg].d[0], src_real) {
+        if (isunordered(XMM[cpu_reg].d[0], src_real)) {
             cpu_state.flags |= Z_FLAG | P_FLAG | C_FLAG;
         } else if (XMM[cpu_reg].d[0] > src_real) {
             cpu_state.flags &= ~(Z_FLAG | P_FLAG | C_FLAG);
@@ -72,7 +72,7 @@ opUCOMISD_xmm_xmm_a32(uint32_t fetchdat)
             return 1;
         double src_real;
         src_real = *(double *) &src;
-        if (isunordered(XMM[cpu_reg].d[0], src_real) {
+        if (isunordered(XMM[cpu_reg].d[0], src_real)) {
             cpu_state.flags |= Z_FLAG | P_FLAG | C_FLAG;
         } else if (XMM[cpu_reg].d[0] > src_real) {
             cpu_state.flags &= ~(Z_FLAG | P_FLAG | C_FLAG);
@@ -116,7 +116,7 @@ opCOMISD_xmm_xmm_a16(uint32_t fetchdat)
             return 1;
         double src_real;
         src_real = *(double *) &src;
-        if (isunordered(XMM[cpu_reg].d[0], src_real) {
+        if (isunordered(XMM[cpu_reg].d[0], src_real)) {
             cpu_state.flags |= Z_FLAG | P_FLAG | C_FLAG;
         } else if (XMM[cpu_reg].d[0] > src_real) {
             cpu_state.flags &= ~(Z_FLAG | P_FLAG | C_FLAG);
@@ -160,7 +160,7 @@ opCOMISD_xmm_xmm_a32(uint32_t fetchdat)
             return 1;
         double src_real;
         src_real = *(double *) &src;
-        if (isunordered(XMM[cpu_reg].d[0], src_real) {
+        if (isunordered(XMM[cpu_reg].d[0], src_real)) {
             cpu_state.flags |= Z_FLAG | P_FLAG | C_FLAG;
         } else if (XMM[cpu_reg].d[0] > src_real) {
             cpu_state.flags &= ~(Z_FLAG | P_FLAG | C_FLAG);
