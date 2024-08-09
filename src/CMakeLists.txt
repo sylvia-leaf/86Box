@@ -27,10 +27,6 @@ if(CMAKE_SYSTEM_NAME MATCHES "Linux")
     add_compile_definitions(_FILE_OFFSET_BITS=64 _LARGEFILE_SOURCE=1 _LARGEFILE64_SOURCE=1)
 endif()
 
-if(PCL)
-    target_compile_definitions(PCBox PRIVATE USE_PCL)
-endif()
-
 if(CPPTHREADS)
     target_sources(PCBox PRIVATE thread.cpp)
 endif()

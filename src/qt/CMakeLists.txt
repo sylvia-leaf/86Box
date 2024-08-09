@@ -190,6 +190,10 @@ if(RTMIDI)
     target_compile_definitions(ui PRIVATE USE_RTMIDI)
 endif()
 
+if(WACOM)
+    target_compile_definitions(ui PRIVATE USE_WACOM)
+endif()
+
 if(WIN32)
     enable_language(RC)
     target_sources(PCBox PUBLIC 86Box-qt.rc)
