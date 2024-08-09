@@ -10469,7 +10469,7 @@ const cpu_family_t cpu_families[] = {
             { .name = "", 0 }
         }
     },
-#if defined(DEV_BRANCH) && defined(USE_GENERICINTEL)
+#ifdef USE_GENERICINTEL
     {
         .package       = CPU_PKG_SOCKET370,
         .manufacturer  = "Intel",
