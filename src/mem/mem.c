@@ -446,7 +446,7 @@ mmutranslatereal_pae(uint32_t addr, int rw)
     }
 
     addr4 = (temp & ~0xfffULL) + ((addr >> 9) & 0xff8);
-    temp  = rammap64(addr4) & 0x000000ffffffffffULL;
+    temp  = rammap64(addr4) & 0x800000ffffffffffULL;
     temp3 = temp & temp4;
     if (!(temp & 1) || ((CPL == 3) && !(temp3 & 4) && !cpl_override) || ((rw == 1) && !(temp3 & 2) && (((CPL == 3) && !cpl_override) || (cr0 & WP_FLAG)))) {
         cr2 = addr;
