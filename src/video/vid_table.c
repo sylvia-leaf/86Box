@@ -150,10 +150,10 @@ video_cards[] = {
     { &et4000w32p_cardex_pci_device                    },
     { &et4000w32p_noncardex_pci_device                 },
     { &et4000w32p_pci_device                           },
-#if defined(DEV_BRANCH) && defined(USE_RIVA128)
+#ifdef USE_RIVA128
     { &riva128_pci_device                            },
 #endif
-#if defined(DEV_BRANCH) && defined(USE_RIVATNT)
+#ifdef USE_RIVATNT
     { &rivatnt_pci_device                            },
 #endif
     { &s3_spea_mercury_lite_86c928_pci_device          },
@@ -253,7 +253,7 @@ video_cards[] = {
     { &compaq_voodoo_3_3500_agp_device                 },
     { &voodoo_3_3500_se_agp_device                     },
     { &voodoo_3_3500_si_agp_device                     },
-#if defined(DEV_BRANCH) && defined(USE_R100)
+#ifdef USE_R100
     { &ati_r100_device                                 },
 #endif
     { NULL                                             }
