@@ -980,8 +980,8 @@ opPSHUFD_a16(uint32_t fetchdat)
         SSE_REG tmp;
         tmp.l[0]          = XMM[cpu_rm].l[imm & 3];
         tmp.l[1]          = XMM[cpu_rm].l[(imm >> 2) & 3];
-        tmp.l[2]          = XMM[cpu_reg].l[(imm >> 4) & 3];
-        tmp.l[3]          = XMM[cpu_reg].l[(imm >> 6) & 3];
+        tmp.l[2]          = XMM[cpu_rm].l[(imm >> 4) & 3];
+        tmp.l[3]          = XMM[cpu_rm].l[(imm >> 6) & 3];
         XMM[cpu_reg].q[0] = tmp.q[0];
         XMM[cpu_reg].q[1] = tmp.q[1];
         CLOCK_CYCLES(1);
@@ -1004,8 +1004,8 @@ opPSHUFD_a16(uint32_t fetchdat)
             return 1;
         tmp.l[0]          = src[imm & 3];
         tmp.l[1]          = src[(imm >> 2) & 3];
-        tmp.l[2]          = XMM[cpu_reg].l[(imm >> 4) & 3];
-        tmp.l[3]          = XMM[cpu_reg].l[(imm >> 6) & 3];
+        tmp.l[2]          = src[(imm >> 4) & 3];
+        tmp.l[3]          = src[(imm >> 6) & 3];
         XMM[cpu_reg].q[0] = tmp.q[0];
         XMM[cpu_reg].q[1] = tmp.q[1];
         CLOCK_CYCLES(2);
@@ -1024,8 +1024,8 @@ opPSHUFD_a32(uint32_t fetchdat)
         SSE_REG tmp;
         tmp.l[0]          = XMM[cpu_rm].l[imm & 3];
         tmp.l[1]          = XMM[cpu_rm].l[(imm >> 2) & 3];
-        tmp.l[2]          = XMM[cpu_reg].l[(imm >> 4) & 3];
-        tmp.l[3]          = XMM[cpu_reg].l[(imm >> 6) & 3];
+        tmp.l[2]          = XMM[cpu_rm].l[(imm >> 4) & 3];
+        tmp.l[3]          = XMM[cpu_rm].l[(imm >> 6) & 3];
         XMM[cpu_reg].q[0] = tmp.q[0];
         XMM[cpu_reg].q[1] = tmp.q[1];
         CLOCK_CYCLES(1);
@@ -1048,8 +1048,8 @@ opPSHUFD_a32(uint32_t fetchdat)
             return 1;
         tmp.l[0]          = src[imm & 3];
         tmp.l[1]          = src[(imm >> 2) & 3];
-        tmp.l[2]          = XMM[cpu_reg].l[(imm >> 4) & 3];
-        tmp.l[3]          = XMM[cpu_reg].l[(imm >> 6) & 3];
+        tmp.l[2]          = src[(imm >> 4) & 3];
+        tmp.l[3]          = src[(imm >> 6) & 3];
         XMM[cpu_reg].q[0] = tmp.q[0];
         XMM[cpu_reg].q[1] = tmp.q[1];
         CLOCK_CYCLES(2);
