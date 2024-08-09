@@ -282,6 +282,7 @@ mem_flush_write_page(uint32_t addr, uint32_t virt)
 
 #define mmutranslate_read(addr)  mmutranslatereal(addr, 0)
 #define mmutranslate_write(addr) mmutranslatereal(addr, 1)
+#define mmutranslate_execute(addr)  mmutranslatereal(addr, 2)
 #define rammap(x)                ((uint32_t *) (_mem_exec[(x) >> MEM_GRANULARITY_BITS]))[((x) >> 2) & MEM_GRANULARITY_QMASK]
 #define rammap64(x)              ((uint64_t *) (_mem_exec[(x) >> MEM_GRANULARITY_BITS]))[((x) >> 3) & MEM_GRANULARITY_PMASK]
 
@@ -303,7 +304,7 @@ mmutranslatereal_normal(uint32_t addr, int rw)
         temp &= 1;
         if (CPL == 3)
             temp |= 4;
-        if (rw)
+        if (rw == 1)
             temp |= 2;
         cpu_state.abrt = ABRT_PF;
         abrt_error     = temp;
@@ -312,12 +313,12 @@ mmutranslatereal_normal(uint32_t addr, int rw)
 
     if ((temp & 0x80) && (cr4 & CR4_PSE)) {
         /*4MB page*/
-        if (((CPL == 3) && !(temp & 4) && !cpl_override) || (rw && !(temp & 2) && (((CPL == 3) && !cpl_override) || ((is486 || isibm486) && (cr0 & WP_FLAG))))) {
+        if (((CPL == 3) && !(temp & 4) && !cpl_override) || ((rw == 1) && !(temp & 2) && (((CPL == 3) && !cpl_override) || ((is486 || isibm486) && (cr0 & WP_FLAG))))) {
             cr2 = addr;
             temp &= 1;
             if (CPL == 3)
                 temp |= 4;
-            if (rw)
+            if (rw == 1)
                 temp |= 2;
             cpu_state.abrt = ABRT_PF;
             abrt_error     = temp;
@@ -333,12 +334,12 @@ mmutranslatereal_normal(uint32_t addr, int rw)
 
     temp  = rammap((temp & ~0xfff) + ((addr >> 10) & 0xffc));
     temp3 = temp & temp2;
-    if (!(temp & 1) || ((CPL == 3) && !(temp3 & 4) && !cpl_override) || (rw && !(temp3 & 2) && (((CPL == 3) && !cpl_override) || ((is486 || isibm486) && (cr0 & WP_FLAG))))) {
+    if (!(temp & 1) || ((CPL == 3) && !(temp3 & 4) && !cpl_override) || ((rw == 1) && !(temp3 & 2) && (((CPL == 3) && !cpl_override) || ((is486 || isibm486) && (cr0 & WP_FLAG))))) {
         cr2 = addr;
         temp &= 1;
         if (CPL == 3)
             temp |= 4;
-        if (rw)
+        if (rw == 1)
             temp |= 2;
         cpu_state.abrt = ABRT_PF;
         abrt_error     = temp;
@@ -347,7 +348,7 @@ mmutranslatereal_normal(uint32_t addr, int rw)
 
     mmu_perm = temp & 4;
     rammap(addr2) |= 0x20;
-    rammap((temp2 & ~0xfff) + ((addr >> 10) & 0xffc)) |= (rw ? 0x60 : 0x20);
+    rammap((temp2 & ~0xfff) + ((addr >> 10) & 0xffc)) |= ((rw == 1) ? 0x60 : 0x20);
 
     return (uint64_t) ((temp & ~0xfff) + (addr & 0xfff));
 }
@@ -381,14 +382,27 @@ mmutranslatereal_pae(uint32_t addr, int rw)
     }
 
     addr3 = (temp & ~0xfffULL) + ((addr >> 18) & 0xff8);
-    temp = temp4 = rammap64(addr3) & 0x000000ffffffffffULL;
+    temp = temp4 = rammap64(addr3) & 0x800000ffffffffffULL;
     temp3        = temp & temp2;
     if (!(temp & 1)) {
         cr2 = addr;
         temp &= 1;
         if (CPL == 3)
             temp |= 4;
-        if (rw)
+        if (rw == 1)
+            temp |= 2;
+        cpu_state.abrt = ABRT_PF;
+        abrt_error     = temp;
+        return 0xffffffffffffffffULL;
+    }
+
+    if((temp & 0x8000000000000000ULL) && (rw == 2) && (cpu_features & CPU_FEATURE_NX))
+    {
+        cr2 = addr;
+        temp &= 1;
+        if (CPL == 3)
+            temp |= 4;
+        if (rw == 1)
             temp |= 2;
         cpu_state.abrt = ABRT_PF;
         abrt_error     = temp;
@@ -397,18 +411,32 @@ mmutranslatereal_pae(uint32_t addr, int rw)
 
     if (temp & 0x80) {
         /*2MB page*/
-        if (((CPL == 3) && !(temp & 4) && !cpl_override) || (rw && !(temp & 2) && (((CPL == 3) && !cpl_override) || (cr0 & WP_FLAG)))) {
+        if (((CPL == 3) && !(temp & 4) && !cpl_override) || ((rw == 1) && !(temp & 2) && (((CPL == 3) && !cpl_override) || (cr0 & WP_FLAG)))) {
             cr2 = addr;
             temp &= 1;
             if (CPL == 3)
                 temp |= 4;
-            if (rw)
+            if (rw == 1)
                 temp |= 2;
             cpu_state.abrt = ABRT_PF;
             abrt_error     = temp;
 
             return 0xffffffffffffffffULL;
         }
+
+        if((temp & 0x8000000000000000ULL) && (rw == 2) && (cpu_features & CPU_FEATURE_NX))
+        {
+            cr2 = addr;
+            temp &= 1;
+            if (CPL == 3)
+                temp |= 4;
+            if (rw == 1)
+                temp |= 2;
+            cpu_state.abrt = ABRT_PF;
+            abrt_error     = temp;
+            return 0xffffffffffffffffULL;
+        }
+
         mmu_perm = temp & 4;
         rammap64(addr3) |= (rw ? 0x60 : 0x20);
 
@@ -418,12 +446,25 @@ mmutranslatereal_pae(uint32_t addr, int rw)
     addr4 = (temp & ~0xfffULL) + ((addr >> 9) & 0xff8);
     temp  = rammap64(addr4) & 0x000000ffffffffffULL;
     temp3 = temp & temp4;
-    if (!(temp & 1) || ((CPL == 3) && !(temp3 & 4) && !cpl_override) || (rw && !(temp3 & 2) && (((CPL == 3) && !cpl_override) || (cr0 & WP_FLAG)))) {
+    if (!(temp & 1) || ((CPL == 3) && !(temp3 & 4) && !cpl_override) || ((rw == 1) && !(temp3 & 2) && (((CPL == 3) && !cpl_override) || (cr0 & WP_FLAG)))) {
         cr2 = addr;
         temp &= 1;
         if (CPL == 3)
             temp |= 4;
-        if (rw)
+        if (rw == 1)
+            temp |= 2;
+        cpu_state.abrt = ABRT_PF;
+        abrt_error     = temp;
+        return 0xffffffffffffffffULL;
+    }
+
+    if((temp & 0x8000000000000000ULL) && (rw == 2) && (cpu_features & CPU_FEATURE_NX))
+    {
+        cr2 = addr;
+        temp &= 1;
+        if (CPL == 3)
+            temp |= 4;
+        if (rw == 1)
             temp |= 2;
         cpu_state.abrt = ABRT_PF;
         abrt_error     = temp;
@@ -432,7 +473,7 @@ mmutranslatereal_pae(uint32_t addr, int rw)
 
     mmu_perm = temp & 4;
     rammap64(addr3) |= 0x20;
-    rammap64(addr4) |= (rw ? 0x60 : 0x20);
+    rammap64(addr4) |= ((rw == 1) ? 0x60 : 0x20);
 
     return ((temp & ~0xfffULL) + ((uint64_t) (addr & 0xfff))) & 0x000000ffffffffffULL;
 }
@@ -661,6 +702,46 @@ addwritelookup(uint32_t virt, uint32_t phys)
     writelnext &= (cachesize - 1);
 
     cycles -= 9;
+}
+
+uint8_t *
+getpccache_execute(uint32_t a)
+{
+    uint64_t a64 = (uint64_t) a;
+#if (defined __amd64__ || defined _M_X64 || defined __aarch64__ || defined _M_ARM64)
+    uint8_t *p;
+#endif
+    uint32_t a2;
+
+    a2 = a;
+
+    if (cr0 >> 31) {
+        a64 = mmutranslate_execute(a64);
+
+        if (a64 == 0xffffffffffffffffULL)
+            return ram;
+    }
+    a64 &= rammask;
+
+    if (_mem_exec[a64 >> MEM_GRANULARITY_BITS]) {
+        if (is286) {
+            if (read_mapping[a64 >> MEM_GRANULARITY_BITS] && (read_mapping[a64 >> MEM_GRANULARITY_BITS]->flags & MEM_MAPPING_ROM_WS))
+                cpu_prefetch_cycles = cpu_rom_prefetch_cycles;
+            else
+                cpu_prefetch_cycles = cpu_mem_prefetch_cycles;
+        }
+
+#if (defined __amd64__ || defined _M_X64 || defined __aarch64__ || defined _M_ARM64)
+        p = &_mem_exec[a64 >> MEM_GRANULARITY_BITS][(uintptr_t) (a64 & MEM_GRANULARITY_PAGE) - (uintptr_t) (a2 & ~0xfff)];
+        return (uint8_t *) (((uintptr_t) p & 0x00000000ffffffffULL) | ((uintptr_t) &_mem_exec[a64 >> MEM_GRANULARITY_BITS][0] & 0xffffffff00000000ULL));
+#else
+        return &_mem_exec[a64 >> MEM_GRANULARITY_BITS][(uintptr_t) (a64 & MEM_GRANULARITY_PAGE) - (uintptr_t) (a2 & ~0xfff)];
+#endif
+    }
+
+    mem_log("Bad getpccache %08X%08X\n", (uint32_t) (a64 >> 32), (uint32_t) (a64 & 0xffffffffULL));
+
+    return (uint8_t *) &ff_pccache;
 }
 
 uint8_t *
