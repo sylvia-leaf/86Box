@@ -326,6 +326,8 @@ exec386_dynarec_int(void)
 #    endif
             x86_opcodes[(opcode | cpu_state.op32) & 0x3ff](fetchdat);
             sse_xmm = 0;
+            is_repe = 0;
+            is_repne = 0;
         }
 
 #    ifndef USE_NEW_DYNAREC
@@ -680,6 +682,8 @@ exec386_dynarec_dyn(void)
 
                 x86_opcodes[(opcode | cpu_state.op32) & 0x3ff](fetchdat);
                 sse_xmm = 0;
+                is_repe = 0;
+                is_repne = 0;
 
                 if (x86_was_reset)
                     break;
@@ -931,6 +935,9 @@ exec386(int32_t cycs)
                 cpu_state.eflags &= ~(RF_FLAG);
 #endif
                 x86_opcodes[(opcode | cpu_state.op32) & 0x3ff](fetchdat);
+                sse_xmm = 0;
+                is_repe = 0;
+                is_repne = 0;
                 if (x86_was_reset)
                     break;
             }
