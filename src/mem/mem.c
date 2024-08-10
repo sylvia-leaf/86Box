@@ -481,6 +481,8 @@ mmutranslatereal_pae(uint32_t addr, int rw)
     rammap64(addr3) |= 0x20;
     rammap64(addr4) |= ((rw == 1) ? 0x60 : 0x20);
 
+    temp &= 0x000000ffffffffffULL;
+
     return ((temp & ~0xfffULL) + ((uint64_t) (addr & 0xfff))) & 0x000000ffffffffffULL;
 }
 
