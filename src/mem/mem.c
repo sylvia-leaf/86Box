@@ -391,7 +391,7 @@ mmutranslatereal_pae(uint32_t addr, int rw)
         temp &= 1;
         if (CPL == 3)
             temp |= 4;
-        if (rw)
+        if (rw == 1)
             temp |= 2;
         cpu_state.abrt = ABRT_PF;
         abrt_error     = temp;
@@ -419,7 +419,7 @@ mmutranslatereal_pae(uint32_t addr, int rw)
             temp &= 1;
             if (CPL == 3)
                 temp |= 4;
-            if (rw)
+            if (rw == 1)
                 temp |= 2;
             cpu_state.abrt = ABRT_PF;
             abrt_error     = temp;
@@ -441,7 +441,7 @@ mmutranslatereal_pae(uint32_t addr, int rw)
         temp &= 1;
         if (CPL == 3)
             temp |= 4;
-        if (rw)
+        if (rw == 1)
             temp |= 2;
         cpu_state.abrt = ABRT_PF;
         abrt_error     = temp;
