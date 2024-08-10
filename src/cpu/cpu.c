@@ -82,6 +82,7 @@ enum {
     CPUID_PAT       = (1 << 16), /* Page Attribute Table */
     CPUID_PSN       = (1 << 18), /* Processor Serial Number */
     CPUID_CLFLUSH   = (1 << 19), /* CLFLUSH instruction */
+    CPUID_NX        = (1 << 20), /* NX bit */
     CPUID_MMX       = (1 << 23), /* MMX technology */
     CPUID_FXSR      = (1 << 24), /* FXSAVE and FXRSTOR instructions */
     CPUID_SSE       = (1 << 25),
@@ -1917,7 +1918,7 @@ cpu_set(void)
 
             timing_misaligned = 3;
 
-            cpu_features = CPU_FEATURE_RDTSC | CPU_FEATURE_MSR | CPU_FEATURE_CR4 | CPU_FEATURE_VME | CPU_FEATURE_MMX | CPU_FEATURE_SSE | CPU_FEATURE_SSE2 | CPU_FEATURE_CLFLUSH;
+            cpu_features = CPU_FEATURE_RDTSC | CPU_FEATURE_MSR | CPU_FEATURE_CR4 | CPU_FEATURE_VME | CPU_FEATURE_MMX | CPU_FEATURE_SSE | CPU_FEATURE_SSE2 | CPU_FEATURE_CLFLUSH | CPU_FEATURE_NX;
             msr.fcr      = (1 << 8) | (1 << 9) | (1 << 12) | (1 << 16) | (1 << 19) | (1 << 21);
             cpu_CR4_mask = CR4_VME | CR4_PVI | CR4_TSD | CR4_DE | CR4_PSE | CR4_MCE | CR4_PAE | CR4_PCE | CR4_PGE;
             cpu_CR4_mask |= CR4_OSFXSR | CR4_OSXMMEXCPT;
@@ -2927,6 +2928,15 @@ cpu_CPUID(void)
                 EAX = 0x00000001;
                 EBX = ECX = 0;
                 EDX       = 0x00000000;
+            } else if (EAX == 0x80000000) {
+                EAX = 0x80000001;
+                EBX = 0x756e6547;
+                EDX = 0x49656e69;
+                ECX = 0x6c65746e;
+            } else if (EAX == 0x80000001) {
+                EAX = CPUID;
+                EBX = ECX = 0;
+                EDX       = CPUID_FPU | CPUID_VME | CPUID_PSE | CPUID_TSC | CPUID_MSR | CPUID_PAE | CPUID_MCE | CPUID_CMPXCHG8B | CPUID_AMDSEP | CPUID_MMX | CPUID_MTRR | CPUID_PGE | CPUID_MCA | CPUID_SEP | CPUID_FXSR | CPUID_CMOV | CPUID_SSE | CPUID_SSE2 | CPUID_NX;//| CPUID_CLFLUSH;
             } else
                 EAX = EBX = ECX = EDX = 0;
             break;
@@ -4410,6 +4420,21 @@ pentium_invalid_rdmsr:
                 case 0x2000:
                 case 0x2002 ... 0x2004:
                     break;
+                /* Extended Feature Enable Register */
+                case 0xc0000080:
+                    if (cpu_s->cpu_type < CPU_GENERICINTEL)
+                        goto i686_invalid_rdmsr;
+                    EAX = msr.amd_efer & 0xffffffff;
+                    EDX = msr.amd_efer >> 32;
+                    break;
+                /* SYSCALL Target Address Register */
+                case 0xc0000081:
+                    if (cpu_s->cpu_type < CPU_GENERICINTEL)
+                        goto i686_invalid_rdmsr;
+
+                    EAX = msr.amd_star & 0xffffffff;
+                    EDX = msr.amd_star >> 32;
+                    break;
                 default:
 i686_invalid_rdmsr:
                     cpu_log("RDMSR: Invalid MSR: %08X\n", ECX);
@@ -5431,6 +5456,23 @@ pentium_invalid_wrmsr:
                 /* Unknown, possibly control registers? */
                 case 0x2000:
                 case 0x2002 ... 0x2004:
+                    break;
+                /* Extended Feature Enable Register */
+                case 0xc0000080:
+                    if (cpu_s->cpu_type < CPU_GENERICINTEL)
+                        goto i686_invalid_wrmsr;
+                    temp = EAX | ((uint64_t) EDX << 32);
+                    //if (temp & ~1ULL)
+                    //    x86gpf(NULL, 0);
+                    //else
+                        msr.amd_efer = temp;
+                    break;
+                /* SYSCALL Target Address Register */
+                case 0xc0000081:
+                    if (cpu_s->cpu_type < CPU_GENERICINTEL)
+                        goto i686_invalid_wrmsr;
+
+                    msr.amd_star = EAX | ((uint64_t) EDX << 32);
                     break;
                 default:
 i686_invalid_wrmsr:
