@@ -885,7 +885,7 @@ readmembl(uint32_t addr)
         a      = mmutranslate_read(addr);
         addr64 = (uint32_t) a;
 
-        if (a > 0xffffffffULL)
+        if (a > 0xfffffffffULL)
             return 0xff;
     }
     addr = (uint32_t) (addr64 & rammask);
@@ -929,7 +929,7 @@ writemembl(uint32_t addr, uint8_t val)
         a      = mmutranslate_write(addr);
         addr64 = (uint32_t) a;
 
-        if (a > 0xffffffffULL)
+        if (a > 0xfffffffffULL)
             return;
     }
     addr = (uint32_t) (addr64 & rammask);
@@ -1044,7 +1044,7 @@ readmemwl(uint32_t addr)
                     a          = mmutranslate_read(addr + i);
                     addr64a[i] = (uint32_t) a;
 
-                    if (a > 0xffffffffULL)
+                    if (a > 0xfffffffffULL)
                         return 0xffff;
                 }
             }
@@ -1060,7 +1060,7 @@ readmemwl(uint32_t addr)
         a          = mmutranslate_read(addr);
         addr64a[0] = (uint32_t) a;
 
-        if (a > 0xffffffffULL)
+        if (a > 0xfffffffffULL)
             return 0xffff;
     } else
         addr64a[0] = (uint64_t) addr;
@@ -1116,7 +1116,7 @@ writememwl(uint32_t addr, uint16_t val)
                         a          = mmutranslate_write(addr + i);
                         addr64a[i] = (uint32_t) a;
 
-                        if (a > 0xffffffffULL)
+                        if (a > 0xfffffffffULL)
                             return;
                     }
                 }
@@ -1144,7 +1144,7 @@ writememwl(uint32_t addr, uint16_t val)
         a          = mmutranslate_write(addr);
         addr64a[0] = (uint32_t) a;
 
-        if (a > 0xffffffffULL)
+        if (a > 0xfffffffffULL)
             return;
     }
 
@@ -1334,7 +1334,7 @@ readmemll(uint32_t addr)
                         addr64a[i] = (uint32_t) a;
                     }
 
-                    if (a > 0xffffffffULL)
+                    if (a > 0xfffffffffULL)
                         return 0xffff;
                 }
             }
@@ -1352,7 +1352,7 @@ readmemll(uint32_t addr)
         a          = mmutranslate_read(addr);
         addr64a[0] = (uint32_t) a;
 
-        if (a > 0xffffffffULL)
+        if (a > 0xfffffffffULL)
             return 0xffffffff;
     }
 
@@ -1422,7 +1422,7 @@ writememll(uint32_t addr, uint32_t val)
                             addr64a[i] = (uint32_t) a;
                         }
 
-                        if (a > 0xffffffffULL)
+                        if (a > 0xfffffffffULL)
                             return;
                     }
                 }
@@ -1450,7 +1450,7 @@ writememll(uint32_t addr, uint32_t val)
         a          = mmutranslate_write(addr);
         addr64a[0] = (uint32_t) a;
 
-        if (a > 0xffffffffULL)
+        if (a > 0xfffffffffULL)
             return;
     }
 
@@ -1657,7 +1657,7 @@ readmemql(uint32_t addr)
                         addr64a[i] = (uint32_t) a;
                     }
 
-                    if (a > 0xffffffffULL)
+                    if (a > 0xfffffffffULL)
                         return 0xffff;
                 }
             }
@@ -1675,7 +1675,7 @@ readmemql(uint32_t addr)
         a          = mmutranslate_read(addr);
         addr64a[0] = (uint32_t) a;
 
-        if (a > 0xffffffffULL)
+        if (a > 0xfffffffffULL)
             return 0xffffffffffffffffULL;
     }
 
@@ -1737,7 +1737,7 @@ writememql(uint32_t addr, uint64_t val)
                             addr64a[i] = (uint32_t) a;
                         }
 
-                        if (addr64a[i] > 0xffffffffULL)
+                        if (addr64a[i] > 0xfffffffffULL)
                             return;
                     }
                 }
@@ -1764,7 +1764,7 @@ writememql(uint32_t addr, uint64_t val)
 
     if (cr0 >> 31) {
         addr64a[0] = mmutranslate_write(addr);
-        if (addr64a[0] > 0xffffffffULL)
+        if (addr64a[0] > 0xfffffffffULL)
             return;
     }
 
