@@ -380,8 +380,8 @@ typedef struct {
     uint32_t flags_op1;
     uint32_t flags_op2;
 
-    uint64_t pc;
-    uint64_t oldpc;
+    uint32_t pc;
+    uint32_t oldpc;
     uint32_t op32;
 
     int TOP;
@@ -457,6 +457,8 @@ typedef struct
 {
     x86reg regs64[8];
     uint32_t regs_high[16];
+    uint32_t pc_high;
+    uint32_t oldpc_high;
 } cpu_state64_t;
 
 
