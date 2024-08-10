@@ -327,7 +327,7 @@ mmutranslatereal_normal(uint32_t addr, int rw)
         }
 
         mmu_perm = temp & 4;
-        rammap(addr2) |= (rw ? 0x60 : 0x20);
+        rammap(addr2) |= ((rw == 1) ? 0x60 : 0x20);
 
         return (temp & ~0x3fffff) + (addr & 0x3fffff);
     }
@@ -384,7 +384,7 @@ mmutranslatereal_pae(uint32_t addr, int rw)
 
     addr3 = (temp & ~0xfffULL) + ((addr >> 18) & 0xff8);
     temp = temp4 = rammap64(addr3) & 0x000000ffffffffffULL;
-    nxbit = rammap64(addr3) & 0x8000000000000000ULL;
+    nxbit = rammap64(addr) & 0x8000000000000000ULL;
     temp3        = temp & temp2;
     if (!(temp & 1)) {
         cr2 = addr;
@@ -434,7 +434,7 @@ mmutranslatereal_pae(uint32_t addr, int rw)
 
     addr4 = (temp & ~0xfffULL) + ((addr >> 9) & 0xff8);
     temp  = rammap64(addr4) & 0x000000ffffffffffULL;
-    nxbit = rammap64(addr4) & 0x8000000000000000ULL;
+    nxbit = rammap64(addr) & 0x8000000000000000ULL;
     temp3 = temp & temp4;
     if (!(temp & 1) || ((CPL == 3) && !(temp3 & 4) && !cpl_override) || ((rw == 1) && !(temp3 & 2) && (((CPL == 3) && !cpl_override) || (cr0 & WP_FLAG)))) {
         cr2 = addr;
