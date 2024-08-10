@@ -443,7 +443,7 @@ mmutranslatereal_pae(uint32_t addr, int rw)
         mmu_perm = temp & 4;
         rammap64(addr3) |= (rw ? 0x60 : 0x20);
 
-        return ((temp & ~0x1fffffULL) + (addr & 0x1fffffULL)) & 0x000000ffffffffffULL;
+        return ((temp & ~0x1fffffULL) + (addr & 0x1fffffULL)) & 0x0000000fffffffffULL;
     }
 
     temp &= 0x0000000fffffffffULL;
