@@ -380,8 +380,8 @@ typedef struct {
     uint32_t flags_op1;
     uint32_t flags_op2;
 
-    uint32_t pc;
-    uint32_t oldpc;
+    uint64_t pc;
+    uint64_t oldpc;
     uint32_t op32;
 
     int TOP;
@@ -452,6 +452,13 @@ typedef struct {
 
     uint32_t _smbase;
 } cpu_state_t;
+
+typedef struct
+{
+    x86reg regs64[8];
+    uint32_t regs_high[16];
+} cpu_state64_t;
+
 
 #define in_smm   cpu_state._in_smm
 #define smi_line cpu_state._smi_line
@@ -535,6 +542,7 @@ COMPILE_TIME_ASSERT(sizeof(cpu_state_t) <= 128)
 
 /* Global variables. */
 extern cpu_state_t cpu_state;
+extern cpu_state64_t cpu_state64;
 
 extern const cpu_family_t         cpu_families[];
 extern cpu_family_t              *cpu_f;
