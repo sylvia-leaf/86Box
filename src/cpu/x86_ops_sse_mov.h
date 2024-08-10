@@ -458,7 +458,7 @@ opMOVHPS_f_xmm_MOVLHPS_xmm_xmm_a16(uint32_t fetchdat)
         uint64_t dst;
 
         SEG_CHECK_READ(cpu_state.ea_seg);
-        dst = readmemq(easeg, cpu_state.eaaddr + 8);
+        dst = readmemq(easeg, cpu_state.eaaddr);
         if (cpu_state.abrt)
             return 1;
         XMM[cpu_reg].q[1] = dst;
@@ -484,7 +484,7 @@ opMOVHPS_f_xmm_MOVLHPS_xmm_xmm_a32(uint32_t fetchdat)
         uint64_t dst;
 
         SEG_CHECK_READ(cpu_state.ea_seg);
-        dst = readmemq(easeg, cpu_state.eaaddr + 8);
+        dst = readmemq(easeg, cpu_state.eaaddr);
         if (cpu_state.abrt)
             return 1;
         XMM[cpu_reg].q[1] = dst;
