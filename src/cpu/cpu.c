@@ -5464,7 +5464,7 @@ pentium_invalid_wrmsr:
                     temp = EAX | ((uint64_t) EDX << 32);
                     //if (temp & ~1ULL)
                     //    x86gpf(NULL, 0);
-                    else
+                    //else
                         msr.amd_efer = temp;
                     break;
                 /* SYSCALL Target Address Register */
