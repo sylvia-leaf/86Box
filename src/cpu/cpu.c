@@ -5462,8 +5462,8 @@ pentium_invalid_wrmsr:
                     if (cpu_s->cpu_type < CPU_GENERICINTEL)
                         goto i686_invalid_wrmsr;
                     temp = EAX | ((uint64_t) EDX << 32);
-                    if (temp & ~1ULL)
-                        x86gpf(NULL, 0);
+                    //if (temp & ~1ULL)
+                    //    x86gpf(NULL, 0);
                     else
                         msr.amd_efer = temp;
                     break;
