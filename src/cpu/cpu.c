@@ -269,7 +269,7 @@ int timing_jmp_pm;
 int timing_jmp_pm_gate;
 int timing_misaligned;
 
-uint32_t cpu_features;
+uint64_t cpu_features;
 uint32_t cpu_fast_off_flags;
 
 uint32_t _tr[8]      = { 0, 0, 0, 0, 0, 0, 0, 0 };
