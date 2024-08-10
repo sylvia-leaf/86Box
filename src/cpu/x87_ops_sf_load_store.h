@@ -634,7 +634,7 @@ next_ins:
 #endif
 
 static int
-sf_FISTPiw_a16(uint32_t fetchdat)
+sf_FISTTPiw_a16(uint32_t fetchdat)
 {
     struct softfloat_status_t status;
     uint16_t                  sw       = fpu_state.swd;
@@ -708,7 +708,7 @@ next_ins:
 #endif
 
 static int
-sf_FISTPil_a16(uint32_t fetchdat)
+sf_FISTTPil_a16(uint32_t fetchdat)
 {
     struct softfloat_status_t status;
     uint16_t                  sw       = fpu_state.swd;
@@ -725,7 +725,7 @@ sf_FISTPil_a16(uint32_t fetchdat)
             goto next_ins;
     } else {
         status   = i387cw_to_softfloat_status_word(i387_get_control_word() | FPU_RC_CHOP);
-        save_reg = extF80_to_i32(FPU_read_regi(0), &status);
+        save_reg = extF80_to_i32(FPU_read_regi(0), softfloat_round_down, true, &status);
         if (FPU_exception(fetchdat, status.softfloat_exceptionFlags, 1)) {
             goto next_ins;
         }
@@ -762,7 +762,7 @@ sf_FISTTPil_a32(uint32_t fetchdat)
             goto next_ins;
     } else {
         status   = i387cw_to_softfloat_status_word(i387_get_control_word() | FPU_RC_CHOP);
-        save_reg = extF80_to_i32(FPU_read_regi(0), &status);
+        save_reg = extF80_to_i32(FPU_read_regi(0), softfloat_round_down, true, &status);
         if (FPU_exception(fetchdat, status.softfloat_exceptionFlags, 1))
             goto next_ins;
     }
@@ -782,7 +782,7 @@ next_ins:
 #endif
 
 static int
-sf_FISTPiw_a16(uint32_t fetchdat)
+sf_FISTTPiq_a16(uint32_t fetchdat)
 {
     struct softfloat_status_t status;
     uint16_t                  sw       = fpu_state.swd;
@@ -799,7 +799,7 @@ sf_FISTPiw_a16(uint32_t fetchdat)
             goto next_ins;
     } else {
         status   = i387cw_to_softfloat_status_word(i387_get_control_word() | FPU_RC_CHOP);
-        save_reg = extF80_to_i64(FPU_read_regi(0), &status);
+        save_reg = extF80_to_i64(FPU_read_regi(0),softfloat_round_down, true, &status);
         if (FPU_exception(fetchdat, status.softfloat_exceptionFlags, 1)) {
             goto next_ins;
         }
@@ -836,7 +836,7 @@ sf_FISTTPiq_a32(uint32_t fetchdat)
             goto next_ins;
     } else {
         status   = i387cw_to_softfloat_status_word(i387_get_control_word() | FPU_RC_CHOP);
-        save_reg = extF80_to_i64(FPU_read_regi(0), &status);
+        save_reg = extF80_to_i64(FPU_read_regi(0), softfloat_round_down, true, &status);
         if (FPU_exception(fetchdat, status.softfloat_exceptionFlags, 1))
             goto next_ins;
     }

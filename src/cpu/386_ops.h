@@ -209,6 +209,8 @@ extern void x386_dynarec_log(const char *fmt, ...);
 #    include "x86_ops_sse2_mmx_pack.h"
 #    include "x86_ops_sse2_mmx_shift.h"
 #    include "x86_ops_sse2_mov.h"
+#    include "x86_ops_sse3_arith.h"
+#    include "x86_ops_sse3_mov.h"
 #    include "x86_ops_mmx_arith.h"
 #    include "x86_ops_mmx_cmp.h"
 #    include "x86_ops_mmx_logic.h"

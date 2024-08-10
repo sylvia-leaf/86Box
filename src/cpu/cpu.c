@@ -1853,17 +1853,21 @@ cpu_set(void)
             if (fpu_softfloat) {
                 x86_dynarec_opcodes_da_a16 = dynarec_ops_sf_fpu_686_da_a16;
                 x86_dynarec_opcodes_da_a32 = dynarec_ops_sf_fpu_686_da_a32;
-                x86_dynarec_opcodes_db_a16 = dynarec_ops_sf_fpu_686_db_a16;
-                x86_dynarec_opcodes_db_a32 = dynarec_ops_sf_fpu_686_db_a32;
-                x86_dynarec_opcodes_df_a16 = dynarec_ops_sf_fpu_686_df_a16;
-                x86_dynarec_opcodes_df_a32 = dynarec_ops_sf_fpu_686_df_a32;
+                x86_dynarec_opcodes_db_a16 = dynarec_ops_sf_fpu_sse3_db_a16;
+                x86_dynarec_opcodes_db_a32 = dynarec_ops_sf_fpu_sse3_db_a32;
+                x86_dynarec_opcodes_dd_a16 = dynarec_ops_sf_fpu_sse3_dd_a16;
+                x86_dynarec_opcodes_dd_a32 = dynarec_ops_sf_fpu_sse3_dd_a32;
+                x86_dynarec_opcodes_df_a16 = dynarec_ops_sf_fpu_sse3_df_a16;
+                x86_dynarec_opcodes_df_a32 = dynarec_ops_sf_fpu_sse3_df_a32;
             } else {
                 x86_dynarec_opcodes_da_a16 = dynarec_ops_fpu_686_da_a16;
                 x86_dynarec_opcodes_da_a32 = dynarec_ops_fpu_686_da_a32;
-                x86_dynarec_opcodes_db_a16 = dynarec_ops_fpu_686_db_a16;
-                x86_dynarec_opcodes_db_a32 = dynarec_ops_fpu_686_db_a32;
-                x86_dynarec_opcodes_df_a16 = dynarec_ops_fpu_686_df_a16;
-                x86_dynarec_opcodes_df_a32 = dynarec_ops_fpu_686_df_a32;
+                x86_dynarec_opcodes_db_a16 = dynarec_ops_fpu_sse3_db_a16;
+                x86_dynarec_opcodes_db_a32 = dynarec_ops_fpu_sse3_db_a32;
+                x86_dynarec_opcodes_dd_a16 = dynarec_ops_fpu_sse3_dd_a16;
+                x86_dynarec_opcodes_dd_a32 = dynarec_ops_fpu_sse3_dd_a32;
+                x86_dynarec_opcodes_df_a16 = dynarec_ops_fpu_sse3_df_a16;
+                x86_dynarec_opcodes_df_a32 = dynarec_ops_fpu_sse3_df_a32;
             }
             x86_dynarec_opcodes_REPE_0f = dynarec_ops_genericintel_REPE_0f;
             x86_dynarec_opcodes_REPNE_0f = dynarec_ops_genericintel_REPNE_0f;
@@ -1875,17 +1879,21 @@ cpu_set(void)
             if (fpu_softfloat) {
                 x86_opcodes_da_a16 = ops_sf_fpu_686_da_a16;
                 x86_opcodes_da_a32 = ops_sf_fpu_686_da_a32;
-                x86_opcodes_db_a16 = ops_sf_fpu_686_db_a16;
-                x86_opcodes_db_a32 = ops_sf_fpu_686_db_a32;
-                x86_opcodes_df_a16 = ops_sf_fpu_686_df_a16;
-                x86_opcodes_df_a32 = ops_sf_fpu_686_df_a32;
+                x86_opcodes_db_a16 = ops_sf_fpu_sse3_db_a16;
+                x86_opcodes_db_a32 = ops_sf_fpu_sse3_db_a32;
+                x86_opcodes_dd_a16 = ops_sf_fpu_sse3_dd_a16;
+                x86_opcodes_dd_a32 = ops_sf_fpu_sse3_dd_a32;
+                x86_opcodes_df_a16 = ops_sf_fpu_sse3_df_a16;
+                x86_opcodes_df_a32 = ops_sf_fpu_sse3_df_a32;
             } else {
                 x86_opcodes_da_a16 = ops_fpu_686_da_a16;
                 x86_opcodes_da_a32 = ops_fpu_686_da_a32;
-                x86_opcodes_db_a16 = ops_fpu_686_db_a16;
-                x86_opcodes_db_a32 = ops_fpu_686_db_a32;
-                x86_opcodes_df_a16 = ops_fpu_686_df_a16;
-                x86_opcodes_df_a32 = ops_fpu_686_df_a32;
+                x86_opcodes_db_a16 = ops_fpu_sse3_db_a16;
+                x86_opcodes_db_a32 = ops_fpu_sse3_db_a32;
+                x86_opcodes_dd_a16 = ops_fpu_sse3_dd_a16;
+                x86_opcodes_dd_a32 = ops_fpu_sse3_dd_a32;
+                x86_opcodes_df_a16 = ops_fpu_sse3_df_a16;
+                x86_opcodes_df_a32 = ops_fpu_sse3_df_a32;
             }
 
             timing_rr  = 1; /* register dest - register src */
@@ -1920,7 +1928,7 @@ cpu_set(void)
 
             timing_misaligned = 3;
 
-            cpu_features = CPU_FEATURE_RDTSC | CPU_FEATURE_MSR | CPU_FEATURE_CR4 | CPU_FEATURE_VME | CPU_FEATURE_MMX | CPU_FEATURE_SSE | CPU_FEATURE_SSE2 | CPU_FEATURE_CLFLUSH | CPU_FEATURE_NX;
+            cpu_features = CPU_FEATURE_RDTSC | CPU_FEATURE_MSR | CPU_FEATURE_CR4 | CPU_FEATURE_VME | CPU_FEATURE_MMX | CPU_FEATURE_SSE | CPU_FEATURE_SSE2 | CPU_FEATURE_CLFLUSH | CPU_FEATURE_NX | CPU_FEATURE_SSE3;
             msr.fcr      = (1 << 8) | (1 << 9) | (1 << 12) | (1 << 16) | (1 << 19) | (1 << 21);
             cpu_CR4_mask = CR4_VME | CR4_PVI | CR4_TSD | CR4_DE | CR4_PSE | CR4_MCE | CR4_PAE | CR4_PCE | CR4_PGE;
             cpu_CR4_mask |= CR4_OSFXSR | CR4_OSXMMEXCPT;
