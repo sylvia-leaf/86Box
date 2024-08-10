@@ -86,7 +86,9 @@ enum {
     CPUID_MMX       = (1 << 23), /* MMX technology */
     CPUID_FXSR      = (1 << 24), /* FXSAVE and FXRSTOR instructions */
     CPUID_SSE       = (1 << 25),
-    CPUID_SSE2      = (1 << 26)
+    CPUID_SSE2      = (1 << 26),
+
+    CPUID_SSE3      = (1 << 0)
 };
 
 /* Additional flags returned by CPUID function 0x80000001 */
@@ -2932,7 +2934,8 @@ cpu_CPUID(void)
                 ECX = 0x6c65746e;
             } else if (EAX == 1) {
                 EAX = CPUID;
-                EBX = ECX = 0;
+                EBX = 0;
+                ECX       = CPUID_SSE3;
                 EDX       = CPUID_FPU | CPUID_VME | CPUID_PSE | CPUID_TSC | CPUID_MSR | CPUID_PAE | CPUID_MCE | CPUID_CMPXCHG8B | CPUID_MMX | CPUID_MTRR | CPUID_PGE | CPUID_MCA | CPUID_SEP | CPUID_FXSR | CPUID_CMOV | CPUID_SSE | CPUID_SSE2;// | CPUID_CLFLUSH;
             } else if (EAX == 2) {
                 EAX = 0x00000001;
