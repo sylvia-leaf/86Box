@@ -1062,7 +1062,7 @@ opMOVD_xmm_l_a16(uint32_t fetchdat)
 {
     fetch_ea_16(fetchdat);
     if (cpu_mod == 3) {
-        cpu_state.regs[cpu_rm].l = XMM[cpu_reg].l[0];
+        setr32(cpu_rm, XMM[cpu_reg].l[0]);
         CLOCK_CYCLES(1);
     } else {
         SEG_CHECK_WRITE(cpu_state.ea_seg);
@@ -1080,7 +1080,7 @@ opMOVD_xmm_l_a32(uint32_t fetchdat)
 {
     fetch_ea_32(fetchdat);
     if (cpu_mod == 3) {
-        cpu_state.regs[cpu_rm].l = XMM[cpu_reg].l[0];
+        setr32(cpu_rm, XMM[cpu_reg].l[0]);
         CLOCK_CYCLES(1);
     } else {
         SEG_CHECK_WRITE(cpu_state.ea_seg);
