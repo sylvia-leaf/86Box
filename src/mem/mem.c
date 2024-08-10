@@ -383,7 +383,8 @@ mmutranslatereal_pae(uint32_t addr, int rw)
 
     addr3 = (temp & ~0xfffULL) + ((addr >> 18) & 0xff8);
     temp = temp4 = rammap64(addr3) & 0x800000ffffffffffULL;
-    temp3        = temp & temp2;
+
+    temp3        = temp & temp2 & 0x000000ffffffffffULL;
     if (!(temp & 1)) {
         cr2 = addr;
         temp &= 1;
@@ -444,6 +445,8 @@ mmutranslatereal_pae(uint32_t addr, int rw)
 
         return ((temp & ~0x1fffffULL) + (addr & 0x1fffffULL)) & 0x000000ffffffffffULL;
     }
+
+    temp &= 0x000000ffffffffffULL;
 
     addr4 = (temp & ~0xfffULL) + ((addr >> 9) & 0xff8);
     temp  = rammap64(addr4) & 0x800000ffffffffffULL;
