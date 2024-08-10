@@ -121,6 +121,8 @@ enum {
 #define CPU_ALTERNATE_XTAL   4
 #define CPU_FIXED_MULTIPLIER 8
 
+#define EFER_NXE (1 << 11)
+
 #if (defined __amd64__ || defined _M_X64)
 #    define LOOKUP_INV -1LL
 #else

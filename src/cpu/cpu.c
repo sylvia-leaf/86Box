@@ -4420,6 +4420,21 @@ pentium_invalid_rdmsr:
                 case 0x2000:
                 case 0x2002 ... 0x2004:
                     break;
+                /* Extended Feature Enable Register */
+                case 0xc0000080:
+                    if (cpu_s->cpu_type < CPU_GENERICINTEL)
+                        goto i686_invalid_rdmsr;
+                    EAX = msr.amd_efer & 0xffffffff;
+                    EDX = msr.amd_efer >> 32;
+                    break;
+                /* SYSCALL Target Address Register */
+                case 0xc0000081:
+                    if (cpu_s->cpu_type < CPU_GENERICINTEL)
+                        goto i686_invalid_rdmsr;
+
+                    EAX = msr.amd_star & 0xffffffff;
+                    EDX = msr.amd_star >> 32;
+                    break;
                 default:
 i686_invalid_rdmsr:
                     cpu_log("RDMSR: Invalid MSR: %08X\n", ECX);
@@ -5441,6 +5456,23 @@ pentium_invalid_wrmsr:
                 /* Unknown, possibly control registers? */
                 case 0x2000:
                 case 0x2002 ... 0x2004:
+                    break;
+                /* Extended Feature Enable Register */
+                case 0xc0000080:
+                    if (cpu_s->cpu_type < CPU_GENERICINTEL)
+                        goto i686_invalid_wrmsr;
+                    temp = EAX | ((uint64_t) EDX << 32);
+                    if (temp & ~1ULL)
+                        x86gpf(NULL, 0);
+                    else
+                        msr.amd_efer = temp;
+                    break;
+                /* SYSCALL Target Address Register */
+                case 0xc0000081:
+                    if (cpu_s->cpu_type < CPU_GENERICINTEL)
+                        goto i686_invalid_wrmsr;
+
+                    msr.amd_star = EAX | ((uint64_t) EDX << 32);
                     break;
                 default:
 i686_invalid_wrmsr:

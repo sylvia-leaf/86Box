@@ -398,7 +398,7 @@ mmutranslatereal_pae(uint32_t addr, int rw)
         return 0xffffffffffffffffULL;
     }
 
-    if(nxbit && (rw == 2) && (cpu_features & CPU_FEATURE_NX))
+    if(nxbit && (rw == 2) && (cpu_features & CPU_FEATURE_NX) && (msr.amd_efer & EFER_NXE))
     {
         cr2 = addr;
         temp &= 1;
@@ -448,7 +448,7 @@ mmutranslatereal_pae(uint32_t addr, int rw)
         return 0xffffffffffffffffULL;
     }
 
-    if(nxbit && (rw == 2) && (cpu_features & CPU_FEATURE_NX))
+    if(nxbit && (rw == 2) && (cpu_features & CPU_FEATURE_NX) && (msr.amd_efer & EFER_NXE))
     {
         cr2 = addr;
         temp &= 1;
