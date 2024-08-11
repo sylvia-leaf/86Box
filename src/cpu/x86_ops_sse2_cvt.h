@@ -124,7 +124,9 @@ opCVTTSD2SI_l_xmm_a16(uint32_t fetchdat)
 {
     fetch_ea_16(fetchdat);
     if (cpu_mod == 3) {
+        fesetround(rounding_modes[(mxcsr >> 13) & 3]);
         setr32(cpu_reg, trunc(XMM[cpu_rm].d[0]));
+        fesetround(FE_TONEAREST);
         CLOCK_CYCLES(1);
     } else {
         uint64_t dst;
@@ -135,7 +137,9 @@ opCVTTSD2SI_l_xmm_a16(uint32_t fetchdat)
             return 1;
         double dst_real;
         dst_real = *(double *) &dst;
+        fesetround(rounding_modes[(mxcsr >> 13) & 3]);
         setr32(cpu_reg, trunc(dst_real));
+        fesetround(FE_TONEAREST);
         CLOCK_CYCLES(2);
     }
     return 0;
