@@ -591,13 +591,16 @@ opPADDSW_xmm_a32(uint32_t fetchdat)
 static int
 opPMULUDQ_xmm_a16(uint32_t fetchdat)
 {
-    SSE_REG src;
+    SSE_REG src, tmp;
 
     fetch_ea_16(fetchdat);
     SSE_GETSRC();
 
-    XMM[cpu_reg].q[0] = (uint64_t) XMM[cpu_reg].l[0] * (uint64_t) src.l[0];
-    XMM[cpu_reg].q[1] = (uint64_t) XMM[cpu_reg].l[2] * (uint64_t) src.l[2];
+    tmp.q[0] = (uint64_t) XMM[cpu_reg].l[0] * (uint64_t) src.l[0];
+    tmp.q[1] = (uint64_t) XMM[cpu_reg].l[2] * (uint64_t) src.l[2];
+
+    XMM[cpu_reg].q[0] = tmp.q[0];
+    XMM[cpu_reg].q[1] = tmp.q[1];
 
     return 0;
 }
@@ -605,13 +608,16 @@ opPMULUDQ_xmm_a16(uint32_t fetchdat)
 static int
 opPMULUDQ_xmm_a32(uint32_t fetchdat)
 {
-    SSE_REG src;
+    SSE_REG src, tmp;
 
     fetch_ea_32(fetchdat);
     SSE_GETSRC();
 
-    XMM[cpu_reg].q[0] = (uint64_t) XMM[cpu_reg].l[0] * (uint64_t) src.l[0];
-    XMM[cpu_reg].q[1] = (uint64_t) XMM[cpu_reg].l[2] * (uint64_t) src.l[2];
+    tmp.q[0] = (uint64_t) XMM[cpu_reg].l[0] * (uint64_t) src.l[0];
+    tmp.q[1] = (uint64_t) XMM[cpu_reg].l[2] * (uint64_t) src.l[2];
+
+    XMM[cpu_reg].q[0] = tmp.q[0];
+    XMM[cpu_reg].q[1] = tmp.q[1];
 
     return 0;
 }
