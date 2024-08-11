@@ -598,8 +598,9 @@ extern int hasfpu;
 #define CPU_FEATURE_SSE2    (1 << 11)
 #define CPU_FEATURE_CLFLUSH (1 << 12)
 #define CPU_FEATURE_NX      (1 << 13)
+#define CPU_FEATURE_SSE3      (1 << 14)
 
-extern uint32_t cpu_features;
+extern uint64_t cpu_features;
 
 extern int smi_latched;
 extern int smm_in_hlt;
