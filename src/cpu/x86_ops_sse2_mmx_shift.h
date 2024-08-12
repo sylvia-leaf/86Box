@@ -4,9 +4,8 @@ opPSxxW_xmm_imm(uint32_t fetchdat)
 {
     int reg   = fetchdat & 7;
     int op    = fetchdat & 0x38;
-    int shift = (fetchdat >> 8) & 0xff;
-
-    cpu_state.pc += 2;
+    cpu_state.pc++;
+    int shift = getbyte();
 
     switch (op) {
         case 0x10: /*PSRLW*/
@@ -66,9 +65,8 @@ opPSxxD_xmm_imm(uint32_t fetchdat)
 {
     int reg   = fetchdat & 7;
     int op    = fetchdat & 0x38;
-    int shift = (fetchdat >> 8) & 0xff;
-
-    cpu_state.pc += 2;
+    cpu_state.pc++;
+    int shift = getbyte();
 
     switch (op) {
         case 0x10: /*PSRLD*/
@@ -116,9 +114,8 @@ opPSxxQ_xmm_imm(uint32_t fetchdat)
 {
     int reg   = fetchdat & 7;
     int op    = fetchdat & 0x38;
-    int shift = (fetchdat >> 8) & 0xff;
-
-    cpu_state.pc += 2;
+    cpu_state.pc++;
+    int shift = getbyte();
 
     switch (op) {
         case 0x10: /*PSRLQ*/
