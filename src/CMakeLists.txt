@@ -27,7 +27,9 @@ if(CMAKE_SYSTEM_NAME MATCHES "Linux")
     add_compile_definitions(_FILE_OFFSET_BITS=64 _LARGEFILE_SOURCE=1 _LARGEFILE64_SOURCE=1)
 endif()
 
-if(CPPTHREADS)
+if(WIN32)
+    target_sources(PCBox PRIVATE qt/win_thread.c)
+else()
     target_sources(PCBox PRIVATE thread.cpp)
 endif()
 
