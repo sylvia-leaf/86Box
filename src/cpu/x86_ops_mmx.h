@@ -77,8 +77,9 @@ check_sse_exceptions_float(float* result)
         if((mxcsr & MXCSR_DAZ) && (mxcsr & 0x100))
         {
             uint32_t result_bits = *(uint32_t*)result;
-            if(result_bits & (1u << 31)) *result = *(float*)&(1u << 31);
-            else *result = 0;
+            if(result_bits & (1u << 31)) result_bits = 1u << 31;
+            else result_bits = 0;
+            *result = *(float*)&result_bits;
         }
     }
     if (fperaised & FE_DIVBYZERO)
@@ -91,8 +92,9 @@ check_sse_exceptions_float(float* result)
         if((mxcsr & MXCSR_FTZ) && (mxcsr & 0x800))
         {
             uint32_t result_bits = *(uint32_t*)result;
-            if(result_bits & (1u << 31)) *result = *(float*)&(1u << 31);
-            else *result = 0;
+            if(result_bits & (1u << 31)) result_bits = 1u << 31;
+            else result_bits = 0;
+            *result = *(float*)&result_bits;
         }
     }
     if (fperaised & FE_INEXACT)
@@ -121,9 +123,10 @@ check_sse_exceptions_double(double* result)
         mxcsr |= 2;
         if((mxcsr & MXCSR_DAZ) && (mxcsr & 0x100))
         {
-            uint32_t result_bits = *(uint32_t*)result;
-            if(result_bits & (1ull << 63)) *result = *(double*)&(1ull << 63);
-            else *result = 0;
+            uint64_t result_bits = *(uint64_t*)result;
+            if(result_bits & (1ull << 63)) result_bits = 1ull << 63;
+            else result_bits = 0;
+            *result = *(double*)&result_bits;
         }
     }
     if (fperaised & FE_DIVBYZERO)
@@ -135,9 +138,10 @@ check_sse_exceptions_double(double* result)
         mxcsr |= 0x10;
         if((mxcsr & MXCSR_FTZ) && (mxcsr & 0x800))
         {
-            uint32_t result_bits = *(uint32_t*)result;
-            if(result_bits & (1ull << 63)) *result = *(double*)&(1ull << 63);
-            else *result = 0;
+            uint64_t result_bits = *(uint64_t*)result;
+            if(result_bits & (1ull << 63)) result_bits = 1ull << 63;
+            else result_bits = 0;
+            *result = *(double*)&result_bits;
         }
     }
     if (fperaised & FE_INEXACT)
