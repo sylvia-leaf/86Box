@@ -66,26 +66,87 @@ opEMMS(uint32_t fetchdat)
 }
 
 static inline int
-check_sse_exceptions(double result)
+check_sse_exceptions_float(float* result)
 {
     int fperaised = fetestexcept(FE_ALL_EXCEPT);
     if (fperaised & FE_INVALID)
         mxcsr |= 1;
-    if (fpclassify(result) == FP_SUBNORMAL)
+    if (fpclassify(*result) == FP_SUBNORMAL)
+    {
         mxcsr |= 2;
+        if((mxcsr & MXCSR_DAZ) && (mxcsr & 0x100))
+        {
+            uint32_t result_bits = *(uint32_t*)result;
+            if(result_bits & (1u << 31)) *result = *(float*)&(1u << 31);
+            else *result = 0;
+        }
+    }
     if (fperaised & FE_DIVBYZERO)
         mxcsr |= 4;
     if (fperaised & FE_OVERFLOW)
         mxcsr |= 8;
     if (fperaised & FE_UNDERFLOW)
+    {
         mxcsr |= 0x10;
+        if((mxcsr & MXCSR_FTZ) && (mxcsr & 0x800))
+        {
+            uint32_t result_bits = *(uint32_t*)result;
+            if(result_bits & (1u << 31)) *result = *(float*)&(1u << 31);
+            else *result = 0;
+        }
+    }
     if (fperaised & FE_INEXACT)
         mxcsr |= 0x20;
 
     int unmasked = (~mxcsr >> 7) & 0x3f;
     if ((mxcsr & 0x3f) & (unmasked & 0x3f)) {
         if (cr4 & CR4_OSXMMEXCPT)
-            x86_doabrt(0x13);
+            x86_int(0x13);
+        ILLEGAL_ON(!(cr4 & CR4_OSXMMEXCPT));
+    }
+
+
+    return 0;
+}
+
+
+static inline int
+check_sse_exceptions_double(double* result)
+{
+    int fperaised = fetestexcept(FE_ALL_EXCEPT);
+    if (fperaised & FE_INVALID)
+        mxcsr |= 1;
+    if (fpclassify(*result) == FP_SUBNORMAL)
+    {
+        mxcsr |= 2;
+        if((mxcsr & MXCSR_DAZ) && (mxcsr & 0x100))
+        {
+            uint32_t result_bits = *(uint32_t*)result;
+            if(result_bits & (1ull << 63)) *result = *(double*)&(1ull << 63);
+            else *result = 0;
+        }
+    }
+    if (fperaised & FE_DIVBYZERO)
+        mxcsr |= 4;
+    if (fperaised & FE_OVERFLOW)
+        mxcsr |= 8;
+    if (fperaised & FE_UNDERFLOW)
+    {
+        mxcsr |= 0x10;
+        if((mxcsr & MXCSR_FTZ) && (mxcsr & 0x800))
+        {
+            uint32_t result_bits = *(uint32_t*)result;
+            if(result_bits & (1ull << 63)) *result = *(double*)&(1ull << 63);
+            else *result = 0;
+        }
+    }
+    if (fperaised & FE_INEXACT)
+        mxcsr |= 0x20;
+
+    int unmasked = (~mxcsr >> 7) & 0x3f;
+    if ((mxcsr & 0x3f) & (unmasked & 0x3f)) {
+        if (cr4 & CR4_OSXMMEXCPT)
+            x86_int(0x13);
         ILLEGAL_ON(!(cr4 & CR4_OSXMMEXCPT));
     }
     return 0;

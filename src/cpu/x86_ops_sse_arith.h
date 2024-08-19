@@ -18,10 +18,10 @@ opSQRTPS_xmm_xmm_a16(uint32_t fetchdat)
         XMM[cpu_reg].f[2] = sqrt(XMM[cpu_rm].f[2]);
         XMM[cpu_reg].f[3] = sqrt(XMM[cpu_rm].f[3]);
         fesetround(FE_TONEAREST);
-        check_sse_exceptions(XMM[cpu_reg].f[0]);
-        check_sse_exceptions(XMM[cpu_reg].f[1]);
-        check_sse_exceptions(XMM[cpu_reg].f[2]);
-        check_sse_exceptions(XMM[cpu_reg].f[3]);
+        check_sse_exceptions_float(&XMM[cpu_reg].f[0]);
+        check_sse_exceptions_float(&XMM[cpu_reg].f[1]);
+        check_sse_exceptions_float(&XMM[cpu_reg].f[2]);
+        check_sse_exceptions_float(&XMM[cpu_reg].f[3]);
         CLOCK_CYCLES(1);
     } else {
         uint32_t src[4];
@@ -50,10 +50,10 @@ opSQRTPS_xmm_xmm_a16(uint32_t fetchdat)
         XMM[cpu_reg].f[2] = sqrt(src_real[2]);
         XMM[cpu_reg].f[3] = sqrt(src_real[3]);
         fesetround(FE_TONEAREST);
-        check_sse_exceptions(XMM[cpu_reg].f[0]);
-        check_sse_exceptions(XMM[cpu_reg].f[1]);
-        check_sse_exceptions(XMM[cpu_reg].f[2]);
-        check_sse_exceptions(XMM[cpu_reg].f[3]);
+        check_sse_exceptions_float(&XMM[cpu_reg].f[0]);
+        check_sse_exceptions_float(&XMM[cpu_reg].f[1]);
+        check_sse_exceptions_float(&XMM[cpu_reg].f[2]);
+        check_sse_exceptions_float(&XMM[cpu_reg].f[3]);
         CLOCK_CYCLES(2);
     }
 
@@ -75,10 +75,10 @@ opSQRTPS_xmm_xmm_a32(uint32_t fetchdat)
         XMM[cpu_reg].f[2] = sqrt(XMM[cpu_rm].f[2]);
         XMM[cpu_reg].f[3] = sqrt(XMM[cpu_rm].f[3]);
         fesetround(FE_TONEAREST);
-        check_sse_exceptions(XMM[cpu_reg].f[0]);
-        check_sse_exceptions(XMM[cpu_reg].f[1]);
-        check_sse_exceptions(XMM[cpu_reg].f[2]);
-        check_sse_exceptions(XMM[cpu_reg].f[3]);
+        check_sse_exceptions_float(&XMM[cpu_reg].f[0]);
+        check_sse_exceptions_float(&XMM[cpu_reg].f[1]);
+        check_sse_exceptions_float(&XMM[cpu_reg].f[2]);
+        check_sse_exceptions_float(&XMM[cpu_reg].f[3]);
         CLOCK_CYCLES(1);
     } else {
         uint32_t src[4];
@@ -107,10 +107,10 @@ opSQRTPS_xmm_xmm_a32(uint32_t fetchdat)
         XMM[cpu_reg].f[2] = sqrt(src_real[2]);
         XMM[cpu_reg].f[3] = sqrt(src_real[3]);
         fesetround(FE_TONEAREST);
-        check_sse_exceptions(XMM[cpu_reg].f[0]);
-        check_sse_exceptions(XMM[cpu_reg].f[1]);
-        check_sse_exceptions(XMM[cpu_reg].f[2]);
-        check_sse_exceptions(XMM[cpu_reg].f[3]);
+        check_sse_exceptions_float(&XMM[cpu_reg].f[0]);
+        check_sse_exceptions_float(&XMM[cpu_reg].f[1]);
+        check_sse_exceptions_float(&XMM[cpu_reg].f[2]);
+        check_sse_exceptions_float(&XMM[cpu_reg].f[3]);
         CLOCK_CYCLES(2);
     }
 
@@ -126,7 +126,7 @@ opSQRTSS_xmm_xmm_a16(uint32_t fetchdat)
         fesetround(rounding_modes[(mxcsr >> 13) & 3]);
         XMM[cpu_reg].f[0] = sqrt(XMM[cpu_rm].f[0]);
         fesetround(FE_TONEAREST);
-        check_sse_exceptions(XMM[cpu_reg].f[0]);
+        check_sse_exceptions_float(&XMM[cpu_reg].f[0]);
         CLOCK_CYCLES(1);
     } else {
         uint32_t src;
@@ -140,7 +140,7 @@ opSQRTSS_xmm_xmm_a16(uint32_t fetchdat)
         fesetround(rounding_modes[(mxcsr >> 13) & 3]);
         XMM[cpu_reg].f[0] = sqrt(src_real);
         fesetround(FE_TONEAREST);
-        check_sse_exceptions(XMM[cpu_reg].f[0]);
+        check_sse_exceptions_float(&XMM[cpu_reg].f[0]);
         CLOCK_CYCLES(2);
     }
 
@@ -156,7 +156,7 @@ opSQRTSS_xmm_xmm_a32(uint32_t fetchdat)
         fesetround(rounding_modes[(mxcsr >> 13) & 3]);
         XMM[cpu_reg].f[0] = sqrt(XMM[cpu_rm].f[0]);
         fesetround(FE_TONEAREST);
-        check_sse_exceptions(XMM[cpu_reg].f[0]);
+        check_sse_exceptions_float(&XMM[cpu_reg].f[0]);
         CLOCK_CYCLES(1);
     } else {
         uint32_t src;
@@ -170,7 +170,7 @@ opSQRTSS_xmm_xmm_a32(uint32_t fetchdat)
         fesetround(rounding_modes[(mxcsr >> 13) & 3]);
         XMM[cpu_reg].f[0] = sqrt(src_real);
         fesetround(FE_TONEAREST);
-        check_sse_exceptions(XMM[cpu_reg].f[0]);
+        check_sse_exceptions_float(&XMM[cpu_reg].f[0]);
         CLOCK_CYCLES(2);
     }
 
@@ -192,10 +192,10 @@ opRSQRTPS_xmm_xmm_a16(uint32_t fetchdat)
         XMM[cpu_reg].f[2] = 1.0 / sqrt(XMM[cpu_rm].f[2]);
         XMM[cpu_reg].f[3] = 1.0 / sqrt(XMM[cpu_rm].f[3]);
         fesetround(FE_TONEAREST);
-        check_sse_exceptions(XMM[cpu_reg].f[0]);
-        check_sse_exceptions(XMM[cpu_reg].f[1]);
-        check_sse_exceptions(XMM[cpu_reg].f[2]);
-        check_sse_exceptions(XMM[cpu_reg].f[3]);
+        check_sse_exceptions_float(&XMM[cpu_reg].f[0]);
+        check_sse_exceptions_float(&XMM[cpu_reg].f[1]);
+        check_sse_exceptions_float(&XMM[cpu_reg].f[2]);
+        check_sse_exceptions_float(&XMM[cpu_reg].f[3]);
         CLOCK_CYCLES(1);
     } else {
         uint32_t src[4];
@@ -224,10 +224,10 @@ opRSQRTPS_xmm_xmm_a16(uint32_t fetchdat)
         XMM[cpu_reg].f[2] = 1.0 / sqrt(src_real[2]);
         XMM[cpu_reg].f[3] = 1.0 / sqrt(src_real[3]);
         fesetround(FE_TONEAREST);
-        check_sse_exceptions(XMM[cpu_reg].f[0]);
-        check_sse_exceptions(XMM[cpu_reg].f[1]);
-        check_sse_exceptions(XMM[cpu_reg].f[2]);
-        check_sse_exceptions(XMM[cpu_reg].f[3]);
+        check_sse_exceptions_float(&XMM[cpu_reg].f[0]);
+        check_sse_exceptions_float(&XMM[cpu_reg].f[1]);
+        check_sse_exceptions_float(&XMM[cpu_reg].f[2]);
+        check_sse_exceptions_float(&XMM[cpu_reg].f[3]);
     }
 
     return 0;
@@ -248,10 +248,10 @@ opRSQRTPS_xmm_xmm_a32(uint32_t fetchdat)
         XMM[cpu_reg].f[2] = 1.0 / sqrt(XMM[cpu_rm].f[2]);
         XMM[cpu_reg].f[3] = 1.0 / sqrt(XMM[cpu_rm].f[3]);
         fesetround(FE_TONEAREST);
-        check_sse_exceptions(XMM[cpu_reg].f[0]);
-        check_sse_exceptions(XMM[cpu_reg].f[1]);
-        check_sse_exceptions(XMM[cpu_reg].f[2]);
-        check_sse_exceptions(XMM[cpu_reg].f[3]);
+        check_sse_exceptions_float(&XMM[cpu_reg].f[0]);
+        check_sse_exceptions_float(&XMM[cpu_reg].f[1]);
+        check_sse_exceptions_float(&XMM[cpu_reg].f[2]);
+        check_sse_exceptions_float(&XMM[cpu_reg].f[3]);
         CLOCK_CYCLES(1);
     } else {
         uint32_t src[4];
@@ -280,10 +280,10 @@ opRSQRTPS_xmm_xmm_a32(uint32_t fetchdat)
         XMM[cpu_reg].f[2] = 1.0 / sqrt(src_real[2]);
         XMM[cpu_reg].f[3] = 1.0 / sqrt(src_real[3]);
         fesetround(FE_TONEAREST);
-        check_sse_exceptions(XMM[cpu_reg].f[0]);
-        check_sse_exceptions(XMM[cpu_reg].f[1]);
-        check_sse_exceptions(XMM[cpu_reg].f[2]);
-        check_sse_exceptions(XMM[cpu_reg].f[3]);
+        check_sse_exceptions_float(&XMM[cpu_reg].f[0]);
+        check_sse_exceptions_float(&XMM[cpu_reg].f[1]);
+        check_sse_exceptions_float(&XMM[cpu_reg].f[2]);
+        check_sse_exceptions_float(&XMM[cpu_reg].f[3]);
         CLOCK_CYCLES(2);
     }
 
@@ -299,7 +299,7 @@ opRSQRTSS_xmm_xmm_a16(uint32_t fetchdat)
         fesetround(rounding_modes[(mxcsr >> 13) & 3]);
         XMM[cpu_reg].f[0] = 1.0 / sqrt(XMM[cpu_rm].f[0]);
         fesetround(FE_TONEAREST);
-        check_sse_exceptions(XMM[cpu_reg].f[0]);
+        check_sse_exceptions_float(&XMM[cpu_reg].f[0]);
         CLOCK_CYCLES(1);
     } else {
         uint32_t src;
@@ -313,7 +313,7 @@ opRSQRTSS_xmm_xmm_a16(uint32_t fetchdat)
         fesetround(rounding_modes[(mxcsr >> 13) & 3]);
         XMM[cpu_reg].f[0] = 1.0 / sqrt(src_real);
         fesetround(FE_TONEAREST);
-        check_sse_exceptions(XMM[cpu_reg].f[0]);
+        check_sse_exceptions_float(&XMM[cpu_reg].f[0]);
         CLOCK_CYCLES(2);
     }
 
@@ -329,7 +329,7 @@ opRSQRTSS_xmm_xmm_a32(uint32_t fetchdat)
         fesetround(rounding_modes[(mxcsr >> 13) & 3]);
         XMM[cpu_reg].f[0] = 1.0 / sqrt(XMM[cpu_rm].f[0]);
         fesetround(FE_TONEAREST);
-        check_sse_exceptions(XMM[cpu_reg].f[0]);
+        check_sse_exceptions_float(&XMM[cpu_reg].f[0]);
         CLOCK_CYCLES(1);
     } else {
         uint32_t src;
@@ -343,7 +343,7 @@ opRSQRTSS_xmm_xmm_a32(uint32_t fetchdat)
         fesetround(rounding_modes[(mxcsr >> 13) & 3]);
         XMM[cpu_reg].f[0] = 1.0 / sqrt(src_real);
         fesetround(FE_TONEAREST);
-        check_sse_exceptions(XMM[cpu_reg].f[0]);
+        check_sse_exceptions_float(&XMM[cpu_reg].f[0]);
         CLOCK_CYCLES(2);
     }
 
@@ -359,7 +359,7 @@ opRCPSS_xmm_xmm_a16(uint32_t fetchdat)
         fesetround(rounding_modes[(mxcsr >> 13) & 3]);
         XMM[cpu_reg].f[0] = 1.0 / XMM[cpu_rm].f[0];
         fesetround(FE_TONEAREST);
-        check_sse_exceptions(XMM[cpu_reg].f[0]);
+        check_sse_exceptions_float(&XMM[cpu_reg].f[0]);
         CLOCK_CYCLES(1);
     } else {
         uint32_t src;
@@ -373,7 +373,7 @@ opRCPSS_xmm_xmm_a16(uint32_t fetchdat)
         fesetround(rounding_modes[(mxcsr >> 13) & 3]);
         XMM[cpu_reg].f[0] = 1.0 / src_real;
         fesetround(FE_TONEAREST);
-        check_sse_exceptions(XMM[cpu_reg].f[0]);
+        check_sse_exceptions_float(&XMM[cpu_reg].f[0]);
         CLOCK_CYCLES(2);
     }
 
@@ -389,7 +389,7 @@ opRCPSS_xmm_xmm_a32(uint32_t fetchdat)
         fesetround(rounding_modes[(mxcsr >> 13) & 3]);
         XMM[cpu_reg].f[0] = 1.0 / XMM[cpu_rm].f[0];
         fesetround(FE_TONEAREST);
-        check_sse_exceptions(XMM[cpu_reg].f[0]);
+        check_sse_exceptions_float(&XMM[cpu_reg].f[0]);
         CLOCK_CYCLES(1);
     } else {
         uint32_t src;
@@ -403,7 +403,7 @@ opRCPSS_xmm_xmm_a32(uint32_t fetchdat)
         fesetround(rounding_modes[(mxcsr >> 13) & 3]);
         XMM[cpu_reg].f[0] = 1.0 / src_real;
         fesetround(FE_TONEAREST);
-        check_sse_exceptions(XMM[cpu_reg].f[0]);
+        check_sse_exceptions_float(&XMM[cpu_reg].f[0]);
         CLOCK_CYCLES(2);
     }
 
@@ -423,10 +423,10 @@ opRCPPS_xmm_xmm_a16(uint32_t fetchdat)
         XMM[cpu_reg].f[1] = 1.0 / XMM[cpu_rm].f[1];
         XMM[cpu_reg].f[2] = 1.0 / XMM[cpu_rm].f[2];
         XMM[cpu_reg].f[3] = 1.0 / XMM[cpu_rm].f[3];
-        check_sse_exceptions(XMM[cpu_reg].f[0]);
-        check_sse_exceptions(XMM[cpu_reg].f[1]);
-        check_sse_exceptions(XMM[cpu_reg].f[2]);
-        check_sse_exceptions(XMM[cpu_reg].f[3]);
+        check_sse_exceptions_float(&XMM[cpu_reg].f[0]);
+        check_sse_exceptions_float(&XMM[cpu_reg].f[1]);
+        check_sse_exceptions_float(&XMM[cpu_reg].f[2]);
+        check_sse_exceptions_float(&XMM[cpu_reg].f[3]);
         CLOCK_CYCLES(1);
     } else {
         uint32_t src[4];
@@ -453,10 +453,10 @@ opRCPPS_xmm_xmm_a16(uint32_t fetchdat)
         XMM[cpu_reg].f[1] = 1.0 / src_real[1];
         XMM[cpu_reg].f[2] = 1.0 / src_real[2];
         XMM[cpu_reg].f[3] = 1.0 / src_real[3];
-        check_sse_exceptions(XMM[cpu_reg].f[0]);
-        check_sse_exceptions(XMM[cpu_reg].f[1]);
-        check_sse_exceptions(XMM[cpu_reg].f[2]);
-        check_sse_exceptions(XMM[cpu_reg].f[3]);
+        check_sse_exceptions_float(&XMM[cpu_reg].f[0]);
+        check_sse_exceptions_float(&XMM[cpu_reg].f[1]);
+        check_sse_exceptions_float(&XMM[cpu_reg].f[2]);
+        check_sse_exceptions_float(&XMM[cpu_reg].f[3]);
     }
 
     return 0;
@@ -477,10 +477,10 @@ opRCPPS_xmm_xmm_a32(uint32_t fetchdat)
         XMM[cpu_reg].f[2] = 1.0 / XMM[cpu_rm].f[2];
         XMM[cpu_reg].f[3] = 1.0 / XMM[cpu_rm].f[3];
         fesetround(FE_TONEAREST);
-        check_sse_exceptions(XMM[cpu_reg].f[0]);
-        check_sse_exceptions(XMM[cpu_reg].f[1]);
-        check_sse_exceptions(XMM[cpu_reg].f[2]);
-        check_sse_exceptions(XMM[cpu_reg].f[3]);
+        check_sse_exceptions_float(&XMM[cpu_reg].f[0]);
+        check_sse_exceptions_float(&XMM[cpu_reg].f[1]);
+        check_sse_exceptions_float(&XMM[cpu_reg].f[2]);
+        check_sse_exceptions_float(&XMM[cpu_reg].f[3]);
         CLOCK_CYCLES(1);
     } else {
         uint32_t src[4];
@@ -509,10 +509,10 @@ opRCPPS_xmm_xmm_a32(uint32_t fetchdat)
         XMM[cpu_reg].f[2] = 1.0 / src_real[2];
         XMM[cpu_reg].f[3] = 1.0 / src_real[3];
         fesetround(FE_TONEAREST);
-        check_sse_exceptions(XMM[cpu_reg].f[0]);
-        check_sse_exceptions(XMM[cpu_reg].f[1]);
-        check_sse_exceptions(XMM[cpu_reg].f[2]);
-        check_sse_exceptions(XMM[cpu_reg].f[3]);
+        check_sse_exceptions_float(&XMM[cpu_reg].f[0]);
+        check_sse_exceptions_float(&XMM[cpu_reg].f[1]);
+        check_sse_exceptions_float(&XMM[cpu_reg].f[2]);
+        check_sse_exceptions_float(&XMM[cpu_reg].f[3]);
     }
 
     return 0;
@@ -533,10 +533,10 @@ opADDPS_xmm_xmm_a16(uint32_t fetchdat)
         XMM[cpu_reg].f[2] += XMM[cpu_rm].f[2];
         XMM[cpu_reg].f[3] += XMM[cpu_rm].f[3];
         fesetround(FE_TONEAREST);
-        check_sse_exceptions(XMM[cpu_reg].f[0]);
-        check_sse_exceptions(XMM[cpu_reg].f[1]);
-        check_sse_exceptions(XMM[cpu_reg].f[2]);
-        check_sse_exceptions(XMM[cpu_reg].f[3]);
+        check_sse_exceptions_float(&XMM[cpu_reg].f[0]);
+        check_sse_exceptions_float(&XMM[cpu_reg].f[1]);
+        check_sse_exceptions_float(&XMM[cpu_reg].f[2]);
+        check_sse_exceptions_float(&XMM[cpu_reg].f[3]);
         CLOCK_CYCLES(1);
     } else {
         uint32_t src[4];
@@ -565,10 +565,10 @@ opADDPS_xmm_xmm_a16(uint32_t fetchdat)
         XMM[cpu_reg].f[2] += src_real[2];
         XMM[cpu_reg].f[3] += src_real[3];
         fesetround(FE_TONEAREST);
-        check_sse_exceptions(XMM[cpu_reg].f[0]);
-        check_sse_exceptions(XMM[cpu_reg].f[1]);
-        check_sse_exceptions(XMM[cpu_reg].f[2]);
-        check_sse_exceptions(XMM[cpu_reg].f[3]);
+        check_sse_exceptions_float(&XMM[cpu_reg].f[0]);
+        check_sse_exceptions_float(&XMM[cpu_reg].f[1]);
+        check_sse_exceptions_float(&XMM[cpu_reg].f[2]);
+        check_sse_exceptions_float(&XMM[cpu_reg].f[3]);
     }
 
     return 0;
@@ -589,10 +589,10 @@ opADDPS_xmm_xmm_a32(uint32_t fetchdat)
         XMM[cpu_reg].f[2] += XMM[cpu_rm].f[2];
         XMM[cpu_reg].f[3] += XMM[cpu_rm].f[3];
         fesetround(FE_TONEAREST);
-        check_sse_exceptions(XMM[cpu_reg].f[0]);
-        check_sse_exceptions(XMM[cpu_reg].f[1]);
-        check_sse_exceptions(XMM[cpu_reg].f[2]);
-        check_sse_exceptions(XMM[cpu_reg].f[3]);
+        check_sse_exceptions_float(&XMM[cpu_reg].f[0]);
+        check_sse_exceptions_float(&XMM[cpu_reg].f[1]);
+        check_sse_exceptions_float(&XMM[cpu_reg].f[2]);
+        check_sse_exceptions_float(&XMM[cpu_reg].f[3]);
         CLOCK_CYCLES(1);
     } else {
         uint32_t src[4];
@@ -621,10 +621,10 @@ opADDPS_xmm_xmm_a32(uint32_t fetchdat)
         XMM[cpu_reg].f[2] += src_real[2];
         XMM[cpu_reg].f[3] += src_real[3];
         fesetround(FE_TONEAREST);
-        check_sse_exceptions(XMM[cpu_reg].f[0]);
-        check_sse_exceptions(XMM[cpu_reg].f[1]);
-        check_sse_exceptions(XMM[cpu_reg].f[2]);
-        check_sse_exceptions(XMM[cpu_reg].f[3]);
+        check_sse_exceptions_float(&XMM[cpu_reg].f[0]);
+        check_sse_exceptions_float(&XMM[cpu_reg].f[1]);
+        check_sse_exceptions_float(&XMM[cpu_reg].f[2]);
+        check_sse_exceptions_float(&XMM[cpu_reg].f[3]);
     }
 
     return 0;
@@ -639,7 +639,7 @@ opADDSS_xmm_xmm_a16(uint32_t fetchdat)
         fesetround(rounding_modes[(mxcsr >> 13) & 3]);
         XMM[cpu_reg].f[0] += XMM[cpu_rm].f[0];
         fesetround(FE_TONEAREST);
-        check_sse_exceptions(XMM[cpu_reg].f[0]);
+        check_sse_exceptions_float(&XMM[cpu_reg].f[0]);
         CLOCK_CYCLES(1);
     } else {
         uint32_t src;
@@ -653,7 +653,7 @@ opADDSS_xmm_xmm_a16(uint32_t fetchdat)
         fesetround(rounding_modes[(mxcsr >> 13) & 3]);
         XMM[cpu_reg].f[0] += src_real;
         fesetround(FE_TONEAREST);
-        check_sse_exceptions(XMM[cpu_reg].f[0]);
+        check_sse_exceptions_float(&XMM[cpu_reg].f[0]);
     }
 
     return 0;
@@ -668,7 +668,7 @@ opADDSS_xmm_xmm_a32(uint32_t fetchdat)
         fesetround(rounding_modes[(mxcsr >> 13) & 3]);
         XMM[cpu_reg].f[0] += XMM[cpu_rm].f[0];
         fesetround(FE_TONEAREST);
-        check_sse_exceptions(XMM[cpu_reg].f[0]);
+        check_sse_exceptions_float(&XMM[cpu_reg].f[0]);
         CLOCK_CYCLES(1);
     } else {
         uint32_t src;
@@ -682,7 +682,7 @@ opADDSS_xmm_xmm_a32(uint32_t fetchdat)
         fesetround(rounding_modes[(mxcsr >> 13) & 3]);
         XMM[cpu_reg].f[0] += src_real;
         fesetround(FE_TONEAREST);
-        check_sse_exceptions(XMM[cpu_reg].f[0]);
+        check_sse_exceptions_float(&XMM[cpu_reg].f[0]);
     }
 
     return 0;
@@ -703,10 +703,10 @@ opMULPS_xmm_xmm_a16(uint32_t fetchdat)
         XMM[cpu_reg].f[2] *= XMM[cpu_rm].f[2];
         XMM[cpu_reg].f[3] *= XMM[cpu_rm].f[3];
         fesetround(FE_TONEAREST);
-        check_sse_exceptions(XMM[cpu_reg].f[0]);
-        check_sse_exceptions(XMM[cpu_reg].f[1]);
-        check_sse_exceptions(XMM[cpu_reg].f[2]);
-        check_sse_exceptions(XMM[cpu_reg].f[3]);
+        check_sse_exceptions_float(&XMM[cpu_reg].f[0]);
+        check_sse_exceptions_float(&XMM[cpu_reg].f[1]);
+        check_sse_exceptions_float(&XMM[cpu_reg].f[2]);
+        check_sse_exceptions_float(&XMM[cpu_reg].f[3]);
         CLOCK_CYCLES(1);
     } else {
         uint32_t src[4];
@@ -735,10 +735,10 @@ opMULPS_xmm_xmm_a16(uint32_t fetchdat)
         XMM[cpu_reg].f[2] *= src_real[2];
         XMM[cpu_reg].f[3] *= src_real[3];
         fesetround(FE_TONEAREST);
-        check_sse_exceptions(XMM[cpu_reg].f[0]);
-        check_sse_exceptions(XMM[cpu_reg].f[1]);
-        check_sse_exceptions(XMM[cpu_reg].f[2]);
-        check_sse_exceptions(XMM[cpu_reg].f[3]);
+        check_sse_exceptions_float(&XMM[cpu_reg].f[0]);
+        check_sse_exceptions_float(&XMM[cpu_reg].f[1]);
+        check_sse_exceptions_float(&XMM[cpu_reg].f[2]);
+        check_sse_exceptions_float(&XMM[cpu_reg].f[3]);
     }
 
     return 0;
@@ -759,10 +759,10 @@ opMULPS_xmm_xmm_a32(uint32_t fetchdat)
         XMM[cpu_reg].f[2] *= XMM[cpu_rm].f[2];
         XMM[cpu_reg].f[3] *= XMM[cpu_rm].f[3];
         fesetround(FE_TONEAREST);
-        check_sse_exceptions(XMM[cpu_reg].f[0]);
-        check_sse_exceptions(XMM[cpu_reg].f[1]);
-        check_sse_exceptions(XMM[cpu_reg].f[2]);
-        check_sse_exceptions(XMM[cpu_reg].f[3]);
+        check_sse_exceptions_float(&XMM[cpu_reg].f[0]);
+        check_sse_exceptions_float(&XMM[cpu_reg].f[1]);
+        check_sse_exceptions_float(&XMM[cpu_reg].f[2]);
+        check_sse_exceptions_float(&XMM[cpu_reg].f[3]);
         CLOCK_CYCLES(1);
     } else {
         uint32_t src[4];
@@ -791,10 +791,10 @@ opMULPS_xmm_xmm_a32(uint32_t fetchdat)
         XMM[cpu_reg].f[2] *= src_real[2];
         XMM[cpu_reg].f[3] *= src_real[3];
         fesetround(FE_TONEAREST);
-        check_sse_exceptions(XMM[cpu_reg].f[0]);
-        check_sse_exceptions(XMM[cpu_reg].f[1]);
-        check_sse_exceptions(XMM[cpu_reg].f[2]);
-        check_sse_exceptions(XMM[cpu_reg].f[3]);
+        check_sse_exceptions_float(&XMM[cpu_reg].f[0]);
+        check_sse_exceptions_float(&XMM[cpu_reg].f[1]);
+        check_sse_exceptions_float(&XMM[cpu_reg].f[2]);
+        check_sse_exceptions_float(&XMM[cpu_reg].f[3]);
     }
 
     return 0;
@@ -809,7 +809,7 @@ opMULSS_xmm_xmm_a16(uint32_t fetchdat)
         fesetround(rounding_modes[(mxcsr >> 13) & 3]);
         XMM[cpu_reg].f[0] *= XMM[cpu_rm].f[0];
         fesetround(FE_TONEAREST);
-        check_sse_exceptions(XMM[cpu_reg].f[0]);
+        check_sse_exceptions_float(&XMM[cpu_reg].f[0]);
         CLOCK_CYCLES(1);
     } else {
         uint32_t src;
@@ -823,7 +823,7 @@ opMULSS_xmm_xmm_a16(uint32_t fetchdat)
         fesetround(rounding_modes[(mxcsr >> 13) & 3]);
         XMM[cpu_reg].f[0] *= src_real;
         fesetround(FE_TONEAREST);
-        check_sse_exceptions(XMM[cpu_reg].f[0]);
+        check_sse_exceptions_float(&XMM[cpu_reg].f[0]);
     }
 
     return 0;
@@ -838,7 +838,7 @@ opMULSS_xmm_xmm_a32(uint32_t fetchdat)
         fesetround(rounding_modes[(mxcsr >> 13) & 3]);
         XMM[cpu_reg].f[0] *= XMM[cpu_rm].f[0];
         fesetround(FE_TONEAREST);
-        check_sse_exceptions(XMM[cpu_reg].f[0]);
+        check_sse_exceptions_float(&XMM[cpu_reg].f[0]);
         CLOCK_CYCLES(1);
     } else {
         uint32_t src;
@@ -852,7 +852,7 @@ opMULSS_xmm_xmm_a32(uint32_t fetchdat)
         fesetround(rounding_modes[(mxcsr >> 13) & 3]);
         XMM[cpu_reg].f[0] *= src_real;
         fesetround(FE_TONEAREST);
-        check_sse_exceptions(XMM[cpu_reg].f[0]);
+        check_sse_exceptions_float(&XMM[cpu_reg].f[0]);
     }
 
     return 0;
@@ -873,10 +873,10 @@ opSUBPS_xmm_xmm_a16(uint32_t fetchdat)
         XMM[cpu_reg].f[2] -= XMM[cpu_rm].f[2];
         XMM[cpu_reg].f[3] -= XMM[cpu_rm].f[3];
         fesetround(FE_TONEAREST);
-        check_sse_exceptions(XMM[cpu_reg].f[0]);
-        check_sse_exceptions(XMM[cpu_reg].f[1]);
-        check_sse_exceptions(XMM[cpu_reg].f[2]);
-        check_sse_exceptions(XMM[cpu_reg].f[3]);
+        check_sse_exceptions_float(&XMM[cpu_reg].f[0]);
+        check_sse_exceptions_float(&XMM[cpu_reg].f[1]);
+        check_sse_exceptions_float(&XMM[cpu_reg].f[2]);
+        check_sse_exceptions_float(&XMM[cpu_reg].f[3]);
         CLOCK_CYCLES(1);
     } else {
         uint32_t src[4];
@@ -905,10 +905,10 @@ opSUBPS_xmm_xmm_a16(uint32_t fetchdat)
         XMM[cpu_reg].f[2] -= src_real[2];
         XMM[cpu_reg].f[3] -= src_real[3];
         fesetround(FE_TONEAREST);
-        check_sse_exceptions(XMM[cpu_reg].f[0]);
-        check_sse_exceptions(XMM[cpu_reg].f[1]);
-        check_sse_exceptions(XMM[cpu_reg].f[2]);
-        check_sse_exceptions(XMM[cpu_reg].f[3]);
+        check_sse_exceptions_float(&XMM[cpu_reg].f[0]);
+        check_sse_exceptions_float(&XMM[cpu_reg].f[1]);
+        check_sse_exceptions_float(&XMM[cpu_reg].f[2]);
+        check_sse_exceptions_float(&XMM[cpu_reg].f[3]);
     }
 
     return 0;
@@ -929,10 +929,10 @@ opSUBPS_xmm_xmm_a32(uint32_t fetchdat)
         XMM[cpu_reg].f[2] -= XMM[cpu_rm].f[2];
         XMM[cpu_reg].f[3] -= XMM[cpu_rm].f[3];
         fesetround(FE_TONEAREST);
-        check_sse_exceptions(XMM[cpu_reg].f[0]);
-        check_sse_exceptions(XMM[cpu_reg].f[1]);
-        check_sse_exceptions(XMM[cpu_reg].f[2]);
-        check_sse_exceptions(XMM[cpu_reg].f[3]);
+        check_sse_exceptions_float(&XMM[cpu_reg].f[0]);
+        check_sse_exceptions_float(&XMM[cpu_reg].f[1]);
+        check_sse_exceptions_float(&XMM[cpu_reg].f[2]);
+        check_sse_exceptions_float(&XMM[cpu_reg].f[3]);
         CLOCK_CYCLES(1);
     } else {
         uint32_t src[4];
@@ -961,10 +961,10 @@ opSUBPS_xmm_xmm_a32(uint32_t fetchdat)
         XMM[cpu_reg].f[2] -= src_real[2];
         XMM[cpu_reg].f[3] -= src_real[3];
         fesetround(FE_TONEAREST);
-        check_sse_exceptions(XMM[cpu_reg].f[0]);
-        check_sse_exceptions(XMM[cpu_reg].f[1]);
-        check_sse_exceptions(XMM[cpu_reg].f[2]);
-        check_sse_exceptions(XMM[cpu_reg].f[3]);
+        check_sse_exceptions_float(&XMM[cpu_reg].f[0]);
+        check_sse_exceptions_float(&XMM[cpu_reg].f[1]);
+        check_sse_exceptions_float(&XMM[cpu_reg].f[2]);
+        check_sse_exceptions_float(&XMM[cpu_reg].f[3]);
     }
 
     return 0;
@@ -979,7 +979,7 @@ opSUBSS_xmm_xmm_a16(uint32_t fetchdat)
         fesetround(rounding_modes[(mxcsr >> 13) & 3]);
         XMM[cpu_reg].f[0] -= XMM[cpu_rm].f[0];
         fesetround(FE_TONEAREST);
-        check_sse_exceptions(XMM[cpu_reg].f[0]);
+        check_sse_exceptions_float(&XMM[cpu_reg].f[0]);
         CLOCK_CYCLES(1);
     } else {
         uint32_t src;
@@ -993,7 +993,7 @@ opSUBSS_xmm_xmm_a16(uint32_t fetchdat)
         fesetround(rounding_modes[(mxcsr >> 13) & 3]);
         XMM[cpu_reg].f[0] -= src_real;
         fesetround(FE_TONEAREST);
-        check_sse_exceptions(XMM[cpu_reg].f[0]);
+        check_sse_exceptions_float(&XMM[cpu_reg].f[0]);
     }
 
     return 0;
@@ -1008,7 +1008,7 @@ opSUBSS_xmm_xmm_a32(uint32_t fetchdat)
         fesetround(rounding_modes[(mxcsr >> 13) & 3]);
         XMM[cpu_reg].f[0] -= XMM[cpu_rm].f[0];
         fesetround(FE_TONEAREST);
-        check_sse_exceptions(XMM[cpu_reg].f[0]);
+        check_sse_exceptions_float(&XMM[cpu_reg].f[0]);
         CLOCK_CYCLES(1);
     } else {
         uint32_t src;
@@ -1022,7 +1022,7 @@ opSUBSS_xmm_xmm_a32(uint32_t fetchdat)
         fesetround(rounding_modes[(mxcsr >> 13) & 3]);
         XMM[cpu_reg].f[0] -= src_real;
         fesetround(FE_TONEAREST);
-        check_sse_exceptions(XMM[cpu_reg].f[0]);
+        check_sse_exceptions_float(&XMM[cpu_reg].f[0]);
     }
 
     return 0;
@@ -1041,10 +1041,10 @@ opMINPS_xmm_xmm_a16(uint32_t fetchdat)
         XMM[cpu_reg].f[1] = fmin(XMM[cpu_rm].f[1], XMM[cpu_reg].f[1]);
         XMM[cpu_reg].f[2] = fmin(XMM[cpu_rm].f[2], XMM[cpu_reg].f[2]);
         XMM[cpu_reg].f[3] = fmin(XMM[cpu_rm].f[3], XMM[cpu_reg].f[3]);
-        check_sse_exceptions(XMM[cpu_reg].f[0]);
-        check_sse_exceptions(XMM[cpu_reg].f[1]);
-        check_sse_exceptions(XMM[cpu_reg].f[2]);
-        check_sse_exceptions(XMM[cpu_reg].f[3]);
+        check_sse_exceptions_float(&XMM[cpu_reg].f[0]);
+        check_sse_exceptions_float(&XMM[cpu_reg].f[1]);
+        check_sse_exceptions_float(&XMM[cpu_reg].f[2]);
+        check_sse_exceptions_float(&XMM[cpu_reg].f[3]);
         CLOCK_CYCLES(1);
     } else {
         uint32_t src[4];
@@ -1071,10 +1071,10 @@ opMINPS_xmm_xmm_a16(uint32_t fetchdat)
         XMM[cpu_reg].f[1] = fmin(XMM[cpu_reg].f[1], src_real[1]);
         XMM[cpu_reg].f[2] = fmin(XMM[cpu_reg].f[2], src_real[2]);
         XMM[cpu_reg].f[3] = fmin(XMM[cpu_reg].f[3], src_real[3]);
-        check_sse_exceptions(XMM[cpu_reg].f[0]);
-        check_sse_exceptions(XMM[cpu_reg].f[1]);
-        check_sse_exceptions(XMM[cpu_reg].f[2]);
-        check_sse_exceptions(XMM[cpu_reg].f[3]);
+        check_sse_exceptions_float(&XMM[cpu_reg].f[0]);
+        check_sse_exceptions_float(&XMM[cpu_reg].f[1]);
+        check_sse_exceptions_float(&XMM[cpu_reg].f[2]);
+        check_sse_exceptions_float(&XMM[cpu_reg].f[3]);
     }
 
     return 0;
@@ -1093,10 +1093,10 @@ opMINPS_xmm_xmm_a32(uint32_t fetchdat)
         XMM[cpu_reg].f[1] = fmin(XMM[cpu_rm].f[1], XMM[cpu_reg].f[1]);
         XMM[cpu_reg].f[2] = fmin(XMM[cpu_rm].f[2], XMM[cpu_reg].f[2]);
         XMM[cpu_reg].f[3] = fmin(XMM[cpu_rm].f[3], XMM[cpu_reg].f[3]);
-        check_sse_exceptions(XMM[cpu_reg].f[0]);
-        check_sse_exceptions(XMM[cpu_reg].f[1]);
-        check_sse_exceptions(XMM[cpu_reg].f[2]);
-        check_sse_exceptions(XMM[cpu_reg].f[3]);
+        check_sse_exceptions_float(&XMM[cpu_reg].f[0]);
+        check_sse_exceptions_float(&XMM[cpu_reg].f[1]);
+        check_sse_exceptions_float(&XMM[cpu_reg].f[2]);
+        check_sse_exceptions_float(&XMM[cpu_reg].f[3]);
         CLOCK_CYCLES(1);
     } else {
         uint32_t src[4];
@@ -1123,10 +1123,10 @@ opMINPS_xmm_xmm_a32(uint32_t fetchdat)
         XMM[cpu_reg].f[1] = fmin(XMM[cpu_reg].f[1], src_real[1]);
         XMM[cpu_reg].f[2] = fmin(XMM[cpu_reg].f[2], src_real[2]);
         XMM[cpu_reg].f[3] = fmin(XMM[cpu_reg].f[3], src_real[3]);
-        check_sse_exceptions(XMM[cpu_reg].f[0]);
-        check_sse_exceptions(XMM[cpu_reg].f[1]);
-        check_sse_exceptions(XMM[cpu_reg].f[2]);
-        check_sse_exceptions(XMM[cpu_reg].f[3]);
+        check_sse_exceptions_float(&XMM[cpu_reg].f[0]);
+        check_sse_exceptions_float(&XMM[cpu_reg].f[1]);
+        check_sse_exceptions_float(&XMM[cpu_reg].f[2]);
+        check_sse_exceptions_float(&XMM[cpu_reg].f[3]);
     }
 
     return 0;
@@ -1139,7 +1139,7 @@ opMINSS_xmm_xmm_a16(uint32_t fetchdat)
     fetch_ea_16(fetchdat);
     if (cpu_mod == 3) {
         XMM[cpu_reg].f[0] = fmin(XMM[cpu_rm].f[0], XMM[cpu_reg].f[0]);
-        check_sse_exceptions(XMM[cpu_reg].f[0]);
+        check_sse_exceptions_float(&XMM[cpu_reg].f[0]);
         CLOCK_CYCLES(1);
     } else {
         uint32_t src;
@@ -1151,7 +1151,7 @@ opMINSS_xmm_xmm_a16(uint32_t fetchdat)
         float src_real;
         src_real          = *(float *) &src;
         XMM[cpu_reg].f[0] = fmin(XMM[cpu_reg].f[0], src_real);
-        check_sse_exceptions(XMM[cpu_reg].f[0]);
+        check_sse_exceptions_float(&XMM[cpu_reg].f[0]);
     }
 
     return 0;
@@ -1164,7 +1164,7 @@ opMINSS_xmm_xmm_a32(uint32_t fetchdat)
     fetch_ea_32(fetchdat);
     if (cpu_mod == 3) {
         XMM[cpu_reg].f[0] = fmin(XMM[cpu_rm].f[0], XMM[cpu_reg].f[0]);
-        check_sse_exceptions(XMM[cpu_reg].f[0]);
+        check_sse_exceptions_float(&XMM[cpu_reg].f[0]);
         CLOCK_CYCLES(1);
     } else {
         uint32_t src;
@@ -1176,7 +1176,7 @@ opMINSS_xmm_xmm_a32(uint32_t fetchdat)
         float src_real;
         src_real          = *(float *) &src;
         XMM[cpu_reg].f[0] = fmin(XMM[cpu_reg].f[0], src_real);
-        check_sse_exceptions(XMM[cpu_reg].f[0]);
+        check_sse_exceptions_float(&XMM[cpu_reg].f[0]);
     }
 
     return 0;
@@ -1197,10 +1197,10 @@ opDIVPS_xmm_xmm_a16(uint32_t fetchdat)
         XMM[cpu_reg].f[2] /= XMM[cpu_rm].f[2];
         XMM[cpu_reg].f[3] /= XMM[cpu_rm].f[3];
         fesetround(FE_TONEAREST);
-        check_sse_exceptions(XMM[cpu_reg].f[0]);
-        check_sse_exceptions(XMM[cpu_reg].f[1]);
-        check_sse_exceptions(XMM[cpu_reg].f[2]);
-        check_sse_exceptions(XMM[cpu_reg].f[3]);
+        check_sse_exceptions_float(&XMM[cpu_reg].f[0]);
+        check_sse_exceptions_float(&XMM[cpu_reg].f[1]);
+        check_sse_exceptions_float(&XMM[cpu_reg].f[2]);
+        check_sse_exceptions_float(&XMM[cpu_reg].f[3]);
         CLOCK_CYCLES(1);
     } else {
         uint32_t src[4];
@@ -1229,10 +1229,10 @@ opDIVPS_xmm_xmm_a16(uint32_t fetchdat)
         XMM[cpu_reg].f[2] /= src_real[2];
         XMM[cpu_reg].f[3] /= src_real[3];
         fesetround(FE_TONEAREST);
-        check_sse_exceptions(XMM[cpu_reg].f[0]);
-        check_sse_exceptions(XMM[cpu_reg].f[1]);
-        check_sse_exceptions(XMM[cpu_reg].f[2]);
-        check_sse_exceptions(XMM[cpu_reg].f[3]);
+        check_sse_exceptions_float(&XMM[cpu_reg].f[0]);
+        check_sse_exceptions_float(&XMM[cpu_reg].f[1]);
+        check_sse_exceptions_float(&XMM[cpu_reg].f[2]);
+        check_sse_exceptions_float(&XMM[cpu_reg].f[3]);
     }
 
     return 0;
@@ -1253,10 +1253,10 @@ opDIVPS_xmm_xmm_a32(uint32_t fetchdat)
         XMM[cpu_reg].f[2] /= XMM[cpu_rm].f[2];
         XMM[cpu_reg].f[3] /= XMM[cpu_rm].f[3];
         fesetround(FE_TONEAREST);
-        check_sse_exceptions(XMM[cpu_reg].f[0]);
-        check_sse_exceptions(XMM[cpu_reg].f[1]);
-        check_sse_exceptions(XMM[cpu_reg].f[2]);
-        check_sse_exceptions(XMM[cpu_reg].f[3]);
+        check_sse_exceptions_float(&XMM[cpu_reg].f[0]);
+        check_sse_exceptions_float(&XMM[cpu_reg].f[1]);
+        check_sse_exceptions_float(&XMM[cpu_reg].f[2]);
+        check_sse_exceptions_float(&XMM[cpu_reg].f[3]);
         CLOCK_CYCLES(1);
     } else {
         uint32_t src[4];
@@ -1285,10 +1285,10 @@ opDIVPS_xmm_xmm_a32(uint32_t fetchdat)
         XMM[cpu_reg].f[2] /= src_real[2];
         XMM[cpu_reg].f[3] /= src_real[3];
         fesetround(FE_TONEAREST);
-        check_sse_exceptions(XMM[cpu_reg].f[0]);
-        check_sse_exceptions(XMM[cpu_reg].f[1]);
-        check_sse_exceptions(XMM[cpu_reg].f[2]);
-        check_sse_exceptions(XMM[cpu_reg].f[3]);
+        check_sse_exceptions_float(&XMM[cpu_reg].f[0]);
+        check_sse_exceptions_float(&XMM[cpu_reg].f[1]);
+        check_sse_exceptions_float(&XMM[cpu_reg].f[2]);
+        check_sse_exceptions_float(&XMM[cpu_reg].f[3]);
     }
 
     return 0;
@@ -1303,7 +1303,7 @@ opDIVSS_xmm_xmm_a16(uint32_t fetchdat)
         fesetround(rounding_modes[(mxcsr >> 13) & 3]);
         XMM[cpu_reg].f[0] /= XMM[cpu_rm].f[0];
         fesetround(FE_TONEAREST);
-        check_sse_exceptions(XMM[cpu_reg].f[0]);
+        check_sse_exceptions_float(&XMM[cpu_reg].f[0]);
         CLOCK_CYCLES(1);
     } else {
         uint32_t src;
@@ -1317,7 +1317,7 @@ opDIVSS_xmm_xmm_a16(uint32_t fetchdat)
         fesetround(rounding_modes[(mxcsr >> 13) & 3]);
         XMM[cpu_reg].f[0] /= src_real;
         fesetround(FE_TONEAREST);
-        check_sse_exceptions(XMM[cpu_reg].f[0]);
+        check_sse_exceptions_float(&XMM[cpu_reg].f[0]);
     }
 
     return 0;
@@ -1332,7 +1332,7 @@ opDIVSS_xmm_xmm_a32(uint32_t fetchdat)
         fesetround(rounding_modes[(mxcsr >> 13) & 3]);
         XMM[cpu_reg].f[0] /= XMM[cpu_rm].f[0];
         fesetround(FE_TONEAREST);
-        check_sse_exceptions(XMM[cpu_reg].f[0]);
+        check_sse_exceptions_float(&XMM[cpu_reg].f[0]);
         CLOCK_CYCLES(1);
     } else {
         uint32_t src;
@@ -1346,7 +1346,7 @@ opDIVSS_xmm_xmm_a32(uint32_t fetchdat)
         fesetround(rounding_modes[(mxcsr >> 13) & 3]);
         XMM[cpu_reg].f[0] /= src_real;
         fesetround(FE_TONEAREST);
-        check_sse_exceptions(XMM[cpu_reg].f[0]);
+        check_sse_exceptions_float(&XMM[cpu_reg].f[0]);
     }
 
     return 0;
@@ -1365,10 +1365,10 @@ opMAXPS_xmm_xmm_a16(uint32_t fetchdat)
         XMM[cpu_reg].f[1] = fmax(XMM[cpu_rm].f[1], XMM[cpu_reg].f[1]);
         XMM[cpu_reg].f[2] = fmax(XMM[cpu_rm].f[2], XMM[cpu_reg].f[2]);
         XMM[cpu_reg].f[3] = fmax(XMM[cpu_rm].f[3], XMM[cpu_reg].f[3]);
-        check_sse_exceptions(XMM[cpu_reg].f[0]);
-        check_sse_exceptions(XMM[cpu_reg].f[1]);
-        check_sse_exceptions(XMM[cpu_reg].f[2]);
-        check_sse_exceptions(XMM[cpu_reg].f[3]);
+        check_sse_exceptions_float(&XMM[cpu_reg].f[0]);
+        check_sse_exceptions_float(&XMM[cpu_reg].f[1]);
+        check_sse_exceptions_float(&XMM[cpu_reg].f[2]);
+        check_sse_exceptions_float(&XMM[cpu_reg].f[3]);
         CLOCK_CYCLES(1);
     } else {
         uint32_t src[4];
@@ -1395,10 +1395,10 @@ opMAXPS_xmm_xmm_a16(uint32_t fetchdat)
         XMM[cpu_reg].f[1] = fmax(XMM[cpu_reg].f[1], src_real[1]);
         XMM[cpu_reg].f[2] = fmax(XMM[cpu_reg].f[2], src_real[2]);
         XMM[cpu_reg].f[3] = fmax(XMM[cpu_reg].f[3], src_real[3]);
-        check_sse_exceptions(XMM[cpu_reg].f[0]);
-        check_sse_exceptions(XMM[cpu_reg].f[1]);
-        check_sse_exceptions(XMM[cpu_reg].f[2]);
-        check_sse_exceptions(XMM[cpu_reg].f[3]);
+        check_sse_exceptions_float(&XMM[cpu_reg].f[0]);
+        check_sse_exceptions_float(&XMM[cpu_reg].f[1]);
+        check_sse_exceptions_float(&XMM[cpu_reg].f[2]);
+        check_sse_exceptions_float(&XMM[cpu_reg].f[3]);
     }
 
     return 0;
@@ -1417,10 +1417,10 @@ opMAXPS_xmm_xmm_a32(uint32_t fetchdat)
         XMM[cpu_reg].f[1] = fmax(XMM[cpu_rm].f[1], XMM[cpu_reg].f[1]);
         XMM[cpu_reg].f[2] = fmax(XMM[cpu_rm].f[2], XMM[cpu_reg].f[2]);
         XMM[cpu_reg].f[3] = fmax(XMM[cpu_rm].f[3], XMM[cpu_reg].f[3]);
-        check_sse_exceptions(XMM[cpu_reg].f[0]);
-        check_sse_exceptions(XMM[cpu_reg].f[1]);
-        check_sse_exceptions(XMM[cpu_reg].f[2]);
-        check_sse_exceptions(XMM[cpu_reg].f[3]);
+        check_sse_exceptions_float(&XMM[cpu_reg].f[0]);
+        check_sse_exceptions_float(&XMM[cpu_reg].f[1]);
+        check_sse_exceptions_float(&XMM[cpu_reg].f[2]);
+        check_sse_exceptions_float(&XMM[cpu_reg].f[3]);
         CLOCK_CYCLES(1);
     } else {
         uint32_t src[4];
@@ -1447,10 +1447,10 @@ opMAXPS_xmm_xmm_a32(uint32_t fetchdat)
         XMM[cpu_reg].f[1] = fmax(XMM[cpu_reg].f[1], src_real[1]);
         XMM[cpu_reg].f[2] = fmax(XMM[cpu_reg].f[2], src_real[2]);
         XMM[cpu_reg].f[3] = fmax(XMM[cpu_reg].f[3], src_real[3]);
-        check_sse_exceptions(XMM[cpu_reg].f[0]);
-        check_sse_exceptions(XMM[cpu_reg].f[1]);
-        check_sse_exceptions(XMM[cpu_reg].f[2]);
-        check_sse_exceptions(XMM[cpu_reg].f[3]);
+        check_sse_exceptions_float(&XMM[cpu_reg].f[0]);
+        check_sse_exceptions_float(&XMM[cpu_reg].f[1]);
+        check_sse_exceptions_float(&XMM[cpu_reg].f[2]);
+        check_sse_exceptions_float(&XMM[cpu_reg].f[3]);
     }
 
     return 0;
@@ -1463,7 +1463,7 @@ opMAXSS_xmm_xmm_a16(uint32_t fetchdat)
     fetch_ea_16(fetchdat);
     if (cpu_mod == 3) {
         XMM[cpu_reg].f[0] = fmax(XMM[cpu_rm].f[0], XMM[cpu_reg].f[0]);
-        check_sse_exceptions(XMM[cpu_reg].f[0]);
+        check_sse_exceptions_float(&XMM[cpu_reg].f[0]);
         CLOCK_CYCLES(1);
     } else {
         uint32_t src;
@@ -1475,7 +1475,7 @@ opMAXSS_xmm_xmm_a16(uint32_t fetchdat)
         float src_real;
         src_real          = *(float *) &src;
         XMM[cpu_reg].f[0] = fmax(XMM[cpu_reg].f[0], src_real);
-        check_sse_exceptions(XMM[cpu_reg].f[0]);
+        check_sse_exceptions_float(&XMM[cpu_reg].f[0]);
     }
 
     return 0;
@@ -1488,7 +1488,7 @@ opMAXSS_xmm_xmm_a32(uint32_t fetchdat)
     fetch_ea_32(fetchdat);
     if (cpu_mod == 3) {
         XMM[cpu_reg].f[0] = fmax(XMM[cpu_rm].f[0], XMM[cpu_reg].f[0]);
-        check_sse_exceptions(XMM[cpu_reg].f[0]);
+        check_sse_exceptions_float(&XMM[cpu_reg].f[0]);
         CLOCK_CYCLES(1);
     } else {
         uint32_t src;
@@ -1500,7 +1500,7 @@ opMAXSS_xmm_xmm_a32(uint32_t fetchdat)
         float src_real;
         src_real          = *(float *) &src;
         XMM[cpu_reg].f[0] = fmax(XMM[cpu_reg].f[0], src_real);
-        check_sse_exceptions(XMM[cpu_reg].f[0]);
+        check_sse_exceptions_float(&XMM[cpu_reg].f[0]);
     }
 
     return 0;
