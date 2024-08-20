@@ -459,7 +459,7 @@ typedef struct
     uint32_t regs_high[16];
     uint32_t pc_high;
     uint32_t oldpc_high;
-} cpu_state64_t;
+} cpu_state_high_t;
 
 
 #define in_smm   cpu_state._in_smm
@@ -544,7 +544,7 @@ COMPILE_TIME_ASSERT(sizeof(cpu_state_t) <= 128)
 
 /* Global variables. */
 extern cpu_state_t cpu_state;
-extern cpu_state64_t cpu_state64;
+extern cpu_state_high_t cpu_state_high;
 
 extern const cpu_family_t         cpu_families[];
 extern cpu_family_t              *cpu_f;
