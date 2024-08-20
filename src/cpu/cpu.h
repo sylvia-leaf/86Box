@@ -459,6 +459,8 @@ typedef struct
     uint32_t regs_high[16];
     uint32_t pc_high;
     uint32_t oldpc_high;
+    uint32_t mxcsr;
+    SSE_REG XMM[16];
 } cpu_state_high_t;
 
 
@@ -637,8 +639,6 @@ extern uint16_t temp_seg_data[4];
 extern uint16_t cs_msr;
 extern uint32_t esp_msr;
 extern uint32_t eip_msr;
-extern SSE_REG  XMM[8];
-extern uint32_t mxcsr;
 
 #define MXCSR_DAZ 0x0040
 #define MXCSR_FTZ 0x8000

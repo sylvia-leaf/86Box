@@ -58,9 +58,6 @@
 #define CCR3_SMI_LOCK (1 << 0)
 #define CCR3_NMI_EN   (1 << 1)
 
-SSE_REG  XMM[8];
-uint32_t mxcsr;
-
 enum {
     CPUID_FPU       = (1 << 0),  /* On-chip Floating Point Unit */
     CPUID_VME       = (1 << 1),  /* Virtual 8086 mode extensions */
