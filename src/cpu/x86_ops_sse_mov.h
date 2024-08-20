@@ -952,7 +952,9 @@ opPEXTRW_xmm_w_a16(uint32_t fetchdat)
     ILLEGAL_ON(cpu_mod != 3);
     if (cpu_mod == 3) {
         if (sse_xmm)
+        {
             setr32(cpu_reg, cpu_state_high.XMM[cpu_rm].w[imm & 7]);
+        }
         else {
             MMX_ENTER();
             MMX_REG src;
@@ -976,7 +978,9 @@ opPEXTRW_xmm_w_a32(uint32_t fetchdat)
     ILLEGAL_ON(cpu_mod != 3);
     if (cpu_mod == 3) {
         if (sse_xmm)
+        {
             setr32(cpu_reg, cpu_state_high.XMM[cpu_rm].w[imm & 7]);
+        }
         else {
             MMX_ENTER();
             MMX_REG src;

@@ -78,7 +78,7 @@ extern int fpu_cycles;
 
 #define setznp168 setznp16
 
-#define getr8(r)  (((r & 4) && !(r & 0x10) ? cpu_state.regs[r & 3].b.h : cpu_state.regs[r & 3].b.l)
+#define getr8(r)  (((r & 4) && !(r & 0x10)) ? cpu_state.regs[r & 3].b.h : cpu_state.regs[r].b.l)
 #define getr16(r) cpu_state.regs[r].w
 #define getr32(r) cpu_state.regs[r].l
 
@@ -86,9 +86,9 @@ extern int fpu_cycles;
     if ((r & 4) && !(r & 0x10))                         \
         cpu_state.regs[r & 3].b.h = v; \
     else                               \
-        cpu_state.regs[r & 3].b.l = v;
+        cpu_state.regs[r].b.l = v;
 #define setr16(r, v) cpu_state.regs[r].w = v
-#define setr32(r, v) cpu_state.regs[r].l = v; cpu_state_high.regs_high = 0
+#define setr32(r, v) cpu_state.regs[r].l = v; cpu_state_high.regs_high[r] = 0
 
 #define fetchea()                  \
     {                              \
