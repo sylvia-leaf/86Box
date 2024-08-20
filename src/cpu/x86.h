@@ -78,25 +78,43 @@ extern int fpu_cycles;
 
 #define setznp168 setznp16
 
-#define getr8(r)  (((r & 4) && !(r & 0x10)) ? cpu_state.regs[r & 3].b.h : cpu_state.regs[r].b.l)
-#define getr16(r) cpu_state.regs[r].w
-#define getr32(r) cpu_state.regs[r].l
+#define getr8(r)  (((r & 4) && !(r & 0x10)) ? cpu_state.regs[r & 3].b.h : (r & 8) ? cpu_state_high.regs64[r&7].b.l : cpu_state.regs[r].b.l)
+#define getr16(r) (r & 8) ? cpu_state_high.regs64[r&7].w : cpu_state.regs[r&0x7].w
+#define getr32(r) (r & 8) ? cpu_state_high.regs64[r&7].l : cpu_state.regs[r&0x7].l
 
 #define setr8(r, v)                    \
     if ((r & 4) && !(r & 0x10))                         \
         cpu_state.regs[r & 3].b.h = v; \
-    else                               \
-        cpu_state.regs[r].b.l = v;
-#define setr16(r, v) cpu_state.regs[r].w = v
-#define setr32(r, v) cpu_state.regs[r].l = v; cpu_state_high.regs_high[r] = 0
+    else if(!(r & 8))                               \
+        cpu_state.regs[r & 7].b.l = v; \
+    else \
+        cpu_state_high.regs64[r & 7].b.l = v
+#define setr16(r, v) \
+    if(r & 8) \
+    { \
+        cpu_state_high.regs64[r&0x7].w = v; \
+    } \
+    else \
+    { \
+        cpu_state.regs[r&0x7].w = v; \
+    }
+#define setr32(r, v) \
+    if(r & 8) \
+    { \
+        cpu_state_high.regs64[r&0x7].l = v; cpu_state_high.regs_high[r&0xf] = 0; \
+    } \
+    else \
+    { \
+        cpu_state.regs[r&0x7].l = v; cpu_state_high.regs_high[r&0xf] = 0; \
+    }
 
 #define fetchea()                  \
     {                              \
         rmdat = readmemb(cs + pc); \
         pc++;                      \
-        reg = (rmdat >> 3) & 7;    \
+        reg = ((rmdat >> 3) & 7) | ((cpu_state_high.rex_byte & 4) << 1) | (cpu_state_high.rex_present << 4);  \
         mod = (rmdat >> 6) & 3;    \
-        rm  = rmdat & 7;           \
+        rm  = (rmdat & 7) | ((cpu_state_high.rex_byte & 1) << 3) | (cpu_state_high.rex_present << 4);         \
         if (mod != 3)              \
             fetcheal();            \
     }
