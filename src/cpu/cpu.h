@@ -461,6 +461,9 @@ typedef struct
     uint32_t oldpc_high;
     uint32_t mxcsr;
     SSE_REG XMM[16];
+    uint64_t cr8;
+    uint32_t cr2_high;
+    uint32_t cr3_high;
 } cpu_state_high_t;
 
 
