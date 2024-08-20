@@ -464,6 +464,8 @@ typedef struct
     uint64_t cr8;
     uint32_t cr2_high;
     uint32_t cr3_high;
+    uint8_t rex_byte;
+    int rex_present;
 } cpu_state_high_t;
 
 
