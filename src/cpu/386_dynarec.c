@@ -213,7 +213,7 @@ fetch_ea_64_long(uint32_t rmdat)
             }
         } else if (cpu_rm == 5) {
             //RIP-relative addressing
-            if(!(use32 & 0x200)) cpu_state.eaaddr = cpu_state.pc | ((uint64_t)cpu_state_high.pc_high << 32) + getlong();
+            if(!(use32 & 0x200)) cpu_state.eaaddr = (cpu_state.pc | ((uint64_t)cpu_state_high.pc_high << 32)) + getlong();
             else cpu_state.eaaddr = cpu_state.pc + getlong();
         }
     }
