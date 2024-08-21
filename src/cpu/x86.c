@@ -375,7 +375,7 @@ reset_common(int hard)
 
     for(int i = 0; i < 8; i++)
     {
-        cpu_state_high.regs64[i] = 0;
+        cpu_state_high.regs64[i].l = 0;
     }
     
     cpu_state_high.pc_high = cpu_state_high.oldpc_high = 0;
