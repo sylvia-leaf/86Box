@@ -365,6 +365,20 @@ reset_common(int hard)
     in_lock    = 0;
 
     cpu_cpurst_on_sr = 0;
+
+    for(int i = 0; i < 16; i++)
+    {
+        cpu_state_high.XMM[i].q[0] = 0;
+        cpu_state_high.XMM[i].q[1] = 0;
+        cpu_state_high.regs_high[i] = 0;
+    }
+
+    for(int i = 0; i < 8; i++)
+    {
+        cpu_state_high.regs64[i] = 0;
+    }
+    
+    cpu_state_high.pc_high = cpu_state_high.oldpc_high = 0;
 }
 
 /* Hard reset. */
