@@ -97,8 +97,8 @@ opCVTTPD2PI_mm_xmm_a16(uint32_t fetchdat)
     
     dst = MMX_GETREGP(cpu_reg);
     SSE_GETSRC();
-    dst->l[0] = trunc(cpu_state_high.XMM[cpu_rm].d[0]);
-    dst->l[1] = trunc(cpu_state_high.XMM[cpu_rm].d[1]);
+    dst->l[0] = trunc(src.d[0]);
+    dst->l[1] = trunc(src.d[1]);
     MMX_SETEXP(cpu_reg);
     return 0;
 }
@@ -113,8 +113,8 @@ opCVTTPD2PI_mm_xmm_a32(uint32_t fetchdat)
 
     dst = MMX_GETREGP(cpu_reg);
     SSE_GETSRC();
-    dst->l[0] = trunc(cpu_state_high.XMM[cpu_rm].d[0]);
-    dst->l[1] = trunc(cpu_state_high.XMM[cpu_rm].d[1]);
+    dst->l[0] = trunc(src.d[0]);
+    dst->l[1] = trunc(src.d[1]);
     MMX_SETEXP(cpu_reg);
     return 0;
 }
