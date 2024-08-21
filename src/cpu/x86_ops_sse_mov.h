@@ -230,6 +230,9 @@ opMOVSS_xmm_f_a32(uint32_t fetchdat)
 static int
 opMOVLPS_f_xmm_MOVHLPS_xmm_xmm_a16(uint32_t fetchdat)
 {
+    if ((cpu_features & CPU_FEATURE_SSE2) && sse_xmm)
+        return opMOVLPD_f_xmm_a16(fetchdat);
+
     fetch_ea_16(fetchdat);
     if (cpu_mod == 3) {
         // MOVHLPS
@@ -253,6 +256,9 @@ opMOVLPS_f_xmm_MOVHLPS_xmm_xmm_a16(uint32_t fetchdat)
 static int
 opMOVLPS_f_xmm_MOVHLPS_xmm_xmm_a32(uint32_t fetchdat)
 {
+    if ((cpu_features & CPU_FEATURE_SSE2) && sse_xmm)
+        return opMOVLPD_f_xmm_a32(fetchdat);
+
     fetch_ea_32(fetchdat);
     if (cpu_mod == 3) {
         // MOVHLPS

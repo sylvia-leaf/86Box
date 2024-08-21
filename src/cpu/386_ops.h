@@ -2699,7 +2699,7 @@ const OpFn OP_TABLE(genericintel_REPNE_0f)[1024] = {
         /*16-bit data, 16-bit addr*/
 /*      00              01              02              03              04              05              06              07              08              09              0a              0b              0c              0d              0e              0f*/
 /*00*/  NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL,
-/*10*/  opMOVSD_f_xmm_a16,        opMOVSD_xmm_f_a16,        opMOVDDUP_a16,        opMOVLPD_xmm_f_a16,        opUNPCKLPD_f_xmm_a16,        opUNPCKHPD_f_xmm_a16,        opMOVHPS_f_xmm_MOVLHPS_xmm_xmm_a16,        opMOVHPD_xmm_f_a16,        NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL,
+/*10*/  opMOVSD_f_xmm_a16,        opMOVSD_xmm_f_a16,        opMOVDDUP_a16,        ILLEGAL,        ILLEGAL,        ILLEGAL,        ILLEGAL,        ILLEGAL,        NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL,
 /*20*/  opMOV_r_CRx_a16,opMOV_r_DRx_a16,opMOV_CRx_r_a16,opMOV_DRx_r_a16,opMOV_r_TRx_a16,ILLEGAL,        opMOV_TRx_r_a16,ILLEGAL,        opMOVAPS_q_xmm_a16,        opMOVAPS_xmm_q_a16,        opCVTSI2SD_xmm_l_a16,        opMOVNTPS_xmm_q_a16,        opCVTTSD2SI_l_xmm_a16,        opCVTSD2SI_l_xmm_a16,        opUCOMISS_xmm_xmm_a16,        opCOMISS_xmm_xmm_a16,
 /*30*/  opWRMSR,        opRDTSC,        opRDMSR,        opRDPMC,        opSYSENTER,     opSYSEXIT,      ILLEGAL,        ILLEGAL,        ILLEGAL,        ILLEGAL,        ILLEGAL,        ILLEGAL,        ILLEGAL,        ILLEGAL,        ILLEGAL,        opVPCEXT,
 
@@ -2743,7 +2743,7 @@ const OpFn OP_TABLE(genericintel_REPNE_0f)[1024] = {
         /*16-bit data, 32-bit addr*/
 /*      00              01              02              03              04              05              06              07              08              09              0a              0b              0c              0d              0e              0f*/
 /*00*/  NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL,
-/*10*/  opMOVSD_f_xmm_a32,        opMOVSD_xmm_f_a32,        opMOVDDUP_a32,        opMOVLPD_xmm_f_a32,        opUNPCKLPD_f_xmm_a32,        opUNPCKHPD_f_xmm_a32,        opMOVHPS_f_xmm_MOVLHPS_xmm_xmm_a32,        opMOVHPD_xmm_f_a32,        opHINT_NOP_a32, opHINT_NOP_a32, opHINT_NOP_a32, opHINT_NOP_a32, opHINT_NOP_a32, opHINT_NOP_a32, opHINT_NOP_a32, opHINT_NOP_a32,
+/*10*/  opMOVSD_f_xmm_a32,        opMOVSD_xmm_f_a32,        opMOVDDUP_a32,        ILLEGAL,        ILLEGAL,        ILLEGAL,        ILLEGAL,        ILLEGAL,        opHINT_NOP_a32, opHINT_NOP_a32, opHINT_NOP_a32, opHINT_NOP_a32, opHINT_NOP_a32, opHINT_NOP_a32, opHINT_NOP_a32, opHINT_NOP_a32,
 /*20*/  opMOV_r_CRx_a32,opMOV_r_DRx_a32,opMOV_CRx_r_a32,opMOV_DRx_r_a32,opMOV_r_TRx_a32,ILLEGAL,        opMOV_TRx_r_a32,ILLEGAL,        opMOVAPS_q_xmm_a32,        opMOVAPS_xmm_q_a32,        opCVTSI2SD_xmm_l_a32,        opMOVNTPS_xmm_q_a32,        opCVTTSD2SI_l_xmm_a32,        opCVTSD2SI_l_xmm_a32,        opUCOMISS_xmm_xmm_a32,        opCOMISS_xmm_xmm_a16,
 /*30*/  opWRMSR,        opRDTSC,        opRDMSR,        opRDPMC,        opSYSENTER,     opSYSEXIT,      ILLEGAL,        ILLEGAL,        ILLEGAL,        ILLEGAL,        ILLEGAL,        ILLEGAL,        ILLEGAL,        ILLEGAL,        ILLEGAL,        opVPCEXT,
 
