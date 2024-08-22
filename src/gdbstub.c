@@ -1589,6 +1589,7 @@ gdbstub_client_thread(void *priv)
                 case '$': /* packet start */
                     /* Wait for any existing packets to be processed. */
                     thread_wait_event(client->processed_event, -1);
+                    thread_set_event(client->processed_event);
 
                     client->packet_pos = 0;
                     break;
@@ -1615,6 +1616,7 @@ gdbstub_client_thread(void *priv)
                 default:
                     /* Wait for any existing packets to be processed, just in case. */
                     thread_wait_event(client->processed_event, -1);
+                    thread_set_event(client->processed_event);
 
                     if (client->packet_pos < (sizeof(client->packet) - 1)) {
                         /* Append byte to the packet. */
