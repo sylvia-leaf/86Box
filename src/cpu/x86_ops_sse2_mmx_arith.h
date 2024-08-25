@@ -878,6 +878,44 @@ opPSUBQ_xmm_a32(uint32_t fetchdat)
 }
 
 static int
+opPSUBQ_a16(uint32_t fetchdat)
+{
+    if (sse_xmm)
+        return opPSUBQ_xmm_a16(fetchdat);
+    MMX_REG src;
+    MMX_REG *dst;
+    MMX_ENTER();
+
+    fetch_ea_16(fetchdat);
+    MMX_GETSRC();
+    dst = MMX_GETREGP(cpu_reg);
+
+    dst->q -= src.q;
+    MMX_SETEXP(cpu_reg);
+
+    return 0;
+}
+
+static int
+opPSUBQ_a32(uint32_t fetchdat)
+{
+    if (sse_xmm)
+        return opPSUBQ_xmm_a32(fetchdat);
+    MMX_REG src;
+    MMX_REG *dst;
+    MMX_ENTER();
+
+    fetch_ea_32(fetchdat);
+    MMX_GETSRC();
+    dst = MMX_GETREGP(cpu_reg);
+
+    dst->q -= src.q;
+    MMX_SETEXP(cpu_reg);
+
+    return 0;
+}
+
+static int
 opPADDB_xmm_a16(uint32_t fetchdat)
 {
     SSE_REG src;
