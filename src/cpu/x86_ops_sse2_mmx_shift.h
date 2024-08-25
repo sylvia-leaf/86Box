@@ -135,22 +135,17 @@ opPSxxQ_xmm_imm(uint32_t fetchdat)
                     cpu_state_high.XMM[reg].q[1] = 0;
                     break;
                 }
-                shift *= 8;
-                if(shift == 64)
+                else if(shift > 7)
                 {
                     cpu_state_high.XMM[reg].q[0] = cpu_state_high.XMM[reg].q[1];
                     cpu_state_high.XMM[reg].q[1] = 0;
+                    shift -= 8;
                 }
-                else if (shift > 64)
+                shift *= 8;
+                if(shift != 0)
                 {
-                    cpu_state_high.XMM[reg].q[0] = cpu_state_high.XMM[reg].q[1] >> (shift - 64);
-                    cpu_state_high.XMM[reg].q[1] = 0;
-                }
-                else if (shift < 64)
-                {
-                    cpu_state_high.XMM[reg].q[0] >>= shift;
-                    cpu_state_high.XMM[reg].q[0] |= cpu_state_high.XMM[reg].q[1] << (64 - shift);
-                    cpu_state_high.XMM[reg].q[1] >>= shift;
+                    cpu_state_high.XMM[reg].q[0] = (cpu_state_high.XMM[reg].q[0] >> shift) | (cpu_state_high.XMM[reg].q[1] << (64 - shift));
+                    cpu_state_high.XMM[reg].q[1] = cpu_state_high.XMM[reg].q[1] >> shift;
                 }
             }
             break;
@@ -177,22 +172,17 @@ opPSxxQ_xmm_imm(uint32_t fetchdat)
                     cpu_state_high.XMM[reg].q[1] = 0;
                     break;
                 }
-                shift *= 8;
-                if(shift == 64)
+                else if(shift > 7)
                 {
                     cpu_state_high.XMM[reg].q[1] = cpu_state_high.XMM[reg].q[0];
                     cpu_state_high.XMM[reg].q[0] = 0;
+                    shift -= 8;
                 }
-                else if(shift > 64)
+                shift *= 8;
+                if(shift != 0)
                 {
-                    cpu_state_high.XMM[reg].q[1] = cpu_state_high.XMM[reg].q[0] << (shift - 64);
-                    cpu_state_high.XMM[reg].q[0] = 0;
-                }
-                else if(shift < 64)
-                {
-                    cpu_state_high.XMM[reg].q[0] <<= shift;
-                    cpu_state_high.XMM[reg].q[0] |= cpu_state_high.XMM[reg].q[1] >> (64 - shift);
-                    cpu_state_high.XMM[reg].q[1] <<= shift;
+                    cpu_state_high.XMM[reg].q[1] = (cpu_state_high.XMM[reg].q[1] << shift) | (cpu_state_high.XMM[reg].q[0] >> (64 - shift));
+                    cpu_state_high.XMM[reg].q[0] = cpu_state_high.XMM[reg].q[0] << shift;
                 }
             }
             break;
