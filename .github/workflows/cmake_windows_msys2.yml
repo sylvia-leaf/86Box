@@ -9,6 +9,7 @@ on:
       - "**/CMakeLists.txt"
       - "CMakePresets.json"
       - .github/workflows/cmake_windows_msys2.yml
+      - .github/workflows/make_release.yml
       - vcpkg.json
       - "!**/Makefile*"
 
