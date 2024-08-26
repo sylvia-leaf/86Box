@@ -3,6 +3,7 @@ on: push
 
 jobs:
   test:
+  if: github.repository == 'PCBox/PCBox'
     runs-on: ubuntu-latest
     steps:
       - name: irc push
