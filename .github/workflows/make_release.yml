@@ -78,7 +78,6 @@ jobs:
     if: github.repository == 'PCBox/PCBox'
     needs:
       - cut-release
-      - build_windows_qt
     name: "Upload Artifacts"
     runs-on: ubuntu-latest
     steps:
