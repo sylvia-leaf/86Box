@@ -630,6 +630,8 @@ opPMULUDQ_mm_a16(uint32_t fetchdat)
     MMX_REG src;
     MMX_REG* dst;
 
+    MMX_ENTER();
+
     fetch_ea_16(fetchdat);
     MMX_GETSRC();
     dst = MMX_GETREGP(cpu_reg);
@@ -648,6 +650,8 @@ opPMULUDQ_mm_a32(uint32_t fetchdat)
         return opPMULUDQ_xmm_a32(fetchdat);
     MMX_REG src;
     MMX_REG* dst;
+
+    MMX_ENTER();
 
     fetch_ea_32(fetchdat);
     dst = MMX_GETREGP(cpu_reg);
