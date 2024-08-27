@@ -90,7 +90,7 @@ jobs:
           path: ./ci-artifacts/
 
       - name: Display structure of downloaded files
-        run: ls ./ci-artifacts/
+        run: ls ./ci-artifacts/ 
 
       - name: Name and Upload the Release Assets
         env:
@@ -100,7 +100,7 @@ jobs:
           TAG_VAL=${{needs.cut-release.outputs.new_tag}}
           echo "TAG_VAL=${TAG_VAL}"
           gh release list --repo PCBox/PCBox
-          gh release upload "${TAG_VAL}" ${{ github.WORKSPACE }}/ci-artifacts/*  --repo PCBox/PCBox --clobber
+          gh release upload "${TAG_VAL}" ${{ github.WORKSPACE }}/ci-artifacts/PCBox*/PCBox.exe  --repo PCBox/PCBox --clobber
 
       - name: Publish Release
         env:
