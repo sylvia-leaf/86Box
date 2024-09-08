@@ -613,17 +613,17 @@ cpu_set(void)
 #endif /* USE_DYNAREC */
     x86_setopcodes_2386(ops_2386_386, ops_2386_386_0f);
     x86_opcodes_REPE       = ops_REPE;
-    x86_opcodes_REPE_0f    = ops_REPE;
+    x86_opcodes_REPE_0f    = NULL;
     x86_opcodes_REPNE      = ops_REPNE;
-    x86_opcodes_REPNE_0f   = ops_REPNE;
+    x86_opcodes_REPNE_0f   = NULL;
     x86_2386_opcodes_REPE  = ops_2386_REPE;
     x86_2386_opcodes_REPNE = ops_2386_REPNE;
     x86_opcodes_3DNOW      = ops_3DNOW;
 #ifdef USE_DYNAREC
     x86_dynarec_opcodes_REPE  = dynarec_ops_REPE;
-    x86_dynarec_opcodes_REPE_0f  = dynarec_ops_REPE;
+    x86_dynarec_opcodes_REPE_0f  = NULL;
     x86_dynarec_opcodes_REPNE = dynarec_ops_REPNE;
-    x86_dynarec_opcodes_REPNE_0f  = dynarec_ops_REPNE;
+    x86_dynarec_opcodes_REPNE_0f  = NULL;
     x86_dynarec_opcodes_3DNOW = dynarec_ops_3DNOW;
 #endif /* USE_DYNAREC */
 
