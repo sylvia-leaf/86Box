@@ -413,7 +413,7 @@ codegen_generate_call(uint8_t opcode, OpFn op, uint32_t fetchdat, uint32_t new_p
 #endif
                 op_table        = x86_dynarec_opcodes_0f;
                 recomp_op_table = fpu_softfloat ? recomp_opcodes_0f_no_mmx : recomp_opcodes_0f;
-                if(is_repe)
+                /*if(is_repe)
                 {
                     op_table        = x86_dynarec_opcodes_REPE_0f;
                     recomp_op_table = NULL;
@@ -422,7 +422,7 @@ codegen_generate_call(uint8_t opcode, OpFn op, uint32_t fetchdat, uint32_t new_p
                 {
                     op_table        = x86_dynarec_opcodes_REPNE_0f;
                     recomp_op_table = NULL;
-                }
+                }*/
                 over            = 1;
                 break;
 
