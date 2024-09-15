@@ -125,6 +125,5 @@ popd
 %{_datadir}/%{name}/roms
 
 %changelog
-
-* Sun Sep 15 Britney Lozza <bnlozza[AT]gmail.com> 4.2.4
+* Sun Sep 15 2024 Britney Lozza <bnlozza@gmail.com> - 4.2.4-2
 - Fixing fuel's bad forking by porting the spec file from 86Box to PCBox
