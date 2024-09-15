@@ -25,7 +25,7 @@ Summary:	Classic PC emulator
 License:	GPLv2+
 URL:		https://pcbox-emu.xyz/
 
-Source0:	https://github.com/PCBox/86Box/archive/refs/tags/v%{version}.tar.gz
+Source0:	https://github.com/PCBox/PCBox/archive/refs/tags/v%{version}.tar.gz
 Source1:	https://github.com/PCBox/roms/archive/refs/tags/v%{romver}.zip
 
 BuildRequires: cmake
@@ -126,5 +126,5 @@ popd
 
 %changelog
 
-* Sat Sep 14 Britney Lozza <bnlozza[AT]gmail.com> 4.2.4
+* Sun Sep 15 Britney Lozza <bnlozza[AT]gmail.com> 4.2.4
 - Fixing fuel's bad forking by porting the spec file from 86Box to PCBox
