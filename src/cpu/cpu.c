@@ -2162,6 +2162,14 @@ cpu_set(void)
             fatal("cpu_set : unknown CPU type %" PRIu64 "\n", cpu_s->cpu_type);
     }
 
+#ifdef USE_DYNAREC
+    if(x86_dynarec_opcodes_REPE_0f == NULL) x86_dynarec_opcodes_REPE_0f = x86_dynarec_opcodes_0f;
+    if(x86_dynarec_opcodes_REPNE_0f == NULL) x86_dynarec_opcodes_REPNE_0f = x86_dynarec_opcodes_0f;
+#endif
+
+    if(x86_opcodes_REPE_0f == NULL) x86_opcodes_REPE_0f = x86_opcodes_0f;
+    if(x86_opcodes_REPNE_0f == NULL) x86_opcodes_REPNE_0f = x86_opcodes_0f;
+
     switch (fpu_type) {
         case FPU_NONE:
             break;

@@ -1929,7 +1929,6 @@ codegen_generate_call(uint8_t opcode, OpFn op, uint32_t fetchdat, uint32_t new_p
 
             case 0x66: /*Data size select*/
                 op_32 = ((use32 & 0x100) ^ 0x100) | (op_32 & 0x200);
-                sse_xmm = 1;
                 break;
             case 0x67: /*Address size select*/
                 op_32 = ((use32 & 0x200) ^ 0x200) | (op_32 & 0x100);
