@@ -78,7 +78,7 @@ extern int fpu_cycles;
 
 #define setznp168 setznp16
 
-#define getr8(r)  (((r & 4) && !(r & 0x10)) ? cpu_state.regs[r & 3].b.h : (r & 8) ? cpu_state_high.regs64[r&7].b.l : cpu_state.regs[r].b.l)
+#define getr8(r)  (((r & 4) && !(r & 0x10)) ? cpu_state.regs[r & 3].b.h : (r & 8) ? cpu_state_high.regs64[r&7].b.l : cpu_state.regs[r&7].b.l)
 #define getr16(r) (r & 8) ? cpu_state_high.regs64[r&7].w : cpu_state.regs[r&0x7].w
 #define getr32(r) (r & 8) ? cpu_state_high.regs64[r&7].l : cpu_state.regs[r&0x7].l
 #define getr64(r) (r & 8) ? ((uint64_t)cpu_state_high.regs_high[r&0xf] << 32) | (uint64_t)cpu_state_high.regs64[r&7].l : \
