@@ -550,6 +550,7 @@ mmutranslate_noabrt_pae(uint32_t addr, int rw)
     uint64_t addr2;
     uint64_t addr3;
     uint64_t addr4;
+    uint64_t nxbit;
 
     if (cpu_state.abrt)
         return 0xffffffffffffffffULL;
@@ -562,9 +563,13 @@ mmutranslate_noabrt_pae(uint32_t addr, int rw)
 
     addr3 = (temp & ~0xfffULL) + ((addr >> 18) & 0xff8);
     temp = temp4 = rammap64(addr3) & 0x000000ffffffffffULL;
+    nxbit = rammap64(addr3) & 0x8000000000000000ULL;
     temp3        = temp & temp2;
 
     if (!(temp & 1))
+        return 0xffffffffffffffffULL;
+
+    if (nxbit && (rw == 2) && (cpu_features & CPU_FEATURE_NX) && (msr.amd_efer & EFER_NXE))
         return 0xffffffffffffffffULL;
 
     if (temp & 0x80) {
@@ -577,10 +582,14 @@ mmutranslate_noabrt_pae(uint32_t addr, int rw)
 
     addr4 = (temp & ~0xfffULL) + ((addr >> 9) & 0xff8);
     temp  = rammap64(addr4) & 0x000000ffffffffffULL;
+    nxbit = rammap64(addr3) & 0x8000000000000000ULL;
 
     temp3 = temp & temp4;
 
     if (!(temp & 1) || ((CPL == 3) && !(temp3 & 4) && !cpl_override) || ((rw == 1) && !(temp3 & 2) && ((CPL == 3) || (cr0 & WP_FLAG))))
+        return 0xffffffffffffffffULL;
+
+    if (nxbit && (rw == 2) && (cpu_features & CPU_FEATURE_NX) && (msr.amd_efer & EFER_NXE))
         return 0xffffffffffffffffULL;
 
     return ((temp & ~0xfffULL) + ((uint64_t) (addr & 0xfff))) & 0x000000ffffffffffULL;

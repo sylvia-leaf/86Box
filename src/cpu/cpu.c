@@ -5506,6 +5506,7 @@ pentium_invalid_wrmsr:
                     //    x86gpf(NULL, 0);
                     //else
                         msr.amd_efer = temp;
+                    flushmmucache();
                     break;
                 /* SYSCALL Target Address Register */
                 case 0xc0000081:
