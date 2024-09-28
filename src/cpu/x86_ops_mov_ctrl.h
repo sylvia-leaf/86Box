@@ -184,7 +184,7 @@ opMOV_CRx_r_a16(uint32_t fetchdat)
     fetch_ea_16(fetchdat);
     switch (cpu_reg) {
         case 0:
-            if ((cpu_state.regs[cpu_rm].l ^ cr0) & 0x00000001)
+            if ((cpu_state.regs[cpu_rm].l ^ cr0) & (0x00000001 | WP_FLAG))
                 flushmmucache();
             else if ((cpu_state.regs[cpu_rm].l ^ cr0) & 0x80000000) {
                 if (is_p6 || cpu_use_dynarec)
@@ -249,7 +249,7 @@ opMOV_CRx_r_a32(uint32_t fetchdat)
     fetch_ea_32(fetchdat);
     switch (cpu_reg) {
         case 0:
-            if ((cpu_state.regs[cpu_rm].l ^ cr0) & (0x00000001 || WP_FLAG))
+            if ((cpu_state.regs[cpu_rm].l ^ cr0) & (0x00000001 | WP_FLAG))
                 flushmmucache();
             else if ((cpu_state.regs[cpu_rm].l ^ cr0) & 0x80000000) {
                 if (is_p6 || cpu_use_dynarec)
