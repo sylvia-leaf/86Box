@@ -15,11 +15,7 @@
 %global romver 4.2.1
 
 Name:		PCBox
-# <<<<<<< HEAD
-Version:	4.2.4
-#=======
-#Version:	4.3
-#>>>>>>> 547ae9ad6ae7a7d369fd65b8756ce2af638473dd
+Version:	4.2.5
 Release:	1%{?dist}
 Summary:	Classic PC emulator
 License:	GPLv2+
@@ -125,5 +121,5 @@ popd
 %{_datadir}/%{name}/roms
 
 %changelog
-* Sun Sep 15 2024 Britney Lozza <bnlozza@gmail.com> - 4.2.4-2
+* Sat Sep 28 2024 Britney Lozza <bnlozza@gmail.com> - 4.2.5-1
 - Fixing fuel's bad forking by porting the spec file from 86Box to PCBox
