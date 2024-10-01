@@ -295,7 +295,7 @@ mem_flush_write_page(uint32_t addr, uint32_t virt)
 
 #define mmutranslate_read(addr)  mmutranslatereal(addr, 0)
 #define mmutranslate_write(addr) mmutranslatereal(addr, 1)
-#define mmutranslate_execute(addr)  mmutranslatereal(addr, 2)
+#define mmutranslate_execute(addr)  mmutranslatereal(addr, 0)
 #define rammap(x)                ((uint32_t *) (_mem_exec[(x) >> MEM_GRANULARITY_BITS]))[((x) >> 2) & MEM_GRANULARITY_QMASK]
 #define rammap64(x)              ((uint64_t *) (_mem_exec[(x) >> MEM_GRANULARITY_BITS]))[((x) >> 3) & MEM_GRANULARITY_PMASK]
 
