@@ -1024,7 +1024,7 @@ opSHUFPS_xmm_w_a16(uint32_t fetchdat)
         src[3] = readmeml(easeg, cpu_state.eaaddr + 12);
         if (cpu_state.abrt)
             return 1;
-        tmp.l[2]          = cpu_state_high.XMM[cpu_reg].l[(mm & 3];
+        tmp.l[2]          = cpu_state_high.XMM[cpu_reg].l[imm & 3];
         tmp.l[3]          = cpu_state_high.XMM[cpu_reg].l[(imm >> 2) & 3];
         tmp.l[0]          = src[(imm >> 4) & 3];
         tmp.l[1]          = src[(imm >> 6) & 3];
@@ -1070,7 +1070,7 @@ opSHUFPS_xmm_w_a32(uint32_t fetchdat)
         src[3] = readmeml(easeg, cpu_state.eaaddr + 12);
         if (cpu_state.abrt)
             return 1;
-        tmp.l[2]          = cpu_state_high.XMM[cpu_reg].l[(mm & 3];
+        tmp.l[2]          = cpu_state_high.XMM[cpu_reg].l[imm & 3];
         tmp.l[3]          = cpu_state_high.XMM[cpu_reg].l[(imm >> 2) & 3];
         tmp.l[0]          = src[(imm >> 4) & 3];
         tmp.l[1]          = src[(imm >> 6) & 3];
