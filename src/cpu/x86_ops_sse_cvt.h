@@ -204,12 +204,16 @@ opCVTPS2PI_mm_xmm_a16(uint32_t fetchdat)
     dst = MMX_GETREGP(cpu_reg);
     SSE_GETSRC();
     fesetround(rounding_modes[(cpu_state_high.mxcsr >> 13) & 3]);
-    if (src.f[0] > 2147483647.0)
+    if (src.f[0] < -2147483647.0)
         dst->l[0] = 0x80000000;
+    else if (src.f[0] > 2147483647.0)
+        dst->l[0] = 0;
     else
         dst->sl[0] = src.f[0];
-    if (src.f[1] > 2147483647.0)
+    if (src.f[1] > 2147483647.0 || src.f[1] < -2147483647.0)
         dst->l[1] = 0x80000000;
+    else if (src.f[1] > 2147483647.0)
+        dst->l[1] = 0;
     else
         dst->sl[1] = src.f[1];
     fesetround(FE_TONEAREST);
@@ -233,12 +237,16 @@ opCVTPS2PI_mm_xmm_a32(uint32_t fetchdat)
     dst = MMX_GETREGP(cpu_reg);
     SSE_GETSRC();
     fesetround(rounding_modes[(cpu_state_high.mxcsr >> 13) & 3]);
-    if (src.f[0] > 2147483647.0)
+    if (src.f[0] < -2147483647.0)
         dst->l[0] = 0x80000000;
+    else if (src.f[0] > 2147483647.0)
+        dst->l[0] = 0;
     else
         dst->sl[0] = src.f[0];
-    if (src.f[1] > 2147483647.0)
+    if (src.f[1] > 2147483647.0 || src.f[1] < -2147483647.0)
         dst->l[1] = 0x80000000;
+    else if (src.f[1] > 2147483647.0)
+        dst->l[1] = 0;
     else
         dst->sl[1] = src.f[1];
     fesetround(FE_TONEAREST);

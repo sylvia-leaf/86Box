@@ -1025,10 +1025,10 @@ opMINPS_xmm_xmm_a16(uint32_t fetchdat)
     feclearexcept(FE_ALL_EXCEPT);
     fetch_ea_16(fetchdat);
     if (cpu_mod == 3) {
-        cpu_state_high.XMM[cpu_reg].f[0] = fmin(cpu_state_high.XMM[cpu_rm].f[0], cpu_state_high.XMM[cpu_reg].f[0]);
-        cpu_state_high.XMM[cpu_reg].f[1] = fmin(cpu_state_high.XMM[cpu_rm].f[1], cpu_state_high.XMM[cpu_reg].f[1]);
-        cpu_state_high.XMM[cpu_reg].f[2] = fmin(cpu_state_high.XMM[cpu_rm].f[2], cpu_state_high.XMM[cpu_reg].f[2]);
-        cpu_state_high.XMM[cpu_reg].f[3] = fmin(cpu_state_high.XMM[cpu_rm].f[3], cpu_state_high.XMM[cpu_reg].f[3]);
+        cpu_state_high.XMM[cpu_reg].f[0] = fmin(cpu_state_high.XMM[cpu_reg].f[0], cpu_state_high.XMM[cpu_rm].f[0]);
+        cpu_state_high.XMM[cpu_reg].f[1] = fmin(cpu_state_high.XMM[cpu_reg].f[1], cpu_state_high.XMM[cpu_rm].f[1]);
+        cpu_state_high.XMM[cpu_reg].f[2] = fmin(cpu_state_high.XMM[cpu_reg].f[2], cpu_state_high.XMM[cpu_rm].f[2]);
+        cpu_state_high.XMM[cpu_reg].f[3] = fmin(cpu_state_high.XMM[cpu_reg].f[3], cpu_state_high.XMM[cpu_rm].f[3]);
         check_sse_exceptions_float(&cpu_state_high.XMM[cpu_reg].f[0]);
         check_sse_exceptions_float(&cpu_state_high.XMM[cpu_reg].f[1]);
         check_sse_exceptions_float(&cpu_state_high.XMM[cpu_reg].f[2]);
@@ -1077,10 +1077,10 @@ opMINPS_xmm_xmm_a32(uint32_t fetchdat)
     feclearexcept(FE_ALL_EXCEPT);
     fetch_ea_32(fetchdat);
     if (cpu_mod == 3) {
-        cpu_state_high.XMM[cpu_reg].f[0] = fmin(cpu_state_high.XMM[cpu_rm].f[0], cpu_state_high.XMM[cpu_reg].f[0]);
-        cpu_state_high.XMM[cpu_reg].f[1] = fmin(cpu_state_high.XMM[cpu_rm].f[1], cpu_state_high.XMM[cpu_reg].f[1]);
-        cpu_state_high.XMM[cpu_reg].f[2] = fmin(cpu_state_high.XMM[cpu_rm].f[2], cpu_state_high.XMM[cpu_reg].f[2]);
-        cpu_state_high.XMM[cpu_reg].f[3] = fmin(cpu_state_high.XMM[cpu_rm].f[3], cpu_state_high.XMM[cpu_reg].f[3]);
+        cpu_state_high.XMM[cpu_reg].f[0] = fmin(cpu_state_high.XMM[cpu_reg].f[0], cpu_state_high.XMM[cpu_rm].f[0]);
+        cpu_state_high.XMM[cpu_reg].f[1] = fmin(cpu_state_high.XMM[cpu_reg].f[1], cpu_state_high.XMM[cpu_rm].f[1]);
+        cpu_state_high.XMM[cpu_reg].f[2] = fmin(cpu_state_high.XMM[cpu_reg].f[2], cpu_state_high.XMM[cpu_rm].f[2]);
+        cpu_state_high.XMM[cpu_reg].f[3] = fmin(cpu_state_high.XMM[cpu_reg].f[3], cpu_state_high.XMM[cpu_rm].f[3]);
         check_sse_exceptions_float(&cpu_state_high.XMM[cpu_reg].f[0]);
         check_sse_exceptions_float(&cpu_state_high.XMM[cpu_reg].f[1]);
         check_sse_exceptions_float(&cpu_state_high.XMM[cpu_reg].f[2]);
@@ -1126,7 +1126,7 @@ opMINSS_xmm_xmm_a16(uint32_t fetchdat)
     feclearexcept(FE_ALL_EXCEPT);
     fetch_ea_16(fetchdat);
     if (cpu_mod == 3) {
-        cpu_state_high.XMM[cpu_reg].f[0] = fmin(cpu_state_high.XMM[cpu_rm].f[0], cpu_state_high.XMM[cpu_reg].f[0]);
+        cpu_state_high.XMM[cpu_reg].f[0] = fmin(cpu_state_high.XMM[cpu_reg].f[0], cpu_state_high.XMM[cpu_rm].f[0]);
         check_sse_exceptions_float(&cpu_state_high.XMM[cpu_reg].f[0]);
         CLOCK_CYCLES(1);
     } else {
@@ -1151,7 +1151,7 @@ opMINSS_xmm_xmm_a32(uint32_t fetchdat)
     feclearexcept(FE_ALL_EXCEPT);
     fetch_ea_32(fetchdat);
     if (cpu_mod == 3) {
-        cpu_state_high.XMM[cpu_reg].f[0] = fmin(cpu_state_high.XMM[cpu_rm].f[0], cpu_state_high.XMM[cpu_reg].f[0]);
+        cpu_state_high.XMM[cpu_reg].f[0] = fmin(cpu_state_high.XMM[cpu_reg].f[0], cpu_state_high.XMM[cpu_rm].f[0]);
         check_sse_exceptions_float(&cpu_state_high.XMM[cpu_reg].f[0]);
         CLOCK_CYCLES(1);
     } else {
@@ -1349,10 +1349,10 @@ opMAXPS_xmm_xmm_a16(uint32_t fetchdat)
     feclearexcept(FE_ALL_EXCEPT);
     fetch_ea_16(fetchdat);
     if (cpu_mod == 3) {
-        cpu_state_high.XMM[cpu_reg].f[0] = fmax(cpu_state_high.XMM[cpu_rm].f[0], cpu_state_high.XMM[cpu_reg].f[0]);
-        cpu_state_high.XMM[cpu_reg].f[1] = fmax(cpu_state_high.XMM[cpu_rm].f[1], cpu_state_high.XMM[cpu_reg].f[1]);
-        cpu_state_high.XMM[cpu_reg].f[2] = fmax(cpu_state_high.XMM[cpu_rm].f[2], cpu_state_high.XMM[cpu_reg].f[2]);
-        cpu_state_high.XMM[cpu_reg].f[3] = fmax(cpu_state_high.XMM[cpu_rm].f[3], cpu_state_high.XMM[cpu_reg].f[3]);
+        cpu_state_high.XMM[cpu_reg].f[0] = fmax(cpu_state_high.XMM[cpu_reg].f[0], cpu_state_high.XMM[cpu_rm].f[0]);
+        cpu_state_high.XMM[cpu_reg].f[1] = fmax(cpu_state_high.XMM[cpu_reg].f[1], cpu_state_high.XMM[cpu_rm].f[1]);
+        cpu_state_high.XMM[cpu_reg].f[2] = fmax(cpu_state_high.XMM[cpu_reg].f[2], cpu_state_high.XMM[cpu_rm].f[2]);
+        cpu_state_high.XMM[cpu_reg].f[3] = fmax(cpu_state_high.XMM[cpu_reg].f[3], cpu_state_high.XMM[cpu_rm].f[3]);
         check_sse_exceptions_float(&cpu_state_high.XMM[cpu_reg].f[0]);
         check_sse_exceptions_float(&cpu_state_high.XMM[cpu_reg].f[1]);
         check_sse_exceptions_float(&cpu_state_high.XMM[cpu_reg].f[2]);
@@ -1401,10 +1401,10 @@ opMAXPS_xmm_xmm_a32(uint32_t fetchdat)
     feclearexcept(FE_ALL_EXCEPT);
     fetch_ea_32(fetchdat);
     if (cpu_mod == 3) {
-        cpu_state_high.XMM[cpu_reg].f[0] = fmax(cpu_state_high.XMM[cpu_rm].f[0], cpu_state_high.XMM[cpu_reg].f[0]);
-        cpu_state_high.XMM[cpu_reg].f[1] = fmax(cpu_state_high.XMM[cpu_rm].f[1], cpu_state_high.XMM[cpu_reg].f[1]);
-        cpu_state_high.XMM[cpu_reg].f[2] = fmax(cpu_state_high.XMM[cpu_rm].f[2], cpu_state_high.XMM[cpu_reg].f[2]);
-        cpu_state_high.XMM[cpu_reg].f[3] = fmax(cpu_state_high.XMM[cpu_rm].f[3], cpu_state_high.XMM[cpu_reg].f[3]);
+        cpu_state_high.XMM[cpu_reg].f[0] = fmax(cpu_state_high.XMM[cpu_reg].f[0], cpu_state_high.XMM[cpu_rm].f[0]);
+        cpu_state_high.XMM[cpu_reg].f[1] = fmax(cpu_state_high.XMM[cpu_reg].f[1], cpu_state_high.XMM[cpu_rm].f[1]);
+        cpu_state_high.XMM[cpu_reg].f[2] = fmax(cpu_state_high.XMM[cpu_reg].f[2], cpu_state_high.XMM[cpu_rm].f[2]);
+        cpu_state_high.XMM[cpu_reg].f[3] = fmax(cpu_state_high.XMM[cpu_reg].f[3], cpu_state_high.XMM[cpu_rm].f[3]);
         check_sse_exceptions_float(&cpu_state_high.XMM[cpu_reg].f[0]);
         check_sse_exceptions_float(&cpu_state_high.XMM[cpu_reg].f[1]);
         check_sse_exceptions_float(&cpu_state_high.XMM[cpu_reg].f[2]);
@@ -1450,7 +1450,7 @@ opMAXSS_xmm_xmm_a16(uint32_t fetchdat)
     feclearexcept(FE_ALL_EXCEPT);
     fetch_ea_16(fetchdat);
     if (cpu_mod == 3) {
-        cpu_state_high.XMM[cpu_reg].f[0] = fmax(cpu_state_high.XMM[cpu_rm].f[0], cpu_state_high.XMM[cpu_reg].f[0]);
+        cpu_state_high.XMM[cpu_reg].f[0] = fmax(cpu_state_high.XMM[cpu_reg].f[0], cpu_state_high.XMM[cpu_rm].f[0]);
         check_sse_exceptions_float(&cpu_state_high.XMM[cpu_reg].f[0]);
         CLOCK_CYCLES(1);
     } else {
@@ -1475,7 +1475,7 @@ opMAXSS_xmm_xmm_a32(uint32_t fetchdat)
     feclearexcept(FE_ALL_EXCEPT);
     fetch_ea_32(fetchdat);
     if (cpu_mod == 3) {
-        cpu_state_high.XMM[cpu_reg].f[0] = fmax(cpu_state_high.XMM[cpu_rm].f[0], cpu_state_high.XMM[cpu_reg].f[0]);
+        cpu_state_high.XMM[cpu_reg].f[0] = fmax(cpu_state_high.XMM[cpu_reg].f[0], cpu_state_high.XMM[cpu_rm].f[0]);
         check_sse_exceptions_float(&cpu_state_high.XMM[cpu_reg].f[0]);
         CLOCK_CYCLES(1);
     } else {
