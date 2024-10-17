@@ -94,9 +94,17 @@ opCOMISD_xmm_xmm_a16(uint32_t fetchdat)
     flags_rebuild();
     fetch_ea_16(fetchdat);
     cpu_state.flags &= ~(V_FLAG | A_FLAG | N_FLAG);
+    cpu_state_high.mxcsr &= ~1;
     if (cpu_mod == 3) {
         if (isunordered(cpu_state_high.XMM[cpu_reg].d[0], cpu_state_high.XMM[cpu_rm].d[0])) {
+            cpu_state_high.mxcsr |= 1;
             cpu_state.flags |= Z_FLAG | P_FLAG | C_FLAG;
+            if(!(cpu_state_high.mxcsr & 0x80))
+            {
+                if (cr4 & CR4_OSXMMEXCPT)
+                    x86_int(0x13);
+                ILLEGAL_ON(!(cr4 & CR4_OSXMMEXCPT));
+            }
         } else if (cpu_state_high.XMM[cpu_reg].d[0] > cpu_state_high.XMM[cpu_rm].d[0]) {
             cpu_state.flags &= ~(Z_FLAG | P_FLAG | C_FLAG);
         } else if (cpu_state_high.XMM[cpu_reg].d[0] == cpu_state_high.XMM[cpu_rm].d[0]) {
@@ -117,7 +125,14 @@ opCOMISD_xmm_xmm_a16(uint32_t fetchdat)
         double src_real;
         src_real = *(double *) &src;
         if (isunordered(cpu_state_high.XMM[cpu_reg].d[0], src_real)) {
+            cpu_state_high.mxcsr |= 1;
             cpu_state.flags |= Z_FLAG | P_FLAG | C_FLAG;
+            if(!(cpu_state_high.mxcsr & 0x80))
+            {
+                if (cr4 & CR4_OSXMMEXCPT)
+                    x86_int(0x13);
+                ILLEGAL_ON(!(cr4 & CR4_OSXMMEXCPT));
+            }
         } else if (cpu_state_high.XMM[cpu_reg].d[0] > src_real) {
             cpu_state.flags &= ~(Z_FLAG | P_FLAG | C_FLAG);
         } else if (cpu_state_high.XMM[cpu_reg].d[0] == src_real) {
@@ -138,9 +153,17 @@ opCOMISD_xmm_xmm_a32(uint32_t fetchdat)
     flags_rebuild();
     fetch_ea_32(fetchdat);
     cpu_state.flags &= ~(V_FLAG | A_FLAG | N_FLAG);
+    cpu_state_high.mxcsr &= ~1;
     if (cpu_mod == 3) {
         if (isunordered(cpu_state_high.XMM[cpu_reg].d[0], cpu_state_high.XMM[cpu_rm].d[0])) {
+            cpu_state_high.mxcsr |= 1;
             cpu_state.flags |= Z_FLAG | P_FLAG | C_FLAG;
+            if(!(cpu_state_high.mxcsr & 0x80))
+            {
+                if (cr4 & CR4_OSXMMEXCPT)
+                    x86_int(0x13);
+                ILLEGAL_ON(!(cr4 & CR4_OSXMMEXCPT));
+            }
         } else if (cpu_state_high.XMM[cpu_reg].d[0] > cpu_state_high.XMM[cpu_rm].d[0]) {
             cpu_state.flags &= ~(Z_FLAG | P_FLAG | C_FLAG);
         } else if (cpu_state_high.XMM[cpu_reg].d[0] == cpu_state_high.XMM[cpu_rm].d[0]) {
@@ -161,7 +184,14 @@ opCOMISD_xmm_xmm_a32(uint32_t fetchdat)
         double src_real;
         src_real = *(double *) &src;
         if (isunordered(cpu_state_high.XMM[cpu_reg].d[0], src_real)) {
+            cpu_state_high.mxcsr |= 1;
             cpu_state.flags |= Z_FLAG | P_FLAG | C_FLAG;
+            if(!(cpu_state_high.mxcsr & 0x80))
+            {
+                if (cr4 & CR4_OSXMMEXCPT)
+                    x86_int(0x13);
+                ILLEGAL_ON(!(cr4 & CR4_OSXMMEXCPT));
+            }
         } else if (cpu_state_high.XMM[cpu_reg].d[0] > src_real) {
             cpu_state.flags &= ~(Z_FLAG | P_FLAG | C_FLAG);
         } else if (cpu_state_high.XMM[cpu_reg].d[0] == src_real) {
