@@ -180,9 +180,6 @@ opSQRTSS_xmm_xmm_a32(uint32_t fetchdat)
 static int
 opRSQRTPS_xmm_xmm_a16(uint32_t fetchdat)
 {
-    if(sse_xmm && (cpu_has_feature(CPU_FEATURE_SSE2)))
-        return opRSQRTPD_xmm_xmm_a16(fetchdat);
-
     feclearexcept(FE_ALL_EXCEPT);
     fetch_ea_16(fetchdat);
     if (cpu_mod == 3) {
@@ -236,9 +233,6 @@ opRSQRTPS_xmm_xmm_a16(uint32_t fetchdat)
 static int
 opRSQRTPS_xmm_xmm_a32(uint32_t fetchdat)
 {
-    if(sse_xmm && (cpu_has_feature(CPU_FEATURE_SSE2)))
-        return opRSQRTPD_xmm_xmm_a32(fetchdat);
-
     feclearexcept(FE_ALL_EXCEPT);
     fetch_ea_32(fetchdat);
     if (cpu_mod == 3) {
@@ -413,9 +407,6 @@ opRCPSS_xmm_xmm_a32(uint32_t fetchdat)
 static int
 opRCPPS_xmm_xmm_a16(uint32_t fetchdat)
 {
-    if(sse_xmm && (cpu_has_feature(CPU_FEATURE_SSE2)))
-        return opRCPPD_xmm_xmm_a16(fetchdat);
-
     feclearexcept(FE_ALL_EXCEPT);
     fetch_ea_16(fetchdat);
     if (cpu_mod == 3) {
@@ -465,9 +456,6 @@ opRCPPS_xmm_xmm_a16(uint32_t fetchdat)
 static int
 opRCPPS_xmm_xmm_a32(uint32_t fetchdat)
 {
-    if(sse_xmm && (cpu_has_feature(CPU_FEATURE_SSE2)))
-        return opRCPPD_xmm_xmm_a32(fetchdat);
-
     feclearexcept(FE_ALL_EXCEPT);
     fetch_ea_32(fetchdat);
     if (cpu_mod == 3) {
