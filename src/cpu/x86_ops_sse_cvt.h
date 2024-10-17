@@ -11,8 +11,8 @@ opCVTPI2PS_xmm_mm_a16(uint32_t fetchdat)
     fetch_ea_16(fetchdat);
     MMX_GETSRC();
     fesetround(rounding_modes[(cpu_state_high.mxcsr >> 13) & 3]);
-    cpu_state_high.XMM[cpu_reg].f[0] = src.l[0];
-    cpu_state_high.XMM[cpu_reg].f[1] = src.l[1];
+    cpu_state_high.XMM[cpu_reg].f[0] = src.sl[0];
+    cpu_state_high.XMM[cpu_reg].f[1] = src.sl[1];
     fesetround(FE_TONEAREST);
     check_sse_exceptions_float(&cpu_state_high.XMM[cpu_reg].f[0]);
     check_sse_exceptions_float(&cpu_state_high.XMM[cpu_reg].f[1]);
@@ -33,8 +33,8 @@ opCVTPI2PS_xmm_mm_a32(uint32_t fetchdat)
     fetch_ea_32(fetchdat);
     MMX_GETSRC();
     fesetround(rounding_modes[(cpu_state_high.mxcsr >> 13) & 3]);
-    cpu_state_high.XMM[cpu_reg].f[0] = src.l[0];
-    cpu_state_high.XMM[cpu_reg].f[1] = src.l[1];
+    cpu_state_high.XMM[cpu_reg].f[0] = src.sl[0];
+    cpu_state_high.XMM[cpu_reg].f[1] = src.sl[1];
     fesetround(FE_TONEAREST);
     check_sse_exceptions_float(&cpu_state_high.XMM[cpu_reg].f[0]);
     check_sse_exceptions_float(&cpu_state_high.XMM[cpu_reg].f[1]);
@@ -49,7 +49,7 @@ opCVTSI2SS_xmm_l_a16(uint32_t fetchdat)
     fetch_ea_16(fetchdat);
     if (cpu_mod == 3) {
         fesetround(rounding_modes[(cpu_state_high.mxcsr >> 13) & 3]);
-        cpu_state_high.XMM[cpu_reg].f[0] = getr32(cpu_rm);
+        cpu_state_high.XMM[cpu_reg].f[0] = (int32_t)getr32(cpu_rm);
         fesetround(FE_TONEAREST);
         check_sse_exceptions_float(&cpu_state_high.XMM[cpu_reg].f[0]);
         CLOCK_CYCLES(1);
@@ -61,7 +61,7 @@ opCVTSI2SS_xmm_l_a16(uint32_t fetchdat)
         if (cpu_state.abrt)
             return 1;
         fesetround(rounding_modes[(cpu_state_high.mxcsr >> 13) & 3]);
-        cpu_state_high.XMM[cpu_reg].f[0] = dst;
+        cpu_state_high.XMM[cpu_reg].f[0] = (int32_t)dst;
         fesetround(FE_TONEAREST);
         check_sse_exceptions_float(&cpu_state_high.XMM[cpu_reg].f[0]);
         CLOCK_CYCLES(2);
@@ -76,7 +76,7 @@ opCVTSI2SS_xmm_l_a32(uint32_t fetchdat)
     fetch_ea_32(fetchdat);
     if (cpu_mod == 3) {
         fesetround(rounding_modes[(cpu_state_high.mxcsr >> 13) & 3]);
-        cpu_state_high.XMM[cpu_reg].f[0] = getr32(cpu_rm);
+        cpu_state_high.XMM[cpu_reg].f[0] = (int32_t)getr32(cpu_rm);
         fesetround(FE_TONEAREST);
         check_sse_exceptions_float(&cpu_state_high.XMM[cpu_reg].f[0]);
         CLOCK_CYCLES(1);
@@ -88,7 +88,7 @@ opCVTSI2SS_xmm_l_a32(uint32_t fetchdat)
         if (cpu_state.abrt)
             return 1;
         fesetround(rounding_modes[(cpu_state_high.mxcsr >> 13) & 3]);
-        cpu_state_high.XMM[cpu_reg].f[0] = dst;
+        cpu_state_high.XMM[cpu_reg].f[0] = (int32_t)dst;
         fesetround(FE_TONEAREST);
         check_sse_exceptions_float(&cpu_state_high.XMM[cpu_reg].f[0]);
         CLOCK_CYCLES(2);
@@ -111,8 +111,8 @@ opCVTTPS2PI_mm_xmm_a16(uint32_t fetchdat)
 
     dst = MMX_GETREGP(cpu_reg);
     SSE_GETSRC();
-    dst->l[0] = trunc(src.f[0]);
-    dst->l[1] = trunc(src.f[1]);
+    dst->sl[0] = trunc(src.f[0]);
+    dst->sl[1] = trunc(src.f[1]);
     MMX_SETEXP(cpu_reg);
     CLOCK_CYCLES(1);
 
@@ -132,8 +132,8 @@ opCVTTPS2PI_mm_xmm_a32(uint32_t fetchdat)
     fetch_ea_32(fetchdat);
     dst = MMX_GETREGP(cpu_reg);
     SSE_GETSRC();
-    dst->l[0] = trunc(src.f[0]);
-    dst->l[1] = trunc(src.f[1]);
+    dst->sl[0] = trunc(src.f[0]);
+    dst->sl[1] = trunc(src.f[1]);
     MMX_SETEXP(cpu_reg);
     CLOCK_CYCLES(1);
 
@@ -207,11 +207,11 @@ opCVTPS2PI_mm_xmm_a16(uint32_t fetchdat)
     if (src.f[0] > 2147483647.0)
         dst->l[0] = 0x80000000;
     else
-        dst->l[0] = src.f[0];
+        dst->sl[0] = src.f[0];
     if (src.f[1] > 2147483647.0)
         dst->l[1] = 0x80000000;
     else
-        dst->l[1] = src.f[1];
+        dst->sl[1] = src.f[1];
     fesetround(FE_TONEAREST);
     MMX_SETEXP(cpu_reg);
     CLOCK_CYCLES(1);
@@ -236,11 +236,11 @@ opCVTPS2PI_mm_xmm_a32(uint32_t fetchdat)
     if (src.f[0] > 2147483647.0)
         dst->l[0] = 0x80000000;
     else
-        dst->l[0] = src.f[0];
+        dst->sl[0] = src.f[0];
     if (src.f[1] > 2147483647.0)
         dst->l[1] = 0x80000000;
     else
-        dst->l[1] = src.f[1];
+        dst->sl[1] = src.f[1];
     fesetround(FE_TONEAREST);
     MMX_SETEXP(cpu_reg);
     CLOCK_CYCLES(1);

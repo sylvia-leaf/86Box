@@ -104,7 +104,7 @@ check_sse_exceptions_float(float* result)
     if ((cpu_state_high.mxcsr & 0x3f) & (unmasked & 0x3f)) {
         if (cr4 & CR4_OSXMMEXCPT)
             x86_int(0x13);
-        ILLEGAL_ON(!(cr4 & CR4_OSXMMEXCPT));
+        //ILLEGAL_ON(!(cr4 & CR4_OSXMMEXCPT));
     }
 
 
@@ -151,7 +151,7 @@ check_sse_exceptions_double(double* result)
     if ((cpu_state_high.mxcsr & 0x3f) & (unmasked & 0x3f)) {
         if (cr4 & CR4_OSXMMEXCPT)
             x86_int(0x13);
-        ILLEGAL_ON(!(cr4 & CR4_OSXMMEXCPT));
+        //ILLEGAL_ON(!(cr4 & CR4_OSXMMEXCPT));
     }
     return 0;
 }
