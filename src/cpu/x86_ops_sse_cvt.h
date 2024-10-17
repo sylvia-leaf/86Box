@@ -259,28 +259,19 @@ opCVTPS2PI_mm_xmm_a32(uint32_t fetchdat)
 static int
 opCVTSS2SI_l_xmm_a16(uint32_t fetchdat)
 {
+    SSE_REG  src;
+    int32_t result;
     fetch_ea_16(fetchdat);
-    if (cpu_mod == 3) {
-        fesetround(rounding_modes[(cpu_state_high.mxcsr >> 13) & 3]);
-        setr32(cpu_reg, cpu_state_high.XMM[cpu_rm].f[0]);
-        fesetround(FE_TONEAREST);
-        check_sse_exceptions_float(&cpu_state_high.XMM[cpu_reg].f[0]);
-        CLOCK_CYCLES(1);
-    } else {
-        uint32_t dst;
-
-        SEG_CHECK_READ(cpu_state.ea_seg);
-        dst = readmeml(easeg, cpu_state.eaaddr);
-        if (cpu_state.abrt)
-            return 1;
-        float dst_real;
-        dst_real = *(float *) &dst;
-        fesetround(rounding_modes[(cpu_state_high.mxcsr >> 13) & 3]);
-        setr32(cpu_reg, dst_real);
-        fesetround(FE_TONEAREST);
-        check_sse_exceptions_float(&cpu_state_high.XMM[cpu_reg].f[0]);
-        CLOCK_CYCLES(2);
-    }
+    SSE_GETSRC();
+    fesetround(rounding_modes[(cpu_state_high.mxcsr >> 13) & 3]);
+    if (src.f[0] < -2147483647.0)
+        result = 0x80000000;
+    else if (src.f[0] > 2147483647.0)
+        result = 0;
+    else
+        result = src.f[0];
+    setr32(cpu_reg, result);
+    fesetround(FE_TONEAREST);
 
     return 0;
 }
@@ -288,28 +279,19 @@ opCVTSS2SI_l_xmm_a16(uint32_t fetchdat)
 static int
 opCVTSS2SI_l_xmm_a32(uint32_t fetchdat)
 {
+    SSE_REG  src;
+    int32_t result;
     fetch_ea_32(fetchdat);
-    if (cpu_mod == 3) {
-        fesetround(rounding_modes[(cpu_state_high.mxcsr >> 13) & 3]);
-        setr32(cpu_reg, cpu_state_high.XMM[cpu_rm].f[0]);
-        fesetround(FE_TONEAREST);
-        check_sse_exceptions_float(&cpu_state_high.XMM[cpu_reg].f[0]);
-        CLOCK_CYCLES(1);
-    } else {
-        uint32_t dst;
-
-        SEG_CHECK_READ(cpu_state.ea_seg);
-        dst = readmeml(easeg, cpu_state.eaaddr);
-        if (cpu_state.abrt)
-            return 1;
-        float dst_real;
-        dst_real = *(float *) &dst;
-        fesetround(rounding_modes[(cpu_state_high.mxcsr >> 13) & 3]);
-        setr32(cpu_reg, dst_real);
-        fesetround(FE_TONEAREST);
-        check_sse_exceptions_float(&cpu_state_high.XMM[cpu_reg].f[0]);
-        CLOCK_CYCLES(2);
-    }
+    SSE_GETSRC();
+    fesetround(rounding_modes[(cpu_state_high.mxcsr >> 13) & 3]);
+    if (src.f[0] < -2147483647.0)
+        result = 0x80000000;
+    else if (src.f[0] > 2147483647.0)
+        result = 0;
+    else
+        result = src.f[0];
+    setr32(cpu_reg, result);
+    fesetround(FE_TONEAREST);
 
     return 0;
 }

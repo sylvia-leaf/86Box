@@ -122,49 +122,38 @@ opCVTTPD2PI_mm_xmm_a32(uint32_t fetchdat)
 static int
 opCVTTSD2SI_l_xmm_a16(uint32_t fetchdat)
 {
+    SSE_REG src;
+    int32_t result;
     fetch_ea_16(fetchdat);
-    if (cpu_mod == 3) {
-        fesetround(rounding_modes[(cpu_state_high.mxcsr >> 13) & 3]);
-        setr32(cpu_reg, trunc(cpu_state_high.XMM[cpu_rm].d[0]));
-        fesetround(FE_TONEAREST);
-        CLOCK_CYCLES(1);
-    } else {
-        uint64_t dst;
-
-        SEG_CHECK_READ(cpu_state.ea_seg);
-        dst = readmemq(easeg, cpu_state.eaaddr);
-        if (cpu_state.abrt)
-            return 1;
-        double dst_real;
-        dst_real = *(double *) &dst;
-        fesetround(rounding_modes[(cpu_state_high.mxcsr >> 13) & 3]);
-        setr32(cpu_reg, trunc(dst_real));
-        fesetround(FE_TONEAREST);
-        CLOCK_CYCLES(2);
-    }
+    SSE_GETSRC();
+    fesetround(rounding_modes[(cpu_state_high.mxcsr >> 13) & 3]);
+    if (src.d[0] < -2147483647.0)
+        result = 0x80000000;
+    else if (src.d[0] > 2147483647.0)
+        result = 0;
+    else
+        result = trunc(src.d[0]);
+    setr32(cpu_reg, result);
+    fesetround(FE_TONEAREST);
     return 0;
 }
 
 static int
 opCVTTSD2SI_l_xmm_a32(uint32_t fetchdat)
 {
+    SSE_REG src;
+    int32_t result;
     fetch_ea_32(fetchdat);
-    if (cpu_mod == 3) {
-        setr32(cpu_reg, trunc(cpu_state_high.XMM[cpu_rm].d[0]));
-        CLOCK_CYCLES(1);
-    } else {
-        uint64_t dst;
-
-        SEG_CHECK_READ(cpu_state.ea_seg);
-        dst = readmemq(easeg, cpu_state.eaaddr);
-        if (cpu_state.abrt)
-            return 1;
-        double dst_real;
-        dst_real = *(double *) &dst;
-        setr32(cpu_reg, trunc(dst_real));
-        CLOCK_CYCLES(2);
-    }
-    return 0;
+    SSE_GETSRC();
+    fesetround(rounding_modes[(cpu_state_high.mxcsr >> 13) & 3]);
+    if (src.d[0] < -2147483647.0)
+        result = 0x80000000;
+    else if (src.d[0] > 2147483647.0)
+        result = 0;
+    else
+        result = trunc(src.d[0]);
+    setr32(cpu_reg, result);
+    fesetround(FE_TONEAREST);
 }
 
 static int
