@@ -402,7 +402,7 @@ mmutranslatereal_pae(uint32_t addr, int rw)
         temp &= 1;
         if (CPL == 3)
             temp |= 4;
-        if (rw)
+        if (rw == 1)
             temp |= 2;
         cpu_state.abrt = ABRT_PF;
         abrt_error     = temp;
@@ -411,12 +411,12 @@ mmutranslatereal_pae(uint32_t addr, int rw)
 
     if (temp & 0x80) {
         /*2MB page*/
-        if (((CPL == 3) && !(temp & 4) && !cpl_override) || (rw && !cpl_override && !(temp & 2) && (((CPL == 3) && !cpl_override) || (cr0 & WP_FLAG)))) {
+        if (((CPL == 3) && !(temp & 4) && !cpl_override) || ((rw == 1) && !cpl_override && !(temp & 2) && (((CPL == 3) && !cpl_override) || (cr0 & WP_FLAG)))) {
             cr2 = addr;
             temp &= 1;
             if (CPL == 3)
                 temp |= 4;
-            if (rw)
+            if (rw == 1)
                 temp |= 2;
             cpu_state.abrt = ABRT_PF;
             abrt_error     = temp;
@@ -424,16 +424,16 @@ mmutranslatereal_pae(uint32_t addr, int rw)
             return 0xffffffffffffffffULL;
         }
         mmu_perm = temp & 4;
-        rammap64(addr3) |= (rw ? 0x60 : 0x20);
+        rammap64(addr3) |= ((rw == 1) ? 0x60 : 0x20);
 
         return ((temp & ~0x1fffffULL) + (addr & 0x1fffffULL)) & 0x000000ffffffffffULL;
     }
 
-    addr4 = (temp & ~0xfffULL) + ((addr >> 9) & 0xff8);
+    addr4 = (temp & ~0x8000000000000fffULL) + ((addr >> 9) & 0xff8);
     temp  = rammap64(addr4) & 0x000000ffffffffffULL;
     nxbit = rammap64(addr4) & 0x8000000000000000ULL;
     temp3 = temp & temp4;
-    if (!(temp & 1) || ((CPL == 3) && !(temp3 & 4) && !cpl_override) || (rw && !cpl_override && !(temp3 & 2) && (((CPL == 3) && !cpl_override) || (cr0 & WP_FLAG)))) {
+    if (!(temp & 1) || ((CPL == 3) && !(temp3 & 4) && !cpl_override) || ((rw == 1) && !cpl_override && !(temp3 & 2) && (((CPL == 3) && !cpl_override) || (cr0 & WP_FLAG)))) {
         cr2 = addr;
         temp &= 1;
         if (CPL == 3)
@@ -447,9 +447,9 @@ mmutranslatereal_pae(uint32_t addr, int rw)
 
     mmu_perm = temp & 4;
     rammap64(addr3) |= 0x20;
-    rammap64(addr4) |= (rw ? 0x60 : 0x20);
+    rammap64(addr4) |= ((rw == 1) ? 0x60 : 0x20);
 
-    return ((temp & ~0xfffULL) + ((uint64_t) (addr & 0xfff))) & 0x000000ffffffffffULL;
+    return ((temp & ~0x8000000000000fffULL) + ((uint64_t) (addr & 0xfff))) & 0x000000ffffffffffULL;
 }
 
 uint64_t
