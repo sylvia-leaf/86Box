@@ -292,8 +292,8 @@ opUNPCKLPD_f_xmm_a16(uint32_t fetchdat)
         if (cpu_state.abrt)
             return 1;
         uint64_t src = cpu_state_high.XMM[cpu_reg].q[0];
-        cpu_state_high.XMM[cpu_reg].q[0] = dst[0];
-        cpu_state_high.XMM[cpu_reg].q[1] = src;
+        cpu_state_high.XMM[cpu_reg].q[0] = src;
+        cpu_state_high.XMM[cpu_reg].q[1] = dst[0];
         CLOCK_CYCLES(2);
     }
     return 0;
@@ -318,8 +318,8 @@ opUNPCKLPD_f_xmm_a32(uint32_t fetchdat)
         if (cpu_state.abrt)
             return 1;
         uint64_t src = cpu_state_high.XMM[cpu_reg].q[0];
-        cpu_state_high.XMM[cpu_reg].q[0] = dst[0];
-        cpu_state_high.XMM[cpu_reg].q[1] = src;
+        cpu_state_high.XMM[cpu_reg].q[0] = src;
+        cpu_state_high.XMM[cpu_reg].q[1] = dst[0];
         CLOCK_CYCLES(2);
     }
     return 0;
