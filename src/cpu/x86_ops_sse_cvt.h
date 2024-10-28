@@ -145,7 +145,8 @@ opCVTTSS2SI_l_xmm_a16(uint32_t fetchdat)
 {
     fetch_ea_16(fetchdat);
     if (cpu_mod == 3) {
-        setr32(cpu_reg, trunc(cpu_state_high.XMM[cpu_rm].f[0]));
+        int32_t result = trunc(cpu_state_high.XMM[cpu_rm].f[0]); 
+        setr32(cpu_reg, result);
         check_sse_exceptions_float(&cpu_state_high.XMM[cpu_reg].f[0]);
         CLOCK_CYCLES(1);
     } else {
@@ -157,7 +158,8 @@ opCVTTSS2SI_l_xmm_a16(uint32_t fetchdat)
             return 1;
         float dst_real;
         dst_real = *(float *) &dst;
-        setr32(cpu_reg, trunc(dst_real));
+        int32_t result = trunc(dst_real);
+        setr32(cpu_reg, result);
         check_sse_exceptions_float(&cpu_state_high.XMM[cpu_reg].f[0]);
         CLOCK_CYCLES(2);
     }
@@ -170,7 +172,8 @@ opCVTTSS2SI_l_xmm_a32(uint32_t fetchdat)
 {
     fetch_ea_32(fetchdat);
     if (cpu_mod == 3) {
-        setr32(cpu_reg, trunc(cpu_state_high.XMM[cpu_rm].f[0]));
+        int32_t result = trunc(cpu_state_high.XMM[cpu_rm].f[0]); 
+        setr32(cpu_reg, result);
         check_sse_exceptions_float(&cpu_state_high.XMM[cpu_reg].f[0]);
         CLOCK_CYCLES(1);
     } else {
@@ -182,7 +185,8 @@ opCVTTSS2SI_l_xmm_a32(uint32_t fetchdat)
             return 1;
         float dst_real;
         dst_real = *(float *) &dst;
-        setr32(cpu_reg, trunc(dst_real));
+        int32_t result = trunc(dst_real);
+        setr32(cpu_reg, result);
         check_sse_exceptions_float(&cpu_state_high.XMM[cpu_reg].f[0]);
         CLOCK_CYCLES(2);
     }
