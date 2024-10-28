@@ -3752,14 +3752,14 @@ opPSADBW_mm_mm_a16(uint32_t fetchdat)
 
     MMX_GETSRC();
 
-    temp.b[0] = abs((int8_t)(src.b[0] - dst->b[0]));
-    temp.b[1] = abs((int8_t)(src.b[1] - dst->b[1]));
-    temp.b[2] = abs((int8_t)(src.b[2] - dst->b[2]));
-    temp.b[3] = abs((int8_t)(src.b[3] - dst->b[3]));
-    temp.b[4] = abs((int8_t)(src.b[4] - dst->b[4]));
-    temp.b[5] = abs((int8_t)(src.b[5] - dst->b[5]));
-    temp.b[6] = abs((int8_t)(src.b[6] - dst->b[6]));
-    temp.b[7] = abs((int8_t)(src.b[7] - dst->b[7]));
+    temp.b[0] = abs((int8_t)(dst->b[0] - src.b[0]));
+    temp.b[1] = abs((int8_t)(dst->b[1] - src.b[1]));
+    temp.b[2] = abs((int8_t)(dst->b[2] - src.b[2]));
+    temp.b[3] = abs((int8_t)(dst->b[3] - src.b[3]));
+    temp.b[4] = abs((int8_t)(dst->b[4] - src.b[4]));
+    temp.b[5] = abs((int8_t)(dst->b[5] - src.b[5]));
+    temp.b[6] = abs((int8_t)(dst->b[6] - src.b[6]));
+    temp.b[7] = abs((int8_t)(dst->b[7] - src.b[7]));
 
     uint16_t result = 0;
     for (int i = 0; i < 8; i++) {
@@ -3790,14 +3790,14 @@ opPSADBW_mm_mm_a32(uint32_t fetchdat)
 
     MMX_GETSRC();
 
-    temp.b[0] = abs((int8_t)(src.b[0] - dst->b[0]));
-    temp.b[1] = abs((int8_t)(src.b[1] - dst->b[1]));
-    temp.b[2] = abs((int8_t)(src.b[2] - dst->b[2]));
-    temp.b[3] = abs((int8_t)(src.b[3] - dst->b[3]));
-    temp.b[4] = abs((int8_t)(src.b[4] - dst->b[4]));
-    temp.b[5] = abs((int8_t)(src.b[5] - dst->b[5]));
-    temp.b[6] = abs((int8_t)(src.b[6] - dst->b[6]));
-    temp.b[7] = abs((int8_t)(src.b[7] - dst->b[7]));
+    temp.b[0] = abs((int8_t)(dst->b[0] - src.b[0]));
+    temp.b[1] = abs((int8_t)(dst->b[1] - src.b[1]));
+    temp.b[2] = abs((int8_t)(dst->b[2] - src.b[2]));
+    temp.b[3] = abs((int8_t)(dst->b[3] - src.b[3]));
+    temp.b[4] = abs((int8_t)(dst->b[4] - src.b[4]));
+    temp.b[5] = abs((int8_t)(dst->b[5] - src.b[5]));
+    temp.b[6] = abs((int8_t)(dst->b[6] - src.b[6]));
+    temp.b[7] = abs((int8_t)(dst->b[7] - src.b[7]));
 
     uint16_t result = 0;
     for (int i = 0; i < 8; i++) {
@@ -3820,22 +3820,22 @@ opPSADBW_xmm_xmm_a16(uint32_t fetchdat)
     fetch_ea_16(fetchdat);
     if (cpu_mod == 3) {
         uint8_t temp[16];
-        temp[0]         = abs((int8_t)(cpu_state_high.XMM[cpu_rm].b[0] - cpu_state_high.XMM[cpu_reg].b[0]));
-        temp[1]         = abs((int8_t)(cpu_state_high.XMM[cpu_rm].b[1] - cpu_state_high.XMM[cpu_reg].b[1]));
-        temp[2]         = abs((int8_t)(cpu_state_high.XMM[cpu_rm].b[2] - cpu_state_high.XMM[cpu_reg].b[2]));
-        temp[3]         = abs((int8_t)(cpu_state_high.XMM[cpu_rm].b[3] - cpu_state_high.XMM[cpu_reg].b[3]));
-        temp[4]         = abs((int8_t)(cpu_state_high.XMM[cpu_rm].b[4] - cpu_state_high.XMM[cpu_reg].b[4]));
-        temp[5]         = abs((int8_t)(cpu_state_high.XMM[cpu_rm].b[5] - cpu_state_high.XMM[cpu_reg].b[5]));
-        temp[6]         = abs((int8_t)(cpu_state_high.XMM[cpu_rm].b[6] - cpu_state_high.XMM[cpu_reg].b[6]));
-        temp[7]         = abs((int8_t)(cpu_state_high.XMM[cpu_rm].b[7] - cpu_state_high.XMM[cpu_reg].b[7]));
-        temp[8]         = abs((int8_t)(cpu_state_high.XMM[cpu_rm].b[8] - cpu_state_high.XMM[cpu_reg].b[8]));
-        temp[9]         = abs((int8_t)(cpu_state_high.XMM[cpu_rm].b[9] - cpu_state_high.XMM[cpu_reg].b[9]));
-        temp[10]        = abs((int8_t)(cpu_state_high.XMM[cpu_rm].b[10] - cpu_state_high.XMM[cpu_reg].b[10]));
-        temp[11]        = abs((int8_t)(cpu_state_high.XMM[cpu_rm].b[11] - cpu_state_high.XMM[cpu_reg].b[11]));
-        temp[12]        = abs((int8_t)(cpu_state_high.XMM[cpu_rm].b[12] - cpu_state_high.XMM[cpu_reg].b[12]));
-        temp[13]        = abs((int8_t)(cpu_state_high.XMM[cpu_rm].b[13] - cpu_state_high.XMM[cpu_reg].b[13]));
-        temp[14]        = abs((int8_t)(cpu_state_high.XMM[cpu_rm].b[14] - cpu_state_high.XMM[cpu_reg].b[14]));
-        temp[15]        = abs((int8_t)(cpu_state_high.XMM[cpu_rm].b[15] - cpu_state_high.XMM[cpu_reg].b[15]));
+        temp[0]         = abs((int8_t)(cpu_state_high.XMM[cpu_reg].b[0] - cpu_state_high.XMM[cpu_rm].b[0]));
+        temp[1]         = abs((int8_t)(cpu_state_high.XMM[cpu_reg].b[1] - cpu_state_high.XMM[cpu_rm].b[1]));
+        temp[2]         = abs((int8_t)(cpu_state_high.XMM[cpu_reg].b[2] - cpu_state_high.XMM[cpu_rm].b[2]));
+        temp[3]         = abs((int8_t)(cpu_state_high.XMM[cpu_reg].b[3] - cpu_state_high.XMM[cpu_rm].b[3]));
+        temp[4]         = abs((int8_t)(cpu_state_high.XMM[cpu_reg].b[4] - cpu_state_high.XMM[cpu_rm].b[4]));
+        temp[5]         = abs((int8_t)(cpu_state_high.XMM[cpu_reg].b[5] - cpu_state_high.XMM[cpu_rm].b[5]));
+        temp[6]         = abs((int8_t)(cpu_state_high.XMM[cpu_reg].b[6] - cpu_state_high.XMM[cpu_rm].b[6]));
+        temp[7]         = abs((int8_t)(cpu_state_high.XMM[cpu_reg].b[7] - cpu_state_high.XMM[cpu_rm].b[7]));
+        temp[8]         = abs((int8_t)(cpu_state_high.XMM[cpu_reg].b[8] - cpu_state_high.XMM[cpu_rm].b[8]));
+        temp[9]         = abs((int8_t)(cpu_state_high.XMM[cpu_reg].b[9] - cpu_state_high.XMM[cpu_rm].b[9]));
+        temp[10]        = abs((int8_t)(cpu_state_high.XMM[cpu_reg].b[10] - cpu_state_high.XMM[cpu_rm].b[10]));
+        temp[11]        = abs((int8_t)(cpu_state_high.XMM[cpu_reg].b[11] - cpu_state_high.XMM[cpu_rm].b[11]));
+        temp[12]        = abs((int8_t)(cpu_state_high.XMM[cpu_reg].b[12] - cpu_state_high.XMM[cpu_rm].b[12]));
+        temp[13]        = abs((int8_t)(cpu_state_high.XMM[cpu_reg].b[13] - cpu_state_high.XMM[cpu_rm].b[13]));
+        temp[14]        = abs((int8_t)(cpu_state_high.XMM[cpu_reg].b[14] - cpu_state_high.XMM[cpu_rm].b[14]));
+        temp[15]        = abs((int8_t)(cpu_state_high.XMM[cpu_reg].b[15] - cpu_state_high.XMM[cpu_rm].b[15]));
         uint16_t result = 0;
         for (int i = 0; i < 8; i++) {
             result += temp[i];
@@ -3908,22 +3908,22 @@ opPSADBW_xmm_xmm_a16(uint32_t fetchdat)
         src[15] = readmemb(easeg, cpu_state.eaaddr + 15);
         if (cpu_state.abrt)
             return 1;
-        temp[0]         = abs((int8_t)(src[0] - cpu_state_high.XMM[cpu_reg].b[0]));
-        temp[1]         = abs((int8_t)(src[1] - cpu_state_high.XMM[cpu_reg].b[1]));
-        temp[2]         = abs((int8_t)(src[2] - cpu_state_high.XMM[cpu_reg].b[2]));
-        temp[3]         = abs((int8_t)(src[3] - cpu_state_high.XMM[cpu_reg].b[3]));
-        temp[4]         = abs((int8_t)(src[4] - cpu_state_high.XMM[cpu_reg].b[4]));
-        temp[5]         = abs((int8_t)(src[5] - cpu_state_high.XMM[cpu_reg].b[5]));
-        temp[6]         = abs((int8_t)(src[6] - cpu_state_high.XMM[cpu_reg].b[6]));
-        temp[7]         = abs((int8_t)(src[7] - cpu_state_high.XMM[cpu_reg].b[7]));
-        temp[8]         = abs((int8_t)(src[8] - cpu_state_high.XMM[cpu_reg].b[8]));
-        temp[9]         = abs((int8_t)(src[9] - cpu_state_high.XMM[cpu_reg].b[9]));
-        temp[10]        = abs((int8_t)(src[10] - cpu_state_high.XMM[cpu_reg].b[10]));
-        temp[11]        = abs((int8_t)(src[11] - cpu_state_high.XMM[cpu_reg].b[11]));
-        temp[12]        = abs((int8_t)(src[12] - cpu_state_high.XMM[cpu_reg].b[12]));
-        temp[13]        = abs((int8_t)(src[13] - cpu_state_high.XMM[cpu_reg].b[13]));
-        temp[14]        = abs((int8_t)(src[14] - cpu_state_high.XMM[cpu_reg].b[14]));
-        temp[15]        = abs((int8_t)(src[15] - cpu_state_high.XMM[cpu_reg].b[15]));
+        temp[0]         = abs((int8_t)(cpu_state_high.XMM[cpu_reg].b[0] - src[0]));
+        temp[1]         = abs((int8_t)(cpu_state_high.XMM[cpu_reg].b[1] - src[1]));
+        temp[2]         = abs((int8_t)(cpu_state_high.XMM[cpu_reg].b[2] - src[2]));
+        temp[3]         = abs((int8_t)(cpu_state_high.XMM[cpu_reg].b[3] - src[3]));
+        temp[4]         = abs((int8_t)(cpu_state_high.XMM[cpu_reg].b[4] - src[4]));
+        temp[5]         = abs((int8_t)(cpu_state_high.XMM[cpu_reg].b[5] - src[5]));
+        temp[6]         = abs((int8_t)(cpu_state_high.XMM[cpu_reg].b[6] - src[6]));
+        temp[7]         = abs((int8_t)(cpu_state_high.XMM[cpu_reg].b[7] - src[7]));
+        temp[8]         = abs((int8_t)(cpu_state_high.XMM[cpu_reg].b[8] - src[8]));
+        temp[9]         = abs((int8_t)(cpu_state_high.XMM[cpu_reg].b[9] - src[9]));
+        temp[10]        = abs((int8_t)(cpu_state_high.XMM[cpu_reg].b[10] - src[10]));
+        temp[11]        = abs((int8_t)(cpu_state_high.XMM[cpu_reg].b[11] - src[11]));
+        temp[12]        = abs((int8_t)(cpu_state_high.XMM[cpu_reg].b[12] - src[12]));
+        temp[13]        = abs((int8_t)(cpu_state_high.XMM[cpu_reg].b[13] - src[13]));
+        temp[14]        = abs((int8_t)(cpu_state_high.XMM[cpu_reg].b[14] - src[14]));
+        temp[15]        = abs((int8_t)(cpu_state_high.XMM[cpu_reg].b[15] - src[15]));
         uint16_t result = 0;
         for (int i = 0; i < 8; i++) {
             result += temp[i];
@@ -3953,22 +3953,22 @@ opPSADBW_xmm_xmm_a32(uint32_t fetchdat)
     fetch_ea_32(fetchdat);
     if (cpu_mod == 3) {
         uint8_t temp[16];
-        temp[0]         = abs((int8_t)(cpu_state_high.XMM[cpu_rm].b[0] - cpu_state_high.XMM[cpu_reg].b[0]));
-        temp[1]         = abs((int8_t)(cpu_state_high.XMM[cpu_rm].b[1] - cpu_state_high.XMM[cpu_reg].b[1]));
-        temp[2]         = abs((int8_t)(cpu_state_high.XMM[cpu_rm].b[2] - cpu_state_high.XMM[cpu_reg].b[2]));
-        temp[3]         = abs((int8_t)(cpu_state_high.XMM[cpu_rm].b[3] - cpu_state_high.XMM[cpu_reg].b[3]));
-        temp[4]         = abs((int8_t)(cpu_state_high.XMM[cpu_rm].b[4] - cpu_state_high.XMM[cpu_reg].b[4]));
-        temp[5]         = abs((int8_t)(cpu_state_high.XMM[cpu_rm].b[5] - cpu_state_high.XMM[cpu_reg].b[5]));
-        temp[6]         = abs((int8_t)(cpu_state_high.XMM[cpu_rm].b[6] - cpu_state_high.XMM[cpu_reg].b[6]));
-        temp[7]         = abs((int8_t)(cpu_state_high.XMM[cpu_rm].b[7] - cpu_state_high.XMM[cpu_reg].b[7]));
-        temp[8]         = abs((int8_t)(cpu_state_high.XMM[cpu_rm].b[8] - cpu_state_high.XMM[cpu_reg].b[8]));
-        temp[9]         = abs((int8_t)(cpu_state_high.XMM[cpu_rm].b[9] - cpu_state_high.XMM[cpu_reg].b[9]));
-        temp[10]        = abs((int8_t)(cpu_state_high.XMM[cpu_rm].b[10] - cpu_state_high.XMM[cpu_reg].b[10]));
-        temp[11]        = abs((int8_t)(cpu_state_high.XMM[cpu_rm].b[11] - cpu_state_high.XMM[cpu_reg].b[11]));
-        temp[12]        = abs((int8_t)(cpu_state_high.XMM[cpu_rm].b[12] - cpu_state_high.XMM[cpu_reg].b[12]));
-        temp[13]        = abs((int8_t)(cpu_state_high.XMM[cpu_rm].b[13] - cpu_state_high.XMM[cpu_reg].b[13]));
-        temp[14]        = abs((int8_t)(cpu_state_high.XMM[cpu_rm].b[14] - cpu_state_high.XMM[cpu_reg].b[14]));
-        temp[15]        = abs((int8_t)(cpu_state_high.XMM[cpu_rm].b[15] - cpu_state_high.XMM[cpu_reg].b[15]));
+        temp[0]         = abs((int8_t)(cpu_state_high.XMM[cpu_reg].b[0] - cpu_state_high.XMM[cpu_rm].b[0]));
+        temp[1]         = abs((int8_t)(cpu_state_high.XMM[cpu_reg].b[1] - cpu_state_high.XMM[cpu_rm].b[1]));
+        temp[2]         = abs((int8_t)(cpu_state_high.XMM[cpu_reg].b[2] - cpu_state_high.XMM[cpu_rm].b[2]));
+        temp[3]         = abs((int8_t)(cpu_state_high.XMM[cpu_reg].b[3] - cpu_state_high.XMM[cpu_rm].b[3]));
+        temp[4]         = abs((int8_t)(cpu_state_high.XMM[cpu_reg].b[4] - cpu_state_high.XMM[cpu_rm].b[4]));
+        temp[5]         = abs((int8_t)(cpu_state_high.XMM[cpu_reg].b[5] - cpu_state_high.XMM[cpu_rm].b[5]));
+        temp[6]         = abs((int8_t)(cpu_state_high.XMM[cpu_reg].b[6] - cpu_state_high.XMM[cpu_rm].b[6]));
+        temp[7]         = abs((int8_t)(cpu_state_high.XMM[cpu_reg].b[7] - cpu_state_high.XMM[cpu_rm].b[7]));
+        temp[8]         = abs((int8_t)(cpu_state_high.XMM[cpu_reg].b[8] - cpu_state_high.XMM[cpu_rm].b[8]));
+        temp[9]         = abs((int8_t)(cpu_state_high.XMM[cpu_reg].b[9] - cpu_state_high.XMM[cpu_rm].b[9]));
+        temp[10]        = abs((int8_t)(cpu_state_high.XMM[cpu_reg].b[10] - cpu_state_high.XMM[cpu_rm].b[10]));
+        temp[11]        = abs((int8_t)(cpu_state_high.XMM[cpu_reg].b[11] - cpu_state_high.XMM[cpu_rm].b[11]));
+        temp[12]        = abs((int8_t)(cpu_state_high.XMM[cpu_reg].b[12] - cpu_state_high.XMM[cpu_rm].b[12]));
+        temp[13]        = abs((int8_t)(cpu_state_high.XMM[cpu_reg].b[13] - cpu_state_high.XMM[cpu_rm].b[13]));
+        temp[14]        = abs((int8_t)(cpu_state_high.XMM[cpu_reg].b[14] - cpu_state_high.XMM[cpu_rm].b[14]));
+        temp[15]        = abs((int8_t)(cpu_state_high.XMM[cpu_reg].b[15] - cpu_state_high.XMM[cpu_rm].b[15]));
         uint16_t result = 0;
         for (int i = 0; i < 8; i++) {
             result += temp[i];
@@ -4041,22 +4041,22 @@ opPSADBW_xmm_xmm_a32(uint32_t fetchdat)
         src[15] = readmemb(easeg, cpu_state.eaaddr + 15);
         if (cpu_state.abrt)
             return 1;
-        temp[0]         = abs((int8_t)(src[0] - cpu_state_high.XMM[cpu_reg].b[0]));
-        temp[1]         = abs((int8_t)(src[1] - cpu_state_high.XMM[cpu_reg].b[1]));
-        temp[2]         = abs((int8_t)(src[2] - cpu_state_high.XMM[cpu_reg].b[2]));
-        temp[3]         = abs((int8_t)(src[3] - cpu_state_high.XMM[cpu_reg].b[3]));
-        temp[4]         = abs((int8_t)(src[4] - cpu_state_high.XMM[cpu_reg].b[4]));
-        temp[5]         = abs((int8_t)(src[5] - cpu_state_high.XMM[cpu_reg].b[5]));
-        temp[6]         = abs((int8_t)(src[6] - cpu_state_high.XMM[cpu_reg].b[6]));
-        temp[7]         = abs((int8_t)(src[7] - cpu_state_high.XMM[cpu_reg].b[7]));
-        temp[8]         = abs((int8_t)(src[8] - cpu_state_high.XMM[cpu_reg].b[8]));
-        temp[9]         = abs((int8_t)(src[9] - cpu_state_high.XMM[cpu_reg].b[9]));
-        temp[10]        = abs((int8_t)(src[10] - cpu_state_high.XMM[cpu_reg].b[10]));
-        temp[11]        = abs((int8_t)(src[11] - cpu_state_high.XMM[cpu_reg].b[11]));
-        temp[12]        = abs((int8_t)(src[12] - cpu_state_high.XMM[cpu_reg].b[12]));
-        temp[13]        = abs((int8_t)(src[13] - cpu_state_high.XMM[cpu_reg].b[13]));
-        temp[14]        = abs((int8_t)(src[14] - cpu_state_high.XMM[cpu_reg].b[14]));
-        temp[15]        = abs((int8_t)(src[15] - cpu_state_high.XMM[cpu_reg].b[15]));
+        temp[0]         = abs((int8_t)(cpu_state_high.XMM[cpu_reg].b[0] - src[0]));
+        temp[1]         = abs((int8_t)(cpu_state_high.XMM[cpu_reg].b[1] - src[1]));
+        temp[2]         = abs((int8_t)(cpu_state_high.XMM[cpu_reg].b[2] - src[2]));
+        temp[3]         = abs((int8_t)(cpu_state_high.XMM[cpu_reg].b[3] - src[3]));
+        temp[4]         = abs((int8_t)(cpu_state_high.XMM[cpu_reg].b[4] - src[4]));
+        temp[5]         = abs((int8_t)(cpu_state_high.XMM[cpu_reg].b[5] - src[5]));
+        temp[6]         = abs((int8_t)(cpu_state_high.XMM[cpu_reg].b[6] - src[6]));
+        temp[7]         = abs((int8_t)(cpu_state_high.XMM[cpu_reg].b[7] - src[7]));
+        temp[8]         = abs((int8_t)(cpu_state_high.XMM[cpu_reg].b[8] - src[8]));
+        temp[9]         = abs((int8_t)(cpu_state_high.XMM[cpu_reg].b[9] - src[9]));
+        temp[10]        = abs((int8_t)(cpu_state_high.XMM[cpu_reg].b[10] - src[10]));
+        temp[11]        = abs((int8_t)(cpu_state_high.XMM[cpu_reg].b[11] - src[11]));
+        temp[12]        = abs((int8_t)(cpu_state_high.XMM[cpu_reg].b[12] - src[12]));
+        temp[13]        = abs((int8_t)(cpu_state_high.XMM[cpu_reg].b[13] - src[13]));
+        temp[14]        = abs((int8_t)(cpu_state_high.XMM[cpu_reg].b[14] - src[14]));
+        temp[15]        = abs((int8_t)(cpu_state_high.XMM[cpu_reg].b[15] - src[15]));
         uint16_t result = 0;
         for (int i = 0; i < 8; i++) {
             result += temp[i];
