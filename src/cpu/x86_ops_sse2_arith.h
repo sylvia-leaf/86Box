@@ -5,6 +5,7 @@
 static int
 opSQRTPD_xmm_xmm_a16(uint32_t fetchdat)
 {
+    feclearexcept(FE_ALL_EXCEPT);
     fetch_ea_16(fetchdat);
     if (cpu_mod == 3) {
         fesetround(rounding_modes[(cpu_state_high.mxcsr >> 13) & 3]);
@@ -41,6 +42,7 @@ opSQRTPD_xmm_xmm_a16(uint32_t fetchdat)
 static int
 opSQRTPD_xmm_xmm_a32(uint32_t fetchdat)
 {
+    feclearexcept(FE_ALL_EXCEPT);
     fetch_ea_32(fetchdat);
     if (cpu_mod == 3) {
         fesetround(rounding_modes[(cpu_state_high.mxcsr >> 13) & 3]);
@@ -77,6 +79,7 @@ opSQRTPD_xmm_xmm_a32(uint32_t fetchdat)
 static int
 opSQRTSD_xmm_xmm_a16(uint32_t fetchdat)
 {
+    feclearexcept(FE_ALL_EXCEPT);
     fetch_ea_16(fetchdat);
     if (cpu_mod == 3) {
         fesetround(rounding_modes[(cpu_state_high.mxcsr >> 13) & 3]);
@@ -105,6 +108,7 @@ opSQRTSD_xmm_xmm_a16(uint32_t fetchdat)
 static int
 opSQRTSD_xmm_xmm_a32(uint32_t fetchdat)
 {
+    feclearexcept(FE_ALL_EXCEPT);
     fetch_ea_32(fetchdat);
     if (cpu_mod == 3) {
         fesetround(rounding_modes[(cpu_state_high.mxcsr >> 13) & 3]);
@@ -133,6 +137,7 @@ opSQRTSD_xmm_xmm_a32(uint32_t fetchdat)
 static int
 opADDPD_xmm_xmm_a16(uint32_t fetchdat)
 {
+    feclearexcept(FE_ALL_EXCEPT);
     fetch_ea_16(fetchdat);
     if (cpu_mod == 3) {
         fesetround(rounding_modes[(cpu_state_high.mxcsr >> 13) & 3]);
@@ -168,6 +173,7 @@ opADDPD_xmm_xmm_a16(uint32_t fetchdat)
 static int
 opADDPD_xmm_xmm_a32(uint32_t fetchdat)
 {
+    feclearexcept(FE_ALL_EXCEPT);
     fetch_ea_32(fetchdat);
     if (cpu_mod == 3) {
         fesetround(rounding_modes[(cpu_state_high.mxcsr >> 13) & 3]);
@@ -203,6 +209,7 @@ opADDPD_xmm_xmm_a32(uint32_t fetchdat)
 static int
 opADDSD_xmm_xmm_a16(uint32_t fetchdat)
 {
+    feclearexcept(FE_ALL_EXCEPT);
     fetch_ea_16(fetchdat);
     if (cpu_mod == 3) {
         fesetround(rounding_modes[(cpu_state_high.mxcsr >> 13) & 3]);
@@ -230,6 +237,7 @@ opADDSD_xmm_xmm_a16(uint32_t fetchdat)
 static int
 opADDSD_xmm_xmm_a32(uint32_t fetchdat)
 {
+    feclearexcept(FE_ALL_EXCEPT);
     fetch_ea_32(fetchdat);
     if (cpu_mod == 3) {
         fesetround(rounding_modes[(cpu_state_high.mxcsr >> 13) & 3]);
@@ -257,6 +265,7 @@ opADDSD_xmm_xmm_a32(uint32_t fetchdat)
 static int
 opMULPD_xmm_xmm_a16(uint32_t fetchdat)
 {
+    feclearexcept(FE_ALL_EXCEPT);
     fetch_ea_16(fetchdat);
     if (cpu_mod == 3) {
         fesetround(rounding_modes[(cpu_state_high.mxcsr >> 13) & 3]);
@@ -292,6 +301,7 @@ opMULPD_xmm_xmm_a16(uint32_t fetchdat)
 static int
 opMULPD_xmm_xmm_a32(uint32_t fetchdat)
 {
+    feclearexcept(FE_ALL_EXCEPT);
     fetch_ea_32(fetchdat);
     if (cpu_mod == 3) {
         fesetround(rounding_modes[(cpu_state_high.mxcsr >> 13) & 3]);
@@ -327,6 +337,7 @@ opMULPD_xmm_xmm_a32(uint32_t fetchdat)
 static int
 opMULSD_xmm_xmm_a16(uint32_t fetchdat)
 {
+    feclearexcept(FE_ALL_EXCEPT);
     fetch_ea_16(fetchdat);
     if (cpu_mod == 3) {
         fesetround(rounding_modes[(cpu_state_high.mxcsr >> 13) & 3]);
@@ -354,6 +365,7 @@ opMULSD_xmm_xmm_a16(uint32_t fetchdat)
 static int
 opMULSD_xmm_xmm_a32(uint32_t fetchdat)
 {
+    feclearexcept(FE_ALL_EXCEPT);
     fetch_ea_32(fetchdat);
     if (cpu_mod == 3) {
         fesetround(rounding_modes[(cpu_state_high.mxcsr >> 13) & 3]);
@@ -381,6 +393,7 @@ opMULSD_xmm_xmm_a32(uint32_t fetchdat)
 static int
 opSUBPD_xmm_xmm_a16(uint32_t fetchdat)
 {
+    feclearexcept(FE_ALL_EXCEPT);
     fetch_ea_16(fetchdat);
     if (cpu_mod == 3) {
         fesetround(rounding_modes[(cpu_state_high.mxcsr >> 13) & 3]);
@@ -416,6 +429,7 @@ opSUBPD_xmm_xmm_a16(uint32_t fetchdat)
 static int
 opSUBPD_xmm_xmm_a32(uint32_t fetchdat)
 {
+    feclearexcept(FE_ALL_EXCEPT);
     fetch_ea_32(fetchdat);
     if (cpu_mod == 3) {
         fesetround(rounding_modes[(cpu_state_high.mxcsr >> 13) & 3]);
@@ -451,6 +465,7 @@ opSUBPD_xmm_xmm_a32(uint32_t fetchdat)
 static int
 opSUBSD_xmm_xmm_a16(uint32_t fetchdat)
 {
+    feclearexcept(FE_ALL_EXCEPT);
     fetch_ea_16(fetchdat);
     if (cpu_mod == 3) {
         fesetround(rounding_modes[(cpu_state_high.mxcsr >> 13) & 3]);
@@ -478,6 +493,7 @@ opSUBSD_xmm_xmm_a16(uint32_t fetchdat)
 static int
 opSUBSD_xmm_xmm_a32(uint32_t fetchdat)
 {
+    feclearexcept(FE_ALL_EXCEPT);
     fetch_ea_32(fetchdat);
     if (cpu_mod == 3) {
         fesetround(rounding_modes[(cpu_state_high.mxcsr >> 13) & 3]);
@@ -601,6 +617,7 @@ opMINSD_xmm_xmm_a32(uint32_t fetchdat)
 static int
 opDIVPD_xmm_xmm_a16(uint32_t fetchdat)
 {
+    feclearexcept(FE_ALL_EXCEPT);
     fetch_ea_16(fetchdat);
     if (cpu_mod == 3) {
         fesetround(rounding_modes[(cpu_state_high.mxcsr >> 13) & 3]);
@@ -636,6 +653,7 @@ opDIVPD_xmm_xmm_a16(uint32_t fetchdat)
 static int
 opDIVPD_xmm_xmm_a32(uint32_t fetchdat)
 {
+    feclearexcept(FE_ALL_EXCEPT);
     fetch_ea_32(fetchdat);
     if (cpu_mod == 3) {
         fesetround(rounding_modes[(cpu_state_high.mxcsr >> 13) & 3]);
@@ -671,6 +689,7 @@ opDIVPD_xmm_xmm_a32(uint32_t fetchdat)
 static int
 opDIVSD_xmm_xmm_a16(uint32_t fetchdat)
 {
+    feclearexcept(FE_ALL_EXCEPT);
     fetch_ea_16(fetchdat);
     if (cpu_mod == 3) {
         fesetround(rounding_modes[(cpu_state_high.mxcsr >> 13) & 3]);
@@ -698,6 +717,7 @@ opDIVSD_xmm_xmm_a16(uint32_t fetchdat)
 static int
 opDIVSD_xmm_xmm_a32(uint32_t fetchdat)
 {
+    feclearexcept(FE_ALL_EXCEPT);
     fetch_ea_32(fetchdat);
     if (cpu_mod == 3) {
         fesetround(rounding_modes[(cpu_state_high.mxcsr >> 13) & 3]);
