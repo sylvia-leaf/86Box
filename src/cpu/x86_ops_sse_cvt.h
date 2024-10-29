@@ -2,6 +2,7 @@
 static int
 opCVTPI2PS_xmm_mm_a16(uint32_t fetchdat)
 {
+    feclearexcept(FE_ALL_EXCEPT);
     MMX_REG src;
 
     if ((cpu_features & CPU_FEATURE_SSE2) && sse_xmm)
@@ -24,6 +25,7 @@ opCVTPI2PS_xmm_mm_a16(uint32_t fetchdat)
 static int
 opCVTPI2PS_xmm_mm_a32(uint32_t fetchdat)
 {
+    feclearexcept(FE_ALL_EXCEPT);
     MMX_REG src;
 
     if ((cpu_features & CPU_FEATURE_SSE2) && sse_xmm)
@@ -46,6 +48,7 @@ opCVTPI2PS_xmm_mm_a32(uint32_t fetchdat)
 static int
 opCVTSI2SS_xmm_l_a16(uint32_t fetchdat)
 {
+    feclearexcept(FE_ALL_EXCEPT);
     fetch_ea_16(fetchdat);
     if (cpu_mod == 3) {
         fesetround(rounding_modes[(cpu_state_high.mxcsr >> 13) & 3]);
@@ -73,6 +76,7 @@ opCVTSI2SS_xmm_l_a16(uint32_t fetchdat)
 static int
 opCVTSI2SS_xmm_l_a32(uint32_t fetchdat)
 {
+    feclearexcept(FE_ALL_EXCEPT);
     fetch_ea_32(fetchdat);
     if (cpu_mod == 3) {
         fesetround(rounding_modes[(cpu_state_high.mxcsr >> 13) & 3]);
@@ -143,6 +147,7 @@ opCVTTPS2PI_mm_xmm_a32(uint32_t fetchdat)
 static int
 opCVTTSS2SI_l_xmm_a16(uint32_t fetchdat)
 {
+    feclearexcept(FE_ALL_EXCEPT);
     fetch_ea_16(fetchdat);
     if (cpu_mod == 3) {
         int32_t result = trunc(cpu_state_high.XMM[cpu_rm].f[0]); 
@@ -170,6 +175,7 @@ opCVTTSS2SI_l_xmm_a16(uint32_t fetchdat)
 static int
 opCVTTSS2SI_l_xmm_a32(uint32_t fetchdat)
 {
+    feclearexcept(FE_ALL_EXCEPT);
     fetch_ea_32(fetchdat);
     if (cpu_mod == 3) {
         int32_t result = trunc(cpu_state_high.XMM[cpu_rm].f[0]); 
