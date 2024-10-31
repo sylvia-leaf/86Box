@@ -106,8 +106,6 @@ check_sse_exceptions_float(float* result)
             x86_int(0x13);
         //ILLEGAL_ON(!(cr4 & CR4_OSXMMEXCPT));
     }
-
-    feclearexcept(FE_ALL_EXCEPT);
     return 0;
 }
 
@@ -154,6 +152,5 @@ check_sse_exceptions_double(double* result)
         //ILLEGAL_ON(!(cr4 & CR4_OSXMMEXCPT));
     }
 
-    feclearexcept(FE_ALL_EXCEPT);
     return 0;
 }
