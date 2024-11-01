@@ -71,7 +71,7 @@ opCVTSI2SD_xmm_l_a32(uint32_t fetchdat)
     fetch_ea_32(fetchdat);
     if (cpu_mod == 3) {
         fesetround(rounding_modes[(cpu_state_high.mxcsr >> 13) & 3]);
-        cpu_state_high.XMM[cpu_reg].d[0] = (int32_tgetr32(cpu_rm);
+        cpu_state_high.XMM[cpu_reg].d[0] = (int32_t)getr32(cpu_rm);
         fesetround(FE_TONEAREST);
         check_sse_exceptions_double(&cpu_state_high.XMM[cpu_reg].d[0]);
         CLOCK_CYCLES(1);
