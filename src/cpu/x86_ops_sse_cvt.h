@@ -15,8 +15,8 @@ opCVTPI2PS_xmm_mm_a16(uint32_t fetchdat)
     cpu_state_high.XMM[cpu_reg].f[0] = src.sl[0];
     cpu_state_high.XMM[cpu_reg].f[1] = src.sl[1];
     fesetround(FE_TONEAREST);
-    check_sse_exceptions_float(&cpu_state_high.XMM[cpu_reg].f[0]);
-    check_sse_exceptions_float(&cpu_state_high.XMM[cpu_reg].f[1]);
+    //check_sse_exceptions_float(&cpu_state_high.XMM[cpu_reg].f[0]);
+    //check_sse_exceptions_float(&cpu_state_high.XMM[cpu_reg].f[1]);
     CLOCK_CYCLES(1);
 
     return 0;
@@ -38,8 +38,8 @@ opCVTPI2PS_xmm_mm_a32(uint32_t fetchdat)
     cpu_state_high.XMM[cpu_reg].f[0] = src.sl[0];
     cpu_state_high.XMM[cpu_reg].f[1] = src.sl[1];
     fesetround(FE_TONEAREST);
-    check_sse_exceptions_float(&cpu_state_high.XMM[cpu_reg].f[0]);
-    check_sse_exceptions_float(&cpu_state_high.XMM[cpu_reg].f[1]);
+    //check_sse_exceptions_float(&cpu_state_high.XMM[cpu_reg].f[0]);
+    //check_sse_exceptions_float(&cpu_state_high.XMM[cpu_reg].f[1]);
     CLOCK_CYCLES(1);
 
     return 0;
@@ -54,7 +54,7 @@ opCVTSI2SS_xmm_l_a16(uint32_t fetchdat)
         fesetround(rounding_modes[(cpu_state_high.mxcsr >> 13) & 3]);
         cpu_state_high.XMM[cpu_reg].f[0] = (int32_t)getr32(cpu_rm);
         fesetround(FE_TONEAREST);
-        check_sse_exceptions_float(&cpu_state_high.XMM[cpu_reg].f[0]);
+        //check_sse_exceptions_float(&cpu_state_high.XMM[cpu_reg].f[0]);
         CLOCK_CYCLES(1);
     } else {
         uint32_t dst;
@@ -66,7 +66,7 @@ opCVTSI2SS_xmm_l_a16(uint32_t fetchdat)
         fesetround(rounding_modes[(cpu_state_high.mxcsr >> 13) & 3]);
         cpu_state_high.XMM[cpu_reg].f[0] = (int32_t)dst;
         fesetround(FE_TONEAREST);
-        check_sse_exceptions_float(&cpu_state_high.XMM[cpu_reg].f[0]);
+        //check_sse_exceptions_float(&cpu_state_high.XMM[cpu_reg].f[0]);
         CLOCK_CYCLES(2);
     }
 
@@ -82,7 +82,7 @@ opCVTSI2SS_xmm_l_a32(uint32_t fetchdat)
         fesetround(rounding_modes[(cpu_state_high.mxcsr >> 13) & 3]);
         cpu_state_high.XMM[cpu_reg].f[0] = (int32_t)getr32(cpu_rm);
         fesetround(FE_TONEAREST);
-        check_sse_exceptions_float(&cpu_state_high.XMM[cpu_reg].f[0]);
+        //check_sse_exceptions_float(&cpu_state_high.XMM[cpu_reg].f[0]);
         CLOCK_CYCLES(1);
     } else {
         uint32_t dst;
@@ -94,7 +94,7 @@ opCVTSI2SS_xmm_l_a32(uint32_t fetchdat)
         fesetround(rounding_modes[(cpu_state_high.mxcsr >> 13) & 3]);
         cpu_state_high.XMM[cpu_reg].f[0] = (int32_t)dst;
         fesetround(FE_TONEAREST);
-        check_sse_exceptions_float(&cpu_state_high.XMM[cpu_reg].f[0]);
+        //check_sse_exceptions_float(&cpu_state_high.XMM[cpu_reg].f[0]);
         CLOCK_CYCLES(2);
     }
 
@@ -152,7 +152,7 @@ opCVTTSS2SI_l_xmm_a16(uint32_t fetchdat)
     if (cpu_mod == 3) {
         int32_t result = trunc(cpu_state_high.XMM[cpu_rm].f[0]); 
         setr32(cpu_reg, result);
-        check_sse_exceptions_float(&cpu_state_high.XMM[cpu_reg].f[0]);
+        //check_sse_exceptions_float(&cpu_state_high.XMM[cpu_reg].f[0]);
         CLOCK_CYCLES(1);
     } else {
         uint32_t dst;
@@ -165,7 +165,7 @@ opCVTTSS2SI_l_xmm_a16(uint32_t fetchdat)
         dst_real = *(float *) &dst;
         int32_t result = trunc(dst_real);
         setr32(cpu_reg, result);
-        check_sse_exceptions_float(&cpu_state_high.XMM[cpu_reg].f[0]);
+        //check_sse_exceptions_float(&cpu_state_high.XMM[cpu_reg].f[0]);
         CLOCK_CYCLES(2);
     }
 
@@ -180,7 +180,7 @@ opCVTTSS2SI_l_xmm_a32(uint32_t fetchdat)
     if (cpu_mod == 3) {
         int32_t result = trunc(cpu_state_high.XMM[cpu_rm].f[0]); 
         setr32(cpu_reg, result);
-        check_sse_exceptions_float(&cpu_state_high.XMM[cpu_reg].f[0]);
+        //check_sse_exceptions_float(&cpu_state_high.XMM[cpu_reg].f[0]);
         CLOCK_CYCLES(1);
     } else {
         uint32_t dst;
@@ -193,7 +193,7 @@ opCVTTSS2SI_l_xmm_a32(uint32_t fetchdat)
         dst_real = *(float *) &dst;
         int32_t result = trunc(dst_real);
         setr32(cpu_reg, result);
-        check_sse_exceptions_float(&cpu_state_high.XMM[cpu_reg].f[0]);
+        //check_sse_exceptions_float(&cpu_state_high.XMM[cpu_reg].f[0]);
         CLOCK_CYCLES(2);
     }
 
