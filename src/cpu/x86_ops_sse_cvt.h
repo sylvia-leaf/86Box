@@ -214,18 +214,8 @@ opCVTPS2PI_mm_xmm_a16(uint32_t fetchdat)
     dst = MMX_GETREGP(cpu_reg);
     SSE_GETSRC();
     fesetround(rounding_modes[(cpu_state_high.mxcsr >> 13) & 3]);
-    if (src.f[0] < -2147483647.0)
-        dst->l[0] = 0x80000000;
-    else if (src.f[0] > 2147483647.0)
-        dst->l[0] = 0;
-    else
-        dst->sl[0] = src.f[0];
-    if (src.f[1] > 2147483647.0 || src.f[1] < -2147483647.0)
-        dst->l[1] = 0x80000000;
-    else if (src.f[1] > 2147483647.0)
-        dst->l[1] = 0;
-    else
-        dst->sl[1] = src.f[1];
+    dst->sl[0] = src.f[0];
+    dst->sl[1] = src.f[1];
     fesetround(FE_TONEAREST);
     MMX_SETEXP(cpu_reg);
     CLOCK_CYCLES(1);
@@ -247,18 +237,8 @@ opCVTPS2PI_mm_xmm_a32(uint32_t fetchdat)
     dst = MMX_GETREGP(cpu_reg);
     SSE_GETSRC();
     fesetround(rounding_modes[(cpu_state_high.mxcsr >> 13) & 3]);
-    if (src.f[0] < -2147483647.0)
-        dst->l[0] = 0x80000000;
-    else if (src.f[0] > 2147483647.0)
-        dst->l[0] = 0;
-    else
-        dst->sl[0] = src.f[0];
-    if (src.f[1] > 2147483647.0 || src.f[1] < -2147483647.0)
-        dst->l[1] = 0x80000000;
-    else if (src.f[1] > 2147483647.0)
-        dst->l[1] = 0;
-    else
-        dst->sl[1] = src.f[1];
+    dst->sl[0] = src.f[0];
+    dst->sl[1] = src.f[1];
     fesetround(FE_TONEAREST);
     MMX_SETEXP(cpu_reg);
     CLOCK_CYCLES(1);
@@ -274,12 +254,7 @@ opCVTSS2SI_l_xmm_a16(uint32_t fetchdat)
     fetch_ea_16(fetchdat);
     SSE_GETSRC();
     fesetround(rounding_modes[(cpu_state_high.mxcsr >> 13) & 3]);
-    if (src.f[0] < -2147483647.0)
-        result = 0x80000000;
-    else if (src.f[0] > 2147483647.0)
-        result = 0;
-    else
-        result = src.f[0];
+    result = src.f[0];
     setr32(cpu_reg, result);
     fesetround(FE_TONEAREST);
 
@@ -294,12 +269,7 @@ opCVTSS2SI_l_xmm_a32(uint32_t fetchdat)
     fetch_ea_32(fetchdat);
     SSE_GETSRC();
     fesetround(rounding_modes[(cpu_state_high.mxcsr >> 13) & 3]);
-    if (src.f[0] < -2147483647.0)
-        result = 0x80000000;
-    else if (src.f[0] > 2147483647.0)
-        result = 0;
-    else
-        result = src.f[0];
+    result = src.f[0];
     setr32(cpu_reg, result);
     fesetround(FE_TONEAREST);
 
