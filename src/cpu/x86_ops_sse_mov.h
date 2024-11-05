@@ -956,7 +956,6 @@ opPEXTRW_xmm_w_a16(uint32_t fetchdat)
             MMX_REG src;
             src = MMX_GETREG(cpu_rm);
             setr32(cpu_reg, src.w[imm & 3]);
-            MMX_SETEXP(cpu_rm);
         }
         CLOCK_CYCLES(1);
     }
@@ -982,7 +981,6 @@ opPEXTRW_xmm_w_a32(uint32_t fetchdat)
             MMX_REG src;
             src = MMX_GETREG(cpu_rm);
             setr32(cpu_reg, src.w[imm & 3]);
-            MMX_SETEXP(cpu_rm);
         }
         CLOCK_CYCLES(1);
     }
