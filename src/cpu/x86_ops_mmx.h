@@ -65,17 +65,19 @@ opEMMS(uint32_t fetchdat)
     return 0;
 }
 
-softfloat_status_t mxcsr_to_softfloat_status_word(void)
+static struct softfloat_status_t mxcsr_to_softfloat_status_word(void)
 {
+    struct softfloat_status_t status;
     status.softfloat_exceptionFlags             = 0; // clear exceptions before execution
     status.softfloat_roundingMode               = (cpu_state_high.mxcsr >> 13) & 3;
     status.softfloat_flush_underflow_to_zero    = (cpu_state_high.mxcsr >> 15) & 1;
     status.softfloat_suppressException          = 0;
     status.softfloat_exceptionMasks             = (cpu_state_high.mxcsr >> 7) & 0x3f;
     status.softfloat_denormals_are_zeros        = (cpu_state_high.mxcsr >> 6) & 1;
+    return status;
 }
 
-void softfloat_status_word_to_mxcsr(softfloat_status_t status)
+static void softfloat_status_word_to_mxcsr(struct softfloat_status_t status)
 {
     cpu_state_high.mxcsr |= status.softfloat_exceptionFlags & 0x3f;
 }

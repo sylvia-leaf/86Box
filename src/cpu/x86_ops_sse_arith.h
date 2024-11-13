@@ -11,7 +11,7 @@ opSQRTPS_xmm_xmm_a16(uint32_t fetchdat)
     
     fetch_ea_16(fetchdat);
     SSE_REG src;
-    softfloat_status_t status = mxcsr_to_softfloat_status_word();
+    struct softfloat_status_t status = mxcsr_to_softfloat_status_word();
     SSE_GETSRC();
     cpu_state_high.XMM[cpu_reg].f[0] = f32_sqrt(src.f[0], &status);
     cpu_state_high.XMM[cpu_reg].f[1] = f32_sqrt(src.f[1], &status);
@@ -29,7 +29,7 @@ opSQRTPS_xmm_xmm_a32(uint32_t fetchdat)
 
     fetch_ea_32(fetchdat);
     SSE_REG src;
-    softfloat_status_t status = mxcsr_to_softfloat_status_word();
+    struct softfloat_status_t status = mxcsr_to_softfloat_status_word();
     SSE_GETSRC();
     cpu_state_high.XMM[cpu_reg].f[0] = f32_sqrt(src.f[0], &status);
     cpu_state_high.XMM[cpu_reg].f[1] = f32_sqrt(src.f[1], &status);
@@ -40,18 +40,36 @@ opSQRTPS_xmm_xmm_a32(uint32_t fetchdat)
 }
 
 static int
-opSQRTSS_xmm_xmm_a32(uint32_t fetchdat)
+opSQRTSS_xmm_xmm_a16(uint32_t fetchdat)
 {
-    fetch_ea_32(fetchdat);
+    fetch_ea_16(fetchdat);
     SSE_REG src;
-    softfloat_status_t status = mxcsr_to_softfloat_status_word();
+    struct softfloat_status_t status = mxcsr_to_softfloat_status_word();
     SSE_GETSRC();
     cpu_state_high.XMM[cpu_reg].f[0] = f32_sqrt(src.f[0], &status);
 
     return 0;
 }
 
-static const Bit16u rsqrt_table0[1024] = {
+static int
+opSQRTSS_xmm_xmm_a32(uint32_t fetchdat)
+{
+    fetch_ea_32(fetchdat);
+    SSE_REG src;
+    struct softfloat_status_t status = mxcsr_to_softfloat_status_word();
+    SSE_GETSRC();
+    cpu_state_high.XMM[cpu_reg].f[0] = f32_sqrt(src.f[0], &status);
+
+    return 0;
+}
+
+/* convert float32 NaN number to QNaN */
+static float32 f32_convert_to_QNaN(float32 op)
+{
+  return op | 0x7FC00000;
+}
+
+static const uint16_t rsqrt_table0[1024] = {
     0x34f8, 0x34e0, 0x34d0, 0x34b8, 0x34a0, 0x3488, 0x3470, 0x3460,
     0x3448, 0x3430, 0x3418, 0x3400, 0x33f0, 0x33d8, 0x33c0, 0x33a8,
     0x3398, 0x3380, 0x3368, 0x3350, 0x3338, 0x3328, 0x3310, 0x32f8,
@@ -182,7 +200,7 @@ static const Bit16u rsqrt_table0[1024] = {
     0x0040, 0x0038, 0x0030, 0x0028, 0x0020, 0x0018, 0x0010, 0x0008
 };
 
-static const Bit16u rsqrt_table1[1024] = {
+static const uint16_t rsqrt_table1[1024] = {
     0x7ff0, 0x7fd0, 0x7fb0, 0x7f90, 0x7f70, 0x7f50, 0x7f30, 0x7f10,
     0x7ef0, 0x7ed0, 0x7eb0, 0x7e90, 0x7e70, 0x7e58, 0x7e38, 0x7e18,
     0x7df8, 0x7dd8, 0x7db8, 0x7d98, 0x7d78, 0x7d58, 0x7d38, 0x7d20,
@@ -314,7 +332,7 @@ static const Bit16u rsqrt_table1[1024] = {
 };
 
 // approximate reciprocal sqrt of scalar single precision FP
-float32 approximate_rsqrt(float32 op)
+static float32 approximate_rsqrt(float32 op)
 {
   softfloat_class_t op_class = f32_class(op);
   bool sign = f32_sign(op);
@@ -332,7 +350,7 @@ float32 approximate_rsqrt(float32 op)
 
     case softfloat_SNaN:
     case softfloat_QNaN:
-      return convert_to_QNaN(op);
+      return f32_convert_to_QNaN(op);
 
     case softfloat_normalized:
       break;
@@ -341,8 +359,8 @@ float32 approximate_rsqrt(float32 op)
   if (sign == 1)
     return float32_default_nan;
 
-  Bit32u fraction = f32_fraction(op);
-  Bit16s exp = f32_exp(op);
+  uint32_t fraction = f32_fraction(op);
+  int16_t exp = f32_exp(op);
 
   /*
    * Calculate (1/1.yyyyyyyyyy1), the result is always rounded to the
@@ -352,11 +370,11 @@ float32 approximate_rsqrt(float32 op)
    * Using two precalculated 1024-entry tables.
    */
 
-  const Bit16u *rsqrt_table = (exp & 1) ? rsqrt_table1 : rsqrt_table0;
+  const uint16_t *rsqrt_table = (exp & 1) ? rsqrt_table1 : rsqrt_table0;
 
   exp = 0x7E - ((exp - 0x7F) >> 1);
 
-  return packFloat32(0, exp, (Bit32u)(rsqrt_table[fraction >> 13]) << 8);
+  return packFloat32(0, exp, (uint32_t)(rsqrt_table[fraction >> 13]) << 8);
 }
 
 
@@ -410,7 +428,7 @@ opRSQRTSS_xmm_xmm_a32(uint32_t fetchdat)
     return 0;
 }
 
-static Bit16u rcp_table[2048] = {
+static uint16_t rcp_table[2048] = {
     0x7ff0, 0x7fd0, 0x7fb0, 0x7f90, 0x7f70, 0x7f50, 0x7f30, 0x7f10,
     0x7ef0, 0x7ed0, 0x7eb0, 0x7e90, 0x7e70, 0x7e50, 0x7e30, 0x7e10,
     0x7df8, 0x7dd8, 0x7db8, 0x7d98, 0x7d78, 0x7d58, 0x7d38, 0x7d18,
@@ -670,7 +688,7 @@ static Bit16u rcp_table[2048] = {
 };
 
 // approximate reciprocal of scalar single precision FP
-float32 approximate_rcp(float32 op)
+static float32 approximate_rcp(float32 op)
 {
   softfloat_class_t op_class = f32_class(op);
   bool sign = f32_sign(op);
@@ -686,14 +704,14 @@ float32 approximate_rcp(float32 op)
 
     case softfloat_SNaN:
     case softfloat_QNaN:
-      return convert_to_QNaN(op);
+      return f32_convert_to_QNaN(op);
 
     case softfloat_normalized:
       break;
   }
 
-  Bit32u fraction = f32_fraction(op);
-  Bit16s exp = f32_exp(op);
+  uint32_t fraction = f32_fraction(op);
+  int16_t exp = f32_exp(op);
 
   /*
    * Calculate (1/1.yyyyyyyyyyy1), the result is always rounded to the
@@ -709,7 +727,7 @@ float32 approximate_rcp(float32 op)
   if (exp <= 0)
       return packFloat32(sign, 0, 0);
 
-  return packFloat32(sign, exp, (Bit32u)(rcp_table[fraction >> 12]) << 8);
+  return packFloat32(sign, exp, (uint32_t)(rcp_table[fraction >> 12]) << 8);
 }
 
 static int
@@ -770,7 +788,7 @@ opADDPS_xmm_xmm_a16(uint32_t fetchdat)
 
     fetch_ea_16(fetchdat);
     SSE_REG src;
-    softfloat_status_t status = mxcsr_to_softfloat_status_word();
+    struct softfloat_status_t status = mxcsr_to_softfloat_status_word();
     SSE_GETSRC();
     cpu_state_high.XMM[cpu_reg].f[0] = f32_add(cpu_state_high.XMM[cpu_reg].f[0], src.f[0], &status);
     cpu_state_high.XMM[cpu_reg].f[1] = f32_add(cpu_state_high.XMM[cpu_reg].f[1], src.f[1], &status);
@@ -795,7 +813,7 @@ opADDPS_xmm_xmm_a32(uint32_t fetchdat)
 
     fetch_ea_32(fetchdat);
     SSE_REG src;
-    softfloat_status_t status = mxcsr_to_softfloat_status_word();
+    struct softfloat_status_t status = mxcsr_to_softfloat_status_word();
     SSE_GETSRC();
     cpu_state_high.XMM[cpu_reg].f[0] = f32_add(cpu_state_high.XMM[cpu_reg].f[0], src.f[0], &status);
     cpu_state_high.XMM[cpu_reg].f[1] = f32_add(cpu_state_high.XMM[cpu_reg].f[1], src.f[1], &status);
@@ -817,7 +835,7 @@ opADDSS_xmm_xmm_a16(uint32_t fetchdat)
 {
     fetch_ea_16(fetchdat);
     SSE_REG src;
-    softfloat_status_t status = mxcsr_to_softfloat_status_word();
+    struct softfloat_status_t status = mxcsr_to_softfloat_status_word();
     SSE_GETSRC();
     cpu_state_high.XMM[cpu_reg].f[0] = f32_add(cpu_state_high.XMM[cpu_reg].f[0], src.f[0], &status);
     softfloat_status_word_to_mxcsr(status);
@@ -836,7 +854,7 @@ opADDSS_xmm_xmm_a32(uint32_t fetchdat)
 {
     fetch_ea_32(fetchdat);
     SSE_REG src;
-    softfloat_status_t status = mxcsr_to_softfloat_status_word();
+    struct softfloat_status_t status = mxcsr_to_softfloat_status_word();
     SSE_GETSRC();
     cpu_state_high.XMM[cpu_reg].f[0] = f32_add(cpu_state_high.XMM[cpu_reg].f[0], src.f[0], &status);
     softfloat_status_word_to_mxcsr(status);
@@ -858,7 +876,7 @@ opMULPS_xmm_xmm_a16(uint32_t fetchdat)
 
     fetch_ea_16(fetchdat);
     SSE_REG src;
-    softfloat_status_t status = mxcsr_to_softfloat_status_word();
+    struct softfloat_status_t status = mxcsr_to_softfloat_status_word();
     SSE_GETSRC();
     cpu_state_high.XMM[cpu_reg].f[0] = f32_mul(cpu_state_high.XMM[cpu_reg].f[0], src.f[0], &status);
     cpu_state_high.XMM[cpu_reg].f[1] = f32_mul(cpu_state_high.XMM[cpu_reg].f[1], src.f[1], &status);
@@ -883,7 +901,7 @@ opMULPS_xmm_xmm_a32(uint32_t fetchdat)
 
     fetch_ea_32(fetchdat);
     SSE_REG src;
-    softfloat_status_t status = mxcsr_to_softfloat_status_word();
+    struct softfloat_status_t status = mxcsr_to_softfloat_status_word();
     SSE_GETSRC();
     cpu_state_high.XMM[cpu_reg].f[0] = f32_mul(cpu_state_high.XMM[cpu_reg].f[0], src.f[0], &status);
     cpu_state_high.XMM[cpu_reg].f[1] = f32_mul(cpu_state_high.XMM[cpu_reg].f[1], src.f[1], &status);
@@ -905,7 +923,7 @@ opMULSS_xmm_xmm_a16(uint32_t fetchdat)
 {
     fetch_ea_16(fetchdat);
     SSE_REG src;
-    softfloat_status_t status = mxcsr_to_softfloat_status_word();
+    struct softfloat_status_t status = mxcsr_to_softfloat_status_word();
     SSE_GETSRC();
     cpu_state_high.XMM[cpu_reg].f[0] = f32_mul(cpu_state_high.XMM[cpu_reg].f[0], src.f[0], &status);
     softfloat_status_word_to_mxcsr(status);
@@ -924,7 +942,7 @@ opMULSS_xmm_xmm_a32(uint32_t fetchdat)
 {
     feclearexcept(FE_ALL_EXCEPT);
     SSE_REG src;
-    softfloat_status_t status = mxcsr_to_softfloat_status_word();
+    struct softfloat_status_t status = mxcsr_to_softfloat_status_word();
     SSE_GETSRC();
     cpu_state_high.XMM[cpu_reg].f[0] = f32_mul(cpu_state_high.XMM[cpu_reg].f[0], src.f[0], &status);
     softfloat_status_word_to_mxcsr(status);
@@ -946,7 +964,7 @@ opSUBPS_xmm_xmm_a16(uint32_t fetchdat)
 
     fetch_ea_16(fetchdat);
     SSE_REG src;
-    softfloat_status_t status = mxcsr_to_softfloat_status_word();
+    struct softfloat_status_t status = mxcsr_to_softfloat_status_word();
     SSE_GETSRC();
     cpu_state_high.XMM[cpu_reg].f[0] = f32_sub(cpu_state_high.XMM[cpu_reg].f[0], src.f[0], &status);
     cpu_state_high.XMM[cpu_reg].f[1] = f32_sub(cpu_state_high.XMM[cpu_reg].f[1], src.f[1], &status);
@@ -971,7 +989,7 @@ opSUBPS_xmm_xmm_a32(uint32_t fetchdat)
 
     fetch_ea_32(fetchdat);
     SSE_REG src;
-    softfloat_status_t status = mxcsr_to_softfloat_status_word();
+    struct softfloat_status_t status = mxcsr_to_softfloat_status_word();
     SSE_GETSRC();
     cpu_state_high.XMM[cpu_reg].f[0] = f32_sub(cpu_state_high.XMM[cpu_reg].f[0], src.f[0], &status);
     cpu_state_high.XMM[cpu_reg].f[1] = f32_sub(cpu_state_high.XMM[cpu_reg].f[1], src.f[1], &status);
@@ -993,7 +1011,7 @@ opSUBSS_xmm_xmm_a16(uint32_t fetchdat)
 {
     fetch_ea_16(fetchdat);
     SSE_REG src;
-    softfloat_status_t status = mxcsr_to_softfloat_status_word();
+    struct softfloat_status_t status = mxcsr_to_softfloat_status_word();
     SSE_GETSRC();
     cpu_state_high.XMM[cpu_reg].f[0] = f32_sub(cpu_state_high.XMM[cpu_reg].f[0], src.f[0], &status);
     softfloat_status_word_to_mxcsr(status);
@@ -1012,7 +1030,7 @@ opSUBSS_xmm_xmm_a32(uint32_t fetchdat)
 {
     fetch_ea_32(fetchdat);
     SSE_REG src;
-    softfloat_status_t status = mxcsr_to_softfloat_status_word();
+    struct softfloat_status_t status = mxcsr_to_softfloat_status_word();
     SSE_GETSRC();
     cpu_state_high.XMM[cpu_reg].f[0] = f32_sub(cpu_state_high.XMM[cpu_reg].f[0], src.f[0], &status);
     softfloat_status_word_to_mxcsr(status);
@@ -1034,7 +1052,7 @@ opMINPS_xmm_xmm_a16(uint32_t fetchdat)
 
     fetch_ea_16(fetchdat);
     SSE_REG src;
-    softfloat_status_t status = mxcsr_to_softfloat_status_word();
+    struct softfloat_status_t status = mxcsr_to_softfloat_status_word();
     SSE_GETSRC();
     cpu_state_high.XMM[cpu_reg].f[0] = f32_min(cpu_state_high.XMM[cpu_reg].f[0], src.f[0], &status);
     cpu_state_high.XMM[cpu_reg].f[1] = f32_min(cpu_state_high.XMM[cpu_reg].f[1], src.f[1], &status);
@@ -1059,7 +1077,7 @@ opMINPS_xmm_xmm_a32(uint32_t fetchdat)
 
     fetch_ea_32(fetchdat);
     SSE_REG src;
-    softfloat_status_t status = mxcsr_to_softfloat_status_word();
+    struct softfloat_status_t status = mxcsr_to_softfloat_status_word();
     SSE_GETSRC();
     cpu_state_high.XMM[cpu_reg].f[0] = f32_min(cpu_state_high.XMM[cpu_reg].f[0], src.f[0], &status);
     cpu_state_high.XMM[cpu_reg].f[1] = f32_min(cpu_state_high.XMM[cpu_reg].f[1], src.f[1], &status);
@@ -1081,7 +1099,7 @@ opMINSS_xmm_xmm_a16(uint32_t fetchdat)
 {
     fetch_ea_16(fetchdat);
     SSE_REG src;
-    softfloat_status_t status = mxcsr_to_softfloat_status_word();
+    struct softfloat_status_t status = mxcsr_to_softfloat_status_word();
     SSE_GETSRC();
     cpu_state_high.XMM[cpu_reg].f[0] = f32_min(cpu_state_high.XMM[cpu_reg].f[0], src.f[0], &status);
     softfloat_status_word_to_mxcsr(status);
@@ -1100,7 +1118,7 @@ opMINSS_xmm_xmm_a32(uint32_t fetchdat)
 {
     fetch_ea_32(fetchdat);
     SSE_REG src;
-    softfloat_status_t status = mxcsr_to_softfloat_status_word();
+    struct softfloat_status_t status = mxcsr_to_softfloat_status_word();
     SSE_GETSRC();
     cpu_state_high.XMM[cpu_reg].f[0] = f32_min(cpu_state_high.XMM[cpu_reg].f[0], src.f[0], &status);
     softfloat_status_word_to_mxcsr(status);
@@ -1123,7 +1141,7 @@ opDIVPS_xmm_xmm_a16(uint32_t fetchdat)
 
     fetch_ea_16(fetchdat);
     SSE_REG src;
-    softfloat_status_t status = mxcsr_to_softfloat_status_word();
+    struct softfloat_status_t status = mxcsr_to_softfloat_status_word();
     SSE_GETSRC();
     cpu_state_high.XMM[cpu_reg].f[0] = f32_div(cpu_state_high.XMM[cpu_reg].f[0], src.f[0], &status);
     cpu_state_high.XMM[cpu_reg].f[1] = f32_div(cpu_state_high.XMM[cpu_reg].f[1], src.f[1], &status);
@@ -1148,7 +1166,7 @@ opDIVPS_xmm_xmm_a32(uint32_t fetchdat)
 
     fetch_ea_32(fetchdat);
     SSE_REG src;
-    softfloat_status_t status = mxcsr_to_softfloat_status_word();
+    struct softfloat_status_t status = mxcsr_to_softfloat_status_word();
     SSE_GETSRC();
     cpu_state_high.XMM[cpu_reg].f[0] = f32_div(cpu_state_high.XMM[cpu_reg].f[0], src.f[0], &status);
     cpu_state_high.XMM[cpu_reg].f[1] = f32_div(cpu_state_high.XMM[cpu_reg].f[1], src.f[1], &status);
@@ -1170,7 +1188,7 @@ opDIVSS_xmm_xmm_a16(uint32_t fetchdat)
 {
     fetch_ea_16(fetchdat);
     SSE_REG src;
-    softfloat_status_t status = mxcsr_to_softfloat_status_word();
+    struct softfloat_status_t status = mxcsr_to_softfloat_status_word();
     SSE_GETSRC();
     cpu_state_high.XMM[cpu_reg].f[0] = f32_div(cpu_state_high.XMM[cpu_reg].f[0], src.f[0], &status);
     softfloat_status_word_to_mxcsr(status);
@@ -1189,7 +1207,7 @@ opDIVSS_xmm_xmm_a32(uint32_t fetchdat)
 {
     fetch_ea_32(fetchdat);
     SSE_REG src;
-    softfloat_status_t status = mxcsr_to_softfloat_status_word();
+    struct softfloat_status_t status = mxcsr_to_softfloat_status_word();
     SSE_GETSRC();
     cpu_state_high.XMM[cpu_reg].f[0] = f32_div(cpu_state_high.XMM[cpu_reg].f[0], src.f[0], &status);
     softfloat_status_word_to_mxcsr(status);
@@ -1211,7 +1229,7 @@ opMAXPS_xmm_xmm_a16(uint32_t fetchdat)
 
     fetch_ea_16(fetchdat);
     SSE_REG src;
-    softfloat_status_t status = mxcsr_to_softfloat_status_word();
+    struct softfloat_status_t status = mxcsr_to_softfloat_status_word();
     SSE_GETSRC();
     cpu_state_high.XMM[cpu_reg].f[0] = f32_max(cpu_state_high.XMM[cpu_reg].f[0], src.f[0], &status);
     cpu_state_high.XMM[cpu_reg].f[1] = f32_max(cpu_state_high.XMM[cpu_reg].f[1], src.f[1], &status);
@@ -1236,7 +1254,7 @@ opMAXPS_xmm_xmm_a32(uint32_t fetchdat)
 
     fetch_ea_32(fetchdat);
     SSE_REG src;
-    softfloat_status_t status = mxcsr_to_softfloat_status_word();
+    struct softfloat_status_t status = mxcsr_to_softfloat_status_word();
     SSE_GETSRC();
     cpu_state_high.XMM[cpu_reg].f[0] = f32_max(cpu_state_high.XMM[cpu_reg].f[0], src.f[0], &status);
     cpu_state_high.XMM[cpu_reg].f[1] = f32_max(cpu_state_high.XMM[cpu_reg].f[1], src.f[1], &status);
@@ -1258,7 +1276,7 @@ opMAXSS_xmm_xmm_a16(uint32_t fetchdat)
 {
     fetch_ea_16(fetchdat);
     SSE_REG src;
-    softfloat_status_t status = mxcsr_to_softfloat_status_word();
+    struct softfloat_status_t status = mxcsr_to_softfloat_status_word();
     SSE_GETSRC();
     cpu_state_high.XMM[cpu_reg].f[0] = f32_max(cpu_state_high.XMM[cpu_reg].f[0], src.f[0], &status);
     softfloat_status_word_to_mxcsr(status);
@@ -1277,7 +1295,7 @@ opMAXSS_xmm_xmm_a32(uint32_t fetchdat)
 {
     fetch_ea_32(fetchdat);
     SSE_REG src;
-    softfloat_status_t status = mxcsr_to_softfloat_status_word();
+    struct softfloat_status_t status = mxcsr_to_softfloat_status_word();
     SSE_GETSRC();
     cpu_state_high.XMM[cpu_reg].f[0] = f32_max(cpu_state_high.XMM[cpu_reg].f[0], src.f[0], &status);
     softfloat_status_word_to_mxcsr(status);
@@ -1299,97 +1317,97 @@ opCMPPS_xmm_xmm_a16(uint32_t fetchdat)
 
     fetch_ea_16(fetchdat);
     SSE_REG src;
-    softfloat_status_t status = mxcsr_to_softfloat_status_word();
+    struct softfloat_status_t status = mxcsr_to_softfloat_status_word();
     SSE_GETSRC();
     uint8_t  imm = getbyte();
     int relation = 0;
     switch(imm & 7)
     {
         case 0:
-        relation = f32_compare(cpu_state_high.XMM[cpu_reg].f[0], src.f[0], &status);
+        relation = f32_compare_normal(cpu_state_high.XMM[cpu_reg].f[0], src.f[0], &status);
         cpu_state_high.XMM[cpu_reg].l[0] = (relation == softfloat_relation_equal) ? ~0 : 0;
-        relation = f32_compare(cpu_state_high.XMM[cpu_reg].f[1], src.f[1], &status);
+        relation = f32_compare_normal(cpu_state_high.XMM[cpu_reg].f[1], src.f[1], &status);
         cpu_state_high.XMM[cpu_reg].l[1] = (relation == softfloat_relation_equal) ? ~0 : 0;
-        relation = f32_compare(cpu_state_high.XMM[cpu_reg].f[2], src.f[2], &status);
+        relation = f32_compare_normal(cpu_state_high.XMM[cpu_reg].f[2], src.f[2], &status);
         cpu_state_high.XMM[cpu_reg].l[2] = (relation == softfloat_relation_equal) ? ~0 : 0;
-        relation = f32_compare(cpu_state_high.XMM[cpu_reg].f[3], src.f[3], &status);
+        relation = f32_compare_normal(cpu_state_high.XMM[cpu_reg].f[3], src.f[3], &status);
         cpu_state_high.XMM[cpu_reg].l[3] = (relation == softfloat_relation_equal) ? ~0 : 0;
         break;
 
         case 1:
-        relation = f32_compare(cpu_state_high.XMM[cpu_reg].f[0], src.f[0], &status);
+        relation = f32_compare_normal(cpu_state_high.XMM[cpu_reg].f[0], src.f[0], &status);
         cpu_state_high.XMM[cpu_reg].l[0] = (relation == softfloat_relation_less) ? ~0 : 0;
-        relation = f32_compare(cpu_state_high.XMM[cpu_reg].f[1], src.f[1], &status);
+        relation = f32_compare_normal(cpu_state_high.XMM[cpu_reg].f[1], src.f[1], &status);
         cpu_state_high.XMM[cpu_reg].l[1] = (relation == softfloat_relation_less) ? ~0 : 0;
-        relation = f32_compare(cpu_state_high.XMM[cpu_reg].f[2], src.f[2], &status);
+        relation = f32_compare_normal(cpu_state_high.XMM[cpu_reg].f[2], src.f[2], &status);
         cpu_state_high.XMM[cpu_reg].l[2] = (relation == softfloat_relation_less) ? ~0 : 0;
-        relation = f32_compare(cpu_state_high.XMM[cpu_reg].f[3], src.f[3], &status);
+        relation = f32_compare_normal(cpu_state_high.XMM[cpu_reg].f[3], src.f[3], &status);
         cpu_state_high.XMM[cpu_reg].l[3] = (relation == softfloat_relation_less) ? ~0 : 0;
         break;
 
         case 2:
-        relation = f32_compare(cpu_state_high.XMM[cpu_reg].f[0], src.f[0], &status);
+        relation = f32_compare_normal(cpu_state_high.XMM[cpu_reg].f[0], src.f[0], &status);
         cpu_state_high.XMM[cpu_reg].l[0] = (relation == softfloat_relation_less || relation == softfloat_relation_equal) ? ~0 : 0;
-        relation = f32_compare(cpu_state_high.XMM[cpu_reg].f[1], src.f[1], &status);
+        relation = f32_compare_normal(cpu_state_high.XMM[cpu_reg].f[1], src.f[1], &status);
         cpu_state_high.XMM[cpu_reg].l[1] = (relation == softfloat_relation_less || relation == softfloat_relation_equal) ? ~0 : 0;
-        relation = f32_compare(cpu_state_high.XMM[cpu_reg].f[2], src.f[2], &status);
+        relation = f32_compare_normal(cpu_state_high.XMM[cpu_reg].f[2], src.f[2], &status);
         cpu_state_high.XMM[cpu_reg].l[2] = (relation == softfloat_relation_less || relation == softfloat_relation_equal) ? ~0 : 0;
-        relation = f32_compare(cpu_state_high.XMM[cpu_reg].f[3], src.f[3], &status);
+        relation = f32_compare_normal(cpu_state_high.XMM[cpu_reg].f[3], src.f[3], &status);
         cpu_state_high.XMM[cpu_reg].l[3] = (relation == softfloat_relation_less || relation == softfloat_relation_equal) ? ~0 : 0;
         break;
 
         case 3:
-        relation = f32_compare(cpu_state_high.XMM[cpu_reg].f[0], src.f[0], &status);
+        relation = f32_compare_normal(cpu_state_high.XMM[cpu_reg].f[0], src.f[0], &status);
         cpu_state_high.XMM[cpu_reg].l[0] = (relation == softfloat_relation_unordered) ? ~0 : 0;
-        relation = f32_compare(cpu_state_high.XMM[cpu_reg].f[1], src.f[1], &status);
+        relation = f32_compare_normal(cpu_state_high.XMM[cpu_reg].f[1], src.f[1], &status);
         cpu_state_high.XMM[cpu_reg].l[1] = (relation == softfloat_relation_unordered) ? ~0 : 0;
-        relation = f32_compare(cpu_state_high.XMM[cpu_reg].f[2], src.f[2], &status);
+        relation = f32_compare_normal(cpu_state_high.XMM[cpu_reg].f[2], src.f[2], &status);
         cpu_state_high.XMM[cpu_reg].l[2] = (relation == softfloat_relation_unordered) ? ~0 : 0;
-        relation = f32_compare(cpu_state_high.XMM[cpu_reg].f[3], src.f[3], &status);
+        relation = f32_compare_normal(cpu_state_high.XMM[cpu_reg].f[3], src.f[3], &status);
         cpu_state_high.XMM[cpu_reg].l[3] = (relation == softfloat_relation_unordered) ? ~0 : 0;
         break;
 
         case 4:
-        relation = f32_compare(cpu_state_high.XMM[cpu_reg].f[0], src.f[0], &status);
+        relation = f32_compare_normal(cpu_state_high.XMM[cpu_reg].f[0], src.f[0], &status);
         cpu_state_high.XMM[cpu_reg].l[0] = (relation != softfloat_relation_equal) ? ~0 : 0;
-        relation = f32_compare(cpu_state_high.XMM[cpu_reg].f[1], src.f[1], &status);
+        relation = f32_compare_normal(cpu_state_high.XMM[cpu_reg].f[1], src.f[1], &status);
         cpu_state_high.XMM[cpu_reg].l[1] = (relation != softfloat_relation_equal) ? ~0 : 0;
-        relation = f32_compare(cpu_state_high.XMM[cpu_reg].f[2], src.f[2], &status);
+        relation = f32_compare_normal(cpu_state_high.XMM[cpu_reg].f[2], src.f[2], &status);
         cpu_state_high.XMM[cpu_reg].l[2] = (relation != softfloat_relation_equal) ? ~0 : 0;
-        relation = f32_compare(cpu_state_high.XMM[cpu_reg].f[3], src.f[3], &status);
+        relation = f32_compare_normal(cpu_state_high.XMM[cpu_reg].f[3], src.f[3], &status);
         cpu_state_high.XMM[cpu_reg].l[3] = (relation != softfloat_relation_equal) ? ~0 : 0;
         break;
 
         case 5:
-        relation = f32_compare(cpu_state_high.XMM[cpu_reg].f[0], src.f[0], &status);
+        relation = f32_compare_normal(cpu_state_high.XMM[cpu_reg].f[0], src.f[0], &status);
         cpu_state_high.XMM[cpu_reg].l[0] = (relation != softfloat_relation_less) ? ~0 : 0;
-        relation = f32_compare(cpu_state_high.XMM[cpu_reg].f[1], src.f[1], &status);
+        relation = f32_compare_normal(cpu_state_high.XMM[cpu_reg].f[1], src.f[1], &status);
         cpu_state_high.XMM[cpu_reg].l[1] = (relation != softfloat_relation_less) ? ~0 : 0;
-        relation = f32_compare(cpu_state_high.XMM[cpu_reg].f[2], src.f[2], &status);
+        relation = f32_compare_normal(cpu_state_high.XMM[cpu_reg].f[2], src.f[2], &status);
         cpu_state_high.XMM[cpu_reg].l[2] = (relation != softfloat_relation_less) ? ~0 : 0;
-        relation = f32_compare(cpu_state_high.XMM[cpu_reg].f[3], src.f[3], &status);
+        relation = f32_compare_normal(cpu_state_high.XMM[cpu_reg].f[3], src.f[3], &status);
         cpu_state_high.XMM[cpu_reg].l[3] = (relation != softfloat_relation_less) ? ~0 : 0;
         break;
 
         case 6:
-        relation = f32_compare(cpu_state_high.XMM[cpu_reg].f[0], src.f[0], &status);
+        relation = f32_compare_normal(cpu_state_high.XMM[cpu_reg].f[0], src.f[0], &status);
         cpu_state_high.XMM[cpu_reg].l[0] = (relation != softfloat_relation_less && relation != softfloat_relation_equal) ? ~0 : 0;
-        relation = f32_compare(cpu_state_high.XMM[cpu_reg].f[1], src.f[1], &status);
+        relation = f32_compare_normal(cpu_state_high.XMM[cpu_reg].f[1], src.f[1], &status);
         cpu_state_high.XMM[cpu_reg].l[1] = (relation != softfloat_relation_less && relation != softfloat_relation_equal) ? ~0 : 0;
-        relation = f32_compare(cpu_state_high.XMM[cpu_reg].f[2], src.f[2], &status);
+        relation = f32_compare_normal(cpu_state_high.XMM[cpu_reg].f[2], src.f[2], &status);
         cpu_state_high.XMM[cpu_reg].l[2] = (relation != softfloat_relation_less && relation != softfloat_relation_equal) ? ~0 : 0;
-        relation = f32_compare(cpu_state_high.XMM[cpu_reg].f[3], src.f[3], &status);
+        relation = f32_compare_normal(cpu_state_high.XMM[cpu_reg].f[3], src.f[3], &status);
         cpu_state_high.XMM[cpu_reg].l[3] = (relation != softfloat_relation_less && relation != softfloat_relation_equal) ? ~0 : 0;
         break;
 
         case 7:
-        relation = f32_compare(cpu_state_high.XMM[cpu_reg].f[0], src.f[0], &status);
+        relation = f32_compare_normal(cpu_state_high.XMM[cpu_reg].f[0], src.f[0], &status);
         cpu_state_high.XMM[cpu_reg].l[0] = (relation != softfloat_relation_unordered) ? ~0 : 0;
-        relation = f32_compare(cpu_state_high.XMM[cpu_reg].f[1], src.f[1], &status);
+        relation = f32_compare_normal(cpu_state_high.XMM[cpu_reg].f[1], src.f[1], &status);
         cpu_state_high.XMM[cpu_reg].l[1] = (relation != softfloat_relation_unordered) ? ~0 : 0;
-        relation = f32_compare(cpu_state_high.XMM[cpu_reg].f[2], src.f[2], &status);
+        relation = f32_compare_normal(cpu_state_high.XMM[cpu_reg].f[2], src.f[2], &status);
         cpu_state_high.XMM[cpu_reg].l[2] = (relation != softfloat_relation_unordered) ? ~0 : 0;
-        relation = f32_compare(cpu_state_high.XMM[cpu_reg].f[3], src.f[3], &status);
+        relation = f32_compare_normal(cpu_state_high.XMM[cpu_reg].f[3], src.f[3], &status);
         cpu_state_high.XMM[cpu_reg].l[3] = (relation != softfloat_relation_unordered) ? ~0 : 0;
         break;
     }
@@ -1405,97 +1423,97 @@ opCMPPS_xmm_xmm_a32(uint32_t fetchdat)
 
     fetch_ea_32(fetchdat);
     SSE_REG src;
-    softfloat_status_t status = mxcsr_to_softfloat_status_word();
+    struct softfloat_status_t status = mxcsr_to_softfloat_status_word();
     SSE_GETSRC();
     uint8_t  imm = getbyte();
     int relation = 0;
     switch(imm & 7)
     {
         case 0:
-        relation = f32_compare(cpu_state_high.XMM[cpu_reg].f[0], src.f[0], &status);
+        relation = f32_compare_normal(cpu_state_high.XMM[cpu_reg].f[0], src.f[0], &status);
         cpu_state_high.XMM[cpu_reg].l[0] = (relation == softfloat_relation_equal) ? ~0 : 0;
-        relation = f32_compare(cpu_state_high.XMM[cpu_reg].f[1], src.f[1], &status);
+        relation = f32_compare_normal(cpu_state_high.XMM[cpu_reg].f[1], src.f[1], &status);
         cpu_state_high.XMM[cpu_reg].l[1] = (relation == softfloat_relation_equal) ? ~0 : 0;
-        relation = f32_compare(cpu_state_high.XMM[cpu_reg].f[2], src.f[2], &status);
+        relation = f32_compare_normal(cpu_state_high.XMM[cpu_reg].f[2], src.f[2], &status);
         cpu_state_high.XMM[cpu_reg].l[2] = (relation == softfloat_relation_equal) ? ~0 : 0;
-        relation = f32_compare(cpu_state_high.XMM[cpu_reg].f[3], src.f[3], &status);
+        relation = f32_compare_normal(cpu_state_high.XMM[cpu_reg].f[3], src.f[3], &status);
         cpu_state_high.XMM[cpu_reg].l[3] = (relation == softfloat_relation_equal) ? ~0 : 0;
         break;
 
         case 1:
-        relation = f32_compare(cpu_state_high.XMM[cpu_reg].f[0], src.f[0], &status);
+        relation = f32_compare_normal(cpu_state_high.XMM[cpu_reg].f[0], src.f[0], &status);
         cpu_state_high.XMM[cpu_reg].l[0] = (relation == softfloat_relation_less) ? ~0 : 0;
-        relation = f32_compare(cpu_state_high.XMM[cpu_reg].f[1], src.f[1], &status);
+        relation = f32_compare_normal(cpu_state_high.XMM[cpu_reg].f[1], src.f[1], &status);
         cpu_state_high.XMM[cpu_reg].l[1] = (relation == softfloat_relation_less) ? ~0 : 0;
-        relation = f32_compare(cpu_state_high.XMM[cpu_reg].f[2], src.f[2], &status);
+        relation = f32_compare_normal(cpu_state_high.XMM[cpu_reg].f[2], src.f[2], &status);
         cpu_state_high.XMM[cpu_reg].l[2] = (relation == softfloat_relation_less) ? ~0 : 0;
-        relation = f32_compare(cpu_state_high.XMM[cpu_reg].f[3], src.f[3], &status);
+        relation = f32_compare_normal(cpu_state_high.XMM[cpu_reg].f[3], src.f[3], &status);
         cpu_state_high.XMM[cpu_reg].l[3] = (relation == softfloat_relation_less) ? ~0 : 0;
         break;
 
         case 2:
-        relation = f32_compare(cpu_state_high.XMM[cpu_reg].f[0], src.f[0], &status);
+        relation = f32_compare_normal(cpu_state_high.XMM[cpu_reg].f[0], src.f[0], &status);
         cpu_state_high.XMM[cpu_reg].l[0] = (relation == softfloat_relation_less || relation == softfloat_relation_equal) ? ~0 : 0;
-        relation = f32_compare(cpu_state_high.XMM[cpu_reg].f[1], src.f[1], &status);
+        relation = f32_compare_normal(cpu_state_high.XMM[cpu_reg].f[1], src.f[1], &status);
         cpu_state_high.XMM[cpu_reg].l[1] = (relation == softfloat_relation_less || relation == softfloat_relation_equal) ? ~0 : 0;
-        relation = f32_compare(cpu_state_high.XMM[cpu_reg].f[2], src.f[2], &status);
+        relation = f32_compare_normal(cpu_state_high.XMM[cpu_reg].f[2], src.f[2], &status);
         cpu_state_high.XMM[cpu_reg].l[2] = (relation == softfloat_relation_less || relation == softfloat_relation_equal) ? ~0 : 0;
-        relation = f32_compare(cpu_state_high.XMM[cpu_reg].f[3], src.f[3], &status);
+        relation = f32_compare_normal(cpu_state_high.XMM[cpu_reg].f[3], src.f[3], &status);
         cpu_state_high.XMM[cpu_reg].l[3] = (relation == softfloat_relation_less || relation == softfloat_relation_equal) ? ~0 : 0;
         break;
 
         case 3:
-        relation = f32_compare(cpu_state_high.XMM[cpu_reg].f[0], src.f[0], &status);
+        relation = f32_compare_normal(cpu_state_high.XMM[cpu_reg].f[0], src.f[0], &status);
         cpu_state_high.XMM[cpu_reg].l[0] = (relation == softfloat_relation_unordered) ? ~0 : 0;
-        relation = f32_compare(cpu_state_high.XMM[cpu_reg].f[1], src.f[1], &status);
+        relation = f32_compare_normal(cpu_state_high.XMM[cpu_reg].f[1], src.f[1], &status);
         cpu_state_high.XMM[cpu_reg].l[1] = (relation == softfloat_relation_unordered) ? ~0 : 0;
-        relation = f32_compare(cpu_state_high.XMM[cpu_reg].f[2], src.f[2], &status);
+        relation = f32_compare_normal(cpu_state_high.XMM[cpu_reg].f[2], src.f[2], &status);
         cpu_state_high.XMM[cpu_reg].l[2] = (relation == softfloat_relation_unordered) ? ~0 : 0;
-        relation = f32_compare(cpu_state_high.XMM[cpu_reg].f[3], src.f[3], &status);
+        relation = f32_compare_normal(cpu_state_high.XMM[cpu_reg].f[3], src.f[3], &status);
         cpu_state_high.XMM[cpu_reg].l[3] = (relation == softfloat_relation_unordered) ? ~0 : 0;
         break;
 
         case 4:
-        relation = f32_compare(cpu_state_high.XMM[cpu_reg].f[0], src.f[0], &status);
+        relation = f32_compare_normal(cpu_state_high.XMM[cpu_reg].f[0], src.f[0], &status);
         cpu_state_high.XMM[cpu_reg].l[0] = (relation != softfloat_relation_equal) ? ~0 : 0;
-        relation = f32_compare(cpu_state_high.XMM[cpu_reg].f[1], src.f[1], &status);
+        relation = f32_compare_normal(cpu_state_high.XMM[cpu_reg].f[1], src.f[1], &status);
         cpu_state_high.XMM[cpu_reg].l[1] = (relation != softfloat_relation_equal) ? ~0 : 0;
-        relation = f32_compare(cpu_state_high.XMM[cpu_reg].f[2], src.f[2], &status);
+        relation = f32_compare_normal(cpu_state_high.XMM[cpu_reg].f[2], src.f[2], &status);
         cpu_state_high.XMM[cpu_reg].l[2] = (relation != softfloat_relation_equal) ? ~0 : 0;
-        relation = f32_compare(cpu_state_high.XMM[cpu_reg].f[3], src.f[3], &status);
+        relation = f32_compare_normal(cpu_state_high.XMM[cpu_reg].f[3], src.f[3], &status);
         cpu_state_high.XMM[cpu_reg].l[3] = (relation != softfloat_relation_equal) ? ~0 : 0;
         break;
 
         case 5:
-        relation = f32_compare(cpu_state_high.XMM[cpu_reg].f[0], src.f[0], &status);
+        relation = f32_compare_normal(cpu_state_high.XMM[cpu_reg].f[0], src.f[0], &status);
         cpu_state_high.XMM[cpu_reg].l[0] = (relation != softfloat_relation_less) ? ~0 : 0;
-        relation = f32_compare(cpu_state_high.XMM[cpu_reg].f[1], src.f[1], &status);
+        relation = f32_compare_normal(cpu_state_high.XMM[cpu_reg].f[1], src.f[1], &status);
         cpu_state_high.XMM[cpu_reg].l[1] = (relation != softfloat_relation_less) ? ~0 : 0;
-        relation = f32_compare(cpu_state_high.XMM[cpu_reg].f[2], src.f[2], &status);
+        relation = f32_compare_normal(cpu_state_high.XMM[cpu_reg].f[2], src.f[2], &status);
         cpu_state_high.XMM[cpu_reg].l[2] = (relation != softfloat_relation_less) ? ~0 : 0;
-        relation = f32_compare(cpu_state_high.XMM[cpu_reg].f[3], src.f[3], &status);
+        relation = f32_compare_normal(cpu_state_high.XMM[cpu_reg].f[3], src.f[3], &status);
         cpu_state_high.XMM[cpu_reg].l[3] = (relation != softfloat_relation_less) ? ~0 : 0;
         break;
 
         case 6:
-        relation = f32_compare(cpu_state_high.XMM[cpu_reg].f[0], src.f[0], &status);
+        relation = f32_compare_normal(cpu_state_high.XMM[cpu_reg].f[0], src.f[0], &status);
         cpu_state_high.XMM[cpu_reg].l[0] = (relation != softfloat_relation_less && relation != softfloat_relation_equal) ? ~0 : 0;
-        relation = f32_compare(cpu_state_high.XMM[cpu_reg].f[1], src.f[1], &status);
+        relation = f32_compare_normal(cpu_state_high.XMM[cpu_reg].f[1], src.f[1], &status);
         cpu_state_high.XMM[cpu_reg].l[1] = (relation != softfloat_relation_less && relation != softfloat_relation_equal) ? ~0 : 0;
-        relation = f32_compare(cpu_state_high.XMM[cpu_reg].f[2], src.f[2], &status);
+        relation = f32_compare_normal(cpu_state_high.XMM[cpu_reg].f[2], src.f[2], &status);
         cpu_state_high.XMM[cpu_reg].l[2] = (relation != softfloat_relation_less && relation != softfloat_relation_equal) ? ~0 : 0;
-        relation = f32_compare(cpu_state_high.XMM[cpu_reg].f[3], src.f[3], &status);
+        relation = f32_compare_normal(cpu_state_high.XMM[cpu_reg].f[3], src.f[3], &status);
         cpu_state_high.XMM[cpu_reg].l[3] = (relation != softfloat_relation_less && relation != softfloat_relation_equal) ? ~0 : 0;
         break;
 
         case 7:
-        relation = f32_compare(cpu_state_high.XMM[cpu_reg].f[0], src.f[0], &status);
+        relation = f32_compare_normal(cpu_state_high.XMM[cpu_reg].f[0], src.f[0], &status);
         cpu_state_high.XMM[cpu_reg].l[0] = (relation != softfloat_relation_unordered) ? ~0 : 0;
-        relation = f32_compare(cpu_state_high.XMM[cpu_reg].f[1], src.f[1], &status);
+        relation = f32_compare_normal(cpu_state_high.XMM[cpu_reg].f[1], src.f[1], &status);
         cpu_state_high.XMM[cpu_reg].l[1] = (relation != softfloat_relation_unordered) ? ~0 : 0;
-        relation = f32_compare(cpu_state_high.XMM[cpu_reg].f[2], src.f[2], &status);
+        relation = f32_compare_normal(cpu_state_high.XMM[cpu_reg].f[2], src.f[2], &status);
         cpu_state_high.XMM[cpu_reg].l[2] = (relation != softfloat_relation_unordered) ? ~0 : 0;
-        relation = f32_compare(cpu_state_high.XMM[cpu_reg].f[3], src.f[3], &status);
+        relation = f32_compare_normal(cpu_state_high.XMM[cpu_reg].f[3], src.f[3], &status);
         cpu_state_high.XMM[cpu_reg].l[3] = (relation != softfloat_relation_unordered) ? ~0 : 0;
         break;
     }
@@ -1507,49 +1525,49 @@ opCMPSS_xmm_xmm_a16(uint32_t fetchdat)
 {
     fetch_ea_16(fetchdat);
     SSE_REG src;
-    softfloat_status_t status = mxcsr_to_softfloat_status_word();
+    struct softfloat_status_t status = mxcsr_to_softfloat_status_word();
     SSE_GETSRC();
     uint8_t  imm = getbyte();
     int relation = 0;
     switch(imm & 7)
     {
         case 0:
-        relation = f32_compare(cpu_state_high.XMM[cpu_reg].f[0], src.f[0], &status);
+        relation = f32_compare_normal(cpu_state_high.XMM[cpu_reg].f[0], src.f[0], &status);
         cpu_state_high.XMM[cpu_reg].l[0] = (relation == softfloat_relation_equal) ? ~0 : 0;
         break;
 
         case 1:
-        relation = f32_compare(cpu_state_high.XMM[cpu_reg].f[0], src.f[0], &status);
+        relation = f32_compare_normal(cpu_state_high.XMM[cpu_reg].f[0], src.f[0], &status);
         cpu_state_high.XMM[cpu_reg].l[0] = (relation == softfloat_relation_less) ? ~0 : 0;
         break;
 
         case 2:
-        relation = f32_compare(cpu_state_high.XMM[cpu_reg].f[0], src.f[0], &status);
+        relation = f32_compare_normal(cpu_state_high.XMM[cpu_reg].f[0], src.f[0], &status);
         cpu_state_high.XMM[cpu_reg].l[0] = (relation == softfloat_relation_less || relation == softfloat_relation_equal) ? ~0 : 0;
         break;
 
         case 3:
-        relation = f32_compare(cpu_state_high.XMM[cpu_reg].f[0], src.f[0], &status);
+        relation = f32_compare_normal(cpu_state_high.XMM[cpu_reg].f[0], src.f[0], &status);
         cpu_state_high.XMM[cpu_reg].l[0] = (relation == softfloat_relation_unordered) ? ~0 : 0;
         break;
 
         case 4:
-        relation = f32_compare(cpu_state_high.XMM[cpu_reg].f[0], src.f[0], &status);
+        relation = f32_compare_normal(cpu_state_high.XMM[cpu_reg].f[0], src.f[0], &status);
         cpu_state_high.XMM[cpu_reg].l[0] = (relation != softfloat_relation_equal) ? ~0 : 0;
         break;
 
         case 5:
-        relation = f32_compare(cpu_state_high.XMM[cpu_reg].f[0], src.f[0], &status);
+        relation = f32_compare_normal(cpu_state_high.XMM[cpu_reg].f[0], src.f[0], &status);
         cpu_state_high.XMM[cpu_reg].l[0] = (relation != softfloat_relation_less) ? ~0 : 0;
         break;
 
         case 6:
-        relation = f32_compare(cpu_state_high.XMM[cpu_reg].f[0], src.f[0], &status);
+        relation = f32_compare_normal(cpu_state_high.XMM[cpu_reg].f[0], src.f[0], &status);
         cpu_state_high.XMM[cpu_reg].l[0] = (relation != softfloat_relation_less && relation != softfloat_relation_equal) ? ~0 : 0;
         break;
 
         case 7:
-        relation = f32_compare(cpu_state_high.XMM[cpu_reg].f[0], src.f[0], &status);
+        relation = f32_compare_normal(cpu_state_high.XMM[cpu_reg].f[0], src.f[0], &status);
         cpu_state_high.XMM[cpu_reg].l[0] = (relation != softfloat_relation_unordered) ? ~0 : 0;
         break;
     }
@@ -1562,49 +1580,49 @@ opCMPSS_xmm_xmm_a32(uint32_t fetchdat)
 {
     fetch_ea_32(fetchdat);
     SSE_REG src;
-    softfloat_status_t status = mxcsr_to_softfloat_status_word();
+    struct softfloat_status_t status = mxcsr_to_softfloat_status_word();
     SSE_GETSRC();
     uint8_t  imm = getbyte();
     int relation = 0;
     switch(imm & 7)
     {
         case 0:
-        relation = f32_compare(cpu_state_high.XMM[cpu_reg].f[0], src.f[0], &status);
+        relation = f32_compare_normal(cpu_state_high.XMM[cpu_reg].f[0], src.f[0], &status);
         cpu_state_high.XMM[cpu_reg].l[0] = (relation == softfloat_relation_equal) ? ~0 : 0;
         break;
 
         case 1:
-        relation = f32_compare(cpu_state_high.XMM[cpu_reg].f[0], src.f[0], &status);
+        relation = f32_compare_normal(cpu_state_high.XMM[cpu_reg].f[0], src.f[0], &status);
         cpu_state_high.XMM[cpu_reg].l[0] = (relation == softfloat_relation_less) ? ~0 : 0;
         break;
 
         case 2:
-        relation = f32_compare(cpu_state_high.XMM[cpu_reg].f[0], src.f[0], &status);
+        relation = f32_compare_normal(cpu_state_high.XMM[cpu_reg].f[0], src.f[0], &status);
         cpu_state_high.XMM[cpu_reg].l[0] = (relation == softfloat_relation_less || relation == softfloat_relation_equal) ? ~0 : 0;
         break;
 
         case 3:
-        relation = f32_compare(cpu_state_high.XMM[cpu_reg].f[0], src.f[0], &status);
+        relation = f32_compare_normal(cpu_state_high.XMM[cpu_reg].f[0], src.f[0], &status);
         cpu_state_high.XMM[cpu_reg].l[0] = (relation == softfloat_relation_unordered) ? ~0 : 0;
         break;
 
         case 4:
-        relation = f32_compare(cpu_state_high.XMM[cpu_reg].f[0], src.f[0], &status);
+        relation = f32_compare_normal(cpu_state_high.XMM[cpu_reg].f[0], src.f[0], &status);
         cpu_state_high.XMM[cpu_reg].l[0] = (relation != softfloat_relation_equal) ? ~0 : 0;
         break;
 
         case 5:
-        relation = f32_compare(cpu_state_high.XMM[cpu_reg].f[0], src.f[0], &status);
+        relation = f32_compare_normal(cpu_state_high.XMM[cpu_reg].f[0], src.f[0], &status);
         cpu_state_high.XMM[cpu_reg].l[0] = (relation != softfloat_relation_less) ? ~0 : 0;
         break;
 
         case 6:
-        relation = f32_compare(cpu_state_high.XMM[cpu_reg].f[0], src.f[0], &status);
+        relation = f32_compare_normal(cpu_state_high.XMM[cpu_reg].f[0], src.f[0], &status);
         cpu_state_high.XMM[cpu_reg].l[0] = (relation != softfloat_relation_less && relation != softfloat_relation_equal) ? ~0 : 0;
         break;
 
         case 7:
-        relation = f32_compare(cpu_state_high.XMM[cpu_reg].f[0], src.f[0], &status);
+        relation = f32_compare_normal(cpu_state_high.XMM[cpu_reg].f[0], src.f[0], &status);
         cpu_state_high.XMM[cpu_reg].l[0] = (relation != softfloat_relation_unordered) ? ~0 : 0;
         break;
     }

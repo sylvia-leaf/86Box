@@ -10,7 +10,7 @@ opCVTPI2PS_xmm_mm_a16(uint32_t fetchdat)
     MMX_ENTER();
     fetch_ea_16(fetchdat);
     MMX_GETSRC();
-    softfloat_status_t status = mxcsr_to_softfloat_status_word();
+    struct softfloat_status_t status = mxcsr_to_softfloat_status_word();
     cpu_state_high.XMM[cpu_reg].f[0] = i32_to_f32(src.sl[0], &status);
     cpu_state_high.XMM[cpu_reg].f[1] = i32_to_f32(src.sl[1], &status);
     softfloat_status_word_to_mxcsr(status);
@@ -35,7 +35,7 @@ opCVTPI2PS_xmm_mm_a32(uint32_t fetchdat)
     MMX_ENTER();
     fetch_ea_32(fetchdat);
     MMX_GETSRC();
-    softfloat_status_t status = mxcsr_to_softfloat_status_word();
+    struct softfloat_status_t status = mxcsr_to_softfloat_status_word();
     cpu_state_high.XMM[cpu_reg].f[0] = i32_to_f32(src.sl[0], &status);
     cpu_state_high.XMM[cpu_reg].f[1] = i32_to_f32(src.sl[1], &status);
     softfloat_status_word_to_mxcsr(status);
@@ -53,7 +53,7 @@ static int
 opCVTSI2SS_xmm_l_a16(uint32_t fetchdat)
 {
     fetch_ea_16(fetchdat);
-    softfloat_status_t status = mxcsr_to_softfloat_status_word();
+    struct softfloat_status_t status = mxcsr_to_softfloat_status_word();
     if (cpu_mod == 3) {
         cpu_state_high.XMM[cpu_reg].f[0] = i32_to_f32(getr32(cpu_rm), &status);
         CLOCK_CYCLES(1);
@@ -82,7 +82,7 @@ static int
 opCVTSI2SS_xmm_l_a32(uint32_t fetchdat)
 {
     fetch_ea_32(fetchdat);
-    softfloat_status_t status = mxcsr_to_softfloat_status_word();
+    struct softfloat_status_t status = mxcsr_to_softfloat_status_word();
     if (cpu_mod == 3) {
         cpu_state_high.XMM[cpu_reg].f[0] = i32_to_f32(getr32(cpu_rm), &status);
         CLOCK_CYCLES(1);
@@ -215,9 +215,9 @@ opCVTPS2PI_mm_xmm_a16(uint32_t fetchdat)
     fetch_ea_16(fetchdat);
     dst = MMX_GETREGP(cpu_reg);
     SSE_GETSRC();
-    softfloat_status_t status = mxcsr_to_softfloat_status_word();
-    dst->sl[0] = f32_to_i32(src.f[0], &status);
-    dst->sl[1] = f32_to_i32(src.f[1], &status);
+    struct softfloat_status_t status = mxcsr_to_softfloat_status_word();
+    dst->sl[0] = f32_to_i32_normal(src.f[0], &status);
+    dst->sl[1] = f32_to_i32_normal(src.f[1], &status);
     MMX_SETEXP(cpu_reg);
     softfloat_status_word_to_mxcsr(status);
     int unmasked = (~cpu_state_high.mxcsr >> 7) & 0x3f;
@@ -244,9 +244,9 @@ opCVTPS2PI_mm_xmm_a32(uint32_t fetchdat)
     fetch_ea_32(fetchdat);
     dst = MMX_GETREGP(cpu_reg);
     SSE_GETSRC();
-    softfloat_status_t status = mxcsr_to_softfloat_status_word();
-    dst->sl[0] = f32_to_i32(src.f[0], &status);
-    dst->sl[1] = f32_to_i32(src.f[1], &status);
+    struct softfloat_status_t status = mxcsr_to_softfloat_status_word();
+    dst->sl[0] = f32_to_i32_normal(src.f[0], &status);
+    dst->sl[1] = f32_to_i32_normal(src.f[1], &status);
     MMX_SETEXP(cpu_reg);
     softfloat_status_word_to_mxcsr(status);
     int unmasked = (~cpu_state_high.mxcsr >> 7) & 0x3f;
@@ -267,8 +267,8 @@ opCVTSS2SI_l_xmm_a16(uint32_t fetchdat)
     int32_t result;
     fetch_ea_16(fetchdat);
     SSE_GETSRC();
-    softfloat_status_t status = mxcsr_to_softfloat_status_word();
-    result = f32_to_i32(src.f[0], &status);
+    struct softfloat_status_t status = mxcsr_to_softfloat_status_word();
+    result = f32_to_i32_normal(src.f[0], &status);
     setr32(cpu_reg, result);
     softfloat_status_word_to_mxcsr(status);
     int unmasked = (~cpu_state_high.mxcsr >> 7) & 0x3f;
@@ -288,8 +288,8 @@ opCVTSS2SI_l_xmm_a32(uint32_t fetchdat)
     int32_t result;
     fetch_ea_32(fetchdat);
     SSE_GETSRC();
-    softfloat_status_t status = mxcsr_to_softfloat_status_word();
-    result = f32_to_i32(src.f[0], &status);
+    struct softfloat_status_t status = mxcsr_to_softfloat_status_word();
+    result = f32_to_i32_normal(src.f[0], &status);
     setr32(cpu_reg, result);
     softfloat_status_word_to_mxcsr(status);
     int unmasked = (~cpu_state_high.mxcsr >> 7) & 0x3f;
