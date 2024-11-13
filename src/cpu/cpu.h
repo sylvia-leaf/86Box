@@ -241,8 +241,10 @@ typedef union {
     int16_t  sw[8];
     uint8_t  b[16];
     int8_t   sb[16];
-    float    f[4];
-    double   d[2];
+    float32_t   f[4];
+    float64_t   d[2];
+    float f2[4];
+    double d2[2];
 } SSE_REG;
 
 typedef struct {

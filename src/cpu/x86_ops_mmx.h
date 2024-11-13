@@ -65,92 +65,17 @@ opEMMS(uint32_t fetchdat)
     return 0;
 }
 
-static inline int
-check_sse_exceptions_float(float* result)
+softfloat_status_t mxcsr_to_softfloat_status_word(void)
 {
-    int fperaised = fetestexcept(FE_ALL_EXCEPT);
-    if (fperaised & FE_INVALID)
-        cpu_state_high.mxcsr |= 1;
-    if (fpclassify(*result) == FP_SUBNORMAL)
-    {
-        cpu_state_high.mxcsr |= 2;
-        if((cpu_state_high.mxcsr & MXCSR_DAZ) && (cpu_state_high.mxcsr & 0x100))
-        {
-            uint32_t result_bits = *(uint32_t*)result;
-            if(result_bits & (1u << 31)) result_bits = 1u << 31;
-            else result_bits = 0;
-            *result = *(float*)&result_bits;
-        }
-    }
-    if (fperaised & FE_DIVBYZERO)
-        cpu_state_high.mxcsr |= 4;
-    if (fperaised & FE_OVERFLOW)
-        cpu_state_high.mxcsr |= 8;
-    if (fperaised & FE_UNDERFLOW)
-    {
-        cpu_state_high.mxcsr |= 0x10;
-        if((cpu_state_high.mxcsr & MXCSR_FTZ) && (cpu_state_high.mxcsr & 0x800))
-        {
-            uint32_t result_bits = *(uint32_t*)result;
-            if(result_bits & (1u << 31)) result_bits = 1u << 31;
-            else result_bits = 0;
-            *result = *(float*)&result_bits;
-        }
-    }
-    if (fperaised & FE_INEXACT)
-        cpu_state_high.mxcsr |= 0x20;
-
-    int unmasked = (~cpu_state_high.mxcsr >> 7) & 0x3f;
-    if ((cpu_state_high.mxcsr & 0x3f) & (unmasked & 0x3f)) {
-        if (cr4 & CR4_OSXMMEXCPT)
-            x86_int(0x13);
-        //ILLEGAL_ON(!(cr4 & CR4_OSXMMEXCPT));
-    }
-    return 0;
+    status.softfloat_exceptionFlags             = 0; // clear exceptions before execution
+    status.softfloat_roundingMode               = (cpu_state_high.mxcsr >> 13) & 3;
+    status.softfloat_flush_underflow_to_zero    = (cpu_state_high.mxcsr >> 15) & 1;
+    status.softfloat_suppressException          = 0;
+    status.softfloat_exceptionMasks             = (cpu_state_high.mxcsr >> 7) & 0x3f;
+    status.softfloat_denormals_are_zeros        = (cpu_state_high.mxcsr >> 6) & 1;
 }
 
-
-static inline int
-check_sse_exceptions_double(double* result)
+void softfloat_status_word_to_mxcsr(softfloat_status_t status)
 {
-    int fperaised = fetestexcept(FE_ALL_EXCEPT);
-    if (fperaised & FE_INVALID)
-        cpu_state_high.mxcsr |= 1;
-    if (fpclassify(*result) == FP_SUBNORMAL)
-    {
-        cpu_state_high.mxcsr |= 2;
-        if((cpu_state_high.mxcsr & MXCSR_DAZ) && (cpu_state_high.mxcsr & 0x100))
-        {
-            uint64_t result_bits = *(uint64_t*)result;
-            if(result_bits & (1ull << 63)) result_bits = 1ull << 63;
-            else result_bits = 0;
-            *result = *(double*)&result_bits;
-        }
-    }
-    if (fperaised & FE_DIVBYZERO)
-        cpu_state_high.mxcsr |= 4;
-    if (fperaised & FE_OVERFLOW)
-        cpu_state_high.mxcsr |= 8;
-    if (fperaised & FE_UNDERFLOW)
-    {
-        cpu_state_high.mxcsr |= 0x10;
-        if((cpu_state_high.mxcsr & MXCSR_FTZ) && (cpu_state_high.mxcsr & 0x800))
-        {
-            uint64_t result_bits = *(uint64_t*)result;
-            if(result_bits & (1ull << 63)) result_bits = 1ull << 63;
-            else result_bits = 0;
-            *result = *(double*)&result_bits;
-        }
-    }
-    if (fperaised & FE_INEXACT)
-        cpu_state_high.mxcsr |= 0x20;
-
-    int unmasked = (~cpu_state_high.mxcsr >> 7) & 0x3f;
-    if ((cpu_state_high.mxcsr & 0x3f) & (unmasked & 0x3f)) {
-        if (cr4 & CR4_OSXMMEXCPT)
-            x86_int(0x13);
-        //ILLEGAL_ON(!(cr4 & CR4_OSXMMEXCPT));
-    }
-
-    return 0;
+    cpu_state_high.mxcsr |= status.softfloat_exceptionFlags & 0x3f;
 }

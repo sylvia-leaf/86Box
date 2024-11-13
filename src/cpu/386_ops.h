@@ -198,6 +198,8 @@ extern void x386_dynarec_log(const char *fmt, ...);
 #include "x86_ops_misc.h"
 #include "x87_ops.h"
 #ifndef OPS_286_386
+#    include "softfloat3e/softfloat-specialize.h"
+#    include "softfloat3e/fpu_trans.h"
 #    include "x86_ops_i686.h"
 #    include "x86_ops_mmx.h"
 #    include "x86_ops_sse2_arith.h"
