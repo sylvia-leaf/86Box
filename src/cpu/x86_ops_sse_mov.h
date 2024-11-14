@@ -309,6 +309,7 @@ opMOVLPS_xmm_f_a32(uint32_t fetchdat)
     if (cpu_state.abrt)
         return 1;
     CLOCK_CYCLES(2);
+    return 0;
 }
 
 static int

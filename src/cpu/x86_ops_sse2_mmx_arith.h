@@ -654,6 +654,7 @@ opPMULUDQ_mm_a32(uint32_t fetchdat)
     MMX_ENTER();
 
     fetch_ea_32(fetchdat);
+    MMX_GETSRC();
     dst = MMX_GETREGP(cpu_reg);
 
     dst->q = (uint64_t) dst->l[0] * (uint64_t) src.l[0];
