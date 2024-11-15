@@ -148,6 +148,7 @@ opCVTTSD2SI_l_xmm_a32(uint32_t fetchdat)
     result = trunc(src.d2[0]);
     setr32(cpu_reg, result);
     fesetround(FE_TONEAREST);
+    return 0;
 }
 
 static int
