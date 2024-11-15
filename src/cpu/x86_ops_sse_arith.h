@@ -940,7 +940,7 @@ opMULSS_xmm_xmm_a16(uint32_t fetchdat)
 static int
 opMULSS_xmm_xmm_a32(uint32_t fetchdat)
 {
-    feclearexcept(FE_ALL_EXCEPT);
+    fetch_ea_32(fetchdat);
     SSE_REG src;
     struct softfloat_status_t status = mxcsr_to_softfloat_status_word();
     SSE_GETSRC();
