@@ -24,5 +24,6 @@
         <file>pcbox_vi-VN.qm</file>
         <file>pcbox_zh-CN.qm</file>
         <file>pcbox_zh-TW.qm</file>
+@QT_TRANSLATIONS_LIST@
     </qresource>
 </RCC>
