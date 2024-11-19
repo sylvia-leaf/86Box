@@ -14,12 +14,12 @@ opCVTPI2PS_xmm_mm_a16(uint32_t fetchdat)
     cpu_state_high.XMM[cpu_reg].f[0] = i32_to_f32(src.sl[0], &status);
     cpu_state_high.XMM[cpu_reg].f[1] = i32_to_f32(src.sl[1], &status);
     softfloat_status_word_to_mxcsr(status);
-    int unmasked = (~cpu_state_high.mxcsr >> 7) & 0x3f;
+    /*int unmasked = (~cpu_state_high.mxcsr >> 7) & 0x3f;
     if ((cpu_state_high.mxcsr & 0x3f) & (unmasked & 0x3f)) {
         if (cr4 & CR4_OSXMMEXCPT)
             x86_int(0x13);
         //ILLEGAL_ON(!(cr4 & CR4_OSXMMEXCPT));
-    }
+    }*/
 
     return 0;
 }
@@ -39,12 +39,12 @@ opCVTPI2PS_xmm_mm_a32(uint32_t fetchdat)
     cpu_state_high.XMM[cpu_reg].f[0] = i32_to_f32(src.sl[0], &status);
     cpu_state_high.XMM[cpu_reg].f[1] = i32_to_f32(src.sl[1], &status);
     softfloat_status_word_to_mxcsr(status);
-    int unmasked = (~cpu_state_high.mxcsr >> 7) & 0x3f;
+    /*int unmasked = (~cpu_state_high.mxcsr >> 7) & 0x3f;
     if ((cpu_state_high.mxcsr & 0x3f) & (unmasked & 0x3f)) {
         if (cr4 & CR4_OSXMMEXCPT)
             x86_int(0x13);
         //ILLEGAL_ON(!(cr4 & CR4_OSXMMEXCPT));
-    }
+    }*/
 
     return 0;
 }
@@ -68,12 +68,12 @@ opCVTSI2SS_xmm_l_a16(uint32_t fetchdat)
         CLOCK_CYCLES(2);
     }
     softfloat_status_word_to_mxcsr(status);
-    int unmasked = (~cpu_state_high.mxcsr >> 7) & 0x3f;
+    /*int unmasked = (~cpu_state_high.mxcsr >> 7) & 0x3f;
     if ((cpu_state_high.mxcsr & 0x3f) & (unmasked & 0x3f)) {
         if (cr4 & CR4_OSXMMEXCPT)
             x86_int(0x13);
         //ILLEGAL_ON(!(cr4 & CR4_OSXMMEXCPT));
-    }
+    }*/
 
     return 0;
 }
@@ -97,12 +97,12 @@ opCVTSI2SS_xmm_l_a32(uint32_t fetchdat)
         CLOCK_CYCLES(2);
     }
     softfloat_status_word_to_mxcsr(status);
-    int unmasked = (~cpu_state_high.mxcsr >> 7) & 0x3f;
+    /*int unmasked = (~cpu_state_high.mxcsr >> 7) & 0x3f;
     if ((cpu_state_high.mxcsr & 0x3f) & (unmasked & 0x3f)) {
         if (cr4 & CR4_OSXMMEXCPT)
             x86_int(0x13);
         //ILLEGAL_ON(!(cr4 & CR4_OSXMMEXCPT));
-    }
+    }*/
 
     return 0;
 }
@@ -159,12 +159,12 @@ opCVTTSS2SI_l_xmm_a16(uint32_t fetchdat)
     struct softfloat_status_t status = mxcsr_to_softfloat_status_word(); 
     setr32(cpu_reg, f32_to_i32_round_to_zero(src.f[0], &status));
     softfloat_status_word_to_mxcsr(status);
-    int unmasked = (~cpu_state_high.mxcsr >> 7) & 0x3f;
+    /*int unmasked = (~cpu_state_high.mxcsr >> 7) & 0x3f;
     if ((cpu_state_high.mxcsr & 0x3f) & (unmasked & 0x3f)) {
         if (cr4 & CR4_OSXMMEXCPT)
             x86_int(0x13);
         //ILLEGAL_ON(!(cr4 & CR4_OSXMMEXCPT));
-    }
+    }*/
     CLOCK_CYCLES(1);
 
     return 0;
@@ -179,12 +179,12 @@ opCVTTSS2SI_l_xmm_a32(uint32_t fetchdat)
     struct softfloat_status_t status = mxcsr_to_softfloat_status_word(); 
     setr32(cpu_reg, f32_to_i32_round_to_zero(src.f[0], &status));
     softfloat_status_word_to_mxcsr(status);
-    int unmasked = (~cpu_state_high.mxcsr >> 7) & 0x3f;
+    /*int unmasked = (~cpu_state_high.mxcsr >> 7) & 0x3f;
     if ((cpu_state_high.mxcsr & 0x3f) & (unmasked & 0x3f)) {
         if (cr4 & CR4_OSXMMEXCPT)
             x86_int(0x13);
         //ILLEGAL_ON(!(cr4 & CR4_OSXMMEXCPT));
-    }
+    }*/
     CLOCK_CYCLES(1);
 
     return 0;
@@ -208,12 +208,12 @@ opCVTPS2PI_mm_xmm_a16(uint32_t fetchdat)
     dst->sl[1] = f32_to_i32_normal(src.f[1], &status);
     MMX_SETEXP(cpu_reg);
     softfloat_status_word_to_mxcsr(status);
-    int unmasked = (~cpu_state_high.mxcsr >> 7) & 0x3f;
+    /*int unmasked = (~cpu_state_high.mxcsr >> 7) & 0x3f;
     if ((cpu_state_high.mxcsr & 0x3f) & (unmasked & 0x3f)) {
         if (cr4 & CR4_OSXMMEXCPT)
             x86_int(0x13);
         //ILLEGAL_ON(!(cr4 & CR4_OSXMMEXCPT));
-    }
+    }*/
     CLOCK_CYCLES(1);
 
     return 0;
@@ -237,12 +237,12 @@ opCVTPS2PI_mm_xmm_a32(uint32_t fetchdat)
     dst->sl[1] = f32_to_i32_normal(src.f[1], &status);
     MMX_SETEXP(cpu_reg);
     softfloat_status_word_to_mxcsr(status);
-    int unmasked = (~cpu_state_high.mxcsr >> 7) & 0x3f;
+    /*int unmasked = (~cpu_state_high.mxcsr >> 7) & 0x3f;
     if ((cpu_state_high.mxcsr & 0x3f) & (unmasked & 0x3f)) {
         if (cr4 & CR4_OSXMMEXCPT)
             x86_int(0x13);
         //ILLEGAL_ON(!(cr4 & CR4_OSXMMEXCPT));
-    }
+    }*/
     CLOCK_CYCLES(1);
 
     return 0;
@@ -259,12 +259,12 @@ opCVTSS2SI_l_xmm_a16(uint32_t fetchdat)
     result = f32_to_i32_normal(src.f[0], &status);
     setr32(cpu_reg, result);
     softfloat_status_word_to_mxcsr(status);
-    int unmasked = (~cpu_state_high.mxcsr >> 7) & 0x3f;
+    /*int unmasked = (~cpu_state_high.mxcsr >> 7) & 0x3f;
     if ((cpu_state_high.mxcsr & 0x3f) & (unmasked & 0x3f)) {
         if (cr4 & CR4_OSXMMEXCPT)
             x86_int(0x13);
         //ILLEGAL_ON(!(cr4 & CR4_OSXMMEXCPT));
-    }
+    }*/
 
     return 0;
 }
@@ -280,12 +280,12 @@ opCVTSS2SI_l_xmm_a32(uint32_t fetchdat)
     result = f32_to_i32_normal(src.f[0], &status);
     setr32(cpu_reg, result);
     softfloat_status_word_to_mxcsr(status);
-    int unmasked = (~cpu_state_high.mxcsr >> 7) & 0x3f;
+    /*int unmasked = (~cpu_state_high.mxcsr >> 7) & 0x3f;
     if ((cpu_state_high.mxcsr & 0x3f) & (unmasked & 0x3f)) {
         if (cr4 & CR4_OSXMMEXCPT)
             x86_int(0x13);
         //ILLEGAL_ON(!(cr4 & CR4_OSXMMEXCPT));
-    }
+    }*/
 
     return 0;
 }
