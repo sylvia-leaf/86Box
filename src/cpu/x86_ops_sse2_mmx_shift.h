@@ -141,7 +141,7 @@ opPSxxQ_xmm_imm(uint32_t fetchdat)
                     cpu_state_high.XMM[reg].q[1] = 0;
                     shift -= 8;
                 }
-                shift *= 8;
+                shift <<= 3;
                 if(shift != 0)
                 {
                     cpu_state_high.XMM[reg].q[0] = (cpu_state_high.XMM[reg].q[0] >> shift) | (cpu_state_high.XMM[reg].q[1] << (64 - shift));
@@ -178,7 +178,7 @@ opPSxxQ_xmm_imm(uint32_t fetchdat)
                     cpu_state_high.XMM[reg].q[0] = 0;
                     shift -= 8;
                 }
-                shift *= 8;
+                shift <<= 3;
                 if(shift != 0)
                 {
                     cpu_state_high.XMM[reg].q[1] = (cpu_state_high.XMM[reg].q[1] << shift) | (cpu_state_high.XMM[reg].q[0] >> (64 - shift));

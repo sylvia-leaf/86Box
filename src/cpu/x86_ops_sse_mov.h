@@ -498,16 +498,12 @@ opMOVHPS_xmm_f_a16(uint32_t fetchdat)
         return opMOVHPD_xmm_f_a16(fetchdat);
 
     fetch_ea_16(fetchdat);
-    if (cpu_mod == 3) {
-        cpu_state_high.XMM[cpu_rm].q[1] = cpu_state_high.XMM[cpu_reg].q[0];
-        CLOCK_CYCLES(1);
-    } else {
-        SEG_CHECK_WRITE(cpu_state.ea_seg);
-        writememq(easeg, cpu_state.eaaddr, cpu_state_high.XMM[cpu_reg].q[1]);
-        if (cpu_state.abrt)
-            return 1;
-        CLOCK_CYCLES(2);
-    }
+    ILLEGAL_ON(cpu_mod == 3);
+    SEG_CHECK_WRITE(cpu_state.ea_seg);
+    writememq(easeg, cpu_state.eaaddr, cpu_state_high.XMM[cpu_reg].q[1]);
+    if (cpu_state.abrt)
+        return 1;
+    CLOCK_CYCLES(2);
     return 0;
 }
 
@@ -518,17 +514,12 @@ opMOVHPS_xmm_f_a32(uint32_t fetchdat)
         return opMOVHPD_xmm_f_a32(fetchdat);
 
     fetch_ea_32(fetchdat);
-    if (cpu_mod == 3) {
-        cpu_state_high.XMM[cpu_rm].q[1] = cpu_state_high.XMM[cpu_reg].q[0];
-        CLOCK_CYCLES(1);
-    } else {
-        SEG_CHECK_WRITE(cpu_state.ea_seg);
-        writememq(easeg, cpu_state.eaaddr, cpu_state_high.XMM[cpu_reg].q[1]);
-        if (cpu_state.abrt)
-            return 1;
-        CLOCK_CYCLES(2);
-    }
-
+    ILLEGAL_ON(cpu_mod == 3);
+    SEG_CHECK_WRITE(cpu_state.ea_seg);
+    writememq(easeg, cpu_state.eaaddr, cpu_state_high.XMM[cpu_reg].q[1]);
+    if (cpu_state.abrt)
+        return 1;
+    CLOCK_CYCLES(2);
     return 0;
 }
 

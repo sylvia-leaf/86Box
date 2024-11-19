@@ -686,7 +686,7 @@ opMOVD_l_xmm_a16(uint32_t fetchdat)
 {
     fetch_ea_16(fetchdat);
     if (cpu_mod == 3) {
-        cpu_state_high.XMM[cpu_reg].l[0] = cpu_state.regs[cpu_rm].l;
+        cpu_state_high.XMM[cpu_reg].l[0] = getr32(cpu_rm);
         cpu_state_high.XMM[cpu_reg].l[1] = 0;
         cpu_state_high.XMM[cpu_reg].l[2] = 0;
         cpu_state_high.XMM[cpu_reg].l[3] = 0;
@@ -713,7 +713,7 @@ opMOVD_l_xmm_a32(uint32_t fetchdat)
 {
     fetch_ea_32(fetchdat);
     if (cpu_mod == 3) {
-        cpu_state_high.XMM[cpu_reg].l[0] = cpu_state.regs[cpu_rm].l;
+        cpu_state_high.XMM[cpu_reg].l[0] = getr32(cpu_rm);
         cpu_state_high.XMM[cpu_reg].l[1] = 0;
         cpu_state_high.XMM[cpu_reg].l[2] = 0;
         cpu_state_high.XMM[cpu_reg].l[3] = 0;

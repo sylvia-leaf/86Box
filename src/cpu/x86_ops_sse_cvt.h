@@ -153,25 +153,19 @@ opCVTTPS2PI_mm_xmm_a32(uint32_t fetchdat)
 static int
 opCVTTSS2SI_l_xmm_a16(uint32_t fetchdat)
 {
-    feclearexcept(FE_ALL_EXCEPT);
+    SSE_REG  src;
     fetch_ea_16(fetchdat);
-    if (cpu_mod == 3) {
-        int32_t result = trunc(cpu_state_high.XMM[cpu_rm].f2[0]); 
-        setr32(cpu_reg, result);
-        CLOCK_CYCLES(1);
-    } else {
-        uint32_t dst;
-
-        SEG_CHECK_READ(cpu_state.ea_seg);
-        dst = readmeml(easeg, cpu_state.eaaddr);
-        if (cpu_state.abrt)
-            return 1;
-        float dst_real;
-        dst_real = *(float *) &dst;
-        int32_t result = trunc(dst_real);
-        setr32(cpu_reg, result);
-        CLOCK_CYCLES(2);
+    SSE_GETSRC();
+    struct softfloat_status_t status = mxcsr_to_softfloat_status_word(); 
+    setr32(cpu_reg, f32_to_i32_round_to_zero(src.f[0], &status));
+    softfloat_status_word_to_mxcsr(status);
+    int unmasked = (~cpu_state_high.mxcsr >> 7) & 0x3f;
+    if ((cpu_state_high.mxcsr & 0x3f) & (unmasked & 0x3f)) {
+        if (cr4 & CR4_OSXMMEXCPT)
+            x86_int(0x13);
+        //ILLEGAL_ON(!(cr4 & CR4_OSXMMEXCPT));
     }
+    CLOCK_CYCLES(1);
 
     return 0;
 }
@@ -179,25 +173,19 @@ opCVTTSS2SI_l_xmm_a16(uint32_t fetchdat)
 static int
 opCVTTSS2SI_l_xmm_a32(uint32_t fetchdat)
 {
-    feclearexcept(FE_ALL_EXCEPT);
+    SSE_REG src;
     fetch_ea_32(fetchdat);
-    if (cpu_mod == 3) {
-        int32_t result = trunc(cpu_state_high.XMM[cpu_rm].f2[0]);
-        setr32(cpu_reg, result);
-        CLOCK_CYCLES(1);
-    } else {
-        uint32_t dst;
-
-        SEG_CHECK_READ(cpu_state.ea_seg);
-        dst = readmeml(easeg, cpu_state.eaaddr);
-        if (cpu_state.abrt)
-            return 1;
-        float dst_real;
-        dst_real = *(float *) &dst;
-        int32_t result = trunc(dst_real);
-        setr32(cpu_reg, result);
-        CLOCK_CYCLES(2);
+    SSE_GETSRC();
+    struct softfloat_status_t status = mxcsr_to_softfloat_status_word(); 
+    setr32(cpu_reg, f32_to_i32_round_to_zero(src.f[0], &status));
+    softfloat_status_word_to_mxcsr(status);
+    int unmasked = (~cpu_state_high.mxcsr >> 7) & 0x3f;
+    if ((cpu_state_high.mxcsr & 0x3f) & (unmasked & 0x3f)) {
+        if (cr4 & CR4_OSXMMEXCPT)
+            x86_int(0x13);
+        //ILLEGAL_ON(!(cr4 & CR4_OSXMMEXCPT));
     }
+    CLOCK_CYCLES(1);
 
     return 0;
 }
