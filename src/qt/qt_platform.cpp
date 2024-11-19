@@ -804,6 +804,8 @@ plat_set_thread_name(void *thread, const char *name)
     if (thread) /* Apple pthread can only set self's name */
         return;
     char truncated[64];
+#    elif defined(Q_OS_NETBSD)
+    char truncated[64];
 #    else
     char truncated[16];
 #    endif
@@ -812,6 +814,8 @@ plat_set_thread_name(void *thread, const char *name)
     pthread_setname_np(truncated);
 #    elif defined(Q_OS_OPENBSD)
     pthread_set_name_np(thread ? *((pthread_t *) thread) : pthread_self(), truncated);
+#    elif defined(Q_OS_NETBSD)
+    pthread_setname_np(thread ? *((pthread_t *) thread) : pthread_self(), truncated, "%s");
 #    else
     pthread_setname_np(thread ? *((pthread_t *) thread) : pthread_self(), truncated);
 #    endif
