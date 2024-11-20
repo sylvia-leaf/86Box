@@ -365,7 +365,7 @@ plat_mmap(size_t size, uint8_t executable)
 #elif defined Q_OS_UNIX
 #    if defined Q_OS_DARWIN && defined MAP_JIT
     void *ret = mmap(0, size, PROT_READ | PROT_WRITE | (executable ? PROT_EXEC : 0), MAP_ANON | MAP_PRIVATE | (executable ? MAP_JIT : 0), -1, 0);
-#elif defined(PROT_MPROTECT)
+#    elif defined(PROT_MPROTECT)
     void *ret = mmap(0, size, PROT_MPROTECT(PROT_READ | PROT_WRITE | (executable ? PROT_EXEC : 0)), MAP_ANON | MAP_PRIVATE, -1, 0);
 #    else
     void *ret = mmap(0, size, PROT_READ | PROT_WRITE | (executable ? PROT_EXEC : 0), MAP_ANON | MAP_PRIVATE, -1, 0);
@@ -814,6 +814,8 @@ plat_set_thread_name(void *thread, const char *name)
     strncpy(truncated, name, sizeof(truncated) - 1);
 #    if defined(Q_OS_DARWIN)
     pthread_setname_np(truncated);
+#    elif defined(Q_OS_NETBSD)
+    pthread_setname_np(thread ? *((pthread_t *) thread) : pthread_self(), truncated, "%s");
 #    elif defined(Q_OS_OPENBSD)
     pthread_set_name_np(thread ? *((pthread_t *) thread) : pthread_self(), truncated);
 #    elif defined(Q_OS_NETBSD)
