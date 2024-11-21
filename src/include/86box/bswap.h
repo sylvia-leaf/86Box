@@ -35,8 +35,6 @@
  *   USA.
  */
 
-#ifndef __NetBSD__
-
 #ifndef BSWAP_H
 #define BSWAP_H
 
@@ -61,6 +59,8 @@
 		    (((x) & 0x0000ff0000000000ull) >> 24) |		\
 		    (((x) & 0x00ff000000000000ull) >> 40) |		\
 		    (((x) & 0xff00000000000000ull) >> 56)))
+
+#ifndef __NetBSD__
 
 static __inline uint16_t
 bswap16(uint16_t x)
@@ -91,6 +91,7 @@ bswap64(uint64_t x)
     return bswap_16(x);
 #endif
 }
+#endif
 
 static __inline void
 bswap16s(uint16_t *s)
@@ -241,5 +242,3 @@ cpu_to_be32wu(uint32_t *p, uint32_t v)
 #undef be_bswaps
 
 #endif /*BSWAP_H*/
-
-#endif
