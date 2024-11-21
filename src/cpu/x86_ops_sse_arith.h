@@ -794,8 +794,8 @@ opADDPS_xmm_xmm_a16(uint32_t fetchdat)
     cpu_state_high.XMM[cpu_reg].f[1] = f32_add(cpu_state_high.XMM[cpu_reg].f[1], src.f[1], &status);
     cpu_state_high.XMM[cpu_reg].f[2] = f32_add(cpu_state_high.XMM[cpu_reg].f[2], src.f[2], &status);
     cpu_state_high.XMM[cpu_reg].f[3] = f32_add(cpu_state_high.XMM[cpu_reg].f[3], src.f[3], &status);
-    softfloat_status_word_to_mxcsr(status);
-    /*int unmasked = (~cpu_state_high.mxcsr >> 7) & 0x3f;
+    /*softfloat_status_word_to_mxcsr(status);
+    int unmasked = (~cpu_state_high.mxcsr >> 7) & 0x3f;
     if ((cpu_state_high.mxcsr & 0x3f) & (unmasked & 0x3f)) {
         if (cr4 & CR4_OSXMMEXCPT)
             x86_int(0x13);
@@ -819,8 +819,8 @@ opADDPS_xmm_xmm_a32(uint32_t fetchdat)
     cpu_state_high.XMM[cpu_reg].f[1] = f32_add(cpu_state_high.XMM[cpu_reg].f[1], src.f[1], &status);
     cpu_state_high.XMM[cpu_reg].f[2] = f32_add(cpu_state_high.XMM[cpu_reg].f[2], src.f[2], &status);
     cpu_state_high.XMM[cpu_reg].f[3] = f32_add(cpu_state_high.XMM[cpu_reg].f[3], src.f[3], &status);
-    softfloat_status_word_to_mxcsr(status);
-    /*int unmasked = (~cpu_state_high.mxcsr >> 7) & 0x3f;
+    /*softfloat_status_word_to_mxcsr(status);
+    int unmasked = (~cpu_state_high.mxcsr >> 7) & 0x3f;
     if ((cpu_state_high.mxcsr & 0x3f) & (unmasked & 0x3f)) {
         if (cr4 & CR4_OSXMMEXCPT)
             x86_int(0x13);
@@ -838,8 +838,8 @@ opADDSS_xmm_xmm_a16(uint32_t fetchdat)
     struct softfloat_status_t status = mxcsr_to_softfloat_status_word();
     SSE_GETSRC();
     cpu_state_high.XMM[cpu_reg].f[0] = f32_add(cpu_state_high.XMM[cpu_reg].f[0], src.f[0], &status);
-    softfloat_status_word_to_mxcsr(status);
-    /*int unmasked = (~cpu_state_high.mxcsr >> 7) & 0x3f;
+    /*softfloat_status_word_to_mxcsr(status);
+    int unmasked = (~cpu_state_high.mxcsr >> 7) & 0x3f;
     if ((cpu_state_high.mxcsr & 0x3f) & (unmasked & 0x3f)) {
         if (cr4 & CR4_OSXMMEXCPT)
             x86_int(0x13);
@@ -857,8 +857,8 @@ opADDSS_xmm_xmm_a32(uint32_t fetchdat)
     struct softfloat_status_t status = mxcsr_to_softfloat_status_word();
     SSE_GETSRC();
     cpu_state_high.XMM[cpu_reg].f[0] = f32_add(cpu_state_high.XMM[cpu_reg].f[0], src.f[0], &status);
-    softfloat_status_word_to_mxcsr(status);
-    /*int unmasked = (~cpu_state_high.mxcsr >> 7) & 0x3f;
+    /*softfloat_status_word_to_mxcsr(status);
+    int unmasked = (~cpu_state_high.mxcsr >> 7) & 0x3f;
     if ((cpu_state_high.mxcsr & 0x3f) & (unmasked & 0x3f)) {
         if (cr4 & CR4_OSXMMEXCPT)
             x86_int(0x13);
@@ -882,8 +882,8 @@ opMULPS_xmm_xmm_a16(uint32_t fetchdat)
     cpu_state_high.XMM[cpu_reg].f[1] = f32_mul(cpu_state_high.XMM[cpu_reg].f[1], src.f[1], &status);
     cpu_state_high.XMM[cpu_reg].f[2] = f32_mul(cpu_state_high.XMM[cpu_reg].f[2], src.f[2], &status);
     cpu_state_high.XMM[cpu_reg].f[3] = f32_mul(cpu_state_high.XMM[cpu_reg].f[3], src.f[3], &status);
-    softfloat_status_word_to_mxcsr(status);
-    /*int unmasked = (~cpu_state_high.mxcsr >> 7) & 0x3f;
+    /*softfloat_status_word_to_mxcsr(status);
+    int unmasked = (~cpu_state_high.mxcsr >> 7) & 0x3f;
     if ((cpu_state_high.mxcsr & 0x3f) & (unmasked & 0x3f)) {
         if (cr4 & CR4_OSXMMEXCPT)
             x86_int(0x13);
@@ -907,8 +907,8 @@ opMULPS_xmm_xmm_a32(uint32_t fetchdat)
     cpu_state_high.XMM[cpu_reg].f[1] = f32_mul(cpu_state_high.XMM[cpu_reg].f[1], src.f[1], &status);
     cpu_state_high.XMM[cpu_reg].f[2] = f32_mul(cpu_state_high.XMM[cpu_reg].f[2], src.f[2], &status);
     cpu_state_high.XMM[cpu_reg].f[3] = f32_mul(cpu_state_high.XMM[cpu_reg].f[3], src.f[3], &status);
-    softfloat_status_word_to_mxcsr(status);
-    /*int unmasked = (~cpu_state_high.mxcsr >> 7) & 0x3f;
+    /*softfloat_status_word_to_mxcsr(status);
+    int unmasked = (~cpu_state_high.mxcsr >> 7) & 0x3f;
     if ((cpu_state_high.mxcsr & 0x3f) & (unmasked & 0x3f)) {
         if (cr4 & CR4_OSXMMEXCPT)
             x86_int(0x13);
@@ -926,8 +926,8 @@ opMULSS_xmm_xmm_a16(uint32_t fetchdat)
     struct softfloat_status_t status = mxcsr_to_softfloat_status_word();
     SSE_GETSRC();
     cpu_state_high.XMM[cpu_reg].f[0] = f32_mul(cpu_state_high.XMM[cpu_reg].f[0], src.f[0], &status);
-    softfloat_status_word_to_mxcsr(status);
-    /*int unmasked = (~cpu_state_high.mxcsr >> 7) & 0x3f;
+    /*softfloat_status_word_to_mxcsr(status);
+    int unmasked = (~cpu_state_high.mxcsr >> 7) & 0x3f;
     if ((cpu_state_high.mxcsr & 0x3f) & (unmasked & 0x3f)) {
         if (cr4 & CR4_OSXMMEXCPT)
             x86_int(0x13);
@@ -945,8 +945,8 @@ opMULSS_xmm_xmm_a32(uint32_t fetchdat)
     struct softfloat_status_t status = mxcsr_to_softfloat_status_word();
     SSE_GETSRC();
     cpu_state_high.XMM[cpu_reg].f[0] = f32_mul(cpu_state_high.XMM[cpu_reg].f[0], src.f[0], &status);
-    softfloat_status_word_to_mxcsr(status);
-    /*int unmasked = (~cpu_state_high.mxcsr >> 7) & 0x3f;
+    /*softfloat_status_word_to_mxcsr(status);
+    int unmasked = (~cpu_state_high.mxcsr >> 7) & 0x3f;
     if ((cpu_state_high.mxcsr & 0x3f) & (unmasked & 0x3f)) {
         if (cr4 & CR4_OSXMMEXCPT)
             x86_int(0x13);
@@ -970,8 +970,8 @@ opSUBPS_xmm_xmm_a16(uint32_t fetchdat)
     cpu_state_high.XMM[cpu_reg].f[1] = f32_sub(cpu_state_high.XMM[cpu_reg].f[1], src.f[1], &status);
     cpu_state_high.XMM[cpu_reg].f[2] = f32_sub(cpu_state_high.XMM[cpu_reg].f[2], src.f[2], &status);
     cpu_state_high.XMM[cpu_reg].f[3] = f32_sub(cpu_state_high.XMM[cpu_reg].f[3], src.f[3], &status);
-    softfloat_status_word_to_mxcsr(status);
-    /*int unmasked = (~cpu_state_high.mxcsr >> 7) & 0x3f;
+    /*softfloat_status_word_to_mxcsr(status);
+    int unmasked = (~cpu_state_high.mxcsr >> 7) & 0x3f;
     if ((cpu_state_high.mxcsr & 0x3f) & (unmasked & 0x3f)) {
         if (cr4 & CR4_OSXMMEXCPT)
             x86_int(0x13);
@@ -995,8 +995,8 @@ opSUBPS_xmm_xmm_a32(uint32_t fetchdat)
     cpu_state_high.XMM[cpu_reg].f[1] = f32_sub(cpu_state_high.XMM[cpu_reg].f[1], src.f[1], &status);
     cpu_state_high.XMM[cpu_reg].f[2] = f32_sub(cpu_state_high.XMM[cpu_reg].f[2], src.f[2], &status);
     cpu_state_high.XMM[cpu_reg].f[3] = f32_sub(cpu_state_high.XMM[cpu_reg].f[3], src.f[3], &status);
-    softfloat_status_word_to_mxcsr(status);
-    /*int unmasked = (~cpu_state_high.mxcsr >> 7) & 0x3f;
+    /*softfloat_status_word_to_mxcsr(status);
+    int unmasked = (~cpu_state_high.mxcsr >> 7) & 0x3f;
     if ((cpu_state_high.mxcsr & 0x3f) & (unmasked & 0x3f)) {
         if (cr4 & CR4_OSXMMEXCPT)
             x86_int(0x13);
@@ -1014,8 +1014,8 @@ opSUBSS_xmm_xmm_a16(uint32_t fetchdat)
     struct softfloat_status_t status = mxcsr_to_softfloat_status_word();
     SSE_GETSRC();
     cpu_state_high.XMM[cpu_reg].f[0] = f32_sub(cpu_state_high.XMM[cpu_reg].f[0], src.f[0], &status);
-    softfloat_status_word_to_mxcsr(status);
-    /*int unmasked = (~cpu_state_high.mxcsr >> 7) & 0x3f;
+    /*softfloat_status_word_to_mxcsr(status);
+    int unmasked = (~cpu_state_high.mxcsr >> 7) & 0x3f;
     if ((cpu_state_high.mxcsr & 0x3f) & (unmasked & 0x3f)) {
         if (cr4 & CR4_OSXMMEXCPT)
             x86_int(0x13);
@@ -1033,8 +1033,8 @@ opSUBSS_xmm_xmm_a32(uint32_t fetchdat)
     struct softfloat_status_t status = mxcsr_to_softfloat_status_word();
     SSE_GETSRC();
     cpu_state_high.XMM[cpu_reg].f[0] = f32_sub(cpu_state_high.XMM[cpu_reg].f[0], src.f[0], &status);
-    softfloat_status_word_to_mxcsr(status);
-    /*int unmasked = (~cpu_state_high.mxcsr >> 7) & 0x3f;
+    /*softfloat_status_word_to_mxcsr(status);
+    int unmasked = (~cpu_state_high.mxcsr >> 7) & 0x3f;
     if ((cpu_state_high.mxcsr & 0x3f) & (unmasked & 0x3f)) {
         if (cr4 & CR4_OSXMMEXCPT)
             x86_int(0x13);
@@ -1058,8 +1058,8 @@ opMINPS_xmm_xmm_a16(uint32_t fetchdat)
     cpu_state_high.XMM[cpu_reg].f[1] = f32_min(cpu_state_high.XMM[cpu_reg].f[1], src.f[1], &status);
     cpu_state_high.XMM[cpu_reg].f[2] = f32_min(cpu_state_high.XMM[cpu_reg].f[2], src.f[2], &status);
     cpu_state_high.XMM[cpu_reg].f[3] = f32_min(cpu_state_high.XMM[cpu_reg].f[3], src.f[3], &status);
-    softfloat_status_word_to_mxcsr(status);
-    /*int unmasked = (~cpu_state_high.mxcsr >> 7) & 0x3f;
+    /*softfloat_status_word_to_mxcsr(status);
+    int unmasked = (~cpu_state_high.mxcsr >> 7) & 0x3f;
     if ((cpu_state_high.mxcsr & 0x3f) & (unmasked & 0x3f)) {
         if (cr4 & CR4_OSXMMEXCPT)
             x86_int(0x13);
@@ -1083,8 +1083,8 @@ opMINPS_xmm_xmm_a32(uint32_t fetchdat)
     cpu_state_high.XMM[cpu_reg].f[1] = f32_min(cpu_state_high.XMM[cpu_reg].f[1], src.f[1], &status);
     cpu_state_high.XMM[cpu_reg].f[2] = f32_min(cpu_state_high.XMM[cpu_reg].f[2], src.f[2], &status);
     cpu_state_high.XMM[cpu_reg].f[3] = f32_min(cpu_state_high.XMM[cpu_reg].f[3], src.f[3], &status);
-    softfloat_status_word_to_mxcsr(status);
-    /*int unmasked = (~cpu_state_high.mxcsr >> 7) & 0x3f;
+    /*softfloat_status_word_to_mxcsr(status);
+    int unmasked = (~cpu_state_high.mxcsr >> 7) & 0x3f;
     if ((cpu_state_high.mxcsr & 0x3f) & (unmasked & 0x3f)) {
         if (cr4 & CR4_OSXMMEXCPT)
             x86_int(0x13);
@@ -1102,8 +1102,8 @@ opMINSS_xmm_xmm_a16(uint32_t fetchdat)
     struct softfloat_status_t status = mxcsr_to_softfloat_status_word();
     SSE_GETSRC();
     cpu_state_high.XMM[cpu_reg].f[0] = f32_min(cpu_state_high.XMM[cpu_reg].f[0], src.f[0], &status);
-    softfloat_status_word_to_mxcsr(status);
-    /*int unmasked = (~cpu_state_high.mxcsr >> 7) & 0x3f;
+    /*softfloat_status_word_to_mxcsr(status);
+    int unmasked = (~cpu_state_high.mxcsr >> 7) & 0x3f;
     if ((cpu_state_high.mxcsr & 0x3f) & (unmasked & 0x3f)) {
         if (cr4 & CR4_OSXMMEXCPT)
             x86_int(0x13);
@@ -1121,8 +1121,8 @@ opMINSS_xmm_xmm_a32(uint32_t fetchdat)
     struct softfloat_status_t status = mxcsr_to_softfloat_status_word();
     SSE_GETSRC();
     cpu_state_high.XMM[cpu_reg].f[0] = f32_min(cpu_state_high.XMM[cpu_reg].f[0], src.f[0], &status);
-    softfloat_status_word_to_mxcsr(status);
-    /*int unmasked = (~cpu_state_high.mxcsr >> 7) & 0x3f;
+    /*softfloat_status_word_to_mxcsr(status);
+    int unmasked = (~cpu_state_high.mxcsr >> 7) & 0x3f;
     if ((cpu_state_high.mxcsr & 0x3f) & (unmasked & 0x3f)) {
         if (cr4 & CR4_OSXMMEXCPT)
             x86_int(0x13);
@@ -1147,8 +1147,8 @@ opDIVPS_xmm_xmm_a16(uint32_t fetchdat)
     cpu_state_high.XMM[cpu_reg].f[1] = f32_div(cpu_state_high.XMM[cpu_reg].f[1], src.f[1], &status);
     cpu_state_high.XMM[cpu_reg].f[2] = f32_div(cpu_state_high.XMM[cpu_reg].f[2], src.f[2], &status);
     cpu_state_high.XMM[cpu_reg].f[3] = f32_div(cpu_state_high.XMM[cpu_reg].f[3], src.f[3], &status);
-    softfloat_status_word_to_mxcsr(status);
-    /*int unmasked = (~cpu_state_high.mxcsr >> 7) & 0x3f;
+    /*softfloat_status_word_to_mxcsr(status);
+    int unmasked = (~cpu_state_high.mxcsr >> 7) & 0x3f;
     if ((cpu_state_high.mxcsr & 0x3f) & (unmasked & 0x3f)) {
         if (cr4 & CR4_OSXMMEXCPT)
             x86_int(0x13);
@@ -1172,8 +1172,8 @@ opDIVPS_xmm_xmm_a32(uint32_t fetchdat)
     cpu_state_high.XMM[cpu_reg].f[1] = f32_div(cpu_state_high.XMM[cpu_reg].f[1], src.f[1], &status);
     cpu_state_high.XMM[cpu_reg].f[2] = f32_div(cpu_state_high.XMM[cpu_reg].f[2], src.f[2], &status);
     cpu_state_high.XMM[cpu_reg].f[3] = f32_div(cpu_state_high.XMM[cpu_reg].f[3], src.f[3], &status);
-    softfloat_status_word_to_mxcsr(status);
-    /*int unmasked = (~cpu_state_high.mxcsr >> 7) & 0x3f;
+    /*softfloat_status_word_to_mxcsr(status);
+    int unmasked = (~cpu_state_high.mxcsr >> 7) & 0x3f;
     if ((cpu_state_high.mxcsr & 0x3f) & (unmasked & 0x3f)) {
         if (cr4 & CR4_OSXMMEXCPT)
             x86_int(0x13);
@@ -1191,8 +1191,8 @@ opDIVSS_xmm_xmm_a16(uint32_t fetchdat)
     struct softfloat_status_t status = mxcsr_to_softfloat_status_word();
     SSE_GETSRC();
     cpu_state_high.XMM[cpu_reg].f[0] = f32_div(cpu_state_high.XMM[cpu_reg].f[0], src.f[0], &status);
-    softfloat_status_word_to_mxcsr(status);
-    /*int unmasked = (~cpu_state_high.mxcsr >> 7) & 0x3f;
+    /*softfloat_status_word_to_mxcsr(status);
+    int unmasked = (~cpu_state_high.mxcsr >> 7) & 0x3f;
     if ((cpu_state_high.mxcsr & 0x3f) & (unmasked & 0x3f)) {
         if (cr4 & CR4_OSXMMEXCPT)
             x86_int(0x13);
@@ -1210,8 +1210,8 @@ opDIVSS_xmm_xmm_a32(uint32_t fetchdat)
     struct softfloat_status_t status = mxcsr_to_softfloat_status_word();
     SSE_GETSRC();
     cpu_state_high.XMM[cpu_reg].f[0] = f32_div(cpu_state_high.XMM[cpu_reg].f[0], src.f[0], &status);
-    softfloat_status_word_to_mxcsr(status);
-    /*int unmasked = (~cpu_state_high.mxcsr >> 7) & 0x3f;
+    /*softfloat_status_word_to_mxcsr(status);
+    int unmasked = (~cpu_state_high.mxcsr >> 7) & 0x3f;
     if ((cpu_state_high.mxcsr & 0x3f) & (unmasked & 0x3f)) {
         if (cr4 & CR4_OSXMMEXCPT)
             x86_int(0x13);
@@ -1235,8 +1235,8 @@ opMAXPS_xmm_xmm_a16(uint32_t fetchdat)
     cpu_state_high.XMM[cpu_reg].f[1] = f32_max(cpu_state_high.XMM[cpu_reg].f[1], src.f[1], &status);
     cpu_state_high.XMM[cpu_reg].f[2] = f32_max(cpu_state_high.XMM[cpu_reg].f[2], src.f[2], &status);
     cpu_state_high.XMM[cpu_reg].f[3] = f32_max(cpu_state_high.XMM[cpu_reg].f[3], src.f[3], &status);
-    softfloat_status_word_to_mxcsr(status);
-    /*int unmasked = (~cpu_state_high.mxcsr >> 7) & 0x3f;
+    /*softfloat_status_word_to_mxcsr(status);
+    int unmasked = (~cpu_state_high.mxcsr >> 7) & 0x3f;
     if ((cpu_state_high.mxcsr & 0x3f) & (unmasked & 0x3f)) {
         if (cr4 & CR4_OSXMMEXCPT)
             x86_int(0x13);
@@ -1260,8 +1260,8 @@ opMAXPS_xmm_xmm_a32(uint32_t fetchdat)
     cpu_state_high.XMM[cpu_reg].f[1] = f32_max(cpu_state_high.XMM[cpu_reg].f[1], src.f[1], &status);
     cpu_state_high.XMM[cpu_reg].f[2] = f32_max(cpu_state_high.XMM[cpu_reg].f[2], src.f[2], &status);
     cpu_state_high.XMM[cpu_reg].f[3] = f32_max(cpu_state_high.XMM[cpu_reg].f[3], src.f[3], &status);
-    softfloat_status_word_to_mxcsr(status);
-    /*int unmasked = (~cpu_state_high.mxcsr >> 7) & 0x3f;
+    /*softfloat_status_word_to_mxcsr(status);
+    int unmasked = (~cpu_state_high.mxcsr >> 7) & 0x3f;
     if ((cpu_state_high.mxcsr & 0x3f) & (unmasked & 0x3f)) {
         if (cr4 & CR4_OSXMMEXCPT)
             x86_int(0x13);
@@ -1279,8 +1279,8 @@ opMAXSS_xmm_xmm_a16(uint32_t fetchdat)
     struct softfloat_status_t status = mxcsr_to_softfloat_status_word();
     SSE_GETSRC();
     cpu_state_high.XMM[cpu_reg].f[0] = f32_max(cpu_state_high.XMM[cpu_reg].f[0], src.f[0], &status);
-    softfloat_status_word_to_mxcsr(status);
-    /*int unmasked = (~cpu_state_high.mxcsr >> 7) & 0x3f;
+    /*softfloat_status_word_to_mxcsr(status);
+    int unmasked = (~cpu_state_high.mxcsr >> 7) & 0x3f;
     if ((cpu_state_high.mxcsr & 0x3f) & (unmasked & 0x3f)) {
         if (cr4 & CR4_OSXMMEXCPT)
             x86_int(0x13);
@@ -1298,8 +1298,8 @@ opMAXSS_xmm_xmm_a32(uint32_t fetchdat)
     struct softfloat_status_t status = mxcsr_to_softfloat_status_word();
     SSE_GETSRC();
     cpu_state_high.XMM[cpu_reg].f[0] = f32_max(cpu_state_high.XMM[cpu_reg].f[0], src.f[0], &status);
-    softfloat_status_word_to_mxcsr(status);
-    /*int unmasked = (~cpu_state_high.mxcsr >> 7) & 0x3f;
+    /*softfloat_status_word_to_mxcsr(status);
+    int unmasked = (~cpu_state_high.mxcsr >> 7) & 0x3f;
     if ((cpu_state_high.mxcsr & 0x3f) & (unmasked & 0x3f)) {
         if (cr4 & CR4_OSXMMEXCPT)
             x86_int(0x13);
