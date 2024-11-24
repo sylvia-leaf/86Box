@@ -131,8 +131,8 @@ opCVTTSD2SI_l_xmm_a16(uint32_t fetchdat)
     SSE_GETSRC();
     struct softfloat_status_t status = mxcsr_to_softfloat_status_word(); 
     setr32(cpu_reg, f64_to_i32_round_to_zero(src.d[0], &status));
-    softfloat_status_word_to_mxcsr(status);
-    /*int unmasked = (~cpu_state_high.mxcsr >> 7) & 0x3f;
+    /*softfloat_status_word_to_mxcsr(status);
+    int unmasked = (~cpu_state_high.mxcsr >> 7) & 0x3f;
     if ((cpu_state_high.mxcsr & 0x3f) & (unmasked & 0x3f)) {
         if (cr4 & CR4_OSXMMEXCPT)
             x86_int(0x13);
@@ -150,8 +150,8 @@ opCVTTSD2SI_l_xmm_a32(uint32_t fetchdat)
     SSE_GETSRC();
     struct softfloat_status_t status = mxcsr_to_softfloat_status_word(); 
     setr32(cpu_reg, f64_to_i32_round_to_zero(src.d[0], &status));
-    softfloat_status_word_to_mxcsr(status);
-    /*int unmasked = (~cpu_state_high.mxcsr >> 7) & 0x3f;
+    /*softfloat_status_word_to_mxcsr(status);
+    int unmasked = (~cpu_state_high.mxcsr >> 7) & 0x3f;
     if ((cpu_state_high.mxcsr & 0x3f) & (unmasked & 0x3f)) {
         if (cr4 & CR4_OSXMMEXCPT)
             x86_int(0x13);
