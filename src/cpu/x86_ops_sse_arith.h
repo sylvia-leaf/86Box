@@ -1692,22 +1692,22 @@ opPMINUB_xmm_xmm_a16(uint32_t fetchdat)
     fetch_ea_16(fetchdat);
     SSE_GETSRC();
 
-    if(src,b[0] < cpu_state_high.XMM[cpu_reg].b[0]) cpu_state_high.XMM[cpu_reg].b[0] = src.b[0];
-    if(src,b[1] < cpu_state_high.XMM[cpu_reg].b[1]) cpu_state_high.XMM[cpu_reg].b[1] = src.b[1];
-    if(src,b[2] < cpu_state_high.XMM[cpu_reg].b[2]) cpu_state_high.XMM[cpu_reg].b[2] = src.b[2];
-    if(src,b[3] < cpu_state_high.XMM[cpu_reg].b[3]) cpu_state_high.XMM[cpu_reg].b[3] = src.b[3];
-    if(src,b[4] < cpu_state_high.XMM[cpu_reg].b[4]) cpu_state_high.XMM[cpu_reg].b[4] = src.b[4];
-    if(src,b[5] < cpu_state_high.XMM[cpu_reg].b[5]) cpu_state_high.XMM[cpu_reg].b[5] = src.b[5];
-    if(src,b[6] < cpu_state_high.XMM[cpu_reg].b[6]) cpu_state_high.XMM[cpu_reg].b[6] = src.b[6];
-    if(src,b[7] < cpu_state_high.XMM[cpu_reg].b[7]) cpu_state_high.XMM[cpu_reg].b[7] = src.b[7];
-    if(src,b[8] < cpu_state_high.XMM[cpu_reg].b[8]) cpu_state_high.XMM[cpu_reg].b[8] = src.b[8];
-    if(src,b[9] < cpu_state_high.XMM[cpu_reg].b[9]) cpu_state_high.XMM[cpu_reg].b[9] = src.b[9];
-    if(src,b[10] < cpu_state_high.XMM[cpu_reg].b[10]) cpu_state_high.XMM[cpu_reg].b[10] = src.b[10];
-    if(src,b[11] < cpu_state_high.XMM[cpu_reg].b[11]) cpu_state_high.XMM[cpu_reg].b[11] = src.b[11];
-    if(src,b[12] < cpu_state_high.XMM[cpu_reg].b[12]) cpu_state_high.XMM[cpu_reg].b[12] = src.b[12];
-    if(src,b[13] < cpu_state_high.XMM[cpu_reg].b[13]) cpu_state_high.XMM[cpu_reg].b[13] = src.b[13];
-    if(src,b[14] < cpu_state_high.XMM[cpu_reg].b[14]) cpu_state_high.XMM[cpu_reg].b[14] = src.b[14];
-    if(src,b[15] < cpu_state_high.XMM[cpu_reg].b[15]) cpu_state_high.XMM[cpu_reg].b[15] = src.b[15];
+    if(src.b[0] < cpu_state_high.XMM[cpu_reg].b[0]) cpu_state_high.XMM[cpu_reg].b[0] = src.b[0];
+    if(src.b[1] < cpu_state_high.XMM[cpu_reg].b[1]) cpu_state_high.XMM[cpu_reg].b[1] = src.b[1];
+    if(src.b[2] < cpu_state_high.XMM[cpu_reg].b[2]) cpu_state_high.XMM[cpu_reg].b[2] = src.b[2];
+    if(src.b[3] < cpu_state_high.XMM[cpu_reg].b[3]) cpu_state_high.XMM[cpu_reg].b[3] = src.b[3];
+    if(src.b[4] < cpu_state_high.XMM[cpu_reg].b[4]) cpu_state_high.XMM[cpu_reg].b[4] = src.b[4];
+    if(src.b[5] < cpu_state_high.XMM[cpu_reg].b[5]) cpu_state_high.XMM[cpu_reg].b[5] = src.b[5];
+    if(src.b[6] < cpu_state_high.XMM[cpu_reg].b[6]) cpu_state_high.XMM[cpu_reg].b[6] = src.b[6];
+    if(src.b[7] < cpu_state_high.XMM[cpu_reg].b[7]) cpu_state_high.XMM[cpu_reg].b[7] = src.b[7];
+    if(src.b[8] < cpu_state_high.XMM[cpu_reg].b[8]) cpu_state_high.XMM[cpu_reg].b[8] = src.b[8];
+    if(src.b[9] < cpu_state_high.XMM[cpu_reg].b[9]) cpu_state_high.XMM[cpu_reg].b[9] = src.b[9];
+    if(src.b[10] < cpu_state_high.XMM[cpu_reg].b[10]) cpu_state_high.XMM[cpu_reg].b[10] = src.b[10];
+    if(src.b[11] < cpu_state_high.XMM[cpu_reg].b[11]) cpu_state_high.XMM[cpu_reg].b[11] = src.b[11];
+    if(src.b[12] < cpu_state_high.XMM[cpu_reg].b[12]) cpu_state_high.XMM[cpu_reg].b[12] = src.b[12];
+    if(src.b[13] < cpu_state_high.XMM[cpu_reg].b[13]) cpu_state_high.XMM[cpu_reg].b[13] = src.b[13];
+    if(src.b[14] < cpu_state_high.XMM[cpu_reg].b[14]) cpu_state_high.XMM[cpu_reg].b[14] = src.b[14];
+    if(src.b[15] < cpu_state_high.XMM[cpu_reg].b[15]) cpu_state_high.XMM[cpu_reg].b[15] = src.b[15];
 
     return 0;
 }
@@ -1719,22 +1719,22 @@ opPMINUB_xmm_xmm_a32(uint32_t fetchdat)
     fetch_ea_32(fetchdat);
     SSE_GETSRC();
 
-    if(src,b[0] < cpu_state_high.XMM[cpu_reg].b[0]) cpu_state_high.XMM[cpu_reg].b[0] = src.b[0];
-    if(src,b[1] < cpu_state_high.XMM[cpu_reg].b[1]) cpu_state_high.XMM[cpu_reg].b[1] = src.b[1];
-    if(src,b[2] < cpu_state_high.XMM[cpu_reg].b[2]) cpu_state_high.XMM[cpu_reg].b[2] = src.b[2];
-    if(src,b[3] < cpu_state_high.XMM[cpu_reg].b[3]) cpu_state_high.XMM[cpu_reg].b[3] = src.b[3];
-    if(src,b[4] < cpu_state_high.XMM[cpu_reg].b[4]) cpu_state_high.XMM[cpu_reg].b[4] = src.b[4];
-    if(src,b[5] < cpu_state_high.XMM[cpu_reg].b[5]) cpu_state_high.XMM[cpu_reg].b[5] = src.b[5];
-    if(src,b[6] < cpu_state_high.XMM[cpu_reg].b[6]) cpu_state_high.XMM[cpu_reg].b[6] = src.b[6];
-    if(src,b[7] < cpu_state_high.XMM[cpu_reg].b[7]) cpu_state_high.XMM[cpu_reg].b[7] = src.b[7];
-    if(src,b[8] < cpu_state_high.XMM[cpu_reg].b[8]) cpu_state_high.XMM[cpu_reg].b[8] = src.b[8];
-    if(src,b[9] < cpu_state_high.XMM[cpu_reg].b[9]) cpu_state_high.XMM[cpu_reg].b[9] = src.b[9];
-    if(src,b[10] < cpu_state_high.XMM[cpu_reg].b[10]) cpu_state_high.XMM[cpu_reg].b[10] = src.b[10];
-    if(src,b[11] < cpu_state_high.XMM[cpu_reg].b[11]) cpu_state_high.XMM[cpu_reg].b[11] = src.b[11];
-    if(src,b[12] < cpu_state_high.XMM[cpu_reg].b[12]) cpu_state_high.XMM[cpu_reg].b[12] = src.b[12];
-    if(src,b[13] < cpu_state_high.XMM[cpu_reg].b[13]) cpu_state_high.XMM[cpu_reg].b[13] = src.b[13];
-    if(src,b[14] < cpu_state_high.XMM[cpu_reg].b[14]) cpu_state_high.XMM[cpu_reg].b[14] = src.b[14];
-    if(src,b[15] < cpu_state_high.XMM[cpu_reg].b[15]) cpu_state_high.XMM[cpu_reg].b[15] = src.b[15];
+    if(src.b[0] < cpu_state_high.XMM[cpu_reg].b[0]) cpu_state_high.XMM[cpu_reg].b[0] = src.b[0];
+    if(src.b[1] < cpu_state_high.XMM[cpu_reg].b[1]) cpu_state_high.XMM[cpu_reg].b[1] = src.b[1];
+    if(src.b[2] < cpu_state_high.XMM[cpu_reg].b[2]) cpu_state_high.XMM[cpu_reg].b[2] = src.b[2];
+    if(src.b[3] < cpu_state_high.XMM[cpu_reg].b[3]) cpu_state_high.XMM[cpu_reg].b[3] = src.b[3];
+    if(src.b[4] < cpu_state_high.XMM[cpu_reg].b[4]) cpu_state_high.XMM[cpu_reg].b[4] = src.b[4];
+    if(src.b[5] < cpu_state_high.XMM[cpu_reg].b[5]) cpu_state_high.XMM[cpu_reg].b[5] = src.b[5];
+    if(src.b[6] < cpu_state_high.XMM[cpu_reg].b[6]) cpu_state_high.XMM[cpu_reg].b[6] = src.b[6];
+    if(src.b[7] < cpu_state_high.XMM[cpu_reg].b[7]) cpu_state_high.XMM[cpu_reg].b[7] = src.b[7];
+    if(src.b[8] < cpu_state_high.XMM[cpu_reg].b[8]) cpu_state_high.XMM[cpu_reg].b[8] = src.b[8];
+    if(src.b[9] < cpu_state_high.XMM[cpu_reg].b[9]) cpu_state_high.XMM[cpu_reg].b[9] = src.b[9];
+    if(src.b[10] < cpu_state_high.XMM[cpu_reg].b[10]) cpu_state_high.XMM[cpu_reg].b[10] = src.b[10];
+    if(src.b[11] < cpu_state_high.XMM[cpu_reg].b[11]) cpu_state_high.XMM[cpu_reg].b[11] = src.b[11];
+    if(src.b[12] < cpu_state_high.XMM[cpu_reg].b[12]) cpu_state_high.XMM[cpu_reg].b[12] = src.b[12];
+    if(src.b[13] < cpu_state_high.XMM[cpu_reg].b[13]) cpu_state_high.XMM[cpu_reg].b[13] = src.b[13];
+    if(src.b[14] < cpu_state_high.XMM[cpu_reg].b[14]) cpu_state_high.XMM[cpu_reg].b[14] = src.b[14];
+    if(src.b[15] < cpu_state_high.XMM[cpu_reg].b[15]) cpu_state_high.XMM[cpu_reg].b[15] = src.b[15];
 
     return 0;
 }
@@ -1820,22 +1820,22 @@ opPMAXUB_xmm_xmm_a16(uint32_t fetchdat)
     fetch_ea_16(fetchdat);
     SSE_GETSRC();
     
-    if(src,b[0] > cpu_state_high.XMM[cpu_reg].b[0]) cpu_state_high.XMM[cpu_reg].b[0] = src.b[0];
-    if(src,b[1] > cpu_state_high.XMM[cpu_reg].b[1]) cpu_state_high.XMM[cpu_reg].b[1] = src.b[1];
-    if(src,b[2] > cpu_state_high.XMM[cpu_reg].b[2]) cpu_state_high.XMM[cpu_reg].b[2] = src.b[2];
-    if(src,b[3] > cpu_state_high.XMM[cpu_reg].b[3]) cpu_state_high.XMM[cpu_reg].b[3] = src.b[3];
-    if(src,b[4] > cpu_state_high.XMM[cpu_reg].b[4]) cpu_state_high.XMM[cpu_reg].b[4] = src.b[4];
-    if(src,b[5] > cpu_state_high.XMM[cpu_reg].b[5]) cpu_state_high.XMM[cpu_reg].b[5] = src.b[5];
-    if(src,b[6] > cpu_state_high.XMM[cpu_reg].b[6]) cpu_state_high.XMM[cpu_reg].b[6] = src.b[6];
-    if(src,b[7] > cpu_state_high.XMM[cpu_reg].b[7]) cpu_state_high.XMM[cpu_reg].b[7] = src.b[7];
-    if(src,b[8] > cpu_state_high.XMM[cpu_reg].b[8]) cpu_state_high.XMM[cpu_reg].b[8] = src.b[8];
-    if(src,b[9] > cpu_state_high.XMM[cpu_reg].b[9]) cpu_state_high.XMM[cpu_reg].b[9] = src.b[9];
-    if(src,b[10] > cpu_state_high.XMM[cpu_reg].b[10]) cpu_state_high.XMM[cpu_reg].b[10] = src.b[10];
-    if(src,b[11] > cpu_state_high.XMM[cpu_reg].b[11]) cpu_state_high.XMM[cpu_reg].b[11] = src.b[11];
-    if(src,b[12] > cpu_state_high.XMM[cpu_reg].b[12]) cpu_state_high.XMM[cpu_reg].b[12] = src.b[12];
-    if(src,b[13] > cpu_state_high.XMM[cpu_reg].b[13]) cpu_state_high.XMM[cpu_reg].b[13] = src.b[13];
-    if(src,b[14] > cpu_state_high.XMM[cpu_reg].b[14]) cpu_state_high.XMM[cpu_reg].b[14] = src.b[14];
-    if(src,b[15] > cpu_state_high.XMM[cpu_reg].b[15]) cpu_state_high.XMM[cpu_reg].b[15] = src.b[15];
+    if(src.b[0] > cpu_state_high.XMM[cpu_reg].b[0]) cpu_state_high.XMM[cpu_reg].b[0] = src.b[0];
+    if(src.b[1] > cpu_state_high.XMM[cpu_reg].b[1]) cpu_state_high.XMM[cpu_reg].b[1] = src.b[1];
+    if(src.b[2] > cpu_state_high.XMM[cpu_reg].b[2]) cpu_state_high.XMM[cpu_reg].b[2] = src.b[2];
+    if(src.b[3] > cpu_state_high.XMM[cpu_reg].b[3]) cpu_state_high.XMM[cpu_reg].b[3] = src.b[3];
+    if(src.b[4] > cpu_state_high.XMM[cpu_reg].b[4]) cpu_state_high.XMM[cpu_reg].b[4] = src.b[4];
+    if(src.b[5] > cpu_state_high.XMM[cpu_reg].b[5]) cpu_state_high.XMM[cpu_reg].b[5] = src.b[5];
+    if(src.b[6] > cpu_state_high.XMM[cpu_reg].b[6]) cpu_state_high.XMM[cpu_reg].b[6] = src.b[6];
+    if(src.b[7] > cpu_state_high.XMM[cpu_reg].b[7]) cpu_state_high.XMM[cpu_reg].b[7] = src.b[7];
+    if(src.b[8] > cpu_state_high.XMM[cpu_reg].b[8]) cpu_state_high.XMM[cpu_reg].b[8] = src.b[8];
+    if(src.b[9] > cpu_state_high.XMM[cpu_reg].b[9]) cpu_state_high.XMM[cpu_reg].b[9] = src.b[9];
+    if(src.b[10] > cpu_state_high.XMM[cpu_reg].b[10]) cpu_state_high.XMM[cpu_reg].b[10] = src.b[10];
+    if(src.b[11] > cpu_state_high.XMM[cpu_reg].b[11]) cpu_state_high.XMM[cpu_reg].b[11] = src.b[11];
+    if(src.b[12] > cpu_state_high.XMM[cpu_reg].b[12]) cpu_state_high.XMM[cpu_reg].b[12] = src.b[12];
+    if(src.b[13] > cpu_state_high.XMM[cpu_reg].b[13]) cpu_state_high.XMM[cpu_reg].b[13] = src.b[13];
+    if(src.b[14] > cpu_state_high.XMM[cpu_reg].b[14]) cpu_state_high.XMM[cpu_reg].b[14] = src.b[14];
+    if(src.b[15] > cpu_state_high.XMM[cpu_reg].b[15]) cpu_state_high.XMM[cpu_reg].b[15] = src.b[15];
 
     return 0;
 }
@@ -1847,22 +1847,22 @@ opPMAXUB_xmm_xmm_a32(uint32_t fetchdat)
     fetch_ea_32(fetchdat);
     SSE_GETSRC();
 
-    if(src,b[0] > cpu_state_high.XMM[cpu_reg].b[0]) cpu_state_high.XMM[cpu_reg].b[0] = src.b[0];
-    if(src,b[1] > cpu_state_high.XMM[cpu_reg].b[1]) cpu_state_high.XMM[cpu_reg].b[1] = src.b[1];
-    if(src,b[2] > cpu_state_high.XMM[cpu_reg].b[2]) cpu_state_high.XMM[cpu_reg].b[2] = src.b[2];
-    if(src,b[3] > cpu_state_high.XMM[cpu_reg].b[3]) cpu_state_high.XMM[cpu_reg].b[3] = src.b[3];
-    if(src,b[4] > cpu_state_high.XMM[cpu_reg].b[4]) cpu_state_high.XMM[cpu_reg].b[4] = src.b[4];
-    if(src,b[5] > cpu_state_high.XMM[cpu_reg].b[5]) cpu_state_high.XMM[cpu_reg].b[5] = src.b[5];
-    if(src,b[6] > cpu_state_high.XMM[cpu_reg].b[6]) cpu_state_high.XMM[cpu_reg].b[6] = src.b[6];
-    if(src,b[7] > cpu_state_high.XMM[cpu_reg].b[7]) cpu_state_high.XMM[cpu_reg].b[7] = src.b[7];
-    if(src,b[8] > cpu_state_high.XMM[cpu_reg].b[8]) cpu_state_high.XMM[cpu_reg].b[8] = src.b[8];
-    if(src,b[9] > cpu_state_high.XMM[cpu_reg].b[9]) cpu_state_high.XMM[cpu_reg].b[9] = src.b[9];
-    if(src,b[10] > cpu_state_high.XMM[cpu_reg].b[10]) cpu_state_high.XMM[cpu_reg].b[10] = src.b[10];
-    if(src,b[11] > cpu_state_high.XMM[cpu_reg].b[11]) cpu_state_high.XMM[cpu_reg].b[11] = src.b[11];
-    if(src,b[12] > cpu_state_high.XMM[cpu_reg].b[12]) cpu_state_high.XMM[cpu_reg].b[12] = src.b[12];
-    if(src,b[13] > cpu_state_high.XMM[cpu_reg].b[13]) cpu_state_high.XMM[cpu_reg].b[13] = src.b[13];
-    if(src,b[14] > cpu_state_high.XMM[cpu_reg].b[14]) cpu_state_high.XMM[cpu_reg].b[14] = src.b[14];
-    if(src,b[15] > cpu_state_high.XMM[cpu_reg].b[15]) cpu_state_high.XMM[cpu_reg].b[15] = src.b[15];
+    if(src.b[0] > cpu_state_high.XMM[cpu_reg].b[0]) cpu_state_high.XMM[cpu_reg].b[0] = src.b[0];
+    if(src.b[1] > cpu_state_high.XMM[cpu_reg].b[1]) cpu_state_high.XMM[cpu_reg].b[1] = src.b[1];
+    if(src.b[2] > cpu_state_high.XMM[cpu_reg].b[2]) cpu_state_high.XMM[cpu_reg].b[2] = src.b[2];
+    if(src.b[3] > cpu_state_high.XMM[cpu_reg].b[3]) cpu_state_high.XMM[cpu_reg].b[3] = src.b[3];
+    if(src.b[4] > cpu_state_high.XMM[cpu_reg].b[4]) cpu_state_high.XMM[cpu_reg].b[4] = src.b[4];
+    if(src.b[5] > cpu_state_high.XMM[cpu_reg].b[5]) cpu_state_high.XMM[cpu_reg].b[5] = src.b[5];
+    if(src.b[6] > cpu_state_high.XMM[cpu_reg].b[6]) cpu_state_high.XMM[cpu_reg].b[6] = src.b[6];
+    if(src.b[7] > cpu_state_high.XMM[cpu_reg].b[7]) cpu_state_high.XMM[cpu_reg].b[7] = src.b[7];
+    if(src.b[8] > cpu_state_high.XMM[cpu_reg].b[8]) cpu_state_high.XMM[cpu_reg].b[8] = src.b[8];
+    if(src.b[9] > cpu_state_high.XMM[cpu_reg].b[9]) cpu_state_high.XMM[cpu_reg].b[9] = src.b[9];
+    if(src.b[10] > cpu_state_high.XMM[cpu_reg].b[10]) cpu_state_high.XMM[cpu_reg].b[10] = src.b[10];
+    if(src.b[11] > cpu_state_high.XMM[cpu_reg].b[11]) cpu_state_high.XMM[cpu_reg].b[11] = src.b[11];
+    if(src.b[12] > cpu_state_high.XMM[cpu_reg].b[12]) cpu_state_high.XMM[cpu_reg].b[12] = src.b[12];
+    if(src.b[13] > cpu_state_high.XMM[cpu_reg].b[13]) cpu_state_high.XMM[cpu_reg].b[13] = src.b[13];
+    if(src.b[14] > cpu_state_high.XMM[cpu_reg].b[14]) cpu_state_high.XMM[cpu_reg].b[14] = src.b[14];
+    if(src.b[15] > cpu_state_high.XMM[cpu_reg].b[15]) cpu_state_high.XMM[cpu_reg].b[15] = src.b[15];
 
     return 0;
 }
