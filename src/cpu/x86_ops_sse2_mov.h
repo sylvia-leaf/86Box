@@ -854,136 +854,81 @@ opMOVDQU_l_xmm_a32(uint32_t fetchdat)
 static int
 opPSHUFLW_a16(uint32_t fetchdat)
 {
+    SSE_REG src. tmp;
     fetch_ea_16(fetchdat);
     uint8_t imm = getbyte();
     if (cpu_state.abrt)
         return 1;
-    if (cpu_mod == 3) {
-        cpu_state_high.XMM[cpu_reg].w[0] = cpu_state_high.XMM[cpu_rm].w[imm & 3];
-        cpu_state_high.XMM[cpu_reg].w[1] = cpu_state_high.XMM[cpu_rm].w[(imm >> 2) & 3];
-        cpu_state_high.XMM[cpu_reg].w[2] = cpu_state_high.XMM[cpu_rm].w[(imm >> 4) & 3];
-        cpu_state_high.XMM[cpu_reg].w[3] = cpu_state_high.XMM[cpu_rm].w[(imm >> 6) & 3];
-        cpu_state_high.XMM[cpu_reg].q[1] = cpu_state_high.XMM[cpu_rm].q[1];
-        CLOCK_CYCLES(1);
-    } else {
-        uint64_t src[2];
+    SSE_GETSRC();
+    tmp.q[1] = src.q[1];
+    tmp.w[0] = src.w[imm & 3];
+    tmp.w[1] = src.w[(imm >> 2) & 3];
+    tmp.w[2] = src.w[(imm >> 4) & 3];
+    tmp.w[3] = src.w[(imm >> 6) & 3];
 
-        SEG_CHECK_READ(cpu_state.ea_seg);
-        src[0] = readmemq(easeg, cpu_state.eaaddr);
-        if (cpu_state.abrt)
-            return 1;
-        src[1] = readmemq(easeg, cpu_state.eaaddr + 8);
-        if (cpu_state.abrt)
-            return 1;
-        cpu_state_high.XMM[cpu_reg].w[0] = (src[0] >> ((imm & 3) << 4)) & 0xffff;
-        cpu_state_high.XMM[cpu_reg].w[1] = (src[0] >> (((imm >> 2) & 3) << 4)) & 0xffff;
-        cpu_state_high.XMM[cpu_reg].w[2] = (src[0] >> (((imm >> 4) & 3) << 4)) & 0xffff;
-        cpu_state_high.XMM[cpu_reg].w[3] = (src[0] >> (((imm >> 6) & 3) << 4)) & 0xffff;
-        cpu_state_high.XMM[cpu_reg].q[1] = src[1];
-        CLOCK_CYCLES(2);
-    }
+    cpu_state_high.XMM[cpu_reg].q[0] = tmp.q[0];
+    cpu_state_high.XMM[cpu_reg].q[1] = tmp.q[1];
     return 0;
 }
 
 static int
 opPSHUFLW_a32(uint32_t fetchdat)
 {
+    SSE_REG src. tmp;
     fetch_ea_32(fetchdat);
     uint8_t imm = getbyte();
     if (cpu_state.abrt)
         return 1;
-    if (cpu_mod == 3) {
-        cpu_state_high.XMM[cpu_reg].w[0] = cpu_state_high.XMM[cpu_rm].w[imm & 3];
-        cpu_state_high.XMM[cpu_reg].w[1] = cpu_state_high.XMM[cpu_rm].w[(imm >> 2) & 3];
-        cpu_state_high.XMM[cpu_reg].w[2] = cpu_state_high.XMM[cpu_rm].w[(imm >> 4) & 3];
-        cpu_state_high.XMM[cpu_reg].w[3] = cpu_state_high.XMM[cpu_rm].w[(imm >> 6) & 3];
-        cpu_state_high.XMM[cpu_reg].q[1] = cpu_state_high.XMM[cpu_rm].q[1];
-        CLOCK_CYCLES(1);
-    } else {
-        uint64_t src[2];
+    SSE_GETSRC();
+    tmp.q[1] = src.q[1];
+    tmp.w[0] = src.w[imm & 3];
+    tmp.w[1] = src.w[(imm >> 2) & 3];
+    tmp.w[2] = src.w[(imm >> 4) & 3];
+    tmp.w[3] = src.w[(imm >> 6) & 3];
 
-        SEG_CHECK_READ(cpu_state.ea_seg);
-        src[0] = readmemq(easeg, cpu_state.eaaddr);
-        if (cpu_state.abrt)
-            return 1;
-        src[1] = readmemq(easeg, cpu_state.eaaddr + 8);
-        if (cpu_state.abrt)
-            return 1;
-        cpu_state_high.XMM[cpu_reg].w[0] = (src[0] >> ((imm & 3) << 4)) & 0xffff;
-        cpu_state_high.XMM[cpu_reg].w[1] = (src[0] >> (((imm >> 2) & 3) << 4)) & 0xffff;
-        cpu_state_high.XMM[cpu_reg].w[2] = (src[0] >> (((imm >> 4) & 3) << 4)) & 0xffff;
-        cpu_state_high.XMM[cpu_reg].w[3] = (src[0] >> (((imm >> 6) & 3) << 4)) & 0xffff;
-        cpu_state_high.XMM[cpu_reg].q[1] = src[1];
-        CLOCK_CYCLES(2);
-    }
+    cpu_state_high.XMM[cpu_reg].q[0] = tmp.q[0];
+    cpu_state_high.XMM[cpu_reg].q[1] = tmp.q[1];
     return 0;
 }
 
 static int
 opPSHUFHW_a16(uint32_t fetchdat)
 {
+    SSE_REG src. tmp;
     fetch_ea_16(fetchdat);
     uint8_t imm = getbyte();
     if (cpu_state.abrt)
         return 1;
-    if (cpu_mod == 3) {
-        cpu_state_high.XMM[cpu_reg].q[0] = cpu_state_high.XMM[cpu_rm].q[0];
-        cpu_state_high.XMM[cpu_reg].w[4] = cpu_state_high.XMM[cpu_rm].w[(imm & 3) + 4];
-        cpu_state_high.XMM[cpu_reg].w[5] = cpu_state_high.XMM[cpu_rm].w[((imm >> 2) & 3) + 4];
-        cpu_state_high.XMM[cpu_reg].w[6] = cpu_state_high.XMM[cpu_rm].w[((imm >> 4) & 3) + 4];
-        cpu_state_high.XMM[cpu_reg].w[7] = cpu_state_high.XMM[cpu_rm].w[((imm >> 6) & 3) + 4];
-        CLOCK_CYCLES(1);
-    } else {
-        uint64_t src[2];
+    SSE_GETSRC();
+    tmp.q[0] = src.q[0];
+    tmp.w[4] = src.w[(imm & 3) + 4];
+    tmp.w[5] = src.w[((imm >> 2) & 3) + 4];
+    tmp.w[6] = src.w[((imm >> 4) & 3) + 4];
+    tmp.w[7] = src.w[((imm >> 6) & 3) + 4];
 
-        SEG_CHECK_READ(cpu_state.ea_seg);
-        src[0] = readmemq(easeg, cpu_state.eaaddr);
-        if (cpu_state.abrt)
-            return 1;
-        src[1] = readmemq(easeg, cpu_state.eaaddr + 8);
-        if (cpu_state.abrt)
-            return 1;
-        cpu_state_high.XMM[cpu_reg].q[0] = src[0];
-        cpu_state_high.XMM[cpu_reg].w[4] = (src[1] >> ((imm & 3) << 4)) & 0xffff;
-        cpu_state_high.XMM[cpu_reg].w[5] = (src[1] >> (((imm >> 2) & 3) << 4)) & 0xffff;
-        cpu_state_high.XMM[cpu_reg].w[6] = (src[1] >> (((imm >> 4) & 3) << 4)) & 0xffff;
-        cpu_state_high.XMM[cpu_reg].w[7] = (src[1] >> (((imm >> 6) & 3) << 4)) & 0xffff;
-        CLOCK_CYCLES(2);
-    }
+    cpu_state_high.XMM[cpu_reg].q[0] = tmp.q[0];
+    cpu_state_high.XMM[cpu_reg].q[1] = tmp.q[1];
+
     return 0;
 }
 
 static int
 opPSHUFHW_a32(uint32_t fetchdat)
 {
+    SSE_REG src. tmp;
     fetch_ea_32(fetchdat);
     uint8_t imm = getbyte();
     if (cpu_state.abrt)
         return 1;
-    if (cpu_mod == 3) {
-        cpu_state_high.XMM[cpu_reg].q[0] = cpu_state_high.XMM[cpu_rm].q[0];
-        cpu_state_high.XMM[cpu_reg].w[4] = cpu_state_high.XMM[cpu_rm].w[(imm & 3) + 4];
-        cpu_state_high.XMM[cpu_reg].w[5] = cpu_state_high.XMM[cpu_rm].w[((imm >> 2) & 3) + 4];
-        cpu_state_high.XMM[cpu_reg].w[6] = cpu_state_high.XMM[cpu_rm].w[((imm >> 4) & 3) + 4];
-        cpu_state_high.XMM[cpu_reg].w[7] = cpu_state_high.XMM[cpu_rm].w[((imm >> 6) & 3) + 4];
-        CLOCK_CYCLES(1);
-    } else {
-        uint64_t src[2];
+    SSE_GETSRC();
+    tmp.q[0] = src.q[0];
+    tmp.w[4] = src.w[(imm & 3) + 4];
+    tmp.w[5] = src.w[((imm >> 2) & 3) + 4];
+    tmp.w[6] = src.w[((imm >> 4) & 3) + 4];
+    tmp.w[7] = src.w[((imm >> 6) & 3) + 4];
 
-        SEG_CHECK_READ(cpu_state.ea_seg);
-        src[0] = readmemq(easeg, cpu_state.eaaddr);
-        if (cpu_state.abrt)
-            return 1;
-        src[1] = readmemq(easeg, cpu_state.eaaddr + 8);
-        if (cpu_state.abrt)
-            return 1;
-        cpu_state_high.XMM[cpu_reg].q[0] = src[0];
-        cpu_state_high.XMM[cpu_reg].w[4] = (src[1] >> ((imm & 3) << 4)) & 0xffff;
-        cpu_state_high.XMM[cpu_reg].w[5] = (src[1] >> (((imm >> 2) & 3) << 4)) & 0xffff;
-        cpu_state_high.XMM[cpu_reg].w[6] = (src[1] >> (((imm >> 4) & 3) << 4)) & 0xffff;
-        cpu_state_high.XMM[cpu_reg].w[7] = (src[1] >> (((imm >> 6) & 3) << 4)) & 0xffff;
-        CLOCK_CYCLES(2);
-    }
+    cpu_state_high.XMM[cpu_reg].q[0] = tmp.q[0];
+    cpu_state_high.XMM[cpu_reg].q[1] = tmp.q[1];
     return 0;
 }
 
