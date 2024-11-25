@@ -854,7 +854,7 @@ opMOVDQU_l_xmm_a32(uint32_t fetchdat)
 static int
 opPSHUFLW_a16(uint32_t fetchdat)
 {
-    SSE_REG src. tmp;
+    SSE_REG src, tmp;
     fetch_ea_16(fetchdat);
     uint8_t imm = getbyte();
     if (cpu_state.abrt)
@@ -874,7 +874,7 @@ opPSHUFLW_a16(uint32_t fetchdat)
 static int
 opPSHUFLW_a32(uint32_t fetchdat)
 {
-    SSE_REG src. tmp;
+    SSE_REG src, tmp;
     fetch_ea_32(fetchdat);
     uint8_t imm = getbyte();
     if (cpu_state.abrt)
@@ -894,7 +894,7 @@ opPSHUFLW_a32(uint32_t fetchdat)
 static int
 opPSHUFHW_a16(uint32_t fetchdat)
 {
-    SSE_REG src. tmp;
+    SSE_REG src, tmp;
     fetch_ea_16(fetchdat);
     uint8_t imm = getbyte();
     if (cpu_state.abrt)
@@ -915,7 +915,7 @@ opPSHUFHW_a16(uint32_t fetchdat)
 static int
 opPSHUFHW_a32(uint32_t fetchdat)
 {
-    SSE_REG src. tmp;
+    SSE_REG src, tmp;
     fetch_ea_32(fetchdat);
     uint8_t imm = getbyte();
     if (cpu_state.abrt)
