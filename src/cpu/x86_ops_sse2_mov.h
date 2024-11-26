@@ -1330,8 +1330,8 @@ opMOVQ2DQ_a16(uint32_t fetchdat)
     ILLEGAL_ON(cpu_mod != 3);
     MMX_GETSRC();
 
-    cpu_state_high.XMM[cpu_rm].q[0] = src.q;
-    cpu_state_high.XMM[cpu_rm].q[1] = 0;
+    cpu_state_high.XMM[cpu_reg].q[0] = src.q;
+    cpu_state_high.XMM[cpu_reg].q[1] = 0;
     CLOCK_CYCLES(1);
     return 0;
 }
@@ -1345,8 +1345,8 @@ opMOVQ2DQ_a32(uint32_t fetchdat)
     ILLEGAL_ON(cpu_mod != 3);
     MMX_GETSRC();
 
-    cpu_state_high.XMM[cpu_rm].q[0] = src.q;
-    cpu_state_high.XMM[cpu_rm].q[1] = 0;
+    cpu_state_high.XMM[cpu_reg].q[0] = src.q;
+    cpu_state_high.XMM[cpu_reg].q[1] = 0;
     CLOCK_CYCLES(1);
     return 0;
 }
@@ -1358,10 +1358,10 @@ opMOVDQ2Q_a16(uint32_t fetchdat)
     MMX_ENTER();
     fetch_ea_16(fetchdat);
     ILLEGAL_ON(cpu_mod != 3);
-    dst = MMX_GETREGP(cpu_rm);
+    dst = MMX_GETREGP(cpu_reg);
 
-    dst->q = cpu_state_high.XMM[cpu_reg].q[0];
-    MMX_SETEXP(cpu_rm);
+    dst->q = cpu_state_high.XMM[cpu_rm].q[0];
+    MMX_SETEXP(cpu_reg);
     CLOCK_CYCLES(1);
     return 0;
 }
@@ -1373,10 +1373,10 @@ opMOVDQ2Q_a32(uint32_t fetchdat)
     MMX_ENTER();
     fetch_ea_32(fetchdat);
     ILLEGAL_ON(cpu_mod != 3);
-    dst = MMX_GETREGP(cpu_rm);
+    dst = MMX_GETREGP(cpu_reg);
 
-    dst->q = cpu_state_high.XMM[cpu_reg].q[0];
-    MMX_SETEXP(cpu_rm);
+    dst->q = cpu_state_high.XMM[cpu_rm].q[0];
+    MMX_SETEXP(cpu_reg);
     CLOCK_CYCLES(1);
     return 0;
 }
