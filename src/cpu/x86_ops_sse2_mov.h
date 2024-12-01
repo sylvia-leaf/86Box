@@ -1062,7 +1062,6 @@ opMOVQ_xmm_q_a16(uint32_t fetchdat)
     fetch_ea_16(fetchdat);
     if (cpu_mod == 3) {
         cpu_state_high.XMM[cpu_rm].q[0] = cpu_state_high.XMM[cpu_reg].q[0];
-        cpu_state_high.XMM[cpu_rm].q[1] = 0;
         CLOCK_CYCLES(1);
     } else {
         SEG_CHECK_WRITE(cpu_state.ea_seg);
@@ -1080,7 +1079,6 @@ opMOVQ_xmm_q_a32(uint32_t fetchdat)
     fetch_ea_32(fetchdat);
     if (cpu_mod == 3) {
         cpu_state_high.XMM[cpu_rm].q[0] = cpu_state_high.XMM[cpu_reg].q[0];
-        cpu_state_high.XMM[cpu_rm].q[1] = 0;
         CLOCK_CYCLES(1);
     } else {
         SEG_CHECK_WRITE(cpu_state.ea_seg);
@@ -1291,7 +1289,6 @@ opMOVQ_q_xmm_a16(uint32_t fetchdat)
     fetch_ea_16(fetchdat);
     if (cpu_mod == 3) {
         cpu_state_high.XMM[cpu_reg].q[0] = cpu_state_high.XMM[cpu_rm].q[0];
-        cpu_state_high.XMM[cpu_reg].q[1] = 0;
         CLOCK_CYCLES(1);
     } else {
         SEG_CHECK_READ(cpu_state.ea_seg);
@@ -1311,7 +1308,6 @@ opMOVQ_q_xmm_a32(uint32_t fetchdat)
     fetch_ea_32(fetchdat);
     if (cpu_mod == 3) {
         cpu_state_high.XMM[cpu_reg].q[0] = cpu_state_high.XMM[cpu_rm].q[0];
-        cpu_state_high.XMM[cpu_reg].q[1] = 0;
         CLOCK_CYCLES(1);
     } else {
         SEG_CHECK_READ(cpu_state.ea_seg);
