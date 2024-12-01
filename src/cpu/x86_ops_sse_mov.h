@@ -534,7 +534,7 @@ opMOVAPS_q_xmm_a16(uint32_t fetchdat)
         cpu_state_high.XMM[cpu_reg].f[3] = cpu_state_high.XMM[cpu_rm].f[3];
         CLOCK_CYCLES(1);
     } else {
-        uint64_t dst[4];
+        uint32_t dst[4];
 
         SEG_CHECK_READ(cpu_state.ea_seg);
         if (cpu_state.eaaddr & 0xf) {
@@ -576,7 +576,7 @@ opMOVAPS_q_xmm_a32(uint32_t fetchdat)
         cpu_state_high.XMM[cpu_reg].f[3] = cpu_state_high.XMM[cpu_rm].f[3];
         CLOCK_CYCLES(1);
     } else {
-        uint64_t dst[4];
+        uint32_t dst[4];
 
         SEG_CHECK_READ(cpu_state.ea_seg);
         if (cpu_state.eaaddr & 0xf) {
@@ -753,13 +753,13 @@ opMOVMSKPS_l_xmm_a16(uint32_t fetchdat)
     ILLEGAL_ON(cpu_mod != 3);
     if (cpu_mod == 3) {
         uint32_t result = 0;
-        if (cpu_state_high.XMM[cpu_rm].l[0] & (1 << 31))
+        if (cpu_state_high.XMM[cpu_rm].l[0] & (1u << 31))
             result |= 1;
-        if (cpu_state_high.XMM[cpu_rm].l[1] & (1 << 31))
+        if (cpu_state_high.XMM[cpu_rm].l[1] & (1u << 31))
             result |= 2;
-        if (cpu_state_high.XMM[cpu_rm].l[2] & (1 << 31))
+        if (cpu_state_high.XMM[cpu_rm].l[2] & (1u << 31))
             result |= 4;
-        if (cpu_state_high.XMM[cpu_rm].l[3] & (1 << 31))
+        if (cpu_state_high.XMM[cpu_rm].l[3] & (1u << 31))
             result |= 8;
         setr32(cpu_reg, result);
         CLOCK_CYCLES(1);
@@ -778,13 +778,13 @@ opMOVMSKPS_l_xmm_a32(uint32_t fetchdat)
     ILLEGAL_ON(cpu_mod != 3);
     if (cpu_mod == 3) {
         uint32_t result = 0;
-        if (cpu_state_high.XMM[cpu_rm].l[0] & (1 << 31))
+        if (cpu_state_high.XMM[cpu_rm].l[0] & (1u << 31))
             result |= 1;
-        if (cpu_state_high.XMM[cpu_rm].l[1] & (1 << 31))
+        if (cpu_state_high.XMM[cpu_rm].l[1] & (1u << 31))
             result |= 2;
-        if (cpu_state_high.XMM[cpu_rm].l[2] & (1 << 31))
+        if (cpu_state_high.XMM[cpu_rm].l[2] & (1u << 31))
             result |= 4;
-        if (cpu_state_high.XMM[cpu_rm].l[3] & (1 << 31))
+        if (cpu_state_high.XMM[cpu_rm].l[3] & (1u << 31))
             result |= 8;
         setr32(cpu_reg, result);
         CLOCK_CYCLES(1);
