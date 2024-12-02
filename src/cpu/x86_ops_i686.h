@@ -246,8 +246,6 @@ sf_fx_save_stor_common(uint32_t fetchdat, int bits)
             x86gpf(NULL, 0);
 #endif
         cpu_state_high.mxcsr = src & mxcsr_mask;
-        if(cpu_state_high.mxcsr & 0x8000) pclog("MXCSR FTZ active!\n");
-        if(cpu_state_high.mxcsr & 0x0040) pclog("MXCSR DAZ active!\n");
     } else if (fxinst == 3) {
         if (cpu_mod == 3) {
             x86illegal();
@@ -503,18 +501,6 @@ fx_save_stor_common(uint32_t fetchdat, int bits)
         writememl(easeg, cpu_state.eaaddr + 16, x87_op_off);
         writememw(easeg, cpu_state.eaaddr + 20, x87_op_seg);
 
-        if (cpu_state.ismmx) {
-            for (i = 0; i <= 7; i++) {
-                cpu_state.eaaddr = old_eaaddr + 32 + (i << 4);
-                x87_stmmx(cpu_state.MM[i]);
-            }
-        } else {
-            for (i = 0; i <= 7; i++) {
-                cpu_state.eaaddr = old_eaaddr + 32 + (i << 4);
-                x87_st_fsave(i);
-            }
-        }
-
         if ((cpu_features & CPU_FEATURE_SSE) && (cr4 & CR4_OSFXSR)) {
             writememl(easeg, cpu_state.eaaddr + 24, cpu_state_high.mxcsr);
             if (!(cpu_features & CPU_FEATURE_SSE2))
@@ -537,6 +523,18 @@ fx_save_stor_common(uint32_t fetchdat, int bits)
             writememq(easeg, cpu_state.eaaddr + 0x108, cpu_state_high.XMM[6].q[1]);
             writememq(easeg, cpu_state.eaaddr + 0x110, cpu_state_high.XMM[7].q[0]);
             writememq(easeg, cpu_state.eaaddr + 0x118, cpu_state_high.XMM[7].q[1]);
+        }
+
+        if (cpu_state.ismmx) {
+            for (i = 0; i <= 7; i++) {
+                cpu_state.eaaddr = old_eaaddr + 32 + (i << 4);
+                x87_stmmx(cpu_state.MM[i]);
+            }
+        } else {
+            for (i = 0; i <= 7; i++) {
+                cpu_state.eaaddr = old_eaaddr + 32 + (i << 4);
+                x87_st_fsave(i);
+            }
         }
 
         cpu_state.eaaddr = old_eaaddr;
