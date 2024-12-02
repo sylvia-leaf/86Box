@@ -132,22 +132,12 @@ sf_fx_save_stor_common(uint32_t fetchdat, int bits)
                 cpu_state_high.mxcsr = readmeml(easeg, cpu_state.eaaddr + 24) & 0xffbf;
             else
                 cpu_state_high.mxcsr = readmeml(easeg, cpu_state.eaaddr + 24) & 0xffff;
-            cpu_state_high.XMM[0].q[0] = readmemq(easeg, cpu_state.eaaddr + 0xa0);
-            cpu_state_high.XMM[0].q[1] = readmemq(easeg, cpu_state.eaaddr + 0xa8);
-            cpu_state_high.XMM[1].q[0] = readmemq(easeg, cpu_state.eaaddr + 0xb0);
-            cpu_state_high.XMM[1].q[1] = readmemq(easeg, cpu_state.eaaddr + 0xb8);
-            cpu_state_high.XMM[2].q[0] = readmemq(easeg, cpu_state.eaaddr + 0xc0);
-            cpu_state_high.XMM[2].q[1] = readmemq(easeg, cpu_state.eaaddr + 0xc8);
-            cpu_state_high.XMM[3].q[0] = readmemq(easeg, cpu_state.eaaddr + 0xd0);
-            cpu_state_high.XMM[3].q[1] = readmemq(easeg, cpu_state.eaaddr + 0xd8);
-            cpu_state_high.XMM[4].q[0] = readmemq(easeg, cpu_state.eaaddr + 0xe0);
-            cpu_state_high.XMM[4].q[1] = readmemq(easeg, cpu_state.eaaddr + 0xe8);
-            cpu_state_high.XMM[5].q[0] = readmemq(easeg, cpu_state.eaaddr + 0xf0);
-            cpu_state_high.XMM[5].q[1] = readmemq(easeg, cpu_state.eaaddr + 0xf8);
-            cpu_state_high.XMM[6].q[0] = readmemq(easeg, cpu_state.eaaddr + 0x100);
-            cpu_state_high.XMM[6].q[1] = readmemq(easeg, cpu_state.eaaddr + 0x108);
-            cpu_state_high.XMM[7].q[0] = readmemq(easeg, cpu_state.eaaddr + 0x110);
-            cpu_state_high.XMM[7].q[1] = readmemq(easeg, cpu_state.eaaddr + 0x118);
+
+            for(int i = 0; i < 8; i++)
+            {
+                cpu_state_high.XMM[i].q[0] = readmemq(easeg, cpu_state.eaaddr + 0xa0 + (i << 4));
+                cpu_state_high.XMM[i].q[1] = readmemq(easeg, cpu_state.eaaddr + 0xa8 + (i << 4));
+            }
         }
 
         CLOCK_CYCLES((cr0 & 1) ? 34 : 44);
@@ -207,22 +197,12 @@ sf_fx_save_stor_common(uint32_t fetchdat, int bits)
                 writememl(easeg, cpu_state.eaaddr + 28, 0xffbf);
             else
                 writememl(easeg, cpu_state.eaaddr + 28, 0xffff);
-            writememq(easeg, cpu_state.eaaddr + 0xa0, cpu_state_high.XMM[0].q[0]);
-            writememq(easeg, cpu_state.eaaddr + 0xa8, cpu_state_high.XMM[0].q[1]);
-            writememq(easeg, cpu_state.eaaddr + 0xb0, cpu_state_high.XMM[1].q[0]);
-            writememq(easeg, cpu_state.eaaddr + 0xb8, cpu_state_high.XMM[1].q[1]);
-            writememq(easeg, cpu_state.eaaddr + 0xc0, cpu_state_high.XMM[2].q[0]);
-            writememq(easeg, cpu_state.eaaddr + 0xc8, cpu_state_high.XMM[2].q[1]);
-            writememq(easeg, cpu_state.eaaddr + 0xd0, cpu_state_high.XMM[3].q[0]);
-            writememq(easeg, cpu_state.eaaddr + 0xd8, cpu_state_high.XMM[3].q[1]);
-            writememq(easeg, cpu_state.eaaddr + 0xe0, cpu_state_high.XMM[4].q[0]);
-            writememq(easeg, cpu_state.eaaddr + 0xe8, cpu_state_high.XMM[4].q[1]);
-            writememq(easeg, cpu_state.eaaddr + 0xf0, cpu_state_high.XMM[5].q[0]);
-            writememq(easeg, cpu_state.eaaddr + 0xf8, cpu_state_high.XMM[5].q[1]);
-            writememq(easeg, cpu_state.eaaddr + 0x100, cpu_state_high.XMM[6].q[0]);
-            writememq(easeg, cpu_state.eaaddr + 0x108, cpu_state_high.XMM[6].q[1]);
-            writememq(easeg, cpu_state.eaaddr + 0x110, cpu_state_high.XMM[7].q[0]);
-            writememq(easeg, cpu_state.eaaddr + 0x118, cpu_state_high.XMM[7].q[1]);
+
+            for(int i = 0; i < 8; i++)
+            {
+                writememq(easeg, cpu_state.eaaddr + 0xa0 + (i << 4), cpu_state_high.XMM[i].q[0]);
+                writememq(easeg, cpu_state.eaaddr + 0xa8 + (i << 4), cpu_state_high.XMM[i].q[1]);
+            }
         }
 
         CLOCK_CYCLES((cr0 & 1) ? 56 : 67);
@@ -431,22 +411,12 @@ fx_save_stor_common(uint32_t fetchdat, int bits)
                 cpu_state_high.mxcsr = readmeml(easeg, cpu_state.eaaddr + 24) & 0xffbf;
             else
                 cpu_state_high.mxcsr = readmeml(easeg, cpu_state.eaaddr + 24) & 0xffff;
-            cpu_state_high.XMM[0].q[0] = readmemq(easeg, cpu_state.eaaddr + 0xa0);
-            cpu_state_high.XMM[0].q[1] = readmemq(easeg, cpu_state.eaaddr + 0xa8);
-            cpu_state_high.XMM[1].q[0] = readmemq(easeg, cpu_state.eaaddr + 0xb0);
-            cpu_state_high.XMM[1].q[1] = readmemq(easeg, cpu_state.eaaddr + 0xb8);
-            cpu_state_high.XMM[2].q[0] = readmemq(easeg, cpu_state.eaaddr + 0xc0);
-            cpu_state_high.XMM[2].q[1] = readmemq(easeg, cpu_state.eaaddr + 0xc8);
-            cpu_state_high.XMM[3].q[0] = readmemq(easeg, cpu_state.eaaddr + 0xd0);
-            cpu_state_high.XMM[3].q[1] = readmemq(easeg, cpu_state.eaaddr + 0xd8);
-            cpu_state_high.XMM[4].q[0] = readmemq(easeg, cpu_state.eaaddr + 0xe0);
-            cpu_state_high.XMM[4].q[1] = readmemq(easeg, cpu_state.eaaddr + 0xe8);
-            cpu_state_high.XMM[5].q[0] = readmemq(easeg, cpu_state.eaaddr + 0xf0);
-            cpu_state_high.XMM[5].q[1] = readmemq(easeg, cpu_state.eaaddr + 0xf8);
-            cpu_state_high.XMM[6].q[0] = readmemq(easeg, cpu_state.eaaddr + 0x100);
-            cpu_state_high.XMM[6].q[1] = readmemq(easeg, cpu_state.eaaddr + 0x108);
-            cpu_state_high.XMM[7].q[0] = readmemq(easeg, cpu_state.eaaddr + 0x110);
-            cpu_state_high.XMM[7].q[1] = readmemq(easeg, cpu_state.eaaddr + 0x118);
+
+            for(int i = 0; i < 8; i++)
+            {
+                cpu_state_high.XMM[i].q[0] = readmemq(easeg, cpu_state.eaaddr + 0xa0 + (i << 4));
+                cpu_state_high.XMM[i].q[1] = readmemq(easeg, cpu_state.eaaddr + 0xa8 + (i << 4));
+            }
         }
         if (cpu_state.ismmx) {
             for (i = 0; i <= 7; i++) {
@@ -507,22 +477,11 @@ fx_save_stor_common(uint32_t fetchdat, int bits)
                 writememl(easeg, cpu_state.eaaddr + 28, 0xffbf);
             else
                 writememl(easeg, cpu_state.eaaddr + 28, 0xffff);
-            writememq(easeg, cpu_state.eaaddr + 0xa0, cpu_state_high.XMM[0].q[0]);
-            writememq(easeg, cpu_state.eaaddr + 0xa8, cpu_state_high.XMM[0].q[1]);
-            writememq(easeg, cpu_state.eaaddr + 0xb0, cpu_state_high.XMM[1].q[0]);
-            writememq(easeg, cpu_state.eaaddr + 0xb8, cpu_state_high.XMM[1].q[1]);
-            writememq(easeg, cpu_state.eaaddr + 0xc0, cpu_state_high.XMM[2].q[0]);
-            writememq(easeg, cpu_state.eaaddr + 0xc8, cpu_state_high.XMM[2].q[1]);
-            writememq(easeg, cpu_state.eaaddr + 0xd0, cpu_state_high.XMM[3].q[0]);
-            writememq(easeg, cpu_state.eaaddr + 0xd8, cpu_state_high.XMM[3].q[1]);
-            writememq(easeg, cpu_state.eaaddr + 0xe0, cpu_state_high.XMM[4].q[0]);
-            writememq(easeg, cpu_state.eaaddr + 0xe8, cpu_state_high.XMM[4].q[1]);
-            writememq(easeg, cpu_state.eaaddr + 0xf0, cpu_state_high.XMM[5].q[0]);
-            writememq(easeg, cpu_state.eaaddr + 0xf8, cpu_state_high.XMM[5].q[1]);
-            writememq(easeg, cpu_state.eaaddr + 0x100, cpu_state_high.XMM[6].q[0]);
-            writememq(easeg, cpu_state.eaaddr + 0x108, cpu_state_high.XMM[6].q[1]);
-            writememq(easeg, cpu_state.eaaddr + 0x110, cpu_state_high.XMM[7].q[0]);
-            writememq(easeg, cpu_state.eaaddr + 0x118, cpu_state_high.XMM[7].q[1]);
+            for(int i = 0; i < 8; i++)
+            {
+                writememq(easeg, cpu_state.eaaddr + 0xa0 + (i << 4), cpu_state_high.XMM[i].q[0]);
+                writememq(easeg, cpu_state.eaaddr + 0xa8 + (i << 4), cpu_state_high.XMM[i].q[1]);
+            }
         }
 
         if (cpu_state.ismmx) {
