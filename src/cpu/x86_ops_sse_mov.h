@@ -1276,42 +1276,42 @@ opMASKMOVQ_l_mm_a16(uint32_t fetchdat)
         src = MMX_GETREG(cpu_rm);
         SEG_CHECK_WRITE(cpu_state.ea_seg);
         if (src.b[0] & (1 << 7)) {
-            writememb(ds, DI, dst.b[0]);
+            writememb(cpu_state.ea_seg, DI, dst.b[0]);
             if (cpu_state.abrt)
                 return 1;
         }
         if (src.b[1] & (1 << 7)) {
-            writememb(ds, DI + 1, dst.b[1]);
+            writememb(cpu_state.ea_seg, DI + 1, dst.b[1]);
             if (cpu_state.abrt)
                 return 1;
         }
         if (src.b[2] & (1 << 7)) {
-            writememb(ds, DI + 2, dst.b[2]);
+            writememb(cpu_state.ea_seg, DI + 2, dst.b[2]);
             if (cpu_state.abrt)
                 return 1;
         }
         if (src.b[3] & (1 << 7)) {
-            writememb(ds, DI + 3, dst.b[3]);
+            writememb(cpu_state.ea_seg, DI + 3, dst.b[3]);
             if (cpu_state.abrt)
                 return 1;
         }
         if (src.b[4] & (1 << 7)) {
-            writememb(ds, DI + 4, dst.b[4]);
+            writememb(cpu_state.ea_seg, DI + 4, dst.b[4]);
             if (cpu_state.abrt)
                 return 1;
         }
         if (src.b[5] & (1 << 7)) {
-            writememb(ds, DI + 5, dst.b[5]);
+            writememb(cpu_state.ea_seg, DI + 5, dst.b[5]);
             if (cpu_state.abrt)
                 return 1;
         }
         if (src.b[6] & (1 << 7)) {
-            writememb(ds, DI + 6, dst.b[6]);
+            writememb(cpu_state.ea_seg, DI + 6, dst.b[6]);
             if (cpu_state.abrt)
                 return 1;
         }
         if (src.b[7] & (1 << 7)) {
-            writememb(ds, DI + 7, dst.b[7]);
+            writememb(cpu_state.ea_seg, DI + 7, dst.b[7]);
             if (cpu_state.abrt)
                 return 1;
         }
@@ -1337,42 +1337,42 @@ opMASKMOVQ_l_mm_a32(uint32_t fetchdat)
         src = MMX_GETREG(cpu_rm);
         SEG_CHECK_WRITE(cpu_state.ea_seg);
         if (src.b[0] & (1 << 7)) {
-            writememb(ds, EDI, dst.b[0]);
+            writememb(cpu_state.ea_seg, EDI, dst.b[0]);
             if (cpu_state.abrt)
                 return 1;
         }
         if (src.b[1] & (1 << 7)) {
-            writememb(ds, EDI + 1, dst.b[1]);
+            writememb(cpu_state.ea_seg, EDI + 1, dst.b[1]);
             if (cpu_state.abrt)
                 return 1;
         }
         if (src.b[2] & (1 << 7)) {
-            writememb(ds, EDI + 2, dst.b[2]);
+            writememb(cpu_state.ea_seg, EDI + 2, dst.b[2]);
             if (cpu_state.abrt)
                 return 1;
         }
         if (src.b[3] & (1 << 7)) {
-            writememb(ds, EDI + 3, dst.b[3]);
+            writememb(cpu_state.ea_seg, EDI + 3, dst.b[3]);
             if (cpu_state.abrt)
                 return 1;
         }
         if (src.b[4] & (1 << 7)) {
-            writememb(ds, EDI + 4, dst.b[4]);
+            writememb(cpu_state.ea_seg, EDI + 4, dst.b[4]);
             if (cpu_state.abrt)
                 return 1;
         }
         if (src.b[5] & (1 << 7)) {
-            writememb(ds, EDI + 5, dst.b[5]);
+            writememb(cpu_state.ea_seg, EDI + 5, dst.b[5]);
             if (cpu_state.abrt)
                 return 1;
         }
         if (src.b[6] & (1 << 7)) {
-            writememb(ds, EDI + 6, dst.b[6]);
+            writememb(cpu_state.ea_seg, EDI + 6, dst.b[6]);
             if (cpu_state.abrt)
                 return 1;
         }
         if (src.b[7] & (1 << 7)) {
-            writememb(ds, EDI + 7, dst.b[7]);
+            writememb(cpu_state.ea_seg, EDI + 7, dst.b[7]);
             if (cpu_state.abrt)
                 return 1;
         }
