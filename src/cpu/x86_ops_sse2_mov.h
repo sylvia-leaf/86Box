@@ -1428,83 +1428,87 @@ opMASKMOVDQU_a16(uint32_t fetchdat)
     ILLEGAL_ON(cpu_mod != 3);
     if (cpu_mod == 3) {
         SEG_CHECK_WRITE(cpu_state.ea_seg);
-        if (cpu_state_high.XMM[cpu_rm].b[0] & (1 << 7)) {
-            writememb(easeg, DI, cpu_state_high.XMM[cpu_reg].b[0]);
+        SSE_REG src, dst;
+        dst = cpu_state_high.XMM[cpu_reg];
+        src = cpu_state_high.XMM[cpu_rm];
+        SEG_CHECK_WRITE(cpu_state.ea_seg);
+        if (src.b[0] & (1 << 7)) {
+            writememb(easeg, DI, dst.b[0]);
             if (cpu_state.abrt)
                 return 1;
         }
-        if (cpu_state_high.XMM[cpu_rm].b[1] & (1 << 7)) {
-            writememb(easeg, DI + 1, cpu_state_high.XMM[cpu_reg].b[1]);
+        if (src.b[1] & (1 << 7)) {
+            writememb(easeg, DI + 1, dst.b[1]);
             if (cpu_state.abrt)
                 return 1;
         }
-        if (cpu_state_high.XMM[cpu_rm].b[2] & (1 << 7)) {
-            writememb(easeg, DI + 2, cpu_state_high.XMM[cpu_reg].b[2]);
+        if (src.b[2] & (1 << 7)) {
+            writememb(easeg, DI + 2, dst.b[2]);
             if (cpu_state.abrt)
                 return 1;
         }
-        if (cpu_state_high.XMM[cpu_rm].b[3] & (1 << 7)) {
-            writememb(easeg, DI + 3, cpu_state_high.XMM[cpu_reg].b[3]);
+        if (src.b[3] & (1 << 7)) {
+            writememb(easeg, DI + 3, dst.b[3]);
             if (cpu_state.abrt)
                 return 1;
         }
-        if (cpu_state_high.XMM[cpu_rm].b[4] & (1 << 7)) {
-            writememb(easeg, DI + 4, cpu_state_high.XMM[cpu_reg].b[4]);
+        if (src.b[4] & (1 << 7)) {
+            writememb(easeg, DI + 4, dst.b[4]);
             if (cpu_state.abrt)
                 return 1;
         }
-        if (cpu_state_high.XMM[cpu_rm].b[5] & (1 << 7)) {
-            writememb(easeg, DI + 5, cpu_state_high.XMM[cpu_reg].b[5]);
+        if (src.b[5] & (1 << 7)) {
+            writememb(easeg, DI + 5, dst.b[5]);
             if (cpu_state.abrt)
                 return 1;
         }
-        if (cpu_state_high.XMM[cpu_rm].b[6] & (1 << 7)) {
-            writememb(easeg, DI + 6, cpu_state_high.XMM[cpu_reg].b[6]);
+        if (src.b[6] & (1 << 7)) {
+            writememb(easeg, DI + 6, dst.b[6]);
             if (cpu_state.abrt)
                 return 1;
         }
-        if (cpu_state_high.XMM[cpu_rm].b[7] & (1 << 7)) {
-            writememb(easeg, DI + 7, cpu_state_high.XMM[cpu_reg].b[7]);
+        if (src.b[7] & (1 << 7)) {
+            writememb(easeg, DI + 7, dst.b[7]);
             if (cpu_state.abrt)
                 return 1;
         }
-        if (cpu_state_high.XMM[cpu_rm].b[8] & (1 << 7)) {
-            writememb(easeg, DI + 8, cpu_state_high.XMM[cpu_reg].b[8]);
+        if (src.b[8] & (1 << 7)) {
+            writememb(easeg, DI + 8, dst.b[8]);
             if (cpu_state.abrt)
                 return 1;
         }
-        if (cpu_state_high.XMM[cpu_rm].b[9] & (1 << 7)) {
-            writememb(easeg, DI + 9, cpu_state_high.XMM[cpu_reg].b[9]);
+        if (src.b[9] & (1 << 7)) {
+            writememb(easeg, DI + 9, dst.b[9]);
             if (cpu_state.abrt)
                 return 1;
         }
-        if (cpu_state_high.XMM[cpu_rm].b[10] & (1 << 7)) {
-            writememb(easeg, DI + 10, cpu_state_high.XMM[cpu_reg].b[10]);
+        if (src.b[10] & (1 << 7)) {
+            writememb(easeg, DI + 10, dst.b[10]);
             if (cpu_state.abrt)
                 return 1;
         }
-        if (cpu_state_high.XMM[cpu_rm].b[11] & (1 << 7)) {
-            writememb(easeg, DI + 11, cpu_state_high.XMM[cpu_reg].b[11]);
+        if (src.b[11] & (1 << 7)) {
+            writememb(easeg, DI + 11, dst.b[11]);
             if (cpu_state.abrt)
                 return 1;
         }
-        if (cpu_state_high.XMM[cpu_rm].b[12] & (1 << 7)) {
-            writememb(easeg, DI + 12, cpu_state_high.XMM[cpu_reg].b[12]);
+        if (src.b[12] & (1 << 7)) {
+            writememb(easeg, DI + 12, dst.b[12]);
             if (cpu_state.abrt)
                 return 1;
         }
-        if (cpu_state_high.XMM[cpu_rm].b[13] & (1 << 7)) {
-            writememb(easeg, DI + 13, cpu_state_high.XMM[cpu_reg].b[13]);
+        if (src.b[13] & (1 << 7)) {
+            writememb(easeg, DI + 13, dst.b[13]);
             if (cpu_state.abrt)
                 return 1;
         }
-        if (cpu_state_high.XMM[cpu_rm].b[14] & (1 << 7)) {
-            writememb(easeg, DI + 14, cpu_state_high.XMM[cpu_reg].b[14]);
+        if (src.b[14] & (1 << 7)) {
+            writememb(easeg, DI + 14, dst.b[14]);
             if (cpu_state.abrt)
                 return 1;
         }
-        if (cpu_state_high.XMM[cpu_rm].b[15] & (1 << 7)) {
-            writememb(easeg, DI + 15, cpu_state_high.XMM[cpu_reg].b[15]);
+        if (src.b[15] & (1 << 7)) {
+            writememb(easeg, DI + 15, dst.b[15]);
             if (cpu_state.abrt)
                 return 1;
         }
@@ -1521,7 +1525,7 @@ opMASKMOVDQU_a32(uint32_t fetchdat)
     if (cpu_mod == 3) {
         SSE_REG src, dst;
         dst = cpu_state_high.XMM[cpu_reg];
-        src = cpu_state_high.XMM[cpu_rm]
+        src = cpu_state_high.XMM[cpu_rm];
         SEG_CHECK_WRITE(cpu_state.ea_seg);
         if (src.b[0] & (1 << 7)) {
             writememb(easeg, EDI, dst.b[0]);
