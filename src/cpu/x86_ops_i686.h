@@ -225,7 +225,7 @@ sf_fx_save_stor_common(uint32_t fetchdat, int bits)
         if(src & ~mxcsr_mask)
             x86gpf(NULL, 0);
 #endif
-        cpu_state_high.mxcsr = src & mxcsr_mask;
+        cpu_state_high.mxcsr = src;// & mxcsr_mask;
     } else if (fxinst == 3) {
         if (cpu_mod == 3) {
             x86illegal();
@@ -376,6 +376,19 @@ fx_save_stor_common(uint32_t fetchdat, int bits)
         x87_op_off |= (readmemw(easeg, cpu_state.eaaddr + 6) >> 12) << 16;
         x87_op_seg = readmemw(easeg, cpu_state.eaaddr + 20);
 
+        if ((cpu_features & CPU_FEATURE_SSE) && (cr4 & CR4_OSFXSR)) {
+            if (!(cpu_features & CPU_FEATURE_SSE2))
+                cpu_state_high.mxcsr = readmeml(easeg, cpu_state.eaaddr + 24) & 0xffbf;
+            else
+                cpu_state_high.mxcsr = readmeml(easeg, cpu_state.eaaddr + 24) & 0xffff;
+
+            for(int i = 0; i < 8; i++)
+            {
+                cpu_state_high.XMM[i].q[0] = readmemq(easeg, cpu_state.eaaddr + 0xa0 + (i << 4));
+                cpu_state_high.XMM[i].q[1] = readmemq(easeg, cpu_state.eaaddr + 0xa8 + (i << 4));
+            }
+        }
+
         for (i = 0; i <= 7; i++) {
             cpu_state.eaaddr = old_eaaddr + 32 + (i << 4);
             mant             = readmemq(easeg, cpu_state.eaaddr);
@@ -406,18 +419,6 @@ fx_save_stor_common(uint32_t fetchdat, int bits)
 
         x87_settag(rec_ftw);
 
-        if ((cpu_features & CPU_FEATURE_SSE) && (cr4 & CR4_OSFXSR)) {
-            if (!(cpu_features & CPU_FEATURE_SSE2))
-                cpu_state_high.mxcsr = readmeml(easeg, cpu_state.eaaddr + 24) & 0xffbf;
-            else
-                cpu_state_high.mxcsr = readmeml(easeg, cpu_state.eaaddr + 24) & 0xffff;
-
-            for(int i = 0; i < 8; i++)
-            {
-                cpu_state_high.XMM[i].q[0] = readmemq(easeg, cpu_state.eaaddr + 0xa0 + (i << 4));
-                cpu_state_high.XMM[i].q[1] = readmemq(easeg, cpu_state.eaaddr + 0xa8 + (i << 4));
-            }
-        }
         if (cpu_state.ismmx) {
             for (i = 0; i <= 7; i++) {
                 cpu_state.eaaddr = old_eaaddr + 32 + (i << 4);
@@ -500,6 +501,7 @@ fx_save_stor_common(uint32_t fetchdat, int bits)
 
         CLOCK_CYCLES((cr0 & 1) ? 56 : 67);
     } else if (fxinst == 2) {
+        //LDMXCSR
         if (cpu_mod == 3) {
             x86illegal();
             return cpu_state.abrt;
@@ -518,8 +520,9 @@ fx_save_stor_common(uint32_t fetchdat, int bits)
         if(src & ~mxcsr_mask)
             x86gpf(NULL, 0);
 #endif
-        cpu_state_high.mxcsr = src & mxcsr_mask;
+        cpu_state_high.mxcsr = src;// & mxcsr_mask;
     } else if (fxinst == 3) {
+        //STMXCSR
         if (cpu_mod == 3) {
             x86illegal();
             return cpu_state.abrt;
