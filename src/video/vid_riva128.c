@@ -254,7 +254,7 @@ riva128_pci_read(int func, int addr, void *p)
 		return 0x02; /*Fast DEVSEL timing*/
 
 	case 0x08:
-		return 0x00; /*Revision ID*/
+		return 0x10; /*Revision ID*/
 	case 0x09:
 		return 0x00; /*Programming interface*/
 
