@@ -1150,7 +1150,7 @@ static void
 
     svga->vblank_start = rivatnt_vblank_start;
 
-    pci_add_card(PCI_ADD_VIDEO, rivatnt_pci_read, rivatnt_pci_write, rivatnt, &rivatnt->pci_slot);
+    pci_add_card(PCI_ADD_NORMAL, rivatnt_pci_read, rivatnt_pci_write, rivatnt, &rivatnt->pci_slot);
 
     rivatnt->pci_regs[0x04] = 0x07;
     rivatnt->pci_regs[0x05] = 0x00;

@@ -2683,7 +2683,7 @@ static void
 	io_sethandler(0x03c0, 0x0020, riva128_in, NULL, NULL, riva128_out,
 			NULL, NULL, riva128);
 
-	pci_add_card(PCI_ADD_VIDEO, riva128_pci_read,
+	pci_add_card(PCI_ADD_NORMAL, riva128_pci_read,
 			riva128_pci_write, riva128, &riva128->pci_slot);
 
 	riva128->pci_regs[0x04] = 0x08;
