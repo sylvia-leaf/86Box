@@ -549,7 +549,7 @@ riva128_pmc_read(uint32_t addr, void *p)
 
 	switch(addr) {
 	case 0x000000:
-		return 0x00030100; /* ID register. */
+		return 0x00030110; /* ID register. */
 	case 0x000100:
 		pci_clear_irq(riva128->pci_slot, PCI_INTA, &riva128->irq_state);
 		return riva128_pmc_recompute_intr(0, riva128);
