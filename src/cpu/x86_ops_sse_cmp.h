@@ -13,6 +13,13 @@ opUCOMISS_xmm_xmm_a16(uint32_t fetchdat)
     cpu_state.flags &= ~(V_FLAG | A_FLAG | N_FLAG | Z_FLAG | P_FLAG | C_FLAG);
     int relation = f32_compare_quiet(cpu_state_high.XMM[cpu_reg].f[0], src.f[0], &status);
     FPU_write_eflags_fpu_compare(relation);
+    softfloat_status_word_to_mxcsr(status);
+    int unmasked = (~cpu_state_high.mxcsr >> 7) & 0x3f;
+    if ((cpu_state_high.mxcsr & 0x3f) & (unmasked & 0x3f)) {
+        if (cr4 & CR4_OSXMMEXCPT)
+            x86_int(0x13);
+        //ILLEGAL_ON(!(cr4 & CR4_OSXMMEXCPT));
+    }
     return 0;
 }
 
@@ -30,6 +37,13 @@ opUCOMISS_xmm_xmm_a32(uint32_t fetchdat)
     cpu_state.flags &= ~(V_FLAG | A_FLAG | N_FLAG | Z_FLAG | P_FLAG | C_FLAG);
     int relation = f32_compare_quiet(cpu_state_high.XMM[cpu_reg].f[0], src.f[0], &status);
     FPU_write_eflags_fpu_compare(relation);
+    softfloat_status_word_to_mxcsr(status);
+    int unmasked = (~cpu_state_high.mxcsr >> 7) & 0x3f;
+    if ((cpu_state_high.mxcsr & 0x3f) & (unmasked & 0x3f)) {
+        if (cr4 & CR4_OSXMMEXCPT)
+            x86_int(0x13);
+        //ILLEGAL_ON(!(cr4 & CR4_OSXMMEXCPT));
+    }
     return 0;
 }
 
@@ -47,6 +61,13 @@ opCOMISS_xmm_xmm_a16(uint32_t fetchdat)
     cpu_state.flags &= ~(V_FLAG | A_FLAG | N_FLAG | Z_FLAG | P_FLAG | C_FLAG);
     int relation = f32_compare_normal(cpu_state_high.XMM[cpu_reg].f[0], src.f[0], &status);
     FPU_write_eflags_fpu_compare(relation);
+    softfloat_status_word_to_mxcsr(status);
+    int unmasked = (~cpu_state_high.mxcsr >> 7) & 0x3f;
+    if ((cpu_state_high.mxcsr & 0x3f) & (unmasked & 0x3f)) {
+        if (cr4 & CR4_OSXMMEXCPT)
+            x86_int(0x13);
+        //ILLEGAL_ON(!(cr4 & CR4_OSXMMEXCPT));
+    }
     return 0;
 }
 
@@ -64,5 +85,12 @@ opCOMISS_xmm_xmm_a32(uint32_t fetchdat)
     cpu_state.flags &= ~(V_FLAG | A_FLAG | N_FLAG | Z_FLAG | P_FLAG | C_FLAG);
     int relation = f32_compare_normal(cpu_state_high.XMM[cpu_reg].f[0], src.f[0], &status);
     FPU_write_eflags_fpu_compare(relation);
+    softfloat_status_word_to_mxcsr(status);
+    int unmasked = (~cpu_state_high.mxcsr >> 7) & 0x3f;
+    if ((cpu_state_high.mxcsr & 0x3f) & (unmasked & 0x3f)) {
+        if (cr4 & CR4_OSXMMEXCPT)
+            x86_int(0x13);
+        //ILLEGAL_ON(!(cr4 & CR4_OSXMMEXCPT));
+    }
     return 0;
 }
