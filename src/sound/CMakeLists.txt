@@ -180,13 +180,13 @@ if(SERIALPORT_FOUND OR DEFINED LIBSERIALPORT_ROOT)
 
     if(APPLE)
         include_directories(${LIBSERIALPORT_ROOT}/include)
-        target_link_libraries(86Box ${LIBSERIALPORT_ROOT}/lib/libserialport.dylib)
+        target_link_libraries(PCBox ${LIBSERIALPORT_ROOT}/lib/libserialport.dylib)
     elseif(WIN32)
         include_directories(${SERIALPORT_INCLUDE_DIRS})
-        target_link_libraries(86Box ${SERIALPORT_LIBRARIES} SetupAPI)
+        target_link_libraries(PCBox ${SERIALPORT_LIBRARIES} SetupAPI)
     else()
         include_directories(${SERIALPORT_INCLUDE_DIRS})
-        target_link_libraries(86Box ${SERIALPORT_LIBRARIES})
+        target_link_libraries(PCBox ${SERIALPORT_LIBRARIES})
     endif()
     target_sources(snd PRIVATE
     snd_opl2board.c
