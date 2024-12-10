@@ -806,139 +806,28 @@ opMAXSD_xmm_xmm_a32(uint32_t fetchdat)
     return 0;
 }
 
+/* Comparison predicate for CMPSD/CMPPD instructions */
+static float64_compare_method compare64[8] = {
+  f64_eq_ordered_quiet,
+  f64_lt_ordered_signalling,
+  f64_le_ordered_signalling,
+  f64_unordered_quiet,
+  f64_neq_unordered_quiet,
+  f64_nlt_unordered_signalling,
+  f64_nle_unordered_signalling,
+  f64_ordered_quiet
+};
+
 static int
 opCMPPD_xmm_xmm_a16(uint32_t fetchdat)
 {
     fetch_ea_16(fetchdat);
+    SSE_REG src;
+    struct softfloat_status_t status = mxcsr_to_softfloat_status_word();
+    SSE_GETSRC();
     uint8_t  imm = getbyte();
-    uint64_t cmp[2] = { 0, 0 };
-    if (cpu_mod == 3) {
-        switch (imm & 7) {
-            case 0:
-                {
-                    cmp[0] = cpu_state_high.XMM[cpu_reg].d2[0] == cpu_state_high.XMM[cpu_rm].d2[0] ? ~0ull : 0;
-                    cmp[1] = cpu_state_high.XMM[cpu_reg].d2[1] == cpu_state_high.XMM[cpu_rm].d2[1] ? ~0ull : 0;
-                    break;
-                }
-            case 1:
-                {
-                    cmp[0] = cpu_state_high.XMM[cpu_reg].d2[0] < cpu_state_high.XMM[cpu_rm].d2[0] ? ~0ull : 0;
-                    cmp[1] = cpu_state_high.XMM[cpu_reg].d2[1] < cpu_state_high.XMM[cpu_rm].d2[1] ? ~0ull : 0;
-                    break;
-                }
-            case 2:
-                {
-                    cmp[0] = cpu_state_high.XMM[cpu_reg].d2[0] <= cpu_state_high.XMM[cpu_rm].d2[0] ? ~0ull : 0;
-                    cmp[1] = cpu_state_high.XMM[cpu_reg].d2[1] <= cpu_state_high.XMM[cpu_rm].d2[1] ? ~0ull : 0;
-                    break;
-                }
-            case 3:
-                {
-                    cmp[0] = isunordered(cpu_state_high.XMM[cpu_reg].d2[0], cpu_state_high.XMM[cpu_rm].d2[0]) ? ~0ull : 0;
-                    cmp[1] = isunordered(cpu_state_high.XMM[cpu_reg].d2[1], cpu_state_high.XMM[cpu_rm].d2[1]) ? ~0ull : 0;
-                    break;
-                }
-            case 4:
-                {
-                    cmp[0] = cpu_state_high.XMM[cpu_reg].d2[0] != cpu_state_high.XMM[cpu_rm].d2[0] ? ~0ull : 0;
-                    cmp[1] = cpu_state_high.XMM[cpu_reg].d2[1] != cpu_state_high.XMM[cpu_rm].d2[1] ? ~0ull : 0;
-                    break;
-                }
-            case 5:
-                {
-                    cmp[0] = !(cpu_state_high.XMM[cpu_reg].d2[0] < cpu_state_high.XMM[cpu_rm].d2[0]) ? ~0ull : 0;
-                    cmp[1] = !(cpu_state_high.XMM[cpu_reg].d2[1] < cpu_state_high.XMM[cpu_rm].d2[1]) ? ~0ull : 0;
-                    break;
-                }
-            case 6:
-                {
-                    cmp[0] = !(cpu_state_high.XMM[cpu_reg].d2[0] <= cpu_state_high.XMM[cpu_rm].d2[0]) ? ~0ull : 0;
-                    cmp[1] = !(cpu_state_high.XMM[cpu_reg].d2[1] <= cpu_state_high.XMM[cpu_rm].d2[1]) ? ~0ull : 0;
-                    break;
-                }
-            case 7:
-                {
-                    cmp[0] = isunordered(cpu_state_high.XMM[cpu_reg].d2[0], cpu_state_high.XMM[cpu_rm].d2[0]) ? 0 : ~0ull;
-                    cmp[1] = isunordered(cpu_state_high.XMM[cpu_reg].d2[1], cpu_state_high.XMM[cpu_rm].d2[1]) ? 0 : ~0ull;
-                    break;
-                }
-
-            default:
-                break;
-        }
-        cpu_state_high.XMM[cpu_reg].q[0] = cmp[0];
-        cpu_state_high.XMM[cpu_reg].q[1] = cmp[1];
-        CLOCK_CYCLES(1);
-    } else {
-        uint64_t src[2];
-
-        SEG_CHECK_READ(cpu_state.ea_seg);
-        src[0] = readmemq(easeg, cpu_state.eaaddr);
-        if (cpu_state.abrt)
-            return 1;
-        src[1] = readmemq(easeg, cpu_state.eaaddr + 8);
-        if (cpu_state.abrt)
-            return 1;
-        double src_real[2];
-        src_real[0] = *(double *) &src[0];
-        src_real[1] = *(double *) &src[1];
-        switch (imm & 7) {
-            case 0:
-                {
-                    cmp[0] = cpu_state_high.XMM[cpu_reg].d2[0] == src_real[0] ? ~0ull : 0;
-                    cmp[1] = cpu_state_high.XMM[cpu_reg].d2[1] == src_real[1] ? ~0ull : 0;
-                    break;
-                }
-            case 1:
-                {
-                    cmp[0] = cpu_state_high.XMM[cpu_reg].d2[0] < src_real[0] ? ~0ull : 0;
-                    cmp[1] = cpu_state_high.XMM[cpu_reg].d2[1] < src_real[1] ? ~0ull : 0;
-                    break;
-                }
-            case 2:
-                {
-                    cmp[0] = cpu_state_high.XMM[cpu_reg].d2[0] <= src_real[0] ? ~0ull : 0;
-                    cmp[1] = cpu_state_high.XMM[cpu_reg].d2[1] <= src_real[1] ? ~0ull : 0;
-                    break;
-                }
-            case 3:
-                {
-                    cmp[0] = isunordered(cpu_state_high.XMM[cpu_reg].d2[0], src_real[0]) ? ~0ull : 0;
-                    cmp[1] = isunordered(cpu_state_high.XMM[cpu_reg].d2[1], src_real[1]) ? ~0ull : 0;
-                    break;
-                }
-            case 4:
-                {
-                    cmp[0] = cpu_state_high.XMM[cpu_reg].d2[0] != src_real[0] ? ~0ull : 0;
-                    cmp[1] = cpu_state_high.XMM[cpu_reg].d2[1] != src_real[1] ? ~0ull : 0;
-                    break;
-                }
-            case 5:
-                {
-                    cmp[0] = !(cpu_state_high.XMM[cpu_reg].d2[0] < src_real[0]) ? ~0ull : 0;
-                    cmp[1] = !(cpu_state_high.XMM[cpu_reg].d2[1] < src_real[1]) ? ~0ull : 0;
-                    break;
-                }
-            case 6:
-                {
-                    cmp[0] = !(cpu_state_high.XMM[cpu_reg].d2[0] <= src_real[0]) ? ~0ull : 0;
-                    cmp[1] = !(cpu_state_high.XMM[cpu_reg].d2[1] <= src_real[1]) ? ~0ull : 0;
-                    break;
-                }
-            case 7:
-                {
-                    cmp[0] = isunordered(cpu_state_high.XMM[cpu_reg].d2[0], src_real[0]) ? 0 : ~0ull;
-                    cmp[1] = isunordered(cpu_state_high.XMM[cpu_reg].d2[1], src_real[1]) ? 0 : ~0ull;
-                    break;
-                }
-
-            default:
-                break;
-        }
-        cpu_state_high.XMM[cpu_reg].q[0] = cmp[0];
-        cpu_state_high.XMM[cpu_reg].q[1] = cmp[1];
-        CLOCK_CYCLES(2);
-    }
+    cpu_state_high.XMM[cpu_reg].q[0] = compare64[imm & 7](cpu_state_high.XMM[cpu_reg].d[0], src.d[0], &status) ? ~0ull : 0;
+    cpu_state_high.XMM[cpu_reg].q[1] = compare64[imm & 7](cpu_state_high.XMM[cpu_reg].d[1], src.d[1], &status) ? ~0ull : 0;
     return 0;
 }
 
@@ -947,134 +836,11 @@ opCMPPD_xmm_xmm_a32(uint32_t fetchdat)
 {
     fetch_ea_32(fetchdat);
     uint8_t  imm = getbyte();
-    uint64_t cmp[2] = { 0, 0 };
-    if (cpu_mod == 3) {
-        switch (imm & 7) {
-            case 0:
-                {
-                    cmp[0] = cpu_state_high.XMM[cpu_reg].d2[0] == cpu_state_high.XMM[cpu_rm].d2[0] ? ~0ull : 0;
-                    cmp[1] = cpu_state_high.XMM[cpu_reg].d2[1] == cpu_state_high.XMM[cpu_rm].d2[1] ? ~0ull : 0;
-                    break;
-                }
-            case 1:
-                {
-                    cmp[0] = cpu_state_high.XMM[cpu_reg].d2[0] < cpu_state_high.XMM[cpu_rm].d2[0] ? ~0ull : 0;
-                    cmp[1] = cpu_state_high.XMM[cpu_reg].d2[1] < cpu_state_high.XMM[cpu_rm].d2[1] ? ~0ull : 0;
-                    break;
-                }
-            case 2:
-                {
-                    cmp[0] = cpu_state_high.XMM[cpu_reg].d2[0] <= cpu_state_high.XMM[cpu_rm].d2[0] ? ~0ull : 0;
-                    cmp[1] = cpu_state_high.XMM[cpu_reg].d2[1] <= cpu_state_high.XMM[cpu_rm].d2[1] ? ~0ull : 0;
-                    break;
-                }
-            case 3:
-                {
-                    cmp[0] = isunordered(cpu_state_high.XMM[cpu_reg].d2[0], cpu_state_high.XMM[cpu_rm].d2[0]) ? ~0ull : 0;
-                    cmp[1] = isunordered(cpu_state_high.XMM[cpu_reg].d2[1], cpu_state_high.XMM[cpu_rm].d2[1]) ? ~0ull : 0;
-                    break;
-                }
-            case 4:
-                {
-                    cmp[0] = cpu_state_high.XMM[cpu_reg].d2[0] != cpu_state_high.XMM[cpu_rm].d2[0] ? ~0ull : 0;
-                    cmp[1] = cpu_state_high.XMM[cpu_reg].d2[1] != cpu_state_high.XMM[cpu_rm].d2[1] ? ~0ull : 0;
-                    break;
-                }
-            case 5:
-                {
-                    cmp[0] = !(cpu_state_high.XMM[cpu_reg].d2[0] < cpu_state_high.XMM[cpu_rm].d2[0]) ? ~0ull : 0;
-                    cmp[1] = !(cpu_state_high.XMM[cpu_reg].d2[1] < cpu_state_high.XMM[cpu_rm].d2[1]) ? ~0ull : 0;
-                    break;
-                }
-            case 6:
-                {
-                    cmp[0] = !(cpu_state_high.XMM[cpu_reg].d2[0] <= cpu_state_high.XMM[cpu_rm].d2[0]) ? ~0ull : 0;
-                    cmp[1] = !(cpu_state_high.XMM[cpu_reg].d2[1] <= cpu_state_high.XMM[cpu_rm].d2[1]) ? ~0ull : 0;
-                    break;
-                }
-            case 7:
-                {
-                    cmp[0] = isunordered(cpu_state_high.XMM[cpu_reg].d2[0], cpu_state_high.XMM[cpu_rm].d2[0]) ? 0 : ~0ull;
-                    cmp[1] = isunordered(cpu_state_high.XMM[cpu_reg].d2[1], cpu_state_high.XMM[cpu_rm].d2[1]) ? 0 : ~0ull;
-                    break;
-                }
-
-            default:
-                break;
-        }
-        cpu_state_high.XMM[cpu_reg].q[0] = cmp[0];
-        cpu_state_high.XMM[cpu_reg].q[1] = cmp[1];
-        CLOCK_CYCLES(1);
-    } else {
-        uint64_t src[2];
-
-        SEG_CHECK_READ(cpu_state.ea_seg);
-        src[0] = readmemq(easeg, cpu_state.eaaddr);
-        if (cpu_state.abrt)
-            return 1;
-        src[1] = readmemq(easeg, cpu_state.eaaddr + 8);
-        if (cpu_state.abrt)
-            return 1;
-        double src_real[2];
-        src_real[0] = *(double *) &src[0];
-        src_real[1] = *(double *) &src[1];
-        switch (imm & 7) {
-            case 0:
-                {
-                    cmp[0] = cpu_state_high.XMM[cpu_reg].d2[0] == src_real[0] ? ~0ull : 0;
-                    cmp[1] = cpu_state_high.XMM[cpu_reg].d2[1] == src_real[1] ? ~0ull : 0;
-                    break;
-                }
-            case 1:
-                {
-                    cmp[0] = cpu_state_high.XMM[cpu_reg].d2[0] < src_real[0] ? ~0ull : 0;
-                    cmp[1] = cpu_state_high.XMM[cpu_reg].d2[1] < src_real[1] ? ~0ull : 0;
-                    break;
-                }
-            case 2:
-                {
-                    cmp[0] = cpu_state_high.XMM[cpu_reg].d2[0] <= src_real[0] ? ~0ull : 0;
-                    cmp[1] = cpu_state_high.XMM[cpu_reg].d2[1] <= src_real[1] ? ~0ull : 0;
-                    break;
-                }
-            case 3:
-                {
-                    cmp[0] = isunordered(cpu_state_high.XMM[cpu_reg].d2[0], src_real[0]) ? ~0ull : 0;
-                    cmp[1] = isunordered(cpu_state_high.XMM[cpu_reg].d2[1], src_real[1]) ? ~0ull : 0;
-                    break;
-                }
-            case 4:
-                {
-                    cmp[0] = cpu_state_high.XMM[cpu_reg].d2[0] != src_real[0] ? ~0ull : 0;
-                    cmp[1] = cpu_state_high.XMM[cpu_reg].d2[1] != src_real[1] ? ~0ull : 0;
-                    break;
-                }
-            case 5:
-                {
-                    cmp[0] = !(cpu_state_high.XMM[cpu_reg].d2[0] < src_real[0]) ? ~0ull : 0;
-                    cmp[1] = !(cpu_state_high.XMM[cpu_reg].d2[1] < src_real[1]) ? ~0ull : 0;
-                    break;
-                }
-            case 6:
-                {
-                    cmp[0] = !(cpu_state_high.XMM[cpu_reg].d2[0] <= src_real[0]) ? ~0ull : 0;
-                    cmp[1] = !(cpu_state_high.XMM[cpu_reg].d2[1] <= src_real[1]) ? ~0ull : 0;
-                    break;
-                }
-            case 7:
-                {
-                    cmp[0] = isunordered(cpu_state_high.XMM[cpu_reg].d2[0], src_real[0]) ? 0 : ~0ull;
-                    cmp[1] = isunordered(cpu_state_high.XMM[cpu_reg].d2[1], src_real[1]) ? 0 : ~0ull;
-                    break;
-                }
-
-            default:
-                break;
-        }
-        cpu_state_high.XMM[cpu_reg].q[0] = cmp[0];
-        cpu_state_high.XMM[cpu_reg].q[1] = cmp[1];
-        CLOCK_CYCLES(2);
-    }
+    SSE_REG src;
+    struct softfloat_status_t status = mxcsr_to_softfloat_status_word();
+    SSE_GETSRC();
+    cpu_state_high.XMM[cpu_reg].q[0] = compare64[imm & 7](cpu_state_high.XMM[cpu_reg].d[0], src.d[0], &status) ? ~0ull : 0;
+    cpu_state_high.XMM[cpu_reg].q[1] = compare64[imm & 7](cpu_state_high.XMM[cpu_reg].d[1], src.d[1], &status) ? ~0ull : 0;
     return 0;
 }
 
@@ -1083,112 +849,10 @@ opCMPSD_xmm_xmm_a16(uint32_t fetchdat)
 {
     fetch_ea_16(fetchdat);
     uint8_t  imm = getbyte();
-    uint32_t cmp = 0;
-    if (cpu_mod == 3) {
-        switch (imm & 7) {
-            case 0:
-                {
-                    cmp = cpu_state_high.XMM[cpu_reg].d2[0] == cpu_state_high.XMM[cpu_rm].d2[0] ? ~0ull : 0;
-                    break;
-                }
-            case 1:
-                {
-                    cmp = cpu_state_high.XMM[cpu_reg].d2[0] < cpu_state_high.XMM[cpu_rm].d2[0] ? ~0ull : 0;
-                    break;
-                }
-            case 2:
-                {
-                    cmp = cpu_state_high.XMM[cpu_reg].d2[0] <= cpu_state_high.XMM[cpu_rm].d2[0] ? ~0ull : 0;
-                    break;
-                }
-            case 3:
-                {
-                    cmp = isunordered(cpu_state_high.XMM[cpu_reg].d2[0], cpu_state_high.XMM[cpu_rm].d2[0]) ? ~0ull : 0;
-                    break;
-                }
-            case 4:
-                {
-                    cmp = cpu_state_high.XMM[cpu_reg].d2[0] != cpu_state_high.XMM[cpu_rm].d2[0] ? ~0ull : 0;
-                    break;
-                }
-            case 5:
-                {
-                    cmp = !(cpu_state_high.XMM[cpu_reg].d2[0] < cpu_state_high.XMM[cpu_rm].d2[0]) ? ~0ull : 0;
-                    break;
-                }
-            case 6:
-                {
-                    cmp = !(cpu_state_high.XMM[cpu_reg].d2[0] <= cpu_state_high.XMM[cpu_rm].d2[0]) ? ~0ull : 0;
-                    break;
-                }
-            case 7:
-                {
-                    cmp = isunordered(cpu_state_high.XMM[cpu_reg].d2[0], cpu_state_high.XMM[cpu_rm].d2[0]) ? 0 : ~0ull;
-                    break;
-                }
-
-            default:
-                break;
-        }
-        cpu_state_high.XMM[cpu_reg].q[0] = cmp;
-        CLOCK_CYCLES(1);
-    } else {
-        uint64_t src;
-
-        SEG_CHECK_READ(cpu_state.ea_seg);
-        src = readmemq(easeg, cpu_state.eaaddr);
-        if (cpu_state.abrt)
-            return 1;
-        double src_real;
-        src_real = *(double *) &src;
-        switch (imm & 7) {
-            case 0:
-                {
-                    cmp = cpu_state_high.XMM[cpu_reg].d2[0] == src_real ? ~0ull : 0;
-                    break;
-                }
-            case 1:
-                {
-                    cmp = cpu_state_high.XMM[cpu_reg].d2[0] < src_real ? ~0ull : 0;
-                    break;
-                }
-            case 2:
-                {
-                    cmp = cpu_state_high.XMM[cpu_reg].d2[0] <= src_real ? ~0ull : 0;
-                    break;
-                }
-            case 3:
-                {
-                    cmp = isunordered(cpu_state_high.XMM[cpu_reg].d2[0], src_real) ? ~0ull : 0;
-                    break;
-                }
-            case 4:
-                {
-                    cmp = cpu_state_high.XMM[cpu_reg].d2[0] != src_real ? ~0ull : 0;
-                    break;
-                }
-            case 5:
-                {
-                    cmp = !(cpu_state_high.XMM[cpu_reg].d2[0] < src_real) ? ~0ull : 0;
-                    break;
-                }
-            case 6:
-                {
-                    cmp = !(cpu_state_high.XMM[cpu_reg].d2[0] <= src_real) ? ~0ull : 0;
-                    break;
-                }
-            case 7:
-                {
-                    cmp = isunordered(cpu_state_high.XMM[cpu_reg].d2[0], src_real) ? 0 : ~0ull;
-                    break;
-                }
-
-            default:
-                break;
-        }
-        cpu_state_high.XMM[cpu_reg].q[0] = cmp;
-        CLOCK_CYCLES(2);
-    }
+    SSE_REG src;
+    struct softfloat_status_t status = mxcsr_to_softfloat_status_word();
+    SSE_GETSRC();
+    cpu_state_high.XMM[cpu_reg].q[0] = compare64[imm & 7](cpu_state_high.XMM[cpu_reg].d[0], src.d[0], &status) ? ~0ull : 0;
     return 0;
 }
 
@@ -1197,111 +861,9 @@ opCMPSD_xmm_xmm_a32(uint32_t fetchdat)
 {
     fetch_ea_32(fetchdat);
     uint8_t  imm = getbyte();
-    uint64_t cmp = 0;
-    if (cpu_mod == 3) {
-        switch (imm & 7) {
-            case 0:
-                {
-                    cmp = cpu_state_high.XMM[cpu_reg].d2[0] == cpu_state_high.XMM[cpu_rm].d2[0] ? ~0ull : 0;
-                    break;
-                }
-            case 1:
-                {
-                    cmp = cpu_state_high.XMM[cpu_reg].d2[0] < cpu_state_high.XMM[cpu_rm].d2[0] ? ~0ull : 0;
-                    break;
-                }
-            case 2:
-                {
-                    cmp = cpu_state_high.XMM[cpu_reg].d2[0] <= cpu_state_high.XMM[cpu_rm].d2[0] ? ~0ull : 0;
-                    break;
-                }
-            case 3:
-                {
-                    cmp = isunordered(cpu_state_high.XMM[cpu_reg].d2[0], cpu_state_high.XMM[cpu_rm].d2[0]) ? ~0ull : 0;
-                    break;
-                }
-            case 4:
-                {
-                    cmp = cpu_state_high.XMM[cpu_reg].d2[0] != cpu_state_high.XMM[cpu_rm].d2[0] ? ~0ull : 0;
-                    break;
-                }
-            case 5:
-                {
-                    cmp = !(cpu_state_high.XMM[cpu_reg].d2[0] < cpu_state_high.XMM[cpu_rm].d2[0]) ? ~0ull : 0;
-                    break;
-                }
-            case 6:
-                {
-                    cmp = !(cpu_state_high.XMM[cpu_reg].d2[0] <= cpu_state_high.XMM[cpu_rm].d2[0]) ? ~0ull : 0;
-                    break;
-                }
-            case 7:
-                {
-                    cmp = isunordered(cpu_state_high.XMM[cpu_reg].d2[0], cpu_state_high.XMM[cpu_rm].d2[0]) ? 0 : ~0ull;
-                    break;
-                }
-
-            default:
-                break;
-        }
-        cpu_state_high.XMM[cpu_reg].q[0] = cmp;
-        CLOCK_CYCLES(1);
-    } else {
-        uint64_t src;
-
-        SEG_CHECK_READ(cpu_state.ea_seg);
-        src = readmemq(easeg, cpu_state.eaaddr);
-        if (cpu_state.abrt)
-            return 1;
-        double src_real;
-        src_real = *(double *) &src;
-        switch (imm & 7) {
-            case 0:
-                {
-                    cmp = cpu_state_high.XMM[cpu_reg].d2[0] == src_real ? ~0ull : 0;
-                    break;
-                }
-            case 1:
-                {
-                    cmp = cpu_state_high.XMM[cpu_reg].d2[0] < src_real ? ~0ull : 0;
-                    break;
-                }
-            case 2:
-                {
-                    cmp = cpu_state_high.XMM[cpu_reg].d2[0] <= src_real ? ~0ull : 0;
-                    break;
-                }
-            case 3:
-                {
-                    cmp = isunordered(cpu_state_high.XMM[cpu_reg].d2[0], src_real) ? ~0ull : 0;
-                    break;
-                }
-            case 4:
-                {
-                    cmp = cpu_state_high.XMM[cpu_reg].d2[0] != src_real ? ~0ull : 0;
-                    break;
-                }
-            case 5:
-                {
-                    cmp = !(cpu_state_high.XMM[cpu_reg].d2[0] < src_real) ? ~0ull : 0;
-                    break;
-                }
-            case 6:
-                {
-                    cmp = !(cpu_state_high.XMM[cpu_reg].d2[0] <= src_real) ? ~0ull : 0;
-                    break;
-                }
-            case 7:
-                {
-                    cmp = isunordered(cpu_state_high.XMM[cpu_reg].d2[0], src_real) ? 0 : ~0ull;
-                    break;
-                }
-
-            default:
-                break;
-        }
-        cpu_state_high.XMM[cpu_reg].q[0] = cmp;
-        CLOCK_CYCLES(2);
-    }
+    SSE_REG src;
+    struct softfloat_status_t status = mxcsr_to_softfloat_status_word();
+    SSE_GETSRC();
+    cpu_state_high.XMM[cpu_reg].q[0] = compare64[imm & 7](cpu_state_high.XMM[cpu_reg].d[0], src.d[0], &status) ? ~0ull : 0;
     return 0;
 }
