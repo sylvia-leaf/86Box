@@ -819,8 +819,6 @@ plat_set_thread_name(void *thread, const char *name)
     pthread_setname_np(thread ? *((pthread_t *) thread) : pthread_self(), truncated, "%s");
 #    elif defined(Q_OS_OPENBSD)
     pthread_set_name_np(thread ? *((pthread_t *) thread) : pthread_self(), truncated);
-#    elif defined(Q_OS_NETBSD)
-    pthread_setname_np(thread ? *((pthread_t *) thread) : pthread_self(), truncated, "%s");
 #    else
     pthread_setname_np(thread ? *((pthread_t *) thread) : pthread_self(), truncated);
 #    endif
