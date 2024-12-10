@@ -26,6 +26,7 @@
 #endif
 #ifdef __NetBSD__
 #    define _NETBSD_VISIBLE 1
+#    define _NETBSD_SOURCE 1
 #endif
 #include <stdio.h>
 #include <fcntl.h>
