@@ -2976,7 +2976,7 @@ cpu_CPUID(void)
             } else if (EAX == 0x80000001) {
                 EAX = CPUID;
                 EBX = ECX = 0;
-                EDX       = CPUID_FPU | CPUID_VME | CPUID_PSE | CPUID_TSC | CPUID_MSR | CPUID_PAE | CPUID_MCE | CPUID_CMPXCHG8B | CPUID_MMX | CPUID_MTRR | CPUID_PGE | CPUID_MCA | CPUID_SEP | CPUID_FXSR | CPUID_CMOV | CPUID_NX;//| CPUID_CLFLUSH;
+                EDX       = CPUID_FPU | CPUID_VME | CPUID_PSE | CPUID_TSC | CPUID_MSR | CPUID_PAE | CPUID_MCE | CPUID_CMPXCHG8B | CPUID_MMX | CPUID_MTRR | CPUID_PGE | CPUID_MCA | CPUID_SEP | CPUID_FXSR | CPUID_CMOV | CPUID_NX;
             } else
                 EAX = EBX = ECX = EDX = 0;
             break;

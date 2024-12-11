@@ -7441,6 +7441,23 @@ const cpu_family_t cpu_families[] = {
     .atclk_div          = 48
 },
 {
+    .name               = "450",
+    .cpu_type           = CPU_PENTIUM3,
+    .fpus               = fpus_internal,
+    .rspeed             = 450000000,
+    .multi              = 4.5,
+    .voltage            = 2050,
+    .edx_reset          = 0x673,
+    .cpuid_model        = 0x673,
+    .cyrix_id           = 0,
+    .cpu_flags          = CPU_SUPPORTS_DYNAREC | CPU_REQUIRES_DYNAREC,
+    .mem_read_cycles    = 44,
+    .mem_write_cycles   = 44,
+    .cache_read_cycles  = 15,
+    .cache_write_cycles = 15,
+    .atclk_div          = 54
+},
+{
     .name               = "500",
     .cpu_type           = CPU_PENTIUM3,
     .fpus               = fpus_internal,
@@ -10477,7 +10494,7 @@ const cpu_family_t cpu_families[] = {
         .internal_name = "generic_intel",
         .cpus          = (const CPU[]) {
             { "100",  CPU_GENERICINTEL, fpus_internal,  100000000,  1.0, 1800, 0x6B4, 0x6B4, 0, 0/*CPU_SUPPORTS_DYNAREC*/,  9,  9,  3,  3, 12 },
-            { "200",  CPU_GENERICINTEL, fpus_internal,  200000000,  2.0, 1800, 0x6B4, 0x6B4, 0, 0/*CPU_SUPPORTS_DYNAREC*/, 18, 18,  6,  6, 24 },
+            { "200",  CPU_GENERICINTEL, fpus_internal,  200000000,  2.0, 1800, 0x6B4, 0x6B4, 0, 0/*CPU_SUPPORTS_DYNAREC*/, 18, 18,  9,  9, 24 },
             { "300",  CPU_GENERICINTEL, fpus_internal,  300000000,  3.0, 1800, 0x6B4, 0x6B4, 0, 0/*CPU_SUPPORTS_DYNAREC*/, 27, 27,  9,  9, 36 },
             { "400",  CPU_GENERICINTEL, fpus_internal,  400000000,  4.0, 1800, 0x6B4, 0x6B4, 0, 0/*CPU_SUPPORTS_DYNAREC*/, 36, 36, 12, 12, 48 },
             { "500",  CPU_GENERICINTEL, fpus_internal,  500000000,  5.0, 1800, 0x6B4, 0x6B4, 0, 0/*CPU_SUPPORTS_DYNAREC*/, 45, 45, 15, 15, 60 },
