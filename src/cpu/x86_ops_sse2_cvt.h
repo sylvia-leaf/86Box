@@ -49,7 +49,7 @@ opCVTSI2SD_xmm_l_a16(uint32_t fetchdat)
     fetch_ea_16(fetchdat);
     struct softfloat_status_t status = mxcsr_to_softfloat_status_word(); 
     if (cpu_mod == 3) {
-        cpu_state_high.XMM[cpu_reg].d[0] = i32_to_f64(getr32(cpu_rm));
+        cpu_state_high.XMM[cpu_reg].d[0] = i32_to_f64((int32_t)getr32(cpu_rm));
         CLOCK_CYCLES(1);
     } else {
         int32_t dst;
@@ -77,7 +77,7 @@ opCVTSI2SD_xmm_l_a32(uint32_t fetchdat)
     fetch_ea_32(fetchdat);
     struct softfloat_status_t status = mxcsr_to_softfloat_status_word(); 
     if (cpu_mod == 3) {
-        cpu_state_high.XMM[cpu_reg].d[0] = i32_to_f64(getr32(cpu_rm));
+        cpu_state_high.XMM[cpu_reg].d[0] = i32_to_f64((int32_t)getr32(cpu_rm));
         CLOCK_CYCLES(1);
     } else {
         int32_t dst;
