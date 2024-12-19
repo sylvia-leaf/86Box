@@ -342,7 +342,7 @@ mmutranslatereal_normal(uint32_t addr, int rw)
         mmu_perm = temp & 4;
         rammap(addr2) |= ((rw == 1) ? 0x60 : 0x20);
 
-        if(cpu_features & CPU_FEATURE_PSE36) ret |= (temp & 0x1e000) << 32;
+        if(cpu_features & CPU_FEATURE_PSE36) ret |= (uint64_t)(temp & 0x1e000) << 32;
 
         return ret + (addr & 0x3fffff);
     }
