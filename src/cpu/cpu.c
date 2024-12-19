@@ -77,6 +77,7 @@ enum {
     CPUID_MCA       = (1 << 14), /* Machine Check Architecture */
     CPUID_CMOV      = (1 << 15), /* Conditional move instructions */
     CPUID_PAT       = (1 << 16), /* Page Attribute Table */
+    CPUID_PSE36     = (1 << 17), /* PSE 36 bit addressing */
     CPUID_PSN       = (1 << 18), /* Processor Serial Number */
     CPUID_CLFLUSH   = (1 << 19), /* CLFLUSH instruction */
     CPUID_NX        = (1 << 20), /* NX bit */
@@ -1775,12 +1776,15 @@ cpu_set(void)
 
             timing_misaligned = 3;
 
-            cpu_features = CPU_FEATURE_RDTSC | CPU_FEATURE_MSR | CPU_FEATURE_CR4 | CPU_FEATURE_VME;
+            cpu_features = CPU_FEATURE_RDTSC | CPU_FEATURE_MSR | CPU_FEATURE_CR4 | CPU_FEATURE_VME | CPU_FEATURE_PSE36;
             if (cpu_s->cpu_type >= CPU_PENTIUM2)
                 cpu_features |= CPU_FEATURE_MMX;
             cpu_CR4_mask = CR4_VME | CR4_PVI | CR4_TSD | CR4_DE | CR4_PSE | CR4_MCE | CR4_PAE | CR4_PCE | CR4_PGE;
             if (cpu_s->cpu_type == CPU_PENTIUM2D)
+            {
                 cpu_CR4_mask |= CR4_OSFXSR;
+                cpu_features |= CPU_FEATURE_PSE36;
+            }
 
 #ifdef USE_DYNAREC
             codegen_timing_set(&codegen_timing_p6);
@@ -1858,7 +1862,7 @@ cpu_set(void)
 
             timing_misaligned = 3;
 
-            cpu_features = CPU_FEATURE_RDTSC | CPU_FEATURE_MSR | CPU_FEATURE_CR4 | CPU_FEATURE_VME | CPU_FEATURE_MMX | CPU_FEATURE_SSE;
+            cpu_features = CPU_FEATURE_RDTSC | CPU_FEATURE_MSR | CPU_FEATURE_CR4 | CPU_FEATURE_VME | CPU_FEATURE_MMX | CPU_FEATURE_PSE36 | CPU_FEATURE_SSE;
             msr.fcr      = (1 << 8) | (1 << 9) | (1 << 12) | (1 << 16) | (1 << 19) | (1 << 21);
             cpu_CR4_mask = CR4_VME | CR4_PVI | CR4_TSD | CR4_DE | CR4_PSE | CR4_MCE | CR4_PAE | CR4_PCE | CR4_PGE;
             cpu_CR4_mask |= CR4_OSFXSR | CR4_OSXMMEXCPT;
@@ -1949,7 +1953,7 @@ cpu_set(void)
 
             timing_misaligned = 3;
 
-            cpu_features = CPU_FEATURE_RDTSC | CPU_FEATURE_MSR | CPU_FEATURE_CR4 | CPU_FEATURE_VME | CPU_FEATURE_MMX | CPU_FEATURE_SSE | CPU_FEATURE_SSE2 | CPU_FEATURE_CLFLUSH | CPU_FEATURE_NX | CPU_FEATURE_SSE3;
+            cpu_features = CPU_FEATURE_RDTSC | CPU_FEATURE_MSR | CPU_FEATURE_CR4 | CPU_FEATURE_VME | CPU_FEATURE_MMX | CPU_FEATURE_PSE36 | CPU_FEATURE_SSE | CPU_FEATURE_SSE2 | CPU_FEATURE_CLFLUSH | CPU_FEATURE_NX | CPU_FEATURE_SSE3;
             msr.fcr      = (1 << 8) | (1 << 9) | (1 << 12) | (1 << 16) | (1 << 19) | (1 << 21);
             cpu_CR4_mask = CR4_VME | CR4_PVI | CR4_TSD | CR4_DE | CR4_PSE | CR4_MCE | CR4_PAE | CR4_PCE | CR4_PGE;
             cpu_CR4_mask |= CR4_OSFXSR | CR4_OSXMMEXCPT;
@@ -2913,7 +2917,7 @@ cpu_CPUID(void)
             } else if (EAX == 1) {
                 EAX = CPUID;
                 EBX = ECX = 0;
-                EDX       = CPUID_FPU | CPUID_VME | CPUID_DE | CPUID_PSE | CPUID_TSC | CPUID_MSR | CPUID_PAE | CPUID_MCE | CPUID_CMPXCHG8B | CPUID_MMX | CPUID_MTRR | CPUID_PGE | CPUID_MCA | CPUID_SEP | CPUID_FXSR | CPUID_CMOV;
+                EDX       = CPUID_FPU | CPUID_VME | CPUID_DE | CPUID_PSE | CPUID_TSC | CPUID_MSR | CPUID_PAE | CPUID_MCE | CPUID_CMPXCHG8B | CPUID_MMX | CPUID_MTRR | CPUID_PGE | CPUID_MCA | CPUID_SEP | CPUID_FXSR | CPUID_CMOV | CPUID_PSE36;
             } else if (EAX == 2) {
                 EAX = 0x03020101; /* Instruction TLB: 4 KB pages, 4-way set associative, 32 entries
                                      Instruction TLB: 4 MB pages, fully associative, 2 entries
@@ -2944,7 +2948,7 @@ cpu_CPUID(void)
             } else if (EAX == 1) {
                 EAX = CPUID;
                 EBX = ECX = 0;
-                EDX       = CPUID_FPU | CPUID_VME | CPUID_DE | CPUID_PSE | CPUID_TSC | CPUID_MSR | CPUID_PAE | CPUID_MCE | CPUID_CMPXCHG8B | CPUID_MMX | CPUID_MTRR | CPUID_PGE | CPUID_MCA | CPUID_SEP | CPUID_FXSR | CPUID_CMOV | CPUID_SSE;
+                EDX       = CPUID_FPU | CPUID_VME | CPUID_DE | CPUID_PSE | CPUID_TSC | CPUID_MSR | CPUID_PAE | CPUID_MCE | CPUID_CMPXCHG8B | CPUID_MMX | CPUID_MTRR | CPUID_PGE | CPUID_MCA | CPUID_SEP | CPUID_FXSR | CPUID_CMOV | CPUID_PSE36 | CPUID_SSE;
             } else if (EAX == 2) {
                 EAX = 0x00000001;
                 EBX = ECX = 0;
@@ -2963,7 +2967,7 @@ cpu_CPUID(void)
                 EAX = CPUID;
                 EBX = 0;
                 ECX       = 0;//CPUID_SSE3;
-                EDX       = CPUID_FPU | CPUID_VME | CPUID_DE | CPUID_PSE | CPUID_TSC | CPUID_MSR | CPUID_PAE | CPUID_MCE | CPUID_CMPXCHG8B | CPUID_MMX | CPUID_MTRR | CPUID_PGE | CPUID_MCA | CPUID_SEP | CPUID_FXSR | CPUID_CMOV | CPUID_SSE | CPUID_SSE2;// | CPUID_CLFLUSH;
+                EDX       = CPUID_FPU | CPUID_VME | CPUID_DE | CPUID_PSE | CPUID_TSC | CPUID_MSR | CPUID_PAE | CPUID_MCE | CPUID_CMPXCHG8B | CPUID_MMX | CPUID_MTRR | CPUID_PGE | CPUID_MCA | CPUID_SEP | CPUID_FXSR | CPUID_CMOV | CPUID_PSE36 | CPUID_SSE | CPUID_SSE2;// | CPUID_CLFLUSH;
             } else if (EAX == 2) {
                 EAX = 0x00000001;
                 EBX = ECX = 0;
