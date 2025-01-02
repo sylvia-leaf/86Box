@@ -2460,10 +2460,17 @@ cpu_CPUID(void)
                                      Instruction TLB: 4 MB pages, fully associative, 2 entries
                                      Data TLB: 4 KB pages, 4-way set associative, 64 entries */
                 EBX = ECX = 0;
-                EDX       = 0x06040a42; /* 2nd-level cache: 256 KB, 4-way set associative, 32-byte line size
+                if (cpu_s->rspeed == 166666666) { /* All 166MHz Pentium Pro CPUs had 512k L2 cache. */
+                    EDX = 0x06040a43;      /* 2nd-level cache: 512 KB, 4-way set associative, 32-byte line size
                                            1st-level data cache: 8 KB, 2-way set associative, 32-byte line size
                                            Data TLB: 4 MB pages, 4-way set associative, 8 entries
                                            1st-level instruction cache: 8 KB, 4-way set associative, 32-byte line size */
+                } else { /* 150MHz, 180MHz or 200MHz Pentium Pro. */
+                    EDX = 0x06040a42;      /* 2nd-level cache: 256 KB, 4-way set associative, 32-byte line size
+                                           1st-level data cache: 8 KB, 2-way set associative, 32-byte line size
+                                           Data TLB: 4 MB pages, 4-way set associative, 8 entries
+                                           1st-level instruction cache: 8 KB, 4-way set associative, 32-byte line size */                    
+                }
             } else
                 EAX = EBX = ECX = EDX = 0;
             break;
