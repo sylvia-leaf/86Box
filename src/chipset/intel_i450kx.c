@@ -801,8 +801,8 @@ i450kx_init(UNUSED(const device_t *info))
 {
     i450kx_t *dev = (i450kx_t *) malloc(sizeof(i450kx_t));
     memset(dev, 0, sizeof(i450kx_t));
-    pci_add_card(PCI_ADD_NORTHBRIDGE, pb_read, pb_write, dev, &dev->pb_slot);        /* Device 19h: Intel 450KX PCI Bridge PB */
-    pci_add_card(PCI_ADD_NORTHBRIDGE_SEC, mc_read, mc_write, dev, &dev->mc_slot);    /* Device 14h: Intel 450KX Memory Controller MC */
+    pci_add_card(PCI_ADD_NORTHBRIDGE, pb_read, pb_write, dev, &dev->pb_slot);                 /* Device 19h: Intel 450KX PCI Bridge PB (82454KX) */
+    pci_add_card(PCI_ADD_NORTHBRIDGE_SEC, mc_read, mc_write, dev, &dev->mc_slot);             /* Device 14h: Intel 450KX Memory Controller MC (82451KX/82452KX/82453KX) */
 
     dev->smram[0] = smram_add();
     dev->smram[1] = smram_add();
@@ -815,6 +815,98 @@ i450kx_init(UNUSED(const device_t *info))
 
     return dev;
 }
+
+/*
+static void *
+i450gx_1pb_1mc_init(UNUSED(const device_t *info))
+{
+    i450kx_t *dev = (i450kx_t *) malloc(sizeof(i450kx_t));
+    memset(dev, 0, sizeof(i450kx_t));
+    pci_add_card(PCI_ADD_NORTHBRIDGE, pb_read, pb_write, dev, &dev->pb_slot);                    Device 19h: Intel 450GX Compatibility PCI Bridge PB (82454GX)
+    pci_add_card(PCI_ADD_NORTHBRIDGE_SEC, mc_read, mc_write, dev, &dev->mc_slot);                Device 14h: Intel 450GX Memory Controller MC (82451GX/82452GX/82453GX)
+
+    dev->smram[0] = smram_add();
+    dev->smram[1] = smram_add();
+
+    cpu_cache_int_enabled = 1;
+    cpu_cache_ext_enabled = 1;
+    cpu_update_waitstates();
+
+    i450kx_reset(dev);
+
+    return dev;
+}
+*/
+
+/*
+static void *
+i450gx_2pb_1mc_init(UNUSED(const device_t *info))
+{
+    i450kx_t *dev = (i450kx_t *) malloc(sizeof(i450kx_t));
+    memset(dev, 0, sizeof(i450kx_t));
+    pci_add_card(PCI_ADD_NORTHBRIDGE, pb_read, pb_write, dev, &dev->pb_slot);                    Device 19h: Intel 450GX Compatibility PCI Bridge PB (82454GX)
+    pci_add_card(PCI_ADD_NORTHBRIDGE_SEC, mc_read, mc_write, dev, &dev->mc_slot);                Device 14h: Intel 450GX Memory Controller MC (82451GX/82452GX/82453GX)
+    pci_add_card(PCI_ADD_NORTHBRIDGE_TER, pb_aux_read, pb_aux_write, dev, &dev->pb_aux_slot);    Device 1Ah: Intel 450GX Auxiliary PCI Bridge PB (82454GX)
+
+    dev->smram[0] = smram_add();
+    dev->smram[1] = smram_add();
+
+    cpu_cache_int_enabled = 1;
+    cpu_cache_ext_enabled = 1;
+    cpu_update_waitstates();
+
+    i450kx_reset(dev);
+
+    return dev;
+}
+*/
+
+/*
+static void *
+i450gx_1pb_2mc_init(UNUSED(const device_t *info))
+{
+    i450kx_t *dev = (i450kx_t *) malloc(sizeof(i450kx_t));
+    memset(dev, 0, sizeof(i450kx_t));
+    pci_add_card(PCI_ADD_NORTHBRIDGE, pb_read, pb_write, dev, &dev->pb_slot);                    Device 19h: Intel 450GX Compatibility PCI Bridge PB (82454GX)
+    pci_add_card(PCI_ADD_NORTHBRIDGE_SEC, mc_read, mc_write, dev, &dev->mc_slot);                Device 14h: Intel 450GX Memory Controller MC (82451GX/82452GX/82453GX)
+    pci_add_card(PCI_ADD_NORTHBRIDGE_TER, mc2_read, mc2_write, dev, &dev->mc2_slot);             Device 15h: Intel 450GX Memory Controller MC (82451GX/82452GX/82453GX)
+
+    dev->smram[0] = smram_add();
+    dev->smram[1] = smram_add();
+
+    cpu_cache_int_enabled = 1;
+    cpu_cache_ext_enabled = 1;
+    cpu_update_waitstates();
+
+    i450kx_reset(dev);
+
+    return dev;
+}
+*/
+
+/*
+static void *
+i450gx_2pb_2mc_init(UNUSED(const device_t *info))
+{
+    i450kx_t *dev = (i450kx_t *) malloc(sizeof(i450kx_t));
+    memset(dev, 0, sizeof(i450kx_t));
+    pci_add_card(PCI_ADD_NORTHBRIDGE, pb_read, pb_write, dev, &dev->pb_slot);                    Device 19h: Intel 450GX Compatibility PCI Bridge PB (82454GX)
+    pci_add_card(PCI_ADD_NORTHBRIDGE_SEC, mc_read, mc_write, dev, &dev->mc_slot);                Device 14h: Intel 450GX Memory Controller MC (82451GX/82452GX/82453GX)
+    pci_add_card(PCI_ADD_NORTHBRIDGE_TER, pb_aux_read, pb_aux_write, dev, &dev->pb_aux_slot);    Device 1Ah: Intel 450GX Auxiliary PCI Bridge PB (82454GX)
+    pci_add_card(PCI_ADD_NORTHBRIDGE_QUA, mc_read, mc_write, dev, &dev->mc_slot);                Device 15h: Intel 450GX Memory Controller MC (82451GX/82452GX/82453GX)
+
+    dev->smram[0] = smram_add();
+    dev->smram[1] = smram_add();
+
+    cpu_cache_int_enabled = 1;
+    cpu_cache_ext_enabled = 1;
+    cpu_update_waitstates();
+
+    i450kx_reset(dev);
+
+    return dev;
+}
+*/
 
 const device_t i450kx_device = {
     .name          = "Intel 450KX (Mars)",
@@ -829,3 +921,69 @@ const device_t i450kx_device = {
     .force_redraw  = NULL,
     .config        = NULL
 };
+
+
+/*
+const device_t i450gx_1pb_1mc device = {
+    .name          = "Intel 450GX (Orion), 1 PB + 1 MC",
+    .internal_name = "i450gx_1pb_1mc",
+    .flags         = DEVICE_PCI,
+    .local         = 0,
+    .init          = i450gx_1pb_1mc_init,
+    .close         = i450gx_1pb_1mc_close,
+    .reset         = i450gx_1pb_1mc_reset,
+    { .available = NULL },
+    .speed_changed = NULL,
+    .force_redraw  = NULL,
+    .config        = NULL
+};
+*/
+/*
+const device_t i450gx_2pb_1mc device = {
+    .name          = "Intel 450GX (Orion), 2 PBs + 1 MC",
+    .internal_name = "i450gx_2pb_1mc",
+    .flags         = DEVICE_PCI,
+    .local         = 0,
+    .init          = i450gx_2pb_1mc_init,
+    .close         = i450gx_2pb_1mc_close,
+    .reset         = i450gx_2pb_1mc_reset,
+    { .available = NULL },
+    .speed_changed = NULL,
+    .force_redraw  = NULL,
+    .config        = NULL
+};
+*/
+
+
+/* No i450GX chipset motherboard that I could find on TheRetroWeb's database used two memory controllers.
+   However, TheRetroWeb's database isn't exhaustive, and there could be such a motherboard floating around. */
+/*
+const device_t i450gx_1pb_2mc device = {
+    .name          = "Intel 450GX (Orion), 1 PB + 2 MCs",
+    .internal_name = "i450gx_1pb_2mc",
+    .flags         = DEVICE_PCI,
+    .local         = 0,
+    .init          = i450gx_1pb_2mc_init,
+    .close         = i450gx_1pb_2mc_close,
+    .reset         = i450gx_1pb_2mc_reset,
+    { .available = NULL },
+    .speed_changed = NULL,
+    .force_redraw  = NULL,
+    .config        = NULL
+};
+*/
+/*
+const device_t i450gx_2pb_2mc device = {
+    .name          = "Intel 450GX (Orion), 2 PBs + 2 MCs",
+    .internal_name = "i450gx_2pb_2mc",
+    .flags         = DEVICE_PCI,
+    .local         = 0,
+    .init          = i450gx_2pb_2mc_init,
+    .close         = i450gx_2pb_2mc_close,
+    .reset         = i450gx_2pb_2mc_reset,
+    { .available = NULL },
+    .speed_changed = NULL,
+    .force_redraw  = NULL,
+    .config        = NULL
+};
+*/
