@@ -36,7 +36,7 @@ add_library(chipset OBJECT
     cs4031.c
     intel_420ex.c
     intel_4x0.c
-    intel_i450kx.c
+    intel_450.c
     intel_sio.c
     intel_piix.c
     ../ioapic.c

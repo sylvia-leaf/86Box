@@ -36,25 +36,25 @@
 #include <86box/chipset.h>
 
 #ifdef ENABLE_450KX_LOG
-int i450kx_do_log = ENABLE_450KX_LOG;
+int i450_do_log = ENABLE_450KX_LOG;
 
 static void
-i450kx_log(const char *fmt, ...)
+i450_log(const char *fmt, ...)
 {
     va_list ap;
 
-    if (i450kx_do_log) {
+    if (i450_do_log) {
         va_start(ap, fmt);
         pclog_ex(fmt, ap);
         va_end(ap);
     }
 }
 #else
-#    define i450kx_log(fmt, ...)
+#    define i450_log(fmt, ...)
 #endif
 
 /* TODO: Finish the bus index stuff. */
-typedef struct i450kx_t {
+typedef struct i450_t {
     smram_t *smram[2];
 
     uint8_t bus_index;
@@ -66,10 +66,10 @@ typedef struct i450kx_t {
     uint8_t mc_pci_conf[256];
 
     uint8_t mem_state[2][256];
-} i450kx_t;
+} i450_t;
 
 static void
-i450kx_map(i450kx_t *dev, int bus, uint32_t addr, uint32_t size, int state)
+i450_map(i450_t *dev, int bus, uint32_t addr, uint32_t size, int state)
 {
     uint32_t base      = addr >> 12;
     int      states[4] = { MEM_READ_EXTANY | MEM_WRITE_EXTANY, MEM_READ_INTERNAL | MEM_WRITE_EXTANY,
@@ -87,7 +87,7 @@ i450kx_map(i450kx_t *dev, int bus, uint32_t addr, uint32_t size, int state)
 }
 
 static void
-i450kx_smram_recalc(i450kx_t *dev, int bus)
+i450_smram_recalc(i450_t *dev, int bus)
 {
     const uint8_t *regs = bus ? dev->pb_pci_conf : dev->mc_pci_conf;
     uint32_t       addr;
@@ -110,7 +110,7 @@ i450kx_smram_recalc(i450kx_t *dev, int bus)
 }
 
 static void
-i450kx_vid_buf_recalc(i450kx_t *dev, int bus)
+i450_vid_buf_recalc(i450_t *dev, int bus)
 {
     const uint8_t *regs = bus ? dev->pb_pci_conf : dev->mc_pci_conf;
 
@@ -128,10 +128,10 @@ i450kx_vid_buf_recalc(i450kx_t *dev, int bus)
 static void
 pb_write(int func, int addr, uint8_t val, void *priv)
 {
-    i450kx_t *dev = (i450kx_t *) priv;
+    i450_t *dev = (i450_t *) priv;
 
     if (func == 0) {
-        i450kx_log("[%04X:%08X] i450KX-PB: [W] dev->pb_pci_conf[%02X] = %02X\n", CS, cpu_state.pc,
+        i450_log("[%04X:%08X] 82450-PB: [W] dev->pb_pci_conf[%02X] = %02X\n", CS, cpu_state.pc,
                    addr, val);
 
         switch (addr) {
@@ -196,63 +196,63 @@ pb_write(int func, int addr, uint8_t val, void *priv)
 
             case 0x57:
                 dev->pb_pci_conf[addr] = val & 0x08;
-                i450kx_smram_recalc(dev, 1);
+                i450_smram_recalc(dev, 1);
                 break;
 
             case 0x58:
                 dev->pb_pci_conf[addr] = val & 0x02;
-                i450kx_vid_buf_recalc(dev, 1);
+                i450_vid_buf_recalc(dev, 1);
                 break;
 
             case 0x59: /* PAM0 */
                 if ((dev->pb_pci_conf[0x59] ^ val) & 0x0f)
-                    i450kx_map(dev, 1, 0x80000, 0x20000, val & 0x0f);
+                    i450_map(dev, 1, 0x80000, 0x20000, val & 0x0f);
                 if ((dev->pb_pci_conf[0x59] ^ val) & 0xf0) {
-                    i450kx_map(dev, 1, 0xf0000, 0x10000, val >> 4);
+                    i450_map(dev, 1, 0xf0000, 0x10000, val >> 4);
                     shadowbios = (val & 0x10);
                 }
                 dev->pb_pci_conf[0x59] = val & 0x33;
                 break;
             case 0x5a: /* PAM1 */
                 if ((dev->pb_pci_conf[0x5a] ^ val) & 0x0f)
-                    i450kx_map(dev, 1, 0xc0000, 0x04000, val & 0xf);
+                    i450_map(dev, 1, 0xc0000, 0x04000, val & 0xf);
                 if ((dev->pb_pci_conf[0x5a] ^ val) & 0xf0)
-                    i450kx_map(dev, 1, 0xc4000, 0x04000, val >> 4);
+                    i450_map(dev, 1, 0xc4000, 0x04000, val >> 4);
                 dev->pb_pci_conf[0x5a] = val & 0x33;
                 break;
             case 0x5b: /*PAM2 */
                 if ((dev->pb_pci_conf[0x5b] ^ val) & 0x0f)
-                    i450kx_map(dev, 1, 0xc8000, 0x04000, val & 0xf);
+                    i450_map(dev, 1, 0xc8000, 0x04000, val & 0xf);
                 if ((dev->pb_pci_conf[0x5b] ^ val) & 0xf0)
-                    i450kx_map(dev, 1, 0xcc000, 0x04000, val >> 4);
+                    i450_map(dev, 1, 0xcc000, 0x04000, val >> 4);
                 dev->pb_pci_conf[0x5b] = val & 0x33;
                 break;
             case 0x5c: /*PAM3 */
                 if ((dev->pb_pci_conf[0x5c] ^ val) & 0x0f)
-                    i450kx_map(dev, 1, 0xd0000, 0x04000, val & 0xf);
+                    i450_map(dev, 1, 0xd0000, 0x04000, val & 0xf);
                 if ((dev->pb_pci_conf[0x5c] ^ val) & 0xf0)
-                    i450kx_map(dev, 1, 0xd4000, 0x04000, val >> 4);
+                    i450_map(dev, 1, 0xd4000, 0x04000, val >> 4);
                 dev->pb_pci_conf[0x5c] = val & 0x33;
                 break;
             case 0x5d: /* PAM4 */
                 if ((dev->pb_pci_conf[0x5d] ^ val) & 0x0f)
-                    i450kx_map(dev, 1, 0xd8000, 0x04000, val & 0xf);
+                    i450_map(dev, 1, 0xd8000, 0x04000, val & 0xf);
                 if ((dev->pb_pci_conf[0x5d] ^ val) & 0xf0)
-                    i450kx_map(dev, 1, 0xdc000, 0x04000, val >> 4);
+                    i450_map(dev, 1, 0xdc000, 0x04000, val >> 4);
                 dev->pb_pci_conf[0x5d] = val & 0x33;
                 break;
             case 0x5e: /* PAM5 */
                 if ((dev->pb_pci_conf[0x5e] ^ val) & 0x0f)
-                    i450kx_map(dev, 1, 0xe0000, 0x04000, val & 0xf);
+                    i450_map(dev, 1, 0xe0000, 0x04000, val & 0xf);
                 if ((dev->pb_pci_conf[0x5e] ^ val) & 0xf0)
-                    i450kx_map(dev, 1, 0xe4000, 0x04000, val >> 4);
+                    i450_map(dev, 1, 0xe4000, 0x04000, val >> 4);
                 dev->pb_pci_conf[0x5e] = val & 0x33;
                 break;
             case 0x5f: /* PAM6 */
                 if ((dev->pb_pci_conf[0x5f] ^ val) & 0x0f)
-                    i450kx_map(dev, 1, 0xe8000, 0x04000, val & 0xf);
+                    i450_map(dev, 1, 0xe8000, 0x04000, val & 0xf);
                 if ((dev->pb_pci_conf[0x5f] ^ val) & 0xf0)
-                    i450kx_map(dev, 1, 0xec000, 0x04000, val >> 4);
+                    i450_map(dev, 1, 0xec000, 0x04000, val >> 4);
                 dev->pb_pci_conf[0x5f] = val & 0x33;
                 break;
 
@@ -327,11 +327,11 @@ pb_write(int func, int addr, uint8_t val, void *priv)
             case 0xb8:
             case 0xb9:
                 dev->pb_pci_conf[addr] = val;
-                i450kx_smram_recalc(dev, 1);
+                i450_smram_recalc(dev, 1);
                 break;
             case 0xbb:
                 dev->pb_pci_conf[addr] = val & 0xf0;
-                i450kx_smram_recalc(dev, 1);
+                i450_smram_recalc(dev, 1);
                 break;
 
             case 0xbc:
@@ -373,13 +373,13 @@ pb_write(int func, int addr, uint8_t val, void *priv)
 static uint8_t
 pb_read(int func, int addr, void *priv)
 {
-    const i450kx_t *dev = (i450kx_t *) priv;
+    const i450_t *dev = (i450_t *) priv;
     uint8_t   ret = 0xff;
 
     if (func == 0) {
         ret = dev->pb_pci_conf[addr];
 
-        i450kx_log("[%04X:%08X] i450KX-PB: [R] dev->pb_pci_conf[%02X] = %02X\n", CS, cpu_state.pc,
+        i450_log("[%04X:%08X] 82450-PB: [R] dev->pb_pci_conf[%02X] = %02X\n", CS, cpu_state.pc,
                    addr, ret);
     }
 
@@ -388,7 +388,7 @@ pb_read(int func, int addr, void *priv)
 
 /* A way to use spd_write_drbs_interlaved() and convert the output to what we need. */
 static void
-mc_fill_drbs(i450kx_t *dev)
+mc_fill_drbs(i450_t *dev)
 {
     spd_write_drbs_interleaved(dev->mc_pci_conf, 0x60, 0x6f, 4);
     for (uint8_t i = 0x60; i <= 0x6f; i++) {
@@ -402,10 +402,10 @@ mc_fill_drbs(i450kx_t *dev)
 static void
 mc_write(int func, int addr, uint8_t val, void *priv)
 {
-    i450kx_t *dev = (i450kx_t *) priv;
+    i450_t *dev = (i450_t *) priv;
 
     if (func == 0) {
-        i450kx_log("[%04X:%08X] i450KX-MC: [W] dev->mc_pci_conf[%02X] = %02X\n", CS, cpu_state.pc,
+        i450_log("[%04X:%08X] 82450-MC: [W] dev->mc_pci_conf[%02X] = %02X\n", CS, cpu_state.pc,
                    addr, val);
 
         switch (addr) {
@@ -418,63 +418,63 @@ mc_write(int func, int addr, uint8_t val, void *priv)
 
             case 0x57:
                 dev->mc_pci_conf[addr] = val & 0x08;
-                i450kx_smram_recalc(dev, 0);
+                i450_smram_recalc(dev, 0);
                 break;
 
             case 0x58:
                 dev->mc_pci_conf[addr] = val & 0x02;
-                i450kx_vid_buf_recalc(dev, 0);
+                i450_vid_buf_recalc(dev, 0);
                 break;
 
             case 0x59: /* PAM0 */
                 if ((dev->mc_pci_conf[0x59] ^ val) & 0x0f)
-                    i450kx_map(dev, 0, 0x80000, 0x20000, val & 0x0f);
+                    i450_map(dev, 0, 0x80000, 0x20000, val & 0x0f);
                 if ((dev->mc_pci_conf[0x59] ^ val) & 0xf0) {
-                    i450kx_map(dev, 0, 0xf0000, 0x10000, val >> 4);
+                    i450_map(dev, 0, 0xf0000, 0x10000, val >> 4);
                     shadowbios = (val & 0x10);
                 }
                 dev->mc_pci_conf[0x59] = val & 0x33;
                 break;
             case 0x5a: /* PAM1 */
                 if ((dev->mc_pci_conf[0x5a] ^ val) & 0x0f)
-                    i450kx_map(dev, 0, 0xc0000, 0x04000, val & 0xf);
+                    i450_map(dev, 0, 0xc0000, 0x04000, val & 0xf);
                 if ((dev->mc_pci_conf[0x5a] ^ val) & 0xf0)
-                    i450kx_map(dev, 0, 0xc4000, 0x04000, val >> 4);
+                    i450_map(dev, 0, 0xc4000, 0x04000, val >> 4);
                 dev->mc_pci_conf[0x5a] = val & 0x33;
                 break;
             case 0x5b: /*PAM2 */
                 if ((dev->mc_pci_conf[0x5b] ^ val) & 0x0f)
-                    i450kx_map(dev, 0, 0xc8000, 0x04000, val & 0xf);
+                    i450_map(dev, 0, 0xc8000, 0x04000, val & 0xf);
                 if ((dev->mc_pci_conf[0x5b] ^ val) & 0xf0)
-                    i450kx_map(dev, 0, 0xcc000, 0x04000, val >> 4);
+                    i450_map(dev, 0, 0xcc000, 0x04000, val >> 4);
                 dev->mc_pci_conf[0x5b] = val & 0x33;
                 break;
             case 0x5c: /*PAM3 */
                 if ((dev->mc_pci_conf[0x5c] ^ val) & 0x0f)
-                    i450kx_map(dev, 0, 0xd0000, 0x04000, val & 0xf);
+                    i450_map(dev, 0, 0xd0000, 0x04000, val & 0xf);
                 if ((dev->mc_pci_conf[0x5c] ^ val) & 0xf0)
-                    i450kx_map(dev, 0, 0xd4000, 0x04000, val >> 4);
+                    i450_map(dev, 0, 0xd4000, 0x04000, val >> 4);
                 dev->mc_pci_conf[0x5c] = val & 0x33;
                 break;
             case 0x5d: /* PAM4 */
                 if ((dev->mc_pci_conf[0x5d] ^ val) & 0x0f)
-                    i450kx_map(dev, 0, 0xd8000, 0x04000, val & 0xf);
+                    i450_map(dev, 0, 0xd8000, 0x04000, val & 0xf);
                 if ((dev->mc_pci_conf[0x5d] ^ val) & 0xf0)
-                    i450kx_map(dev, 0, 0xdc000, 0x04000, val >> 4);
+                    i450_map(dev, 0, 0xdc000, 0x04000, val >> 4);
                 dev->mc_pci_conf[0x5d] = val & 0x33;
                 break;
             case 0x5e: /* PAM5 */
                 if ((dev->mc_pci_conf[0x5e] ^ val) & 0x0f)
-                    i450kx_map(dev, 0, 0xe0000, 0x04000, val & 0xf);
+                    i450_map(dev, 0, 0xe0000, 0x04000, val & 0xf);
                 if ((dev->mc_pci_conf[0x5e] ^ val) & 0xf0)
-                    i450kx_map(dev, 0, 0xe4000, 0x04000, val >> 4);
+                    i450_map(dev, 0, 0xe4000, 0x04000, val >> 4);
                 dev->mc_pci_conf[0x5e] = val & 0x33;
                 break;
             case 0x5f: /* PAM6 */
                 if ((dev->mc_pci_conf[0x5f] ^ val) & 0x0f)
-                    i450kx_map(dev, 0, 0xe8000, 0x04000, val & 0xf);
+                    i450_map(dev, 0, 0xe8000, 0x04000, val & 0xf);
                 if ((dev->mc_pci_conf[0x5f] ^ val) & 0xf0)
-                    i450kx_map(dev, 0, 0xec000, 0x04000, val >> 4);
+                    i450_map(dev, 0, 0xec000, 0x04000, val >> 4);
                 dev->mc_pci_conf[0x5f] = val & 0x33;
                 break;
 
@@ -556,11 +556,11 @@ mc_write(int func, int addr, uint8_t val, void *priv)
             case 0xb8:
             case 0xb9:
                 dev->mc_pci_conf[addr] = val;
-                i450kx_smram_recalc(dev, 0);
+                i450_smram_recalc(dev, 0);
                 break;
             case 0xbb:
                 dev->mc_pci_conf[addr] = val & 0xf0;
-                i450kx_smram_recalc(dev, 0);
+                i450_smram_recalc(dev, 0);
                 break;
 
             case 0xbc:
@@ -603,13 +603,13 @@ mc_write(int func, int addr, uint8_t val, void *priv)
 static uint8_t
 mc_read(int func, int addr, void *priv)
 {
-    const i450kx_t *dev = (i450kx_t *) priv;
+    const i450_t *dev = (i450_t *) priv;
     uint8_t   ret = 0xff;
 
     if (func == 0) {
         ret = dev->mc_pci_conf[addr];
 
-        i450kx_log("[%04X:%08X] i450KX-MC: [R] dev->mc_pci_conf[%02X] = %02X\n", CS, cpu_state.pc,
+        i450_log("[%04X:%08X] 82450-MC: [R] dev->mc_pci_conf[%02X] = %02X\n", CS, cpu_state.pc,
                    addr, ret);
     }
 
@@ -617,9 +617,9 @@ mc_read(int func, int addr, void *priv)
 }
 
 static void
-i450kx_reset(void *priv)
+i450_reset(void *priv)
 {
-    i450kx_t *dev = (i450kx_t *) priv;
+    i450_t *dev = (i450_t *) priv;
     uint32_t  i;
 
     /* Defaults PB */
@@ -705,8 +705,8 @@ i450kx_reset(void *priv)
 #if 0
     pci_remap_bus(dev->bus_index, 0x00);
 #endif
-    i450kx_smram_recalc(dev, 1);
-    i450kx_vid_buf_recalc(dev, 1);
+    i450_smram_recalc(dev, 1);
+    i450_vid_buf_recalc(dev, 1);
     pb_write(0, 0x59, 0x30, dev);
     for (i = 0x5a; i <= 0x5f; i++)
         pb_write(0, i, 0x33, dev);
@@ -777,8 +777,8 @@ i450kx_reset(void *priv)
     dev->mc_pci_conf[0xc6] = 0x00;
     dev->mc_pci_conf[0xc7] = 0x00;
 
-    i450kx_smram_recalc(dev, 0);
-    i450kx_vid_buf_recalc(dev, 0);
+    i450_smram_recalc(dev, 0);
+    i450_vid_buf_recalc(dev, 0);
     mc_write(0, 0x59, 0x03, dev);
     for (i = 0x5a; i <= 0x5f; i++)
         mc_write(0, i, 0x00, dev);
@@ -787,9 +787,9 @@ i450kx_reset(void *priv)
 }
 
 static void
-i450kx_close(void *priv)
+i450_close(void *priv)
 {
-    i450kx_t *dev = (i450kx_t *) priv;
+    i450_t *dev = (i450_t *) priv;
 
     smram_del(dev->smram[1]);
     smram_del(dev->smram[0]);
@@ -797,10 +797,10 @@ i450kx_close(void *priv)
 }
 
 static void *
-i450kx_init(UNUSED(const device_t *info))
+i450_init(UNUSED(const device_t *info))
 {
-    i450kx_t *dev = (i450kx_t *) malloc(sizeof(i450kx_t));
-    memset(dev, 0, sizeof(i450kx_t));
+    i450_t *dev = (i450_t *) malloc(sizeof(i450_t));
+    memset(dev, 0, sizeof(i450_t));
     pci_add_card(PCI_ADD_NORTHBRIDGE, pb_read, pb_write, dev, &dev->pb_slot);                 /* Device 19h: Intel 450KX PCI Bridge PB (82454KX) */
     pci_add_card(PCI_ADD_NORTHBRIDGE_SEC, mc_read, mc_write, dev, &dev->mc_slot);             /* Device 14h: Intel 450KX Memory Controller MC (82451KX/82452KX/82453KX) */
 
@@ -811,7 +811,7 @@ i450kx_init(UNUSED(const device_t *info))
     cpu_cache_ext_enabled = 1;
     cpu_update_waitstates();
 
-    i450kx_reset(dev);
+    i450_reset(dev);
 
     return dev;
 }
@@ -820,8 +820,8 @@ i450kx_init(UNUSED(const device_t *info))
 static void *
 i450gx_1pb_1mc_init(UNUSED(const device_t *info))
 {
-    i450kx_t *dev = (i450kx_t *) malloc(sizeof(i450kx_t));
-    memset(dev, 0, sizeof(i450kx_t));
+    i450_t *dev = (i450_t *) malloc(sizeof(i450_t));
+    memset(dev, 0, sizeof(i450_t));
     pci_add_card(PCI_ADD_NORTHBRIDGE, pb_read, pb_write, dev, &dev->pb_slot);                    Device 19h: Intel 450GX Compatibility PCI Bridge PB (82454GX)
     pci_add_card(PCI_ADD_NORTHBRIDGE_SEC, mc_read, mc_write, dev, &dev->mc_slot);                Device 14h: Intel 450GX Memory Controller MC (82451GX/82452GX/82453GX)
 
@@ -832,7 +832,7 @@ i450gx_1pb_1mc_init(UNUSED(const device_t *info))
     cpu_cache_ext_enabled = 1;
     cpu_update_waitstates();
 
-    i450kx_reset(dev);
+    i450_reset(dev);
 
     return dev;
 }
@@ -842,8 +842,8 @@ i450gx_1pb_1mc_init(UNUSED(const device_t *info))
 static void *
 i450gx_2pb_1mc_init(UNUSED(const device_t *info))
 {
-    i450kx_t *dev = (i450kx_t *) malloc(sizeof(i450kx_t));
-    memset(dev, 0, sizeof(i450kx_t));
+    i450_t *dev = (i450_t *) malloc(sizeof(i450_t));
+    memset(dev, 0, sizeof(i450_t));
     pci_add_card(PCI_ADD_NORTHBRIDGE, pb_read, pb_write, dev, &dev->pb_slot);                    Device 19h: Intel 450GX Compatibility PCI Bridge PB (82454GX)
     pci_add_card(PCI_ADD_NORTHBRIDGE_SEC, mc_read, mc_write, dev, &dev->mc_slot);                Device 14h: Intel 450GX Memory Controller MC (82451GX/82452GX/82453GX)
     pci_add_card(PCI_ADD_NORTHBRIDGE_TER, pb_aux_read, pb_aux_write, dev, &dev->pb_aux_slot);    Device 1Ah: Intel 450GX Auxiliary PCI Bridge PB (82454GX)
@@ -855,7 +855,7 @@ i450gx_2pb_1mc_init(UNUSED(const device_t *info))
     cpu_cache_ext_enabled = 1;
     cpu_update_waitstates();
 
-    i450kx_reset(dev);
+    i450_reset(dev);
 
     return dev;
 }
@@ -865,8 +865,8 @@ i450gx_2pb_1mc_init(UNUSED(const device_t *info))
 static void *
 i450gx_1pb_2mc_init(UNUSED(const device_t *info))
 {
-    i450kx_t *dev = (i450kx_t *) malloc(sizeof(i450kx_t));
-    memset(dev, 0, sizeof(i450kx_t));
+    i450_t *dev = (i450_t *) malloc(sizeof(i450_t));
+    memset(dev, 0, sizeof(i450_t));
     pci_add_card(PCI_ADD_NORTHBRIDGE, pb_read, pb_write, dev, &dev->pb_slot);                    Device 19h: Intel 450GX Compatibility PCI Bridge PB (82454GX)
     pci_add_card(PCI_ADD_NORTHBRIDGE_SEC, mc_read, mc_write, dev, &dev->mc_slot);                Device 14h: Intel 450GX Memory Controller MC (82451GX/82452GX/82453GX)
     pci_add_card(PCI_ADD_NORTHBRIDGE_TER, mc2_read, mc2_write, dev, &dev->mc2_slot);             Device 15h: Intel 450GX Memory Controller MC (82451GX/82452GX/82453GX)
@@ -878,7 +878,7 @@ i450gx_1pb_2mc_init(UNUSED(const device_t *info))
     cpu_cache_ext_enabled = 1;
     cpu_update_waitstates();
 
-    i450kx_reset(dev);
+    i450_reset(dev);
 
     return dev;
 }
@@ -888,8 +888,8 @@ i450gx_1pb_2mc_init(UNUSED(const device_t *info))
 static void *
 i450gx_2pb_2mc_init(UNUSED(const device_t *info))
 {
-    i450kx_t *dev = (i450kx_t *) malloc(sizeof(i450kx_t));
-    memset(dev, 0, sizeof(i450kx_t));
+    i450_t *dev = (i450_t *) malloc(sizeof(i450_t));
+    memset(dev, 0, sizeof(i450_t));
     pci_add_card(PCI_ADD_NORTHBRIDGE, pb_read, pb_write, dev, &dev->pb_slot);                    Device 19h: Intel 450GX Compatibility PCI Bridge PB (82454GX)
     pci_add_card(PCI_ADD_NORTHBRIDGE_SEC, mc_read, mc_write, dev, &dev->mc_slot);                Device 14h: Intel 450GX Memory Controller MC (82451GX/82452GX/82453GX)
     pci_add_card(PCI_ADD_NORTHBRIDGE_TER, pb_aux_read, pb_aux_write, dev, &dev->pb_aux_slot);    Device 1Ah: Intel 450GX Auxiliary PCI Bridge PB (82454GX)
@@ -902,7 +902,7 @@ i450gx_2pb_2mc_init(UNUSED(const device_t *info))
     cpu_cache_ext_enabled = 1;
     cpu_update_waitstates();
 
-    i450kx_reset(dev);
+    i450_reset(dev);
 
     return dev;
 }
@@ -910,12 +910,12 @@ i450gx_2pb_2mc_init(UNUSED(const device_t *info))
 
 const device_t i450kx_device = {
     .name          = "Intel 450KX (Mars)",
-    .internal_name = "i450kx",
+    .internal_name = "i450",
     .flags         = DEVICE_PCI,
     .local         = 0,
-    .init          = i450kx_init,
-    .close         = i450kx_close,
-    .reset         = i450kx_reset,
+    .init          = i450_init,
+    .close         = i450_close,
+    .reset         = i450_reset,
     { .available = NULL },
     .speed_changed = NULL,
     .force_redraw  = NULL,
