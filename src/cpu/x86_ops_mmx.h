@@ -48,6 +48,12 @@
     }                                        \
     x87_set_mmx()
 
+#define SSE_ENTER()
+    if (cr0 & 0x8) { \
+        x86_int(7);  \
+        return 1;    \
+    }
+
 static int
 opEMMS(uint32_t fetchdat)
 {

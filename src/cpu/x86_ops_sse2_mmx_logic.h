@@ -2,6 +2,7 @@
 static int
 opPAND_xmm_a16(uint32_t fetchdat)
 {
+    SSE_ENTER();
     SSE_REG src;
 
     fetch_ea_16(fetchdat);
@@ -15,6 +16,7 @@ opPAND_xmm_a16(uint32_t fetchdat)
 static int
 opPAND_xmm_a32(uint32_t fetchdat)
 {
+    SSE_ENTER();
     SSE_REG src;
 
     fetch_ea_32(fetchdat);
@@ -28,6 +30,7 @@ opPAND_xmm_a32(uint32_t fetchdat)
 static int
 opPANDN_xmm_a16(uint32_t fetchdat)
 {
+    SSE_ENTER();
     SSE_REG src;
 
     fetch_ea_16(fetchdat);
@@ -41,6 +44,7 @@ opPANDN_xmm_a16(uint32_t fetchdat)
 static int
 opPANDN_xmm_a32(uint32_t fetchdat)
 {
+    SSE_ENTER();
     SSE_REG src;
 
     fetch_ea_32(fetchdat);
@@ -54,6 +58,7 @@ opPANDN_xmm_a32(uint32_t fetchdat)
 static int
 opPOR_xmm_a16(uint32_t fetchdat)
 {
+    SSE_ENTER();
     SSE_REG src;
 
     fetch_ea_16(fetchdat);
@@ -67,6 +72,7 @@ opPOR_xmm_a16(uint32_t fetchdat)
 static int
 opPOR_xmm_a32(uint32_t fetchdat)
 {
+    SSE_ENTER();
     SSE_REG src;
 
     fetch_ea_32(fetchdat);
@@ -80,6 +86,7 @@ opPOR_xmm_a32(uint32_t fetchdat)
 static int
 opPXOR_xmm_a16(uint32_t fetchdat)
 {
+    SSE_ENTER();
     SSE_REG src;
 
     fetch_ea_16(fetchdat);
@@ -93,6 +100,7 @@ opPXOR_xmm_a16(uint32_t fetchdat)
 static int
 opPXOR_xmm_a32(uint32_t fetchdat)
 {
+    SSE_ENTER();
     SSE_REG src;
 
     fetch_ea_32(fetchdat);

@@ -52,6 +52,7 @@ opCVTPI2PS_xmm_mm_a32(uint32_t fetchdat)
 static int
 opCVTSI2SS_xmm_l_a16(uint32_t fetchdat)
 {
+    SSE_ENTER();
     fetch_ea_16(fetchdat);
     struct softfloat_status_t status = mxcsr_to_softfloat_status_word();
     if (cpu_mod == 3) {
@@ -81,6 +82,7 @@ opCVTSI2SS_xmm_l_a16(uint32_t fetchdat)
 static int
 opCVTSI2SS_xmm_l_a32(uint32_t fetchdat)
 {
+    SSE_ENTER();
     fetch_ea_32(fetchdat);
     struct softfloat_status_t status = mxcsr_to_softfloat_status_word();
     if (cpu_mod == 3) {
@@ -153,6 +155,7 @@ opCVTTPS2PI_mm_xmm_a32(uint32_t fetchdat)
 static int
 opCVTTSS2SI_l_xmm_a16(uint32_t fetchdat)
 {
+    SSE_ENTER();
     SSE_REG  src;
     fetch_ea_16(fetchdat);
     SSE_GETSRC();
@@ -173,6 +176,7 @@ opCVTTSS2SI_l_xmm_a16(uint32_t fetchdat)
 static int
 opCVTTSS2SI_l_xmm_a32(uint32_t fetchdat)
 {
+    SSE_ENTER();
     SSE_REG src;
     fetch_ea_32(fetchdat);
     SSE_GETSRC();
@@ -251,6 +255,7 @@ opCVTPS2PI_mm_xmm_a32(uint32_t fetchdat)
 static int
 opCVTSS2SI_l_xmm_a16(uint32_t fetchdat)
 {
+    SSE_ENTER();
     SSE_REG  src;
     int32_t result;
     fetch_ea_16(fetchdat);
@@ -272,6 +277,7 @@ opCVTSS2SI_l_xmm_a16(uint32_t fetchdat)
 static int
 opCVTSS2SI_l_xmm_a32(uint32_t fetchdat)
 {
+    SSE_ENTER();
     SSE_REG  src;
     int32_t result;
     fetch_ea_32(fetchdat);

@@ -5,6 +5,8 @@ opUCOMISS_xmm_xmm_a16(uint32_t fetchdat)
     if ((cpu_features & CPU_FEATURE_SSE2) && sse_xmm)
         return opUCOMISD_xmm_xmm_a16(fetchdat);
 
+    SSE_ENTER();
+
     flags_rebuild();
     fetch_ea_16(fetchdat);
     SSE_REG src;
@@ -28,6 +30,8 @@ opUCOMISS_xmm_xmm_a32(uint32_t fetchdat)
 {
     if ((cpu_features & CPU_FEATURE_SSE2) && sse_xmm)
         return opUCOMISD_xmm_xmm_a32(fetchdat);
+
+    SSE_ENTER();
 
     flags_rebuild();
     fetch_ea_32(fetchdat);
@@ -53,6 +57,8 @@ opCOMISS_xmm_xmm_a16(uint32_t fetchdat)
     if ((cpu_features & CPU_FEATURE_SSE2) && sse_xmm)
         return opCOMISD_xmm_xmm_a16(fetchdat);
 
+    SSE_ENTER();
+
     flags_rebuild();
     fetch_ea_16(fetchdat);
     SSE_REG src;
@@ -76,6 +82,8 @@ opCOMISS_xmm_xmm_a32(uint32_t fetchdat)
 {
     if ((cpu_features & CPU_FEATURE_SSE2) && sse_xmm)
         return opCOMISD_xmm_xmm_a32(fetchdat);
+
+    SSE_ENTER();
 
     flags_rebuild();
     fetch_ea_32(fetchdat);

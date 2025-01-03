@@ -2,6 +2,7 @@
 static int
 opANDPS_q_xmm_a16(uint32_t fetchdat)
 {
+    SSE_ENTER();
     fetch_ea_16(fetchdat);
     if (cpu_mod == 3) {
         cpu_state_high.XMM[cpu_reg].l[0] &= cpu_state_high.XMM[cpu_rm].l[0];
@@ -38,6 +39,7 @@ opANDPS_q_xmm_a16(uint32_t fetchdat)
 static int
 opANDPS_q_xmm_a32(uint32_t fetchdat)
 {
+    SSE_ENTER();
     fetch_ea_32(fetchdat);
     if (cpu_mod == 3) {
         cpu_state_high.XMM[cpu_reg].l[0] &= cpu_state_high.XMM[cpu_rm].l[0];
@@ -74,6 +76,7 @@ opANDPS_q_xmm_a32(uint32_t fetchdat)
 static int
 opANDNPS_q_xmm_a16(uint32_t fetchdat)
 {
+    SSE_ENTER();
     fetch_ea_16(fetchdat);
     if (cpu_mod == 3) {
         cpu_state_high.XMM[cpu_reg].l[0] = ~cpu_state_high.XMM[cpu_reg].l[0] & cpu_state_high.XMM[cpu_rm].l[0];
@@ -110,6 +113,7 @@ opANDNPS_q_xmm_a16(uint32_t fetchdat)
 static int
 opANDNPS_q_xmm_a32(uint32_t fetchdat)
 {
+    SSE_ENTER();
     fetch_ea_32(fetchdat);
     if (cpu_mod == 3) {
         cpu_state_high.XMM[cpu_reg].l[0] = ~cpu_state_high.XMM[cpu_reg].l[0] & cpu_state_high.XMM[cpu_rm].l[0];
@@ -146,6 +150,7 @@ opANDNPS_q_xmm_a32(uint32_t fetchdat)
 static int
 opORPS_q_xmm_a16(uint32_t fetchdat)
 {
+    SSE_ENTER();
     fetch_ea_16(fetchdat);
     if (cpu_mod == 3) {
         cpu_state_high.XMM[cpu_reg].l[0] |= cpu_state_high.XMM[cpu_rm].l[0];
@@ -182,6 +187,7 @@ opORPS_q_xmm_a16(uint32_t fetchdat)
 static int
 opORPS_q_xmm_a32(uint32_t fetchdat)
 {
+    SSE_ENTER();
     fetch_ea_32(fetchdat);
     if (cpu_mod == 3) {
         cpu_state_high.XMM[cpu_reg].l[0] |= cpu_state_high.XMM[cpu_rm].l[0];
@@ -218,6 +224,7 @@ opORPS_q_xmm_a32(uint32_t fetchdat)
 static int
 opXORPS_q_xmm_a16(uint32_t fetchdat)
 {
+    SSE_ENTER();
     fetch_ea_16(fetchdat);
     if (cpu_mod == 3) {
         cpu_state_high.XMM[cpu_reg].l[0] ^= cpu_state_high.XMM[cpu_rm].l[0];
@@ -254,6 +261,7 @@ opXORPS_q_xmm_a16(uint32_t fetchdat)
 static int
 opXORPS_q_xmm_a32(uint32_t fetchdat)
 {
+    SSE_ENTER();
     fetch_ea_32(fetchdat);
     if (cpu_mod == 3) {
         cpu_state_high.XMM[cpu_reg].l[0] ^= cpu_state_high.XMM[cpu_rm].l[0];

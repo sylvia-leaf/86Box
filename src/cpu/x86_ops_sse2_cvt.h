@@ -46,6 +46,7 @@ opCVTPI2PD_xmm_mm_a32(uint32_t fetchdat)
 static int
 opCVTSI2SD_xmm_l_a16(uint32_t fetchdat)
 {
+    SSE_ENTER();
     fetch_ea_16(fetchdat);
     struct softfloat_status_t status = mxcsr_to_softfloat_status_word(); 
     if (cpu_mod == 3) {
@@ -74,6 +75,7 @@ opCVTSI2SD_xmm_l_a16(uint32_t fetchdat)
 static int
 opCVTSI2SD_xmm_l_a32(uint32_t fetchdat)
 {
+    SSE_ENTER();
     fetch_ea_32(fetchdat);
     struct softfloat_status_t status = mxcsr_to_softfloat_status_word(); 
     if (cpu_mod == 3) {
@@ -150,6 +152,7 @@ opCVTTPD2PI_mm_xmm_a32(uint32_t fetchdat)
 static int
 opCVTTSD2SI_l_xmm_a16(uint32_t fetchdat)
 {
+    SSE_ENTER();
     SSE_REG src;
     fetch_ea_16(fetchdat);
     SSE_GETSRC();
@@ -169,6 +172,7 @@ opCVTTSD2SI_l_xmm_a16(uint32_t fetchdat)
 static int
 opCVTTSD2SI_l_xmm_a32(uint32_t fetchdat)
 {
+    SSE_ENTER();
     SSE_REG src;
     fetch_ea_32(fetchdat);
     SSE_GETSRC();
@@ -188,6 +192,7 @@ opCVTTSD2SI_l_xmm_a32(uint32_t fetchdat)
 static int
 opCVTSD2SI_l_xmm_a16(uint32_t fetchdat)
 {
+    SSE_ENTER();
     SSE_REG src;
     fetch_ea_16(fetchdat);
     SSE_GETSRC();
@@ -206,6 +211,7 @@ opCVTSD2SI_l_xmm_a16(uint32_t fetchdat)
 static int
 opCVTSD2SI_l_xmm_a32(uint32_t fetchdat)
 {
+    SSE_ENTER();
     SSE_REG src;
     fetch_ea_32(fetchdat);
     SSE_GETSRC();
@@ -224,6 +230,7 @@ opCVTSD2SI_l_xmm_a32(uint32_t fetchdat)
 static int
 opCVTPD2PS_mm_xmm_a16(uint32_t fetchdat)
 {
+    SSE_ENTER();
     SSE_REG src;
     fetch_ea_16(fetchdat);
     SSE_GETSRC();
@@ -245,6 +252,7 @@ opCVTPD2PS_mm_xmm_a16(uint32_t fetchdat)
 static int
 opCVTPD2PS_mm_xmm_a32(uint32_t fetchdat)
 {
+    SSE_ENTER();
     SSE_REG src;
     fetch_ea_32(fetchdat);
     SSE_GETSRC();
@@ -268,6 +276,8 @@ opCVTPS2PD_mm_xmm_a16(uint32_t fetchdat)
 {
     if ((cpu_features & CPU_FEATURE_SSE2) && sse_xmm)
         return opCVTPD2PS_mm_xmm_a16(fetchdat);
+    
+    SSE_ENTER();
     fetch_ea_16(fetchdat);
     SSE_REG src;
     SSE_GETSRC();
@@ -289,6 +299,8 @@ opCVTPS2PD_mm_xmm_a32(uint32_t fetchdat)
 {
     if ((cpu_features & CPU_FEATURE_SSE2) && sse_xmm)
         return opCVTPD2PS_mm_xmm_a32(fetchdat);
+    
+    SSE_ENTER();
     fetch_ea_32(fetchdat);
     SSE_REG src;
     SSE_GETSRC();
@@ -308,6 +320,7 @@ opCVTPS2PD_mm_xmm_a32(uint32_t fetchdat)
 static int
 opCVTSS2SD_mm_xmm_a16(uint32_t fetchdat)
 {
+    SSE_ENTER();
     fetch_ea_16(fetchdat);
     SSE_REG src;
     SSE_GETSRC();
@@ -326,6 +339,7 @@ opCVTSS2SD_mm_xmm_a16(uint32_t fetchdat)
 static int
 opCVTSS2SD_mm_xmm_a32(uint32_t fetchdat)
 {
+    SSE_ENTER();
     fetch_ea_32(fetchdat);
     SSE_REG src;
     SSE_GETSRC();
@@ -344,6 +358,7 @@ opCVTSS2SD_mm_xmm_a32(uint32_t fetchdat)
 static int
 opCVTSD2SS_mm_xmm_a16(uint32_t fetchdat)
 {
+    SSE_ENTER();
     fetch_ea_16(fetchdat);
     SSE_REG src;
     SSE_GETSRC();
@@ -362,6 +377,7 @@ opCVTSD2SS_mm_xmm_a16(uint32_t fetchdat)
 static int
 opCVTSD2SS_mm_xmm_a32(uint32_t fetchdat)
 {
+    SSE_ENTER();
     fetch_ea_32(fetchdat);
     SSE_REG src;
     SSE_GETSRC();
@@ -380,6 +396,7 @@ opCVTSD2SS_mm_xmm_a32(uint32_t fetchdat)
 static int
 opCVTPS2DQ_xmm_xmm_a16(uint32_t fetchdat)
 {
+    SSE_ENTER();
     SSE_REG src;
     fetch_ea_16(fetchdat);
     SSE_GETSRC();
@@ -401,6 +418,7 @@ opCVTPS2DQ_xmm_xmm_a16(uint32_t fetchdat)
 static int
 opCVTPS2DQ_xmm_xmm_a32(uint32_t fetchdat)
 {
+    SSE_ENTER();
     SSE_REG src;
     fetch_ea_32(fetchdat);
     SSE_GETSRC();
@@ -425,6 +443,7 @@ opCVTDQ2PS_xmm_xmm_a16(uint32_t fetchdat)
     SSE_REG src;
     if ((cpu_features & CPU_FEATURE_SSE2) && sse_xmm)
         return opCVTPS2DQ_xmm_xmm_a16(fetchdat);
+    SSE_ENTER();
     fetch_ea_16(fetchdat);
     SSE_GETSRC();
     struct softfloat_status_t status = mxcsr_to_softfloat_status_word();
@@ -448,6 +467,7 @@ opCVTDQ2PS_xmm_xmm_a32(uint32_t fetchdat)
     SSE_REG src;
     if ((cpu_features & CPU_FEATURE_SSE2) && sse_xmm)
         return opCVTPS2DQ_xmm_xmm_a32(fetchdat);
+    SSE_ENTER();
     fetch_ea_32(fetchdat);
     SSE_GETSRC();
     struct softfloat_status_t status = mxcsr_to_softfloat_status_word();
@@ -468,6 +488,7 @@ opCVTDQ2PS_xmm_xmm_a32(uint32_t fetchdat)
 static int
 opCVTTPS2DQ_xmm_xmm_a16(uint32_t fetchdat)
 {
+    SSE_ENTER();
     SSE_REG src;
     fetch_ea_16(fetchdat);
     SSE_GETSRC();
@@ -489,6 +510,7 @@ opCVTTPS2DQ_xmm_xmm_a16(uint32_t fetchdat)
 static int
 opCVTTPS2DQ_xmm_xmm_a32(uint32_t fetchdat)
 {
+    SSE_ENTER();
     SSE_REG src;
     fetch_ea_32(fetchdat);
     SSE_GETSRC();
@@ -510,6 +532,7 @@ opCVTTPS2DQ_xmm_xmm_a32(uint32_t fetchdat)
 static int
 opCVTPD2DQ_mm_xmm_a16(uint32_t fetchdat)
 {
+    SSE_ENTER();
     SSE_REG src;
     fetch_ea_16(fetchdat);
     SSE_GETSRC();
@@ -530,6 +553,7 @@ opCVTPD2DQ_mm_xmm_a16(uint32_t fetchdat)
 static int
 opCVTPD2DQ_mm_xmm_a32(uint32_t fetchdat)
 {
+    SSE_ENTER();
     SSE_REG src;
     fetch_ea_32(fetchdat);
     SSE_GETSRC();
@@ -550,6 +574,7 @@ opCVTPD2DQ_mm_xmm_a32(uint32_t fetchdat)
 static int
 opCVTTPD2DQ_mm_xmm_a16(uint32_t fetchdat)
 {
+    SSE_ENTER();
     SSE_REG src;
     fetch_ea_16(fetchdat);
     ILLEGAL_ON(!sse_xmm);
@@ -571,6 +596,7 @@ opCVTTPD2DQ_mm_xmm_a16(uint32_t fetchdat)
 static int
 opCVTTPD2DQ_mm_xmm_a32(uint32_t fetchdat)
 {
+    SSE_ENTER();
     SSE_REG src;
     fetch_ea_32(fetchdat);
     ILLEGAL_ON(!sse_xmm);
@@ -592,6 +618,7 @@ opCVTTPD2DQ_mm_xmm_a32(uint32_t fetchdat)
 static int
 opCVTDQ2PD_mm_xmm_a16(uint32_t fetchdat)
 {
+    SSE_ENTER();
     SSE_REG src;
     fetch_ea_16(fetchdat);
     SSE_GETSRC();
@@ -603,6 +630,7 @@ opCVTDQ2PD_mm_xmm_a16(uint32_t fetchdat)
 static int
 opCVTDQ2PD_mm_xmm_a32(uint32_t fetchdat)
 {
+    SSE_ENTER();
     SSE_REG src;
     fetch_ea_32(fetchdat);
     SSE_GETSRC();

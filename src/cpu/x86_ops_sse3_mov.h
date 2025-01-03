@@ -2,6 +2,7 @@
 static int
 opMOVDDUP_a16(uint32_t fetchdat)
 {
+    SSE_ENTER();
     SSE_REG src;
 
     fetch_ea_16(fetchdat);
@@ -15,6 +16,7 @@ opMOVDDUP_a16(uint32_t fetchdat)
 static int
 opMOVDDUP_a32(uint32_t fetchdat)
 {
+    SSE_ENTER();
     SSE_REG src;
 
     fetch_ea_32(fetchdat);
@@ -28,6 +30,7 @@ opMOVDDUP_a32(uint32_t fetchdat)
 static int
 opMOVSLDUP_a16(uint32_t fetchdat)
 {
+    SSE_ENTER();
     SSE_REG src;
 
     fetch_ea_16(fetchdat);
@@ -43,6 +46,7 @@ opMOVSLDUP_a16(uint32_t fetchdat)
 static int
 opMOVSLDUP_a32(uint32_t fetchdat)
 {
+    SSE_ENTER();
     SSE_REG src;
 
     fetch_ea_32(fetchdat);
@@ -58,6 +62,7 @@ opMOVSLDUP_a32(uint32_t fetchdat)
 static int
 opMOVSHDUP_a16(uint32_t fetchdat)
 {
+    SSE_ENTER();
     SSE_REG src;
 
     fetch_ea_16(fetchdat);
@@ -73,6 +78,7 @@ opMOVSHDUP_a16(uint32_t fetchdat)
 static int
 opMOVSHDUP_a32(uint32_t fetchdat)
 {
+    SSE_ENTER();
     SSE_REG src;
 
     fetch_ea_32(fetchdat);

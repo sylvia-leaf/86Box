@@ -2,6 +2,7 @@
 static int
 opPCMPGTB_xmm_a16(uint32_t fetchdat)
 {
+    SSE_ENTER();
     SSE_REG src;
 
     fetch_ea_16(fetchdat);
@@ -30,6 +31,7 @@ opPCMPGTB_xmm_a16(uint32_t fetchdat)
 static int
 opPCMPGTB_xmm_a32(uint32_t fetchdat)
 {
+    SSE_ENTER();
     SSE_REG src;
 
     fetch_ea_32(fetchdat);
@@ -58,6 +60,7 @@ opPCMPGTB_xmm_a32(uint32_t fetchdat)
 static int
 opPCMPGTW_xmm_a16(uint32_t fetchdat)
 {
+    SSE_ENTER();
     SSE_REG src;
 
     fetch_ea_16(fetchdat);
@@ -78,6 +81,7 @@ opPCMPGTW_xmm_a16(uint32_t fetchdat)
 static int
 opPCMPGTW_xmm_a32(uint32_t fetchdat)
 {
+    SSE_ENTER();
     SSE_REG src;
 
     fetch_ea_32(fetchdat);
@@ -98,6 +102,7 @@ opPCMPGTW_xmm_a32(uint32_t fetchdat)
 static int
 opPCMPGTD_xmm_a16(uint32_t fetchdat)
 {
+    SSE_ENTER();
     SSE_REG src;
 
     fetch_ea_16(fetchdat);
@@ -114,6 +119,7 @@ opPCMPGTD_xmm_a16(uint32_t fetchdat)
 static int
 opPCMPGTD_xmm_a32(uint32_t fetchdat)
 {
+    SSE_ENTER();
     SSE_REG src;
 
     fetch_ea_32(fetchdat);
@@ -130,6 +136,7 @@ opPCMPGTD_xmm_a32(uint32_t fetchdat)
 static int
 opPCMPEQB_xmm_a16(uint32_t fetchdat)
 {
+    SSE_ENTER();
     SSE_REG src;
 
     fetch_ea_16(fetchdat);
@@ -158,6 +165,7 @@ opPCMPEQB_xmm_a16(uint32_t fetchdat)
 static int
 opPCMPEQB_xmm_a32(uint32_t fetchdat)
 {
+    SSE_ENTER();
     SSE_REG src;
 
     fetch_ea_32(fetchdat);
@@ -186,6 +194,7 @@ opPCMPEQB_xmm_a32(uint32_t fetchdat)
 static int
 opPCMPEQW_xmm_a16(uint32_t fetchdat)
 {
+    SSE_ENTER();
     SSE_REG src;
 
     fetch_ea_16(fetchdat);
@@ -206,6 +215,7 @@ opPCMPEQW_xmm_a16(uint32_t fetchdat)
 static int
 opPCMPEQW_xmm_a32(uint32_t fetchdat)
 {
+    SSE_ENTER();
     SSE_REG src;
 
     fetch_ea_32(fetchdat);
@@ -226,6 +236,7 @@ opPCMPEQW_xmm_a32(uint32_t fetchdat)
 static int
 opPCMPEQD_xmm_a16(uint32_t fetchdat)
 {
+    SSE_ENTER();
     SSE_REG src;
 
     fetch_ea_16(fetchdat);
@@ -242,6 +253,7 @@ opPCMPEQD_xmm_a16(uint32_t fetchdat)
 static int
 opPCMPEQD_xmm_a32(uint32_t fetchdat)
 {
+    SSE_ENTER();
     SSE_REG src;
 
     fetch_ea_32(fetchdat);

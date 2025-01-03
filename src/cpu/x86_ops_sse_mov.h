@@ -2,6 +2,7 @@
 static int
 opMOVUPS_q_xmm_a16(uint32_t fetchdat)
 {
+    SSE_ENTER();
     fetch_ea_16(fetchdat);
     if (cpu_mod == 3) {
         cpu_state_high.XMM[cpu_reg].f[0] = cpu_state_high.XMM[cpu_rm].f[0];
@@ -39,6 +40,7 @@ opMOVUPS_q_xmm_a16(uint32_t fetchdat)
 static int
 opMOVUPS_q_xmm_a32(uint32_t fetchdat)
 {
+    SSE_ENTER();
     fetch_ea_32(fetchdat);
     if (cpu_mod == 3) {
         cpu_state_high.XMM[cpu_reg].f[0] = cpu_state_high.XMM[cpu_rm].f[0];
@@ -76,6 +78,7 @@ opMOVUPS_q_xmm_a32(uint32_t fetchdat)
 static int
 opMOVUPS_xmm_q_a16(uint32_t fetchdat)
 {
+    SSE_ENTER();
     fetch_ea_16(fetchdat);
     if (cpu_mod == 3) {
         cpu_state_high.XMM[cpu_rm].f[0] = cpu_state_high.XMM[cpu_reg].f[0];
@@ -108,6 +111,7 @@ opMOVUPS_xmm_q_a16(uint32_t fetchdat)
 static int
 opMOVUPS_xmm_q_a32(uint32_t fetchdat)
 {
+    SSE_ENTER();
     fetch_ea_32(fetchdat);
     if (cpu_mod == 3) {
         cpu_state_high.XMM[cpu_rm].f[0] = cpu_state_high.XMM[cpu_reg].f[0];
@@ -140,6 +144,7 @@ opMOVUPS_xmm_q_a32(uint32_t fetchdat)
 static int
 opMOVSS_f_xmm_a16(uint32_t fetchdat)
 {
+    SSE_ENTER();
     fetch_ea_16(fetchdat);
     if (cpu_mod == 3) {
         cpu_state_high.XMM[cpu_reg].f[0] = cpu_state_high.XMM[cpu_rm].f[0];
@@ -165,6 +170,7 @@ opMOVSS_f_xmm_a16(uint32_t fetchdat)
 static int
 opMOVSS_f_xmm_a32(uint32_t fetchdat)
 {
+    SSE_ENTER();
     fetch_ea_32(fetchdat);
     if (cpu_mod == 3) {
         cpu_state_high.XMM[cpu_reg].f[0] = cpu_state_high.XMM[cpu_rm].f[0];
@@ -190,6 +196,7 @@ opMOVSS_f_xmm_a32(uint32_t fetchdat)
 static int
 opMOVSS_xmm_f_a16(uint32_t fetchdat)
 {
+    SSE_ENTER();
     fetch_ea_16(fetchdat);
     if (cpu_mod == 3) {
         cpu_state_high.XMM[cpu_rm].f[0] = cpu_state_high.XMM[cpu_reg].f[0];
@@ -210,6 +217,7 @@ opMOVSS_xmm_f_a16(uint32_t fetchdat)
 static int
 opMOVSS_xmm_f_a32(uint32_t fetchdat)
 {
+    SSE_ENTER();
     fetch_ea_32(fetchdat);
     if (cpu_mod == 3) {
         cpu_state_high.XMM[cpu_rm].f[0] = cpu_state_high.XMM[cpu_reg].f[0];
@@ -232,6 +240,8 @@ opMOVLPS_f_xmm_MOVHLPS_xmm_xmm_a16(uint32_t fetchdat)
 {
     if ((cpu_features & CPU_FEATURE_SSE2) && sse_xmm)
         return opMOVLPD_f_xmm_a16(fetchdat);
+
+    SSE_ENTER();
 
     fetch_ea_16(fetchdat);
     if (cpu_mod == 3) {
@@ -259,6 +269,8 @@ opMOVLPS_f_xmm_MOVHLPS_xmm_xmm_a32(uint32_t fetchdat)
     if ((cpu_features & CPU_FEATURE_SSE2) && sse_xmm)
         return opMOVLPD_f_xmm_a32(fetchdat);
 
+    SSE_ENTER();
+
     fetch_ea_32(fetchdat);
     if (cpu_mod == 3) {
         // MOVHLPS
@@ -285,6 +297,8 @@ opMOVLPS_xmm_f_a16(uint32_t fetchdat)
     if ((cpu_features & CPU_FEATURE_SSE2) && sse_xmm)
         return opMOVLPD_xmm_f_a16(fetchdat);
 
+    SSE_ENTER();
+
     fetch_ea_16(fetchdat);
     ILLEGAL_ON(cpu_mod == 3);
     SEG_CHECK_WRITE(cpu_state.ea_seg);
@@ -302,6 +316,8 @@ opMOVLPS_xmm_f_a32(uint32_t fetchdat)
     if ((cpu_features & CPU_FEATURE_SSE2) && sse_xmm)
         return opMOVLPD_xmm_f_a32(fetchdat);
 
+    SSE_ENTER();
+
     fetch_ea_32(fetchdat);
     ILLEGAL_ON(cpu_mod == 3);
     SEG_CHECK_WRITE(cpu_state.ea_seg);
@@ -317,6 +333,8 @@ opUNPCKLPS_f_xmm_a16(uint32_t fetchdat)
 {
     if ((cpu_features & CPU_FEATURE_SSE2) && sse_xmm)
         return opUNPCKLPD_f_xmm_a16(fetchdat);
+
+    SSE_ENTER();
 
     fetch_ea_16(fetchdat);
     if (cpu_mod == 3) {
@@ -350,6 +368,8 @@ opUNPCKLPS_f_xmm_a32(uint32_t fetchdat)
     if ((cpu_features & CPU_FEATURE_SSE2) && sse_xmm)
         return opUNPCKLPD_f_xmm_a32(fetchdat);
 
+    SSE_ENTER();
+
     fetch_ea_32(fetchdat);
     if (cpu_mod == 3) {
         cpu_state_high.XMM[cpu_reg].l[0] = cpu_state_high.XMM[cpu_reg].l[0];
@@ -381,6 +401,8 @@ opUNPCKHPS_f_xmm_a16(uint32_t fetchdat)
 {
     if ((cpu_features & CPU_FEATURE_SSE2) && sse_xmm)
         return opUNPCKHPD_f_xmm_a16(fetchdat);
+
+    SSE_ENTER();
 
     fetch_ea_16(fetchdat);
     if (cpu_mod == 3) {
@@ -414,6 +436,8 @@ opUNPCKHPS_f_xmm_a32(uint32_t fetchdat)
     if ((cpu_features & CPU_FEATURE_SSE2) && sse_xmm)
         return opUNPCKHPD_f_xmm_a32(fetchdat);
 
+    SSE_ENTER();
+
     fetch_ea_32(fetchdat);
     if (cpu_mod == 3) {
         cpu_state_high.XMM[cpu_reg].l[0] = cpu_state_high.XMM[cpu_reg].l[2];
@@ -445,6 +469,8 @@ opMOVHPS_f_xmm_MOVLHPS_xmm_xmm_a16(uint32_t fetchdat)
     if ((cpu_features & CPU_FEATURE_SSE2) && sse_xmm)
         return opMOVHPD_f_xmm_a16(fetchdat);
 
+    SSE_ENTER();
+
     fetch_ea_16(fetchdat);
     if (cpu_mod == 3) {
         // MOVLHPS
@@ -470,6 +496,8 @@ opMOVHPS_f_xmm_MOVLHPS_xmm_xmm_a32(uint32_t fetchdat)
 {
     if ((cpu_features & CPU_FEATURE_SSE2) && sse_xmm)
         return opMOVHPD_f_xmm_a32(fetchdat);
+
+    SSE_ENTER();
 
     fetch_ea_32(fetchdat);
     if (cpu_mod == 3) {
@@ -497,6 +525,8 @@ opMOVHPS_xmm_f_a16(uint32_t fetchdat)
     if ((cpu_features & CPU_FEATURE_SSE2) && sse_xmm)
         return opMOVHPD_xmm_f_a16(fetchdat);
 
+    SSE_ENTER();
+
     fetch_ea_16(fetchdat);
     ILLEGAL_ON(cpu_mod == 3);
     SEG_CHECK_WRITE(cpu_state.ea_seg);
@@ -513,6 +543,8 @@ opMOVHPS_xmm_f_a32(uint32_t fetchdat)
     if ((cpu_features & CPU_FEATURE_SSE2) && sse_xmm)
         return opMOVHPD_xmm_f_a32(fetchdat);
 
+    SSE_ENTER();
+
     fetch_ea_32(fetchdat);
     ILLEGAL_ON(cpu_mod == 3);
     SEG_CHECK_WRITE(cpu_state.ea_seg);
@@ -526,6 +558,7 @@ opMOVHPS_xmm_f_a32(uint32_t fetchdat)
 static int
 opMOVAPS_q_xmm_a16(uint32_t fetchdat)
 {
+    SSE_ENTER();
     fetch_ea_16(fetchdat);
     if (cpu_mod == 3) {
         cpu_state_high.XMM[cpu_reg].f[0] = cpu_state_high.XMM[cpu_rm].f[0];
@@ -568,6 +601,7 @@ opMOVAPS_q_xmm_a16(uint32_t fetchdat)
 static int
 opMOVAPS_q_xmm_a32(uint32_t fetchdat)
 {
+    SSE_ENTER();
     fetch_ea_32(fetchdat);
     if (cpu_mod == 3) {
         cpu_state_high.XMM[cpu_reg].f[0] = cpu_state_high.XMM[cpu_rm].f[0];
@@ -610,6 +644,7 @@ opMOVAPS_q_xmm_a32(uint32_t fetchdat)
 static int
 opMOVAPS_xmm_q_a16(uint32_t fetchdat)
 {
+    SSE_ENTER();
     fetch_ea_16(fetchdat);
     if (cpu_mod == 3) {
         cpu_state_high.XMM[cpu_rm].f[0] = cpu_state_high.XMM[cpu_reg].f[0];
@@ -647,6 +682,7 @@ opMOVAPS_xmm_q_a16(uint32_t fetchdat)
 static int
 opMOVAPS_xmm_q_a32(uint32_t fetchdat)
 {
+    SSE_ENTER();
     fetch_ea_32(fetchdat);
     if (cpu_mod == 3) {
         cpu_state_high.XMM[cpu_rm].f[0] = cpu_state_high.XMM[cpu_reg].f[0];
@@ -684,6 +720,7 @@ opMOVAPS_xmm_q_a32(uint32_t fetchdat)
 static int
 opMOVNTPS_xmm_q_a16(uint32_t fetchdat)
 {
+    SSE_ENTER();
     fetch_ea_16(fetchdat);
     ILLEGAL_ON(cpu_mod == 3);
 
@@ -715,6 +752,7 @@ opMOVNTPS_xmm_q_a16(uint32_t fetchdat)
 static int
 opMOVNTPS_xmm_q_a32(uint32_t fetchdat)
 {
+    SSE_ENTER();
     fetch_ea_32(fetchdat);
     ILLEGAL_ON(cpu_mod == 3);
 
@@ -748,6 +786,8 @@ opMOVMSKPS_l_xmm_a16(uint32_t fetchdat)
 {
     if ((cpu_features & CPU_FEATURE_SSE2) && sse_xmm)
         return opMOVMSKPD_l_xmm_a16(fetchdat);
+    
+    SSE_ENTER();
 
     fetch_ea_16(fetchdat);
     ILLEGAL_ON(cpu_mod != 3);
@@ -773,6 +813,8 @@ opMOVMSKPS_l_xmm_a32(uint32_t fetchdat)
 {
     if ((cpu_features & CPU_FEATURE_SSE2) && sse_xmm)
         return opMOVMSKPD_l_xmm_a32(fetchdat);
+
+    SSE_ENTER();
 
     fetch_ea_32(fetchdat);
     ILLEGAL_ON(cpu_mod != 3);
@@ -858,8 +900,10 @@ opPINSRW_xmm_w_a16(uint32_t fetchdat)
         return 1;
     if (cpu_mod == 3) {
         uint16_t rm = getr16(cpu_rm);
-        if (sse_xmm)
+        if (sse_xmm) {
+            SSE_ENTER();
             cpu_state_high.XMM[cpu_reg].w[imm & 7] = rm;
+        }
         else {
             MMX_ENTER();
             MMX_REG *dst;
@@ -875,8 +919,10 @@ opPINSRW_xmm_w_a16(uint32_t fetchdat)
         src = readmemw(easeg, cpu_state.eaaddr);
         if (cpu_state.abrt)
             return 1;
-        if (sse_xmm)
+        if (sse_xmm) {
+            SSE_ENTER();
             cpu_state_high.XMM[cpu_reg].w[imm & 7] = src;
+        }
         else {
             MMX_ENTER();
             MMX_REG *dst;
@@ -899,8 +945,10 @@ opPINSRW_xmm_w_a32(uint32_t fetchdat)
         return 1;
     if (cpu_mod == 3) {
         uint16_t rm = getr16(cpu_rm);
-        if (sse_xmm)
+        if (sse_xmm) {
+            SSE_ENTER();
             cpu_state_high.XMM[cpu_reg].w[imm & 7] = rm;
+        }
         else {
             MMX_ENTER();
             MMX_REG *dst;
@@ -916,8 +964,10 @@ opPINSRW_xmm_w_a32(uint32_t fetchdat)
         src = readmemw(easeg, cpu_state.eaaddr);
         if (cpu_state.abrt)
             return 1;
-        if (sse_xmm)
+        if (sse_xmm) {
+            SSE_ENTER();
             cpu_state_high.XMM[cpu_reg].w[imm & 7] = src;
+        }
         else {
             MMX_ENTER();
             MMX_REG *dst;
@@ -941,6 +991,7 @@ opPEXTRW_xmm_w_a16(uint32_t fetchdat)
     if (cpu_mod == 3) {
         if (sse_xmm)
         {
+            SSE_ENTER();
             setr32(cpu_reg, cpu_state_high.XMM[cpu_rm].w[imm & 7]);
         }
         else {
@@ -966,6 +1017,7 @@ opPEXTRW_xmm_w_a32(uint32_t fetchdat)
     if (cpu_mod == 3) {
         if (sse_xmm)
         {
+            SSE_ENTER();
             setr32(cpu_reg, cpu_state_high.XMM[cpu_rm].w[imm & 7]);
         }
         else {
@@ -985,6 +1037,8 @@ opSHUFPS_xmm_w_a16(uint32_t fetchdat)
 {
     if ((cpu_features & CPU_FEATURE_SSE2) && sse_xmm)
         return opSHUFPD_xmm_w_a16(fetchdat);
+
+    SSE_ENTER();
 
     fetch_ea_16(fetchdat);
     uint8_t imm = getbyte();
@@ -1031,6 +1085,8 @@ opSHUFPS_xmm_w_a32(uint32_t fetchdat)
 {
     if ((cpu_features & CPU_FEATURE_SSE2) && sse_xmm)
         return opSHUFPD_xmm_w_a32(fetchdat);
+
+    SSE_ENTER();
 
     fetch_ea_32(fetchdat);
     uint8_t imm = getbyte();
@@ -1080,6 +1136,7 @@ opPMOVMSKB_l_xmm_a16(uint32_t fetchdat)
     if (cpu_mod == 3) {
         uint32_t result = 0;
         if ((cpu_features & CPU_FEATURE_SSE2) && sse_xmm) {
+            SSE_ENTER();
             if (cpu_state_high.XMM[cpu_rm].b[0] & (1 << 7))
                 result |= 1;
             if (cpu_state_high.XMM[cpu_rm].b[1] & (1 << 7))
@@ -1148,6 +1205,7 @@ opPMOVMSKB_l_xmm_a32(uint32_t fetchdat)
     if (cpu_mod == 3) {
         uint32_t result = 0;
         if ((cpu_features & CPU_FEATURE_SSE2) && sse_xmm) {
+            SSE_ENTER();
             if (cpu_state_high.XMM[cpu_rm].b[0] & (1 << 7))
                 result |= 1;
             if (cpu_state_high.XMM[cpu_rm].b[1] & (1 << 7))

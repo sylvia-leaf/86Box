@@ -5,6 +5,7 @@
 static int
 opSQRTPD_xmm_xmm_a16(uint32_t fetchdat)
 {
+    SSE_ENTER();
     feclearexcept(FE_ALL_EXCEPT);
     fetch_ea_16(fetchdat);
     if (cpu_mod == 3) {
@@ -42,6 +43,7 @@ opSQRTPD_xmm_xmm_a16(uint32_t fetchdat)
 static int
 opSQRTPD_xmm_xmm_a32(uint32_t fetchdat)
 {
+    SSE_ENTER();
     feclearexcept(FE_ALL_EXCEPT);
     fetch_ea_32(fetchdat);
     if (cpu_mod == 3) {
@@ -79,6 +81,7 @@ opSQRTPD_xmm_xmm_a32(uint32_t fetchdat)
 static int
 opSQRTSD_xmm_xmm_a16(uint32_t fetchdat)
 {
+    SSE_ENTER();
     feclearexcept(FE_ALL_EXCEPT);
     fetch_ea_16(fetchdat);
     if (cpu_mod == 3) {
@@ -108,6 +111,7 @@ opSQRTSD_xmm_xmm_a16(uint32_t fetchdat)
 static int
 opSQRTSD_xmm_xmm_a32(uint32_t fetchdat)
 {
+    SSE_ENTER();
     feclearexcept(FE_ALL_EXCEPT);
     fetch_ea_32(fetchdat);
     if (cpu_mod == 3) {
@@ -137,6 +141,7 @@ opSQRTSD_xmm_xmm_a32(uint32_t fetchdat)
 static int
 opADDPD_xmm_xmm_a16(uint32_t fetchdat)
 {
+    SSE_ENTER();
     feclearexcept(FE_ALL_EXCEPT);
     fetch_ea_16(fetchdat);
     if (cpu_mod == 3) {
@@ -173,6 +178,7 @@ opADDPD_xmm_xmm_a16(uint32_t fetchdat)
 static int
 opADDPD_xmm_xmm_a32(uint32_t fetchdat)
 {
+    SSE_ENTER();
     feclearexcept(FE_ALL_EXCEPT);
     fetch_ea_32(fetchdat);
     if (cpu_mod == 3) {
@@ -209,6 +215,7 @@ opADDPD_xmm_xmm_a32(uint32_t fetchdat)
 static int
 opADDSD_xmm_xmm_a16(uint32_t fetchdat)
 {
+    SSE_ENTER();
     feclearexcept(FE_ALL_EXCEPT);
     fetch_ea_16(fetchdat);
     if (cpu_mod == 3) {
@@ -237,6 +244,7 @@ opADDSD_xmm_xmm_a16(uint32_t fetchdat)
 static int
 opADDSD_xmm_xmm_a32(uint32_t fetchdat)
 {
+    SSE_ENTER();
     feclearexcept(FE_ALL_EXCEPT);
     fetch_ea_32(fetchdat);
     if (cpu_mod == 3) {
@@ -265,6 +273,7 @@ opADDSD_xmm_xmm_a32(uint32_t fetchdat)
 static int
 opMULPD_xmm_xmm_a16(uint32_t fetchdat)
 {
+    SSE_ENTER();
     feclearexcept(FE_ALL_EXCEPT);
     fetch_ea_16(fetchdat);
     if (cpu_mod == 3) {
@@ -301,6 +310,7 @@ opMULPD_xmm_xmm_a16(uint32_t fetchdat)
 static int
 opMULPD_xmm_xmm_a32(uint32_t fetchdat)
 {
+    SSE_ENTER();
     feclearexcept(FE_ALL_EXCEPT);
     fetch_ea_32(fetchdat);
     if (cpu_mod == 3) {
@@ -337,6 +347,7 @@ opMULPD_xmm_xmm_a32(uint32_t fetchdat)
 static int
 opMULSD_xmm_xmm_a16(uint32_t fetchdat)
 {
+    SSE_ENTER();
     feclearexcept(FE_ALL_EXCEPT);
     fetch_ea_16(fetchdat);
     if (cpu_mod == 3) {
@@ -365,6 +376,7 @@ opMULSD_xmm_xmm_a16(uint32_t fetchdat)
 static int
 opMULSD_xmm_xmm_a32(uint32_t fetchdat)
 {
+    SSE_ENTER();
     feclearexcept(FE_ALL_EXCEPT);
     fetch_ea_32(fetchdat);
     if (cpu_mod == 3) {
@@ -393,6 +405,7 @@ opMULSD_xmm_xmm_a32(uint32_t fetchdat)
 static int
 opSUBPD_xmm_xmm_a16(uint32_t fetchdat)
 {
+    SSE_ENTER();
     feclearexcept(FE_ALL_EXCEPT);
     fetch_ea_16(fetchdat);
     if (cpu_mod == 3) {
@@ -429,6 +442,7 @@ opSUBPD_xmm_xmm_a16(uint32_t fetchdat)
 static int
 opSUBPD_xmm_xmm_a32(uint32_t fetchdat)
 {
+    SSE_ENTER();
     feclearexcept(FE_ALL_EXCEPT);
     fetch_ea_32(fetchdat);
     if (cpu_mod == 3) {
@@ -465,6 +479,7 @@ opSUBPD_xmm_xmm_a32(uint32_t fetchdat)
 static int
 opSUBSD_xmm_xmm_a16(uint32_t fetchdat)
 {
+    SSE_ENTER();
     feclearexcept(FE_ALL_EXCEPT);
     fetch_ea_16(fetchdat);
     if (cpu_mod == 3) {
@@ -493,6 +508,7 @@ opSUBSD_xmm_xmm_a16(uint32_t fetchdat)
 static int
 opSUBSD_xmm_xmm_a32(uint32_t fetchdat)
 {
+    SSE_ENTER();
     feclearexcept(FE_ALL_EXCEPT);
     fetch_ea_32(fetchdat);
     if (cpu_mod == 3) {
@@ -521,6 +537,7 @@ opSUBSD_xmm_xmm_a32(uint32_t fetchdat)
 static int
 opMINPD_xmm_xmm_a16(uint32_t fetchdat)
 {
+    SSE_ENTER();
     fetch_ea_16(fetchdat);
     SSE_REG src;
     struct softfloat_status_t status = mxcsr_to_softfloat_status_word();
@@ -540,6 +557,7 @@ opMINPD_xmm_xmm_a16(uint32_t fetchdat)
 static int
 opMINPD_xmm_xmm_a32(uint32_t fetchdat)
 {
+    SSE_ENTER();
     fetch_ea_32(fetchdat);
     SSE_REG src;
     struct softfloat_status_t status = mxcsr_to_softfloat_status_word();
@@ -559,6 +577,7 @@ opMINPD_xmm_xmm_a32(uint32_t fetchdat)
 static int
 opMINSD_xmm_xmm_a16(uint32_t fetchdat)
 {
+    SSE_ENTER();
     fetch_ea_16(fetchdat);
     if (cpu_mod == 3) {
         cpu_state_high.XMM[cpu_reg].d2[0] = fmin(cpu_state_high.XMM[cpu_rm].d2[0], cpu_state_high.XMM[cpu_reg].d2[0]);
@@ -580,6 +599,7 @@ opMINSD_xmm_xmm_a16(uint32_t fetchdat)
 static int
 opMINSD_xmm_xmm_a32(uint32_t fetchdat)
 {
+    SSE_ENTER();
     fetch_ea_32(fetchdat);
     if (cpu_mod == 3) {
         cpu_state_high.XMM[cpu_reg].d2[0] = fmin(cpu_state_high.XMM[cpu_rm].d2[0], cpu_state_high.XMM[cpu_reg].d2[0]);
@@ -601,6 +621,7 @@ opMINSD_xmm_xmm_a32(uint32_t fetchdat)
 static int
 opDIVPD_xmm_xmm_a16(uint32_t fetchdat)
 {
+    SSE_ENTER();
     feclearexcept(FE_ALL_EXCEPT);
     fetch_ea_16(fetchdat);
     if (cpu_mod == 3) {
@@ -637,6 +658,7 @@ opDIVPD_xmm_xmm_a16(uint32_t fetchdat)
 static int
 opDIVPD_xmm_xmm_a32(uint32_t fetchdat)
 {
+    SSE_ENTER();
     feclearexcept(FE_ALL_EXCEPT);
     fetch_ea_32(fetchdat);
     if (cpu_mod == 3) {
@@ -673,6 +695,7 @@ opDIVPD_xmm_xmm_a32(uint32_t fetchdat)
 static int
 opDIVSD_xmm_xmm_a16(uint32_t fetchdat)
 {
+    SSE_ENTER();
     feclearexcept(FE_ALL_EXCEPT);
     fetch_ea_16(fetchdat);
     if (cpu_mod == 3) {
@@ -701,6 +724,7 @@ opDIVSD_xmm_xmm_a16(uint32_t fetchdat)
 static int
 opDIVSD_xmm_xmm_a32(uint32_t fetchdat)
 {
+    SSE_ENTER();
     feclearexcept(FE_ALL_EXCEPT);
     fetch_ea_32(fetchdat);
     if (cpu_mod == 3) {
@@ -729,6 +753,7 @@ opDIVSD_xmm_xmm_a32(uint32_t fetchdat)
 static int
 opMAXPD_xmm_xmm_a16(uint32_t fetchdat)
 {
+    SSE_ENTER();
     fetch_ea_16(fetchdat);
     SSE_REG src;
     struct softfloat_status_t status = mxcsr_to_softfloat_status_word();
@@ -748,6 +773,7 @@ opMAXPD_xmm_xmm_a16(uint32_t fetchdat)
 static int
 opMAXPD_xmm_xmm_a32(uint32_t fetchdat)
 {
+    SSE_ENTER();
     fetch_ea_32(fetchdat);
     SSE_REG src;
     struct softfloat_status_t status = mxcsr_to_softfloat_status_word();
@@ -767,6 +793,7 @@ opMAXPD_xmm_xmm_a32(uint32_t fetchdat)
 static int
 opMAXSD_xmm_xmm_a16(uint32_t fetchdat)
 {
+    SSE_ENTER();
     fetch_ea_16(fetchdat);
     if (cpu_mod == 3) {
         cpu_state_high.XMM[cpu_reg].d2[0] = fmax(cpu_state_high.XMM[cpu_rm].d2[0], cpu_state_high.XMM[cpu_reg].d2[0]);
@@ -788,6 +815,7 @@ opMAXSD_xmm_xmm_a16(uint32_t fetchdat)
 static int
 opMAXSD_xmm_xmm_a32(uint32_t fetchdat)
 {
+    SSE_ENTER();
     fetch_ea_32(fetchdat);
     if (cpu_mod == 3) {
         cpu_state_high.XMM[cpu_reg].d2[0] = fmax(cpu_state_high.XMM[cpu_rm].d2[0], cpu_state_high.XMM[cpu_reg].d2[0]);
@@ -821,6 +849,7 @@ static float64_compare_method compare64[8] = {
 static int
 opCMPPD_xmm_xmm_a16(uint32_t fetchdat)
 {
+    SSE_ENTER();
     fetch_ea_16(fetchdat);
     SSE_REG src;
     struct softfloat_status_t status = mxcsr_to_softfloat_status_word();
@@ -834,6 +863,7 @@ opCMPPD_xmm_xmm_a16(uint32_t fetchdat)
 static int
 opCMPPD_xmm_xmm_a32(uint32_t fetchdat)
 {
+    SSE_ENTER();
     fetch_ea_32(fetchdat);
     uint8_t  imm = getbyte();
     SSE_REG src;
@@ -847,6 +877,7 @@ opCMPPD_xmm_xmm_a32(uint32_t fetchdat)
 static int
 opCMPSD_xmm_xmm_a16(uint32_t fetchdat)
 {
+    SSE_ENTER();
     fetch_ea_16(fetchdat);
     uint8_t  imm = getbyte();
     SSE_REG src;
@@ -859,6 +890,7 @@ opCMPSD_xmm_xmm_a16(uint32_t fetchdat)
 static int
 opCMPSD_xmm_xmm_a32(uint32_t fetchdat)
 {
+    SSE_ENTER();
     fetch_ea_32(fetchdat);
     uint8_t  imm = getbyte();
     SSE_REG src;

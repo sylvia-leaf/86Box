@@ -2,6 +2,7 @@
 static int
 opPSxxW_xmm_imm(uint32_t fetchdat)
 {
+    SSE_ENTER();
     int      reg   = fetchdat & 7;
     int      op    = fetchdat & 0x38;
     int      shift = (fetchdat >> 8) & 0xff;
@@ -64,6 +65,7 @@ opPSxxW_xmm_imm(uint32_t fetchdat)
 static int
 opPSxxD_xmm_imm(uint32_t fetchdat)
 {
+    SSE_ENTER();
     int      reg   = fetchdat & 7;
     int      op    = fetchdat & 0x38;
     int      shift = (fetchdat >> 8) & 0xff;
@@ -114,6 +116,7 @@ opPSxxD_xmm_imm(uint32_t fetchdat)
 static int
 opPSxxQ_xmm_imm(uint32_t fetchdat)
 {
+    SSE_ENTER();
     int      reg   = fetchdat & 7;
     int      op    = fetchdat & 0x38;
     int      shift = (fetchdat >> 8) & 0xff;
@@ -216,6 +219,7 @@ opPSxxQ_xmm_imm(uint32_t fetchdat)
 static int
 opPSRLW_xmm_a16(uint32_t fetchdat)
 {
+    SSE_ENTER();
     uint64_t shift;
 
     fetch_ea_16(fetchdat);
@@ -241,6 +245,7 @@ opPSRLW_xmm_a16(uint32_t fetchdat)
 static int
 opPSRLW_xmm_a32(uint32_t fetchdat)
 {
+    SSE_ENTER();
     uint64_t shift;
 
     fetch_ea_32(fetchdat);
@@ -266,6 +271,7 @@ opPSRLW_xmm_a32(uint32_t fetchdat)
 static int
 opPSRLD_xmm_a16(uint32_t fetchdat)
 {
+    SSE_ENTER();
     uint64_t shift;
 
     fetch_ea_16(fetchdat);
@@ -287,6 +293,7 @@ opPSRLD_xmm_a16(uint32_t fetchdat)
 static int
 opPSRLD_xmm_a32(uint32_t fetchdat)
 {
+    SSE_ENTER();
     uint64_t shift;
 
     fetch_ea_32(fetchdat);
@@ -308,6 +315,7 @@ opPSRLD_xmm_a32(uint32_t fetchdat)
 static int
 opPSRLQ_xmm_a16(uint32_t fetchdat)
 {
+    SSE_ENTER();
     uint64_t shift;
 
     fetch_ea_16(fetchdat);
@@ -327,6 +335,7 @@ opPSRLQ_xmm_a16(uint32_t fetchdat)
 static int
 opPSRLQ_xmm_a32(uint32_t fetchdat)
 {
+    SSE_ENTER();
     uint64_t shift;
 
     fetch_ea_32(fetchdat);
@@ -346,6 +355,7 @@ opPSRLQ_xmm_a32(uint32_t fetchdat)
 static int
 opPSRAW_xmm_a16(uint32_t fetchdat)
 {
+    SSE_ENTER();
     uint64_t shift;
 
     fetch_ea_16(fetchdat);
@@ -369,6 +379,7 @@ opPSRAW_xmm_a16(uint32_t fetchdat)
 static int
 opPSRAW_xmm_a32(uint32_t fetchdat)
 {
+    SSE_ENTER();
     uint64_t shift;
 
     fetch_ea_32(fetchdat);
@@ -392,6 +403,7 @@ opPSRAW_xmm_a32(uint32_t fetchdat)
 static int
 opPSRAD_xmm_a16(uint32_t fetchdat)
 {
+    SSE_ENTER();
     uint64_t shift;
 
     fetch_ea_16(fetchdat);
@@ -411,6 +423,7 @@ opPSRAD_xmm_a16(uint32_t fetchdat)
 static int
 opPSRAD_xmm_a32(uint32_t fetchdat)
 {
+    SSE_ENTER();
     uint64_t shift;
 
     fetch_ea_32(fetchdat);
@@ -430,6 +443,7 @@ opPSRAD_xmm_a32(uint32_t fetchdat)
 static int
 opPSLLW_xmm_a16(uint32_t fetchdat)
 {
+    SSE_ENTER();
     uint64_t shift;
 
     fetch_ea_16(fetchdat);
@@ -455,6 +469,7 @@ opPSLLW_xmm_a16(uint32_t fetchdat)
 static int
 opPSLLW_xmm_a32(uint32_t fetchdat)
 {
+    SSE_ENTER();
     uint64_t shift;
 
     fetch_ea_32(fetchdat);
@@ -480,6 +495,7 @@ opPSLLW_xmm_a32(uint32_t fetchdat)
 static int
 opPSLLD_xmm_a16(uint32_t fetchdat)
 {
+    SSE_ENTER();
     uint64_t shift;
 
     fetch_ea_16(fetchdat);
@@ -501,6 +517,7 @@ opPSLLD_xmm_a16(uint32_t fetchdat)
 static int
 opPSLLD_xmm_a32(uint32_t fetchdat)
 {
+    SSE_ENTER();
     uint64_t shift;
 
     fetch_ea_32(fetchdat);
@@ -522,6 +539,7 @@ opPSLLD_xmm_a32(uint32_t fetchdat)
 static int
 opPSLLQ_xmm_a16(uint32_t fetchdat)
 {
+    SSE_ENTER();
     uint64_t shift;
 
     fetch_ea_16(fetchdat);
@@ -541,6 +559,7 @@ opPSLLQ_xmm_a16(uint32_t fetchdat)
 static int
 opPSLLQ_xmm_a32(uint32_t fetchdat)
 {
+    SSE_ENTER();
     uint64_t  shift;
 
     fetch_ea_32(fetchdat);

@@ -2,6 +2,7 @@
 static int
 opHADDPS_a16(uint32_t fetchdat)
 {
+    SSE_ENTER();
     SSE_REG src, tmp;
 
     fetch_ea_16(fetchdat);
@@ -19,6 +20,7 @@ opHADDPS_a16(uint32_t fetchdat)
 static int
 opHADDPS_a32(uint32_t fetchdat)
 {
+    SSE_ENTER();
     SSE_REG src, tmp;
 
     fetch_ea_32(fetchdat);
@@ -36,6 +38,7 @@ opHADDPS_a32(uint32_t fetchdat)
 static int
 opHADDPD_a16(uint32_t fetchdat)
 {
+    SSE_ENTER();
     SSE_REG src, tmp;
 
     fetch_ea_16(fetchdat);
@@ -51,6 +54,7 @@ opHADDPD_a16(uint32_t fetchdat)
 static int
 opHADDPD_a32(uint32_t fetchdat)
 {
+    SSE_ENTER();
     SSE_REG src, tmp;
 
     fetch_ea_32(fetchdat);
@@ -66,6 +70,7 @@ opHADDPD_a32(uint32_t fetchdat)
 static int
 opHSUBPS_a16(uint32_t fetchdat)
 {
+    SSE_ENTER();
     SSE_REG src, tmp;
 
     fetch_ea_16(fetchdat);
@@ -83,6 +88,7 @@ opHSUBPS_a16(uint32_t fetchdat)
 static int
 opHSUBPS_a32(uint32_t fetchdat)
 {
+    SSE_ENTER();
     SSE_REG src, tmp;
 
     fetch_ea_32(fetchdat);
@@ -100,6 +106,7 @@ opHSUBPS_a32(uint32_t fetchdat)
 static int
 opHSUBPD_a16(uint32_t fetchdat)
 {
+    SSE_ENTER();
     SSE_REG src, tmp;
 
     fetch_ea_16(fetchdat);
@@ -115,6 +122,7 @@ opHSUBPD_a16(uint32_t fetchdat)
 static int
 opHSUBPD_a32(uint32_t fetchdat)
 {
+    SSE_ENTER();
     SSE_REG src, tmp;
 
     fetch_ea_32(fetchdat);
@@ -130,6 +138,7 @@ opHSUBPD_a32(uint32_t fetchdat)
 static int
 opADDSUBPS_a16(uint32_t fetchdat)
 {
+    SSE_ENTER();
     SSE_REG src, tmp;
 
     fetch_ea_16(fetchdat);
@@ -147,6 +156,7 @@ opADDSUBPS_a16(uint32_t fetchdat)
 static int
 opADDSUBPS_a32(uint32_t fetchdat)
 {
+    SSE_ENTER();
     SSE_REG src, tmp;
 
     fetch_ea_32(fetchdat);
@@ -164,6 +174,7 @@ opADDSUBPS_a32(uint32_t fetchdat)
 static int
 opADDSUBPD_a16(uint32_t fetchdat)
 {
+    SSE_ENTER();
     SSE_REG src, tmp;
 
     fetch_ea_16(fetchdat);
@@ -179,6 +190,7 @@ opADDSUBPD_a16(uint32_t fetchdat)
 static int
 opADDSUBPD_a32(uint32_t fetchdat)
 {
+    SSE_ENTER();
     SSE_REG src, tmp;
 
     fetch_ea_32(fetchdat);

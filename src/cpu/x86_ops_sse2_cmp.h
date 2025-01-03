@@ -2,6 +2,7 @@
 static int
 opUCOMISD_xmm_xmm_a16(uint32_t fetchdat)
 {
+    SSE_ENTER();
     flags_rebuild();
     fetch_ea_16(fetchdat);
     SSE_REG src;
@@ -23,7 +24,7 @@ opUCOMISD_xmm_xmm_a16(uint32_t fetchdat)
 static int
 opUCOMISD_xmm_xmm_a32(uint32_t fetchdat)
 {
-    // TODO: Unordered result.
+    SSE_ENTER();
     flags_rebuild();
     fetch_ea_32(fetchdat);
     SSE_REG src;
@@ -45,6 +46,7 @@ opUCOMISD_xmm_xmm_a32(uint32_t fetchdat)
 static int
 opCOMISD_xmm_xmm_a16(uint32_t fetchdat)
 {
+    SSE_ENTER();
     flags_rebuild();
     fetch_ea_16(fetchdat);
     SSE_REG src;
@@ -66,6 +68,7 @@ opCOMISD_xmm_xmm_a16(uint32_t fetchdat)
 static int
 opCOMISD_xmm_xmm_a32(uint32_t fetchdat)
 {
+    SSE_ENTER();
     flags_rebuild();
     fetch_ea_32(fetchdat);
     SSE_REG src;
