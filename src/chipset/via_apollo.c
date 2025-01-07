@@ -39,9 +39,9 @@
 #define VIA_597  0x05970100
 #define VIA_598  0x05980000
 #define VIA_691  0x06910600
-#define VIA_693  0x06930100
 #define VIA_693A 0x06914400
 #define VIA_694  0x0691c200
+#define VIA_693  0x06930100
 #define VIA_8601 0x86010500
 
 typedef struct via_apollo_t {
@@ -144,7 +144,7 @@ via_apollo_setup(via_apollo_t *dev)
 
     if ((dev->id >= VIA_585) || (dev->id < VIA_597))
         dev->pci_conf[0x52] = 0x02;
-    else if (dev->id >= VIA_694)
+    else if ((dev->id >= VIA_694) && (dev->id != VIA_693))
         dev->pci_conf[0x52] = (dev->id == VIA_694) ? 0x90 : 0x10;
 
     if (dev->id >= VIA_693A)
@@ -155,7 +155,7 @@ via_apollo_setup(via_apollo_t *dev)
         dev->pci_conf[0x57] = 0x01;
     }
 
-    if (dev->id >= VIA_694)
+    if ((dev->id >= VIA_694) && (dev->id != VIA_693))
         dev->pci_conf[0x58] = 0x40;
     else if (dev->id >= VIA_585)
         dev->pci_conf[0x58] = 0x05;
@@ -178,25 +178,37 @@ via_apollo_setup(via_apollo_t *dev)
     if (dev->id >= VIA_691)
         dev->pci_conf[0x67] = 0xec; /* DRAM Timing for Banks 6, 7 */
     if (dev->id >= VIA_693A) {
-        if (cpu_busspeed < 95000000) { /* 66 MHz */
-            cpu_set_pci_speed(cpu_busspeed / 2);
-            cpu_set_agp_speed(cpu_busspeed);
-            dev->pci_conf[0x68] |= 0x00;
-        } else if (cpu_busspeed < 124000000) { /* 100 MHz */
-            cpu_set_pci_speed(cpu_busspeed / 3);
-            cpu_set_agp_speed(cpu_busspeed / 1.5);
-            dev->pci_conf[0x68] |= 0x01;
-        } else { /* 133 MHz */
-            cpu_set_pci_speed(cpu_busspeed / 4);
-            cpu_set_agp_speed(cpu_busspeed / 2);
-            dev->pci_conf[0x68] |= (dev->id == VIA_8601) ? 0x03 : 0x02;
+        if (dev->id == VIA_693) {
+            if (cpu_busspeed < 100000000) { /* 66 MHz */
+                cpu_set_pci_speed(cpu_busspeed / 2);
+                cpu_set_agp_speed(cpu_busspeed);
+                dev->pci_conf[0x68] |= 0x00;
+            } else { /* 100 MHz */
+                cpu_set_pci_speed(cpu_busspeed / 3);
+                cpu_set_agp_speed(cpu_busspeed / 1.5);
+                dev->pci_conf[0x68] |= 0x01;
+            }
+        } else {
+            if (cpu_busspeed < 95000000) { /* 66 MHz */
+                cpu_set_pci_speed(cpu_busspeed / 2);
+                cpu_set_agp_speed(cpu_busspeed);
+                dev->pci_conf[0x68] |= 0x00;
+            } else if (cpu_busspeed < 124000000) { /* 100 MHz */
+                cpu_set_pci_speed(cpu_busspeed / 3);
+                cpu_set_agp_speed(cpu_busspeed / 1.5);
+                dev->pci_conf[0x68] |= 0x01;
+            } else { /* 133 MHz */
+                cpu_set_pci_speed(cpu_busspeed / 4);
+                cpu_set_agp_speed(cpu_busspeed / 2);
+                dev->pci_conf[0x68] |= (dev->id == VIA_8601) ? 0x03 : 0x02;
+            }
         }
     } else if (dev->id >= VIA_598) {
         if (cpu_busspeed < ((dev->id >= VIA_691) ? 100000000 : 75000000)) { /* 66 MHz */
             cpu_set_pci_speed(cpu_busspeed / 2);
             cpu_set_agp_speed(cpu_busspeed);
             dev->pci_conf[0x68] |= 0x00;
-        } else if (cpu_busspeed < 100000000) { /* 75/83 MHz (not available on 691) */
+        } else if (cpu_busspeed < 100000000) { /* 75/83 MHz (not available on 691 or 693) */
             cpu_set_pci_speed(cpu_busspeed / 2.5);
             cpu_set_agp_speed(cpu_busspeed / 1.25);
             dev->pci_conf[0x68] |= 0x03;
@@ -215,7 +227,7 @@ via_apollo_setup(via_apollo_t *dev)
         dev->pci_conf[0xa5] = 0x02;
         dev->pci_conf[0xa7] = 0x07;
 
-        if (dev->id == VIA_693A) {
+        if ((dev->id == VIA_693A) || (dev->id == VIA_693)) {
             dev->pci_conf[0xac] = 0x08;
             dev->pci_conf[0xad] = 0x02;
         }
@@ -324,7 +336,7 @@ via_apollo_host_bridge_write(int func, int addr, uint8_t val, void *priv)
                 dev->pci_conf[0x53] = (dev->pci_conf[0x53] & ~0xfc) | (val & 0xfc);
             else if ((dev->id == VIA_691) || (dev->id == VIA_694))
                 dev->pci_conf[0x53] = val;
-            else if ((dev->id >= VIA_585) || (dev->id < VIA_597) || (dev->id == VIA_693A))
+            else if ((dev->id >= VIA_585) || (dev->id < VIA_597) || (dev->id == VIA_693A) || (dev->id == VIA_693))
                 dev->pci_conf[0x53] = (dev->pci_conf[0x53] & ~0xf8) | (val & 0xf8);
             else
                 dev->pci_conf[0x53] = (dev->pci_conf[0x53] & ~0xf0) | (val & 0xf0);
@@ -496,7 +508,7 @@ via_apollo_host_bridge_write(int func, int addr, uint8_t val, void *priv)
             if (dev->id != VIA_595) {
                 if (dev->id == VIA_597)
                     dev->pci_conf[0x68] = (dev->pci_conf[0x68] & ~0xfe) | (val & 0xfe);
-                else if ((dev->id == VIA_693A) || (dev->id == VIA_694))
+                else if ((dev->id == VIA_693A) || (dev->id == VIA_694) || (dev->id == VIA_693))
                     dev->pci_conf[0x68] = (dev->pci_conf[0x68] & ~0xdc) | (val & 0xdc);
                 else
                     dev->pci_conf[0x68] = (dev->pci_conf[0x68] & ~0xfc) | (val & 0xfc);
@@ -504,14 +516,14 @@ via_apollo_host_bridge_write(int func, int addr, uint8_t val, void *priv)
             break;
         case 0x69:
             if ((dev->id != VIA_585) || (dev->id != VIA_595)) {
-                if ((dev->id == VIA_693A) || (dev->id < VIA_8601))
+                if ((dev->id == VIA_693A) || (dev->id < VIA_8601) || (dev->id == VIA_693))
                     dev->pci_conf[0x69] = (dev->pci_conf[0x69] & ~0xfe) | (val & 0xfe);
                 else
                     dev->pci_conf[0x69] = val;
             }
             break;
         case 0x6b:
-            if ((dev->id == VIA_693A) || (dev->id < VIA_8601))
+            if ((dev->id == VIA_693A) || (dev->id < VIA_8601) || (dev->id == VIA_693))
                 dev->pci_conf[0x6b] = val;
             else if (dev->id == VIA_691)
                 dev->pci_conf[0x6b] = (dev->pci_conf[0x6b] & ~0xcf) | (val & 0xcf);
@@ -523,7 +535,7 @@ via_apollo_host_bridge_write(int func, int addr, uint8_t val, void *priv)
                 dev->pci_conf[0x6b] = (dev->pci_conf[0x6b] & ~0xc1) | (val & 0xc1);
             break;
         case 0x6c:
-            if ((dev->id == VIA_597) || ((dev->id == VIA_693A) || (dev->id < VIA_8601)))
+            if ((dev->id == VIA_597) || ((dev->id == VIA_693A) || (dev->id < VIA_8601) || (dev->id == VIA_693)))
                 dev->pci_conf[0x6c] = (dev->pci_conf[0x6c] & ~0x1f) | (val & 0x1f);
             else if (dev->id == VIA_598)
                 dev->pci_conf[0x6c] = (dev->pci_conf[0x6c] & ~0x7f) | (val & 0x7f);
@@ -535,7 +547,7 @@ via_apollo_host_bridge_write(int func, int addr, uint8_t val, void *priv)
         case 0x6d:
             if ((dev->id == VIA_597) || (dev->id == VIA_694))
                 dev->pci_conf[0x6d] = (dev->pci_conf[0x6d] & ~0x0f) | (val & 0x0f);
-            else if ((dev->id == VIA_598) || (dev->id == VIA_693A) || (dev->id == VIA_8601))
+            else if ((dev->id == VIA_598) || (dev->id == VIA_693A) || (dev->id == VIA_8601) || (dev->id == VIA_693))
                 dev->pci_conf[0x6d] = (dev->pci_conf[0x6d] & ~0x7f) | (val & 0x7f);
             else
                 dev->pci_conf[0x6d] = val;
@@ -579,7 +591,7 @@ via_apollo_host_bridge_write(int func, int addr, uint8_t val, void *priv)
                 dev->pci_conf[0x73] = val;
             break;
         case 0x74:
-            if ((dev->id == VIA_693A) || (dev->id == VIA_8601))
+            if ((dev->id == VIA_693A) || (dev->id == VIA_8601) || (dev->id == VIA_693))
                 dev->pci_conf[0x74] = (dev->pci_conf[0x74] & ~0xdf) | (val & 0xdf);
             else if (dev->id == VIA_694)
                 dev->pci_conf[0x74] = (dev->pci_conf[0x74] & ~0x9f) | (val & 0x9f);
@@ -631,7 +643,7 @@ via_apollo_host_bridge_write(int func, int addr, uint8_t val, void *priv)
             apollo_agp_map(dev);
             break;
         case 0x88:
-            if ((dev->id == VIA_693A) || (dev->id == VIA_8601))
+            if ((dev->id == VIA_693A) || (dev->id == VIA_8601) || (dev->id == VIA_693))
                 dev->pci_conf[0x88] = (dev->pci_conf[0x88] & ~0x06) | (val & 0x06);
             else
                 dev->pci_conf[0x88] = (dev->pci_conf[0x88] & ~0x07) | (val & 0x07);
@@ -751,6 +763,7 @@ via_apollo_init(const device_t *info)
             break;
 
         case VIA_598:
+        case VIA_693:
         case VIA_693A:
         case VIA_694:
             device_add(&via_mvp3_agp_device);
@@ -763,7 +776,7 @@ via_apollo_init(const device_t *info)
     if (dev->id >= VIA_597)
         dev->agpgart = device_add(&agpgart_device);
 
-    if ((dev->id >= VIA_694) && (dev->id != VIA_8601))
+    if ((dev->id >= VIA_694) && (dev->id != VIA_8601) && (dev->id != VIA_693))
         dev->drb_unit = 16;
     else if (dev->id >= VIA_597)
         dev->drb_unit = 8;
