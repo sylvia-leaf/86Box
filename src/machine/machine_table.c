@@ -164,6 +164,7 @@ const machine_filter_t machine_chipsets[] = {
     { "VIA Apollo VP3",             MACHINE_CHIPSET_VIA_APOLLO_VP3      },
     { "VIA Apollo MVP3",            MACHINE_CHIPSET_VIA_APOLLO_MVP3     },
     { "VIA Apollo Pro",             MACHINE_CHIPSET_VIA_APOLLO_PRO      },
+    { "VIA Apollo Pro+",            MACHINE_CHIPSET_VIA_APOLLO_PRO_PLUS },
     { "VIA Apollo Pro 133",         MACHINE_CHIPSET_VIA_APOLLO_PRO_133  },
     { "VIA Apollo Pro 133A",        MACHINE_CHIPSET_VIA_APOLLO_PRO_133A },
     { "VLSI SCAMP",                 MACHINE_CHIPSET_VLSI_SCAMP          },
