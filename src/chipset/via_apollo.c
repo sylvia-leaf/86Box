@@ -39,6 +39,7 @@
 #define VIA_597  0x05970100
 #define VIA_598  0x05980000
 #define VIA_691  0x06910600
+#define VIA_693  0x06930100
 #define VIA_693A 0x06914400
 #define VIA_694  0x0691c200
 #define VIA_8601 0x86010500
@@ -846,6 +847,20 @@ const device_t via_apro_device = {
     .internal_name = "via_apro",
     .flags         = DEVICE_PCI,
     .local         = VIA_691, /*VT82C691*/
+    .init          = via_apollo_init,
+    .close         = via_apollo_close,
+    .reset         = via_apollo_reset,
+    { .available = NULL },
+    .speed_changed = NULL,
+    .force_redraw  = NULL,
+    .config        = NULL
+};
+
+const device_t via_aproplus_device = {
+    .name          = "VIA Apollo Pro+",
+    .internal_name = "via_aproplus",
+    .flags         = DEVICE_PCI,
+    .local         = VIA_693, /*VT82C693*/
     .init          = via_apollo_init,
     .close         = via_apollo_close,
     .reset         = via_apollo_reset,
