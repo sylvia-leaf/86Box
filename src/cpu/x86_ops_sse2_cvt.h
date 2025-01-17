@@ -7,16 +7,8 @@ opCVTPI2PD_xmm_mm_a16(uint32_t fetchdat)
     fetch_ea_16(fetchdat);
     MMX_GETSRC();
 
-    struct softfloat_status_t status = mxcsr_to_softfloat_status_word(); 
     cpu_state_high.XMM[cpu_reg].d[0] = i32_to_f64(src.sl[0]);
     cpu_state_high.XMM[cpu_reg].d[1] = i32_to_f64(src.sl[1]);
-    /*softfloat_status_word_to_mxcsr(status);
-    int unmasked = (~cpu_state_high.mxcsr >> 7) & 0x3f;
-    if ((cpu_state_high.mxcsr & 0x3f) & (unmasked & 0x3f)) {
-        if (cr4 & CR4_OSXMMEXCPT)
-            x86_int(0x13);
-        //ILLEGAL_ON(!(cr4 & CR4_OSXMMEXCPT));
-    }*/
     CLOCK_CYCLES(1);
     return 0;
 }
@@ -29,16 +21,8 @@ opCVTPI2PD_xmm_mm_a32(uint32_t fetchdat)
     fetch_ea_32(fetchdat);
     MMX_GETSRC();
 
-    struct softfloat_status_t status = mxcsr_to_softfloat_status_word(); 
     cpu_state_high.XMM[cpu_reg].d[0] = i32_to_f64(src.sl[0]);
     cpu_state_high.XMM[cpu_reg].d[1] = i32_to_f64(src.sl[1]);
-    /*softfloat_status_word_to_mxcsr(status);
-    int unmasked = (~cpu_state_high.mxcsr >> 7) & 0x3f;
-    if ((cpu_state_high.mxcsr & 0x3f) & (unmasked & 0x3f)) {
-        if (cr4 & CR4_OSXMMEXCPT)
-            x86_int(0x13);
-        //ILLEGAL_ON(!(cr4 & CR4_OSXMMEXCPT));
-    }*/
     CLOCK_CYCLES(1);
     return 0;
 }
@@ -48,7 +32,6 @@ opCVTSI2SD_xmm_l_a16(uint32_t fetchdat)
 {
     SSE_ENTER();
     fetch_ea_16(fetchdat);
-    struct softfloat_status_t status = mxcsr_to_softfloat_status_word(); 
     if (cpu_mod == 3) {
         cpu_state_high.XMM[cpu_reg].d[0] = i32_to_f64((int32_t)getr32(cpu_rm));
         CLOCK_CYCLES(1);
@@ -62,13 +45,6 @@ opCVTSI2SD_xmm_l_a16(uint32_t fetchdat)
         cpu_state_high.XMM[cpu_reg].d[0] = i32_to_f64(dst);
         CLOCK_CYCLES(2);
     }
-    /*softfloat_status_word_to_mxcsr(status);
-    int unmasked = (~cpu_state_high.mxcsr >> 7) & 0x3f;
-    if ((cpu_state_high.mxcsr & 0x3f) & (unmasked & 0x3f)) {
-        if (cr4 & CR4_OSXMMEXCPT)
-            x86_int(0x13);
-        //ILLEGAL_ON(!(cr4 & CR4_OSXMMEXCPT));
-    }*/
     return 0;
 }
 
@@ -77,7 +53,6 @@ opCVTSI2SD_xmm_l_a32(uint32_t fetchdat)
 {
     SSE_ENTER();
     fetch_ea_32(fetchdat);
-    struct softfloat_status_t status = mxcsr_to_softfloat_status_word(); 
     if (cpu_mod == 3) {
         cpu_state_high.XMM[cpu_reg].d[0] = i32_to_f64((int32_t)getr32(cpu_rm));
         CLOCK_CYCLES(1);
@@ -91,13 +66,6 @@ opCVTSI2SD_xmm_l_a32(uint32_t fetchdat)
         cpu_state_high.XMM[cpu_reg].d[0] = i32_to_f64(dst);
         CLOCK_CYCLES(2);
     }
-    /*softfloat_status_word_to_mxcsr(status);
-    int unmasked = (~cpu_state_high.mxcsr >> 7) & 0x3f;
-    if ((cpu_state_high.mxcsr & 0x3f) & (unmasked & 0x3f)) {
-        if (cr4 & CR4_OSXMMEXCPT)
-            x86_int(0x13);
-        //ILLEGAL_ON(!(cr4 & CR4_OSXMMEXCPT));
-    }*/
     return 0;
 }
 
