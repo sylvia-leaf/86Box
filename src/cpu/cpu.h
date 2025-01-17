@@ -222,8 +222,6 @@ typedef struct {
     int      checked; /*Non-zero if selector is known to be valid*/
 } x86seg;
 
-#include "softfloat3e/softfloat_types.h"
-
 typedef union {
     uint64_t q;
     int64_t  sq;
@@ -245,8 +243,8 @@ typedef union {
     int16_t  sw[8];
     uint8_t  b[16];
     int8_t   sb[16];
-    float32   f[4];
-    float64   d[2];
+    uint32_t   f[4]; //float32
+    uint64_t   d[2]; //float64
     float f2[4];
     double d2[2];
 } SSE_REG;
