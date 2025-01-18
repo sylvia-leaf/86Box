@@ -1444,6 +1444,12 @@ opMOVNTDQ_a16(uint32_t fetchdat)
     fetch_ea_16(fetchdat);
     ILLEGAL_ON(cpu_mod == 3);
 
+    if (cpu_state.eaaddr & 0xf) {
+        x86gpf(NULL, 0);
+        if (cpu_state.abrt)
+            return 1;
+    }
+
     SEG_CHECK_WRITE(cpu_state.ea_seg);
     CHECK_WRITE_COMMON(cpu_state.ea_seg, cpu_state.eaaddr, cpu_state.eaaddr + 15);
     writememq(easeg, cpu_state.eaaddr, cpu_state_high.XMM[cpu_reg].q[0]);
@@ -1462,6 +1468,12 @@ opMOVNTDQ_a32(uint32_t fetchdat)
     SSE_ENTER();
     fetch_ea_32(fetchdat);
     ILLEGAL_ON(cpu_mod == 3);
+
+    if (cpu_state.eaaddr & 0xf) {
+        x86gpf(NULL, 0);
+        if (cpu_state.abrt)
+            return 1;
+    }
 
     SEG_CHECK_WRITE(cpu_state.ea_seg);
     CHECK_WRITE_COMMON(cpu_state.ea_seg, cpu_state.eaaddr, cpu_state.eaaddr + 15);
