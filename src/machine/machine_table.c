@@ -67,6 +67,7 @@ extern const device_t ibmat_device;
 extern const device_t ibmxt286_device;
 extern const device_t pb450_device;
 extern const device_t jukopc_device;
+extern const device_t vendex_device;
 
 const machine_filter_t machine_types[] = {
     { "None",                             MACHINE_TYPE_NONE       },
@@ -1701,7 +1702,7 @@ const machine_t machines[] = {
         .kbc_p1 = 0xff,
         .gpio = 0xffffffff,
         .gpio_acpi = 0xffffffff,
-        .device = NULL,
+        .device = &vendex_device,
         .fdc_device = NULL,
         .sio_device = NULL,
         .vid_device = NULL,
