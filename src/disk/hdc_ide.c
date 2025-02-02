@@ -386,7 +386,7 @@ ide_atapi_get_period(uint8_t channel)
 }
 
 static void
-ide_irq_update(ide_board_t *dev, int log)
+ide_irq_update(ide_board_t *dev, UNUSED(int log))
 {
     ide_t *ide;
     uint8_t set;
@@ -1894,7 +1894,7 @@ ide_read_data(ide_t *ide)
 }
 
 static uint8_t
-ide_status(ide_t *ide, ide_t *ide_other, int ch)
+ide_status(ide_t *ide, UNUSED(ide_t *ide_other), UNUSED(int ch))
 {
     uint8_t ret;
 
@@ -3207,7 +3207,7 @@ mcide_mca_reset(void *priv)
 }
 
 static void
-mcide_reset(void *priv)
+mcide_reset(UNUSED(void *priv))
 {
     for (uint8_t i = 0; i < 2; i++) {
         if (ide_boards[i] != NULL)
@@ -3269,7 +3269,7 @@ const device_t ide_isa_device = {
     .init          = ide_init,
     .close         = ide_close,
     .reset         = ide_reset,
-    { .available = NULL },
+    .available     = NULL,
     .speed_changed = NULL,
     .force_redraw  = NULL,
     .config        = NULL
@@ -3283,7 +3283,7 @@ const device_t ide_isa_2ch_device = {
     .init          = ide_init,
     .close         = ide_close,
     .reset         = ide_reset,
-    { .available = NULL },
+    .available     = NULL,
     .speed_changed = NULL,
     .force_redraw  = NULL,
     .config        = NULL
@@ -3297,7 +3297,7 @@ const device_t ide_vlb_device = {
     .init          = ide_init,
     .close         = ide_close,
     .reset         = ide_reset,
-    { .available = NULL },
+    .available     = NULL,
     .speed_changed = NULL,
     .force_redraw  = NULL,
     .config        = NULL
@@ -3311,7 +3311,7 @@ const device_t ide_vlb_2ch_device = {
     .init          = ide_init,
     .close         = ide_close,
     .reset         = ide_reset,
-    { .available = NULL },
+    .available     = NULL,
     .speed_changed = NULL,
     .force_redraw  = NULL,
     .config        = NULL
@@ -3325,7 +3325,7 @@ const device_t ide_pci_device = {
     .init          = ide_init,
     .close         = ide_close,
     .reset         = ide_reset,
-    { .available = NULL },
+    .available     = NULL,
     .speed_changed = NULL,
     .force_redraw  = NULL,
     .config        = NULL
@@ -3339,7 +3339,7 @@ const device_t ide_pci_2ch_device = {
     .init          = ide_init,
     .close         = ide_close,
     .reset         = ide_reset,
-    { .available = NULL },
+    .available     = NULL,
     .speed_changed = NULL,
     .force_redraw  = NULL,
     .config        = NULL
@@ -3353,7 +3353,7 @@ const device_t mcide_device = {
     .init          = mcide_init,
     .close         = mcide_close,
     .reset         = mcide_reset,
-    { .available = mcide_available },
+    .available     = mcide_available,
     .speed_changed = NULL,
     .force_redraw  = NULL,
     .config        = NULL
@@ -3422,7 +3422,7 @@ const device_t ide_ter_device = {
     .init          = ide_ter_init,
     .close         = ide_ter_close,
     .reset         = NULL,
-    { .available = NULL },
+    .available     = NULL,
     .speed_changed = NULL,
     .force_redraw  = NULL,
     .config        = ide_ter_config
@@ -3436,7 +3436,7 @@ const device_t ide_ter_pnp_device = {
     .init          = ide_ter_init,
     .close         = ide_ter_close,
     .reset         = NULL,
-    { .available = NULL },
+    .available     = NULL,
     .speed_changed = NULL,
     .force_redraw  = NULL,
     .config        = NULL
@@ -3450,7 +3450,7 @@ const device_t ide_qua_device = {
     .init          = ide_qua_init,
     .close         = ide_qua_close,
     .reset         = NULL,
-    { .available = NULL },
+    .available     = NULL,
     .speed_changed = NULL,
     .force_redraw  = NULL,
     .config        = ide_qua_config
@@ -3464,7 +3464,7 @@ const device_t ide_qua_pnp_device = {
     .init          = ide_qua_init,
     .close         = ide_qua_close,
     .reset         = NULL,
-    { .available = NULL },
+    .available     = NULL,
     .speed_changed = NULL,
     .force_redraw  = NULL,
     .config        = NULL

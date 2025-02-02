@@ -472,13 +472,9 @@ t228_feedb(void *priv)
 static void *
 t128_init(const device_t *info)
 {
-    t128_t      *t128;
-    ncr_t       *ncr;
+    t128_t      *t128 = calloc(1, sizeof(t128_t));
+    ncr_t       *ncr  = &t128->ncr;
     scsi_bus_t  *scsi_bus;
-
-    t128 = malloc(sizeof(t128_t));
-    memset(t128, 0x00, sizeof(t128_t));
-    ncr = &t128->ncr;
 
     ncr->bus = scsi_get_bus();
     scsi_bus = &ncr->scsibus;
@@ -608,7 +604,7 @@ const device_t scsi_t128_device = {
     .init          = t128_init,
     .close         = t128_close,
     .reset         = NULL,
-    { .available = t128_available },
+    .available     = t128_available,
     .speed_changed = NULL,
     .force_redraw  = NULL,
     .config        = t128_config
@@ -623,7 +619,7 @@ const device_t scsi_t228_device = {
     .init          = t128_init,
     .close         = t128_close,
     .reset         = NULL,
-    { .available = t128_available },
+    .available     = t128_available,
     .speed_changed = NULL,
     .force_redraw  = NULL,
     .config        = NULL
@@ -637,7 +633,7 @@ const device_t scsi_pas_device = {
     .init          = t128_init,
     .close         = t128_close,
     .reset         = NULL,
-    { .available = NULL },
+    .available     = NULL,
     .speed_changed = NULL,
     .force_redraw  = NULL,
     .config        = NULL

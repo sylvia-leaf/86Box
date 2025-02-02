@@ -19,7 +19,7 @@
 #include <string.h>
 #include <stdlib.h>
 #include <wchar.h>
-#include <86box/bswap.h>
+//#include <86box/bswap.h>
 #include <86box/86box.h>
 #include <86box/io.h>
 #include <86box/machine.h>
@@ -3813,7 +3813,7 @@ const device_t xga_device = {
     .init          = xga_init,
     .close         = xga_close,
     .reset         = xga_reset,
-    { .available = xga_available },
+    .available     = xga_available,
     .speed_changed = xga_speed_changed,
     .force_redraw  = xga_force_redraw,
     .config        = xga_mca_configuration
@@ -3827,7 +3827,7 @@ const device_t xga_isa_device = {
     .init          = xga_init,
     .close         = xga_close,
     .reset         = xga_reset,
-    { .available = xga_available },
+    .available     = xga_available,
     .speed_changed = xga_speed_changed,
     .force_redraw  = xga_force_redraw,
     .config        = xga_isa_configuration
@@ -3841,7 +3841,7 @@ const device_t inmos_isa_device = {
     .init          = svga_xga_init,
     .close         = xga_close,
     .reset         = xga_reset,
-    { .available = inmos_xga_available },
+    .available     = inmos_xga_available,
     .speed_changed = xga_speed_changed,
     .force_redraw  = xga_force_redraw,
     .config        = xga_inmos_isa_configuration

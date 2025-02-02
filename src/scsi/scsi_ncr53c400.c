@@ -632,13 +632,9 @@ ncr53c400_init(const device_t *info)
 {
     const char  *bios_ver = NULL;
     const char  *fn;
-    ncr53c400_t *ncr400;
-    ncr_t       *ncr;
+    ncr53c400_t *ncr400 = calloc(1, sizeof(ncr53c400_t));
+    ncr_t       *ncr    = &ncr400->ncr;
     scsi_bus_t  *scsi_bus;
-
-    ncr400 = malloc(sizeof(ncr53c400_t));
-    memset(ncr400, 0x00, sizeof(ncr53c400_t));
-    ncr = &ncr400->ncr;
 
     ncr400->type = info->local;
 
@@ -954,7 +950,7 @@ const device_t scsi_lcs6821n_device = {
     .init          = ncr53c400_init,
     .close         = ncr53c400_close,
     .reset         = NULL,
-    { .available = lcs6821n_available },
+    .available     = lcs6821n_available,
     .speed_changed = NULL,
     .force_redraw  = NULL,
     .config        = ncr53c400_mmio_config
@@ -968,7 +964,7 @@ const device_t scsi_rt1000b_device = {
     .init          = ncr53c400_init,
     .close         = ncr53c400_close,
     .reset         = NULL,
-    { .available = NULL },
+    .available     = NULL,
     .speed_changed = NULL,
     .force_redraw  = NULL,
     .config        = rt1000b_config
@@ -982,7 +978,7 @@ const device_t scsi_rt1000mc_device = {
     .init          = ncr53c400_init,
     .close         = ncr53c400_close,
     .reset         = NULL,
-    { .available = rt1000b_mc_available },
+    .available     = rt1000b_mc_available,
     .speed_changed = NULL,
     .force_redraw  = NULL,
     .config        = rt1000b_mc_config
@@ -996,7 +992,7 @@ const device_t scsi_t130b_device = {
     .init          = ncr53c400_init,
     .close         = ncr53c400_close,
     .reset         = NULL,
-    { .available = t130b_available },
+    .available     = t130b_available,
     .speed_changed = NULL,
     .force_redraw  = NULL,
     .config        = t130b_config
@@ -1010,7 +1006,7 @@ const device_t scsi_ls2000_device = {
     .init          = ncr53c400_init,
     .close         = ncr53c400_close,
     .reset         = NULL,
-    { .available = corel_ls2000_available },
+    .available     = corel_ls2000_available,
     .speed_changed = NULL,
     .force_redraw  = NULL,
     .config        = ncr53c400_mmio_config
