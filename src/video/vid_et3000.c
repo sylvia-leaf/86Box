@@ -548,17 +548,20 @@ et3000_available(void)
 }
 
 static const device_config_t et3000_config[] = {
-    { .name        = "memory",
-     .description = "Memory size",
-     .type        = CONFIG_SELECTION,
-     .default_int = 512,
-     .selection   = {
-          { .description = "256 KB",
-              .value       = 256 },
-          { .description = "512 KB",
-              .value       = 512 },
-          { .description = "" } } },
-    { .type = CONFIG_END }
+  // clang-format off
+    {
+        .name        = "memory",
+        .description = "Memory size",
+        .type        = CONFIG_SELECTION,
+        .default_int = 512,
+        .selection   = {
+            { .description = "256 KB", .value       = 256 },
+            { .description = "512 KB", .value       = 512 },
+            { .description = ""                           }
+        }
+    },
+    { .name = "", .description = "", .type = CONFIG_END }
+  // clang-format on
 };
 
 const device_t et3000_isa_device = {
@@ -569,7 +572,7 @@ const device_t et3000_isa_device = {
     .init          = et3000_init,
     .close         = et3000_close,
     .reset         = NULL,
-    { .available = et3000_available },
+    .available     = et3000_available,
     .speed_changed = et3000_speed_changed,
     .force_redraw  = et3000_force_redraw,
     .config        = et3000_config

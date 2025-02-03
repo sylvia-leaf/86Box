@@ -11,6 +11,7 @@
  * Authors: Sarah Walker, <https://pcem-emulator.co.uk/>
  *          Miran Grca, <mgrca8@gmail.com>
  *          Fred N. van Kempen, <decwiz@yahoo.com>
+ *          Jasmine Iwanek, <jriwanek@gmail.com>
  *
  *          Copyright 2008-2020 Sarah Walker.
  *          Copyright 2016-2020 Miran Grca.
@@ -18,7 +19,7 @@
  *          Copyright 2021      Laci bá'
  *          Copyright 2021      dob205
  *          Copyright 2021      Andreas J. Reichel.
- *          Copyright 2021-2022 Jasmine Iwanek.
+ *          Copyright 2021-2025 Jasmine Iwanek.
  */
 #include <inttypes.h>
 #include <stdarg.h>
@@ -103,6 +104,7 @@
 #include <86box/machine_status.h>
 #include <86box/apm.h>
 #include <86box/acpi.h>
+#include <86box/nv/vid_nv_rivatimer.h>
 
 // Disable c99-designator to avoid the warnings about int ng
 #ifdef __clang__
@@ -177,6 +179,7 @@ int      bugger_enabled                         = 0;              /* (C) enable 
 int      novell_keycard_enabled                 = 0;              /* (C) enable Novell NetWare 2.x key card emulation. */
 int      postcard_enabled                       = 0;              /* (C) enable POST card */
 int      unittester_enabled                     = 0;              /* (C) enable unit tester device */
+int      gameport_type[GAMEPORT_MAX]            = { 0, 0 };       /* (C) enable gameports */
 int      isamem_type[ISAMEM_MAX]                = { 0, 0, 0, 0 }; /* (C) enable ISA mem cards */
 int      isartc_type                            = 0;              /* (C) enable ISA RTC card */
 int      gfxcard[GFXCARD_MAX]                   = { 0, 0 };       /* (C) graphics/video card */
@@ -252,11 +255,35 @@ static volatile atomic_int do_pause_ack = 0;
 static volatile atomic_int pause_ack = 0;
 
 #ifndef RELEASE_BUILD
-static char buff[1024];
-static int  seen = 0;
+
+#define LOG_SIZE_BUFFER 1024            /* Log size buffer */
+
+static char buff[LOG_SIZE_BUFFER];
+
+static int seen = 0;
 
 static int suppr_seen = 1;
+
+// Functions only used in this translation unit
+void pclog_ensure_stdlog_open(void);
 #endif
+
+/* 
+    Ensures STDLOG is open for pclog_ex and pclog_ex_cyclic
+*/
+void pclog_ensure_stdlog_open(void)
+{
+#ifndef RELEASE_BUILD
+    if (stdlog == NULL) {
+        if (log_path[0] != '\0') {
+            stdlog = plat_fopen(log_path, "w");
+            if (stdlog == NULL)
+                stdlog = stdout;
+        } else
+            stdlog = stdout;
+    }
+#endif
+}
 
 /*
  * Log something to the logfile or stdout.
@@ -266,22 +293,15 @@ static int suppr_seen = 1;
  * being logged, and catch repeating entries.
  */
 void
-pclog_ex(const char *fmt, va_list ap)
+pclog_ex(UNUSED(const char *fmt), UNUSED(va_list ap))
 {
 #ifndef RELEASE_BUILD
-    char temp[1024];
+    char temp[LOG_SIZE_BUFFER];
 
     if (strcmp(fmt, "") == 0)
         return;
 
-    if (stdlog == NULL) {
-        if (log_path[0] != '\0') {
-            stdlog = plat_fopen(log_path, "w");
-            if (stdlog == NULL)
-                stdlog = stdout;
-        } else
-            stdlog = stdout;
-    }
+    pclog_ensure_stdlog_open();
 
     vsprintf(temp, fmt, ap);
     if (suppr_seen && !strcmp(buff, temp))
@@ -298,6 +318,8 @@ pclog_ex(const char *fmt, va_list ap)
 #endif
 }
 
+
+
 void
 pclog_toggle_suppr(void)
 {
@@ -308,7 +330,7 @@ pclog_toggle_suppr(void)
 
 /* Log something. We only do this in non-release builds. */
 void
-pclog(const char *fmt, ...)
+pclog(UNUSED(const char *fmt), ...)
 {
 #ifndef RELEASE_BUILD
     va_list ap;
@@ -1426,6 +1448,9 @@ pc_run(void)
         pc_reset_hard_close();
         pc_reset_hard_init();
     }
+
+    /* Update the guest-CPU independent timer for devices with independent clock speed */
+    rivatimer_update_all();
 
     /* Run a block of code. */
     startblit();
