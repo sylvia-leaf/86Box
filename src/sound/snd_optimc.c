@@ -394,7 +394,7 @@ optimc_init(const device_t *info)
     optimc->fm_type = (info->local & OPTIMC_OPL4) ? FM_YMF278B : FM_YMF262;
 
     sb_dsp_set_real_opl(&optimc->sb->dsp, optimc->fm_type != FM_YMF278B);
-    sb_dsp_init(&optimc->sb->dsp, SBPRO2, SB_SUBTYPE_DEFAULT, optimc);
+    sb_dsp_init(&optimc->sb->dsp, SBPRO2_DSP_302, SB_SUBTYPE_DEFAULT, optimc);
     sb_dsp_setaddr(&optimc->sb->dsp, optimc->cur_addr);
     sb_dsp_setirq(&optimc->sb->dsp, optimc->cur_irq);
     sb_dsp_setdma8(&optimc->sb->dsp, optimc->cur_dma);
@@ -419,8 +419,7 @@ optimc_init(const device_t *info)
         music_add_handler(sb_get_music_buffer_sbpro, optimc->sb);
     sound_set_cd_audio_filter(sbpro_filter_cd_audio, optimc->sb); /* CD audio filter for the default context */
 
-    optimc->mpu = (mpu_t *) malloc(sizeof(mpu_t));
-    memset(optimc->mpu, 0, sizeof(mpu_t));
+    optimc->mpu = (mpu_t *) calloc(1, sizeof(mpu_t));
     mpu401_init(optimc->mpu, optimc->cur_mpu401_addr, optimc->cur_mpu401_irq, M_UART, device_get_config_int("receive_input401"));
 
     if (device_get_config_int("receive_input"))

@@ -630,6 +630,7 @@ esp_hard_reset(esp_t *dev)
     fifo8_reset(&dev->fifo);
     fifo8_reset(&dev->cmdfifo);
     dev->dma             = 0;
+    dev->tchi_written    = 0;
     dev->rregs[ESP_CFG1] = dev->mca ? dev->HostID : 7;
     esp_log("ESP Reset\n");
 
@@ -1346,7 +1347,7 @@ esp_reg_read(esp_t *dev, uint32_t saddr)
             if (dev->mca) {
                 ret = dev->rregs[ESP_TCHI];
             } else {
-                if (dev->rregs[ESP_CFG2] & 0x40)
+                if (!dev->tchi_written)
                     ret = TCHI_AM53C974;
                 else
                     ret = dev->rregs[ESP_TCHI];
@@ -1369,6 +1370,8 @@ esp_reg_write(esp_t *dev, uint32_t saddr, uint32_t val)
     esp_log("Write reg %02x = %02x\n", saddr, val);
     switch (saddr) {
         case ESP_TCHI:
+            dev->tchi_written = 1;
+            fallthrough;
         case ESP_TCLO:
         case ESP_TCMID:
             esp_log("ESP TCW reg%02x = %02x.\n", saddr, val);
@@ -2201,10 +2204,7 @@ esp_pci_write(UNUSED(int func), int addr, uint8_t val, void *priv)
 static void *
 dc390_init(UNUSED(const device_t *info))
 {
-    esp_t *dev;
-
-    dev = malloc(sizeof(esp_t));
-    memset(dev, 0x00, sizeof(esp_t));
+    esp_t *dev = calloc(1, sizeof(esp_t));
 
     dev->bus = scsi_get_bus();
 
@@ -2416,10 +2416,7 @@ ncr53c9x_mca_feedb(void *priv)
 static void *
 ncr53c9x_mca_init(const device_t *info)
 {
-    esp_t *dev;
-
-    dev = malloc(sizeof(esp_t));
-    memset(dev, 0x00, sizeof(esp_t));
+    esp_t *dev = calloc(1, sizeof(esp_t));
 
     dev->bus = scsi_get_bus();
 
@@ -2479,7 +2476,7 @@ const device_t dc390_pci_device = {
     .init          = dc390_init,
     .close         = esp_close,
     .reset         = NULL,
-    { .available = NULL },
+    .available     = NULL,
     .speed_changed = NULL,
     .force_redraw  = NULL,
     .config        = bios_enable_config
@@ -2493,7 +2490,7 @@ const device_t am53c974_pci_device = {
     .init          = dc390_init,
     .close         = esp_close,
     .reset         = NULL,
-    { .available = NULL },
+    .available     = NULL,
     .speed_changed = NULL,
     .force_redraw  = NULL,
     .config        = NULL
@@ -2507,7 +2504,7 @@ const device_t ncr53c90a_mca_device = {
     .init          = ncr53c9x_mca_init,
     .close         = esp_close,
     .reset         = NULL,
-    { .available = NULL },
+    .available     = NULL,
     .speed_changed = NULL,
     .force_redraw  = NULL,
     .config        = NULL

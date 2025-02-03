@@ -1000,8 +1000,7 @@ xta_init(const device_t *info)
     int         max = XTA_NUM;
 
     /* Allocate and initialize device block. */
-    dev = malloc(sizeof(hdc_t));
-    memset(dev, 0x00, sizeof(hdc_t));
+    dev = calloc(1, sizeof(hdc_t));
     dev->type = info->local;
 
     /* Do per-controller-type setup. */
@@ -1038,7 +1037,7 @@ xta_init(const device_t *info)
     /* Load any disks for this device class. */
     c = 0;
     for (uint8_t i = 0; i < HDD_NUM; i++) {
-        if ((hdd[i].bus == HDD_BUS_XTA) && (hdd[i].xta_channel < max)) {
+        if ((hdd[i].bus_type == HDD_BUS_XTA) && (hdd[i].xta_channel < max)) {
             drive = &dev->drives[hdd[i].xta_channel];
 
             if (!hdd_image_load(i)) {
@@ -1114,7 +1113,7 @@ static const device_config_t wdxt150_config[] = {
         .default_string = "",
         .default_int = 0x0320,
         .file_filter = "",
-        .spinner = { 0 }, /*W2*/
+        .spinner = { 0 },
         .selection = {
             { .description = "320H", .value = 0x0320 },
             { .description = "324H", .value = 0x0324 },
@@ -1128,7 +1127,7 @@ static const device_config_t wdxt150_config[] = {
         .default_string = "",
         .default_int = 5,
         .file_filter = "",
-        .spinner = { 0 }, /*W3*/
+        .spinner = { 0 },
         .selection = {
             { .description = "IRQ 5", .value = 5 },
             { .description = "IRQ 4", .value = 4 },
@@ -1142,7 +1141,7 @@ static const device_config_t wdxt150_config[] = {
         .default_string = "",
         .default_int = 0xc8000,
         .file_filter = "",
-        .spinner = { 0 }, /*W1*/
+        .spinner = { 0 },
         .selection = {
             { .description = "C800H", .value = 0xc8000 },
             { .description = "CA00H", .value = 0xca000 },
@@ -1156,7 +1155,7 @@ static const device_config_t wdxt150_config[] = {
         .default_string = "rev_1",
         .default_int = 0,
         .file_filter = "",
-        .spinner = { 0 }, /*W1*/
+        .spinner = { 0 },
         .bios = {
             { .name = "Revision 1.0", .internal_name = "rev_1", .bios_type = BIOS_NORMAL,
               .files_no = 1, .local = 0, .size = 8192, .files = { WD_REV_1_BIOS_FILE, "" } },
@@ -1170,29 +1169,29 @@ static const device_config_t wdxt150_config[] = {
 };
 
 const device_t xta_wdxt150_device = {
-    .name = "WDXT-150 XTA Fixed Disk Controller",
+    .name          = "WDXT-150 XTA Fixed Disk Controller",
     .internal_name = "xta_wdxt150",
-    .flags = DEVICE_ISA,
-    .local = 0,
-    .init = xta_init,
-    .close = xta_close,
-    .reset = NULL,
-    { .available = NULL /*xta_available*/ },
+    .flags         = DEVICE_ISA,
+    .local         = 0,
+    .init          = xta_init,
+    .close         = xta_close,
+    .reset         = NULL,
+    .available     = NULL /*xta_available*/,
     .speed_changed = NULL,
-    .force_redraw = NULL,
-    .config = wdxt150_config
+    .force_redraw  = NULL,
+    .config        = wdxt150_config
 };
 
 const device_t xta_hd20_device = {
-    .name = "EuroPC HD20 Fixed Disk Controller",
+    .name          = "EuroPC HD20 Fixed Disk Controller",
     .internal_name = "xta_hd20",
-    .flags = DEVICE_ISA,
-    .local = 1,
-    .init = xta_init,
-    .close = xta_close,
-    .reset = NULL,
-    { .available = NULL },
+    .flags         = DEVICE_ISA,
+    .local         = 1,
+    .init          = xta_init,
+    .close         = xta_close,
+    .reset         = NULL,
+    .available     = NULL,
     .speed_changed = NULL,
-    .force_redraw = NULL,
-    .config = NULL
+    .force_redraw  = NULL,
+    .config        = NULL
 };

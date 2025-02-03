@@ -423,9 +423,9 @@ es1370_calc_sample_rate(es137x_t *dev)
         dev->calc_sample_rate = 5512;
     }
 
-    dev->calc_sample_rate_synth = 44100 / (1 << ((dev->int_ctrl >> 12) & 3));
-    dev->interp_factor_synth    = 1. / (double) (1 << ((dev->int_ctrl >> 12) & 3));
-    dev->interp_step_synth      = (1 << ((dev->int_ctrl >> 12) & 3));
+    dev->calc_sample_rate_synth = 44100 / (1 << (((dev->int_ctrl >> 12) & 3) ^ 3));
+    dev->interp_factor_synth    = 1. / (double) ((1 << ((dev->int_ctrl >> 12) & 3) ^ 3));
+    dev->interp_step_synth      = (1 << (((dev->int_ctrl >> 12) & 3) ^ 3));
 }
 
 static void
@@ -2645,8 +2645,7 @@ static void es137x_speed_changed(void *priv);
 static void *
 es1370_init(const device_t *info)
 {
-    es137x_t *dev = malloc(sizeof(es137x_t));
-    memset(dev, 0x00, sizeof(es137x_t));
+    es137x_t *dev = calloc(1, sizeof(es137x_t));
     dev->type = info->local;
 
     if (device_get_config_int("receive_input"))
@@ -2689,8 +2688,7 @@ es1370_init(const device_t *info)
 static void *
 es1371_init(const device_t *info)
 {
-    es137x_t *dev = malloc(sizeof(es137x_t));
-    memset(dev, 0x00, sizeof(es137x_t));
+    es137x_t *dev = calloc(1, sizeof(es137x_t));
     dev->type = info->local & 0xffffff00;
 
     if (device_get_config_int("receive_input"))
@@ -2827,6 +2825,10 @@ static const device_config_t ct5880_config[] = {
             {
                 .description = "SigmaTel STAC9721T (stereo)",
                 .value = AC97_CODEC_STAC9721
+            },
+            {
+                .description = "TriTech TR28023 / Creative CT1297",
+                .value = AC97_CODEC_TR28023
             },
             { .description = "" }
         },
