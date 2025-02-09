@@ -31,6 +31,9 @@
 #include <86box/rom.h>
 #include <86box/device.h>
 #include <86box/machine.h>
+#include <86box/timer.h>
+#include <86box/fdd.h>
+#include <86box/fdc.h>
 #include <86box/keyboard.h>
 #include <86box/sound.h>
 #include <86box/sio.h>
@@ -38,7 +41,6 @@
 #include <86box/video.h>
 #include <86box/plat_unused.h>
 #include <86box/thread.h>
-#include <86box/timer.h>
 #include <86box/network.h>
 
 // Temporarily here till we move everything out into the right files
@@ -81,6 +83,7 @@ const machine_filter_t machine_types[] = {
     { "[1992] i486 (Socket 168 and 1)",   MACHINE_TYPE_486        },
     { "[1992] i486 (Socket 2)",           MACHINE_TYPE_486_S2     },
     { "[1994] i486 (Socket 3)",           MACHINE_TYPE_486_S3     },
+    { "[1994] i486 (Socket 3 PCI)",       MACHINE_TYPE_486_S3_PCI },
     { "[1992] i486 (Miscellaneous)",      MACHINE_TYPE_486_MISC   },
     { "[1993] Socket 4",                  MACHINE_TYPE_SOCKET4    },
     { "[1994] Socket 5",                  MACHINE_TYPE_SOCKET5    },
@@ -7432,7 +7435,7 @@ const machine_t machines[] = {
     {
         .name = "[ALi M1429G] TriGem 486GP",
         .internal_name = "tg486gp",
-        .type = MACHINE_TYPE_486_S3,
+        .type = MACHINE_TYPE_486_S3_PCI,
         .chipset = MACHINE_CHIPSET_ALI_M1429G,
         .init = machine_at_tg486gp_init,
         .p1_handler = NULL,
@@ -7472,7 +7475,7 @@ const machine_t machines[] = {
     {
         .name = "[ALi M1489] AAEON SBC-490",
         .internal_name = "sbc490",
-        .type = MACHINE_TYPE_486_S3,
+        .type = MACHINE_TYPE_486_S3_PCI,
         .chipset = MACHINE_CHIPSET_ALI_M1489,
         .init = machine_at_sbc490_init,
         .p1_handler = NULL,
@@ -7513,7 +7516,7 @@ const machine_t machines[] = {
     {
         .name = "[ALi M1489] ABIT AB-PB4",
         .internal_name = "abpb4",
-        .type = MACHINE_TYPE_486_S3,
+        .type = MACHINE_TYPE_486_S3_PCI,
         .chipset = MACHINE_CHIPSET_ALI_M1489,
         .init = machine_at_abpb4_init,
         .p1_handler = NULL,
@@ -7601,7 +7604,7 @@ const machine_t machines[] = {
     {
         .name = "[ALi M1489] MSI MS-4145",
         .internal_name = "ms4145",
-        .type = MACHINE_TYPE_486_S3,
+        .type = MACHINE_TYPE_486_S3_PCI,
         .chipset = MACHINE_CHIPSET_ALI_M1489,
         .init = machine_at_ms4145_init,
         .p1_handler = NULL,
@@ -7641,7 +7644,7 @@ const machine_t machines[] = {
     {
         .name = "[ALi M1489] ESA TF-486",
         .internal_name = "tf486",
-        .type = MACHINE_TYPE_486_S3,
+        .type = MACHINE_TYPE_486_S3_PCI,
         .chipset = MACHINE_CHIPSET_ALI_M1489,
         .init = machine_at_tf486_init,
         .p1_handler = NULL,
@@ -7681,7 +7684,7 @@ const machine_t machines[] = {
     {
         .name = "[ALi M1489] Acrosser AR-B1476",
         .internal_name = "arb1476",
-        .type = MACHINE_TYPE_486_S3,
+        .type = MACHINE_TYPE_486_S3_PCI,
         .chipset = MACHINE_CHIPSET_ALI_M1489,
         .init = machine_at_arb1476_init,
         .p1_handler = NULL,
@@ -7721,7 +7724,7 @@ const machine_t machines[] = {
     {
         .name = "[OPTi 802G] IBM Aptiva 510/710/Vision",
         .internal_name = "aptiva510",
-        .type = MACHINE_TYPE_486_S3,
+        .type = MACHINE_TYPE_486_S3_PCI,
         .chipset = MACHINE_CHIPSET_OPTI_895_802G,
         .init = machine_at_aptiva510_init,
         .p1_handler = NULL,
@@ -7761,7 +7764,7 @@ const machine_t machines[] = {
     {
         .name = "[OPTi 802G] IBM PC 330 (type 6573)",
         .internal_name = "pc330_6573",
-        .type = MACHINE_TYPE_486_S3,
+        .type = MACHINE_TYPE_486_S3_PCI,
         .chipset = MACHINE_CHIPSET_OPTI_895_802G,
         .init = machine_at_pc330_6573_init,
         .p1_handler = NULL,
@@ -7801,7 +7804,7 @@ const machine_t machines[] = {
     {
         .name = "[i420EX] ASUS PVI-486AP4",
         .internal_name = "486ap4",
-        .type = MACHINE_TYPE_486_S3,
+        .type = MACHINE_TYPE_486_S3_PCI,
         .chipset = MACHINE_CHIPSET_INTEL_420EX,
         .init = machine_at_486ap4_init,
         .p1_handler = NULL,
@@ -7841,7 +7844,7 @@ const machine_t machines[] = {
     {
         .name = "[i420EX] Intel Classic/PCI ED",
         .internal_name = "ninja",
-        .type = MACHINE_TYPE_486_S3,
+        .type = MACHINE_TYPE_486_S3_PCI,
         .chipset = MACHINE_CHIPSET_INTEL_420EX,
         .init = machine_at_ninja_init,
         .p1_handler = NULL,
@@ -7881,7 +7884,7 @@ const machine_t machines[] = {
     {
         .name = "[i420EX] Anigma BAT4IP3e",
         .internal_name = "bat4ip3e",
-        .type = MACHINE_TYPE_486_S3,
+        .type = MACHINE_TYPE_486_S3_PCI,
         .chipset = MACHINE_CHIPSET_INTEL_420EX,
         .init = machine_at_bat4ip3e_init,
         .p1_handler = NULL,
@@ -7921,7 +7924,7 @@ const machine_t machines[] = {
     {
         .name = "[i420EX] Advanced Integration Research 486PI",
         .internal_name = "486pi",
-        .type = MACHINE_TYPE_486_S3,
+        .type = MACHINE_TYPE_486_S3_PCI,
         .chipset = MACHINE_CHIPSET_INTEL_420EX,
         .init = machine_at_486pi_init,
         .p1_handler = NULL,
@@ -7961,7 +7964,7 @@ const machine_t machines[] = {
     {
         .name = "[i420EX] ICS SB486P",
         .internal_name = "sb486p",
-        .type = MACHINE_TYPE_486_S3,
+        .type = MACHINE_TYPE_486_S3_PCI,
         .chipset = MACHINE_CHIPSET_INTEL_420EX,
         .init = machine_at_sb486p_init,
         .p1_handler = NULL,
@@ -8001,7 +8004,7 @@ const machine_t machines[] = {
     {
         .name = "[i420TX] ASUS PCI/I-486SP3",
         .internal_name = "486sp3",
-        .type = MACHINE_TYPE_486_S3,
+        .type = MACHINE_TYPE_486_S3_PCI,
         .chipset = MACHINE_CHIPSET_INTEL_420TX,
         .init = machine_at_486sp3_init,
         .p1_handler = NULL,
@@ -8041,7 +8044,7 @@ const machine_t machines[] = {
     {
         .name = "[i420TX] Intel Classic/PCI",
         .internal_name = "alfredo",
-        .type = MACHINE_TYPE_486_S3,
+        .type = MACHINE_TYPE_486_S3_PCI,
         .chipset = MACHINE_CHIPSET_INTEL_420TX,
         .init = machine_at_alfredo_init,
         .p1_handler = NULL,
@@ -8081,7 +8084,7 @@ const machine_t machines[] = {
     {
         .name = "[i420TX] AMI Super Voyager PCI",
         .internal_name = "amis76",
-        .type = MACHINE_TYPE_486_S3,
+        .type = MACHINE_TYPE_486_S3_PCI,
         .chipset = MACHINE_CHIPSET_INTEL_420TX,
         .init = machine_at_amis76_init,
         .p1_handler = NULL,
@@ -8122,7 +8125,7 @@ const machine_t machines[] = {
     {
         .name = "[i420ZX] ASUS PCI/I-486SP3G",
         .internal_name = "486sp3g",
-        .type = MACHINE_TYPE_486_S3,
+        .type = MACHINE_TYPE_486_S3_PCI,
         .chipset = MACHINE_CHIPSET_INTEL_420ZX,
         .init = machine_at_486sp3g_init,
         .p1_handler = NULL,
@@ -8162,7 +8165,7 @@ const machine_t machines[] = {
     {
         .name = "[IMS 8848] J-Bond PCI400C-B",
         .internal_name = "pci400cb",
-        .type = MACHINE_TYPE_486_S3,
+        .type = MACHINE_TYPE_486_S3_PCI,
         .chipset = MACHINE_CHIPSET_IMS_8848,
         .init = machine_at_pci400cb_init,
         .p1_handler = NULL,
@@ -8202,7 +8205,7 @@ const machine_t machines[] = {
     {
         .name = "[SiS 496] ASUS PVI-486SP3C",
         .internal_name = "486sp3c",
-        .type = MACHINE_TYPE_486_S3,
+        .type = MACHINE_TYPE_486_S3_PCI,
         .chipset = MACHINE_CHIPSET_SIS_496,
         .init = machine_at_486sp3c_init,
         .p1_handler = NULL,
@@ -8242,7 +8245,7 @@ const machine_t machines[] = {
     {
         .name = "[SiS 496] Lucky Star LS-486E",
         .internal_name = "ls486e",
-        .type = MACHINE_TYPE_486_S3,
+        .type = MACHINE_TYPE_486_S3_PCI,
         .chipset = MACHINE_CHIPSET_SIS_496,
         .init = machine_at_ls486e_init,
         .p1_handler = NULL,
@@ -8282,7 +8285,7 @@ const machine_t machines[] = {
     {
         .name = "[SiS 496] Micronics M4Li",
         .internal_name = "m4li",
-        .type = MACHINE_TYPE_486_S3,
+        .type = MACHINE_TYPE_486_S3_PCI,
         .chipset = MACHINE_CHIPSET_SIS_496,
         .init = machine_at_m4li_init,
         .p1_handler = NULL,
@@ -8322,7 +8325,7 @@ const machine_t machines[] = {
     {
         .name = "[SiS 496] Rise Computer R418",
         .internal_name = "r418",
-        .type = MACHINE_TYPE_486_S3,
+        .type = MACHINE_TYPE_486_S3_PCI,
         .chipset = MACHINE_CHIPSET_SIS_496,
         .init = machine_at_r418_init,
         .p1_handler = NULL,
@@ -8363,7 +8366,7 @@ const machine_t machines[] = {
     {
         .name = "[SiS 496] Soyo 4SAW2",
         .internal_name = "4saw2",
-        .type = MACHINE_TYPE_486_S3,
+        .type = MACHINE_TYPE_486_S3_PCI,
         .chipset = MACHINE_CHIPSET_SIS_496,
         .init = machine_at_4saw2_init,
         .p1_handler = NULL,
@@ -8404,7 +8407,7 @@ const machine_t machines[] = {
     {
         .name = "[SiS 496] Zida Tomato 4DP",
         .internal_name = "4dps",
-        .type = MACHINE_TYPE_486_S3,
+        .type = MACHINE_TYPE_486_S3_PCI,
         .chipset = MACHINE_CHIPSET_SIS_496,
         .init = machine_at_4dps_init,
         .p1_handler = NULL,
@@ -8444,7 +8447,7 @@ const machine_t machines[] = {
     {
         .name = "[SiS 496] MSI MS-4144",
         .internal_name = "ms4144",
-        .type = MACHINE_TYPE_486_S3,
+        .type = MACHINE_TYPE_486_S3_PCI,
         .chipset = MACHINE_CHIPSET_SIS_496,
         .init = machine_at_ms4144_init,
         .p1_handler = NULL,
@@ -8484,7 +8487,7 @@ const machine_t machines[] = {
     {
         .name = "[UMC 8881] A-Trend ATC-1415",
         .internal_name = "atc1415",
-        .type = MACHINE_TYPE_486_S3,
+        .type = MACHINE_TYPE_486_S3_PCI,
         .chipset = MACHINE_CHIPSET_UMC_UM8881,
         .init = machine_at_atc1415_init,
         .p1_handler = NULL,
@@ -8524,7 +8527,7 @@ const machine_t machines[] = {
     {
         .name = "[UMC 8881] ECS Elite UM8810P-AIO",
         .internal_name = "ecs486",
-        .type = MACHINE_TYPE_486_S3,
+        .type = MACHINE_TYPE_486_S3_PCI,
         .chipset = MACHINE_CHIPSET_UMC_UM8881,
         .init = machine_at_ecs486_init,
         .p1_handler = NULL,
@@ -8564,7 +8567,7 @@ const machine_t machines[] = {
     {
         .name = "[UMC 8881] Epson ActionPC 2600",
         .internal_name = "actionpc2600",
-        .type = MACHINE_TYPE_486_S3,
+        .type = MACHINE_TYPE_486_S3_PCI,
         .chipset = MACHINE_CHIPSET_UMC_UM8881,
         .init = machine_at_actionpc2600_init,
         .p1_handler = NULL,
@@ -8605,7 +8608,7 @@ const machine_t machines[] = {
     {
         .name = "[UMC 8881] Epson ActionTower 8400",
         .internal_name = "actiontower8400",
-        .type = MACHINE_TYPE_486_S3,
+        .type = MACHINE_TYPE_486_S3_PCI,
         .chipset = MACHINE_CHIPSET_UMC_UM8881,
         .init = machine_at_actiontower8400_init,
         .p1_handler = NULL,
@@ -8646,7 +8649,7 @@ const machine_t machines[] = {
     {
         .name = "[UMC 8881] PC Chips M919",
         .internal_name = "m919",
-        .type = MACHINE_TYPE_486_S3,
+        .type = MACHINE_TYPE_486_S3_PCI,
         .chipset = MACHINE_CHIPSET_UMC_UM8881,
         .init = machine_at_m919_init,
         .p1_handler = NULL,
@@ -8686,7 +8689,7 @@ const machine_t machines[] = {
     {
         .name = "[UMC 8881] Samsung SPC7700P-LW",
         .internal_name = "spc7700plw",
-        .type = MACHINE_TYPE_486_S3,
+        .type = MACHINE_TYPE_486_S3_PCI,
         .chipset = MACHINE_CHIPSET_UMC_UM8881,
         .init = machine_at_spc7700plw_init,
         .p1_handler = NULL,
@@ -8726,7 +8729,7 @@ const machine_t machines[] = {
     {
         .name = "[UMC 8881] Shuttle HOT-433A",
         .internal_name = "hot433a",
-        .type = MACHINE_TYPE_486_S3,
+        .type = MACHINE_TYPE_486_S3_PCI,
         .chipset = MACHINE_CHIPSET_UMC_UM8881,
         .init = machine_at_hot433a_init,
         .p1_handler = NULL,
@@ -8807,7 +8810,7 @@ const machine_t machines[] = {
     {
         .name = "[VIA VT82C496G] DFI G486VPA",
         .internal_name = "g486vpa",
-        .type = MACHINE_TYPE_486_S3,
+        .type = MACHINE_TYPE_486_S3_PCI,
         .chipset = MACHINE_CHIPSET_VIA_VT82C496G,
         .init = machine_at_g486vpa_init,
         .p1_handler = NULL,
@@ -8847,7 +8850,7 @@ const machine_t machines[] = {
     {
         .name = "[VIA VT82C496G] FIC VIP-IO2",
         .internal_name = "486vipio2",
-        .type = MACHINE_TYPE_486_S3,
+        .type = MACHINE_TYPE_486_S3_PCI,
         .chipset = MACHINE_CHIPSET_VIA_VT82C496G,
         .init = machine_at_486vipio2_init,
         .p1_handler = NULL,
@@ -16545,8 +16548,8 @@ const machine_t machines[] = {
 
 /* Saved copies - jumpers get applied to these.
    We use also machine_gpio to store IBM PC/XT jumpers as they need more than one byte. */
-static uint8_t machine_p1_default;
-static uint8_t machine_p1;
+static uint32_t machine_p1_default;
+static uint32_t machine_p1;
 
 static uint32_t machine_gpio_default;
 static uint32_t machine_gpio;
