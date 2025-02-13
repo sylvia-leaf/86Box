@@ -6870,7 +6870,7 @@ const machine_t machines[] = {
     {
         .name = "[OPTi 895] Packard Bell PB450",
         .internal_name = "pb450",
-        .type = MACHINE_TYPE_486_S3,
+        .type = MACHINE_TYPE_486_S3_PCI,
         .chipset = MACHINE_CHIPSET_OPTI_895_802G,
         .init = machine_at_pb450_init,
         .p1_handler = NULL,
@@ -7395,7 +7395,7 @@ const machine_t machines[] = {
     {
         .name = "[ALi M1429G] MSI MS-4134",
         .internal_name = "ms4134",
-        .type = MACHINE_TYPE_486_S3,
+        .type = MACHINE_TYPE_486_S3_PCI,
         .chipset = MACHINE_CHIPSET_ALI_M1429G,
         .init = machine_at_ms4134_init,
         .p1_handler = NULL,
@@ -7560,7 +7560,7 @@ const machine_t machines[] = {
     {
         .name = "[ALi M1489] AMI WinBIOS 486 PCI",
         .internal_name = "win486pci",
-        .type = MACHINE_TYPE_486_S3,
+        .type = MACHINE_TYPE_486_S3_PCI,
         .chipset = MACHINE_CHIPSET_ALI_M1489,
         .init = machine_at_win486pci_init,
         .p1_handler = NULL,
@@ -8770,7 +8770,7 @@ const machine_t machines[] = {
     {
         .name = "[UMC 8881] Compaq Presario 7100/7200 Series 486",
         .internal_name = "pl4600c",
-        .type = MACHINE_TYPE_486_S3,
+        .type = MACHINE_TYPE_486_S3_PCI,
         .chipset = MACHINE_CHIPSET_UMC_UM8881,
         .init = machine_at_pl4600c_init,
         .p1_handler = NULL,
