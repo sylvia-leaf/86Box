@@ -116,6 +116,7 @@
 #define MACHINE_IDE_QUA           0x20000000 /* sys has int qua IDE/ATAPI */
 #define MACHINE_SCSI              0x40000000 /* sys has int SCSI */
 #define MACHINE_USB               0x80000000 /* sys has int USB */
+#define MACHINE_COREBOOT         0x100000000 /* sys has coreboot BIOS */
 /* Combined flags. */
 #define MACHINE_LPT               (MACHINE_LPT-PRI | MACHINE_LPT_SEC | \
                                    MACHINE_LPT_TER | MACHINE_LPT_QUA)
