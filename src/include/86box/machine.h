@@ -319,7 +319,7 @@ typedef struct _machine_ {
     uint32_t             (*gpio_acpi_handler)(uint8_t write, uint32_t val);
     const machine_cpu_t    cpu;
     uintptr_t              bus_flags;
-    uintptr_t              flags;
+    uint64_t               flags;
     const machine_memory_t ram;
     int                    ram_granularity;
     int                    nvrmask;
