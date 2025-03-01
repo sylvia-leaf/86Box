@@ -214,7 +214,7 @@ fetch_ea_64_long(uint32_t rmdat)
             }
         } else if (cpu_rm == 5) {
             //RIP-relative addressing
-            if(!(use32 & 0x200)) cpu_state.eaaddr = (cpu_state.pc | ((uint64_t)cpu_state_high.pc_high << 32)) + getlong();
+            if(!(use32 & 0x200)) cpu_state.eaaddr = (cpu_state.pc | ((uint64_t)cpu_state.pc_high << 32)) + getlong();
             else cpu_state.eaaddr = cpu_state.pc + getlong();
         }
     }
@@ -251,8 +251,8 @@ fetch_ea_64_long(uint32_t rmdat)
 #define fetch_ea_64(rmdat)       \
     cpu_state.pc++;              \
     cpu_mod = (rmdat >> 6) & 3;  \
-    cpu_reg = ((rmdat >> 3) & 7) | ((cpu_state_high.rex_byte & 4) << 1) | (cpu_state_high.rex_present << 4);  \
-    cpu_rm  = (rmdat & 7) | ((cpu_state_high.rex_byte & 1) << 3) | (cpu_state_high.rex_present << 4);         \
+    cpu_reg = ((rmdat >> 3) & 7) | ((cpu_state.rex_byte & 4) << 1) | (cpu_state.rex_present << 4);  \
+    cpu_rm  = (rmdat & 7) | ((cpu_state.rex_byte & 1) << 3) | (cpu_state.rex_present << 4);         \
     if (cpu_mod != 3) {          \
         fetch_ea_64_long(rmdat); \
     }                            \

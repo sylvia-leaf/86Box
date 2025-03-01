@@ -104,8 +104,6 @@ enum {
 cpu_state_t cpu_state;
 fpu_state_t fpu_state;
 
-cpu_state_high_t cpu_state_high;
-
 /* Place this immediately after. */
 uint32_t abrt_error;
 
