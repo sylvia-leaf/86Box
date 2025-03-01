@@ -467,7 +467,7 @@ typedef struct {
     uint32_t cr3_high;
     uint8_t rex_byte;
     int rex_present;
-    int cpu_state.sse_xmm;
+    int sse_xmm;
 } cpu_state_t;
 
 
