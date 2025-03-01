@@ -182,7 +182,7 @@ uint16_t cpu_fast_off_count;
 uint16_t cpu_fast_off_val;
 uint16_t temp_seg_data[4] = { 0, 0, 0, 0 };
 
-int sse_xmm;
+int cpu_state.sse_xmm;
 
 int isa_cycles;
 int cpu_inited;

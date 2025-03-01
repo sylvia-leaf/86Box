@@ -2,7 +2,7 @@
 static int
 opUCOMISS_xmm_xmm_a16(uint32_t fetchdat)
 {
-    if ((cpu_features & CPU_FEATURE_SSE2) && sse_xmm)
+    if ((cpu_features & CPU_FEATURE_SSE2) && cpu_state.sse_xmm)
         return opUCOMISD_xmm_xmm_a16(fetchdat);
 
     SSE_ENTER();
@@ -28,7 +28,7 @@ opUCOMISS_xmm_xmm_a16(uint32_t fetchdat)
 static int
 opUCOMISS_xmm_xmm_a32(uint32_t fetchdat)
 {
-    if ((cpu_features & CPU_FEATURE_SSE2) && sse_xmm)
+    if ((cpu_features & CPU_FEATURE_SSE2) && cpu_state.sse_xmm)
         return opUCOMISD_xmm_xmm_a32(fetchdat);
 
     SSE_ENTER();
@@ -54,7 +54,7 @@ opUCOMISS_xmm_xmm_a32(uint32_t fetchdat)
 static int
 opCOMISS_xmm_xmm_a16(uint32_t fetchdat)
 {
-    if ((cpu_features & CPU_FEATURE_SSE2) && sse_xmm)
+    if ((cpu_features & CPU_FEATURE_SSE2) && cpu_state.sse_xmm)
         return opCOMISD_xmm_xmm_a16(fetchdat);
 
     SSE_ENTER();
@@ -80,7 +80,7 @@ opCOMISS_xmm_xmm_a16(uint32_t fetchdat)
 static int
 opCOMISS_xmm_xmm_a32(uint32_t fetchdat)
 {
-    if ((cpu_features & CPU_FEATURE_SSE2) && sse_xmm)
+    if ((cpu_features & CPU_FEATURE_SSE2) && cpu_state.sse_xmm)
         return opCOMISD_xmm_xmm_a32(fetchdat);
 
     SSE_ENTER();

@@ -592,7 +592,7 @@ opPACKSSDW_xmm_a32(uint32_t fetchdat)
 static int
 opPUNPCKLQDQ_a16(uint32_t fetchdat)
 {
-    ILLEGAL_ON(!sse_xmm);
+    ILLEGAL_ON(!cpu_state.sse_xmm);
     SSE_ENTER();
     SSE_REG src;
 
@@ -608,7 +608,7 @@ opPUNPCKLQDQ_a16(uint32_t fetchdat)
 static int
 opPUNPCKLQDQ_a32(uint32_t fetchdat)
 {
-    ILLEGAL_ON(!sse_xmm);
+    ILLEGAL_ON(!cpu_state.sse_xmm);
     SSE_ENTER();
     SSE_REG src;
 
@@ -624,7 +624,7 @@ opPUNPCKLQDQ_a32(uint32_t fetchdat)
 static int
 opPUNPCKHQDQ_a16(uint32_t fetchdat)
 {
-    ILLEGAL_ON(!sse_xmm);
+    ILLEGAL_ON(!cpu_state.sse_xmm);
     SSE_ENTER();
     SSE_REG src;
 
@@ -640,7 +640,7 @@ opPUNPCKHQDQ_a16(uint32_t fetchdat)
 static int
 opPUNPCKHQDQ_a32(uint32_t fetchdat)
 {
-    ILLEGAL_ON(!sse_xmm);
+    ILLEGAL_ON(!cpu_state.sse_xmm);
     SSE_ENTER();
     SSE_REG src;
 

@@ -242,7 +242,7 @@ opCVTPD2PS_mm_xmm_a32(uint32_t fetchdat)
 static int
 opCVTPS2PD_mm_xmm_a16(uint32_t fetchdat)
 {
-    if ((cpu_features & CPU_FEATURE_SSE2) && sse_xmm)
+    if ((cpu_features & CPU_FEATURE_SSE2) && cpu_state.sse_xmm)
         return opCVTPD2PS_mm_xmm_a16(fetchdat);
     
     SSE_ENTER();
@@ -265,7 +265,7 @@ opCVTPS2PD_mm_xmm_a16(uint32_t fetchdat)
 static int
 opCVTPS2PD_mm_xmm_a32(uint32_t fetchdat)
 {
-    if ((cpu_features & CPU_FEATURE_SSE2) && sse_xmm)
+    if ((cpu_features & CPU_FEATURE_SSE2) && cpu_state.sse_xmm)
         return opCVTPD2PS_mm_xmm_a32(fetchdat);
     
     SSE_ENTER();
@@ -409,7 +409,7 @@ static int
 opCVTDQ2PS_xmm_xmm_a16(uint32_t fetchdat)
 {
     SSE_REG src;
-    if ((cpu_features & CPU_FEATURE_SSE2) && sse_xmm)
+    if ((cpu_features & CPU_FEATURE_SSE2) && cpu_state.sse_xmm)
         return opCVTPS2DQ_xmm_xmm_a16(fetchdat);
     SSE_ENTER();
     fetch_ea_16(fetchdat);
@@ -433,7 +433,7 @@ static int
 opCVTDQ2PS_xmm_xmm_a32(uint32_t fetchdat)
 {
     SSE_REG src;
-    if ((cpu_features & CPU_FEATURE_SSE2) && sse_xmm)
+    if ((cpu_features & CPU_FEATURE_SSE2) && cpu_state.sse_xmm)
         return opCVTPS2DQ_xmm_xmm_a32(fetchdat);
     SSE_ENTER();
     fetch_ea_32(fetchdat);
@@ -545,7 +545,7 @@ opCVTTPD2DQ_mm_xmm_a16(uint32_t fetchdat)
     SSE_ENTER();
     SSE_REG src;
     fetch_ea_16(fetchdat);
-    ILLEGAL_ON(!sse_xmm);
+    ILLEGAL_ON(!cpu_state.sse_xmm);
     SSE_GETSRC();
     struct softfloat_status_t status = mxcsr_to_softfloat_status_word();
     cpu_state.XMM[cpu_reg].sl[0] = f64_to_i32_round_to_zero(src.d[0], &status);
@@ -567,7 +567,7 @@ opCVTTPD2DQ_mm_xmm_a32(uint32_t fetchdat)
     SSE_ENTER();
     SSE_REG src;
     fetch_ea_32(fetchdat);
-    ILLEGAL_ON(!sse_xmm);
+    ILLEGAL_ON(!cpu_state.sse_xmm);
     SSE_GETSRC();
     struct softfloat_status_t status = mxcsr_to_softfloat_status_word();
     cpu_state.XMM[cpu_reg].sl[0] = f64_to_i32_round_to_zero(src.d[0], &status);

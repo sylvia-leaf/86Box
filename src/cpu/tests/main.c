@@ -160,7 +160,7 @@ int main(int ac, char** av)
 
         cpu_state.pc++;
         x86_opcodes[(opcode | cpu_state.op32) & 0x3ff](fetchdat);
-        sse_xmm = 0;
+        cpu_state.sse_xmm = 0;
     }
 
     uint64_t result = cpu_state.XMM[0].q[0];

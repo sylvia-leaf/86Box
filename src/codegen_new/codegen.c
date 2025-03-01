@@ -392,6 +392,7 @@ codegen_generate_call(uint8_t opcode, OpFn op, uint32_t fetchdat, uint32_t new_p
     int          opcode_mask        = 0x3ff;
     uint32_t     recomp_opcode_mask = 0x1ff;
     uint32_t     op_32              = use32;
+    int          op_sse_xmm         = 0;
     int          over               = 0;
     int          test_modrm         = 1;
     int          pc_off             = 0;
@@ -411,7 +412,7 @@ codegen_generate_call(uint8_t opcode, OpFn op, uint32_t fetchdat, uint32_t new_p
                 last_prefix = 0x0f;
 #endif
                 op_table        = x86_dynarec_opcodes_0f;
-                recomp_op_table = fpu_softfloat ? recomp_opcodes_0f_no_mmx : recomp_opcodes_0f;
+                recomp_op_table = recomp_opcodes_0f_no_mmx;
                 if(is_repe)
                 {
                     op_table        = x86_dynarec_opcodes_REPE_0f;
@@ -452,6 +453,7 @@ codegen_generate_call(uint8_t opcode, OpFn op, uint32_t fetchdat, uint32_t new_p
 
             case 0x66: /*Data size select*/
                 op_32 = ((use32 & 0x100) ^ 0x100) | (op_32 & 0x200);
+                op_sse_xmm = 1;
                 break;
             case 0x67: /*Address size select*/
                 op_32 = ((use32 & 0x200) ^ 0x200) | (op_32 & 0x100);
@@ -741,6 +743,7 @@ generate_call:
         uop_MOV_PTR(ir, IREG_ea_seg, (void *) op_ea_seg);
     if (op_ssegs != last_op_ssegs)
         uop_MOV_IMM(ir, IREG_ssegs, op_ssegs);
+    uop_MOV_IMM(Ir, IREG_sse_xmm, op_sse_xmm);
     uop_LOAD_FUNC_ARG_IMM(ir, 0, fetchdat);
     uop_CALL_INSTRUCTION_FUNC(ir, op);
     codegen_flags_changed = 0;

@@ -467,13 +467,12 @@ typedef struct {
     uint32_t cr3_high;
     uint8_t rex_byte;
     int rex_present;
+    int cpu_state.sse_xmm;
 } cpu_state_t;
 
 
 #define in_smm   cpu_state._in_smm
 #define smi_line cpu_state._smi_line
-
-extern int sse_xmm;
 
 #define smbase cpu_state._smbase
 
