@@ -900,7 +900,7 @@ opPINSRW_xmm_w_a16(uint32_t fetchdat)
         return 1;
     if (cpu_mod == 3) {
         uint16_t rm = getr16(cpu_rm);
-        if (cpu_state.cpu_state.sse_xmm) {
+        if (cpu_state.sse_xmm) {
             SSE_ENTER();
             cpu_state.XMM[cpu_reg].w[imm & 7] = rm;
         }
@@ -919,7 +919,7 @@ opPINSRW_xmm_w_a16(uint32_t fetchdat)
         src = readmemw(easeg, cpu_state.eaaddr);
         if (cpu_state.abrt)
             return 1;
-        if (cpu_state.cpu_state.sse_xmm) {
+        if (cpu_state.sse_xmm) {
             SSE_ENTER();
             cpu_state.XMM[cpu_reg].w[imm & 7] = src;
         }
@@ -945,7 +945,7 @@ opPINSRW_xmm_w_a32(uint32_t fetchdat)
         return 1;
     if (cpu_mod == 3) {
         uint16_t rm = getr16(cpu_rm);
-        if (cpu_state.cpu_state.sse_xmm) {
+        if (cpu_state.sse_xmm) {
             SSE_ENTER();
             cpu_state.XMM[cpu_reg].w[imm & 7] = rm;
         }
@@ -964,7 +964,7 @@ opPINSRW_xmm_w_a32(uint32_t fetchdat)
         src = readmemw(easeg, cpu_state.eaaddr);
         if (cpu_state.abrt)
             return 1;
-        if (cpu_state.cpu_state.sse_xmm) {
+        if (cpu_state.sse_xmm) {
             SSE_ENTER();
             cpu_state.XMM[cpu_reg].w[imm & 7] = src;
         }
@@ -989,7 +989,7 @@ opPEXTRW_xmm_w_a16(uint32_t fetchdat)
         return 1;
     ILLEGAL_ON(cpu_mod != 3);
     if (cpu_mod == 3) {
-        if (cpu_state.cpu_state.sse_xmm)
+        if (cpu_state.sse_xmm)
         {
             SSE_ENTER();
             setr32(cpu_reg, cpu_state.XMM[cpu_rm].w[imm & 7]);
@@ -1015,7 +1015,7 @@ opPEXTRW_xmm_w_a32(uint32_t fetchdat)
         return 1;
     ILLEGAL_ON(cpu_mod != 3);
     if (cpu_mod == 3) {
-        if (cpu_state.cpu_state.sse_xmm)
+        if (cpu_state.sse_xmm)
         {
             SSE_ENTER();
             setr32(cpu_reg, cpu_state.XMM[cpu_rm].w[imm & 7]);
