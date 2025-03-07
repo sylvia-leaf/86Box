@@ -746,6 +746,7 @@ generate_call:
     uop_MOV_IMM(ir, IREG_sse_xmm, op_sse_xmm);
     uop_LOAD_FUNC_ARG_IMM(ir, 0, fetchdat);
     uop_CALL_INSTRUCTION_FUNC(ir, op);
+    uop_MOV_IMM(ir, IREG_sse_xmm, 0);
     codegen_flags_changed = 0;
     codegen_mark_code_present(block, cs + cpu_state.pc, 8);
 
