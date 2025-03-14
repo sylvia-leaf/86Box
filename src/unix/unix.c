@@ -2,6 +2,9 @@
 #    define _FILE_OFFSET_BITS   64
 #    define _LARGEFILE64_SOURCE 1
 #endif
+#ifdef __HAIKU__
+#include <OS.h>
+#endif
 #include <SDL.h>
 #include <stdlib.h>
 #include <stdbool.h>
@@ -1400,6 +1403,8 @@ plat_set_thread_name(void *thread, const char *name)
     char truncated[64];
 #elif defined(__NetBSD__)
     char truncated[64];
+#elif defined(__HAIKU__)
+    char truncated[32];
 #else
     char truncated[16];
 #endif
@@ -1408,6 +1413,8 @@ plat_set_thread_name(void *thread, const char *name)
     pthread_setname_np(truncated);
 #elif defined(__NetBSD__)
     pthread_setname_np(thread ? *((pthread_t *) thread) : pthread_self(), truncated, "%s");
+#elif defined(__HAIKU__)
+    rename_thread(find_thread(NULL), truncated);
 #else
     pthread_setname_np(thread ? *((pthread_t *) thread) : pthread_self(), truncated);
 #endif
