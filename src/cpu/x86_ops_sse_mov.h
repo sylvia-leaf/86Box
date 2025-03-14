@@ -838,7 +838,7 @@ opMOVMSKPS_l_xmm_a32(uint32_t fetchdat)
 static int
 opPSHUFW_mm_mm_a16(uint32_t fetchdat)
 {
-    MMX_REG  src;
+    MMX_REG  src, tmp;
     MMX_REG *dst;
 
     if ((cpu_features & CPU_FEATURE_SSE2) && cpu_state.sse_xmm)
@@ -853,10 +853,11 @@ opPSHUFW_mm_mm_a16(uint32_t fetchdat)
     MMX_GETSRC();
     dst = MMX_GETREGP(cpu_reg);
 
-    dst->w[0] = src.w[imm & 3];
-    dst->w[1] = src.w[(imm >> 2) & 3];
-    dst->w[2] = src.w[(imm >> 4) & 3];
-    dst->w[3] = src.w[(imm >> 6) & 3];
+    tmp.w[0] = src.w[imm & 3];
+    tmp.w[1] = src.w[(imm >> 2) & 3];
+    tmp.w[2] = src.w[(imm >> 4) & 3];
+    tmp.w[3] = src.w[(imm >> 6) & 3];
+    dst->q = tmp.q;
     CLOCK_CYCLES(1);
     MMX_SETEXP(cpu_reg);
 
@@ -866,7 +867,7 @@ opPSHUFW_mm_mm_a16(uint32_t fetchdat)
 static int
 opPSHUFW_mm_mm_a32(uint32_t fetchdat)
 {
-    MMX_REG  src;
+    MMX_REG  src, tmp;
     MMX_REG *dst;
 
     if ((cpu_features & CPU_FEATURE_SSE2) && cpu_state.sse_xmm)
@@ -881,10 +882,11 @@ opPSHUFW_mm_mm_a32(uint32_t fetchdat)
     MMX_GETSRC();
     dst = MMX_GETREGP(cpu_reg);
 
-    dst->w[0] = src.w[imm & 3];
-    dst->w[1] = src.w[(imm >> 2) & 3];
-    dst->w[2] = src.w[(imm >> 4) & 3];
-    dst->w[3] = src.w[(imm >> 6) & 3];
+    tmp.w[0] = src.w[imm & 3];
+    tmp.w[1] = src.w[(imm >> 2) & 3];
+    tmp.w[2] = src.w[(imm >> 4) & 3];
+    tmp.w[3] = src.w[(imm >> 6) & 3];
+    dst->q = tmp.q;
     CLOCK_CYCLES(1);
     MMX_SETEXP(cpu_reg);
 
