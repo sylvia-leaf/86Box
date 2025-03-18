@@ -1858,6 +1858,8 @@ codegen_generate_call(uint8_t opcode, OpFn op, uint32_t fetchdat, uint32_t new_p
     int          pc_off          = 0;
     int          test_modrm      = 1;
     int          c;
+    int is_repe = 0;
+    int is_repne = 0;
 
     op_ea_seg = &cpu_state.seg_ds;
     op_ssegs  = 0;

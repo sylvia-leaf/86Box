@@ -307,9 +307,6 @@ uint8_t ccr5;
 uint8_t ccr6;
 uint8_t ccr7;
 
-int is_repe;
-int is_repne;
-
 void
 cpu_INVD(uint8_t wb)
 {

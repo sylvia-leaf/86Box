@@ -910,8 +910,6 @@ extern int cpu_override_interpreter;
 
 extern int is_lock_legal(uint32_t fetchdat);
 
-extern int is_repe;
-extern int is_repne;
 extern void cpu_INVD(uint8_t wb);
 
 

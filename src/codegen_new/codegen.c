@@ -397,6 +397,8 @@ codegen_generate_call(uint8_t opcode, OpFn op, uint32_t fetchdat, uint32_t new_p
     int          test_modrm         = 1;
     int          pc_off             = 0;
     uint32_t     next_pc            = 0;
+    int is_repe = 0;
+    int is_repne = 0;
 #ifdef DEBUG_EXTRA
     uint8_t last_prefix = 0;
 #endif
