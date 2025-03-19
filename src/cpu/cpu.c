@@ -300,17 +300,14 @@ uint8_t ccr5;
 uint8_t ccr6;
 uint8_t ccr7;
 
-<<<<<<< HEAD
 void
 cpu_INVD(uint8_t wb)
 {
     mem_invalidate_mtrr(wb);
 }
-=======
 uint8_t reg_30 = 0x00;
 uint8_t arr[24] = { 0 };
 uint8_t rcr[8] = { 0 };
->>>>>>> 2cd99f0c705c9a40cbc4a11866c05c03b6704734
 
 static int cyrix_addr;
 
