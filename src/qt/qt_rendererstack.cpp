@@ -208,9 +208,11 @@ RendererStack::wheelEvent(QWheelEvent *event)
         return;
     }
 
+#if !defined(Q_OS_WINDOWS) && !defined(__APPLE__)
     double numSteps = (double) event->angleDelta().y() / 120.0;
 
     mouse_set_z((int) numSteps);
+#endif
     event->accept();
 }
 
