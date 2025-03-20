@@ -462,7 +462,7 @@ mmutranslatereal_pae(uint32_t addr, int rw)
         return 0xffffffffffffffffULL;
     }
 
-    f(nxbit && (rw == 2)) {
+    if(nxbit && (rw == 2)) {
         cr2 = addr;
         temp &= 1;
         temp |= 0x10;
