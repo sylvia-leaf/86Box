@@ -295,6 +295,7 @@ mem_flush_write_page(uint32_t addr, uint32_t virt)
 
 #define mmutranslate_read(addr)  mmutranslatereal(addr, 0)
 #define mmutranslate_write(addr) mmutranslatereal(addr, 1)
+#define mmutranslate_execute(addr) mmutranslatereal(addr, 2)
 #define rammap(x)                ((uint32_t *) (_mem_exec[(x) >> MEM_GRANULARITY_BITS]))[((x) >> 2) & MEM_GRANULARITY_QMASK]
 #define rammap64(x)              ((uint64_t *) (_mem_exec[(x) >> MEM_GRANULARITY_BITS]))[((x) >> 3) & MEM_GRANULARITY_PMASK]
 
@@ -400,6 +401,7 @@ mmutranslatereal_pae(uint32_t addr, int rw)
 
     addr3 = (temp & ~0xfffULL) + ((addr >> 18) & 0xff8);
     temp = temp4 = rammap64(addr3) & 0x000000ffffffffffULL;
+    nxbit = rammap64(addr3) & 0x8000000000000000ULL;
     temp3        = temp & temp2;
     if (!(temp & 1)) {
         cr2 = addr;
@@ -408,6 +410,17 @@ mmutranslatereal_pae(uint32_t addr, int rw)
             temp |= 4;
         if (rw == 1)
             temp |= 2;
+        cpu_state.abrt = ABRT_PF;
+        abrt_error     = temp;
+        return 0xffffffffffffffffULL;
+    }
+
+    if(nxbit && (rw == 2)) {
+        cr2 = addr;
+        temp &= 1;
+        temp |= 0x10;
+        if (CPL == 3)
+            temp |= 4;
         cpu_state.abrt = ABRT_PF;
         abrt_error     = temp;
         return 0xffffffffffffffffULL;
@@ -444,6 +457,17 @@ mmutranslatereal_pae(uint32_t addr, int rw)
             temp |= 4;
         if (rw)
             temp |= 2;
+        cpu_state.abrt = ABRT_PF;
+        abrt_error     = temp;
+        return 0xffffffffffffffffULL;
+    }
+
+    f(nxbit && (rw == 2)) {
+        cr2 = addr;
+        temp &= 1;
+        temp |= 0x10;
+        if (CPL == 3)
+            temp |= 4;
         cpu_state.abrt = ABRT_PF;
         abrt_error     = temp;
         return 0xffffffffffffffffULL;
@@ -699,7 +723,7 @@ getpccache_execute(uint32_t a)
     a2 = a;
 
     if (cr0 >> 31) {
-        a64 = mmutranslate_read(a64);
+        a64 = mmutranslate_execute(a64);
 
         if (a64 == 0xffffffffffffffffULL)
             return ram;
