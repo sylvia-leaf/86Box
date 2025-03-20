@@ -415,7 +415,7 @@ mmutranslatereal_pae(uint32_t addr, int rw)
         return 0xffffffffffffffffULL;
     }
 
-    if(nxbit && (rw == 2)) {
+    if(nxbit && (rw == 2) && (msr.amd_efer & EFER_NXE)) {
         cr2 = addr;
         temp &= 1;
         temp |= 0x10;
@@ -462,7 +462,7 @@ mmutranslatereal_pae(uint32_t addr, int rw)
         return 0xffffffffffffffffULL;
     }
 
-    if(nxbit && (rw == 2)) {
+    if(nxbit && (rw == 2) && (msr.amd_efer & EFER_NXE)) {
         cr2 = addr;
         temp &= 1;
         temp |= 0x10;
