@@ -40,6 +40,7 @@
 
 #include <stdint.h>
 
+#ifndef __NetBSD__
 #define bswap_16(x)					\
 	((uint16_t)((((x) & 0x00ffu) << 8) |		\
 		    (((x) & 0xff00u) >> 8)))
