@@ -61,7 +61,7 @@
 		    (((x) & 0x00ff000000000000ull) >> 40) |		\
 		    (((x) & 0xff00000000000000ull) >> 56)))
 
-#ifndef __NetBSD__
+#endif
 
 static __inline uint16_t
 bswap16(uint16_t x)
