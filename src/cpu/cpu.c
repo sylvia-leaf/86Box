@@ -2986,7 +2986,7 @@ cpu_CPUID(void)
                 ECX = 0x6c65746e;
             } else if (EAX == 1) {
                 EAX = CPUID;
-                EBX = 0;
+                EBX = 8 << 8;
                 ECX       = 0;//CPUID_SSE3;
                 EDX       = CPUID_FPU | CPUID_VME | CPUID_DE | CPUID_PSE | CPUID_TSC | CPUID_MSR | CPUID_PAE | CPUID_MCE | CPUID_CMPXCHG8B | CPUID_MMX | CPUID_MTRR | CPUID_PGE | CPUID_MCA | CPUID_SEP | CPUID_FXSR | CPUID_CMOV | CPUID_PSE36 | CPUID_SSE | CPUID_SSE2 | CPUID_CLFLUSH;
             } else if (EAX == 2) {
