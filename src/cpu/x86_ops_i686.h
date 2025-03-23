@@ -532,10 +532,7 @@ fx_save_stor_common(uint32_t fetchdat, int bits)
         CLOCK_CYCLES(1);
     }
 #if 1
-    else if (fxinst == 5 || fxinst == 6)
-        CPU_BLOCK_END();
     else if (fxinst == 7) {
-        CPU_BLOCK_END();
         if((cpu_features & CPU_FEATURE_CLFLUSH) && cpu_mod != 3)
         {
             //Emulate CLFLUSH as a single byte read.

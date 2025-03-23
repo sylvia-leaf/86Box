@@ -1913,7 +1913,7 @@ cpu_set(void)
                 x86_opcodes_da_a16 = ops_sf_fpu_686_da_a16;
                 x86_opcodes_da_a32 = ops_sf_fpu_686_da_a32;
                 x86_opcodes_db_a16 = ops_sf_fpu_sse3_db_a16;
-                x86_opcodes_db_a32 = ops_sf_fpu_sse3_db_a32;
+                x86_opcodes_db_a32 = ops_sff_fpu_sse3_db_a32;
                 x86_opcodes_dd_a16 = ops_sf_fpu_sse3_dd_a16;
                 x86_opcodes_dd_a32 = ops_sf_fpu_sse3_dd_a32;
                 x86_opcodes_df_a16 = ops_sf_fpu_sse3_df_a16;
@@ -2988,7 +2988,7 @@ cpu_CPUID(void)
                 EAX = CPUID;
                 EBX = 0;
                 ECX       = 0;//CPUID_SSE3;
-                EDX       = CPUID_FPU | CPUID_VME | CPUID_DE | CPUID_PSE | CPUID_TSC | CPUID_MSR | CPUID_PAE | CPUID_MCE | CPUID_CMPXCHG8B | CPUID_MMX | CPUID_MTRR | CPUID_PGE | CPUID_MCA | CPUID_SEP | CPUID_FXSR | CPUID_CMOV | CPUID_PSE36 | CPUID_SSE | CPUID_SSE2;// | CPUID_CLFLUSH;
+                EDX       = CPUID_FPU | CPUID_VME | CPUID_DE | CPUID_PSE | CPUID_TSC | CPUID_MSR | CPUID_PAE | CPUID_MCE | CPUID_CMPXCHG8B | CPUID_MMX | CPUID_MTRR | CPUID_PGE | CPUID_MCA | CPUID_SEP | CPUID_FXSR | CPUID_CMOV | CPUID_PSE36 | CPUID_SSE | CPUID_SSE2 | CPUID_CLFLUSH;
             } else if (EAX == 2) {
                 EAX = 0x00000001;
                 EBX = ECX = 0;
