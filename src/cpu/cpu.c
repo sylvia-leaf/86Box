@@ -1913,7 +1913,7 @@ cpu_set(void)
                 x86_opcodes_da_a16 = ops_sf_fpu_686_da_a16;
                 x86_opcodes_da_a32 = ops_sf_fpu_686_da_a32;
                 x86_opcodes_db_a16 = ops_sf_fpu_sse3_db_a16;
-                x86_opcodes_db_a32 = ops_sff_fpu_sse3_db_a32;
+                x86_opcodes_db_a32 = ops_sf_fpu_sse3_db_a32;
                 x86_opcodes_dd_a16 = ops_sf_fpu_sse3_dd_a16;
                 x86_opcodes_dd_a32 = ops_sf_fpu_sse3_dd_a32;
                 x86_opcodes_df_a16 = ops_sf_fpu_sse3_df_a16;
