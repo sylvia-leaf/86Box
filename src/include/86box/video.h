@@ -459,15 +459,8 @@ extern const device_t millennium_ii_device;
 extern const device_t productiva_g100_device;
 #endif /* USE_G100 */
 
-/* nVidia RIVA 128 */
-#ifdef USE_RIVA128
-extern const device_t riva128_pci_device;
-#endif
-
-/* nVidia RIVA TNT */
-#ifdef USE_RIVATNT
-extern const device_t rivatnt_pci_device;
-#endif
+/* JEGA */
+extern const device_t if386jega_device;
 
 /* Oak OTI-0x7 */
 extern const device_t oti037c_device;
