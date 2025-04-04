@@ -414,7 +414,7 @@ codegen_generate_call(uint8_t opcode, OpFn op, uint32_t fetchdat, uint32_t new_p
                 last_prefix = 0x0f;
 #endif
                 op_table        = x86_dynarec_opcodes_0f;
-                recomp_op_table = NULL;
+                recomp_op_table = recomp_opcodes_0f_no_mmx;
                 if(is_repe)
                 {
                     op_table        = x86_dynarec_opcodes_REPE_0f;
