@@ -319,6 +319,7 @@ opUNPCKHPD_f_xmm_a16(uint32_t fetchdat)
     SSE_REG src, tmp;
     SSE_ENTER();
     fetch_ea_16(fetchdat);
+    SSE_GETSRC();
     tmp.q[0] = cpu_state.XMM[cpu_reg].q[1];
     tmp.q[1] = src.q[1];
     cpu_state.XMM[cpu_reg].q[0] = tmp.q[0];
@@ -332,6 +333,7 @@ opUNPCKHPD_f_xmm_a32(uint32_t fetchdat)
     SSE_REG src, tmp;
     SSE_ENTER();
     fetch_ea_32(fetchdat);
+    SSE_GETSRC();
     tmp.q[0] = cpu_state.XMM[cpu_reg].q[1];
     tmp.q[1] = src.q[1];
     cpu_state.XMM[cpu_reg].q[0] = tmp.q[0];
