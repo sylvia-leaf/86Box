@@ -240,6 +240,7 @@ sf_fx_save_stor_common(uint32_t fetchdat, int bits)
             SEG_CHECK_READ(cpu_state.ea_seg);
             (void)readmemb(easeg, cpu_state.eaaddr);
         }
+    }
 
     return cpu_state.abrt;
 }
