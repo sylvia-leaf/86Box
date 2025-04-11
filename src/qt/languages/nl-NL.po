@@ -213,13 +213,8 @@ msgstr "&Help"
 msgid "&Documentation..."
 msgstr "&Documentatie..."
 
-<<<<<<< HEAD
 msgid "&About PCBox..."	
 msgstr "&Over PCBox..."
-=======
-msgid "&About 86Box..."
-msgstr "&Over 86Box..."
->>>>>>> bc5b8f3910030600d63616d5727e472aa686c569
 
 msgid "&New image..."
 msgstr "&Nieuw image..."
@@ -632,13 +627,8 @@ msgstr "ISABugger-apparaat"
 msgid "POST card"
 msgstr "POST-kaart"
 
-<<<<<<< HEAD
 msgid "PCBox"	
 msgstr "PCBox"
-=======
-msgid "86Box"
-msgstr "86Box"
->>>>>>> bc5b8f3910030600d63616d5727e472aa686c569
 
 msgid "Error"
 msgstr "Fout"
@@ -661,13 +651,8 @@ msgstr "ZIP %1 %2 (%3): %4"
 msgid "ZIP images"
 msgstr "ZIP-images"
 
-<<<<<<< HEAD
 msgid "PCBox could not find any usable ROM images.\n\nPlease <a href=\"https://github.com/PCBox/roms/releases/latest\">download</a> a ROM set and extract it into the \"roms\" directory."	
 msgstr "PCBox kon geen bruikbare ROM images vinden.\n\n<a href=\"https://github.com/PCBox/roms/releases/latest\">Download</a> een ROM set en pak deze uit in de map \"roms\"."
-=======
-msgid "86Box could not find any usable ROM images.\n\nPlease <a href=\"https://github.com/86Box/roms/releases/latest\">download</a> a ROM set and extract it into the \"roms\" directory."
-msgstr "86Box kon geen bruikbare ROM images vinden.\n\n<a href=\"https://github.com/86Box/roms/releases/latest\">Download</a> een ROM set en pak deze uit in de map \"roms\"."
->>>>>>> bc5b8f3910030600d63616d5727e472aa686c569
 
 msgid "(empty)"
 msgstr "(leeg)"
@@ -828,13 +813,8 @@ msgstr "Flux images"
 msgid "Are you sure you want to hard reset the emulated machine?"
 msgstr "Weet je zeker dat je de geëmuleerde machine wilt resetten?"
 
-<<<<<<< HEAD
 msgid "Are you sure you want to exit PCBox?"	
 msgstr "Weet je zeker dat je PCBox wilt verlaten?"
-=======
-msgid "Are you sure you want to exit 86Box?"
-msgstr "Weet je zeker dat je 86Box wilt verlaten?"
->>>>>>> bc5b8f3910030600d63616d5727e472aa686c569
 
 msgid "Unable to initialize Ghostscript"
 msgstr "Kan Ghostscript niet initialiseren"
@@ -848,13 +828,8 @@ msgstr "MO %1 (%2): %3"
 msgid "MO images"
 msgstr "MO-images"
 
-<<<<<<< HEAD
 msgid "Welcome to PCBox!"	
 msgstr "Welkom bij PCBox!"
-=======
-msgid "Welcome to 86Box!"
-msgstr "Welkom bij 86Box!"
->>>>>>> bc5b8f3910030600d63616d5727e472aa686c569
 
 msgid "Internal device"
 msgstr "Intern apparaat"
@@ -874,19 +849,11 @@ msgstr "Dit zal de geëmuleerde machine een hard reset geven."
 msgid "Save"
 msgstr "Opslaan"
 
-<<<<<<< HEAD
 msgid "About PCBox"	
 msgstr "Over PCBox"
 
 msgid "PCBox v"	
 msgstr "PCBox v"
-=======
-msgid "About 86Box"
-msgstr "Over 86Box"
-
-msgid "86Box v"
-msgstr "86Box v"
->>>>>>> bc5b8f3910030600d63616d5727e472aa686c569
 
 msgid "An emulator of old computers\n\nAuthors: Miran Grča (OBattler), RichardG867, Jasmine Iwanek, TC1995, coldbrewed, Teemu Korhonen (Manaatti), Joakim L. Gilje, Adrien Moulin (elyosh), Daniel Balsom (gloriouscow), Cacodemon345, Fred N. van Kempen (waltje), Tiseno100, reenigne, and others.\n\nWith previous core contributions from Sarah Walker, leilei, JohnElliott, greatpsycho, and others.\n\nReleased under the GNU General Public License version 2 or later. See LICENSE for more information."
 msgstr "Een emulator van oude computers\n\nAuteurs: Miran Grča (OBattler), RichardG867, Jasmine Iwanek, TC1995, coldbrewed, Teemu Korhonen (Manaatti), Joakim L. Gilje, Adrien Moulin (elyosh), Daniel Balsom (gloriouscow), Cacodemon345, Fred N. van Kempen (waltje), Tiseno100, reenigne, and others.\n\nMet eerdere bijdragen van Sarah Walker, leilei, JohnElliott, greatpsycho en anderen.\n\nUitgebracht onder de GNU General Public License versie 2 of later. Zie LICENSE voor meer informatie."
@@ -1233,13 +1200,8 @@ msgstr "&Autopauze bij focusverlies"
 msgid "WinBox is no longer supported"
 msgstr "WinBox wordt niet langer ondersteund"
 
-<<<<<<< HEAD
-msgid "Development of the WinBox manager stopped in 2022 due to a lack of maintainers. As we direct our efforts towards making PCBox even better, we have made the decision to no longer support WinBox as a manager.\n\nNo further updates will be provided through WinBox, and you may encounter incorrect behavior should you continue using it with newer versions of PCBox. Any bug reports related to WinBox behavior will be closed as invalid.\n\nGo to 86box.net for a list of other managers you can use."	
-msgstr "De ontwikkeling van de WinBox manager is gestopt in 2022 door een gebrek aan beheerders. Omdat we onze inspanningen richten op het nog beter maken van PCBox, hebben we de beslissing genomen om WinBox niet langer te ondersteunen als een manager.\n\nEr zullen geen verdere updates worden geleverd door WinBox. Je kunt onjuist gedrag tegenkomen als je het blijft gebruiken met nieuwere versies van PCBox. Alle bugrapporten gerelateerd aan het gedrag van WinBox zullen worden gesloten als ongeldig.\n\nGa naar 86box.net voor een lijst van andere managers die je kunt gebruiken."
-=======
 msgid "Development of the WinBox manager stopped in 2022 due to a lack of maintainers. As we direct our efforts towards making 86Box even better, we have made the decision to no longer support WinBox as a manager.\n\nNo further updates will be provided through WinBox, and you may encounter incorrect behavior should you continue using it with newer versions of 86Box. Any bug reports related to WinBox behavior will be closed as invalid.\n\nGo to 86box.net for a list of other managers you can use."
 msgstr "De ontwikkeling van de WinBox manager is gestopt in 2022 door een gebrek aan beheerders. Omdat we onze inspanningen richten op het nog beter maken van 86Box, hebben we de beslissing genomen om WinBox niet langer te ondersteunen als een manager.\n\nEr zullen geen verdere updates worden geleverd door WinBox. Je kunt onjuist gedrag tegenkomen als je het blijft gebruiken met nieuwere versies van 86Box. Alle bugrapporten gerelateerd aan het gedrag van WinBox zullen worden gesloten als ongeldig.\n\nGa naar 86box.net voor een lijst van andere managers die je kunt gebruiken."
->>>>>>> bc5b8f3910030600d63616d5727e472aa686c569
 
 msgid "Generate"
 msgstr "Genereren"
@@ -1352,27 +1314,14 @@ msgstr "Fout bij het initialiseren van OpenGL"
 msgid "\nFalling back to software rendering."
 msgstr "\nTerugvallen op software rendering."
 
-<<<<<<< HEAD
-msgid "Allocating memory for unpack buffer failed.\n"	
-msgstr "Toewijzen van geheugen voor uitpakbuffer mislukt.\n"
-
-msgid "&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;When selecting media images (CD-ROM, floppy, etc.) the open dialog will start in the same directory as the PCBox configuration file. This setting will likely only make a difference on macOS.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;"	
+msgid "&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;When selecting media images (CD-ROM, floppy, etc.) the open dialog will start in the same directory as the PCBox configuration file. This setting will likely only make a difference on macOS.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;"
 msgstr "&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Bij het selecteren van media-images (CD-ROM, floppy, etc.) zal de \"open dialoog\" starten in dezelfde map als het PCBox configuratiebestand. Deze instelling is doet er waarschijnlijk alleen toe op macOS.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;"
-=======
-msgid "&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;When selecting media images (CD-ROM, floppy, etc.) the open dialog will start in the same directory as the 86Box configuration file. This setting will likely only make a difference on macOS.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;"
-msgstr "&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Bij het selecteren van media-images (CD-ROM, floppy, etc.) zal de \"open dialoog\" starten in dezelfde map als het 86Box configuratiebestand. Deze instelling is doet er waarschijnlijk alleen toe op macOS.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;"
->>>>>>> bc5b8f3910030600d63616d5727e472aa686c569
 
 msgid "This machine might have been moved or copied."
 msgstr "Deze machine is misschien verplaatst of gekopieerd."
 
-<<<<<<< HEAD
-msgid "In order to ensure proper networking functionality, PCBox needs to know if this machine was moved or copied.\n\nSelect \"I Copied It\" if you are not sure."	
+msgid "In order to ensure proper networking functionality, PCBox needs to know if this machine was moved or copied.\n\nSelect \"I Copied It\" if you are not sure."
 msgstr "Om een goede netwerkfunctionaliteit te garanderen, moet PCBox weten of deze machine verplaatst of gekopieerd is.\n\nSelecteer \"Ik heb het gekopieerd\" als u het niet zeker weet."
-=======
-msgid "In order to ensure proper networking functionality, 86Box needs to know if this machine was moved or copied.\n\nSelect \"I Copied It\" if you are not sure."
-msgstr "Om een goede netwerkfunctionaliteit te garanderen, moet 86Box weten of deze machine verplaatst of gekopieerd is.\n\nSelecteer \"Ik heb het gekopieerd\" als u het niet zeker weet."
->>>>>>> bc5b8f3910030600d63616d5727e472aa686c569
 
 msgid "I Moved It"
 msgstr "Ik heb het verplaatst"
@@ -1380,13 +1329,8 @@ msgstr "Ik heb het verplaatst"
 msgid "I Copied It"
 msgstr "Ik heb het gekopieerd"
 
-<<<<<<< HEAD
-msgid "PCBox Monitor #"	
+msgid "PCBox Monitor #"
 msgstr "PCBox Monitor #"
-=======
-msgid "86Box Monitor #"
-msgstr "86Box Monitor #"
->>>>>>> bc5b8f3910030600d63616d5727e472aa686c569
 
 msgid "No MCA devices."
 msgstr "Geen MCA-apparaten."
@@ -1418,13 +1362,8 @@ msgstr "Adapter"
 msgid "VDE Socket"
 msgstr "VDE-socket"
 
-<<<<<<< HEAD
-msgid "PCBox Unit Tester"	
+msgid "PCBox Unit Tester"
 msgstr "PCBox apparaattester"
-=======
-msgid "86Box Unit Tester"
-msgstr "86Box apparaattester"
->>>>>>> bc5b8f3910030600d63616d5727e472aa686c569
 
 msgid "Novell NetWare 2.x Key Card"
 msgstr "Novell NetWare 2.x Key Card"
@@ -1738,13 +1677,8 @@ msgstr "Codec"
 msgid "GUS type"
 msgstr "GUS-type"
 
-<<<<<<< HEAD
-msgid "Enable 0x04 \"Exit PCBox\" command"	
+msgid "Enable 0x04 \"Exit PCBox\" command"
 msgstr "Schakel het commando 0x04 \"Exit PCBox\" in"
-=======
-msgid "Enable 0x04 \"Exit 86Box\" command"
-msgstr "Schakel het commando 0x04 \"Exit 86Box\" in"
->>>>>>> bc5b8f3910030600d63616d5727e472aa686c569
 
 msgid "Display type"
 msgstr "Scherm type"
