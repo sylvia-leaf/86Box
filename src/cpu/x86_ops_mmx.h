@@ -52,6 +52,11 @@
     if (cr0 & 0x8) { \
         x86_int(7);  \
         return 1;    \
+    }                \
+    if ((cr0 & 0x4) || !(cr4 & CR4_OSFXSR)) { \
+        cpu_state.pc = cpu_state.oldpc;       \
+        x86illegal();                         \
+        return 1;                             \
     }
 
 static int
