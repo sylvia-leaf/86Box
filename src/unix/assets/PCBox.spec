@@ -121,10 +121,5 @@ popd
 %{_datadir}/%{name}/roms
 
 %changelog
-<<<<<<< HEAD:src/unix/assets/PCBox.spec
-* Sat Sep 28 2024 Britney Lozza <bnlozza@gmail.com> - 4.3-1
-- Fixing fuel's bad forking by porting the spec file from 86Box to PCBox
-=======
-* Sat Aug 31 Jasmine Iwanek <jriwanek[AT]gmail.com> 5.0-1
+* Sat Apr 16 2025 Britney Lozza <bnlozza@gmail.com> - 5.0-1
 - Bump release
->>>>>>> 2c3fc6ec1ad25ea206c3f96822487645f4f3844b:src/unix/assets/86Box.spec
