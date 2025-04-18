@@ -187,17 +187,19 @@ sf_fx_save_stor_common(uint32_t fetchdat, int bits)
             writememw(easeg, cpu_state.eaaddr + (index * 16) + 40, fp.signExp);
         }
 
-        if ((cpu_features & CPU_FEATURE_SSE) && (cr4 & CR4_OSFXSR)) {
+        if ((cpu_features & CPU_FEATURE_SSE)) {
             writememl(easeg, old_eaaddr + 24, cpu_state.mxcsr);
             if (!(cpu_features & CPU_FEATURE_SSE2))
                 writememl(easeg, old_eaaddr + 28, 0xffbf);
             else
                 writememl(easeg, old_eaaddr + 28, 0xffff);
-
-            for(int i = 0; i < 8; i++)
+            if(cr4 & CR4_OSFXSR)
             {
-                writememq(easeg, old_eaaddr + 0xa0 + (i << 4), cpu_state.XMM[i].q[0]);
-                writememq(easeg, old_eaaddr + 0xa8 + (i << 4), cpu_state.XMM[i].q[1]);
+                for(int i = 0; i < 8; i++)
+                {
+                    writememq(easeg, old_eaaddr + 0xa0 + (i << 4), cpu_state.XMM[i].q[0]);
+                    writememq(easeg, old_eaaddr + 0xa8 + (i << 4), cpu_state.XMM[i].q[1]);
+                }
             }
         }
 
@@ -465,16 +467,19 @@ fx_save_stor_common(uint32_t fetchdat, int bits)
         writememl(easeg, cpu_state.eaaddr + 16, x87_op_off);
         writememw(easeg, cpu_state.eaaddr + 20, x87_op_seg);
 
-        if ((cpu_features & CPU_FEATURE_SSE) && (cr4 & CR4_OSFXSR)) {
+        if ((cpu_features & CPU_FEATURE_SSE)) {
             writememl(easeg, old_eaaddr + 24, cpu_state.mxcsr);
             if (!(cpu_features & CPU_FEATURE_SSE2))
                 writememl(easeg, old_eaaddr + 28, 0xffbf);
             else
                 writememl(easeg, old_eaaddr + 28, 0xffff);
-            for(int i = 0; i < 8; i++)
+            if(cr4 & CR4_OSFXSR)
             {
-                writememq(easeg, old_eaaddr + 0xa0 + (i << 4), cpu_state.XMM[i].q[0]);
-                writememq(easeg, old_eaaddr + 0xa8 + (i << 4), cpu_state.XMM[i].q[1]);
+                for(int i = 0; i < 8; i++)
+                {
+                    writememq(easeg, old_eaaddr + 0xa0 + (i << 4), cpu_state.XMM[i].q[0]);
+                    writememq(easeg, old_eaaddr + 0xa8 + (i << 4), cpu_state.XMM[i].q[1]);
+                }
             }
         }
 
