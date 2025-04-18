@@ -3499,6 +3499,11 @@ mem_add_mtrr(uint64_t base, uint64_t mask, uint8_t type)
 
     mem_log("Adding MTRR base=%08llx mask=%08llx size=%08llx type=%d\n", base, mask, size, type);
 
+    if (type == 0x01) {
+        mem_log("Ignoring MTRR, not doing this breaks Vista\n");
+        return;
+    }
+
     if (size > 0x8000) {
         mem_log("Ignoring MTRR, size too big\n");
         return;
