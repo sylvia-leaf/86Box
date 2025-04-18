@@ -11,7 +11,7 @@ opANDPS_q_xmm_a16(uint32_t fetchdat)
         cpu_state.XMM[cpu_reg].l[3] &= cpu_state.XMM[cpu_rm].l[3];
         CLOCK_CYCLES(1);
     } else {
-        uint64_t dst[4];
+        uint32_t dst[4];
 
         SEG_CHECK_READ(cpu_state.ea_seg);
         dst[0] = readmeml(easeg, cpu_state.eaaddr);
@@ -48,7 +48,7 @@ opANDPS_q_xmm_a32(uint32_t fetchdat)
         cpu_state.XMM[cpu_reg].l[3] &= cpu_state.XMM[cpu_rm].l[3];
         CLOCK_CYCLES(1);
     } else {
-        uint64_t dst[4];
+        uint32_t dst[4];
 
         SEG_CHECK_READ(cpu_state.ea_seg);
         dst[0] = readmeml(easeg, cpu_state.eaaddr);
@@ -85,7 +85,7 @@ opANDNPS_q_xmm_a16(uint32_t fetchdat)
         cpu_state.XMM[cpu_reg].l[3] = ~cpu_state.XMM[cpu_reg].l[3] & cpu_state.XMM[cpu_rm].l[3];
         CLOCK_CYCLES(1);
     } else {
-        uint64_t dst[4];
+        uint32_t dst[4];
 
         SEG_CHECK_READ(cpu_state.ea_seg);
         dst[0] = readmeml(easeg, cpu_state.eaaddr);
@@ -101,9 +101,9 @@ opANDNPS_q_xmm_a16(uint32_t fetchdat)
         if (cpu_state.abrt)
             return 1;
         cpu_state.XMM[cpu_reg].l[0] = ~cpu_state.XMM[cpu_reg].l[0] & dst[0];
-        cpu_state.XMM[cpu_reg].l[1] = ~cpu_state.XMM[cpu_reg].l[0] & dst[1];
-        cpu_state.XMM[cpu_reg].l[2] = ~cpu_state.XMM[cpu_reg].l[0] & dst[2];
-        cpu_state.XMM[cpu_reg].l[3] = ~cpu_state.XMM[cpu_reg].l[0] & dst[3];
+        cpu_state.XMM[cpu_reg].l[1] = ~cpu_state.XMM[cpu_reg].l[1] & dst[1];
+        cpu_state.XMM[cpu_reg].l[2] = ~cpu_state.XMM[cpu_reg].l[2] & dst[2];
+        cpu_state.XMM[cpu_reg].l[3] = ~cpu_state.XMM[cpu_reg].l[3] & dst[3];
 
         CLOCK_CYCLES(2);
     }
@@ -122,7 +122,7 @@ opANDNPS_q_xmm_a32(uint32_t fetchdat)
         cpu_state.XMM[cpu_reg].l[3] = ~cpu_state.XMM[cpu_reg].l[3] & cpu_state.XMM[cpu_rm].l[3];
         CLOCK_CYCLES(1);
     } else {
-        uint64_t dst[4];
+        uint32_t dst[4];
 
         SEG_CHECK_READ(cpu_state.ea_seg);
         dst[0] = readmeml(easeg, cpu_state.eaaddr);
@@ -138,9 +138,9 @@ opANDNPS_q_xmm_a32(uint32_t fetchdat)
         if (cpu_state.abrt)
             return 1;
         cpu_state.XMM[cpu_reg].l[0] = ~cpu_state.XMM[cpu_reg].l[0] & dst[0];
-        cpu_state.XMM[cpu_reg].l[1] = ~cpu_state.XMM[cpu_reg].l[0] & dst[1];
-        cpu_state.XMM[cpu_reg].l[2] = ~cpu_state.XMM[cpu_reg].l[0] & dst[2];
-        cpu_state.XMM[cpu_reg].l[3] = ~cpu_state.XMM[cpu_reg].l[0] & dst[3];
+        cpu_state.XMM[cpu_reg].l[1] = ~cpu_state.XMM[cpu_reg].l[1] & dst[1];
+        cpu_state.XMM[cpu_reg].l[2] = ~cpu_state.XMM[cpu_reg].l[2] & dst[2];
+        cpu_state.XMM[cpu_reg].l[3] = ~cpu_state.XMM[cpu_reg].l[3] & dst[3];
 
         CLOCK_CYCLES(2);
     }
@@ -159,7 +159,7 @@ opORPS_q_xmm_a16(uint32_t fetchdat)
         cpu_state.XMM[cpu_reg].l[3] |= cpu_state.XMM[cpu_rm].l[3];
         CLOCK_CYCLES(1);
     } else {
-        uint64_t dst[4];
+        uint32_t dst[4];
 
         SEG_CHECK_READ(cpu_state.ea_seg);
         dst[0] = readmeml(easeg, cpu_state.eaaddr);
@@ -196,7 +196,7 @@ opORPS_q_xmm_a32(uint32_t fetchdat)
         cpu_state.XMM[cpu_reg].l[3] |= cpu_state.XMM[cpu_rm].l[3];
         CLOCK_CYCLES(1);
     } else {
-        uint64_t dst[4];
+        uint32_t dst[4];
 
         SEG_CHECK_READ(cpu_state.ea_seg);
         dst[0] = readmeml(easeg, cpu_state.eaaddr);
@@ -233,7 +233,7 @@ opXORPS_q_xmm_a16(uint32_t fetchdat)
         cpu_state.XMM[cpu_reg].l[3] ^= cpu_state.XMM[cpu_rm].l[3];
         CLOCK_CYCLES(1);
     } else {
-        uint64_t dst[4];
+        uint32_t dst[4];
 
         SEG_CHECK_READ(cpu_state.ea_seg);
         dst[0] = readmeml(easeg, cpu_state.eaaddr);
@@ -270,7 +270,7 @@ opXORPS_q_xmm_a32(uint32_t fetchdat)
         cpu_state.XMM[cpu_reg].l[3] ^= cpu_state.XMM[cpu_rm].l[3];
         CLOCK_CYCLES(1);
     } else {
-        uint64_t dst[4];
+        uint32_t dst[4];
 
         SEG_CHECK_READ(cpu_state.ea_seg);
         dst[0] = readmeml(easeg, cpu_state.eaaddr);
