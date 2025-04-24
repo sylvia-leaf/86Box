@@ -26,6 +26,7 @@ static struct {
     int      op_ssegs;
     x86seg  *op_ea_seg;
     uint32_t op_32;
+    int      op_sse_xmm;
     int      first_uop;
     int      TOP;
 } codegen_instructions[MAX_INSTRUCTION_COUNT];
@@ -51,6 +52,7 @@ codegen_set_loop_start(ir_data_t *ir, int first_instruction)
     uop_MOV_IMM(ir, IREG_op32, codegen_instructions[first_instruction].op_32);
     uop_MOV_PTR(ir, IREG_ea_seg, (void *) codegen_instructions[first_instruction].op_ea_seg);
     uop_MOV_IMM(ir, IREG_ssegs, codegen_instructions[first_instruction].op_ssegs);
+    uop_MOV_IMM(ir, IREG_sse_xmm, codegen_instructions[first_instruction].op_sse_xmm);
 }
 
 int has_ea;
@@ -81,6 +83,7 @@ int codegen_in_recompile;
 static int      last_op_ssegs;
 static x86seg  *last_op_ea_seg;
 static uint32_t last_op_32;
+static int      last_op_sse_xmm;
 
 void
 codegen_generate_reset(void)
@@ -608,6 +611,7 @@ generate_call:
     codegen_instructions[block->ins].op_ssegs  = last_op_ssegs;
     codegen_instructions[block->ins].op_ea_seg = last_op_ea_seg;
     codegen_instructions[block->ins].op_32     = last_op_32;
+    codegen_instructions[block->ins].op_sse_xmm = last_op_sse_xmm;
     codegen_instructions[block->ins].TOP       = cpu_state.TOP;
     codegen_instructions[block->ins].first_uop = ir->wr_pos;
 
@@ -772,6 +776,7 @@ generate_call:
     last_op_32     = op_32;
     last_op_ea_seg = op_ea_seg;
     last_op_ssegs  = op_ssegs;
+    last_op_sse_xmm = op_sse_xmm;
 #if 0
     codegen_block_ins++;
 #endif
