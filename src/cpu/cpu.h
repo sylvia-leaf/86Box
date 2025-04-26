@@ -468,6 +468,8 @@ typedef struct {
 
     uint32_t _smbase;
 
+    uint32_t x87_op;
+
     x86reg regs64[8];
     uint32_t regs_high[16];
     uint32_t pc_high;
@@ -860,7 +862,7 @@ typedef struct {
     uint32_t smhr;
 } cyrix_t;
 
-extern uint32_t x87_op;
+#define x87_op cpu_state.x87_op
 
 extern uint32_t addr64;
 extern uint32_t addr64_2;
