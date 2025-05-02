@@ -50,7 +50,7 @@
         cpu_state.pc = cpu_state.oldpc;       \
         x86illegal();                         \
         return 1;                            \
-    }
+    }                                        \
     x87_set_mmx()
 
 #define SSE_ENTER()  \
