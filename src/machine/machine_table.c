@@ -7094,7 +7094,7 @@ const machine_t machines[] = {
         .flags = MACHINE_APM,
         .ram = {
             .min = 1024,
-            .max = 65536,
+            .max = 131072,
             .step = 1024
         },
         .nvrmask = 127,
@@ -7134,7 +7134,7 @@ const machine_t machines[] = {
         .flags = MACHINE_APM,
         .ram = {
             .min = 1024,
-            .max = 65536,
+            .max = 131072,
             .step = 1024
         },
         .nvrmask = 127,
@@ -7214,7 +7214,7 @@ const machine_t machines[] = {
         .flags = MACHINE_APM,
         .ram = {
             .min = 1024,
-            .max = 65536,
+            .max = 131072,
             .step = 1024
         },
         .nvrmask = 127,
@@ -7254,7 +7254,7 @@ const machine_t machines[] = {
         .flags = MACHINE_APM,
         .ram = {
             .min = 1024,
-            .max = 65536,
+            .max = 131072,
             .step = 1024
         },
         .nvrmask = 127,
@@ -7373,9 +7373,9 @@ const machine_t machines[] = {
         .bus_flags = MACHINE_PS2,
         .flags = MACHINE_IDE_DUAL | MACHINE_SUPER_IO | MACHINE_APM | MACHINE_VIDEO,
         .ram = {
-            .min = 1024,
-            .max = 65536,
-            .step = 1024
+            .min = 4096,
+            .max = 69632,
+            .step = 4096
         },
         .nvrmask = 127,
         .kbc_device = NULL,
