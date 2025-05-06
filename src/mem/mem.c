@@ -339,12 +339,7 @@ mmutranslatereal_normal(uint32_t addr, int rw)
             return 0xffffffffffffffffULL;
         }
 
-<<<<<<< HEAD
-        mmu_perm = temp & 4;
         rammap(addr2) |= ((rw == 1) ? 0x60 : 0x20);
-=======
-        rammap(addr2) |= (rw ? 0x60 : 0x20);
->>>>>>> eb82f9bcca6f01a31b7ebfca04620e0bc37e9fc9
 
         uint64_t page = temp & ~0x3fffff;
         if (cpu_features & CPU_FEATURE_PSE36)
@@ -442,12 +437,7 @@ mmutranslatereal_pae(uint32_t addr, int rw)
 
             return 0xffffffffffffffffULL;
         }
-<<<<<<< HEAD
-        mmu_perm = temp & 4;
         rammap64(addr3) |= ((rw == 1) ? 0x60 : 0x20);
-=======
-        rammap64(addr3) |= (rw ? 0x60 : 0x20);
->>>>>>> eb82f9bcca6f01a31b7ebfca04620e0bc37e9fc9
 
         return ((temp & ~0x1fffffULL) + (addr & 0x1fffffULL)) & 0x000000ffffffffffULL;
     }
@@ -468,7 +458,6 @@ mmutranslatereal_pae(uint32_t addr, int rw)
         return 0xffffffffffffffffULL;
     }
 
-<<<<<<< HEAD
     if(nxbit && (rw == 2) && (msr.amd_efer & EFER_NXE) && (cpu_features & CPU_FEATURE_NX)) {
         cr2 = addr;
         temp &= 1;
@@ -479,10 +468,6 @@ mmutranslatereal_pae(uint32_t addr, int rw)
         abrt_error     = temp;
         return 0xffffffffffffffffULL;
     }
-
-    mmu_perm = temp & 4;
-=======
->>>>>>> eb82f9bcca6f01a31b7ebfca04620e0bc37e9fc9
     rammap64(addr3) |= 0x20;
     rammap64(addr4) |= ((rw == 1) ? 0x60 : 0x20);
 
