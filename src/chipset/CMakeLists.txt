@@ -42,6 +42,7 @@ add_library(chipset OBJECT
     intel_815ep.c
     intel_ich2.c
     intel_piix.c
+    isa486c.c
     ../ioapic.c
     neat.c
     opti283.c
