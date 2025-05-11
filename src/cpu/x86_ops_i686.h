@@ -230,10 +230,11 @@ sf_fx_save_stor_common(uint32_t fetchdat, int bits)
         src = readmeml(easeg, cpu_state.eaaddr);
         if (cpu_state.abrt)
             return 1;
-#if 0
         if(src & ~mxcsr_mask)
+        {
             x86gpf(NULL, 0);
-#endif
+            return 1;
+        }
         cpu_state.mxcsr = src;// & mxcsr_mask;
     } else if (fxinst == 3) {
         if (cpu_mod == 3) {
@@ -536,10 +537,11 @@ fx_save_stor_common(uint32_t fetchdat, int bits)
         src = readmeml(easeg, cpu_state.eaaddr);
         if (cpu_state.abrt)
             return 1;
-#if 0
         if(src & ~mxcsr_mask)
+        {
             x86gpf(NULL, 0);
-#endif
+            return 1;
+        }
         cpu_state.mxcsr = src;// & mxcsr_mask;
     } else if (fxinst == 3) {
         //STMXCSR
