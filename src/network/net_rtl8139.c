@@ -2478,10 +2478,7 @@ rtl8139_io_writeb(uint32_t addr, uint8_t val, void *priv)
 
     addr &= 0xFF;
     switch (addr) {
-        case MAC0 ... MAC0 + 4:
-            s->phys[addr - MAC0] = val;
-            break;
-        case MAC0 + 5:
+        case MAC0 ... MAC0 + 5:
             s->phys[addr - MAC0] = val;
             break;
         case MAC0 + 6 ... MAC0 + 7:
