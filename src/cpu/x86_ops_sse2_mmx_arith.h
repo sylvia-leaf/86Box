@@ -651,7 +651,7 @@ opPMULUDQ_mm_a16(uint32_t fetchdat)
 {
     if (cpu_state.sse_xmm)
         return opPMULUDQ_xmm_a16(fetchdat);
-    MMX_REG src;
+    MMX_REG src, tmp;
     MMX_REG* dst;
 
     MMX_ENTER();
@@ -660,7 +660,9 @@ opPMULUDQ_mm_a16(uint32_t fetchdat)
     MMX_GETSRC();
     dst = MMX_GETREGP(cpu_reg);
 
-    dst->q = (uint64_t) dst->l[0] * (uint64_t) src.l[0];
+    tmp.q = (uint64_t) dst->l[0] * (uint64_t) src.l[0];
+
+    dst->q = tmp.q;
 
     MMX_SETEXP(cpu_reg);
 
@@ -672,7 +674,7 @@ opPMULUDQ_mm_a32(uint32_t fetchdat)
 {
     if (cpu_state.sse_xmm)
         return opPMULUDQ_xmm_a32(fetchdat);
-    MMX_REG src;
+    MMX_REG src, tmp;
     MMX_REG* dst;
 
     MMX_ENTER();
@@ -681,7 +683,9 @@ opPMULUDQ_mm_a32(uint32_t fetchdat)
     MMX_GETSRC();
     dst = MMX_GETREGP(cpu_reg);
 
-    dst->q = (uint64_t) dst->l[0] * (uint64_t) src.l[0];
+    tmp.q = (uint64_t) dst->l[0] * (uint64_t) src.l[0];
+
+    dst->q = tmp.q;
 
     MMX_SETEXP(cpu_reg);
 
