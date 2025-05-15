@@ -134,6 +134,27 @@ machine_at_tandy4000_init(const machine_t *model)
     return ret;
 }
 
+int
+machine_at_dtk461_init(const machine_t *model)
+{
+    int ret;
+
+    ret = bios_load_linear("roms/machines/dtk461/DTK.BIO",
+                           0x000f0000, 65536, 0);
+
+    if (bios_only || !ret)
+        return ret;
+
+    machine_at_common_init(model);
+    device_add(&sl82c461_device);
+    device_add(&keyboard_at_ami_device);
+
+    if (fdc_current[0] == FDC_INTERNAL)
+        device_add(&fdc_at_device);
+
+    return ret;
+}
+
 static void
 machine_at_sis401_common_init(const machine_t *model)
 {
@@ -422,7 +443,11 @@ machine_at_d824_init(const machine_t *model)
     if (gfxcard[0] == VID_INTERNAL)
         device_add(&gd5428_onboard_device);
 
-    device_add(&keyboard_ps2_device);
+    /*
+       Technically, it should be the VL82C114 but we do not have
+       a proper datasheet of it that tells us the registers.
+     */
+    device_add(&vl82c113_device);
 
     device_add(&ide_isa_device);
     device_add(&fdc37c651_device);
