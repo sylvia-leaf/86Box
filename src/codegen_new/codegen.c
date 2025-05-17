@@ -771,7 +771,7 @@ generate_call:
     uop_CALL_INSTRUCTION_FUNC(ir, op);
     uop_MOV_IMM(ir, IREG_sse_xmm, 0);
     codegen_flags_changed = 0;
-    codegen_mark_code_present(block, cs + cpu_state.pc, 8);
+    codegen_mark_code_present(block, cs + cpu_state.pc, 10);
 
     last_op_32     = op_32;
     last_op_ea_seg = op_ea_seg;
