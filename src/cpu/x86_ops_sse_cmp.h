@@ -15,6 +15,7 @@ opUCOMISS_xmm_xmm_a16(uint32_t fetchdat)
     cpu_state.flags &= ~(V_FLAG | A_FLAG | N_FLAG | Z_FLAG | P_FLAG | C_FLAG);
     int relation = f32_compare_quiet(cpu_state.XMM[cpu_reg].f[0], src.f[0], &status);
     FPU_write_eflags_fpu_compare(relation);
+    flags_extract();
     softfloat_status_word_to_mxcsr(status);
     int unmasked = (~cpu_state.mxcsr >> 7) & 0x3f;
     if ((cpu_state.mxcsr & 0x3f) & (unmasked & 0x3f)) {
@@ -41,6 +42,7 @@ opUCOMISS_xmm_xmm_a32(uint32_t fetchdat)
     cpu_state.flags &= ~(V_FLAG | A_FLAG | N_FLAG | Z_FLAG | P_FLAG | C_FLAG);
     int relation = f32_compare_quiet(cpu_state.XMM[cpu_reg].f[0], src.f[0], &status);
     FPU_write_eflags_fpu_compare(relation);
+    flags_extract();
     softfloat_status_word_to_mxcsr(status);
     int unmasked = (~cpu_state.mxcsr >> 7) & 0x3f;
     if ((cpu_state.mxcsr & 0x3f) & (unmasked & 0x3f)) {
@@ -67,6 +69,7 @@ opCOMISS_xmm_xmm_a16(uint32_t fetchdat)
     cpu_state.flags &= ~(V_FLAG | A_FLAG | N_FLAG | Z_FLAG | P_FLAG | C_FLAG);
     int relation = f32_compare_normal(cpu_state.XMM[cpu_reg].f[0], src.f[0], &status);
     FPU_write_eflags_fpu_compare(relation);
+    flags_extract();
     softfloat_status_word_to_mxcsr(status);
     int unmasked = (~cpu_state.mxcsr >> 7) & 0x3f;
     if ((cpu_state.mxcsr & 0x3f) & (unmasked & 0x3f)) {
@@ -93,6 +96,7 @@ opCOMISS_xmm_xmm_a32(uint32_t fetchdat)
     cpu_state.flags &= ~(V_FLAG | A_FLAG | N_FLAG | Z_FLAG | P_FLAG | C_FLAG);
     int relation = f32_compare_normal(cpu_state.XMM[cpu_reg].f[0], src.f[0], &status);
     FPU_write_eflags_fpu_compare(relation);
+    flags_extract();
     softfloat_status_word_to_mxcsr(status);
     int unmasked = (~cpu_state.mxcsr >> 7) & 0x3f;
     if ((cpu_state.mxcsr & 0x3f) & (unmasked & 0x3f)) {
