@@ -181,9 +181,6 @@ endif()
 add_subdirectory(ymfm)
 target_link_libraries(PCBox ymfm)
 
-add_subdirectory(saasound)
-target_link_libraries(PCBox saasound)
-
 if(GUSMAX)
     target_compile_definitions(snd PRIVATE USE_GUSMAX)
 endif()
