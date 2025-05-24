@@ -8655,7 +8655,7 @@ const machine_t machines[] = {
         .gpio_acpi_handler = NULL,
         .cpu = {
             .package = CPU_PKG_SOCKET3,
-            .block = CPU_BLOCK(CPU_i486SX, CPU_i486DX, CPU_Am486SX, CPU_Am486DX),
+            .block = CPU_BLOCK_NONE,
             .min_bus = 0,
             .max_bus = 0,
             .min_voltage = 0,
@@ -13843,7 +13843,7 @@ const machine_t machines[] = {
         .ram = {
             .min = 8192,
             .max = 1572864,
-            .step = 1024
+            .step = 8192
         },
         .nvrmask = 255,
         .kbc_device = NULL,
@@ -13883,7 +13883,7 @@ const machine_t machines[] = {
         .ram = {
             .min = 8192,
             .max = 1572864,
-            .step = 1024
+            .step = 8192
         },
         .nvrmask = 255,
         .kbc_device = NULL,
@@ -13925,7 +13925,7 @@ const machine_t machines[] = {
         .ram = {
             .min = 8192,
             .max = 786432,
-            .step = 1024
+            .step = 8192
         },
         .nvrmask = 255,
         .kbc_device = NULL,
@@ -14089,7 +14089,7 @@ const machine_t machines[] = {
         .bus_flags = MACHINE_PS2_AGP | MACHINE_BUS_USB,
         .flags = MACHINE_IDE_DUAL | MACHINE_APM | MACHINE_ACPI | MACHINE_USB,
         .ram = {
-            .min = 1024,
+            .min = 8192,
             .max = 1572864,
             .step = 8192
         },
@@ -14448,7 +14448,7 @@ const machine_t machines[] = {
         .cpu = {
             .package = CPU_PKG_SOCKET5_7,
             .block = CPU_BLOCK_NONE,
-            .min_bus = 66666667,
+            .min_bus = 60000000,
             .max_bus = 100000000,
             .min_voltage = 2000,
             .max_voltage = 3520,
@@ -14460,7 +14460,7 @@ const machine_t machines[] = {
         .ram = {
             .min = 8192,
             .max = 786432,
-            .step = 1024
+            .step = 8192
         },
         .nvrmask = 255,
         .kbc_device = NULL,
@@ -15032,7 +15032,7 @@ const machine_t machines[] = {
         .bus_flags = MACHINE_PS2_AGP | MACHINE_BUS_USB,
         .flags = MACHINE_IDE_DUAL | MACHINE_APM | MACHINE_ACPI | MACHINE_GAMEPORT | MACHINE_USB, /* Machine has internal sound: C-Media CMI8330 */
         .ram = {
-            .min = 1024,
+            .min = 8192,
             .max = 1572864,
             .step = 8192
         },
@@ -17469,6 +17469,12 @@ int
 machine_get_type(int m)
 {
     return (machines[m].type);
+}
+
+int
+machine_get_chipset(int m)
+{
+    return (machines[m].chipset);
 }
 
 int
