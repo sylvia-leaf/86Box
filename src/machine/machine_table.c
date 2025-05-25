@@ -16191,7 +16191,7 @@ const machine_t machines[] = {
         .ram = {
             .min = 8192,
             .max = 1572864,
-            .step = 1024
+            .step = 8192
         },
         .nvrmask = 255,
         .kbc_device = NULL,
@@ -16231,7 +16231,7 @@ const machine_t machines[] = {
         .ram = {
             .min = 8192,
             .max = 1572864,
-            .step = 1024
+            .step = 8192
         },
         .nvrmask = 255,
         .kbc_device = NULL,
@@ -16585,7 +16585,7 @@ const machine_t machines[] = {
         .device = NULL,
         .fdc_device = NULL,
         .sio_device = NULL,
-        .vid_device = NULL,
+        .vid_device = &chips_69000_onboard_device,
         .snd_device = NULL,
         .net_device = NULL
     },
@@ -16992,7 +16992,7 @@ const machine_t machines[] = {
         .ram = {
             .min = 8192,
             .max = 1572864,
-            .step = 1024
+            .step = 8192
         },
         .nvrmask = 255,
         .kbc_device = NULL,
