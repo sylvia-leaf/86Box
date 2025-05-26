@@ -178,10 +178,10 @@ if(MUNT)
 endif()
 
 add_subdirectory(ayumi)
-target_link_libraries(86Box ayumi)
+target_link_libraries(PCBox ayumi)
 
 add_subdirectory(esfmu)
-target_link_libraries(86Box esfmu)
+target_link_libraries(PCBox esfmu)
 
 add_subdirectory(ymfm)
 target_link_libraries(PCBox ymfm)
