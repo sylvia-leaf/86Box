@@ -5718,10 +5718,10 @@ const machine_t machines[] = {
     /* Has Award KBC firmware. */
     {
         .name = "[SiS 310] ASUS 386/33-64K",
-        .internal_name = "asus386_3364k",
+        .internal_name = "asus3863364k",
         .type = MACHINE_TYPE_386DX,
         .chipset = MACHINE_CHIPSET_SIS_310,
-        .init = machine_at_asus386_3364k_init,
+        .init = machine_at_asus3863364k_init,
         .p1_handler = NULL,
         .gpio_handler = NULL,
         .available_flag = MACHINE_AVAILABLE,
@@ -9469,7 +9469,7 @@ const machine_t machines[] = {
             .max_multi = 2.0
         },
         .bus_flags = MACHINE_PS2_PCI,
-        .flags = MACHINE_IDE_DUAL | MACHINE_APM, /* Machine has internal video: ST STPC Atlas */
+        .flags = MACHINE_IDE_DUAL | MACHINE_APM | MACHINE_PCI_INTERNAL, /* Machine has internal video: ST STPC Atlas */
         .ram = {
             .min = 32768,
             .max = 163840,
@@ -9510,7 +9510,7 @@ const machine_t machines[] = {
             .max_multi = 2.0
         },
         .bus_flags = MACHINE_PS2_PCI | MACHINE_BUS_USB,
-        .flags = MACHINE_IDE_DUAL | MACHINE_APM | MACHINE_USB, /* Machine has internal video: ST STPC Atlas */
+        .flags = MACHINE_IDE_DUAL | MACHINE_APM | MACHINE_PCI_INTERNAL | MACHINE_USB, /* Machine has internal video: ST STPC Atlas */
         .ram = {
             .min = 32768,
             .max = 163840,
@@ -9551,7 +9551,7 @@ const machine_t machines[] = {
             .max_multi = 2.0
         },
         .bus_flags = MACHINE_PS2,
-        .flags = MACHINE_IDE | MACHINE_APM, /* Machine has internal video: ST STPC Atlas and NIC: Realtek RTL8139C+ */
+        .flags = MACHINE_IDE | MACHINE_APM | MACHINE_PCI_INTERNAL, /* Machine has internal video: ST STPC Atlas and NIC: Realtek RTL8139C+ */
         .ram = {
             .min = 32768,
             .max = 131072,
@@ -9592,7 +9592,7 @@ const machine_t machines[] = {
             .max_multi = 2.0
         },
         .bus_flags = MACHINE_PS2_PCI,
-        .flags = MACHINE_IDE_DUAL | MACHINE_APM,
+        .flags = MACHINE_IDE_DUAL | MACHINE_APM | MACHINE_PCI_INTERNAL,
         .ram = {
             .min = 32768,
             .max = 98304,
@@ -9633,7 +9633,7 @@ const machine_t machines[] = {
             .max_multi = 2.0
         },
         .bus_flags = MACHINE_PS2_PCI,
-        .flags = MACHINE_IDE_DUAL | MACHINE_APM,
+        .flags = MACHINE_IDE_DUAL | MACHINE_APM | MACHINE_PCI_INTERNAL,
         .ram = {
             .min = 32768,
             .max = 131072,
@@ -10596,10 +10596,10 @@ const machine_t machines[] = {
     /* Has a National Semiconductor PC87332VLJ Super I/O with AMIKey 'F' KBC firmware. */
     {
         .name = "[i430FX] Dell OptiPlex GXL/GXM",
-        .internal_name = "optiplex_gxl",
+        .internal_name = "optiplexgxl",
         .type = MACHINE_TYPE_SOCKET5,
         .chipset = MACHINE_CHIPSET_INTEL_430FX,
-        .init = machine_at_optiplex_gxl_init,
+        .init = machine_at_optiplexgxl_init,
         .p1_handler = NULL,
         .gpio_handler = NULL,
         .available_flag = MACHINE_AVAILABLE,
@@ -13194,10 +13194,10 @@ const machine_t machines[] = {
      */
     {
         .name = "[i430TX] Dell OptiPlex GN+",
-        .internal_name = "optiplex_gn",
+        .internal_name = "optiplexgn",
         .type = MACHINE_TYPE_SOCKET7,
         .chipset = MACHINE_CHIPSET_INTEL_430TX,
-        .init = machine_at_optiplex_gn_init,
+        .init = machine_at_optiplexgn_init,
         .p1_handler = NULL,
         .gpio_handler = NULL,
         .available_flag = MACHINE_AVAILABLE,
@@ -15257,10 +15257,10 @@ const machine_t machines[] = {
        firmwares: AMI '5' MegaKey, Phoenix MultiKey/42 1.37, or Phoenix MultiKey/42i 4.16. */
     {
         .name = "[i440LX] Dell OptiPlex GXa",
-        .internal_name = "optiplex_gxa",
+        .internal_name = "optiplexgxa",
         .type = MACHINE_TYPE_SLOT1,
         .chipset = MACHINE_CHIPSET_INTEL_440LX,
-        .init = machine_at_optiplex_gxa_init,
+        .init = machine_at_optiplexgxa_init,
         .p1_handler = NULL,
         .gpio_handler = NULL,
         .available_flag = MACHINE_AVAILABLE,
