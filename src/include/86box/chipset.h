@@ -117,6 +117,8 @@ extern const device_t ioapic_device;
 /* Intel ICH2 */
 extern const device_t intel_815ep_device;
 extern const device_t intel_ich2_device;
+/* Olivetti */
+extern const device_t olivetti_eva_device;
 
 /* OPTi */
 extern const device_t opti283_device;
@@ -209,8 +211,4 @@ extern const device_t nec_mate_unk_device;
 
 extern const device_t phoenix_486_jumper_device;
 extern const device_t phoenix_486_jumper_pci_device;
-
-#ifdef USE_OLIVETTI
-extern const device_t olivetti_eva_device;
-#endif /* USE_OLIVETTI */
 #endif /*EMU_CHIPSET_H*/
