@@ -269,7 +269,7 @@ extern const device_config_t nv3t_config[];                             // Confi
 #define NV3_PFIFO_CACHE1_SIZE_MAX                       NV3_PFIFO_CACHE1_SIZE_REV_C
 #define NV3_PFIFO_CACHE_REASSIGNMENT                    0x2500        
 
-#define NV3_PFIFO_CACHE0_PUSH0                          0x3000
+#define NV3_PFIFO_CACHE0_PUSH_ENABLED                   0x3000
 #define NV3_PFIFO_CACHE0_PUSH_CHANNEL_ID                0x3004
 #define NV3_PFIFO_CACHE0_PUT                            0x3010
 #define NV3_PFIFO_CACHE0_STATUS                         0x3014
@@ -291,7 +291,7 @@ extern const device_config_t nv3t_config[];                             // Confi
 #define NV3_PFIFO_CACHE0_METHOD_END                     0x3200
 #define NV3_PFIFO_CACHE0_METHOD_ADDRESS                 2           // 12:2
 #define NV3_PFIFO_CACHE0_METHOD_SUBCHANNEL              13          // 15:13
-#define NV3_PFIFO_CACHE1_PUSH0                          0x3200
+#define NV3_PFIFO_CACHE1_PUSH_ENABLED                   0x3200
 #define NV3_PFIFO_CACHE1_PUSH_CHANNEL_ID                0x3204
 #define NV3_PFIFO_CACHE1_PUT                            0x3210
 #define NV3_PFIFO_CACHE1_PUT_ADDRESS                    2           // 6:2
@@ -462,6 +462,14 @@ extern const device_config_t nv3t_config[];                             // Confi
 #define NV3_PME_INTR                                    0x200100    // Mediaport: Interrupt Pending?
 #define NV3_PME_INTR_EN                                 0x200140    // Mediaport: Interrupt Enable
 #define NV3_PME_END                                     0x200FFF
+
+// THIS IS NOT A REAL REGISTER.
+// This is so my software e.g. nvplayground can determine if the software is being run in an emulator on a real RIVA 128.
+// This register should have some sort of open bus, garbage or 00/FF on a real NV3/NV3T but have a string.
+#define NV3_EMULATED_MARKER_START                       0x269420    
+
+#define NV3_EMULATED_MARKER                             0x0D15EA5E
+
 #define NV3_PGRAPH_START                                0x400000    // Scene graph for 2d/3d rendering...the most important part
 // PGRAPH Core
 
