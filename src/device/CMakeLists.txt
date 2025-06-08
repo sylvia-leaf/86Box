@@ -36,6 +36,7 @@ add_library(dev OBJECT
     intel_ich2_gpio.c
     intel_ich2_trap.c
     isamem.c
+    isarom.c
     isartc.c
     isapnp.c
     kbc_at.c
