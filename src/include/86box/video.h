@@ -398,6 +398,7 @@ extern const device_t gd5480_pci_device;
 /* Compaq CGA */
 extern const device_t compaq_cga_device;
 extern const device_t compaq_cga_2_device;
+extern const device_t compaq_plasma_device; 
 
 /* Olivetti OGC */
 extern const device_t ogc_device;
@@ -615,6 +616,11 @@ extern const device_t nv3t_device_agp;
 
 /* Wyse 700 */
 extern const device_t wy700_device;
+
+/* Tandy */
+extern const device_t tandy_1000_video_device; 
+extern const device_t tandy_1000hx_video_device; 
+extern const device_t tandy_1000sl_video_device; 
 
 #endif
 
