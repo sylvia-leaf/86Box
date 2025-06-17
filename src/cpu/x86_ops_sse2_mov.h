@@ -581,90 +581,38 @@ opPSHUFHW_a32(uint32_t fetchdat)
 static int
 opPSHUFD_a16(uint32_t fetchdat)
 {
+    SSE_REG src, tmp;
     SSE_ENTER();
     fetch_ea_16(fetchdat);
+    SSE_GETSRC();
     uint8_t imm = getbyte();
     if (cpu_state.abrt)
         return 1;
-    if (cpu_mod == 3) {
-        SSE_REG tmp;
-        tmp.l[0]          = cpu_state.XMM[cpu_rm].l[imm & 3];
-        tmp.l[1]          = cpu_state.XMM[cpu_rm].l[(imm >> 2) & 3];
-        tmp.l[2]          = cpu_state.XMM[cpu_rm].l[(imm >> 4) & 3];
-        tmp.l[3]          = cpu_state.XMM[cpu_rm].l[(imm >> 6) & 3];
-        cpu_state.XMM[cpu_reg].q[0] = tmp.q[0];
-        cpu_state.XMM[cpu_reg].q[1] = tmp.q[1];
-        CLOCK_CYCLES(1);
-    } else {
-        SSE_REG  tmp;
-        uint32_t src[4];
-
-        SEG_CHECK_READ(cpu_state.ea_seg);
-        src[0] = readmeml(easeg, cpu_state.eaaddr);
-        if (cpu_state.abrt)
-            return 1;
-        src[1] = readmeml(easeg, cpu_state.eaaddr + 4);
-        if (cpu_state.abrt)
-            return 1;
-        src[2] = readmeml(easeg, cpu_state.eaaddr + 8);
-        if (cpu_state.abrt)
-            return 1;
-        src[3] = readmeml(easeg, cpu_state.eaaddr + 12);
-        if (cpu_state.abrt)
-            return 1;
-        tmp.l[0]          = src[imm & 3];
-        tmp.l[1]          = src[(imm >> 2) & 3];
-        tmp.l[2]          = src[(imm >> 4) & 3];
-        tmp.l[3]          = src[(imm >> 6) & 3];
-        cpu_state.XMM[cpu_reg].q[0] = tmp.q[0];
-        cpu_state.XMM[cpu_reg].q[1] = tmp.q[1];
-        CLOCK_CYCLES(2);
-    }
+    tmp.l[0]          = src.l[imm & 3];
+    tmp.l[1]          = src.l[(imm >> 2) & 3];
+    tmp.l[2]          = src.l[(imm >> 4) & 3];
+    tmp.l[3]          = src.l[(imm >> 6) & 3];
+    cpu_state.XMM[cpu_reg].q[0] = tmp.q[0];
+    cpu_state.XMM[cpu_reg].q[1] = tmp.q[1];
     return 0;
 }
 
 static int
 opPSHUFD_a32(uint32_t fetchdat)
 {
+    SSE_REG src, tmp;
     SSE_ENTER();
     fetch_ea_32(fetchdat);
+    SSE_GETSRC();
     uint8_t imm = getbyte();
     if (cpu_state.abrt)
         return 1;
-    if (cpu_mod == 3) {
-        SSE_REG tmp;
-        tmp.l[0]          = cpu_state.XMM[cpu_rm].l[imm & 3];
-        tmp.l[1]          = cpu_state.XMM[cpu_rm].l[(imm >> 2) & 3];
-        tmp.l[2]          = cpu_state.XMM[cpu_rm].l[(imm >> 4) & 3];
-        tmp.l[3]          = cpu_state.XMM[cpu_rm].l[(imm >> 6) & 3];
-        cpu_state.XMM[cpu_reg].q[0] = tmp.q[0];
-        cpu_state.XMM[cpu_reg].q[1] = tmp.q[1];
-        CLOCK_CYCLES(1);
-    } else {
-        SSE_REG  tmp;
-        uint32_t src[4];
-
-        SEG_CHECK_READ(cpu_state.ea_seg);
-        src[0] = readmeml(easeg, cpu_state.eaaddr);
-        if (cpu_state.abrt)
-            return 1;
-        src[1] = readmeml(easeg, cpu_state.eaaddr + 4);
-        if (cpu_state.abrt)
-            return 1;
-        src[2] = readmeml(easeg, cpu_state.eaaddr + 8);
-        if (cpu_state.abrt)
-            return 1;
-        src[3] = readmeml(easeg, cpu_state.eaaddr + 12);
-        if (cpu_state.abrt)
-            return 1;
-        tmp.l[0]          = src[imm & 3];
-        tmp.l[1]          = src[(imm >> 2) & 3];
-        tmp.l[2]          = src[(imm >> 4) & 3];
-        tmp.l[3]          = src[(imm >> 6) & 3];
-        cpu_state.XMM[cpu_reg].q[0] = tmp.q[0];
-        cpu_state.XMM[cpu_reg].q[1] = tmp.q[1];
-        CLOCK_CYCLES(2);
-    }
+    tmp.l[0]          = src.l[imm & 3];
+    tmp.l[1]          = src.l[(imm >> 2) & 3];
+    tmp.l[2]          = src.l[(imm >> 4) & 3];
+    tmp.l[3]          = src.l[(imm >> 6) & 3];
+    cpu_state.XMM[cpu_reg].q[0] = tmp.q[0];
+    cpu_state.XMM[cpu_reg].q[1] = tmp.q[1];
     return 0;
 }
 
@@ -872,66 +820,30 @@ opMOVNTI_a32(uint32_t fetchdat)
 static int
 opSHUFPD_xmm_w_a16(uint32_t fetchdat)
 {
+    SSE_REG src,tmp;
     SSE_ENTER();
     fetch_ea_16(fetchdat);
+    SSE_GETSRC();
     uint8_t imm = getbyte();
-    if (cpu_mod == 3) {
-        SSE_REG tmp;
-        tmp.q[0] = cpu_state.XMM[cpu_reg].q[imm & 1];
-        tmp.q[1] = cpu_state.XMM[cpu_rm].q[(imm >> 1) & 1];
-        cpu_state.XMM[cpu_reg].q[0] = tmp.q[0];
-        cpu_state.XMM[cpu_reg].q[1] = tmp.q[1];
-        CLOCK_CYCLES(1);
-    } else {
-        SSE_REG tmp;
-        uint64_t src[2];
-
-        SEG_CHECK_READ(cpu_state.ea_seg);
-        src[0] = readmemq(easeg, cpu_state.eaaddr);
-        if (cpu_state.abrt)
-            return 1;
-        src[1] = readmemq(easeg, cpu_state.eaaddr + 8);
-        if (cpu_state.abrt)
-            return 1;
-        tmp.q[0] = cpu_state.XMM[cpu_reg].q[imm & 1];
-        tmp.q[1] = src[(imm >> 1) & 1];
-        cpu_state.XMM[cpu_reg].q[0] = tmp.q[0];
-        cpu_state.XMM[cpu_reg].q[1] = tmp.q[1];
-        CLOCK_CYCLES(2);
-    }
+    tmp.q[0] = cpu_state.XMM[cpu_reg].q[imm & 1];
+    tmp.q[1] = src.q[(imm >> 1) & 1];
+    cpu_state.XMM[cpu_reg].q[0] = tmp.q[0];
+    cpu_state.XMM[cpu_reg].q[1] = tmp.q[1];
     return 0;
 }
 
 static int
 opSHUFPD_xmm_w_a32(uint32_t fetchdat)
 {
+    SSE_REG src,tmp;
     SSE_ENTER();
     fetch_ea_32(fetchdat);
+    SSE_GETSRC();
     uint8_t imm = getbyte();
-    if (cpu_mod == 3) {
-        SSE_REG tmp;
-        tmp.q[0] = cpu_state.XMM[cpu_reg].q[imm & 1];
-        tmp.q[1] = cpu_state.XMM[cpu_rm].q[(imm >> 1) & 1];
-        cpu_state.XMM[cpu_reg].q[0] = tmp.q[0];
-        cpu_state.XMM[cpu_reg].q[1] = tmp.q[1];
-        CLOCK_CYCLES(1);
-    } else {
-        SSE_REG tmp;
-        uint64_t src[2];
-
-        SEG_CHECK_READ(cpu_state.ea_seg);
-        src[0] = readmemq(easeg, cpu_state.eaaddr);
-        if (cpu_state.abrt)
-            return 1;
-        src[1] = readmemq(easeg, cpu_state.eaaddr + 8);
-        if (cpu_state.abrt)
-            return 1;
-        tmp.q[0] = cpu_state.XMM[cpu_reg].q[imm & 1];
-        tmp.q[1] = src[(imm >> 1) & 1];
-        cpu_state.XMM[cpu_reg].q[0] = tmp.q[0];
-        cpu_state.XMM[cpu_reg].q[1] = tmp.q[1];
-        CLOCK_CYCLES(2);
-    }
+    tmp.q[0] = cpu_state.XMM[cpu_reg].q[imm & 1];
+    tmp.q[1] = src.q[(imm >> 1) & 1];
+    cpu_state.XMM[cpu_reg].q[0] = tmp.q[0];
+    cpu_state.XMM[cpu_reg].q[1] = tmp.q[1];
     return 0;
 }
 

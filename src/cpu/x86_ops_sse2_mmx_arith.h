@@ -305,72 +305,36 @@ opPADDUSW_xmm_a32(uint32_t fetchdat)
 static int
 opPMULHW_xmm_a16(uint32_t fetchdat)
 {
+    SSE_REG src;
     SSE_ENTER();
     fetch_ea_16(fetchdat);
-    if (cpu_mod == 3) {
-        cpu_state.XMM[cpu_reg].sw[0] = ((int32_t) cpu_state.XMM[cpu_reg].sw[0] * (int32_t) cpu_state.XMM[cpu_rm].sw[0]) >> 16;
-        cpu_state.XMM[cpu_reg].sw[1] = ((int32_t) cpu_state.XMM[cpu_reg].sw[1] * (int32_t) cpu_state.XMM[cpu_rm].sw[1]) >> 16;
-        cpu_state.XMM[cpu_reg].sw[2] = ((int32_t) cpu_state.XMM[cpu_reg].sw[2] * (int32_t) cpu_state.XMM[cpu_rm].sw[2]) >> 16;
-        cpu_state.XMM[cpu_reg].sw[3] = ((int32_t) cpu_state.XMM[cpu_reg].sw[3] * (int32_t) cpu_state.XMM[cpu_rm].sw[3]) >> 16;
-        cpu_state.XMM[cpu_reg].sw[4] = ((int32_t) cpu_state.XMM[cpu_reg].sw[4] * (int32_t) cpu_state.XMM[cpu_rm].sw[4]) >> 16;
-        cpu_state.XMM[cpu_reg].sw[5] = ((int32_t) cpu_state.XMM[cpu_reg].sw[5] * (int32_t) cpu_state.XMM[cpu_rm].sw[5]) >> 16;
-        cpu_state.XMM[cpu_reg].sw[6] = ((int32_t) cpu_state.XMM[cpu_reg].sw[6] * (int32_t) cpu_state.XMM[cpu_rm].sw[6]) >> 16;
-        cpu_state.XMM[cpu_reg].sw[7] = ((int32_t) cpu_state.XMM[cpu_reg].sw[7] * (int32_t) cpu_state.XMM[cpu_rm].sw[7]) >> 16;
-        CLOCK_CYCLES(1);
-    } else {
-        SSE_REG src;
-
-        SEG_CHECK_READ(cpu_state.ea_seg);
-        src.q[0] = readmemq(easeg, cpu_state.eaaddr);
-        src.q[1] = readmemq(easeg, cpu_state.eaaddr + 8);
-        if (cpu_state.abrt)
-            return 0;
-        cpu_state.XMM[cpu_reg].sw[0] = ((int32_t) cpu_state.XMM[cpu_reg].sw[0] * (int32_t) src.sw[0]) >> 16;
-        cpu_state.XMM[cpu_reg].sw[1] = ((int32_t) cpu_state.XMM[cpu_reg].sw[1] * (int32_t) src.sw[1]) >> 16;
-        cpu_state.XMM[cpu_reg].sw[2] = ((int32_t) cpu_state.XMM[cpu_reg].sw[2] * (int32_t) src.sw[2]) >> 16;
-        cpu_state.XMM[cpu_reg].sw[3] = ((int32_t) cpu_state.XMM[cpu_reg].sw[3] * (int32_t) src.sw[3]) >> 16;
-        cpu_state.XMM[cpu_reg].sw[4] = ((int32_t) cpu_state.XMM[cpu_reg].sw[4] * (int32_t) src.sw[4]) >> 16;
-        cpu_state.XMM[cpu_reg].sw[5] = ((int32_t) cpu_state.XMM[cpu_reg].sw[5] * (int32_t) src.sw[5]) >> 16;
-        cpu_state.XMM[cpu_reg].sw[6] = ((int32_t) cpu_state.XMM[cpu_reg].sw[6] * (int32_t) src.sw[6]) >> 16;
-        cpu_state.XMM[cpu_reg].sw[7] = ((int32_t) cpu_state.XMM[cpu_reg].sw[7] * (int32_t) src.sw[7]) >> 16;
-        CLOCK_CYCLES(2);
-    }
+    SSE_GETSRC();
+    cpu_state.XMM[cpu_reg].sw[0] = ((int32_t) cpu_state.XMM[cpu_reg].sw[0] * (int32_t) src.sw[0]) >> 16;
+    cpu_state.XMM[cpu_reg].sw[1] = ((int32_t) cpu_state.XMM[cpu_reg].sw[1] * (int32_t) src.sw[1]) >> 16;
+    cpu_state.XMM[cpu_reg].sw[2] = ((int32_t) cpu_state.XMM[cpu_reg].sw[2] * (int32_t) src.sw[2]) >> 16;
+    cpu_state.XMM[cpu_reg].sw[3] = ((int32_t) cpu_state.XMM[cpu_reg].sw[3] * (int32_t) src.sw[3]) >> 16;
+    cpu_state.XMM[cpu_reg].sw[4] = ((int32_t) cpu_state.XMM[cpu_reg].sw[4] * (int32_t) src.sw[4]) >> 16;
+    cpu_state.XMM[cpu_reg].sw[5] = ((int32_t) cpu_state.XMM[cpu_reg].sw[5] * (int32_t) src.sw[5]) >> 16;
+    cpu_state.XMM[cpu_reg].sw[6] = ((int32_t) cpu_state.XMM[cpu_reg].sw[6] * (int32_t) src.sw[6]) >> 16;
+    cpu_state.XMM[cpu_reg].sw[7] = ((int32_t) cpu_state.XMM[cpu_reg].sw[7] * (int32_t) src.sw[7]) >> 16;
     return 0;
 }
 
 static int
 opPMULHW_xmm_a32(uint32_t fetchdat)
 {
+    SSE_REG src;
     SSE_ENTER();
     fetch_ea_32(fetchdat);
-    if (cpu_mod == 3) {
-        cpu_state.XMM[cpu_reg].sw[0] = ((int32_t) cpu_state.XMM[cpu_reg].sw[0] * (int32_t) cpu_state.XMM[cpu_rm].sw[0]) >> 16;
-        cpu_state.XMM[cpu_reg].sw[1] = ((int32_t) cpu_state.XMM[cpu_reg].sw[1] * (int32_t) cpu_state.XMM[cpu_rm].sw[1]) >> 16;
-        cpu_state.XMM[cpu_reg].sw[2] = ((int32_t) cpu_state.XMM[cpu_reg].sw[2] * (int32_t) cpu_state.XMM[cpu_rm].sw[2]) >> 16;
-        cpu_state.XMM[cpu_reg].sw[3] = ((int32_t) cpu_state.XMM[cpu_reg].sw[3] * (int32_t) cpu_state.XMM[cpu_rm].sw[3]) >> 16;
-        cpu_state.XMM[cpu_reg].sw[4] = ((int32_t) cpu_state.XMM[cpu_reg].sw[4] * (int32_t) cpu_state.XMM[cpu_rm].sw[4]) >> 16;
-        cpu_state.XMM[cpu_reg].sw[5] = ((int32_t) cpu_state.XMM[cpu_reg].sw[5] * (int32_t) cpu_state.XMM[cpu_rm].sw[5]) >> 16;
-        cpu_state.XMM[cpu_reg].sw[6] = ((int32_t) cpu_state.XMM[cpu_reg].sw[6] * (int32_t) cpu_state.XMM[cpu_rm].sw[6]) >> 16;
-        cpu_state.XMM[cpu_reg].sw[7] = ((int32_t) cpu_state.XMM[cpu_reg].sw[7] * (int32_t) cpu_state.XMM[cpu_rm].sw[7]) >> 16;
-        CLOCK_CYCLES(1);
-    } else {
-        SSE_REG src;
-
-        SEG_CHECK_READ(cpu_state.ea_seg);
-        src.q[0] = readmemq(easeg, cpu_state.eaaddr);
-        src.q[1] = readmemq(easeg, cpu_state.eaaddr + 8);
-        if (cpu_state.abrt)
-            return 0;
-        cpu_state.XMM[cpu_reg].sw[0] = ((int32_t) cpu_state.XMM[cpu_reg].sw[0] * (int32_t) src.sw[0]) >> 16;
-        cpu_state.XMM[cpu_reg].sw[1] = ((int32_t) cpu_state.XMM[cpu_reg].sw[1] * (int32_t) src.sw[1]) >> 16;
-        cpu_state.XMM[cpu_reg].sw[2] = ((int32_t) cpu_state.XMM[cpu_reg].sw[2] * (int32_t) src.sw[2]) >> 16;
-        cpu_state.XMM[cpu_reg].sw[3] = ((int32_t) cpu_state.XMM[cpu_reg].sw[3] * (int32_t) src.sw[3]) >> 16;
-        cpu_state.XMM[cpu_reg].sw[4] = ((int32_t) cpu_state.XMM[cpu_reg].sw[4] * (int32_t) src.sw[4]) >> 16;
-        cpu_state.XMM[cpu_reg].sw[5] = ((int32_t) cpu_state.XMM[cpu_reg].sw[5] * (int32_t) src.sw[5]) >> 16;
-        cpu_state.XMM[cpu_reg].sw[6] = ((int32_t) cpu_state.XMM[cpu_reg].sw[6] * (int32_t) src.sw[6]) >> 16;
-        cpu_state.XMM[cpu_reg].sw[7] = ((int32_t) cpu_state.XMM[cpu_reg].sw[7] * (int32_t) src.sw[7]) >> 16;
-        CLOCK_CYCLES(2);
-    }
+    SSE_GETSRC();
+    cpu_state.XMM[cpu_reg].sw[0] = ((int32_t) cpu_state.XMM[cpu_reg].sw[0] * (int32_t) src.sw[0]) >> 16;
+    cpu_state.XMM[cpu_reg].sw[1] = ((int32_t) cpu_state.XMM[cpu_reg].sw[1] * (int32_t) src.sw[1]) >> 16;
+    cpu_state.XMM[cpu_reg].sw[2] = ((int32_t) cpu_state.XMM[cpu_reg].sw[2] * (int32_t) src.sw[2]) >> 16;
+    cpu_state.XMM[cpu_reg].sw[3] = ((int32_t) cpu_state.XMM[cpu_reg].sw[3] * (int32_t) src.sw[3]) >> 16;
+    cpu_state.XMM[cpu_reg].sw[4] = ((int32_t) cpu_state.XMM[cpu_reg].sw[4] * (int32_t) src.sw[4]) >> 16;
+    cpu_state.XMM[cpu_reg].sw[5] = ((int32_t) cpu_state.XMM[cpu_reg].sw[5] * (int32_t) src.sw[5]) >> 16;
+    cpu_state.XMM[cpu_reg].sw[6] = ((int32_t) cpu_state.XMM[cpu_reg].sw[6] * (int32_t) src.sw[6]) >> 16;
+    cpu_state.XMM[cpu_reg].sw[7] = ((int32_t) cpu_state.XMM[cpu_reg].sw[7] * (int32_t) src.sw[7]) >> 16;
     return 0;
 }
 
