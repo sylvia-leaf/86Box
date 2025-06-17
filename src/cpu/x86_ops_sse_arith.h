@@ -51,7 +51,7 @@ opSQRTSS_xmm_xmm_a16(uint32_t fetchdat)
     fetch_ea_16(fetchdat);
     SSE_REG src;
     struct softfloat_status_t status = mxcsr_to_softfloat_status_word();
-    SSE_GETSRC();
+    SSE_GETSRC_NOALIGN();
     cpu_state.XMM[cpu_reg].f[0] = f32_sqrt(src.f[0], &status);
 
     return 0;
@@ -65,7 +65,7 @@ opSQRTSS_xmm_xmm_a32(uint32_t fetchdat)
     fetch_ea_32(fetchdat);
     SSE_REG src;
     struct softfloat_status_t status = mxcsr_to_softfloat_status_word();
-    SSE_GETSRC();
+    SSE_GETSRC_NOALIGN();
     cpu_state.XMM[cpu_reg].f[0] = f32_sqrt(src.f[0], &status);
 
     return 0;
@@ -422,7 +422,7 @@ opRSQRTSS_xmm_xmm_a16(uint32_t fetchdat)
     SSE_ENTER();
     fetch_ea_16(fetchdat);
     SSE_REG src;
-    SSE_GETSRC();
+    SSE_GETSRC_NOALIGN();
     cpu_state.XMM[cpu_reg].f[0] = approximate_rsqrt(src.f[0]);
 
     return 0;
@@ -434,7 +434,7 @@ opRSQRTSS_xmm_xmm_a32(uint32_t fetchdat)
     SSE_ENTER();
     fetch_ea_32(fetchdat);
     SSE_REG src;
-    SSE_GETSRC();
+    SSE_GETSRC_NOALIGN();
     cpu_state.XMM[cpu_reg].f[0] = approximate_rsqrt(src.f[0]);
 
     return 0;
@@ -748,7 +748,7 @@ opRCPSS_xmm_xmm_a16(uint32_t fetchdat)
     SSE_ENTER();
     fetch_ea_16(fetchdat);
     SSE_REG src;
-    SSE_GETSRC();
+    SSE_GETSRC_NOALIGN();
     cpu_state.XMM[cpu_reg].f[0] = approximate_rcp(src.f[0]);
 
     return 0;
@@ -760,7 +760,7 @@ opRCPSS_xmm_xmm_a32(uint32_t fetchdat)
     SSE_ENTER();
     fetch_ea_32(fetchdat);
     SSE_REG src;
-    SSE_GETSRC();
+    SSE_GETSRC_NOALIGN();
     cpu_state.XMM[cpu_reg].f[0] = approximate_rcp(src.f[0]);
 
     return 0;
@@ -857,7 +857,7 @@ opADDSS_xmm_xmm_a16(uint32_t fetchdat)
     fetch_ea_16(fetchdat);
     SSE_REG src;
     struct softfloat_status_t status = mxcsr_to_softfloat_status_word();
-    SSE_GETSRC();
+    SSE_GETSRC_NOALIGN();
     cpu_state.XMM[cpu_reg].f[0] = f32_add(cpu_state.XMM[cpu_reg].f[0], src.f[0], &status);
     softfloat_status_word_to_mxcsr(status);
     int unmasked = (~cpu_state.mxcsr >> 7) & 0x3f;
@@ -877,7 +877,7 @@ opADDSS_xmm_xmm_a32(uint32_t fetchdat)
     fetch_ea_32(fetchdat);
     SSE_REG src;
     struct softfloat_status_t status = mxcsr_to_softfloat_status_word();
-    SSE_GETSRC();
+    SSE_GETSRC_NOALIGN();
     cpu_state.XMM[cpu_reg].f[0] = f32_add(cpu_state.XMM[cpu_reg].f[0], src.f[0], &status);
     softfloat_status_word_to_mxcsr(status);
     int unmasked = (~cpu_state.mxcsr >> 7) & 0x3f;
@@ -951,7 +951,7 @@ opMULSS_xmm_xmm_a16(uint32_t fetchdat)
     fetch_ea_16(fetchdat);
     SSE_REG src;
     struct softfloat_status_t status = mxcsr_to_softfloat_status_word();
-    SSE_GETSRC();
+    SSE_GETSRC_NOALIGN();
     cpu_state.XMM[cpu_reg].f[0] = f32_mul(cpu_state.XMM[cpu_reg].f[0], src.f[0], &status);
     softfloat_status_word_to_mxcsr(status);
     int unmasked = (~cpu_state.mxcsr >> 7) & 0x3f;
@@ -971,7 +971,7 @@ opMULSS_xmm_xmm_a32(uint32_t fetchdat)
     fetch_ea_32(fetchdat);
     SSE_REG src;
     struct softfloat_status_t status = mxcsr_to_softfloat_status_word();
-    SSE_GETSRC();
+    SSE_GETSRC_NOALIGN();
     cpu_state.XMM[cpu_reg].f[0] = f32_mul(cpu_state.XMM[cpu_reg].f[0], src.f[0], &status);
     softfloat_status_word_to_mxcsr(status);
     int unmasked = (~cpu_state.mxcsr >> 7) & 0x3f;
@@ -1045,7 +1045,7 @@ opSUBSS_xmm_xmm_a16(uint32_t fetchdat)
     fetch_ea_16(fetchdat);
     SSE_REG src;
     struct softfloat_status_t status = mxcsr_to_softfloat_status_word();
-    SSE_GETSRC();
+    SSE_GETSRC_NOALIGN();
     cpu_state.XMM[cpu_reg].f[0] = f32_sub(cpu_state.XMM[cpu_reg].f[0], src.f[0], &status);
     softfloat_status_word_to_mxcsr(status);
     int unmasked = (~cpu_state.mxcsr >> 7) & 0x3f;
@@ -1065,7 +1065,7 @@ opSUBSS_xmm_xmm_a32(uint32_t fetchdat)
     fetch_ea_32(fetchdat);
     SSE_REG src;
     struct softfloat_status_t status = mxcsr_to_softfloat_status_word();
-    SSE_GETSRC();
+    SSE_GETSRC_NOALIGN();
     cpu_state.XMM[cpu_reg].f[0] = f32_sub(cpu_state.XMM[cpu_reg].f[0], src.f[0], &status);
     softfloat_status_word_to_mxcsr(status);
     int unmasked = (~cpu_state.mxcsr >> 7) & 0x3f;
@@ -1139,7 +1139,7 @@ opMINSS_xmm_xmm_a16(uint32_t fetchdat)
     fetch_ea_16(fetchdat);
     SSE_REG src;
     struct softfloat_status_t status = mxcsr_to_softfloat_status_word();
-    SSE_GETSRC();
+    SSE_GETSRC_NOALIGN();
     cpu_state.XMM[cpu_reg].f[0] = f32_min(cpu_state.XMM[cpu_reg].f[0], src.f[0], &status);
     softfloat_status_word_to_mxcsr(status);
     int unmasked = (~cpu_state.mxcsr >> 7) & 0x3f;
@@ -1159,7 +1159,7 @@ opMINSS_xmm_xmm_a32(uint32_t fetchdat)
     fetch_ea_32(fetchdat);
     SSE_REG src;
     struct softfloat_status_t status = mxcsr_to_softfloat_status_word();
-    SSE_GETSRC();
+    SSE_GETSRC_NOALIGN();
     cpu_state.XMM[cpu_reg].f[0] = f32_min(cpu_state.XMM[cpu_reg].f[0], src.f[0], &status);
     softfloat_status_word_to_mxcsr(status);
     int unmasked = (~cpu_state.mxcsr >> 7) & 0x3f;
@@ -1234,7 +1234,7 @@ opDIVSS_xmm_xmm_a16(uint32_t fetchdat)
     fetch_ea_16(fetchdat);
     SSE_REG src;
     struct softfloat_status_t status = mxcsr_to_softfloat_status_word();
-    SSE_GETSRC();
+    SSE_GETSRC_NOALIGN();
     cpu_state.XMM[cpu_reg].f[0] = f32_div(cpu_state.XMM[cpu_reg].f[0], src.f[0], &status);
     softfloat_status_word_to_mxcsr(status);
     int unmasked = (~cpu_state.mxcsr >> 7) & 0x3f;
@@ -1254,7 +1254,7 @@ opDIVSS_xmm_xmm_a32(uint32_t fetchdat)
     fetch_ea_32(fetchdat);
     SSE_REG src;
     struct softfloat_status_t status = mxcsr_to_softfloat_status_word();
-    SSE_GETSRC();
+    SSE_GETSRC_NOALIGN();
     cpu_state.XMM[cpu_reg].f[0] = f32_div(cpu_state.XMM[cpu_reg].f[0], src.f[0], &status);
     softfloat_status_word_to_mxcsr(status);
     int unmasked = (~cpu_state.mxcsr >> 7) & 0x3f;
@@ -1328,7 +1328,7 @@ opMAXSS_xmm_xmm_a16(uint32_t fetchdat)
     fetch_ea_16(fetchdat);
     SSE_REG src;
     struct softfloat_status_t status = mxcsr_to_softfloat_status_word();
-    SSE_GETSRC();
+    SSE_GETSRC_NOALIGN();
     cpu_state.XMM[cpu_reg].f[0] = f32_max(cpu_state.XMM[cpu_reg].f[0], src.f[0], &status);
     softfloat_status_word_to_mxcsr(status);
     int unmasked = (~cpu_state.mxcsr >> 7) & 0x3f;
@@ -1348,7 +1348,7 @@ opMAXSS_xmm_xmm_a32(uint32_t fetchdat)
     fetch_ea_32(fetchdat);
     SSE_REG src;
     struct softfloat_status_t status = mxcsr_to_softfloat_status_word();
-    SSE_GETSRC();
+    SSE_GETSRC_NOALIGN();
     cpu_state.XMM[cpu_reg].f[0] = f32_max(cpu_state.XMM[cpu_reg].f[0], src.f[0], &status);
     softfloat_status_word_to_mxcsr(status);
     int unmasked = (~cpu_state.mxcsr >> 7) & 0x3f;
@@ -1421,7 +1421,7 @@ opCMPSS_xmm_xmm_a16(uint32_t fetchdat)
     fetch_ea_16(fetchdat);
     SSE_REG src;
     struct softfloat_status_t status = mxcsr_to_softfloat_status_word();
-    SSE_GETSRC();
+    SSE_GETSRC_NOALIGN();
     uint8_t  imm = getbyte();
     cpu_state.XMM[cpu_reg].l[0] = compare32[imm & 7](cpu_state.XMM[cpu_reg].f[0], src.f[0], &status) ? ~0 : 0;
 
@@ -1435,7 +1435,7 @@ opCMPSS_xmm_xmm_a32(uint32_t fetchdat)
     fetch_ea_32(fetchdat);
     SSE_REG src;
     struct softfloat_status_t status = mxcsr_to_softfloat_status_word();
-    SSE_GETSRC();
+    SSE_GETSRC_NOALIGN();
     uint8_t  imm = getbyte();
     cpu_state.XMM[cpu_reg].l[0] = compare32[imm & 7](cpu_state.XMM[cpu_reg].f[0], src.f[0], &status) ? ~0 : 0;
 
