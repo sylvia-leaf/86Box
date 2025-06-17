@@ -1053,8 +1053,6 @@ opMOVNTDQ_a16(uint32_t fetchdat)
     SEG_CHECK_WRITE(cpu_state.ea_seg);
     CHECK_WRITE_COMMON(cpu_state.ea_seg, cpu_state.eaaddr, cpu_state.eaaddr + 15);
     writememq(easeg, cpu_state.eaaddr, cpu_state.XMM[cpu_reg].q[0]);
-    if (cpu_state.abrt)
-        return 1;
     writememq(easeg, cpu_state.eaaddr + 8, cpu_state.XMM[cpu_reg].q[1]);
     if (cpu_state.abrt)
         return 1;
@@ -1078,8 +1076,6 @@ opMOVNTDQ_a32(uint32_t fetchdat)
     SEG_CHECK_WRITE(cpu_state.ea_seg);
     CHECK_WRITE_COMMON(cpu_state.ea_seg, cpu_state.eaaddr, cpu_state.eaaddr + 15);
     writememq(easeg, cpu_state.eaaddr, cpu_state.XMM[cpu_reg].q[0]);
-    if (cpu_state.abrt)
-        return 1;
     writememq(easeg, cpu_state.eaaddr + 8, cpu_state.XMM[cpu_reg].q[1]);
     if (cpu_state.abrt)
         return 1;

@@ -672,14 +672,8 @@ opMOVNTPS_xmm_q_a16(uint32_t fetchdat)
             return 1;
     }
     writememl(easeg, cpu_state.eaaddr, rm[0]);
-    if (cpu_state.abrt)
-        return 1;
     writememl(easeg, cpu_state.eaaddr + 4, rm[1]);
-    if (cpu_state.abrt)
-        return 1;
     writememl(easeg, cpu_state.eaaddr + 8, rm[2]);
-    if (cpu_state.abrt)
-        return 1;
     writememl(easeg, cpu_state.eaaddr + 12, rm[3]);
     if (cpu_state.abrt)
         return 1;
@@ -704,14 +698,8 @@ opMOVNTPS_xmm_q_a32(uint32_t fetchdat)
             return 1;
     }
     writememl(easeg, cpu_state.eaaddr, rm[0]);
-    if (cpu_state.abrt)
-        return 1;
     writememl(easeg, cpu_state.eaaddr + 4, rm[1]);
-    if (cpu_state.abrt)
-        return 1;
     writememl(easeg, cpu_state.eaaddr + 8, rm[2]);
-    if (cpu_state.abrt)
-        return 1;
     writememl(easeg, cpu_state.eaaddr + 12, rm[3]);
     if (cpu_state.abrt)
         return 1;
