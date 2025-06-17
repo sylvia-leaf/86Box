@@ -658,7 +658,7 @@ opPMADDWD_xmm_a32(uint32_t fetchdat)
     SSE_ENTER();
     SSE_REG src;
 
-    fetch_ea_16(fetchdat);
+    fetch_ea_32(fetchdat);
     SSE_GETSRC();
 
     if (cpu_state.XMM[cpu_reg].l[0] == 0x80008000 && src.l[0] == 0x80008000)
