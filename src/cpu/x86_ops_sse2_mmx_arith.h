@@ -90,7 +90,7 @@ opPMULLW_xmm_a32(uint32_t fetchdat)
 {
     SSE_REG src;
     SSE_ENTER();
-    fetch_ea_16(fetchdat);
+    fetch_ea_32(fetchdat);
     SSE_GETSRC();
     cpu_state.XMM[cpu_reg].sw[0] *= src.sw[0];
     cpu_state.XMM[cpu_reg].sw[1] *= src.sw[1];
