@@ -124,8 +124,8 @@ opCVTTSD2SI_l_xmm_a16(uint32_t fetchdat)
     SSE_REG src;
     fetch_ea_16(fetchdat);
     SSE_GETSRC_NOALIGN();
-    struct softfloat_status_t status = mxcsr_to_softfloat_status_word();
-    int32_t result = f64_to_i32_round_to_zero(src.d[0], &status); 
+    struct softfloat_status_t status = mxcsr_to_softfloat_status_word(); 
+    setr32(cpu_reg, f64_to_i32_round_to_zero(src.d[0], &status));
     softfloat_status_word_to_mxcsr(status);
     int unmasked = (~cpu_state.mxcsr >> 7) & 0x3f;
     if ((cpu_state.mxcsr & 0x3f) & (unmasked & 0x3f)) {
@@ -133,7 +133,6 @@ opCVTTSD2SI_l_xmm_a16(uint32_t fetchdat)
             x86_int(0x13);
         ILLEGAL_ON(!(cr4 & CR4_OSXMMEXCPT));
     }
-    setr32(cpu_reg, result);
     return 0;
 }
 
@@ -163,7 +162,7 @@ opCVTSD2SI_l_xmm_a16(uint32_t fetchdat)
     SSE_ENTER();
     SSE_REG src;
     fetch_ea_16(fetchdat);
-    SSE_GETSRC_NOALIGN();
+    SSE_GETSRC();
     struct softfloat_status_t status = mxcsr_to_softfloat_status_word(); 
     setr32(cpu_reg, f64_to_i32_normal(src.d[0], &status));
     softfloat_status_word_to_mxcsr(status);
@@ -182,7 +181,7 @@ opCVTSD2SI_l_xmm_a32(uint32_t fetchdat)
     SSE_ENTER();
     SSE_REG src;
     fetch_ea_32(fetchdat);
-    SSE_GETSRC_NOALIGN();
+    SSE_GETSRC();
     struct softfloat_status_t status = mxcsr_to_softfloat_status_word(); 
     setr32(cpu_reg, f64_to_i32_normal(src.d[0], &status));
     softfloat_status_word_to_mxcsr(status);
@@ -248,7 +247,7 @@ opCVTPS2PD_mm_xmm_a16(uint32_t fetchdat)
     SSE_ENTER();
     fetch_ea_16(fetchdat);
     SSE_REG src;
-    SSE_GETSRC_NOALIGN();
+    SSE_GETSRC();
     struct softfloat_status_t status = mxcsr_to_softfloat_status_word(); 
     cpu_state.XMM[cpu_reg].d[0] = f32_to_f64(src.f[0], &status);
     cpu_state.XMM[cpu_reg].d[1] = f32_to_f64(src.f[1], &status);
@@ -271,7 +270,7 @@ opCVTPS2PD_mm_xmm_a32(uint32_t fetchdat)
     SSE_ENTER();
     fetch_ea_32(fetchdat);
     SSE_REG src;
-    SSE_GETSRC_NOALIGN();
+    SSE_GETSRC();
     struct softfloat_status_t status = mxcsr_to_softfloat_status_word(); 
     cpu_state.XMM[cpu_reg].d[0] = f32_to_f64(src.f[0], &status);
     cpu_state.XMM[cpu_reg].d[1] = f32_to_f64(src.f[1], &status);
@@ -291,7 +290,7 @@ opCVTSS2SD_mm_xmm_a16(uint32_t fetchdat)
     SSE_ENTER();
     fetch_ea_16(fetchdat);
     SSE_REG src;
-    SSE_GETSRC_NOALIGN();
+    SSE_GETSRC();
     struct softfloat_status_t status = mxcsr_to_softfloat_status_word(); 
     cpu_state.XMM[cpu_reg].d[0] = f32_to_f64(src.f[0], &status);
     softfloat_status_word_to_mxcsr(status);
@@ -310,7 +309,7 @@ opCVTSS2SD_mm_xmm_a32(uint32_t fetchdat)
     SSE_ENTER();
     fetch_ea_32(fetchdat);
     SSE_REG src;
-    SSE_GETSRC_NOALIGN();
+    SSE_GETSRC();
     struct softfloat_status_t status = mxcsr_to_softfloat_status_word(); 
     cpu_state.XMM[cpu_reg].d[0] = f32_to_f64(src.f[0], &status);
     softfloat_status_word_to_mxcsr(status);
@@ -329,7 +328,7 @@ opCVTSD2SS_mm_xmm_a16(uint32_t fetchdat)
     SSE_ENTER();
     fetch_ea_16(fetchdat);
     SSE_REG src;
-    SSE_GETSRC_NOALIGN();
+    SSE_GETSRC();
     struct softfloat_status_t status = mxcsr_to_softfloat_status_word(); 
     cpu_state.XMM[cpu_reg].f[0] = f64_to_f32(src.d[0], &status);
     softfloat_status_word_to_mxcsr(status);
@@ -348,7 +347,7 @@ opCVTSD2SS_mm_xmm_a32(uint32_t fetchdat)
     SSE_ENTER();
     fetch_ea_32(fetchdat);
     SSE_REG src;
-    SSE_GETSRC_NOALIGN();
+    SSE_GETSRC();
     struct softfloat_status_t status = mxcsr_to_softfloat_status_word(); 
     cpu_state.XMM[cpu_reg].f[0] = f64_to_f32(src.d[0], &status);
     softfloat_status_word_to_mxcsr(status);
@@ -589,7 +588,7 @@ opCVTDQ2PD_mm_xmm_a16(uint32_t fetchdat)
     SSE_ENTER();
     SSE_REG src;
     fetch_ea_16(fetchdat);
-    SSE_GETSRC_NOALIGN();
+    SSE_GETSRC();
     cpu_state.XMM[cpu_reg].d[0] = i32_to_f64(src.sl[0]);
     cpu_state.XMM[cpu_reg].d[1] = i32_to_f64(src.sl[1]);
     return 0;
@@ -601,7 +600,7 @@ opCVTDQ2PD_mm_xmm_a32(uint32_t fetchdat)
     SSE_ENTER();
     SSE_REG src;
     fetch_ea_32(fetchdat);
-    SSE_GETSRC_NOALIGN();
+    SSE_GETSRC();
     cpu_state.XMM[cpu_reg].d[0] = i32_to_f64(src.sl[0]);
     cpu_state.XMM[cpu_reg].d[1] = i32_to_f64(src.sl[1]);
     return 0;
