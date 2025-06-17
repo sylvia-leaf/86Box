@@ -123,7 +123,7 @@ opCVTTSD2SI_l_xmm_a16(uint32_t fetchdat)
     SSE_ENTER();
     SSE_REG src;
     fetch_ea_16(fetchdat);
-    SSE_GETSRC();
+    SSE_GETSRC_NOALIGN();
     struct softfloat_status_t status = mxcsr_to_softfloat_status_word();
     int32_t result = f64_to_i32_round_to_zero(src.d[0], &status); 
     softfloat_status_word_to_mxcsr(status);
@@ -143,7 +143,7 @@ opCVTTSD2SI_l_xmm_a32(uint32_t fetchdat)
     SSE_ENTER();
     SSE_REG src;
     fetch_ea_32(fetchdat);
-    SSE_GETSRC();
+    SSE_GETSRC_NOALIGN();
     struct softfloat_status_t status = mxcsr_to_softfloat_status_word();
     int32_t result = f64_to_i32_round_to_zero(src.d[0], &status); 
     softfloat_status_word_to_mxcsr(status);

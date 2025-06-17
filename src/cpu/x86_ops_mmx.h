@@ -21,6 +21,21 @@
         CLOCK_CYCLES(2);                           \
     }
 
+#define SSE_GETSRC_NOALIGN()                                      \
+    if (cpu_mod == 3) {                                   \
+        src = cpu_state.XMM[cpu_rm];                      \
+        CLOCK_CYCLES(1);                                  \
+    } else {                                              \
+        SEG_CHECK_READ(cpu_state.ea_seg);                 \
+        src.q[0] = readmemq(easeg, cpu_state.eaaddr);     \
+        if (cpu_state.abrt)                               \
+            return 1;                                     \
+        src.q[1] = readmemq(easeg, cpu_state.eaaddr + 8); \
+        if (cpu_state.abrt)                               \
+            return 1;                                     \
+        CLOCK_CYCLES(2);                                  \
+    }
+
 #define SSE_GETSRC()                                      \
     if (cpu_mod == 3) {                                   \
         src = cpu_state.XMM[cpu_rm];                      \
