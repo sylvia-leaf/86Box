@@ -144,7 +144,7 @@ opCVTTSD2SI_l_xmm_a32(uint32_t fetchdat)
     fetch_ea_32(fetchdat);
     SSE_GETSRC_NOALIGN();
     struct softfloat_status_t status = mxcsr_to_softfloat_status_word();
-    int32_t result = f64_to_i32_round_to_zero(src.d[0], &status); 
+    setr32(cpu_reg, f64_to_i32_round_to_zero(src.d[0], &status));
     softfloat_status_word_to_mxcsr(status);
     int unmasked = (~cpu_state.mxcsr >> 7) & 0x3f;
     if ((cpu_state.mxcsr & 0x3f) & (unmasked & 0x3f)) {
@@ -152,7 +152,6 @@ opCVTTSD2SI_l_xmm_a32(uint32_t fetchdat)
             x86_int(0x13);
         ILLEGAL_ON(!(cr4 & CR4_OSXMMEXCPT));
     }
-    setr32(cpu_reg, result);
     return 0;
 }
 
