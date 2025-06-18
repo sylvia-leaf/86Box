@@ -911,6 +911,7 @@ void nv3_draw_cursor(svga_t* svga, int32_t drawline)
                     else                    // just override 
                         nv3->nvbase.svga.vram[final_position] = current_pixel;
                 case 15 ... 16:             // easy case (our cursor is 15bpp format)
+                {
                     uint32_t index_16 = final_position >> 1; 
                     if (replace_bit)
                     {
@@ -919,7 +920,9 @@ void nv3_draw_cursor(svga_t* svga, int32_t drawline)
                     }
                     else                    // just override 
                         vram_16[index_16] = current_pixel;
-                case 32: 
+                }
+                case 32:
+                {
                     uint32_t index_32 = final_position >> 2; 
                     if (replace_bit)
                     {
@@ -928,7 +931,8 @@ void nv3_draw_cursor(svga_t* svga, int32_t drawline)
                     }
                     else                    // just override 
                         vram_32[index_32] = nv3->nvbase.svga.conv_16to32(&nv3->nvbase.svga, current_pixel, 15); // 565_MODE doesn't seem to matter here
-                    break;  
+                    break;
+                }
             }
 
             // increment vram position 
