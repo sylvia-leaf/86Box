@@ -140,6 +140,8 @@ extern const device_config_t nv3t_config[];                             // Confi
 #define NV3_PCI_CFG_VBIOS_BASE_L                        0x32
 #define NV3_PCI_CFG_VBIOS_BASE_H                        0x33
 
+#define NV3_AGP_CAPABILITIES_POINTER                    0x34
+
 #define NV3_PCI_CFG_INT_LINE                            0x3C
 #define NV3_PCI_CFG_INT_PIN                             0x3D
 
@@ -150,6 +152,63 @@ extern const device_config_t nv3t_config[];                             // Confi
 #define NV3_PCI_CFG_MIN_GRANT_DEFAULT                   0x03
 #define NV3_PCI_CFG_MAX_LATENCY                         0x3F
 #define NV3_PCI_CFG_MAX_LATENCY_DEFAULT                 0x01
+
+//
+// AGP configuration
+//
+
+#define NV3_AGP_START                                   0x44
+
+// stupid stupid pci system
+#define NV3_AGP_CAPABILITIES_START                      0x44
+#define NV3_AGP_CAPABILITIES_CAP_ID                     0x44
+#define NV3_AGP_CAPABILITIES_CAP_ID_AGP                 0x02        // "AGP"
+#define NV3_AGP_CAPABILITIES_NEXT_PTR                   0x45
+#define NV3_AGP_CAPABILITIES_AGP_VERSION                0x46
+#define NV3_AGP_CAPABILITIES_AGP_VERSION_MINOR          0
+#define NV3_AGP_CAPABILITIES_AGP_VERSION_MAJOR          4
+#define NV3_AGP_CAPABILITIES_H                          0x47
+
+#define NV3_AGP_STATUS_RATE                             0x48
+#define NV3_AGP_STATUS_RATE_1X_SUPPORTED                0x1
+#define NV3_AGP_STATUS_RATE_2X_SUPPORTED                0x2
+
+#define NV3_AGP_STATUS_BYTE1                            0x49
+#define NV3_AGP_STATUS_BYTE1_SBA                        1
+#define NV3_AGP_STATUS_SBA_SUPPORTED                    0x0
+#define NV3_AGP_STATUS_SBA_UNSUPPORTED                  0x1
+#define NV3_AGP_STATUS_MAX_REQUESTS                     0x4B
+#define NV3_AGP_STATUS_MAX_REQUESTS_AMOUNT              4
+
+#define NV3_AGP_COMMAND                                 0x4C
+#define NV3_AGP_COMMAND_DATA_RATE                       0
+#define NV3_AGP_COMMAND_DATA_RATE_1X                    0x1
+#define NV3_AGP_COMMAND_DATA_RATE_2X                    0x2
+#define NV3_AGP_COMMAND_BYTE1                           0x4D
+#define NV3_AGP_COMMAND_BYTE1_ENABLE                    0
+#define NV3_AGP_COMMAND_BYTE1_ENABLE_DISABLED           0x0
+#define NV3_AGP_COMMAND_BYTE1_ENABLE_ENABLED            0x1
+#define NV3_AGP_COMMAND_SBA_ENABLE                      1
+#define NV3_AGP_COMMAND_SBA_ENABLE_DISABLED             0x0
+#define NV3_AGP_COMMAND_SBA_ENABLE_ENABLED              0x1
+#define NV3_AGP_COMMAND_REQUEST_DEPTH                   0x4F
+
+#define NV3_AGP_END                                     0x4F
+
+//
+// ACPI (NV3T only)
+// TODO: IMPLEMENT THIS!!!!!!
+//
+#define NV3_POWER_CAP_ID                                0x60
+#define NV3_POWER_NEXT_PTR                              0x61
+#define NV3_POWER_VERSION                               0x62
+
+// "The RIVA128ZX does not physically change its power consumption when
+// POWER_STATE is modified."
+#define NV3_POWER_STATE                                 0x64
+
+#define NV3_POWER_STATE_D0                              0x0
+#define NV3_POWER_STATE_D3HOT                           0x3
 
 // GPU Subsystems
 // These most likely correspond to functional blocks in the original design
@@ -462,13 +521,6 @@ extern const device_config_t nv3t_config[];                             // Confi
 #define NV3_PME_INTR                                    0x200100    // Mediaport: Interrupt Pending?
 #define NV3_PME_INTR_EN                                 0x200140    // Mediaport: Interrupt Enable
 #define NV3_PME_END                                     0x200FFF
-
-// THIS IS NOT A REAL REGISTER.
-// This is so my software e.g. nvplayground can determine if the software is being run in an emulator on a real RIVA 128.
-// This register should have some sort of open bus, garbage or 00/FF on a real NV3/NV3T but have a string.
-#define NV3_EMULATED_MARKER_START                       0x269420    
-
-#define NV3_EMULATED_MARKER                             0x0D15EA5E
 
 #define NV3_PGRAPH_START                                0x400000    // Scene graph for 2d/3d rendering...the most important part
 // PGRAPH Core
@@ -799,6 +851,10 @@ extern const device_config_t nv3t_config[];                             // Confi
 #define NV3_RAMIN_RAMRO_END                             0x1C01FFF
 #define NV3_RAMIN_RAMRM_START                           0x1C02000
 #define NV3_RAMIN_RAMRM_END                             0x1C02FFF
+
+// I'm not sure if this can be moved.
+// 4K of "PRAM" is listed at 0x6000.
+#define NV3_RAMIN_OFFSET_CURSOR                         0x6000
 
 #define NV3_RAMIN_END                                   0x1FFFFFF
 
