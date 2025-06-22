@@ -1002,6 +1002,7 @@ void nv3_draw_cursor(svga_t* svga, int32_t drawline)
                             nv3->nvbase.svga.vram[final_position] = final;
                         }
                     case bpixel_fmt_16bit:             // easy case (our cursor is 15bpp format)
+                    {
                         uint32_t index_16 = final_position >> 1; 
 
                         if (replace_bit) // just replace
@@ -1012,7 +1013,9 @@ void nv3_draw_cursor(svga_t* svga, int32_t drawline)
                             uint16_t final = current_pixel ^ vram_16[index_16];
                             vram_16[index_16] = final;
                         }
-                    case bpixel_fmt_32bit: 
+                    }
+                    case bpixel_fmt_32bit:
+                    {
                         uint32_t index_32 = final_position >> 2; 
 
                         if (replace_bit) // just replace    
@@ -1025,7 +1028,8 @@ void nv3_draw_cursor(svga_t* svga, int32_t drawline)
                             uint32_t final = current_pixel_32 ^ vram_32[index_32];
                             vram_32[index_32] = final;
                         }
-                        break;  
+                        break;
+                    }
                 }
             }
 
