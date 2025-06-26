@@ -3213,7 +3213,7 @@ mem_init(void)
     page_lookup  = (page_t **) malloc((1 << 20) * sizeof(page_t *));
     readlookup2  = malloc((1 << 20) * sizeof(uintptr_t));
     writelookup2 = malloc((1 << 20) * sizeof(uintptr_t));
-#endifS
+#endif
 }
 
 #if (!(defined __amd64__ || defined _M_X64 || defined __aarch64__ || defined _M_ARM64))
