@@ -1821,6 +1821,11 @@ opPAVGB_xmm_xmm_a16(uint32_t fetchdat)
         cpu_state.XMM[cpu_reg].b[15] = (uint8_t) (tmp[15] >> 1);
         CLOCK_CYCLES(1);
     } else {
+        if (cpu_state.eaaddr & 0xf) {
+            x86gpf(NULL, 0);
+            if (cpu_state.abrt)
+                return 1;
+        }
         uint8_t src[16];
 
         SEG_CHECK_READ(cpu_state.ea_seg);
@@ -1953,6 +1958,11 @@ opPAVGB_xmm_xmm_a32(uint32_t fetchdat)
         cpu_state.XMM[cpu_reg].b[15] = (uint8_t) (tmp[15] >> 1);
         CLOCK_CYCLES(1);
     } else {
+        if (cpu_state.eaaddr & 0xf) {
+            x86gpf(NULL, 0);
+            if (cpu_state.abrt)
+                return 1;
+        }
         uint8_t src[16];
 
         SEG_CHECK_READ(cpu_state.ea_seg);
@@ -2149,6 +2159,11 @@ opPAVGW_xmm_xmm_a16(uint32_t fetchdat)
         cpu_state.XMM[cpu_reg].w[7] = (uint16_t) (tmp[7] >> 1);
         CLOCK_CYCLES(1);
     } else {
+        if (cpu_state.eaaddr & 0xf) {
+            x86gpf(NULL, 0);
+            if (cpu_state.abrt)
+                return 1;
+        }
         uint16_t src[8];
 
         SEG_CHECK_READ(cpu_state.ea_seg);
@@ -2225,6 +2240,11 @@ opPAVGW_xmm_xmm_a32(uint32_t fetchdat)
         cpu_state.XMM[cpu_reg].w[7] = (uint16_t) (tmp[7] >> 1);
         CLOCK_CYCLES(1);
     } else {
+        if (cpu_state.eaaddr & 0xf) {
+            x86gpf(NULL, 0);
+            if (cpu_state.abrt)
+                return 1;
+        }
         uint16_t src[8];
 
         SEG_CHECK_READ(cpu_state.ea_seg);
@@ -2357,7 +2377,12 @@ opPMULHUW_xmm_xmm_a16(uint32_t fetchdat)
         cpu_state.XMM[cpu_reg].w[7] = ((uint32_t) cpu_state.XMM[cpu_reg].w[7] * (uint32_t) cpu_state.XMM[cpu_rm].w[7]) >> 16;
         CLOCK_CYCLES(1);
     } else {
-        uint32_t src[8];
+        if (cpu_state.eaaddr & 0xf) {
+            x86gpf(NULL, 0);
+            if (cpu_state.abrt)
+                return 1;
+        }
+        uint16_t src[8];
 
         SEG_CHECK_READ(cpu_state.ea_seg);
         src[0] = readmemw(easeg, cpu_state.eaaddr);
@@ -2413,7 +2438,12 @@ opPMULHUW_xmm_xmm_a32(uint32_t fetchdat)
         cpu_state.XMM[cpu_reg].w[7] = ((uint32_t) cpu_state.XMM[cpu_reg].w[7] * (uint32_t) cpu_state.XMM[cpu_rm].w[7]) >> 16;
         CLOCK_CYCLES(1);
     } else {
-        uint32_t src[8];
+        if (cpu_state.eaaddr & 0xf) {
+            x86gpf(NULL, 0);
+            if (cpu_state.abrt)
+                return 1;
+        }
+        uint16_t src[8];
 
         SEG_CHECK_READ(cpu_state.ea_seg);
         src[0] = readmemw(easeg, cpu_state.eaaddr);
@@ -2535,6 +2565,11 @@ opPMINSW_xmm_xmm_a16(uint32_t fetchdat)
         cpu_state.XMM[cpu_reg].sw[7] = (cpu_state.XMM[cpu_reg].sw[7] < cpu_state.XMM[cpu_rm].sw[7]) ? cpu_state.XMM[cpu_reg].sw[7] : cpu_state.XMM[cpu_rm].sw[7];
         CLOCK_CYCLES(1);
     } else {
+        if (cpu_state.eaaddr & 0xf) {
+            x86gpf(NULL, 0);
+            if (cpu_state.abrt)
+                return 1;
+        }
         int16_t src[8];
 
         SEG_CHECK_READ(cpu_state.ea_seg);
@@ -2591,6 +2626,11 @@ opPMINSW_xmm_xmm_a32(uint32_t fetchdat)
         cpu_state.XMM[cpu_reg].sw[7] = (cpu_state.XMM[cpu_reg].sw[7] < cpu_state.XMM[cpu_rm].sw[7]) ? cpu_state.XMM[cpu_reg].sw[7] : cpu_state.XMM[cpu_rm].sw[7];
         CLOCK_CYCLES(1);
     } else {
+        if (cpu_state.eaaddr & 0xf) {
+            x86gpf(NULL, 0);
+            if (cpu_state.abrt)
+                return 1;
+        }
         int16_t src[8];
 
         SEG_CHECK_READ(cpu_state.ea_seg);
@@ -2713,6 +2753,11 @@ opPMAXSW_xmm_xmm_a16(uint32_t fetchdat)
         cpu_state.XMM[cpu_reg].sw[7] = (cpu_state.XMM[cpu_reg].sw[7] > cpu_state.XMM[cpu_rm].sw[7]) ? cpu_state.XMM[cpu_reg].sw[7] : cpu_state.XMM[cpu_rm].sw[7];
         CLOCK_CYCLES(1);
     } else {
+        if (cpu_state.eaaddr & 0xf) {
+            x86gpf(NULL, 0);
+            if (cpu_state.abrt)
+                return 1;
+        }
         int16_t src[8];
 
         SEG_CHECK_READ(cpu_state.ea_seg);
@@ -2769,6 +2814,11 @@ opPMAXSW_xmm_xmm_a32(uint32_t fetchdat)
         cpu_state.XMM[cpu_reg].sw[7] = (cpu_state.XMM[cpu_reg].sw[7] > cpu_state.XMM[cpu_rm].sw[7]) ? cpu_state.XMM[cpu_reg].sw[7] : cpu_state.XMM[cpu_rm].sw[7];
         CLOCK_CYCLES(1);
     } else {
+        if (cpu_state.eaaddr & 0xf) {
+            x86gpf(NULL, 0);
+            if (cpu_state.abrt)
+                return 1;
+        }
         int16_t src[8];
 
         SEG_CHECK_READ(cpu_state.ea_seg);
@@ -2946,6 +2996,11 @@ opPSADBW_xmm_xmm_a16(uint32_t fetchdat)
         cpu_state.XMM[cpu_reg].w[7] = 0;
         CLOCK_CYCLES(1);
     } else {
+        if (cpu_state.eaaddr & 0xf) {
+            x86gpf(NULL, 0);
+            if (cpu_state.abrt)
+                return 1;
+        }
         uint8_t src[16];
         uint8_t temp[16];
 
@@ -3080,6 +3135,11 @@ opPSADBW_xmm_xmm_a32(uint32_t fetchdat)
         cpu_state.XMM[cpu_reg].w[7] = 0;
         CLOCK_CYCLES(1);
     } else {
+        if (cpu_state.eaaddr & 0xf) {
+            x86gpf(NULL, 0);
+            if (cpu_state.abrt)
+                return 1;
+        }
         uint8_t src[16];
         uint8_t temp[16];
 

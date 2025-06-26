@@ -161,7 +161,7 @@ opCVTSD2SI_l_xmm_a16(uint32_t fetchdat)
     SSE_ENTER();
     SSE_REG src;
     fetch_ea_16(fetchdat);
-    SSE_GETSRC();
+    SSE_GETSRC_NOALIGN();
     struct softfloat_status_t status = mxcsr_to_softfloat_status_word(); 
     setr32(cpu_reg, f64_to_i32_normal(src.d[0], &status));
     softfloat_status_word_to_mxcsr(status);
@@ -180,7 +180,7 @@ opCVTSD2SI_l_xmm_a32(uint32_t fetchdat)
     SSE_ENTER();
     SSE_REG src;
     fetch_ea_32(fetchdat);
-    SSE_GETSRC();
+    SSE_GETSRC_NOALIGN();
     struct softfloat_status_t status = mxcsr_to_softfloat_status_word(); 
     setr32(cpu_reg, f64_to_i32_normal(src.d[0], &status));
     softfloat_status_word_to_mxcsr(status);
@@ -246,7 +246,7 @@ opCVTPS2PD_mm_xmm_a16(uint32_t fetchdat)
     SSE_ENTER();
     fetch_ea_16(fetchdat);
     SSE_REG src;
-    SSE_GETSRC();
+    SSE_GETSRC_NOALIGN();
     struct softfloat_status_t status = mxcsr_to_softfloat_status_word(); 
     cpu_state.XMM[cpu_reg].d[0] = f32_to_f64(src.f[0], &status);
     cpu_state.XMM[cpu_reg].d[1] = f32_to_f64(src.f[1], &status);
@@ -269,7 +269,7 @@ opCVTPS2PD_mm_xmm_a32(uint32_t fetchdat)
     SSE_ENTER();
     fetch_ea_32(fetchdat);
     SSE_REG src;
-    SSE_GETSRC();
+    SSE_GETSRC_NOALIGN();
     struct softfloat_status_t status = mxcsr_to_softfloat_status_word(); 
     cpu_state.XMM[cpu_reg].d[0] = f32_to_f64(src.f[0], &status);
     cpu_state.XMM[cpu_reg].d[1] = f32_to_f64(src.f[1], &status);
@@ -289,7 +289,7 @@ opCVTSS2SD_mm_xmm_a16(uint32_t fetchdat)
     SSE_ENTER();
     fetch_ea_16(fetchdat);
     SSE_REG src;
-    SSE_GETSRC();
+    SSE_GETSRC_NOALIGN();
     struct softfloat_status_t status = mxcsr_to_softfloat_status_word(); 
     cpu_state.XMM[cpu_reg].d[0] = f32_to_f64(src.f[0], &status);
     softfloat_status_word_to_mxcsr(status);
@@ -308,7 +308,7 @@ opCVTSS2SD_mm_xmm_a32(uint32_t fetchdat)
     SSE_ENTER();
     fetch_ea_32(fetchdat);
     SSE_REG src;
-    SSE_GETSRC();
+    SSE_GETSRC_NOALIGN();
     struct softfloat_status_t status = mxcsr_to_softfloat_status_word(); 
     cpu_state.XMM[cpu_reg].d[0] = f32_to_f64(src.f[0], &status);
     softfloat_status_word_to_mxcsr(status);
@@ -327,7 +327,7 @@ opCVTSD2SS_mm_xmm_a16(uint32_t fetchdat)
     SSE_ENTER();
     fetch_ea_16(fetchdat);
     SSE_REG src;
-    SSE_GETSRC();
+    SSE_GETSRC_NOALIGN();
     struct softfloat_status_t status = mxcsr_to_softfloat_status_word(); 
     cpu_state.XMM[cpu_reg].f[0] = f64_to_f32(src.d[0], &status);
     softfloat_status_word_to_mxcsr(status);
@@ -346,7 +346,7 @@ opCVTSD2SS_mm_xmm_a32(uint32_t fetchdat)
     SSE_ENTER();
     fetch_ea_32(fetchdat);
     SSE_REG src;
-    SSE_GETSRC();
+    SSE_GETSRC_NOALIGN();
     struct softfloat_status_t status = mxcsr_to_softfloat_status_word(); 
     cpu_state.XMM[cpu_reg].f[0] = f64_to_f32(src.d[0], &status);
     softfloat_status_word_to_mxcsr(status);
@@ -587,7 +587,7 @@ opCVTDQ2PD_mm_xmm_a16(uint32_t fetchdat)
     SSE_ENTER();
     SSE_REG src;
     fetch_ea_16(fetchdat);
-    SSE_GETSRC();
+    SSE_GETSRC_NOALIGN();
     cpu_state.XMM[cpu_reg].d[0] = i32_to_f64(src.sl[0]);
     cpu_state.XMM[cpu_reg].d[1] = i32_to_f64(src.sl[1]);
     return 0;
@@ -599,7 +599,7 @@ opCVTDQ2PD_mm_xmm_a32(uint32_t fetchdat)
     SSE_ENTER();
     SSE_REG src;
     fetch_ea_32(fetchdat);
-    SSE_GETSRC();
+    SSE_GETSRC_NOALIGN();
     cpu_state.XMM[cpu_reg].d[0] = i32_to_f64(src.sl[0]);
     cpu_state.XMM[cpu_reg].d[1] = i32_to_f64(src.sl[1]);
     return 0;
