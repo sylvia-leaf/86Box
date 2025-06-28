@@ -20,8 +20,6 @@
 extern const device_t acc3221_device;
 
 /* Acer / ALi */
-extern const device_t ali5105_device;
-
 extern const device_t ali5123_device;
 
 /* Chips & Technologies */
@@ -86,10 +84,13 @@ extern const device_t it8702_device;
 extern const device_t nsc366_device;
 extern const device_t nsc366_4f_device;
 
-/* National Semiconductors */
-extern const device_t pc87310_device;
-extern const device_t pc87310_ide_device;
+/* National Semiconductors PC87310 / ALi M5105 */
+#define PC87310_IDE          0x0001
+#define PC87310_ALI          0x0002
 
+extern const device_t pc87310_device;
+
+/* National Semiconductors */
 extern const device_t pc87306_device;
 extern const device_t pc87311_device;
 extern const device_t pc87311_ide_device;
@@ -99,6 +100,7 @@ extern const device_t pc87332_398_ide_device;
 extern const device_t pc87332_398_ide_sec_device;
 extern const device_t pc87332_398_ide_fdcon_device;
 
+/* National Semiconductors PC87307 / PC87309 */
 #define PCX7307_PC87307      0x00c0
 #define PCX7307_PC97307      0x00cf
 
