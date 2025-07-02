@@ -33,6 +33,7 @@
         src.l[1] = 0;                                     \
         src.q[1] = 0;                                     \
         CLOCK_CYCLES(2);                                  \
+    }
 
 #define SSE_GETSRC64()                                    \
     if (cpu_mod == 3) {                                   \
