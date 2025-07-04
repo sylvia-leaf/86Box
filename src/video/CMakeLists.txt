@@ -11,11 +11,7 @@
 # Authors: David Hrdlička, <hrdlickadavid@outlook.com>
 #
 #          Copyright 2020-2021 David Hrdlička.
-<<<<<<< HEAD
-#          Copyright 2025 starfrost
-=======
 #          Copyright 2025 Connor Hyde / starfrost
->>>>>>> de1c7a7c9be1d12c826768d13cf5ddb6542b58b8
 #
 
 add_library(vid OBJECT
