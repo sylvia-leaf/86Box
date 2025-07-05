@@ -796,7 +796,7 @@ main(int argc, char *argv[])
     QObject::connect(&onesec, &QTimer::timeout, &app, [] {
         pc_onesec();
     });
-    onesec.setTimerType(Qt::CoarseTimer);
+    onesec.setTimerType(Qt::PreciseTimer);
     onesec.start(1000);
 
 #ifdef DISCORD
