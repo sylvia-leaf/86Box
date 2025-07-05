@@ -434,7 +434,7 @@ main_thread_fn()
 {
     int      frames;
 
-    //QThread::currentThread()->setPriority(QThread::HighestPriority);
+    QThread::currentThread()->setPriority(QThread::HighestPriority);
     plat_set_thread_name(nullptr, "main_thread_fn");
     framecountx = 0;
     // title_update = 1;
