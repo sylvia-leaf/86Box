@@ -152,6 +152,14 @@ typedef enum nv3_pgraph_class_e
 #define NV3_IMAGE_IN_MEMORY_TOP_LEFT_OFFSET             0x030C
 #define NV3_IMAGE_IN_MEMORY_TOP_LEFT_OFFSET_END         22  
 
+// scaled_image_from_cpu
+#define NV3_SCALED_IMAGE_SIZE_IN                               0x0304
+#define NV3_SCALED_IMAGE_START_POSITION                        0x0310
+#define NV3_SCALED_IMAGE_SIZE                                  0x0314
+#define NV3_SCALED_IMAGE_COLOR_START                           0x0400
+#define NV3_SCALED_IMAGE_COLOR_MAX                             32
+#define NV3_SCALED_IMAGE_COLOR_END                             0x0480
+
 /* GDI */
 
 /* Type A: Unclipped Rectangle */
@@ -718,9 +726,10 @@ typedef struct nv3_object_class_015
     nv3_coord_16_t size_in;
     uint32_t delta_dx_du;
     uint32_t delta_dy_dv;
-    nv3_coord_16_t clip_0;
-    nv3_coord_16_t clip_1;
+    nv3_coord_16_t point;
+    nv3_coord_16_t size;
     uint32_t point12d4; /* todo: fraction struct */
+    nv3_color_expanded_t color[32]; // The color to use
     // no reserve needed
 } nv3_stretched_image_from_cpu_t; 
 

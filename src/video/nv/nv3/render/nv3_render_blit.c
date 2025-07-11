@@ -43,6 +43,19 @@ void nv3_class_011_check_line_bounds(void)
     }
 }
 
+/* Check the line bounds */
+void nv3_class_015_check_line_bounds(void)
+{                
+    uint32_t relative_x = nv3->pgraph.image_current_position.x - nv3->pgraph.stretched_image_from_cpu.point.x;
+
+    /* In the case of class 0x11 there is no requirement to check for relative_y because we have exceeded the size of the image */
+    if (relative_x >= nv3->pgraph.stretched_image_from_cpu.size_in.x)
+    {   
+        nv3->pgraph.image_current_position.y++;
+        nv3->pgraph.image_current_position.x = nv3->pgraph.stretched_image_from_cpu.point.x;
+    }
+}
+
 /* Renders an image from cpu */
 void nv3_render_blit_image(uint32_t color, nv3_grobj_t grobj)
 {
@@ -101,6 +114,69 @@ void nv3_render_blit_image(uint32_t color, nv3_grobj_t grobj)
             if (nv3->pgraph.image_current_position.x < clip_x) nv3_render_write_pixel(nv3->pgraph.image_current_position, color, grobj);
             nv3->pgraph.image_current_position.x++;
             nv3_class_011_check_line_bounds();
+
+            break;
+    }
+}
+
+/* Renders a scaled image from cpu */
+void nv3_render_blit_scaled_image(uint32_t color, nv3_grobj_t grobj)
+{
+    /* todo: a lot of stuff */
+
+    uint32_t pixel0 = 0, pixel1 = 0, pixel2 = 0, pixel3 = 0;
+
+    /* Some extra data is sent as padding, we need to clip it off using size_out */
+
+    uint16_t clip_x = nv3->pgraph.stretched_image_from_cpu.point.x + nv3->pgraph.stretched_image_from_cpu.size.x;
+    /* we need to unpack them - IF THIS IS USED SOMEWHERE ELSE, DO SOMETHING ELSE WITH IT */
+    /* the reverse order is due to the endianness */
+    switch (nv3->nvbase.svga.bpp)
+    {
+        // 4 pixels packed into one color in 8bpp
+        case 8:
+        
+            //pixel3
+            pixel3 = color & 0xFF;
+            if (nv3->pgraph.image_current_position.x < clip_x) nv3_render_write_pixel(nv3->pgraph.image_current_position, pixel3, grobj);
+            nv3->pgraph.image_current_position.x++;
+            nv3_class_015_check_line_bounds();
+
+            pixel2 = (color >> 8) & 0xFF;
+            if (nv3->pgraph.image_current_position.x < clip_x) nv3_render_write_pixel(nv3->pgraph.image_current_position, pixel2, grobj);
+            nv3->pgraph.image_current_position.x++;
+            nv3_class_015_check_line_bounds();
+            
+            pixel1 = (color >> 16) & 0xFF;
+            if (nv3->pgraph.image_current_position.x < clip_x) nv3_render_write_pixel(nv3->pgraph.image_current_position, pixel1, grobj);
+            nv3->pgraph.image_current_position.x++;
+            nv3_class_015_check_line_bounds();
+
+            pixel0 = (color >> 24) & 0xFF;
+            if (nv3->pgraph.image_current_position.x < clip_x) nv3_render_write_pixel(nv3->pgraph.image_current_position, pixel0, grobj);
+            nv3->pgraph.image_current_position.x++;
+            nv3_class_015_check_line_bounds();
+
+            break;
+        // 2 pixels packed into one color in 15/16bpp
+        case 15:
+        case 16:
+            pixel1 = (color) & 0xFFFF;
+            if (nv3->pgraph.image_current_position.x < (clip_x)) nv3_render_write_pixel(nv3->pgraph.image_current_position, pixel1, grobj);
+            nv3->pgraph.image_current_position.x++;
+            nv3_class_015_check_line_bounds();
+
+            pixel0 = (color >> 16) & 0xFFFF;
+            if (nv3->pgraph.image_current_position.x < (clip_x)) nv3_render_write_pixel(nv3->pgraph.image_current_position, pixel0, grobj);
+            nv3->pgraph.image_current_position.x++;
+            nv3_class_015_check_line_bounds();
+                
+            break;
+        // just one pixel in 32bpp
+        case 32: 
+            if (nv3->pgraph.image_current_position.x < clip_x) nv3_render_write_pixel(nv3->pgraph.image_current_position, color, grobj);
+            nv3->pgraph.image_current_position.x++;
+            nv3_class_015_check_line_bounds();
 
             break;
     }
