@@ -993,15 +993,18 @@ xga_accel_read_pattern_map_pixel(svga_t *svga, int x, int y, uint32_t base, int 
     uint8_t      byte;
     uint8_t      px;
     int          skip = 0;
+    int          pos = (y * width) + x;
+
+    addr += (pos / 8);
+    bits = 7 - (pos & 7);
 
     if ((addr < xga->linear_base) || (addr > (xga->linear_base + 0xfffff)))
         skip = 1;
 
-    addr += (y * (width >> 3));
     if (!skip) {
-        READ(addr + (x >> 3), byte);
+        READ(addr, byte);
     } else
-        byte = mem_readb_phys(addr + (x >> 3));
+        byte = mem_readb_phys(addr);
 
     xga_log("0. AccessMode=%02x, SRCMAP=%02x, DSTMAP=%02x, PAT=%02x.\n", xga->access_mode & 0x0f, (xga->accel.px_map_format[xga->accel.src_map] & 0x0f), (xga->accel.px_map_format[xga->accel.dst_map] & 0x0f), (xga->accel.px_map_format[xga->accel.pat_src] & 0x08));
     if (!(xga->accel.px_map_format[xga->accel.src_map] & 0x08) && !(xga->accel.px_map_format[xga->accel.dst_map] & 0x08)) {
@@ -1010,8 +1013,7 @@ xga_accel_read_pattern_map_pixel(svga_t *svga, int x, int y, uint32_t base, int 
         }
     }
 
-    bits = 7 - (x & 7);
-    px = (byte >> bits) & 0x01;
+    px = (byte >> bits) & 1;
 
     if (xga->accel.command == 0x08013002)
         xga_log("Read Pattern Skip=%d, lx=%d, ly=%d, px=%d, py=%d, dx=%d, dy=%d, xlen=%d, width=%d, byte=%02x, bits=%d, addr=%08x, addrpx=%08x, base=%08x, chain=%08x.\n", skip, xga->accel.x, xga->accel.y, x, y, xga->accel.dx, xga->accel.dy, xga->accel.x_len, width, byte, bits, addr, addr + (x >> 3), base, xga->accel.carry_chain);
