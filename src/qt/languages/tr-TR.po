@@ -1237,10 +1237,6 @@ msgstr "Pencereye &odaklanmıyorken duraklat"
 msgid "WinBox is no longer supported"
 msgstr "WinBox artık desteklenmemektedir"
 
-<<<<<<< HEAD
-msgid "Development of the WinBox manager stopped in 2022 due to a lack of maintainers. As we direct our efforts towards making PCBox even better, we have made the decision to no longer support WinBox as a manager.\n\nNo further updates will be provided through WinBox, and you may encounter incorrect behavior should you continue using it with newer versions of PCBox. Any bug reports related to WinBox behavior will be closed as invalid.\n\nGo to 86box.net for a list of other managers you can use."
-msgstr "WinBox yöneticisinin geliştirilmesi 2022 yılında bakımcı eksikliği nedeniyle durduruldu. Çabalarımızı PCBox'ı daha da iyi hale getirmeye yönlendirdiğimiz için bu yöneticiyi artık desteklememe kararı aldık.\n\nArtık WinBox aracılığıyla güncellemeler sağlanmayacaktır ve onu PCBox'ın yeni sürümleriyle kullanmaya devam etmeniz halinde hatalarla karşılaşabilirsiniz. Bunun yanı sıra WinBox ile ilgili tüm hata raporları geçersiz olarak kapatılacaktır.\n\nKullanabileceğiniz diğer yöneticilerin listesi için 86box.net adresini ziyaret edebilirsiniz."
-=======
 msgid ""
 "Development of the WinBox manager stopped in 2022 due to a lack of maintainers. As we direct our efforts towards making PCBox even better, we have made the decision to no longer support WinBox as a manager.\n"
 "\n"
@@ -1253,7 +1249,6 @@ msgstr ""
 "Artık WinBox aracılığıyla güncellemeler yayınlanmayacaktır ve bu yöneticiyi PCBox'ın yeni sürümleriyle kullanmanız halinde hatalarla karşılaşabilirsiniz. WinBox'ın kullanımıyla ilgili tüm hata raporları geçersiz sayılacaktır.\n"
 "\n"
 "Kullanabileceğiniz diğer yöneticilerin bir listesi için lütfen 86box.net adresini ziyaret edin."
->>>>>>> 174d6e1d05db95a25f3a9134c6b2c057ace3c525
 
 msgid "Generate"
 msgstr "Oluştur"
