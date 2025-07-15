@@ -5,7 +5,7 @@ opCVTPI2PD_xmm_mm_a16(uint32_t fetchdat)
     MMX_REG src;
     MMX_ENTER();
     fetch_ea_16(fetchdat);
-    MMX_GETSRC();
+    MMX_GETSRC_SSE();
 
     cpu_state.XMM[cpu_reg].d[0] = i32_to_f64(src.sl[0]);
     cpu_state.XMM[cpu_reg].d[1] = i32_to_f64(src.sl[1]);
@@ -19,7 +19,7 @@ opCVTPI2PD_xmm_mm_a32(uint32_t fetchdat)
     MMX_REG src;
     MMX_ENTER();
     fetch_ea_32(fetchdat);
-    MMX_GETSRC();
+    MMX_GETSRC_SSE();
 
     cpu_state.XMM[cpu_reg].d[0] = i32_to_f64(src.sl[0]);
     cpu_state.XMM[cpu_reg].d[1] = i32_to_f64(src.sl[1]);
