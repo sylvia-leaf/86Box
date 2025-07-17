@@ -11,8 +11,10 @@
  *
  *
  * Authors: Connor Hyde, <mario64crashed@gmail.com> I need a better email address ;^)
+ *          fuel <mszoopers@protonmail.com>
  *
  *          Copyright 2024-2025 Connor Hyde
+ *          Copyright 2025 fuel
  */
 
 #include <stdlib.h>
