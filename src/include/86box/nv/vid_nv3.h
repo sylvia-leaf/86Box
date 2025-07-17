@@ -951,9 +951,6 @@ extern const device_config_t nv3t_config[];                             // Confi
 
 #define NV3_CRTC_REGISTER_RMA_MODE_MAX                  0x0F
 
-
-
-
 /* 
     STRUCTURES FOR THE GPU START HERE
     OBJECT CLASS & RENDERING RELATED STUFF IS IN VID_NV3_CLASSES.H
@@ -1033,6 +1030,7 @@ typedef struct nv3_pfb_s
 #define NV3_NOTIFICATION_PAGE_ACCESS_READ       0x0     // If this is set, the page is read only
 #define NV3_NOTIFICATION_PAGE_ACCESS_READ_WRITE 0x1     // If this is set, the page is read/write
 #define NV3_NOTIFICATION_PAGE_FRAME_ADDRESS     12      // The pageframe to use 
+
 
 
 // Core notification structure
@@ -1250,6 +1248,14 @@ typedef enum nv3_pgraph_bpixel_format_e
     // 32-bit colour (ARGB)
     bpixel_fmt_32bit = 3,
 } nv3_pgraph_bpixel_format;
+
+typedef enum nv3_pgraph_destination_buffer_e
+{
+    pgraph_dest_buffer0 = (1 << NV3_PGRAPH_CONTEXT_SWITCH_DST_BUFFER0_ENABLED),
+    pgraph_dest_buffer1 = (1 << NV3_PGRAPH_CONTEXT_SWITCH_DST_BUFFER1_ENABLED),
+    pgraph_dest_buffer2 = (1 << NV3_PGRAPH_CONTEXT_SWITCH_DST_BUFFER2_ENABLED),
+    pgraph_dest_buffer3 = (1 << NV3_PGRAPH_CONTEXT_SWITCH_DST_BUFFER3_ENABLED),
+} nv3_pgraph_destination_buffer;
 
 // Graphics Subsystem
 typedef struct nv3_pgraph_s
