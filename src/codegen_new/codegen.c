@@ -297,10 +297,17 @@ codegen_generate_ea_32_long(ir_data_t *ir, x86seg *op_ea_seg, uint32_t fetchdat,
             if (cpu_mod) {
                 if (cpu_rm == 5 && !op_ssegs)
                     op_ea_seg = &cpu_state.seg_ss;
+                else
+                    op_ea_seg = &cpu_state.seg_ds;
                 if (cpu_mod == 1) {
-                    uop_ADD_IMM(ir, IREG_eaaddr, IREG_eaaddr, (uint32_t) (int8_t) (fetchdat >> 8));
+                    if (block->flags & CODEBLOCK_NO_IMMEDIATES) {
+                        LOAD_IMMEDIATE_FROM_RAM_8(block, ir, IREG_temp0_B, cs + (*op_pc) + 1);
+                        uop_ADD(ir, IREG_eaaddr, IREG_eaaddr, IREG_temp0_B);
+                    } else {
+                        uop_ADD_IMM(ir, IREG_eaaddr, IREG_eaaddr, (uint32_t) (int8_t) (fetchdat >> 8));
+                        extra_bytes = 1;
+                    }
                     (*op_pc)++;
-                    extra_bytes = 1;
                 } else {
                     if (block->flags & CODEBLOCK_NO_IMMEDIATES) {
                         LOAD_IMMEDIATE_FROM_RAM_32(block, ir, IREG_temp0, cs + (*op_pc) + 1);
@@ -754,7 +761,7 @@ codegen_skip:
         if (cpu_mod != 3 && !(op_32 & 0x200)) {
             op_ea_seg = codegen_generate_ea_16_long(ir, op_ea_seg, fetchdat, op_ssegs, &op_pc);
         }
-        if (cpu_mod != 3 && (op_32 & 0x200)) {
+        else if (cpu_mod != 3 && (op_32 & 0x200)) {
             op_ea_seg = codegen_generate_ea_32_long(ir, op_ea_seg, fetchdat, op_ssegs, &op_pc, stack_offset);
         }
         op_pc -= pc_off;
