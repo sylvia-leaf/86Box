@@ -143,6 +143,7 @@ typedef enum
     PW_INTERLEAVED = 0x08     /* 96-byte PW subchannel, interleaved */
 } mds_subch_mode_t;
 
+#pragma pack(push, 1)
 typedef struct
 {
     uint8_t  file_sig[16];
@@ -224,6 +225,7 @@ typedef struct
     uint32_t pad[2];
     uint32_t entries;
 } mds_dpm_block_t;
+#pragma pack(pop)
 
 #ifdef ENABLE_IMAGE_LOG
 int image_do_log = ENABLE_IMAGE_LOG;
@@ -1805,6 +1807,91 @@ image_load_cue(cd_image_t *img, const char *cuefile)
     return success;
 }
 
+// Converts UTF-16 string into UTF-8 string.
+// If destination string is NULL returns total number of symbols that would've
+// been written (without null terminator). However, when actually writing into
+// destination string, it does include it. So, be sure to allocate extra byte
+// for destination string.
+// Params:
+// u16_str      - source UTF-16 string
+// u16_str_len  - length of source UTF-16 string
+// u8_str       - destination UTF-8 string
+// u8_str_size  - size of destination UTF-8 string in bytes
+// Return value:
+// 0 on success, -1 if encountered invalid surrogate pair, -2 if
+// encountered buffer overflow or length of destination UTF-8 string in bytes
+// (without including the null terminator).
+long int utf16_to_utf8(const uint16_t *u16_str, size_t u16_str_len,
+                       uint8_t *u8_str, size_t u8_str_size)
+{
+    size_t i = 0, j = 0;
+
+    if (!u8_str) {
+        u8_str_size = u16_str_len * 4;
+    }
+
+    while (i < u16_str_len) {
+        uint32_t codepoint = u16_str[i++];
+
+        // check for surrogate pair
+        if (codepoint >= 0xD800 && codepoint <= 0xDBFF) {
+            uint16_t high_surr = codepoint;
+            uint16_t low_surr  = u16_str[i++];
+
+            if (low_surr < 0xDC00 || low_surr > 0xDFFF)
+                return -1;
+
+            codepoint = ((high_surr - 0xD800) << 10) +
+                        (low_surr - 0xDC00) + 0x10000;
+        }
+
+        if (codepoint < 0x80) {
+            if (j + 1 > u8_str_size) return -2;
+
+            if (u8_str) u8_str[j] = (char)codepoint;
+
+            j++;
+        } else if (codepoint < 0x800) {
+            if (j + 2 > u8_str_size) return -2;
+
+            if (u8_str) {
+                u8_str[j + 0] = 0xC0 | (codepoint >> 6);
+                u8_str[j + 1] = 0x80 | (codepoint & 0x3F);
+            }
+
+            j += 2;
+        } else if (codepoint < 0x10000) {
+            if (j + 3 > u8_str_size) return -2;
+
+            if (u8_str) {
+                u8_str[j + 0] = 0xE0 | (codepoint >> 12);
+                u8_str[j + 1] = 0x80 | ((codepoint >> 6) & 0x3F);
+                u8_str[j + 2] = 0x80 | (codepoint & 0x3F);
+            }
+
+            j += 3;
+        } else {
+            if (j + 4 > u8_str_size) return -2;
+
+            if (u8_str) {
+                u8_str[j + 0] = 0xF0 | (codepoint >> 18);
+                u8_str[j + 1] = 0x80 | ((codepoint >> 12) & 0x3F);
+                u8_str[j + 2] = 0x80 | ((codepoint >> 6) & 0x3F);
+                u8_str[j + 3] = 0x80 | (codepoint & 0x3F);
+            }
+
+            j += 4;
+        }
+    }
+
+    if (u8_str) {
+        if (j >= u8_str_size) return -2;
+        u8_str[j] = '\0';
+    }
+
+    return (long int)j;
+}
+
 static int
 image_load_mds(cd_image_t *img, const char *mdsfile)
 {
@@ -1815,6 +1902,7 @@ image_load_mds(cd_image_t *img, const char *mdsfile)
     int            last_t                        = -1;
     int            error;
     char           pathname[MAX_FILENAME_LENGTH];
+    char           ofn[2048]                     = { 0 };
 
     mds_hdr_t             mds_hdr             = { 0 };
     mds_sess_block_t      mds_sess_block      = { 0 };
@@ -1922,7 +2010,7 @@ image_load_mds(cd_image_t *img, const char *mdsfile)
             fread(&mds_dpm_block_offs, 1, sizeof(uint32_t), fp);
 
             fseek(fp, mds_dpm_block_offs, SEEK_SET);
-            fread(&mds_dpm_block, 1, 4 * sizeof(mds_dpm_block_t), fp);
+            fread(&mds_dpm_block, 1, sizeof(mds_dpm_block_t), fp);
 
             /* We currently only support the bad sectors block and not (yet) actual DPM. */
             if (mds_dpm_block.type == 0x00000002) {
@@ -1962,8 +2050,6 @@ image_load_mds(cd_image_t *img, const char *mdsfile)
             last_t           = mds_trk_block.point;
             ct               = image_insert_track(img, mds_sess_block.sess_id, mds_trk_block.point);
 
-            tf = NULL;
-
             if (img->is_dvd) {
                 /* DVD images have no extra block - the extra block offset is the track length. */
                 memset(&mds_trk_ex_block, 0x00, sizeof(mds_trk_ex_block_t));
@@ -1983,14 +2069,24 @@ image_load_mds(cd_image_t *img, const char *mdsfile)
                 fseek(fp, mds_trk_block.footer_offs + (ff * sizeof(mds_footer_t)), SEEK_SET);
                 fread(&mds_footer, 1, sizeof(mds_footer_t), fp);
 
-                wchar_t wfn[2048] = { 0 };
-                char    fn[2048] = { 0 };
+                uint16_t wfn[2048] = { 0 };
+                char     fn[2048] = { 0 };
                 fseek(fp, mds_footer.fn_offs, SEEK_SET);
                 if (mds_footer.fn_is_wide) {
-                    fgetws(wfn, 256, fp);
-                    wcstombs(fn, wfn, 256);
-                } else
-                    fgets(fn, 512, fp);
+                    int len = 0;
+                    for (int i = 0; i < 256; i++) {
+                        fread(&(wfn[i]), 1, 2, fp);
+                        len++;
+                        if (wfn[i] == 0x0000)
+                            break;
+                    }
+                    (void) utf16_to_utf8(wfn, 2048, (uint8_t *) fn, 2048);
+                } else  for (int i = 0; i < 512; i++) {
+                    fread(&fn[i], 1, 1, fp);
+                    if (fn[i] == 0x00)
+                        break;
+                }
+
                 if (!stricmp(fn, "*.mdf")) {
                     strcpy(fn, mdsfile);
                     fn[strlen(mdsfile) - 3] = 'm';
@@ -2004,7 +2100,10 @@ image_load_mds(cd_image_t *img, const char *mdsfile)
                 else
                     strcpy(filename, fn);
 
-                tf = index_file_init(img->dev->id, filename, &error, &is_viso);
+                if (strcmp(ofn, filename) != 0) {
+                    tf = index_file_init(img->dev->id, filename, &error, &is_viso);
+                    strcpy(ofn, filename);
+                }
             }
 
             ct->sector_size = mds_trk_block.sector_len;
