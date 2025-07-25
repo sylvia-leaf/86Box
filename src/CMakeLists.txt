@@ -99,7 +99,7 @@ if(INSTRUMENT)
     add_compile_definitions(USE_INSTRUMENT)
 endif()
 
-target_link_libraries(PCBox cpu chipset mch dev mem fdd game cdrom zip mo hdd
+target_link_libraries(PCBox cpu chipset mch dev mem fdd game cdrom rdisk mo hdd
     net print scsi sio snd utils vid voodoo plat ui)
 
 if(HAIKU)
