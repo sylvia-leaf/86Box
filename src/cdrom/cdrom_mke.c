@@ -239,17 +239,9 @@ mke_disc_info(cdrom_t *dev, unsigned char *b)
 uint8_t
 mke_disc_capacity(cdrom_t *dev, unsigned char *b)
 {
-    track_info_t ti;
-    int          last_track;
-
-    cdrom_read_toc(dev, temp_buf, CD_TOC_NORMAL, 0, 2 << 8, 65536);
-    last_track  = temp_buf[3];
-    dev->ops->get_track_info(dev, last_track + 1, 0, &ti);
-
-    b[0] = ti.m;
-    b[1] = ti.s;
-    /* TODO THIS NEEDS TO HANDLE   FRAME 0,  JUST BEING LAZY 6AM */
-    b[2] = ti.f - 1;
+    b[0] = 0x00;
+    b[1] = 0x00;
+    b[2] = 0x00;
     b[3] = 0x08;
     b[4] = 0x00;
 
@@ -665,7 +657,6 @@ mke_write(uint16_t port, uint8_t val, void *priv)
             mke->enable_register = val;
             break;
         default:
-            mke_log("w %03x %02x\n", address, value);
             break;
     }
 }
@@ -823,11 +814,17 @@ static const device_config_t mke_config[] = {
         .file_filter    = NULL,
         .spinner        = { 0 },
         .selection      = {
+            { .description = "220H", .value = 0x220 },
             { .description = "230H", .value = 0x230 },
             { .description = "250H", .value = 0x250 },
             { .description = "260H", .value = 0x260 },
             { .description = "270H", .value = 0x270 },
             { .description = "290H", .value = 0x290 },
+            { .description = "300H", .value = 0x300 },
+            { .description = "310H", .value = 0x310 },
+            { .description = "320H", .value = 0x320 },
+            { .description = "330H", .value = 0x330 },
+            { .description = "340H", .value = 0x340 },
             { NULL                                  }
         },
         .bios           = { { 0 } }
