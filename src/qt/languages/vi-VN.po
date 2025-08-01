@@ -30,8 +30,8 @@ msgstr "Tạm &dừng"
 msgid "Re&sume"
 msgstr ""
 
-msgid "E&xit..."
-msgstr "Th&oát..."
+msgid "E&xit"
+msgstr "Th&oát"
 
 msgid "&View"
 msgstr "&Xem"
@@ -2386,6 +2386,12 @@ msgid "Could not load file %1"
 msgstr ""
 
 msgid "Key Bindings:"
+msgstr ""
+
+msgid "Bind conflict"
+msgstr ""
+
+msgid "This key combo is already in use."
 msgstr ""
 
 msgid "Action"

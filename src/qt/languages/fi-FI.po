@@ -30,8 +30,8 @@ msgstr "&Tauko"
 msgid "Re&sume"
 msgstr ""
 
-msgid "E&xit..."
-msgstr "&Poistu..."
+msgid "E&xit"
+msgstr "&Poistu"
 
 msgid "&View"
 msgstr "&Näytä"
@@ -2404,6 +2404,12 @@ msgid "Bind Key"
 msgstr ""
 
 msgid "Enter key combo:"
+msgstr ""
+
+msgid "Bind conflict"
+msgstr ""
+
+msgid "This key combo is already in use."
 msgstr ""
 
 msgid "Send Control+Alt+Del"

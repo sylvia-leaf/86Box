@@ -30,8 +30,8 @@ msgstr "&Пауза"
 msgid "Re&sume"
 msgstr "В&озобновить"
 
-msgid "E&xit..."
-msgstr "&Выход..."
+msgid "E&xit"
+msgstr "&Выход"
 
 msgid "&View"
 msgstr "&Вид"
@@ -2405,6 +2405,12 @@ msgstr "Привязать клавишу"
 
 msgid "Enter key combo:"
 msgstr "Введите комбинацию клавиш:"
+
+msgid "Bind conflict"
+msgstr "Конфликт привязки"
+
+msgid "This key combo is already in use."
+msgstr "Эта комбинация клавиш уже используется."
 
 msgid "Send Control+Alt+Del"
 msgstr "Отправить Control+Alt+Del"

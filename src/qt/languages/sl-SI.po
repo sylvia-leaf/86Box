@@ -30,8 +30,8 @@ msgstr "&Premor"
 msgid "Re&sume"
 msgstr ""
 
-msgid "E&xit..."
-msgstr "Iz&hod..."
+msgid "E&xit"
+msgstr "Iz&hod"
 
 msgid "&View"
 msgstr "&Pogled"
@@ -2404,6 +2404,12 @@ msgid "Bind Key"
 msgstr ""
 
 msgid "Enter key combo:"
+msgstr ""
+
+msgid "Bind conflict"
+msgstr ""
+
+msgid "This key combo is already in use."
 msgstr ""
 
 msgid "Send Control+Alt+Del"
