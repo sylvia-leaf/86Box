@@ -153,19 +153,6 @@ if(APPLE)
     target_link_libraries(PCBox Freetype::Freetype)
 endif()
 
-<<<<<<< HEAD
-find_package(SDL2 REQUIRED)
-include_directories(${SDL2_INCLUDE_DIRS})
-if(STATIC_BUILD AND TARGET SDL2::SDL2-static)
-    target_link_libraries(PCBox SDL2::SDL2-static)
-elseif(TARGET SDL2::SDL2)
-    target_link_libraries(PCBox SDL2::SDL2)
-else()
-    target_link_libraries(PCBox ${SDL2_LIBRARIES})
-endif()
-
-=======
->>>>>>> 0b9a028c58a9eacdccc429febecc44b09607fc83
 find_package(PNG REQUIRED)
 include_directories(${PNG_INCLUDE_DIRS})
 target_link_libraries(PCBox PNG::PNG)
