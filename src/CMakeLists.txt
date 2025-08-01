@@ -16,6 +16,10 @@
 #          Copyright 2024      Jasmine Iwanek.
 #
 
+if(NOT CMAKE_TOP_LEVEL_PROCESSED)
+    message(FATAL_ERROR "Incorrect source directory specified. Delete your build directory and retry with the top-level directory instead")
+endif()
+
 if(APPLE)
     set(CMAKE_INSTALL_RPATH_USE_LINK_PATH TRUE)
 endif()
@@ -149,6 +153,7 @@ if(APPLE)
     target_link_libraries(PCBox Freetype::Freetype)
 endif()
 
+<<<<<<< HEAD
 find_package(SDL2 REQUIRED)
 include_directories(${SDL2_INCLUDE_DIRS})
 if(STATIC_BUILD AND TARGET SDL2::SDL2-static)
@@ -159,6 +164,8 @@ else()
     target_link_libraries(PCBox ${SDL2_LIBRARIES})
 endif()
 
+=======
+>>>>>>> 0b9a028c58a9eacdccc429febecc44b09607fc83
 find_package(PNG REQUIRED)
 include_directories(${PNG_INCLUDE_DIRS})
 target_link_libraries(PCBox PNG::PNG)
