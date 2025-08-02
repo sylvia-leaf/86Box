@@ -103,6 +103,8 @@ uint32_t abrt_error;
 #ifdef USE_DYNAREC
 const OpFn *x86_dynarec_opcodes;
 const OpFn *x86_dynarec_opcodes_0f;
+const OpFn *x86_dynarec_opcodes_0f_38;
+const OpFn *x86_dynarec_opcodes_0f_3a;
 const OpFn *x86_dynarec_opcodes_d8_a16;
 const OpFn *x86_dynarec_opcodes_d8_a32;
 const OpFn *x86_dynarec_opcodes_d9_a16;
@@ -128,6 +130,8 @@ const OpFn *x86_dynarec_opcodes_3DNOW;
 
 const OpFn *x86_opcodes;
 const OpFn *x86_opcodes_0f;
+const OpFn *x86_opcodes_0f_38;
+const OpFn *x86_opcodes_0f_3a;
 const OpFn *x86_opcodes_d8_a16;
 const OpFn *x86_opcodes_d8_a32;
 const OpFn *x86_opcodes_d9_a16;
