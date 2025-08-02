@@ -52,7 +52,7 @@ opPSHUFB_xmm_a32(uint32_t fetchdat)
 static int
 opPSHUFB_mm_a16(uint32_t fetchdat)
 {
-    if(sse_xmm) return opPSHUFB_xmm_a16(fetchdat);
+    if(cpu_state.sse_xmm) return opPSHUFB_xmm_a16(fetchdat);
     MMX_ENTER();
     MMX_REG src, *dst, tmp;
 
@@ -61,7 +61,7 @@ opPSHUFB_mm_a16(uint32_t fetchdat)
 
     dst = MMX_GETREGP(cpu_reg);
 
-    tmp = dst;
+    tmp = *dst;
 
     for(int i = 0; i < 8; i++)
     {
@@ -80,7 +80,7 @@ opPSHUFB_mm_a16(uint32_t fetchdat)
 static int
 opPSHUFB_mm_a32(uint32_t fetchdat)
 {
-    if(sse_xmm) return opPSHUFB_xmm_a32(fetchdat);
+    if(cpu_state.sse_xmm) return opPSHUFB_xmm_a32(fetchdat);
     MMX_ENTER();
     MMX_REG src, *dst, tmp;
 
@@ -89,7 +89,7 @@ opPSHUFB_mm_a32(uint32_t fetchdat)
 
     dst = MMX_GETREGP(cpu_reg);
 
-    tmp = dst;
+    tmp = *dst;
 
     for(int i = 0; i < 8; i++)
     {
