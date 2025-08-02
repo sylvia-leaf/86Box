@@ -10,7 +10,7 @@ opPSHUFB_xmm_a16(uint32_t fetchdat)
 
     tmp = cpu_state.XMM[cpu_reg];
 
-    for(int i = 0; i < 8; i++)
+    for(int i = 0; i < 16; i++)
     {
         if(src.b[i] & 0x80)
         {
@@ -35,7 +35,7 @@ opPSHUFB_xmm_a32(uint32_t fetchdat)
 
     tmp = cpu_state.XMM[cpu_reg];
 
-    for(int i = 0; i < 8; i++)
+    for(int i = 0; i < 16; i++)
     {
         if(src.b[i] & 0x80)
         {

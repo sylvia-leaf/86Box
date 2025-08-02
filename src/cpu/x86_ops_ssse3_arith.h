@@ -590,3 +590,225 @@ opPHSUBSW_mm_a32(uint32_t fetchdat)
     dst->q = tmp.q;
     return 0;
 }
+
+static int
+opPSIGNB_xmm_a16(uint32_t fetchdat)
+{
+    SSE_ENTER();
+    SSE_REG src;
+
+    fetch_ea_16(fetchdat);
+    SSE_GETSRC();
+
+    for(int i = 0; i < 16; i++)
+    {
+        int sign = (src.sb[i] > 0) - (src.sb[i] < 0);
+        cpu_state.XMM[cpu_reg].sb[i] *= sign;
+    }
+    return 0;
+}
+
+static int
+opPSIGNB_xmm_a32(uint32_t fetchdat)
+{
+    SSE_ENTER();
+    SSE_REG src;
+
+    fetch_ea_32(fetchdat);
+    SSE_GETSRC();
+
+    for(int i = 0; i < 16; i++)
+    {
+        int sign = (src.sb[i] > 0) - (src.sb[i] < 0);
+        cpu_state.XMM[cpu_reg].sb[i] *= sign;
+    }
+    return 0;
+}
+
+static int
+opPSIGNB_mm_a16(uint32_t fetchdat)
+{
+    if(cpu_state.sse_xmm) return opPSIGNB_xmm_a16(fetchdat);
+    MMX_ENTER();
+    MMX_REG src, *dst;
+
+    fetch_ea_16(fetchdat);
+    MMX_GETSRC();
+
+    dst = MMX_GETREGP(cpu_reg);
+
+    for(int i = 0; i < 8; i++)
+    {
+        int sign = (src.sb[i] > 0) - (src.sb[i] < 0);
+        dst->sb[i] *= sign;
+    }
+    return 0;
+}
+
+static int
+opPSIGNB_mm_a32(uint32_t fetchdat)
+{
+    if(cpu_state.sse_xmm) return opPSIGNB_xmm_a32(fetchdat);
+    MMX_ENTER();
+    MMX_REG src, *dst;
+
+    fetch_ea_32(fetchdat);
+    MMX_GETSRC();
+
+    dst = MMX_GETREGP(cpu_reg);
+
+    for(int i = 0; i < 8; i++)
+    {
+        int sign = (src.sb[i] > 0) - (src.sb[i] < 0);
+        dst->sb[i] *= sign;
+    }
+    return 0;
+}
+
+static int
+opPSIGNW_xmm_a16(uint32_t fetchdat)
+{
+    SSE_ENTER();
+    SSE_REG src;
+
+    fetch_ea_16(fetchdat);
+    SSE_GETSRC();
+
+    for(int i = 0; i < 8; i++)
+    {
+        int sign = (src.sw[i] > 0) - (src.sw[i] < 0);
+        cpu_state.XMM[cpu_reg].sw[i] *= sign;
+    }
+    return 0;
+}
+
+static int
+opPSIGNW_xmm_a32(uint32_t fetchdat)
+{
+    SSE_ENTER();
+    SSE_REG src;
+
+    fetch_ea_32(fetchdat);
+    SSE_GETSRC();
+
+    for(int i = 0; i < 8; i++)
+    {
+        int sign = (src.sw[i] > 0) - (src.sw[i] < 0);
+        cpu_state.XMM[cpu_reg].sw[i] *= sign;
+    }
+    return 0;
+}
+
+static int
+opPSIGNW_mm_a16(uint32_t fetchdat)
+{
+    if(cpu_state.sse_xmm) return opPSIGNW_xmm_a16(fetchdat);
+    MMX_ENTER();
+    MMX_REG src, *dst;
+
+    fetch_ea_16(fetchdat);
+    MMX_GETSRC();
+
+    dst = MMX_GETREGP(cpu_reg);
+
+    for(int i = 0; i < 4; i++)
+    {
+        int sign = (src.sw[i] > 0) - (src.sw[i] < 0);
+        dst->sw[i] *= sign;
+    }
+    return 0;
+}
+
+static int
+opPSIGNW_mm_a32(uint32_t fetchdat)
+{
+    if(cpu_state.sse_xmm) return opPSIGNW_xmm_a32(fetchdat);
+    MMX_ENTER();
+    MMX_REG src, *dst;
+
+    fetch_ea_32(fetchdat);
+    MMX_GETSRC();
+
+    dst = MMX_GETREGP(cpu_reg);
+
+    for(int i = 0; i < 4; i++)
+    {
+        int sign = (src.sw[i] > 0) - (src.sw[i] < 0);
+        dst->sw[i] *= sign;
+    }
+    return 0;
+}
+
+static int
+opPSIGND_xmm_a16(uint32_t fetchdat)
+{
+    SSE_ENTER();
+    SSE_REG src;
+
+    fetch_ea_16(fetchdat);
+    SSE_GETSRC();
+
+    for(int i = 0; i < 4; i++)
+    {
+        int sign = (src.sl[i] > 0) - (src.sl[i] < 0);
+        cpu_state.XMM[cpu_reg].sl[i] *= sign;
+    }
+    return 0;
+}
+
+static int
+opPSIGND_xmm_a32(uint32_t fetchdat)
+{
+    SSE_ENTER();
+    SSE_REG src;
+
+    fetch_ea_32(fetchdat);
+    SSE_GETSRC();
+
+    for(int i = 0; i < 4; i++)
+    {
+        int sign = (src.sl[i] > 0) - (src.sl[i] < 0);
+        cpu_state.XMM[cpu_reg].sl[i] *= sign;
+    }
+    return 0;
+}
+
+static int
+opPSIGND_mm_a16(uint32_t fetchdat)
+{
+    if(cpu_state.sse_xmm) return opPSIGND_xmm_a16(fetchdat);
+    MMX_ENTER();
+    MMX_REG src, *dst;
+
+    fetch_ea_16(fetchdat);
+    MMX_GETSRC();
+
+    dst = MMX_GETREGP(cpu_reg);
+
+    for(int i = 0; i < 2; i++)
+    {
+        int sign = (src.sl[i] > 0) - (src.sl[i] < 0);
+        dst->sl[i] *= sign;
+    }
+    return 0;
+}
+
+static int
+opPSIGND_mm_a32(uint32_t fetchdat)
+{
+    if(cpu_state.sse_xmm) return opPSIGND_xmm_a32(fetchdat);
+    MMX_ENTER();
+    MMX_REG src, *dst;
+
+    fetch_ea_32(fetchdat);
+    MMX_GETSRC();
+
+    dst = MMX_GETREGP(cpu_reg);
+
+    for(int i = 0; i < 2; i++)
+    {
+        int sign = (src.sl[i] > 0) - (src.sl[i] < 0);
+        dst->sl[i] *= sign;
+    }
+    return 0;
+}
