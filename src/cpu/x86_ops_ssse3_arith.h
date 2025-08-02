@@ -812,3 +812,91 @@ opPSIGND_mm_a32(uint32_t fetchdat)
     }
     return 0;
 }
+
+static int
+opPMULHRSW_xmm_a16(uint32_t fetchdat)
+{
+    SSE_ENTER();
+    SSE_REG src, tmp;
+
+    fetch_ea_16(fetchdat);
+    SSE_GETSRC();
+
+    tmp.w[0] = ((((int32_t)cpu_state.XMM[cpu_reg].sw[0] * (int32_t)src.sw[0]) >> 14) + 1) >> 1;
+    tmp.w[1] = ((((int32_t)cpu_state.XMM[cpu_reg].sw[1] * (int32_t)src.sw[1]) >> 14) + 1) >> 1;
+    tmp.w[2] = ((((int32_t)cpu_state.XMM[cpu_reg].sw[2] * (int32_t)src.sw[2]) >> 14) + 1) >> 1;
+    tmp.w[3] = ((((int32_t)cpu_state.XMM[cpu_reg].sw[3] * (int32_t)src.sw[3]) >> 14) + 1) >> 1;
+    tmp.w[4] = ((((int32_t)cpu_state.XMM[cpu_reg].sw[4] * (int32_t)src.sw[4]) >> 14) + 1) >> 1;
+    tmp.w[5] = ((((int32_t)cpu_state.XMM[cpu_reg].sw[5] * (int32_t)src.sw[5]) >> 14) + 1) >> 1;
+    tmp.w[6] = ((((int32_t)cpu_state.XMM[cpu_reg].sw[6] * (int32_t)src.sw[6]) >> 14) + 1) >> 1;
+    tmp.w[7] = ((((int32_t)cpu_state.XMM[cpu_reg].sw[7] * (int32_t)src.sw[7]) >> 14) + 1) >> 1;
+
+    cpu_state.XMM[cpu_reg].q[0] = tmp.q[0];
+    cpu_state.XMM[cpu_reg].q[1] = tmp.q[1];
+    return 0;
+}
+
+static int
+opPMULHRSW_xmm_a32(uint32_t fetchdat)
+{
+    SSE_ENTER();
+    SSE_REG src, tmp;
+
+    fetch_ea_32(fetchdat);
+    SSE_GETSRC();
+
+    tmp.w[0] = ((((int32_t)cpu_state.XMM[cpu_reg].sw[0] * (int32_t)src.sw[0]) >> 14) + 1) >> 1;
+    tmp.w[1] = ((((int32_t)cpu_state.XMM[cpu_reg].sw[1] * (int32_t)src.sw[1]) >> 14) + 1) >> 1;
+    tmp.w[2] = ((((int32_t)cpu_state.XMM[cpu_reg].sw[2] * (int32_t)src.sw[2]) >> 14) + 1) >> 1;
+    tmp.w[3] = ((((int32_t)cpu_state.XMM[cpu_reg].sw[3] * (int32_t)src.sw[3]) >> 14) + 1) >> 1;
+    tmp.w[4] = ((((int32_t)cpu_state.XMM[cpu_reg].sw[4] * (int32_t)src.sw[4]) >> 14) + 1) >> 1;
+    tmp.w[5] = ((((int32_t)cpu_state.XMM[cpu_reg].sw[5] * (int32_t)src.sw[5]) >> 14) + 1) >> 1;
+    tmp.w[6] = ((((int32_t)cpu_state.XMM[cpu_reg].sw[6] * (int32_t)src.sw[6]) >> 14) + 1) >> 1;
+    tmp.w[7] = ((((int32_t)cpu_state.XMM[cpu_reg].sw[7] * (int32_t)src.sw[7]) >> 14) + 1) >> 1;
+
+    cpu_state.XMM[cpu_reg].q[0] = tmp.q[0];
+    cpu_state.XMM[cpu_reg].q[1] = tmp.q[1];
+    return 0;
+}
+
+static int
+opPMULHRSW_mm_a16(uint32_t fetchdat)
+{
+    if(cpu_state.sse_xmm) return opPMULHRSW_xmm_a16(fetchdat);
+    MMX_ENTER();
+    MMX_REG src, *dst, tmp;
+
+    fetch_ea_16(fetchdat);
+    MMX_GETSRC();
+
+    dst = MMX_GETREGP(cpu_reg);
+
+    tmp.w[0] = ((((int32_t)dst->sw[0] * (int32_t)src.sw[0]) >> 14) + 1) >> 1;
+    tmp.w[1] = ((((int32_t)dst->sw[1] * (int32_t)src.sw[1]) >> 14) + 1) >> 1;
+    tmp.w[2] = ((((int32_t)dst->sw[2] * (int32_t)src.sw[2]) >> 14) + 1) >> 1;
+    tmp.w[3] = ((((int32_t)dst->sw[3] * (int32_t)src.sw[3]) >> 14) + 1) >> 1;
+
+    dst->q = tmp.q;
+    return 0;
+}
+
+static int
+opPMULHRSW_mm_a32(uint32_t fetchdat)
+{
+    if(cpu_state.sse_xmm) return opPMULHRSW_xmm_a32(fetchdat);
+    MMX_ENTER();
+    MMX_REG src, *dst, tmp;
+
+    fetch_ea_32(fetchdat);
+    MMX_GETSRC();
+
+    dst = MMX_GETREGP(cpu_reg);
+
+    tmp.w[0] = ((((int32_t)dst->sw[0] * (int32_t)src.sw[0]) >> 14) + 1) >> 1;
+    tmp.w[1] = ((((int32_t)dst->sw[1] * (int32_t)src.sw[1]) >> 14) + 1) >> 1;
+    tmp.w[2] = ((((int32_t)dst->sw[2] * (int32_t)src.sw[2]) >> 14) + 1) >> 1;
+    tmp.w[3] = ((((int32_t)dst->sw[3] * (int32_t)src.sw[3]) >> 14) + 1) >> 1;
+
+    dst->q = tmp.q;
+    return 0;
+}
