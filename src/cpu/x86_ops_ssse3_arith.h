@@ -900,3 +900,213 @@ opPMULHRSW_mm_a32(uint32_t fetchdat)
     dst->q = tmp.q;
     return 0;
 }
+
+static int
+opPABSB_xmm_a16(uint32_t fetchdat)
+{
+    SSE_ENTER();
+    SSE_REG src;
+
+    fetch_ea_16(fetchdat);
+    SSE_GETSRC();
+
+    for(int i = 0; i < 16; i++)
+    {
+        if(src.sb[i] < 0) cpu_state.XMM[cpu_reg].b[i] = -src.sb[i];
+    }
+    return 0;
+}
+
+static int
+opPABSB_xmm_a32(uint32_t fetchdat)
+{
+    SSE_ENTER();
+    SSE_REG src;
+
+    fetch_ea_32(fetchdat);
+    SSE_GETSRC();
+
+    for(int i = 0; i < 16; i++)
+    {
+        if(src.sb[i] < 0) cpu_state.XMM[cpu_reg].b[i] = -src.sb[i];
+    }
+    return 0;
+}
+
+static int
+opPABSB_mm_a16(uint32_t fetchdat)
+{
+    if(cpu_state.sse_xmm) return opPABSB_xmm_a16(fetchdat);
+    MMX_ENTER();
+    MMX_REG src, *dst;
+
+    fetch_ea_16(fetchdat);
+    MMX_GETSRC();
+
+    dst = MMX_GETREGP(cpu_reg);
+
+    for(int i = 0; i < 8; i++)
+    {
+        if(src.sb[i] < 0) dst->b[i] = -src.sb[i];
+    }
+    return 0;
+}
+
+static int
+opPABSB_mm_a32(uint32_t fetchdat)
+{
+    if(cpu_state.sse_xmm) return opPABSB_xmm_a32(fetchdat);
+    MMX_ENTER();
+    MMX_REG src, *dst;
+
+    fetch_ea_32(fetchdat);
+    MMX_GETSRC();
+
+    dst = MMX_GETREGP(cpu_reg);
+
+    for(int i = 0; i < 8; i++)
+    {
+        if(src.sb[i] < 0) dst->b[i] = -src.sb[i];
+    }
+    return 0;
+}
+
+static int
+opPABSW_xmm_a16(uint32_t fetchdat)
+{
+    SSE_ENTER();
+    SSE_REG src;
+
+    fetch_ea_16(fetchdat);
+    SSE_GETSRC();
+
+    for(int i = 0; i < 8; i++)
+    {
+        if(src.sw[i] < 0) cpu_state.XMM[cpu_reg].w[i] = -src.sw[i];
+    }
+    return 0;
+}
+
+static int
+opPABSW_xmm_a32(uint32_t fetchdat)
+{
+    SSE_ENTER();
+    SSE_REG src;
+
+    fetch_ea_32(fetchdat);
+    SSE_GETSRC();
+
+    for(int i = 0; i < 8; i++)
+    {
+        if(src.sw[i] < 0) cpu_state.XMM[cpu_reg].w[i] = -src.sw[i];
+    }
+    return 0;
+}
+
+static int
+opPABSW_mm_a16(uint32_t fetchdat)
+{
+    if(cpu_state.sse_xmm) return opPABSW_xmm_a16(fetchdat);
+    MMX_ENTER();
+    MMX_REG src, *dst;
+
+    fetch_ea_16(fetchdat);
+    MMX_GETSRC();
+
+    dst = MMX_GETREGP(cpu_reg);
+
+    for(int i = 0; i < 4; i++)
+    {
+        if(src.sw[i] < 0) dst->w[i] = -src.sw[i];
+    }
+    return 0;
+}
+
+static int
+opPABSW_mm_a32(uint32_t fetchdat)
+{
+    if(cpu_state.sse_xmm) return opPABSW_xmm_a32(fetchdat);
+    MMX_ENTER();
+    MMX_REG src, *dst;
+
+    fetch_ea_32(fetchdat);
+    MMX_GETSRC();
+
+    dst = MMX_GETREGP(cpu_reg);
+
+    for(int i = 0; i < 4; i++)
+    {
+        if(src.sw[i] < 0) dst->w[i] = -src.sw[i];
+    }
+    return 0;
+}
+
+static int
+opPABSD_xmm_a16(uint32_t fetchdat)
+{
+    SSE_ENTER();
+    SSE_REG src;
+
+    fetch_ea_16(fetchdat);
+    SSE_GETSRC();
+
+    for(int i = 0; i < 4; i++)
+    {
+        if(src.sl[i] < 0) cpu_state.XMM[cpu_reg].l[i] = -src.sl[i];
+    }
+    return 0;
+}
+
+static int
+opPABSD_xmm_a32(uint32_t fetchdat)
+{
+    SSE_ENTER();
+    SSE_REG src;
+
+    fetch_ea_32(fetchdat);
+    SSE_GETSRC();
+
+    for(int i = 0; i < 4; i++)
+    {
+        if(src.sl[i] < 0) cpu_state.XMM[cpu_reg].l[i] = -src.sl[i];
+    }
+    return 0;
+}
+
+static int
+opPABSD_mm_a16(uint32_t fetchdat)
+{
+    if(cpu_state.sse_xmm) return opPABSD_xmm_a16(fetchdat);
+    MMX_ENTER();
+    MMX_REG src, *dst;
+
+    fetch_ea_16(fetchdat);
+    MMX_GETSRC();
+
+    dst = MMX_GETREGP(cpu_reg);
+
+    for(int i = 0; i < 2; i++)
+    {
+        if(src.sl[i] < 0) dst->l[i] = -src.sl[i];
+    }
+    return 0;
+}
+
+static int
+opPABSD_mm_a32(uint32_t fetchdat)
+{
+    if(cpu_state.sse_xmm) return opPABSD_xmm_a32(fetchdat);
+    MMX_ENTER();
+    MMX_REG src, *dst;
+
+    fetch_ea_32(fetchdat);
+    MMX_GETSRC();
+
+    dst = MMX_GETREGP(cpu_reg);
+
+    for(int i = 0; i < 2; i++)
+    {
+        if(src.sl[i] < 0) dst->l[i] = -src.sl[i];
+    }
+    return 0;
+}
