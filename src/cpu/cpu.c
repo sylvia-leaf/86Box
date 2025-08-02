@@ -630,6 +630,8 @@ cpu_set(void)
     x86_opcodes_REPE_0f    = NULL;
     x86_opcodes_REPNE      = ops_REPNE;
     x86_opcodes_REPNE_0f   = NULL;
+    x86_opcodes_0f_38      = NULL;
+    x86_opcodes_0f_3a      = NULL;
     x86_2386_opcodes_REPE  = ops_2386_REPE;
     x86_2386_opcodes_REPNE = ops_2386_REPNE;
     x86_opcodes_3DNOW      = ops_3DNOW;
@@ -638,6 +640,8 @@ cpu_set(void)
     x86_dynarec_opcodes_REPE_0f  = NULL;
     x86_dynarec_opcodes_REPNE = dynarec_ops_REPNE;
     x86_dynarec_opcodes_REPNE_0f  = NULL;
+    x86_dynarec_opcodes_0f_38 = NULL;
+    x86_dynarec_opcodes_0f_3a = NULL;
     x86_dynarec_opcodes_3DNOW = dynarec_ops_3DNOW;
 #endif /* USE_DYNAREC */
 
@@ -1909,11 +1913,15 @@ cpu_set(void)
             }
             x86_dynarec_opcodes_REPE_0f = dynarec_ops_genericintel_REPE_0f;
             x86_dynarec_opcodes_REPNE_0f = dynarec_ops_genericintel_REPNE_0f;
+            x86_dynarec_opcodes_0f_38 = dynarec_ops_genericintel_0f_38;
+            x86_dynarec_opcodes_0f_3a = dynarec_ops_genericintel_0f_3a;
 #else
             x86_setopcodes(ops_386, ops_genericintel_0f);
 #endif
             x86_opcodes_REPE_0f = ops_genericintel_REPE_0f;
             x86_opcodes_REPNE_0f = ops_genericintel_REPNE_0f;
+            x86_opcodes_0f_38 = ops_genericintel_0f_38;
+            x86_opcodes_0f_3a = ops_genericintel_0f_3a;
             if (fpu_softfloat) {
                 x86_opcodes_da_a16 = ops_sf_fpu_686_da_a16;
                 x86_opcodes_da_a32 = ops_sf_fpu_686_da_a32;
