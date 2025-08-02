@@ -146,8 +146,8 @@ opPALIGNR_xmm_a16(uint32_t fetchdat)
     }
     else
     {
-        rmp.q[0] = 0;
-        rmp.q[1] = 0;
+        tmp.q[0] = 0;
+        tmp.q[1] = 0;
     }
 
     cpu_state.XMM[cpu_reg].q[0] = tmp.q[0];
@@ -197,8 +197,8 @@ opPALIGNR_xmm_a32(uint32_t fetchdat)
     }
     else
     {
-        rmp.q[0] = 0;
-        rmp.q[1] = 0;
+        tmp.q[0] = 0;
+        tmp.q[1] = 0;
     }
 
     cpu_state.XMM[cpu_reg].q[0] = tmp.q[0];
@@ -223,7 +223,7 @@ opPALIGNR_mm_a16(uint32_t fetchdat)
     int shift = getbyte() << 3;
 
     if(shift == 0) dst->q = src.q;
-    else if(shift < 64) dst->q = (src.q >> shift) | (dst.q << (64 - shift));
+    else if(shift < 64) dst->q = (src.q >> shift) | (dst->q << (64 - shift));
     else if(shift < 128) dst->q = dst->q >> (shift - 64);
     else dst->q = 0;
 
@@ -245,7 +245,7 @@ opPALIGNR_mm_a32(uint32_t fetchdat)
     int shift = getbyte() << 3;
 
     if(shift == 0) dst->q = src.q;
-    else if(shift < 64) dst->q = (src.q >> shift) | (dst.q << (64 - shift));
+    else if(shift < 64) dst->q = (src.q >> shift) | (dst->q << (64 - shift));
     else if(shift < 128) dst->q = dst->q >> (shift - 64);
     else dst->q = 0;
 
