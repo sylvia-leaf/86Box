@@ -50,6 +50,7 @@ extern void x86_setopcodes(const OpFn *opcodes, const OpFn *opcodes_0f,
 
 extern const OpFn *x86_dynarec_opcodes;
 extern const OpFn *x86_dynarec_opcodes_0f;
+extern const OpFn *x86_dynarec_opcodes_0f_38;
 extern const OpFn *x86_dynarec_opcodes_d8_a16;
 extern const OpFn *x86_dynarec_opcodes_d8_a32;
 extern const OpFn *x86_dynarec_opcodes_d9_a16;
@@ -68,8 +69,10 @@ extern const OpFn *x86_dynarec_opcodes_df_a16;
 extern const OpFn *x86_dynarec_opcodes_df_a32;
 extern const OpFn *x86_dynarec_opcodes_REPE;
 extern const OpFn *x86_dynarec_opcodes_REPE_0f;
+extern const OpFn *x86_dynarec_opcodes_REPE_0f_38;
 extern const OpFn *x86_dynarec_opcodes_REPNE;
 extern const OpFn *x86_dynarec_opcodes_REPNE_0f;
+extern const OpFn *x86_dynarec_opcodes_REPNE_0f_38;
 extern const OpFn *x86_dynarec_opcodes_3DNOW;
 
 extern const OpFn dynarec_ops_186[1024];
@@ -108,6 +111,10 @@ extern const OpFn dynarec_ops_pentium3_REPE_0f[1024];
 extern const OpFn dynarec_ops_genericintel_0f[1024];
 extern const OpFn dynarec_ops_genericintel_REPE_0f[1024];
 extern const OpFn dynarec_ops_genericintel_REPNE_0f[1024];
+
+extern const OpFn dynarec_ops_genericintel_0f_38[512];
+extern const OpFn dynarec_ops_genericintel_REPE_0f_38[512];
+extern const OpFn dynarec_ops_genericintel_REPNE_0f_38[512];
 
 extern const OpFn dynarec_ops_nehemiah_0f[1024];
 extern const OpFn dynarec_ops_nehemiah_REPE_0f[1024];
