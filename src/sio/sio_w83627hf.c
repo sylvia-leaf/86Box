@@ -138,6 +138,7 @@ typedef struct {
     fdc_t     *fdc_controller;
     port_92_t *port_92;
     serial_t  *uart[2];
+    lpt_t     *lpt;
 } w83627hf_t;
 
 /* These differ per board and must be programmed manually */
@@ -389,7 +390,7 @@ w83627hf_fdc_write(uint16_t cur_reg, uint8_t val, w83627hf_t *dev)
 static void
 w83627hf_lpt_write(uint16_t cur_reg, uint8_t val, w83627hf_t *dev)
 {
-    lpt1_remove();
+    lpt_port_remove(dev->lpt);
 
     switch (cur_reg) {
         case 0x30:
@@ -413,8 +414,8 @@ w83627hf_lpt_write(uint16_t cur_reg, uint8_t val, w83627hf_t *dev)
     }
 
     if (dev->dev_regs[1][0x30] & 1) {
-        lpt1_setup((dev->dev_regs[1][0x60] << 8) | (dev->dev_regs[1][0x61]));
-        lpt1_irq(dev->dev_regs[1][0x70]);
+        lpt_port_setup(dev->lpt, (dev->dev_regs[1][0x60] << 8) | (dev->dev_regs[1][0x61]));
+        lpt_port_irq(dev->lpt, dev->dev_regs[1][0x70]);
         w83627hf_log("W83627HF-LPT: BASE: %04x IRQ: %d\n", (dev->dev_regs[1][0x60] << 8) | (dev->dev_regs[1][0x61]), dev->dev_regs[1][0x70]);
     }
 }
@@ -957,6 +958,8 @@ w83627hf_init(const device_t *info)
 
     /* Port 92h */
     dev->port_92 = device_add(&port_92_device);
+
+    dev->lpt = device_add_inst(&lpt_port_device, 1);
 
     /* UART */
     dev->uart[0] = device_add_inst(&ns16550_device, 1);

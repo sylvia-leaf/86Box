@@ -26,6 +26,7 @@ extern const device_t ali5123_device;
 extern const device_t f82c606_device;
 
 extern const device_t f82c710_device;
+extern const device_t f82c710_pc5086_device;
 
 /* SM(S)C */
 extern const device_t fdc37c651_device;
@@ -64,7 +65,6 @@ extern const device_t fdc37c67x_device;
 extern const device_t fdc37c93x_device;
 
 extern const device_t fdc37m60x_device;
-extern const device_t fdc37m60x_370_device;
 
 /* ITE */
 extern const device_t it8661f_device;
