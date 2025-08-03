@@ -79,6 +79,7 @@ enum {
     CPUID_SSE2      = (1 << 26),
 
     CPUID_SSE3      = (1 << 0),
+    CPUID_SSSE3     = (1 << 9),
 
     CPUID_NX        = (1 << 20)  /* NX bit */
 };
@@ -103,6 +104,8 @@ uint32_t abrt_error;
 #ifdef USE_DYNAREC
 const OpFn *x86_dynarec_opcodes;
 const OpFn *x86_dynarec_opcodes_0f;
+const OpFn *x86_dynarec_opcodes_0f_38;
+const OpFn *x86_dynarec_opcodes_0f_3a;
 const OpFn *x86_dynarec_opcodes_d8_a16;
 const OpFn *x86_dynarec_opcodes_d8_a32;
 const OpFn *x86_dynarec_opcodes_d9_a16;
@@ -128,6 +131,8 @@ const OpFn *x86_dynarec_opcodes_3DNOW;
 
 const OpFn *x86_opcodes;
 const OpFn *x86_opcodes_0f;
+const OpFn *x86_opcodes_0f_38;
+const OpFn *x86_opcodes_0f_3a;
 const OpFn *x86_opcodes_d8_a16;
 const OpFn *x86_opcodes_d8_a32;
 const OpFn *x86_opcodes_d9_a16;
@@ -625,6 +630,8 @@ cpu_set(void)
     x86_opcodes_REPE_0f    = NULL;
     x86_opcodes_REPNE      = ops_REPNE;
     x86_opcodes_REPNE_0f   = NULL;
+    x86_opcodes_0f_38      = NULL;
+    x86_opcodes_0f_3a      = NULL;
     x86_2386_opcodes_REPE  = ops_2386_REPE;
     x86_2386_opcodes_REPNE = ops_2386_REPNE;
     x86_opcodes_3DNOW      = ops_3DNOW;
@@ -633,6 +640,8 @@ cpu_set(void)
     x86_dynarec_opcodes_REPE_0f  = NULL;
     x86_dynarec_opcodes_REPNE = dynarec_ops_REPNE;
     x86_dynarec_opcodes_REPNE_0f  = NULL;
+    x86_dynarec_opcodes_0f_38 = NULL;
+    x86_dynarec_opcodes_0f_3a = NULL;
     x86_dynarec_opcodes_3DNOW = dynarec_ops_3DNOW;
 #endif /* USE_DYNAREC */
 
@@ -1904,11 +1913,15 @@ cpu_set(void)
             }
             x86_dynarec_opcodes_REPE_0f = dynarec_ops_genericintel_REPE_0f;
             x86_dynarec_opcodes_REPNE_0f = dynarec_ops_genericintel_REPNE_0f;
+            x86_dynarec_opcodes_0f_38 = dynarec_ops_genericintel_0f_38;
+            x86_dynarec_opcodes_0f_3a = dynarec_ops_genericintel_0f_3a;
 #else
             x86_setopcodes(ops_386, ops_genericintel_0f);
 #endif
             x86_opcodes_REPE_0f = ops_genericintel_REPE_0f;
             x86_opcodes_REPNE_0f = ops_genericintel_REPNE_0f;
+            x86_opcodes_0f_38 = ops_genericintel_0f_38;
+            x86_opcodes_0f_3a = ops_genericintel_0f_3a;
             if (fpu_softfloat) {
                 x86_opcodes_da_a16 = ops_sf_fpu_686_da_a16;
                 x86_opcodes_da_a32 = ops_sf_fpu_686_da_a32;
@@ -2987,7 +3000,7 @@ cpu_CPUID(void)
             } else if (EAX == 1) {
                 EAX = CPUID;
                 EBX = (8 << 8) | (1 << 16);
-                ECX       = CPUID_SSE3;
+                ECX       = CPUID_SSE3 | CPUID_SSSE3;
                 EDX       = CPUID_FPU | CPUID_VME | CPUID_DE | CPUID_PSE | CPUID_TSC | CPUID_MSR | CPUID_PAE | CPUID_MCE | CPUID_CMPXCHG8B | CPUID_MMX | CPUID_MTRR | CPUID_PGE | CPUID_MCA | CPUID_SEP | CPUID_FXSR | CPUID_CMOV | CPUID_PSE36 | CPUID_SSE | CPUID_SSE2 | CPUID_CLFLUSH;
             } else if (EAX == 2) {
                 EAX = 0x00000001;
