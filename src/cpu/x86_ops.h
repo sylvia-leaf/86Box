@@ -111,8 +111,8 @@ extern const OpFn dynarec_ops_genericintel_0f[1024];
 extern const OpFn dynarec_ops_genericintel_REPE_0f[1024];
 extern const OpFn dynarec_ops_genericintel_REPNE_0f[1024];
 
-extern const OpFn dynarec_ops_genericintel_0f_38[512];
-extern const OpFn dynarec_ops_genericintel_0f_3a[512];
+extern const OpFn dynarec_ops_genericintel_0f_38[1024];
+extern const OpFn dynarec_ops_genericintel_0f_3a[1024];
 
 extern const OpFn dynarec_ops_nehemiah_0f[1024];
 extern const OpFn dynarec_ops_nehemiah_REPE_0f[1024];
@@ -282,8 +282,8 @@ extern const OpFn ops_genericintel_0f[1024];
 extern const OpFn ops_genericintel_REPE_0f[1024];
 extern const OpFn ops_genericintel_REPNE_0f[1024];
 
-extern const OpFn ops_genericintel_0f_38[512];
-extern const OpFn ops_genericintel_0f_3a[512];
+extern const OpFn ops_genericintel_0f_38[1024];
+extern const OpFn ops_genericintel_0f_3a[1024];
 
 extern const OpFn ops_nehemiah_0f[1024];
 extern const OpFn ops_nehemiah_REPE_0f[1024];
