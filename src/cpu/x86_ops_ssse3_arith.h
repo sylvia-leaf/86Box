@@ -704,7 +704,7 @@ opPSIGNW_xmm_a16(uint32_t fetchdat)
         {
             cpu_state.XMM[cpu_reg].sw[i] = 0;
         }
-        else if (src.sb[i] < 0)
+        else if (src.sw[i] < 0)
         {
             cpu_state.XMM[cpu_reg].sw[i] = -cpu_state.XMM[cpu_reg].sw[i];
         }
@@ -727,7 +727,7 @@ opPSIGNW_xmm_a32(uint32_t fetchdat)
         {
             cpu_state.XMM[cpu_reg].sw[i] = 0;
         }
-        else if (src.sb[i] < 0)
+        else if (src.sw[i] < 0)
         {
             cpu_state.XMM[cpu_reg].sw[i] = -cpu_state.XMM[cpu_reg].sw[i];
         }
@@ -753,7 +753,7 @@ opPSIGNW_mm_a16(uint32_t fetchdat)
         {
             dst->sw[i] = 0;
         }
-        else if (src.sb[i] < 0)
+        else if (src.sw[i] < 0)
         {
             dst->sw[i] = -dst->sw[i];
         }
@@ -779,7 +779,7 @@ opPSIGNW_mm_a32(uint32_t fetchdat)
         {
             dst->sw[i] = 0;
         }
-        else if (src.sb[i] < 0)
+        else if (src.sw[i] < 0)
         {
             dst->sw[i] = -dst->sw[i];
         }
