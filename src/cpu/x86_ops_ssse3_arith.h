@@ -913,6 +913,7 @@ opPABSB_xmm_a16(uint32_t fetchdat)
     for(int i = 0; i < 16; i++)
     {
         if(src.sb[i] < 0) cpu_state.XMM[cpu_reg].b[i] = -src.sb[i];
+        else cpu_state.XMM[cpu_reg].b[i] = src.sb[i];
     }
     return 0;
 }
@@ -929,6 +930,7 @@ opPABSB_xmm_a32(uint32_t fetchdat)
     for(int i = 0; i < 16; i++)
     {
         if(src.sb[i] < 0) cpu_state.XMM[cpu_reg].b[i] = -src.sb[i];
+        else cpu_state.XMM[cpu_reg].b[i] = src.sb[i];
     }
     return 0;
 }
@@ -948,6 +950,7 @@ opPABSB_mm_a16(uint32_t fetchdat)
     for(int i = 0; i < 8; i++)
     {
         if(src.sb[i] < 0) dst->b[i] = -src.sb[i];
+        else dst->b[i] = src.sb[i];
     }
     return 0;
 }
@@ -967,6 +970,7 @@ opPABSB_mm_a32(uint32_t fetchdat)
     for(int i = 0; i < 8; i++)
     {
         if(src.sb[i] < 0) dst->b[i] = -src.sb[i];
+        else dst->b[i] = src.sb[i];
     }
     return 0;
 }
@@ -983,6 +987,7 @@ opPABSW_xmm_a16(uint32_t fetchdat)
     for(int i = 0; i < 8; i++)
     {
         if(src.sw[i] < 0) cpu_state.XMM[cpu_reg].w[i] = -src.sw[i];
+        else cpu_state.XMM[cpu_reg].w[i] = src.sw[i];
     }
     return 0;
 }
@@ -999,6 +1004,7 @@ opPABSW_xmm_a32(uint32_t fetchdat)
     for(int i = 0; i < 8; i++)
     {
         if(src.sw[i] < 0) cpu_state.XMM[cpu_reg].w[i] = -src.sw[i];
+        else cpu_state.XMM[cpu_reg].w[i] = src.sw[i];
     }
     return 0;
 }
@@ -1018,6 +1024,7 @@ opPABSW_mm_a16(uint32_t fetchdat)
     for(int i = 0; i < 4; i++)
     {
         if(src.sw[i] < 0) dst->w[i] = -src.sw[i];
+        else dst->w[i] = src.sw[i];
     }
     return 0;
 }
@@ -1037,6 +1044,7 @@ opPABSW_mm_a32(uint32_t fetchdat)
     for(int i = 0; i < 4; i++)
     {
         if(src.sw[i] < 0) dst->w[i] = -src.sw[i];
+        else dst->w[i] = src.sw[i];
     }
     return 0;
 }
@@ -1053,6 +1061,7 @@ opPABSD_xmm_a16(uint32_t fetchdat)
     for(int i = 0; i < 4; i++)
     {
         if(src.sl[i] < 0) cpu_state.XMM[cpu_reg].l[i] = -src.sl[i];
+        else cpu_state.XMM[cpu_reg].l[i] = src.sl[i];
     }
     return 0;
 }
@@ -1069,6 +1078,7 @@ opPABSD_xmm_a32(uint32_t fetchdat)
     for(int i = 0; i < 4; i++)
     {
         if(src.sl[i] < 0) cpu_state.XMM[cpu_reg].l[i] = -src.sl[i];
+        else cpu_state.XMM[cpu_reg].l[i] = src.sl[i];
     }
     return 0;
 }
@@ -1088,6 +1098,7 @@ opPABSD_mm_a16(uint32_t fetchdat)
     for(int i = 0; i < 2; i++)
     {
         if(src.sl[i] < 0) dst->l[i] = -src.sl[i];
+        else dst->l[i] = src.sl[i];
     }
     return 0;
 }
@@ -1107,6 +1118,7 @@ opPABSD_mm_a32(uint32_t fetchdat)
     for(int i = 0; i < 2; i++)
     {
         if(src.sl[i] < 0) dst->l[i] = -src.sl[i];
+        else dst->l[i] = src.sl[i];
     }
     return 0;
 }
