@@ -109,49 +109,26 @@ static int
 opPALIGNR_xmm_a16(uint32_t fetchdat)
 {
     SSE_ENTER();
-    SSE_REG src, tmp;
+    SSE_REG src;
 
     fetch_ea_16(fetchdat);
     SSE_GETSRC();
 
-    int shift = getbyte() << 3;
+    int shift = getbyte();
 
-    if(shift == 0)
-    {
-        tmp.q[0] = src.q[0];
-        tmp.q[1] = src.q[1];
-    }
-    else if(shift < 64)
-    {
-        tmp.q[0] = (src.q[0] >> shift) | (src.q[1] << (64 - shift));
-        tmp.q[1] = (src.q[1] >> shift) | (cpu_state.XMM[cpu_reg].q[0] << (64 - shift));
-    }
-    else if(shift < 128)
-    {
-        shift -= 64;
-        tmp.q[0] = (src.q[1] >> shift) | (cpu_state.XMM[cpu_reg].q[0] << (64 - shift));
-        tmp.q[1] = (cpu_state.XMM[cpu_reg].q[0] >> shift) | (cpu_state.XMM[cpu_reg].q[1] << (64 - shift));
-    }
-    else if(shift < 192)
-    {
-        shift -= 128;
-        tmp.q[0] = (cpu_state.XMM[cpu_reg].q[0] >> shift) | (cpu_state.XMM[cpu_reg].q[1] << (64 - shift));
-        tmp.q[1] = (cpu_state.XMM[cpu_reg].q[1] >> shift);
-    }
-    else if(shift < 256)
-    {
-        shift -= 192;
-        tmp.q[0] = (cpu_state.XMM[cpu_reg].q[1] >> shift);
-        tmp.q[1] = 0;
-    }
-    else
-    {
-        tmp.q[0] = 0;
-        tmp.q[1] = 0;
-    }
+    uint8_t tmp[48];
 
-    cpu_state.XMM[cpu_reg].q[0] = tmp.q[0];
-    cpu_state.XMM[cpu_reg].q[1] = tmp.q[1];
+    memcpy(tmp, &src.q[0], 8);
+    memcpy(tmp + 8, &src.q[1], 8);
+
+    memcpy(tmp + 16, &cpu_state.XMM[cpu_reg].q[0], 8);
+    memcpy(tmp + 24, &cpu_state.XMM[cpu_reg].q[1], 8);
+    
+    memset(tmp + 32, 0, 16);
+
+    int shift2 = (shift > 32) ? 32 : shift;
+
+    memcpy(&cpu_state.XMM[cpu_reg], tmp + shift2, 16);
 
     return 0;
 }
@@ -160,49 +137,26 @@ static int
 opPALIGNR_xmm_a32(uint32_t fetchdat)
 {
     SSE_ENTER();
-    SSE_REG src, tmp;
+    SSE_REG src;
 
     fetch_ea_32(fetchdat);
     SSE_GETSRC();
 
-    int shift = getbyte() << 3;
+    int shift = getbyte();
 
-    if(shift == 0)
-    {
-        tmp.q[0] = src.q[0];
-        tmp.q[1] = src.q[1];
-    }
-    else if(shift < 64)
-    {
-        tmp.q[0] = (src.q[0] >> shift) | (src.q[1] << (64 - shift));
-        tmp.q[1] = (src.q[1] >> shift) | (cpu_state.XMM[cpu_reg].q[0] << (64 - shift));
-    }
-    else if(shift < 128)
-    {
-        shift -= 64;
-        tmp.q[0] = (src.q[1] >> shift) | (cpu_state.XMM[cpu_reg].q[0] << (64 - shift));
-        tmp.q[1] = (cpu_state.XMM[cpu_reg].q[0] >> shift) | (cpu_state.XMM[cpu_reg].q[1] << (64 - shift));
-    }
-    else if(shift < 192)
-    {
-        shift -= 128;
-        tmp.q[0] = (cpu_state.XMM[cpu_reg].q[0] >> shift) | (cpu_state.XMM[cpu_reg].q[1] << (64 - shift));
-        tmp.q[1] = (cpu_state.XMM[cpu_reg].q[1] >> shift);
-    }
-    else if(shift < 256)
-    {
-        shift -= 192;
-        tmp.q[0] = (cpu_state.XMM[cpu_reg].q[1] >> shift);
-        tmp.q[1] = 0;
-    }
-    else
-    {
-        tmp.q[0] = 0;
-        tmp.q[1] = 0;
-    }
+    uint8_t tmp[48];
 
-    cpu_state.XMM[cpu_reg].q[0] = tmp.q[0];
-    cpu_state.XMM[cpu_reg].q[1] = tmp.q[1];
+    memcpy(tmp, &src.q[0], 8);
+    memcpy(tmp + 8, &src.q[1], 8);
+
+    memcpy(tmp + 16, &cpu_state.XMM[cpu_reg].q[0], 8);
+    memcpy(tmp + 24, &cpu_state.XMM[cpu_reg].q[1], 8);
+    
+    memset(tmp + 32, 0, 16);
+
+    int shift2 = (shift > 32) ? 32 : shift;
+
+    memcpy(&cpu_state.XMM[cpu_reg], tmp + shift2, 16);
 
     return 0;
 }
