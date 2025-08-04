@@ -174,12 +174,17 @@ opPALIGNR_mm_a16(uint32_t fetchdat)
 
     dst = MMX_GETREGP(cpu_reg);
 
-    int shift = getbyte() << 3;
+    int shift = getbyte();
 
-    if(shift == 0) dst->q = src.q;
-    else if(shift < 64) dst->q = (src.q >> shift) | (dst->q << (64 - shift));
-    else if(shift < 128) dst->q = dst->q >> (shift - 64);
-    else dst->q = 0;
+    uint8_t tmp[24];
+
+    memcpy(tmp, &src.q, 8);
+    memcpy(tmp + 8, dst, 8);
+    memset(tmp + 16, 0, 8);
+
+    int shift2 = (shift > 16) ? 16 : shift;
+
+    memcpy(dst, tmp + shift2, 8);
 
     return 0;
 }
@@ -196,12 +201,16 @@ opPALIGNR_mm_a32(uint32_t fetchdat)
 
     dst = MMX_GETREGP(cpu_reg);
 
-    int shift = getbyte() << 3;
+    int shift = getbyte();
 
-    if(shift == 0) dst->q = src.q;
-    else if(shift < 64) dst->q = (src.q >> shift) | (dst->q << (64 - shift));
-    else if(shift < 128) dst->q = dst->q >> (shift - 64);
-    else dst->q = 0;
+    uint8_t tmp[24];
 
+    memcpy(tmp, &src.q, 8);
+    memcpy(tmp + 8, dst, 8);
+    memset(tmp + 16, 0, 8);
+
+    int shift2 = (shift > 16) ? 16 : shift;
+
+    memcpy(dst, tmp + shift2, 8);
     return 0;
 }
