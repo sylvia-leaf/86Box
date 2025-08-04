@@ -873,8 +873,14 @@ opPSIGND_mm_a32(uint32_t fetchdat)
 
     for(int i = 0; i < 2; i++)
     {
-        int sign = (src.sl[i] > 0) - (src.sl[i] < 0);
-        dst->sl[i] *= sign;
+        if(!src.sl[i])
+        {
+            dst->sl[i] = 0;
+        }
+        else if (src.sl[i] < 0)
+        {
+            dst->sl[i] = -src.sl[i];
+        }
     }
     return 0;
 }
