@@ -602,14 +602,8 @@ opPSIGNB_xmm_a16(uint32_t fetchdat)
 
     for(int i = 0; i < 16; i++)
     {
-        if(!src.sb[i])
-        {
-            cpu_state.XMM[cpu_reg].sb[i] = 0;
-        }
-        else if (src.sb[i] < 0)
-        {
-            cpu_state.XMM[cpu_reg].sb[i] = -src.sb[i];
-        }
+        int sign = (src.sb[i] > 0) - (src.sb[i] < 0);
+        cpu_state.XMM[cpu_reg].sb[i] *= sign;
     }
     return 0;
 }
@@ -625,14 +619,8 @@ opPSIGNB_xmm_a32(uint32_t fetchdat)
 
     for(int i = 0; i < 16; i++)
     {
-        if(!src.sb[i])
-        {
-            cpu_state.XMM[cpu_reg].sb[i] = 0;
-        }
-        else if (src.sb[i] < 0)
-        {
-            cpu_state.XMM[cpu_reg].sb[i] = -src.sb[i];
-        }
+        int sign = (src.sb[i] > 0) - (src.sb[i] < 0);
+        cpu_state.XMM[cpu_reg].sb[i] *= sign;
     }
     return 0;
 }
@@ -651,14 +639,8 @@ opPSIGNB_mm_a16(uint32_t fetchdat)
 
     for(int i = 0; i < 8; i++)
     {
-        if(!src.sb[i])
-        {
-            dst->sb[i] = 0;
-        }
-        else if (src.sb[i] < 0)
-        {
-            dst->b[i] = -src.sb[i];
-        }
+        int sign = (src.sb[i] > 0) - (src.sb[i] < 0);
+        dst->sb[i] *= sign;
     }
     return 0;
 }
@@ -677,14 +659,8 @@ opPSIGNB_mm_a32(uint32_t fetchdat)
 
     for(int i = 0; i < 8; i++)
     {
-        if(!src.sb[i])
-        {
-            dst->sb[i] = 0;
-        }
-        else if (src.sb[i] < 0)
-        {
-            dst->b[i] = -src.sb[i];
-        }
+        int sign = (src.sb[i] > 0) - (src.sb[i] < 0);
+        dst->sb[i] *= sign;
     }
     return 0;
 }
@@ -700,14 +676,8 @@ opPSIGNW_xmm_a16(uint32_t fetchdat)
 
     for(int i = 0; i < 8; i++)
     {
-        if(!src.sw[i])
-        {
-            cpu_state.XMM[cpu_reg].sw[i] = 0;
-        }
-        else if (src.sb[i] < 0)
-        {
-            cpu_state.XMM[cpu_reg].sw[i] = -src.sw[i];
-        }
+        int sign = (src.sw[i] > 0) - (src.sw[i] < 0);
+        cpu_state.XMM[cpu_reg].sw[i] *= sign;
     }
     return 0;
 }
@@ -723,14 +693,8 @@ opPSIGNW_xmm_a32(uint32_t fetchdat)
 
     for(int i = 0; i < 8; i++)
     {
-        if(!src.sw[i])
-        {
-            cpu_state.XMM[cpu_reg].sw[i] = 0;
-        }
-        else if (src.sb[i] < 0)
-        {
-            cpu_state.XMM[cpu_reg].sw[i] = -src.sw[i];
-        }
+        int sign = (src.sw[i] > 0) - (src.sw[i] < 0);
+        cpu_state.XMM[cpu_reg].sw[i] *= sign;
     }
     return 0;
 }
@@ -749,14 +713,8 @@ opPSIGNW_mm_a16(uint32_t fetchdat)
 
     for(int i = 0; i < 4; i++)
     {
-        if(!src.sw[i])
-        {
-            dst->sw[i] = 0;
-        }
-        else if (src.sb[i] < 0)
-        {
-            dst->sw[i] = -src.sw[i];
-        }
+        int sign = (src.sw[i] > 0) - (src.sw[i] < 0);
+        dst->sw[i] *= sign;
     }
     return 0;
 }
@@ -775,14 +733,8 @@ opPSIGNW_mm_a32(uint32_t fetchdat)
 
     for(int i = 0; i < 4; i++)
     {
-        if(!src.sw[i])
-        {
-            dst->sw[i] = 0;
-        }
-        else if (src.sb[i] < 0)
-        {
-            dst->sw[i] = -src.sw[i];
-        }
+        int sign = (src.sw[i] > 0) - (src.sw[i] < 0);
+        dst->sw[i] *= sign;
     }
     return 0;
 }
@@ -798,14 +750,8 @@ opPSIGND_xmm_a16(uint32_t fetchdat)
 
     for(int i = 0; i < 4; i++)
     {
-        if(!src.sl[i])
-        {
-            cpu_state.XMM[cpu_reg].sl[i] = 0;
-        }
-        else if (src.sl[i] < 0)
-        {
-            cpu_state.XMM[cpu_reg].sl[i] = -src.sl[i];
-        }
+        int sign = (src.sl[i] > 0) - (src.sl[i] < 0);
+        cpu_state.XMM[cpu_reg].sl[i] *= sign;
     }
     return 0;
 }
@@ -821,14 +767,8 @@ opPSIGND_xmm_a32(uint32_t fetchdat)
 
     for(int i = 0; i < 4; i++)
     {
-        if(!src.sl[i])
-        {
-            cpu_state.XMM[cpu_reg].sl[i] = 0;
-        }
-        else if (src.sl[i] < 0)
-        {
-            cpu_state.XMM[cpu_reg].sl[i] = -src.sl[i];
-        }
+        int sign = (src.sl[i] > 0) - (src.sl[i] < 0);
+        cpu_state.XMM[cpu_reg].sl[i] *= sign;
     }
     return 0;
 }
@@ -847,14 +787,8 @@ opPSIGND_mm_a16(uint32_t fetchdat)
 
     for(int i = 0; i < 2; i++)
     {
-        if(!src.sl[i])
-        {
-            dst->sl[i] = 0;
-        }
-        else if (src.sl[i] < 0)
-        {
-            dst->sl[i] = -src.sl[i];
-        }
+        int sign = (src.sl[i] > 0) - (src.sl[i] < 0);
+        dst->sl[i] *= sign;
     }
     return 0;
 }
