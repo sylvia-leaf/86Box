@@ -260,14 +260,14 @@ opPMADDUBSW_xmm_a16(uint32_t fetchdat)
     fetch_ea_16(fetchdat);
     SSE_GETSRC();
 
-    tmp.sw[0] = SSATW(((int32_t)src.sb[1] * (uint32_t)cpu_state.XMM[cpu_reg].b[1]) + ((int32_t)src.sb[0] * (uint32_t)cpu_state.XMM[cpu_reg].b[0]));
-    tmp.sw[1] = SSATW(((int32_t)src.sb[3] * (uint32_t)cpu_state.XMM[cpu_reg].b[3]) + ((int32_t)src.sb[2] * (uint32_t)cpu_state.XMM[cpu_reg].b[2]));
-    tmp.sw[2] = SSATW(((int32_t)src.sb[5] * (uint32_t)cpu_state.XMM[cpu_reg].b[5]) + ((int32_t)src.sb[4] * (uint32_t)cpu_state.XMM[cpu_reg].b[4]));
-    tmp.sw[3] = SSATW(((int32_t)src.sb[7] * (uint32_t)cpu_state.XMM[cpu_reg].b[7]) + ((int32_t)src.sb[6] * (uint32_t)cpu_state.XMM[cpu_reg].b[6]));
-    tmp.sw[4] = SSATW(((int32_t)src.sb[9] * (uint32_t)cpu_state.XMM[cpu_reg].b[9]) + ((int32_t)src.sb[8] * (uint32_t)cpu_state.XMM[cpu_reg].b[8]));
-    tmp.sw[5] = SSATW(((int32_t)src.sb[11] * (uint32_t)cpu_state.XMM[cpu_reg].b[11]) + ((int32_t)src.sb[10] * (uint32_t)cpu_state.XMM[cpu_reg].b[10]));
-    tmp.sw[6] = SSATW(((int32_t)src.sb[13] * (uint32_t)cpu_state.XMM[cpu_reg].b[13]) + ((int32_t)src.sb[12] * (uint32_t)cpu_state.XMM[cpu_reg].b[12]));
-    tmp.sw[7] = SSATW(((int32_t)src.sb[15] * (uint32_t)cpu_state.XMM[cpu_reg].b[15]) + ((int32_t)src.sb[14] * (uint32_t)cpu_state.XMM[cpu_reg].b[14]));
+    tmp.sw[0] = SSATW(((int32_t)src.sb[1] * (int32_t)(uint32_t)cpu_state.XMM[cpu_reg].b[1]) + ((int32_t)src.sb[0] * (int32_t)(uint32_t)cpu_state.XMM[cpu_reg].b[0]));
+    tmp.sw[1] = SSATW(((int32_t)src.sb[3] * (int32_t)(uint32_t)cpu_state.XMM[cpu_reg].b[3]) + ((int32_t)src.sb[2] * (int32_t)(uint32_t)cpu_state.XMM[cpu_reg].b[2]));
+    tmp.sw[2] = SSATW(((int32_t)src.sb[5] * (int32_t)(uint32_t)cpu_state.XMM[cpu_reg].b[5]) + ((int32_t)src.sb[4] * (int32_t)(uint32_t)cpu_state.XMM[cpu_reg].b[4]));
+    tmp.sw[3] = SSATW(((int32_t)src.sb[7] * (int32_t)(uint32_t)cpu_state.XMM[cpu_reg].b[7]) + ((int32_t)src.sb[6] * (int32_t)(uint32_t)cpu_state.XMM[cpu_reg].b[6]));
+    tmp.sw[4] = SSATW(((int32_t)src.sb[9] * (int32_t)(uint32_t)cpu_state.XMM[cpu_reg].b[9]) + ((int32_t)src.sb[8] * (int32_t)(uint32_t)cpu_state.XMM[cpu_reg].b[8]));
+    tmp.sw[5] = SSATW(((int32_t)src.sb[11] * (int32_t)(uint32_t)cpu_state.XMM[cpu_reg].b[11]) + ((int32_t)src.sb[10] * (int32_t)(uint32_t)cpu_state.XMM[cpu_reg].b[10]));
+    tmp.sw[6] = SSATW(((int32_t)src.sb[13] * (int32_t)(uint32_t)cpu_state.XMM[cpu_reg].b[13]) + ((int32_t)src.sb[12] * (int32_t)(uint32_t)cpu_state.XMM[cpu_reg].b[12]));
+    tmp.sw[7] = SSATW(((int32_t)src.sb[15] * (int32_t)(uint32_t)cpu_state.XMM[cpu_reg].b[15]) + ((int32_t)src.sb[14] * (int32_t)(uint32_t)cpu_state.XMM[cpu_reg].b[14]));
 
     cpu_state.XMM[cpu_reg].q[0] = tmp.q[0];
     cpu_state.XMM[cpu_reg].q[1] = tmp.q[1];
@@ -283,14 +283,14 @@ opPMADDUBSW_xmm_a32(uint32_t fetchdat)
     fetch_ea_32(fetchdat);
     SSE_GETSRC();
 
-    tmp.sw[0] = SSATW(((int32_t)src.sb[1] * (uint32_t)cpu_state.XMM[cpu_reg].b[1]) + ((int32_t)src.sb[0] * (uint32_t)cpu_state.XMM[cpu_reg].b[0]));
-    tmp.sw[1] = SSATW(((int32_t)src.sb[3] * (uint32_t)cpu_state.XMM[cpu_reg].b[3]) + ((int32_t)src.sb[2] * (uint32_t)cpu_state.XMM[cpu_reg].b[2]));
-    tmp.sw[2] = SSATW(((int32_t)src.sb[5] * (uint32_t)cpu_state.XMM[cpu_reg].b[5]) + ((int32_t)src.sb[4] * (uint32_t)cpu_state.XMM[cpu_reg].b[4]));
-    tmp.sw[3] = SSATW(((int32_t)src.sb[7] * (uint32_t)cpu_state.XMM[cpu_reg].b[7]) + ((int32_t)src.sb[6] * (uint32_t)cpu_state.XMM[cpu_reg].b[6]));
-    tmp.sw[4] = SSATW(((int32_t)src.sb[9] * (uint32_t)cpu_state.XMM[cpu_reg].b[9]) + ((int32_t)src.sb[8] * (uint32_t)cpu_state.XMM[cpu_reg].b[8]));
-    tmp.sw[5] = SSATW(((int32_t)src.sb[11] * (uint32_t)cpu_state.XMM[cpu_reg].b[11]) + ((int32_t)src.sb[10] * (uint32_t)cpu_state.XMM[cpu_reg].b[10]));
-    tmp.sw[6] = SSATW(((int32_t)src.sb[13] * (uint32_t)cpu_state.XMM[cpu_reg].b[13]) + ((int32_t)src.sb[12] * (uint32_t)cpu_state.XMM[cpu_reg].b[12]));
-    tmp.sw[7] = SSATW(((int32_t)src.sb[15] * (uint32_t)cpu_state.XMM[cpu_reg].b[15]) + ((int32_t)src.sb[14] * (uint32_t)cpu_state.XMM[cpu_reg].b[14]));
+    tmp.sw[0] = SSATW(((int32_t)src.sb[1] * (int32_t)(uint32_t)cpu_state.XMM[cpu_reg].b[1]) + ((int32_t)src.sb[0] * (int32_t)(uint32_t)cpu_state.XMM[cpu_reg].b[0]));
+    tmp.sw[1] = SSATW(((int32_t)src.sb[3] * (int32_t)(uint32_t)cpu_state.XMM[cpu_reg].b[3]) + ((int32_t)src.sb[2] * (int32_t)(uint32_t)cpu_state.XMM[cpu_reg].b[2]));
+    tmp.sw[2] = SSATW(((int32_t)src.sb[5] * (int32_t)(uint32_t)cpu_state.XMM[cpu_reg].b[5]) + ((int32_t)src.sb[4] * (int32_t)(uint32_t)cpu_state.XMM[cpu_reg].b[4]));
+    tmp.sw[3] = SSATW(((int32_t)src.sb[7] * (int32_t)(uint32_t)cpu_state.XMM[cpu_reg].b[7]) + ((int32_t)src.sb[6] * (int32_t)(uint32_t)cpu_state.XMM[cpu_reg].b[6]));
+    tmp.sw[4] = SSATW(((int32_t)src.sb[9] * (int32_t)(uint32_t)cpu_state.XMM[cpu_reg].b[9]) + ((int32_t)src.sb[8] * (int32_t)(uint32_t)cpu_state.XMM[cpu_reg].b[8]));
+    tmp.sw[5] = SSATW(((int32_t)src.sb[11] * (int32_t)(uint32_t)cpu_state.XMM[cpu_reg].b[11]) + ((int32_t)src.sb[10] * (int32_t)(uint32_t)cpu_state.XMM[cpu_reg].b[10]));
+    tmp.sw[6] = SSATW(((int32_t)src.sb[13] * (int32_t)(uint32_t)cpu_state.XMM[cpu_reg].b[13]) + ((int32_t)src.sb[12] * (int32_t)(uint32_t)cpu_state.XMM[cpu_reg].b[12]));
+    tmp.sw[7] = SSATW(((int32_t)src.sb[15] * (int32_t)(uint32_t)cpu_state.XMM[cpu_reg].b[15]) + ((int32_t)src.sb[14] * (int32_t)(uint32_t)cpu_state.XMM[cpu_reg].b[14]));
 
     cpu_state.XMM[cpu_reg].q[0] = tmp.q[0];
     cpu_state.XMM[cpu_reg].q[1] = tmp.q[1];
@@ -309,10 +309,10 @@ opPMADDUBSW_mm_a16(uint32_t fetchdat)
 
     dst = MMX_GETREGP(cpu_reg);
 
-    tmp.sw[0] = SSATW(((int32_t)src.sb[1] * (uint32_t)dst->b[1]) + ((int32_t)src.sb[0] * (uint32_t)dst->b[0]));
-    tmp.sw[1] = SSATW(((int32_t)src.sb[3] * (uint32_t)dst->b[3]) + ((int32_t)src.sb[2] * (uint32_t)dst->b[2]));
-    tmp.sw[2] = SSATW(((int32_t)src.sb[5] * (uint32_t)dst->b[5]) + ((int32_t)src.sb[4] * (uint32_t)dst->b[4]));
-    tmp.sw[3] = SSATW(((int32_t)src.sb[7] * (uint32_t)dst->b[7]) + ((int32_t)src.sb[6] * (uint32_t)dst->b[6]));
+    tmp.sw[0] = SSATW(((int32_t)src.sb[1] * (int32_t)(uint32_t)dst->b[1]) + ((int32_t)src.sb[0] * (int32_t)(uint32_t)dst->b[0]));
+    tmp.sw[1] = SSATW(((int32_t)src.sb[3] * (int32_t)(uint32_t)dst->b[3]) + ((int32_t)src.sb[2] * (int32_t)(uint32_t)dst->b[2]));
+    tmp.sw[2] = SSATW(((int32_t)src.sb[5] * (int32_t)(uint32_t)dst->b[5]) + ((int32_t)src.sb[4] * (int32_t)(uint32_t)dst->b[4]));
+    tmp.sw[3] = SSATW(((int32_t)src.sb[7] * (int32_t)(uint32_t)dst->b[7]) + ((int32_t)src.sb[6] * (int32_t)(uint32_t)dst->b[6]));
 
     dst->q = tmp.q;
     return 0;
@@ -330,10 +330,10 @@ opPMADDUBSW_mm_a32(uint32_t fetchdat)
 
     dst = MMX_GETREGP(cpu_reg);
 
-    tmp.sw[0] = SSATW(((int32_t)src.sb[1] * (uint32_t)dst->b[1]) + ((int32_t)src.sb[0] * (uint32_t)dst->b[0]));
-    tmp.sw[1] = SSATW(((int32_t)src.sb[3] * (uint32_t)dst->b[3]) + ((int32_t)src.sb[2] * (uint32_t)dst->b[2]));
-    tmp.sw[2] = SSATW(((int32_t)src.sb[5] * (uint32_t)dst->b[5]) + ((int32_t)src.sb[4] * (uint32_t)dst->b[4]));
-    tmp.sw[3] = SSATW(((int32_t)src.sb[7] * (uint32_t)dst->b[7]) + ((int32_t)src.sb[6] * (uint32_t)dst->b[6]));
+    tmp.sw[0] = SSATW(((int32_t)src.sb[1] * (int32_t)(uint32_t)dst->b[1]) + ((int32_t)src.sb[0] * (int32_t)(uint32_t)dst->b[0]));
+    tmp.sw[1] = SSATW(((int32_t)src.sb[3] * (int32_t)(uint32_t)dst->b[3]) + ((int32_t)src.sb[2] * (int32_t)(uint32_t)dst->b[2]));
+    tmp.sw[2] = SSATW(((int32_t)src.sb[5] * (int32_t)(uint32_t)dst->b[5]) + ((int32_t)src.sb[4] * (int32_t)(uint32_t)dst->b[4]));
+    tmp.sw[3] = SSATW(((int32_t)src.sb[7] * (int32_t)(uint32_t)dst->b[7]) + ((int32_t)src.sb[6] * (int32_t)(uint32_t)dst->b[6]));
 
     dst->q = tmp.q;
     return 0;
