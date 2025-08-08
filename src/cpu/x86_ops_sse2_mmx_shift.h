@@ -135,11 +135,24 @@ opPSxxQ_xmm_imm(uint32_t fetchdat)
             break;
         case 0x18: /*PSRLDQ*/
             {
-                uint8_t tmp[16];
-                if(shift > 16) shift = 16;
-                memcpy(tmp, &cpu_state.XMM[reg].b[shift], 16 - shift);
-                memset(tmp + (16 - shift), 0, shift);
-                memcpy(&cpu_state.XMM[reg], tmp, 16);
+                if(shift > 15)
+                {
+                    cpu_state.XMM[reg].q[0] = 0;
+                    cpu_state.XMM[reg].q[1] = 0;
+                    break;
+                }
+                else if(shift > 7)
+                {
+                    cpu_state.XMM[reg].q[0] = cpu_state.XMM[reg].q[1];
+                    cpu_state.XMM[reg].q[1] = 0;
+                    shift -= 8;
+                }
+                shift <<= 3;
+                if(shift != 0)
+                {
+                    cpu_state.XMM[reg].q[0] = (cpu_state.XMM[reg].q[0] >> shift) | (cpu_state.XMM[reg].q[1] << (64 - shift));
+                    cpu_state.XMM[reg].q[1] = cpu_state.XMM[reg].q[1] >> shift;
+                }
             }
             break;
         case 0x20: /*PSRAQ*/
@@ -159,11 +172,24 @@ opPSxxQ_xmm_imm(uint32_t fetchdat)
             break;
         case 0x38: /*PSLLDQ*/
             {
-                uint8_t tmp[16];
-                if(shift > 16) shift = 16;
-                for(int i = 0; i < shift; ++i) tmp[i] = 0;
-                for(int i = 0; i < 16 - shift; ++i) tmp[i + shift] = cpu_state.XMM[reg].b[i];
-                memcpy(&cpu_state.XMM[reg], tmp, 16);
+                if(shift > 15)
+                {
+                    cpu_state.XMM[reg].q[0] = 0;
+                    cpu_state.XMM[reg].q[1] = 0;
+                    break;
+                }
+                else if(shift > 7)
+                {
+                    cpu_state.XMM[reg].q[1] = cpu_state.XMM[reg].q[0];
+                    cpu_state.XMM[reg].q[0] = 0;
+                    shift -= 8;
+                }
+                shift <<= 3;
+                if(shift != 0)
+                {
+                    cpu_state.XMM[reg].q[1] = (cpu_state.XMM[reg].q[1] << shift) | (cpu_state.XMM[reg].q[0] >> (64 - shift));
+                    cpu_state.XMM[reg].q[0] = cpu_state.XMM[reg].q[0] << shift;
+                }
             }
             break;
         default:
