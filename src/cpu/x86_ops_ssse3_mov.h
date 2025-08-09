@@ -118,12 +118,8 @@ opPALIGNR_xmm_a16(uint32_t fetchdat)
 
     uint8_t tmp[48];
 
-    memcpy(tmp, &src.q[0], 8);
-    memcpy(tmp + 8, &src.q[1], 8);
-
-    memcpy(tmp + 16, &cpu_state.XMM[cpu_reg].q[0], 8);
-    memcpy(tmp + 24, &cpu_state.XMM[cpu_reg].q[1], 8);
-    
+    memcpy(tmp, &src, 16);
+    memcpy(tmp + 16, &cpu_state.XMM[cpu_reg], 16);
     memset(tmp + 32, 0, 16);
 
     int shift2 = (shift > 32) ? 32 : shift;
@@ -146,12 +142,8 @@ opPALIGNR_xmm_a32(uint32_t fetchdat)
 
     uint8_t tmp[48];
 
-    memcpy(tmp, &src.q[0], 8);
-    memcpy(tmp + 8, &src.q[1], 8);
-
-    memcpy(tmp + 16, &cpu_state.XMM[cpu_reg].q[0], 8);
-    memcpy(tmp + 24, &cpu_state.XMM[cpu_reg].q[1], 8);
-    
+    memcpy(tmp, &src, 16);
+    memcpy(tmp + 16, &cpu_state.XMM[cpu_reg], 16);
     memset(tmp + 32, 0, 16);
 
     int shift2 = (shift > 32) ? 32 : shift;
