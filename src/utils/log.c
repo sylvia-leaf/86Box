@@ -36,7 +36,7 @@
 #include <86box/log.h>
 
 typedef struct log_t {
-    char     buff[1024];
+    char     buff[LOG_SIZE_BUFFER];
     char     dev_name[1024];
     int      seen;
     int      suppr_seen;
@@ -106,7 +106,7 @@ void
 log_out(void *priv, const char *fmt, va_list ap)
 {
     log_t *log = (log_t *) priv;
-    char   temp[1024];
+    char   temp[LOG_SIZE_BUFFER];
 
     if (log == NULL)
         pclog("WARNING: Logging called with a NULL log pointer\n");
@@ -286,8 +286,8 @@ void
 log_fatal(void *priv, const char *fmt, ...)
 {
     log_t  *log = (log_t *) priv;
-    char    temp[1024];
-    char    fmt2[1024];
+    char    temp[LOG_SIZE_BUFFER];
+    char    fmt2[LOG_SIZE_BUFFER];
     va_list ap;
 
     if (log == NULL)
@@ -301,7 +301,7 @@ log_fatal(void *priv, const char *fmt, ...)
     }
 
     va_start(ap, fmt);
-    log_copy(log, fmt2, fmt, 1024);
+    log_copy(log, fmt2, fmt, LOG_SIZE_BUFFER);
     vsprintf(temp, fmt2, ap);
     fatal_ex(fmt2, ap);
     va_end(ap);
@@ -312,8 +312,8 @@ void
 log_warning(void *priv, const char *fmt, ...)
 {
     log_t  *log = (log_t *) priv;
-    char    temp[1024];
-    char    fmt2[1024];
+    char    temp[LOG_SIZE_BUFFER];
+    char    fmt2[LOG_SIZE_BUFFER];
     va_list ap;
 
     if (log == NULL)
@@ -327,7 +327,7 @@ log_warning(void *priv, const char *fmt, ...)
     }
 
     va_start(ap, fmt);
-    log_copy(log, fmt2, fmt, 1024);
+    log_copy(log, fmt2, fmt, LOG_SIZE_BUFFER);
     vsprintf(temp, fmt2, ap);
     warning_ex(fmt2, ap);
     va_end(ap);
