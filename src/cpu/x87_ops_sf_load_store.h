@@ -650,8 +650,8 @@ sf_FISTTPiw_a16(uint32_t fetchdat)
         if (!is_IA_masked())
             goto next_ins;
     } else {
-        status   = i387cw_to_softfloat_status_word(i387_get_control_word() | FPU_RC_CHOP);
-        save_reg = extF80_to_i16(FPU_read_regi(0), &status);
+        status   = i387cw_to_softfloat_status_word(i387_get_control_word());
+        save_reg = extF80_to_i16_round_to_zero(FPU_read_regi(0), &status);
         if (FPU_exception(fetchdat, status.softfloat_exceptionFlags, 1)) {
             goto next_ins;
         }
@@ -687,8 +687,8 @@ sf_FISTTPiw_a32(uint32_t fetchdat)
         if (!is_IA_masked())
             goto next_ins;
     } else {
-        status   = i387cw_to_softfloat_status_word(i387_get_control_word() | FPU_RC_CHOP);
-        save_reg = extF80_to_i16(FPU_read_regi(0), &status);
+        status   = i387cw_to_softfloat_status_word(i387_get_control_word());
+        save_reg = extF80_to_i16_round_to_zero(FPU_read_regi(0), &status);
         if (FPU_exception(fetchdat, status.softfloat_exceptionFlags, 1))
             goto next_ins;
     }
@@ -724,8 +724,8 @@ sf_FISTTPil_a16(uint32_t fetchdat)
         if (!is_IA_masked())
             goto next_ins;
     } else {
-        status   = i387cw_to_softfloat_status_word(i387_get_control_word() | FPU_RC_CHOP);
-        save_reg = extF80_to_i32(FPU_read_regi(0), softfloat_round_down, true, &status);
+        status   = i387cw_to_softfloat_status_word(i387_get_control_word());
+        save_reg = extF80_to_i32_round_to_zero(FPU_read_regi(0), softfloat_round_down, true, &status);
         if (FPU_exception(fetchdat, status.softfloat_exceptionFlags, 1)) {
             goto next_ins;
         }
@@ -761,8 +761,8 @@ sf_FISTTPil_a32(uint32_t fetchdat)
         if (!is_IA_masked())
             goto next_ins;
     } else {
-        status   = i387cw_to_softfloat_status_word(i387_get_control_word() | FPU_RC_CHOP);
-        save_reg = extF80_to_i32(FPU_read_regi(0), softfloat_round_down, true, &status);
+        status   = i387cw_to_softfloat_status_word(i387_get_control_word());
+        save_reg = extF80_to_i32_round_to_zero(FPU_read_regi(0), softfloat_round_down, true, &status);
         if (FPU_exception(fetchdat, status.softfloat_exceptionFlags, 1))
             goto next_ins;
     }
@@ -798,8 +798,8 @@ sf_FISTTPiq_a16(uint32_t fetchdat)
         if (!is_IA_masked())
             goto next_ins;
     } else {
-        status   = i387cw_to_softfloat_status_word(i387_get_control_word() | FPU_RC_CHOP);
-        save_reg = extF80_to_i64(FPU_read_regi(0),softfloat_round_down, true, &status);
+        status   = i387cw_to_softfloat_status_word(i387_get_control_word());
+        save_reg = extF80_to_i64_round_to_zero(FPU_read_regi(0),softfloat_round_down, true, &status);
         if (FPU_exception(fetchdat, status.softfloat_exceptionFlags, 1)) {
             goto next_ins;
         }
@@ -835,8 +835,8 @@ sf_FISTTPiq_a32(uint32_t fetchdat)
         if (!is_IA_masked())
             goto next_ins;
     } else {
-        status   = i387cw_to_softfloat_status_word(i387_get_control_word() | FPU_RC_CHOP);
-        save_reg = extF80_to_i64(FPU_read_regi(0), softfloat_round_down, true, &status);
+        status   = i387cw_to_softfloat_status_word(i387_get_control_word());
+        save_reg = extF80_to_i64_round_to_zero(FPU_read_regi(0), softfloat_round_down, true, &status);
         if (FPU_exception(fetchdat, status.softfloat_exceptionFlags, 1))
             goto next_ins;
     }
