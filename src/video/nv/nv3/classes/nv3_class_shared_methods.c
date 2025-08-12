@@ -46,7 +46,6 @@ void nv3_generic_method(uint32_t param, uint32_t method_id, nv3_ramin_context_t 
                 nv_log("Executed method NV3_SET_NOTIFY with nv3->pgraph.notify_pending already set. param=0x%08x, method=0x%04x, grobj=0x%08x 0x%08x 0x%08x 0x%08x\n");
                 nv_log("IF THIS IS A DEBUG BUILD, YOU SHOULD SEE A CONTEXT BELOW");
                 nv3_debug_ramin_print_context_info(param, context);
-                nv3_pgraph_interrupt_invalid(NV3_PGRAPH_INTR_1_DOUBLE_NOTIFY);
                 
                 // disable
                 nv3->pgraph.notify_pending = false;
