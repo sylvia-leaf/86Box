@@ -604,7 +604,7 @@ void nv3_render_current_bpp_dfb_32(uint32_t address)
     || nv3->nvbase.svga.bpp == 16)
     {
         *p = nv3->nvbase.svga.conv_16to32(&nv3->nvbase.svga, data & 0xFFFF, nv3->nvbase.svga.bpp);
-        *p++;
+        p++;
         *p = nv3->nvbase.svga.conv_16to32(&nv3->nvbase.svga, (data >> 16) & 0xFFFF, nv3->nvbase.svga.bpp);
     }
 }

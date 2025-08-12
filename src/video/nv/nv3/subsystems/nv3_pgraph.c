@@ -96,8 +96,8 @@ uint32_t nv3_pgraph_read(uint32_t address)
 { 
     // before doing anything, check that this is even enabled..
 
-    if (!(nv3->pmc.enable >> NV3_PMC_ENABLE_PGRAPH)
-    & NV3_PMC_ENABLE_PGRAPH_ENABLED)
+    if (!((nv3->pmc.enable >> NV3_PMC_ENABLE_PGRAPH)
+    & NV3_PMC_ENABLE_PGRAPH_ENABLED))
     {
         nv_log("Repressing PGRAPH read. The subsystem is disabled according to pmc_enable, returning 0\n");
         return 0x00;
@@ -289,8 +289,8 @@ uint32_t nv3_pgraph_read(uint32_t address)
 
 void nv3_pgraph_write(uint32_t address, uint32_t value) 
 {
-    if (!(nv3->pmc.enable >> NV3_PMC_ENABLE_PGRAPH)
-    & NV3_PMC_ENABLE_PGRAPH_ENABLED)
+    if (!((nv3->pmc.enable >> NV3_PMC_ENABLE_PGRAPH)
+    & NV3_PMC_ENABLE_PGRAPH_ENABLED))
     {
         nv_log("Repressing PGRAPH write. The subsystem is disabled according to pmc_enable\n");
         return;
