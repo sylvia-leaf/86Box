@@ -2994,7 +2994,7 @@ cpu_CPUID(void)
 
         case CPU_GENERICINTEL:
             if (!EAX) {
-                EAX = 0x00000002;
+                EAX = 0x00000005;
                 EBX = 0x756e6547;
                 EDX = 0x49656e69;
                 ECX = 0x6c65746e;
