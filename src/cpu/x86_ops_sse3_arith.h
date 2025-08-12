@@ -10,7 +10,7 @@ opHADDPS_a16(uint32_t fetchdat)
 
     struct softfloat_status_t status = mxcsr_to_softfloat_status_word();
     tmp.f[0] = f32_add(cpu_state.XMM[cpu_reg].f[0], cpu_state.XMM[cpu_reg].f[1], &status);
-    tmp.f[1] = f32_add(cpu_state.XMM[cpu_reg].f[1], cpu_state.XMM[cpu_reg].f[3], &status);
+    tmp.f[1] = f32_add(cpu_state.XMM[cpu_reg].f[2], cpu_state.XMM[cpu_reg].f[3], &status);
     tmp.f[2] = f32_add(src.f[0], src.f[1], &status);
     tmp.f[3] = f32_add(src.f[2], src.f[3], &status);
     cpu_state.XMM[cpu_reg].q[0] = tmp.q[0];
@@ -37,7 +37,7 @@ opHADDPS_a32(uint32_t fetchdat)
 
     struct softfloat_status_t status = mxcsr_to_softfloat_status_word();
     tmp.f[0] = f32_add(cpu_state.XMM[cpu_reg].f[0], cpu_state.XMM[cpu_reg].f[1], &status);
-    tmp.f[1] = f32_add(cpu_state.XMM[cpu_reg].f[1], cpu_state.XMM[cpu_reg].f[3], &status);
+    tmp.f[1] = f32_add(cpu_state.XMM[cpu_reg].f[2], cpu_state.XMM[cpu_reg].f[3], &status);
     tmp.f[2] = f32_add(src.f[0], src.f[1], &status);
     tmp.f[3] = f32_add(src.f[2], src.f[3], &status);
     cpu_state.XMM[cpu_reg].q[0] = tmp.q[0];
@@ -112,7 +112,7 @@ opHSUBPS_a16(uint32_t fetchdat)
 
     struct softfloat_status_t status = mxcsr_to_softfloat_status_word();
     tmp.f[0] = f32_sub(cpu_state.XMM[cpu_reg].f[0], cpu_state.XMM[cpu_reg].f[1], &status);
-    tmp.f[1] = f32_sub(cpu_state.XMM[cpu_reg].f[1], cpu_state.XMM[cpu_reg].f[3], &status);
+    tmp.f[1] = f32_sub(cpu_state.XMM[cpu_reg].f[2], cpu_state.XMM[cpu_reg].f[3], &status);
     tmp.f[2] = f32_sub(src.f[0], src.f[1], &status);
     tmp.f[3] = f32_sub(src.f[2], src.f[3], &status);
     cpu_state.XMM[cpu_reg].q[0] = tmp.q[0];
@@ -139,7 +139,7 @@ opHSUBPS_a32(uint32_t fetchdat)
 
     struct softfloat_status_t status = mxcsr_to_softfloat_status_word();
     tmp.f[0] = f32_sub(cpu_state.XMM[cpu_reg].f[0], cpu_state.XMM[cpu_reg].f[1], &status);
-    tmp.f[1] = f32_sub(cpu_state.XMM[cpu_reg].f[1], cpu_state.XMM[cpu_reg].f[3], &status);
+    tmp.f[1] = f32_sub(cpu_state.XMM[cpu_reg].f[2], cpu_state.XMM[cpu_reg].f[3], &status);
     tmp.f[2] = f32_sub(src.f[0], src.f[1], &status);
     tmp.f[3] = f32_sub(src.f[2], src.f[3], &status);
     cpu_state.XMM[cpu_reg].q[0] = tmp.q[0];
