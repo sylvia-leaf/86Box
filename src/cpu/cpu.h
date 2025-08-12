@@ -621,7 +621,7 @@ extern int hasfpu;
 #define CPU_FEATURE_SSE2    (1 << 12)
 #define CPU_FEATURE_CLFLUSH (1 << 13)
 #define CPU_FEATURE_NX      (1 << 14)
-#define CPU_FEATURE_SSE3    (1 << 15)
+#define CPU_FEATURE_MONITOR_MWAIT (1 << 15)
 
 extern uint64_t cpu_features;
 

@@ -79,6 +79,7 @@ enum {
     CPUID_SSE2      = (1 << 26),
 
     CPUID_SSE3      = (1 << 0),
+    CPUID_MONITOR_MWAIT = (1 << 3),
     CPUID_SSSE3     = (1 << 9),
 
     CPUID_NX        = (1 << 20)  /* NX bit */
@@ -1974,7 +1975,7 @@ cpu_set(void)
 
             timing_misaligned = 3;
 
-            cpu_features = CPU_FEATURE_RDTSC | CPU_FEATURE_MSR | CPU_FEATURE_CR4 | CPU_FEATURE_VME | CPU_FEATURE_MMX | CPU_FEATURE_PSE36 | CPU_FEATURE_SSE | CPU_FEATURE_SSE2 | CPU_FEATURE_CLFLUSH | CPU_FEATURE_NX | CPU_FEATURE_SSE3;
+            cpu_features = CPU_FEATURE_RDTSC | CPU_FEATURE_MSR | CPU_FEATURE_CR4 | CPU_FEATURE_VME | CPU_FEATURE_MMX | CPU_FEATURE_PSE36 | CPU_FEATURE_SSE | CPU_FEATURE_SSE2 | CPU_FEATURE_CLFLUSH | CPU_FEATURE_NX | CPU_FEATURE_MONITOR_MWAIT;
             msr.fcr      = (1 << 8) | (1 << 9) | (1 << 12) | (1 << 16) | (1 << 19) | (1 << 21);
             cpu_CR4_mask = CR4_VME | CR4_PVI | CR4_TSD | CR4_DE | CR4_PSE | CR4_MCE | CR4_PAE | CR4_PCE | CR4_PGE;
             cpu_CR4_mask |= CR4_OSFXSR | CR4_OSXMMEXCPT;
@@ -3000,12 +3001,23 @@ cpu_CPUID(void)
             } else if (EAX == 1) {
                 EAX = CPUID;
                 EBX = (8 << 8) | (1 << 16);
-                ECX       = CPUID_SSE3;// | CPUID_SSSE3;
+                ECX       = CPUID_SSE3 | CPUID_MONITOR_MWAIT | CPUID_SSSE3;
                 EDX       = CPUID_FPU | CPUID_VME | CPUID_DE | CPUID_PSE | CPUID_TSC | CPUID_MSR | CPUID_PAE | CPUID_MCE | CPUID_CMPXCHG8B | CPUID_MMX | CPUID_MTRR | CPUID_PGE | CPUID_MCA | CPUID_SEP | CPUID_FXSR | CPUID_CMOV | CPUID_PSE36 | CPUID_SSE | CPUID_SSE2 | CPUID_CLFLUSH;
             } else if (EAX == 2) {
                 EAX = 0x00000001;
                 EBX = ECX = 0;
                 EDX       = 0x00000000;
+            } else if (EAX == 5) {
+                if((msr.ecx1a0 & (1 << 22)))
+                {
+                    EAX = EBX = ECX = EDX = 0;
+                }
+                else
+                {
+                    EAX = EBX = 0x40;
+                    ECX = 0;
+                    EDX = 0x1120;
+                }
             } else if (EAX == 0x80000000) {
                 EAX = 0x80000001;
                 EBX = 0x756e6547;
