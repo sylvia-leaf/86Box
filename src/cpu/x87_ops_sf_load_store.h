@@ -712,7 +712,7 @@ sf_FISTTPil_a16(uint32_t fetchdat)
 {
     struct softfloat_status_t status;
     uint16_t                  sw       = fpu_state.swd;
-    int16_t                   save_reg = int16_indefinite;
+    int16_t                   save_reg = int32_indefinite;
 
     FP_ENTER();
     FPU_check_pending_exceptions();
@@ -749,7 +749,7 @@ sf_FISTTPil_a32(uint32_t fetchdat)
 {
     struct softfloat_status_t status;
     uint16_t                  sw       = fpu_state.swd;
-    int16_t                   save_reg = int16_indefinite;
+    int16_t                   save_reg = int32_indefinite;
 
     FP_ENTER();
     FPU_check_pending_exceptions();
@@ -786,7 +786,7 @@ sf_FISTTPiq_a16(uint32_t fetchdat)
 {
     struct softfloat_status_t status;
     uint16_t                  sw       = fpu_state.swd;
-    int16_t                   save_reg = int16_indefinite;
+    int16_t                   save_reg = int64_indefinite;
 
     FP_ENTER();
     FPU_check_pending_exceptions();
@@ -823,7 +823,7 @@ sf_FISTTPiq_a32(uint32_t fetchdat)
 {
     struct softfloat_status_t status;
     uint16_t                  sw       = fpu_state.swd;
-    int16_t                   save_reg = int16_indefinite;
+    int16_t                   save_reg = int64_indefinite;
 
     FP_ENTER();
     FPU_check_pending_exceptions();
