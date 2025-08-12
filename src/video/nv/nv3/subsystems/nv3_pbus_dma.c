@@ -131,7 +131,7 @@ void nv3_notify_if_needed(uint32_t name, uint32_t method_id, nv3_ramin_context_t
     switch (info_notification_target)
     {
         case NV3_NOTIFICATION_TARGET_NVM:
-
+        {
             uint32_t* vram_32 = (uint32_t*)nv3->nvbase.svga.vram;
 
             // increment by 1 because each index increments by 4
@@ -140,6 +140,7 @@ void nv3_notify_if_needed(uint32_t name, uint32_t method_id, nv3_ramin_context_t
             vram_32[final_address + 2] = notify.info32;
             vram_32[final_address + 3] = (notify.info16 | notify.status);
             break;
+        }
         case NV3_NOTIFICATION_TARGET_PCI:
         case NV3_NOTIFICATION_TARGET_AGP:
             dma_bm_write(final_address, (uint8_t*)&notify, sizeof(nv3_notification_t), 4);
