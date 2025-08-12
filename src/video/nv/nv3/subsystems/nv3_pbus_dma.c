@@ -27,9 +27,45 @@
 #include <86box/video.h>
 #include <86box/nv/vid_nv.h>
 #include <86box/nv/vid_nv3.h>
-#include <86box/dma.h>
 
 /* Nvidia DMA Engine */
+
+void nv3_perform_dma_m2mf(nv3_grobj_t grobj)
+{  
+        switch (method_id)
+    {
+        /* mthdCreate in software(?)*/
+        case NV3_ROOT_HI_IM_OBJECT_MCOBJECTYFACE:
+            //nv_log("mthdCreate obj_name=0x%08x\n", param);
+            nv3_pgraph_interrupt_invalid(NV3_PGRAPH_INTR_1_SOFTWARE_METHOD_PENDING);
+            break;
+        // set up the current notification request/object
+        // and check for double notifiers.
+        case NV3_SET_NOTIFY:
+            if (nv3->pgraph.notify_pending)
+            {
+                nv_log("Executed method NV3_SET_NOTIFY with nv3->pgraph.notify_pending already set. param=0x%08x, method=0x%04x, grobj=0x%08x 0x%08x 0x%08x 0x%08x\n");
+                nv_log("IF THIS IS A DEBUG BUILD, YOU SHOULD SEE A CONTEXT BELOW");
+                nv3_debug_ramin_print_context_info(param, context);
+                nv3_pgraph_interrupt_invalid(NV3_PGRAPH_INTR_1_DOUBLE_NOTIFY);
+                
+                // disable
+                nv3->pgraph.notify_pending = false;
+                nv3_pgraph_interrupt_invalid(NV3_PGRAPH_INTR_1_DOUBLE_NOTIFY);
+                /* may need to disable fifo in this state */
+                return; 
+            }
+
+            // set a notify as pending.
+            nv3->pgraph.notifier = param; 
+            nv3->pgraph.notify_pending = true; 
+            break;
+        default:
+            nv_log("Shared Generic Methods: Invalid or Unimplemented method 0x%04x", method_id);
+            nv3_pgraph_interrupt_invalid(NV3_PGRAPH_INTR_1_SOFTWARE_METHOD_PENDING);
+            return;
+    }
+}
 
 
 /* Sees if any notification is required after an object method is executed. If so, executes it... */
