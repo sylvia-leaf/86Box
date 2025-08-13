@@ -98,25 +98,25 @@
     x87_set_mmx()
 
 #define SSE_ENTER()  \
-    if (cr0 & 0x8) { \
-        x86_int(7);  \
-        return 1;    \
-    }                \
     if ((cr0 & 0x4) || !(cr4 & CR4_OSFXSR)) { \
         cpu_state.pc = cpu_state.oldpc;       \
         x86illegal();                         \
         return 1;                             \
+    }                \
+    if (cr0 & 0x8) { \
+        x86_int(7);  \
+        return 1;    \
     }
 
 static int
 opEMMS(UNUSED(uint32_t fetchdat))
 {
-    if (!cpu_has_feature(CPU_FEATURE_MMX)) {
+    if (!cpu_has_feature(CPU_FEATURE_MMX) || (cr0 & 0x4)) {
         cpu_state.pc = cpu_state.oldpc;
         x86illegal();
         return 1;
     }
-    if (cr0 & 0xc) {
+    if (cr0 & 0x8) {
         x86_int(7);
         return 1;
     }
