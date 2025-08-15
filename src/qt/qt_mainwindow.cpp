@@ -1094,7 +1094,9 @@ MainWindow::showEvent(QShowEvent *event)
     }
     if (window_remember && vid_resize == 1) {
         ui->stackedWidget->setFixedSize(window_w, window_h);
+#ifndef Q_OS_MACOS
         QApplication::processEvents();
+#endif
         this->adjustSize();
     }
 }
