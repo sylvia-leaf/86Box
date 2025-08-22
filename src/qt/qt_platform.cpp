@@ -666,7 +666,7 @@ plat_chdir(char *path)
 void
 plat_get_global_config_dir(char *outbuf, const size_t len)
 {
-    const auto dir = QDir(QStandardPaths::standardLocations(QStandardPaths::AppConfigLocation)[0]);
+    const auto dir = QDir(QStandardPaths::writableLocation(QStandardPaths::AppConfigLocation));
     if (!dir.exists()) {
         if (!dir.mkpath(".")) {
             qWarning("Failed to create global configuration directory %s", dir.absolutePath().toUtf8().constData());
@@ -697,7 +697,11 @@ plat_get_temp_dir(char *outbuf, const uint8_t len)
 void
 plat_get_vmm_dir(char *outbuf, const size_t len)
 {
+#ifdef Q_OS_WINDOWS
     const auto path = QDir::home().filePath("86Box VMs");
+#else
+    const auto path = QDir(QStandardPaths::standardLocations(QStandardPaths::AppDataLocation)[0]).filePath("Virtual Machines");
+#endif
     strncpy(outbuf, path.toUtf8().constData(), len);
 }
 
