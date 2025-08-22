@@ -774,11 +774,11 @@ msgstr "Ports (COM et LPT)"
 msgid "Ports"
 msgstr "Ports"
 
-msgid "Serial ports"
-msgstr "Ports série"
+msgid "Serial ports:"
+msgstr "Ports série:"
 
-msgid "Parallel ports"
-msgstr "Ports parallèles"
+msgid "Parallel ports:"
+msgstr "Ports parallèles:"
 
 msgid "Storage controllers"
 msgstr "Contrôleurs de stockage"
@@ -1243,7 +1243,7 @@ msgid "Failed to create directory for cloned VM"
 msgstr "Échec de la création du répertoire pour la machine virtuelle clonée"
 
 msgid "Failed to clone VM."
-msgstr "Échec de la clonage de la machine virtuelle."
+msgstr "Échec du clonage de la machine virtuelle."
 
 msgid "Directory in use"
 msgstr "Répertoire utilisé"
@@ -2767,7 +2767,7 @@ msgid "Keybind"
 msgstr "Raccourci clavier"
 
 msgid "Clear binding"
-msgstr "Supprimer la raccourci"
+msgstr "Supprimer le raccourci"
 
 msgid "Bind"
 msgstr "Lier"
@@ -2782,7 +2782,7 @@ msgid "Bind conflict"
 msgstr "Conflit de raccourci"
 
 msgid "This key combo is already in use."
-msgstr "Cette combinaison de touches est déjà utilisée"
+msgstr "Cette combinaison de touches est déjà utilisée."
 
 msgid "Send Control+Alt+Del"
 msgstr "Envoyer Ctrl+Alt+Suppr"
@@ -2829,14 +2829,11 @@ msgstr "Mode concentrateur"
 msgid "Hostname:"
 msgstr "Nom d'hôte:"
 
-msgid "ISA RTC"
-msgstr "RTC ISA"
+msgid "ISA RAM:"
+msgstr "RAM ISA:"
 
-msgid "ISA RAM"
-msgstr "RAM ISA"
-
-msgid "ISA ROM"
-msgstr "ROM ISA"
+msgid "ISA ROM:"
+msgstr "ROM ISA:"
 
 msgid "&Wipe NVRAM"
 msgstr "&Effacer la mémoire NVRAM"
@@ -2902,7 +2899,7 @@ msgid "You are currently running build <b>%1</b>."
 msgstr "Vous exécutez actuellement le build <b>%1</b>."
 
 msgid "<b>Build %1</b> is now available."
-msgstr "<b>Le build %1</b> est désormais disponible."
+msgstr "<b>Le Build %1</b> est désormais disponible."
 
 msgid "Would you like to visit the download page?"
 msgstr "Souhaitez-vous visiter la page de téléchargement ?"
