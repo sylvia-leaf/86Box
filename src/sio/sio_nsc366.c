@@ -503,7 +503,7 @@ nsc366_init(const device_t *info)
     dev->hwm = device_add(&nsc366_hwm_device);
 
     /* Keyboard Controller */
-    device_add(&kbc_ps2_ami_pci_device);
+    device_add_params(&kbc_at_device, (void *) (KBC_VEN_AMI | 0x00004800));
 
     /* Port 92h */
     device_add(&port_92_pci_device);
