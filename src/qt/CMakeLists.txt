@@ -382,6 +382,8 @@ if (WIN32)
     target_sources(ui PRIVATE
         qt_winrawinputfilter.hpp
         qt_winrawinputfilter.cpp
+        qt_vmmanager_windarkmodefilter.hpp
+        qt_vmmanager_windarkmodefilter.cpp
         qt_winmanagerfilter.hpp
         qt_winmanagerfilter.cpp
     )
