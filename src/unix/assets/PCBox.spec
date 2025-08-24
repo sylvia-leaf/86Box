@@ -15,7 +15,7 @@
 %global romver 4.2.1
 
 Name:		PCBox
-Version:	5.0
+Version:	5.0.1
 Release:	1%{?dist}
 Summary:	Classic PC emulator
 License:	GPLv2+
@@ -121,5 +121,5 @@ popd
 %{_datadir}/%{name}/roms
 
 %changelog
-* Sat Apr 16 2025 Britney Lozza <bnlozza@gmail.com> - 5.0-1
+* Sat Aug 31 2025 Jasmine Iwanek <jriwanek[AT]gmail.com> 5.0.1-1
 - Bump release
