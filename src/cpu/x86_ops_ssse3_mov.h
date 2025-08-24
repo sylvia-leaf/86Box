@@ -14,13 +14,15 @@ opPSHUFB_xmm_a16(uint32_t fetchdat)
     {
         if(src.b[i] & 0x80)
         {
-            cpu_state.XMM[cpu_reg].b[i] = 0;
+            tmp.b[i] = 0;
         }
         else
         {
-            cpu_state.XMM[cpu_reg].b[i] = tmp.b[src.b[i] & 0xf];
+            tmp.b[i] = cpu_state.XMM[cpu_reg].b[src.b[i] & 0xf];
         }
     }
+    cpu_state.XMM[cpu_reg].q[0] = tmp.q[0];
+    cpu_state.XMM[cpu_reg].q[1] = tmp.q[1];
     return 0;
 }
 
@@ -39,13 +41,15 @@ opPSHUFB_xmm_a32(uint32_t fetchdat)
     {
         if(src.b[i] & 0x80)
         {
-            cpu_state.XMM[cpu_reg].b[i] = 0;
+            tmp.b[i] = 0;
         }
         else
         {
-            cpu_state.XMM[cpu_reg].b[i] = tmp.b[src.b[i] & 0xf];
+            tmp.b[i] = cpu_state.XMM[cpu_reg].b[src.b[i] & 0xf];
         }
     }
+    cpu_state.XMM[cpu_reg].q[0] = tmp.q[0];
+    cpu_state.XMM[cpu_reg].q[1] = tmp.q[1];
     return 0;
 }
 
@@ -67,13 +71,14 @@ opPSHUFB_mm_a16(uint32_t fetchdat)
     {
         if(src.b[i] & 0x80)
         {
-            dst->b[i] = 0;
+            tmp.b[i] = 0;
         }
         else
         {
-            dst->b[i] = tmp.b[src.b[i] & 7];
+            tmp.b[i] = dst->b[src.b[i] & 7];
         }
     }
+    dst->q = tmp.q;
     return 0;
 }
 
@@ -95,13 +100,14 @@ opPSHUFB_mm_a32(uint32_t fetchdat)
     {
         if(src.b[i] & 0x80)
         {
-            dst->b[i] = 0;
+            tmp.b[i] = 0;
         }
         else
         {
-            dst->b[i] = tmp.b[src.b[i] & 7];
+            tmp.b[i] = dst->b[src.b[i] & 7];
         }
     }
+    dst->q = tmp.q;
     return 0;
 }
 
