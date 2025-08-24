@@ -25,7 +25,9 @@ add_library(cdrom OBJECT
     cdrom_image_viso.c
     cdrom_mke.c
 )
-target_include_directories(PCBox PRIVATE PkgConfig::SNDFILE)
+if(NOT WIN32)
+	target_include_directories(PCBox PRIVATE PkgConfig::SNDFILE)
+endif()
 target_link_libraries(PCBox PkgConfig::SNDFILE)
 
 if(CDROM_MITSUMI)
