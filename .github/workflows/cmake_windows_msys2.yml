@@ -3,7 +3,7 @@ name: CMake (Windows, msys2)
 on:
 
   push:
-    branches: [ "master" ]
+    branches: [ "pcbox" ]
     paths:
       - src/**
       - cmake/**
@@ -16,7 +16,7 @@ on:
       - "!**/Makefile*"
 
   pull_request:
-    branches: [ "master" ]
+    branches: [ "pcbox" ]
     paths:
       - src/**
       - cmake/**
