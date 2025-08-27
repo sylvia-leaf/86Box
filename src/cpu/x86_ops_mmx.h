@@ -140,6 +140,11 @@ static struct softfloat_status_t mxcsr_to_softfloat_status_word(void)
 static void softfloat_status_word_to_mxcsr(struct softfloat_status_t status)
 {
     uint32_t unmasked = ((~cpu_state.mxcsr >> 7) & 0x3f) & (status.softfloat_exceptionFlags & 0x3f);
-    if(unmasked & 7) cpu_state.mxcsr |= status.softfloat_exceptionFlags & 0x7;
-    else cpu_state.mxcsr |= status.softfloat_exceptionFlags & 0x3f;
+    if(unmasked & 7) status.softfloat_exceptionFlags &= 0x7;
+    cpu_state.mxcsr |= status.softfloat_exceptionFlags & 0x3f;
+    if (cpu_state.mxcsr & unmasked & 0x3f) {
+        if (cr4 & CR4_OSXMMEXCPT)
+            x86_int(0x13);
+        ILLEGAL_ON(!(cr4 & CR4_OSXMMEXCPT));
+    }
 }
