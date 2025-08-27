@@ -6002,96 +6002,6 @@ const machine_t machines[] = {
         .snd_device = NULL,
         .net_device = NULL
     },
-
-    /* 440BX */ 
-    /* Has a Winbond W83977EF Super I/O chip with on-chip KBC with AMIKey-2 KBC 
-       firmware. */ 
-    { 
-        .name = "[i440BX] ASUS P2B-LS (coreboot)", 
-        .internal_name = "p2bls_coreboot", 
-        .type = MACHINE_TYPE_SLOT1, 
-        .chipset = MACHINE_CHIPSET_INTEL_440BX, 
-        .init = machine_at_p2bls_coreboot_init, 
-        .p1_handler = NULL, 
-        .gpio_handler = NULL, 
-        .available_flag = MACHINE_AVAILABLE, 
-        .gpio_acpi_handler = NULL, 
-        .cpu = { 
-            .package = CPU_PKG_SLOT1, 
-            .block = CPU_BLOCK_NONE, 
-            .min_bus = 50000000, 
-            .max_bus = 112121212, 
-            .min_voltage = 1300, 
-            .max_voltage = 3500, 
-            .min_multi = 1.5, 
-            .max_multi = 8.0 
-        }, 
-        .bus_flags = MACHINE_PS2_AGP | MACHINE_BUS_USB, 
-        .flags = MACHINE_IDE_DUAL | MACHINE_APM | MACHINE_ACPI | MACHINE_USB, /* Machine has internal SCSI: Adaptec AIC-7890AB */ 
-        .ram = { 
-            .min = 8192, 
-            .max = 1048576, 
-            .step = 8192 
-        }, 
-        .nvrmask = 255,
-        .jumpered_ecp_dma = 0,
-        .default_jumpered_ecp_dma = -1,
-        .kbc_device = NULL, 
-        .kbc_p1 = 0xff, 
-        .gpio = 0xffffffff, 
-        .gpio_acpi = 0xffffffff, 
-        .device = NULL, 
-        .kbd_device = NULL, 
-        .fdc_device = NULL, 
-        .sio_device = NULL, 
-        .vid_device = NULL, 
-        .snd_device = NULL, 
-        .net_device = NULL 
-    }, 
-    /* Has a Winbond W83977EF Super I/O chip with on-chip KBC with AMIKey-2 KBC 
-       firmware. */ 
-    { 
-        .name = "[i440BX] ASUS P3B-F (coreboot)", 
-        .internal_name = "p3bf_coreboot", 
-        .type = MACHINE_TYPE_SLOT1, 
-        .chipset = MACHINE_CHIPSET_INTEL_440BX, 
-        .init = machine_at_p3bf_coreboot_init, 
-        .p1_handler = NULL, 
-        .gpio_handler = NULL, 
-        .available_flag = MACHINE_AVAILABLE, 
-        .gpio_acpi_handler = NULL, 
-        .cpu = { 
-            .package = CPU_PKG_SLOT1, 
-            .block = CPU_BLOCK_NONE, 
-            .min_bus = 66666667, 
-            .max_bus = 150000000, 
-            .min_voltage = 1300, 
-            .max_voltage = 3500, 
-            .min_multi = 1.5, 
-            .max_multi = 8.0 
-        }, 
-        .bus_flags = MACHINE_PS2_AGP | MACHINE_BUS_USB, 
-        .flags = MACHINE_IDE_DUAL | MACHINE_APM | MACHINE_ACPI | MACHINE_USB, 
-        .ram = { 
-            .min = 8192, 
-            .max = 1048576, 
-            .step = 8192 
-        }, 
-        .nvrmask = 255,
-        .jumpered_ecp_dma = 0,
-        .default_jumpered_ecp_dma = -1,
-        .kbc_device = NULL, 
-        .kbc_p1 = 0xff, 
-        .gpio = 0xffffffff, 
-        .gpio_acpi = 0xffffffff, 
-        .device = NULL, 
-        .kbd_device = NULL, 
-        .fdc_device = NULL, 
-        .sio_device = NULL, 
-        .vid_device = NULL, 
-        .snd_device = NULL, 
-        .net_device = NULL 
-    },
     /* ALi M6117 machines */
     /* Has IBM PS/2 Type 1 KBC firmware. */
     {
@@ -17591,6 +17501,51 @@ const machine_t machines[] = {
         .snd_device = NULL,
         .net_device = NULL
     },
+    /* 440BX */ 
+    /* Has a Winbond W83977EF Super I/O chip with on-chip KBC with AMIKey-2 KBC 
+       firmware. */ 
+    { 
+        .name = "[i440BX] ASUS P2B-LS (coreboot)", 
+        .internal_name = "p2bls_coreboot", 
+        .type = MACHINE_TYPE_SLOT1, 
+        .chipset = MACHINE_CHIPSET_INTEL_440BX, 
+        .init = machine_at_p2bls_coreboot_init, 
+        .p1_handler = NULL, 
+        .gpio_handler = NULL, 
+        .available_flag = MACHINE_AVAILABLE, 
+        .gpio_acpi_handler = NULL, 
+        .cpu = { 
+            .package = CPU_PKG_SLOT1, 
+            .block = CPU_BLOCK_NONE, 
+            .min_bus = 50000000, 
+            .max_bus = 112121212, 
+            .min_voltage = 1300, 
+            .max_voltage = 3500, 
+            .min_multi = 1.5, 
+            .max_multi = 8.0 
+        }, 
+        .bus_flags = MACHINE_PS2_AGP | MACHINE_BUS_USB, 
+        .flags = MACHINE_IDE_DUAL | MACHINE_APM | MACHINE_ACPI | MACHINE_USB, /* Machine has internal SCSI: Adaptec AIC-7890AB */ 
+        .ram = { 
+            .min = 8192, 
+            .max = 1048576, 
+            .step = 8192 
+        }, 
+        .nvrmask = 255,
+        .jumpered_ecp_dma = 0,
+        .default_jumpered_ecp_dma = -1,
+        .kbc_device = NULL, 
+        .kbc_p1 = 0xff, 
+        .gpio = 0xffffffff, 
+        .gpio_acpi = 0xffffffff, 
+        .device = NULL, 
+        .kbd_device = NULL, 
+        .fdc_device = NULL, 
+        .sio_device = NULL, 
+        .vid_device = NULL, 
+        .snd_device = NULL, 
+        .net_device = NULL 
+    }, 
     /* Has a Winbond W83977EF Super I/O chip with on-chip KBC with AMIKey-2 KBC
        firmware. */
     {
@@ -17635,6 +17590,50 @@ const machine_t machines[] = {
         .vid_device = NULL,
         .snd_device = NULL,
         .net_device = NULL
+    },
+    /* Has a Winbond W83977EF Super I/O chip with on-chip KBC with AMIKey-2 KBC 
+       firmware. */ 
+    { 
+        .name = "[i440BX] ASUS P3B-F (coreboot)", 
+        .internal_name = "p3bf_coreboot", 
+        .type = MACHINE_TYPE_SLOT1, 
+        .chipset = MACHINE_CHIPSET_INTEL_440BX, 
+        .init = machine_at_p3bf_coreboot_init, 
+        .p1_handler = NULL, 
+        .gpio_handler = NULL, 
+        .available_flag = MACHINE_AVAILABLE, 
+        .gpio_acpi_handler = NULL, 
+        .cpu = { 
+            .package = CPU_PKG_SLOT1, 
+            .block = CPU_BLOCK_NONE, 
+            .min_bus = 66666667, 
+            .max_bus = 150000000, 
+            .min_voltage = 1300, 
+            .max_voltage = 3500, 
+            .min_multi = 1.5, 
+            .max_multi = 8.0 
+        }, 
+        .bus_flags = MACHINE_PS2_AGP | MACHINE_BUS_USB, 
+        .flags = MACHINE_IDE_DUAL | MACHINE_APM | MACHINE_ACPI | MACHINE_USB, 
+        .ram = { 
+            .min = 8192, 
+            .max = 1048576, 
+            .step = 8192 
+        }, 
+        .nvrmask = 255,
+        .jumpered_ecp_dma = 0,
+        .default_jumpered_ecp_dma = -1,
+        .kbc_device = NULL, 
+        .kbc_p1 = 0xff, 
+        .gpio = 0xffffffff, 
+        .gpio_acpi = 0xffffffff, 
+        .device = NULL, 
+        .kbd_device = NULL, 
+        .fdc_device = NULL, 
+        .sio_device = NULL, 
+        .vid_device = NULL, 
+        .snd_device = NULL, 
+        .net_device = NULL 
     },
     /* Has a Winbond W83977TF Super I/O chip with on-chip KBC with AMIKey-2 KBC
        firmware. */
