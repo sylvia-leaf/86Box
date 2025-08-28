@@ -1549,7 +1549,8 @@ MainWindow::eventFilter(QObject *receiver, QEvent *event)
 		if (event->type() == QEvent::KeyPress)
 		{
 			QKeyEvent *ke = (QKeyEvent *) event;
-			if ((QKeySequence)(ke->key() | ke->modifiers()) == FindAcceleratorSeq("release_mouse"))
+			if ((QKeySequence)(ke->key() | (ke->modifiers() & ~Qt::KeypadModifier)) == FindAcceleratorSeq("release_mouse") ||
+                (QKeySequence)(ke->key() | ke->modifiers()) == FindAcceleratorSeq("release_mouse"))
 			{
 				plat_mouse_capture(0);
 			}
@@ -1559,31 +1560,38 @@ MainWindow::eventFilter(QObject *receiver, QEvent *event)
 		{
 			QKeyEvent *ke = (QKeyEvent *) event;
 			
-			if ((QKeySequence)(ke->key() | ke->modifiers()) == FindAcceleratorSeq("screenshot"))
+			if ((QKeySequence)(ke->key() | (ke->modifiers() & ~Qt::KeypadModifier)) == FindAcceleratorSeq("screenshot")
+                || (QKeySequence)(ke->key() | ke->modifiers()) == FindAcceleratorSeq("screenshot"))
 			{
 				ui->actionTake_screenshot->trigger();
 			}
-			if ((QKeySequence)(ke->key() | ke->modifiers()) == FindAcceleratorSeq("fullscreen"))
+			if ((QKeySequence)(ke->key() | (ke->modifiers() & ~Qt::KeypadModifier)) == FindAcceleratorSeq("fullscreen")
+                || (QKeySequence)(ke->key() | ke->modifiers()) == FindAcceleratorSeq("fullscreen"))
 			{
 				ui->actionFullscreen->trigger();
 			}
-			if ((QKeySequence)(ke->key() | ke->modifiers()) == FindAcceleratorSeq("hard_reset"))
+			if ((QKeySequence)(ke->key() | (ke->modifiers() & ~Qt::KeypadModifier)) == FindAcceleratorSeq("hard_reset")
+                || (QKeySequence)(ke->key() | ke->modifiers()) == FindAcceleratorSeq("hard_reset"))
 			{
 				ui->actionHard_Reset->trigger();
 			}
-			if ((QKeySequence)(ke->key() | ke->modifiers()) == FindAcceleratorSeq("send_ctrl_alt_del"))
+			if ((QKeySequence)(ke->key() | (ke->modifiers() & ~Qt::KeypadModifier)) == FindAcceleratorSeq("send_ctrl_alt_del")
+                || (QKeySequence)(ke->key() | ke->modifiers()) == FindAcceleratorSeq("send_ctrl_alt_del"))
 			{
 				ui->actionCtrl_Alt_Del->trigger();
 			}
-			if ((QKeySequence)(ke->key() | ke->modifiers()) == FindAcceleratorSeq("send_ctrl_alt_esc"))
+			if ((QKeySequence)(ke->key() | (ke->modifiers() & ~Qt::KeypadModifier)) == FindAcceleratorSeq("send_ctrl_alt_esc")
+                || (QKeySequence)(ke->key() | ke->modifiers()) == FindAcceleratorSeq("send_ctrl_alt_esc"))
 			{
 				ui->actionCtrl_Alt_Esc->trigger();
 			}
-			if ((QKeySequence)(ke->key() | ke->modifiers()) == FindAcceleratorSeq("pause"))
+			if ((QKeySequence)(ke->key() | (ke->modifiers() & ~Qt::KeypadModifier)) == FindAcceleratorSeq("pause")
+                || (QKeySequence)(ke->key() | ke->modifiers()) == FindAcceleratorSeq("pause"))
 			{
 				ui->actionPause->trigger();
 			}
-			if ((QKeySequence)(ke->key() | ke->modifiers()) == FindAcceleratorSeq("mute"))
+			if ((QKeySequence)(ke->key() | (ke->modifiers() & ~Qt::KeypadModifier)) == FindAcceleratorSeq("mute")
+                || (QKeySequence)(ke->key() | ke->modifiers()) == FindAcceleratorSeq("mute"))
 			{
 				ui->actionMute_Unmute->trigger();
 			}
@@ -2175,6 +2183,9 @@ MainWindow::on_actionHiDPI_scaling_triggered()
 void
 MainWindow::on_actionHide_status_bar_triggered()
 {
+    auto w = ui->stackedWidget->width() * (!dpi_scale ? util::screenOfWidget(this)->devicePixelRatio() : 1.);
+    auto h = ui->stackedWidget->height() * (!dpi_scale ? util::screenOfWidget(this)->devicePixelRatio() : 1.);
+
     hide_status_bar ^= 1;
     ui->actionHide_status_bar->setChecked(hide_status_bar);
     statusBar()->setVisible(!hide_status_bar);
@@ -2186,7 +2197,7 @@ MainWindow::on_actionHide_status_bar_triggered()
     } else {
         int vid_resize_orig = vid_resize;
         vid_resize          = 0;
-        emit resizeContents(monitors[0].mon_scrnsz_x, monitors[0].mon_scrnsz_y);
+        emit resizeContents(vid_resize_orig ? w : monitors[0].mon_scrnsz_x, vid_resize_orig ? h : monitors[0].mon_scrnsz_y);
         vid_resize = vid_resize_orig;
         if (vid_resize == 1)
             setFixedSize(QWIDGETSIZE_MAX, QWIDGETSIZE_MAX);
@@ -2196,6 +2207,9 @@ MainWindow::on_actionHide_status_bar_triggered()
 void
 MainWindow::on_actionHide_tool_bar_triggered()
 {
+    auto w = ui->stackedWidget->width() * (!dpi_scale ? util::screenOfWidget(this)->devicePixelRatio() : 1.);
+    auto h = ui->stackedWidget->height() * (!dpi_scale ? util::screenOfWidget(this)->devicePixelRatio() : 1.);
+
     hide_tool_bar ^= 1;
     ui->actionHide_tool_bar->setChecked(hide_tool_bar);
     ui->toolBar->setVisible(!hide_tool_bar);
@@ -2204,7 +2218,7 @@ MainWindow::on_actionHide_tool_bar_triggered()
     } else {
         int vid_resize_orig = vid_resize;
         vid_resize          = 0;
-        emit resizeContents(monitors[0].mon_scrnsz_x, monitors[0].mon_scrnsz_y);
+        emit resizeContents(vid_resize_orig ? w : monitors[0].mon_scrnsz_x, vid_resize_orig ? h : monitors[0].mon_scrnsz_y);
         vid_resize = vid_resize_orig;
         if (vid_resize == 1)
             setFixedSize(QWIDGETSIZE_MAX, QWIDGETSIZE_MAX);
@@ -2279,7 +2293,9 @@ void
 MainWindow::on_actionPreferences_triggered()
 {
     ProgSettings progsettings(this);
-    progsettings.exec();
+    if (progsettings.exec() == QDialog::Accepted) {
+        emit vmmGlobalConfigurationChanged();
+    }
 }
 
 void

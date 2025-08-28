@@ -196,9 +196,8 @@ add_library(vid OBJECT
     vid_bochs_vbe.c
 )
 
-if(R100)
-    target_compile_definitions(vid PRIVATE USE_R100)
-    target_sources(vid PRIVATE vid_ati_r100.c)
+if(CMAKE_SYSTEM_NAME STREQUAL "FreeBSD")
+    target_include_directories(vid PRIVATE /usr/local/include)
 endif()
 
 if(G100)
