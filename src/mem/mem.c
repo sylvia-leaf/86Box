@@ -571,7 +571,7 @@ mmutranslate_noabrt_pae(uint32_t addr, int rw)
 
     addr3 = (temp & ~0xfffULL) + ((addr >> 18) & 0xff8);
     temp = temp4 = rammap64(addr3) & 0x000000ffffffffffULL;
-    nxbit = rammap64(addr4) & 0x8000000000000000ULL;
+    nxbit = rammap64(addr3) & 0x8000000000000000ULL;
     temp3        = temp & temp2;
 
     if (!(temp & 1))
