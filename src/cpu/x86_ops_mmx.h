@@ -147,4 +147,5 @@ static int softfloat_status_word_to_mxcsr(struct softfloat_status_t status)
             x86_int(0x13);
         ILLEGAL_ON(!(cr4 & CR4_OSXMMEXCPT));
     }
+    return 0;
 }
