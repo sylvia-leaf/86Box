@@ -1949,7 +1949,7 @@ codegen_PMULHW(codeblock_t *block, uop_t *uop)
 
     if (REG_IS_Q(dest_size) && REG_IS_Q(src_size_a) && REG_IS_Q(src_size_b)) {
         host_arm64_SMULL_V4S_4H(block, dest_reg, src_reg_a, src_reg_b);
-        host_arm64_SHRN_V4H_4S(block, dest_reg, dest_reg, 16);
+        host_arm64_SQSHRN_V4H_4S(block, dest_reg, dest_reg, 16);
     } else
         fatal("PMULHW %02x %02x %02x\n", uop->dest_reg_a_real, uop->src_reg_a_real, uop->src_reg_b_real);
 
