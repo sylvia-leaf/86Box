@@ -786,7 +786,13 @@ codegen_MMX_ENTER(codeblock_t *block, uop_t *uop)
         fatal("codegen_MMX_ENTER - out of range\n");
 
     host_arm64_LDR_IMM_W(block, REG_TEMP, REG_CPUSTATE, (uintptr_t) &cr0 - (uintptr_t) &cpu_state);
-    host_arm64_TST_IMM(block, REG_TEMP, 0xc);
+    host_arm64_TST_IMM(block, REG_TEMP, 0x4);
+    branch_ptr = host_arm64_BEQ_(block);
+    host_arm64_call(block, x86illegal);
+    host_arm64_B(block, codegen_exit_rout);
+    host_arm64_branch_set_offset(branch_ptr, &block->data[block_pos]);
+
+    host_arm64_TST_IMM(block, REG_TEMP, 0x8);
     branch_ptr = host_arm64_BEQ_(block);
 
     host_arm64_mov_imm(block, REG_TEMP, uop->imm_data);
