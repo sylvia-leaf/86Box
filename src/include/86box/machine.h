@@ -501,7 +501,7 @@ extern int             machine_at_cmdpc_init(const machine_t *);
 extern int             machine_at_portableii_init(const machine_t *);
 extern int             machine_at_portableiii_init(const machine_t *);
 extern int             machine_at_grid1520_init(const machine_t *);
-extern int             machine_at_mpfpc900_init(const machine_t *);
+extern int             machine_at_pc900_init(const machine_t *);
 extern int             machine_at_mr286_init(const machine_t *);
 extern int             machine_at_pc8_init(const machine_t *);
 extern int             machine_at_m290_init(const machine_t *);
@@ -1131,6 +1131,9 @@ extern int             machine_at_p6i440e2_init(const machine_t *);
 
 /* i440BX */
 extern int             machine_at_bf6_init(const machine_t *);
+#ifdef EMU_DEVICE_H
+extern const device_t  bx6_device;
+#endif
 extern int             machine_at_bx6_init(const machine_t *);
 extern int             machine_at_ax6bc_init(const machine_t *);
 extern int             machine_at_p2bls_init(const machine_t *);

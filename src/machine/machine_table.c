@@ -3345,10 +3345,10 @@ const machine_t machines[] = {
     /* Has IBM AT KBC firmware. */
     {
         .name = "[ISA] Multitech PC-900",
-        .internal_name = "mpfpc900",
+        .internal_name = "pc900",
         .type = MACHINE_TYPE_286,
         .chipset = MACHINE_CHIPSET_DISCRETE,
-        .init = machine_at_mpfpc900_init,
+        .init = machine_at_pc900_init,
         .p1_handler = machine_generic_p1_handler,
         .gpio_handler = NULL,
         .available_flag = MACHINE_AVAILABLE,
@@ -17490,7 +17490,7 @@ const machine_t machines[] = {
         .kbc_p1 = 0x00000cf0,
         .gpio = 0xffffffff,
         .gpio_acpi = 0xffffffff,
-        .device = NULL,
+        .device = &bx6_device,
         .kbd_device = NULL,
         .fdc_device = NULL,
         .sio_device = NULL,
