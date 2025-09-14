@@ -35,13 +35,8 @@ if(MUNT_EXTERNAL)
     list(APPEND VCPKG_MANIFEST_FEATURES "munt")
 endif()
 
-<<<<<<< HEAD
 project(PCBox
     VERSION 5.1
-=======
-project(86Box
-    VERSION 6.0
->>>>>>> 38759c1ae0cfaebecf3a838db17171ed23d1b1f4
     DESCRIPTION "Emulator of x86-based systems"
     HOMEPAGE_URL "https://pcbox-emu.xyz/"
     LANGUAGES C CXX)
