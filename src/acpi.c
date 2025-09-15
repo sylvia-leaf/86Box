@@ -44,6 +44,7 @@
 #include <86box/i2c.h>
 #include <86box/video.h>
 #include <86box/smbus.h>
+#include <86box/hdc.h>
 #include <86box/hdc_ide.h>
 #include <86box/hdc_ide_sff8038i.h>
 #include <86box/sis_55xx.h>
@@ -1334,8 +1335,11 @@ acpi_reg_write_intel(int size, uint16_t addr, uint8_t val, void *priv)
         case 0x36:
         case 0x37:
             /* GPOREG - General Purpose Output Register (IO) */
-            if (size == 1)
+            if (size == 1) {
                 dev->regs.gporeg[addr & 3] = val;
+                if ((addr == 0x34) && !strcmp(machine_get_internal_name(), "cubx"))
+                    hdc_onboard_enabled = (val & 0x01);
+            }
             break;
         default:
             acpi_reg_write_common_regs(size, addr, val, priv);
