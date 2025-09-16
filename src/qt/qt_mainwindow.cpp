@@ -24,6 +24,8 @@
 
 #include "qt_mainwindow.hpp"
 #include "ui_qt_mainwindow.h"
+#include "ui_qt_gpudebug_vram.h"
+#include "ui_qt_gpudebug_visualnv.h"
 
 #include "qt_specifydimensions.h"
 #include "qt_soundgain.hpp"
@@ -105,6 +107,8 @@ void qt_set_sequence_auto_mnemonic(bool b);
 #include "qt_machinestatus.hpp"
 #include "qt_mediamenu.hpp"
 #include "qt_util.hpp"
+
+#include "qt_gpudebug_vram.hpp"
 
 #if defined __unix__ && !defined __HAIKU__
 #    ifndef Q_OS_MACOS
@@ -908,6 +912,45 @@ MainWindow::MainWindow(QWidget *parent)
 	updateShortcuts();
 }
 
+void MainWindow::onHardResetCompleted()
+{
+        ui->actionMCA_devices->setVisible(machine_has_bus(machine, MACHINE_BUS_MCA));
+        num_label->setVisible(machine_has_bus(machine, MACHINE_BUS_PS2_PORTS | MACHINE_BUS_AT_KBD));
+        scroll_label->setVisible(machine_has_bus(machine, MACHINE_BUS_PS2_PORTS | MACHINE_BUS_AT_KBD));
+        caps_label->setVisible(machine_has_bus(machine, MACHINE_BUS_PS2_PORTS | MACHINE_BUS_AT_KBD));
+        /* TODO: Base this on keyboard type instead when that's done. */
+        int ext_ax_kbd = machine_has_bus(machine, MACHINE_BUS_PS2_PORTS | MACHINE_BUS_AT_KBD) &&
+                         (keyboard_type == KEYBOARD_TYPE_AX);
+        int int_ax_kbd = machine_has_flags(machine, MACHINE_KEYBOARD_JIS) &&
+                         !machine_has_bus(machine, MACHINE_BUS_PS2_PORTS);
+        kana_label->setVisible(ext_ax_kbd || int_ax_kbd);
+
+        while (QApplication::overrideCursor())
+            QApplication::restoreOverrideCursor();
+#ifdef USE_WACOM
+        ui->menuTablet_tool->menuAction()->setVisible(mouse_input_mode >= 1);
+#else
+        ui->menuTablet_tool->menuAction()->setVisible(false);
+#endif
+
+#ifdef ENABLE_NV_LOG
+        /* 
+            THIS CODE SUCKS AND THIS DESIGN IS TERRIBLE - EVERYTHING ABOUT IT IS BAD AND WRONG. 
+            ENTIRE DEVICE SUBSYSTEM IDEALLY WOULD BE DECOUPLED FROM UI BUT MEH
+        */
+
+        const device_t* vid_device = video_card_getdevice(gfxcard[0]);
+        
+        bool is_nv3 = (vid_device == &nv3_device_agp
+        || vid_device == &nv3_device_pci
+        || vid_device == &nv3t_device_agp
+        || vid_device == &nv3t_device_pci);
+
+        ui->actionDebug_GPUDebug_VisualNv->setVisible(is_nv3);
+#endif 
+}
+
+
 void
 MainWindow::closeEvent(QCloseEvent *event)
 {
@@ -917,7 +960,7 @@ MainWindow::closeEvent(QCloseEvent *event)
     }
 
     if (confirm_exit && confirm_exit_cmdl && cpu_thread_run) {
-        QMessageBox questionbox(QMessageBox::Icon::Question, "86Box", tr("Are you sure you want to exit 86Box?"), QMessageBox::Yes | QMessageBox::No, this);
+        QMessageBox questionbox(QMessageBox::Icon::Question, "PCBox", tr("Are you sure you want to exit PCBox?"), QMessageBox::Yes | QMessageBox::No, this);
         auto chkbox = new QCheckBox(tr("Don't show this message again"));
         questionbox.setCheckBox(chkbox);
         chkbox->setChecked(!confirm_exit);
@@ -1120,7 +1163,7 @@ MainWindow::initRendererMonitorSlot(int monitor_index)
             this->renderers[monitor_index]->show();
         });
         secondaryRenderer->setWindowFlags(Qt::CustomizeWindowHint | Qt::WindowTitleHint | Qt::WindowCloseButtonHint);
-        secondaryRenderer->setWindowTitle(QObject::tr("86Box Monitor #") + QString::number(monitor_index + 1));
+        secondaryRenderer->setWindowTitle(QObject::tr("PCBox Monitor #") + QString::number(monitor_index + 1));
         secondaryRenderer->setContextMenuPolicy(Qt::PreventContextMenu);
 
         for (int i = 0; i < this->actions().size(); i++) {
@@ -1233,7 +1276,7 @@ void
 MainWindow::on_actionHard_Reset_triggered()
 {
     if (confirm_reset) {
-        QMessageBox questionbox(QMessageBox::Icon::Question, "86Box", tr("Are you sure you want to hard reset the emulated machine?"), QMessageBox::NoButton, this);
+        QMessageBox questionbox(QMessageBox::Icon::Question, "PCBox", tr("Are you sure you want to hard reset the emulated machine?"), QMessageBox::NoButton, this);
         questionbox.addButton(tr("Reset"), QMessageBox::AcceptRole);
         questionbox.addButton(tr("Don't reset"), QMessageBox::RejectRole);
         const auto chkbox = new QCheckBox(tr("Don't show this message again"));
@@ -2512,6 +2555,31 @@ void MainWindow::on_actionACPI_Shutdown_triggered()
     acpi_pwrbut_pressed = 1;
 }
 
+void MainWindow::on_actionDebug_GPUDebug_VRAM_triggered()
+{
+    debugVramDialog = new GPUDebugVRAMDialog(this);
+    debugVramDialog->setWindowFlag(Qt::CustomizeWindowHint, true);
+    debugVramDialog->setWindowFlag(Qt::WindowTitleHint, true);
+    debugVramDialog->setWindowFlag(Qt::WindowSystemMenuHint, false);
+    // If I have this as a NON-MODAL dialog, input is just eaten without doing anything
+    // WTF?!?!?!?!? 
+    //debugVramDialog->show();
+    debugVramDialog->exec();
+
+}
+
+
+void MainWindow::on_actionDebug_GPUDebug_VisualNv_triggered()
+{
+    visualNvDialog = new VisualNVDialog(this);
+    visualNvDialog->setWindowFlag(Qt::CustomizeWindowHint, true);
+    visualNvDialog->setWindowFlag(Qt::WindowTitleHint, true);
+    visualNvDialog->setWindowFlag(Qt::WindowSystemMenuHint, false);
+    // If I have this as a NON-MODAL dialog, input is just eaten without doing anything
+    // WTF?!?!?!?!?
+    //visualNvDialog->show();
+    visualNvDialog->exec();
+}
 void MainWindow::on_actionCGA_composite_settings_triggered()
 {
     isNonPause = true;

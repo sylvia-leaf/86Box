@@ -121,6 +121,8 @@ enum {
     IREG_eaa16,
     IREG_x87_op,
 
+    IREG_sse_xmm,
+
     IREG_FPU_TOP,
 
     /*Temporary registers are stored on the stack, and are not guaranteed to

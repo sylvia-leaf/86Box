@@ -38,15 +38,15 @@ body:
       required: true
   - type: input
     attributes:
-      label: 86Box version
-      description: What version of 86Box are you running? (Please ensure you have updated to the [latest build](https://ci.86box.net/job/86Box/lastSuccessfulBuild/artifact/) before reporting. Merely saying "Latest from Jenkins" is not helpful.)
+      label: PCBox version
+      description: What version of PCBox are you running? (Saying "Latest from Jenkins" is not helpful.)
       placeholder: e.g. v4.0 build 5000
     validations:
       required: true
   - type: dropdown
     attributes:
       label: Build architecture
-      description: 86Box for what architecture are you using?
+      description: PCBox for what architecture are you using?
       options: 
         - Windows - x64 (64-bit) 
         - macOS - Universal (Intel and Apple Silicon) 

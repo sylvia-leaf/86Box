@@ -26,6 +26,7 @@ static struct {
     int      op_ssegs;
     x86seg  *op_ea_seg;
     uint32_t op_32;
+    int      op_sse_xmm;
     int      first_uop;
     int      TOP;
 } codegen_instructions[MAX_INSTRUCTION_COUNT];
@@ -51,6 +52,7 @@ codegen_set_loop_start(ir_data_t *ir, int first_instruction)
     uop_MOV_IMM(ir, IREG_op32, codegen_instructions[first_instruction].op_32);
     uop_MOV_PTR(ir, IREG_ea_seg, (void *) codegen_instructions[first_instruction].op_ea_seg);
     uop_MOV_IMM(ir, IREG_ssegs, codegen_instructions[first_instruction].op_ssegs);
+    uop_MOV_IMM(ir, IREG_sse_xmm, codegen_instructions[first_instruction].op_sse_xmm);
 }
 
 int has_ea;
@@ -81,6 +83,7 @@ int codegen_in_recompile;
 static int      last_op_ssegs;
 static x86seg  *last_op_ea_seg;
 static uint32_t last_op_32;
+static int      last_op_sse_xmm;
 
 void
 codegen_generate_reset(void)
@@ -359,24 +362,68 @@ static uint8_t opcode_modrm[256] = {
 
 static uint8_t opcode_0f_modrm[256] = {
     1, 1, 1, 1,  0, 0, 0, 0,  0, 0, 0, 0,  0, 1, 0, 1, /*00*/
-    1, 1, 1, 1,  0, 0, 0, 0,  1, 1, 1, 1,  1, 1, 1, 1, /*10*/
-    1, 1, 1, 1,  1, 1, 0, 0,  0, 0, 0, 0,  0, 0, 0, 0, /*20*/
+    1, 1, 1, 1,  1, 1, 1, 1,  1, 1, 1, 1,  1, 1, 1, 1, /*10*/
+    1, 1, 1, 1,  1, 1, 0, 0,  1, 1, 1, 1,  1, 1, 1, 1, /*20*/
     0, 0, 0, 0,  0, 0, 1, 1,  0, 0, 0, 0,  0, 0, 0, 1, /*30*/
 
     1, 1, 1, 1,  1, 1, 1, 1,  1, 1, 1, 1,  1, 1, 1, 1, /*40*/
-    1, 1, 1, 0,  1, 1, 0, 0,  1, 1, 1, 1,  1, 1, 1, 0, /*50*/
-    1, 1, 1, 1,  1, 1, 1, 1,  1, 1, 1, 1,  0, 0, 1, 1, /*60*/
-    0, 1, 1, 1,  1, 1, 1, 0,  1, 1, 1, 1,  1, 1, 1, 1, /*70*/
+    1, 1, 1, 1,  1, 1, 1, 1,  1, 1, 1, 1,  1, 1, 1, 1, /*50*/
+    1, 1, 1, 1,  1, 1, 1, 1,  1, 1, 1, 1,  1, 1, 1, 1, /*60*/
+    1, 1, 1, 1,  1, 1, 1, 0,  1, 1, 1, 1,  1, 1, 1, 1, /*70*/
 
     0, 0, 0, 0,  0, 0, 0, 0,  0, 0, 0, 0,  0, 0, 0, 0, /*80*/
     1, 1, 1, 1,  1, 1, 1, 1,  1, 1, 1, 1,  1, 1, 1, 1, /*90*/
     0, 0, 0, 1,  1, 1, 0, 0,  0, 0, 0, 1,  1, 1, 1, 1, /*a0*/
     1, 1, 1, 1,  1, 1, 1, 1,  0, 0, 1, 1,  1, 1, 1, 1, /*b0*/
 
-    1, 1, 0, 0,  0, 0, 0, 1,  0, 0, 0, 0,  0, 0, 0, 0, /*c0*/
-    0, 1, 1, 1,  0, 1, 0, 0,  1, 1, 0, 1,  1, 1, 0, 1, /*d0*/
-    0, 1, 1, 0,  0, 1, 0, 0,  1, 1, 0, 1,  1, 1, 0, 1, /*e0*/
-    0, 1, 1, 1,  0, 1, 0, 0,  1, 1, 1, 0,  1, 1, 1, 0  /*f0*/
+    1, 1, 1, 1,  1, 1, 1, 1,  0, 0, 0, 0,  0, 0, 0, 0, /*c0*/
+    1, 1, 1, 1,  1, 1, 1, 1,  1, 1, 1, 1,  1, 1, 1, 1, /*d0*/
+    1, 1, 1, 1,  1, 1, 1, 1,  1, 1, 1, 1,  1, 1, 1, 1, /*e0*/
+    1, 1, 1, 1,  1, 1, 1, 1,  1, 1, 1, 1,  1, 1, 1, 0  /*f0*/
+};
+
+static uint8_t opcode_0f_38_modrm[256] = {
+    1, 1, 1, 1,  1, 1, 1, 1,  1, 1, 1, 1,  0, 0, 0, 0, /*00*/
+    0, 0, 0, 0,  0, 0, 0, 0,  0, 0, 0, 0,  1, 1, 1, 0, /*10*/
+    0, 0, 0, 0,  0, 0, 0, 0,  0, 0, 0, 0,  0, 0, 0, 0, /*20*/
+    0, 0, 0, 0,  0, 0, 0, 0,  0, 0, 0, 0,  0, 0, 0, 0, /*30*/
+
+    0, 0, 0, 0,  0, 0, 0, 0,  0, 0, 0, 0,  0, 0, 0, 0, /*40*/
+    0, 0, 0, 0,  0, 0, 0, 0,  0, 0, 0, 0,  0, 0, 0, 0, /*50*/
+    0, 0, 0, 0,  0, 0, 0, 0,  0, 0, 0, 0,  0, 0, 0, 0, /*60*/
+    0, 0, 0, 0,  0, 0, 0, 0,  0, 0, 0, 0,  0, 0, 0, 0, /*70*/
+
+    0, 0, 0, 0,  0, 0, 0, 0,  0, 0, 0, 0,  0, 0, 0, 0, /*80*/
+    0, 0, 0, 0,  0, 0, 0, 0,  0, 0, 0, 0,  0, 0, 0, 0, /*90*/
+    0, 0, 0, 0,  0, 0, 0, 0,  0, 0, 0, 0,  0, 0, 0, 0, /*a0*/
+    0, 0, 0, 0,  0, 0, 0, 0,  0, 0, 0, 0,  0, 0, 0, 0, /*b0*/
+
+    0, 0, 0, 0,  0, 0, 0, 0,  0, 0, 0, 0,  0, 0, 0, 0, /*c0*/
+    0, 0, 0, 0,  0, 0, 0, 0,  0, 0, 0, 0,  0, 0, 0, 0, /*d0*/
+    0, 0, 0, 0,  0, 0, 0, 0,  0, 0, 0, 0,  0, 0, 0, 0, /*e0*/
+    0, 0, 0, 0,  0, 0, 0, 0,  0, 0, 0, 0,  0, 0, 0, 0  /*f0*/
+};
+
+static uint8_t opcode_0f_3a_modrm[256] = {
+    0, 0, 0, 0,  0, 0, 0, 0,  0, 0, 0, 0,  0, 0, 0, 1, /*00*/
+    0, 0, 0, 0,  0, 0, 0, 0,  0, 0, 0, 0,  0, 0, 0, 0, /*10*/
+    0, 0, 0, 0,  0, 0, 0, 0,  0, 0, 0, 0,  0, 0, 0, 0, /*20*/
+    0, 0, 0, 0,  0, 0, 0, 0,  0, 0, 0, 0,  0, 0, 0, 0, /*30*/
+
+    0, 0, 0, 0,  0, 0, 0, 0,  0, 0, 0, 0,  0, 0, 0, 0, /*40*/
+    0, 0, 0, 0,  0, 0, 0, 0,  0, 0, 0, 0,  0, 0, 0, 0, /*50*/
+    0, 0, 0, 0,  0, 0, 0, 0,  0, 0, 0, 0,  0, 0, 0, 0, /*60*/
+    0, 0, 0, 0,  0, 0, 0, 0,  0, 0, 0, 0,  0, 0, 0, 0, /*70*/
+
+    0, 0, 0, 0,  0, 0, 0, 0,  0, 0, 0, 0,  0, 0, 0, 0, /*80*/
+    0, 0, 0, 0,  0, 0, 0, 0,  0, 0, 0, 0,  0, 0, 0, 0, /*90*/
+    0, 0, 0, 0,  0, 0, 0, 0,  0, 0, 0, 0,  0, 0, 0, 0, /*a0*/
+    0, 0, 0, 0,  0, 0, 0, 0,  0, 0, 0, 0,  0, 0, 0, 0, /*b0*/
+
+    0, 0, 0, 0,  0, 0, 0, 0,  0, 0, 0, 0,  0, 0, 0, 0, /*c0*/
+    0, 0, 0, 0,  0, 0, 0, 0,  0, 0, 0, 0,  0, 0, 0, 0, /*d0*/
+    0, 0, 0, 0,  0, 0, 0, 0,  0, 0, 0, 0,  0, 0, 0, 0, /*e0*/
+    0, 0, 0, 0,  0, 0, 0, 0,  0, 0, 0, 0,  0, 0, 0, 0  /*f0*/
 };
 // clang-format on
 
@@ -392,11 +439,15 @@ codegen_generate_call(uint8_t opcode, OpFn op, uint32_t fetchdat, uint32_t new_p
     int          opcode_mask        = 0x3ff;
     uint32_t     recomp_opcode_mask = 0x1ff;
     uint32_t     op_32              = use32;
+    int          op_sse_xmm         = 0;
     int          over               = 0;
     int          test_modrm         = 1;
     int          pc_off             = 0;
     int          in_lock            = 0;
     uint32_t     next_pc            = 0;
+    int is_0f = 0;
+    int is_repe = 0;
+    int is_repne = 0;
     uint16_t     op87               = 0x0000;
 #ifdef DEBUG_EXTRA
     uint8_t last_prefix = 0;
@@ -412,9 +463,20 @@ codegen_generate_call(uint8_t opcode, OpFn op, uint32_t fetchdat, uint32_t new_p
 #ifdef DEBUG_EXTRA
                 last_prefix = 0x0f;
 #endif
+                is_0f = 1;
                 op_table        = x86_dynarec_opcodes_0f;
-                recomp_op_table = fpu_softfloat ? recomp_opcodes_0f_no_mmx : recomp_opcodes_0f;
-                over            = 1;
+                recomp_op_table = (fpu_softfloat || (cpu_features & CPU_FEATURE_SSE2)) ? recomp_opcodes_0f_no_mmx : recomp_opcodes_0f;
+                if(is_repe)
+                {
+                    op_table        = x86_dynarec_opcodes_REPE_0f;
+                    recomp_op_table = NULL;
+                }
+                else if(is_repne)
+                {
+                    op_table        = x86_dynarec_opcodes_REPNE_0f;
+                    recomp_op_table = NULL;
+                }
+                if((fetchdat & 0xff) != 0x38 && (fetchdat & 0xff) != 0x3a) over = 1;
                 break;
 
             case 0x26: /*ES:*/
@@ -428,6 +490,24 @@ codegen_generate_call(uint8_t opcode, OpFn op, uint32_t fetchdat, uint32_t new_p
             case 0x36: /*SS:*/
                 op_ea_seg = &cpu_state.seg_ss;
                 op_ssegs  = 1;
+                break;
+            case 0x38:
+                if(is_0f)
+                {
+                    op_table        = x86_dynarec_opcodes_0f_38;
+                    recomp_op_table = NULL;
+                    over = 1;
+                }
+                else goto generate_call;
+                break;
+            case 0x3a:
+                if(is_0f)
+                {
+                    op_table        = x86_dynarec_opcodes_0f_3a;
+                    recomp_op_table = NULL;
+                    over = 1;
+                }
+                else goto generate_call;
                 break;
             case 0x3e: /*DS:*/
                 op_ea_seg = &cpu_state.seg_ds;
@@ -444,6 +524,7 @@ codegen_generate_call(uint8_t opcode, OpFn op, uint32_t fetchdat, uint32_t new_p
 
             case 0x66: /*Data size select*/
                 op_32 = ((use32 & 0x100) ^ 0x100) | (op_32 & 0x200);
+                op_sse_xmm = 1;
                 break;
             case 0x67: /*Address size select*/
                 op_32 = ((use32 & 0x200) ^ 0x200) | (op_32 & 0x100);
@@ -566,6 +647,7 @@ codegen_generate_call(uint8_t opcode, OpFn op, uint32_t fetchdat, uint32_t new_p
 #endif
                 op_table        = x86_dynarec_opcodes_REPNE;
                 recomp_op_table = NULL; // recomp_opcodes_REPNE;
+                is_repne = 1;
                 break;
             case 0xf3: /*REPE*/
 #ifdef DEBUG_EXTRA
@@ -573,6 +655,7 @@ codegen_generate_call(uint8_t opcode, OpFn op, uint32_t fetchdat, uint32_t new_p
 #endif
                 op_table        = x86_dynarec_opcodes_REPE;
                 recomp_op_table = NULL; // recomp_opcodes_REPE;
+                is_repe = 1;
                 break;
 
             default:
@@ -594,6 +677,7 @@ generate_call:
     codegen_instructions[block->ins].op_ssegs  = last_op_ssegs;
     codegen_instructions[block->ins].op_ea_seg = last_op_ea_seg;
     codegen_instructions[block->ins].op_32     = last_op_32;
+    codegen_instructions[block->ins].op_sse_xmm = last_op_sse_xmm;
     codegen_instructions[block->ins].TOP       = cpu_state.TOP;
     codegen_instructions[block->ins].first_uop = ir->wr_pos;
 
@@ -703,13 +787,24 @@ codegen_skip:
         recomp_op_table = recomp_opcodes;
     }
 
+    if ((op_table == x86_dynarec_opcodes_REPNE_0f || op_table == x86_dynarec_opcodes_REPE_0f) && !op_table[opcode | op_32]) {
+        op_table        = x86_dynarec_opcodes_0f;
+        recomp_op_table = recomp_opcodes_0f_no_mmx;
+    }
+
     if (in_lock && ((opcode == 0x90) || (opcode == 0xec)))
         /* This is always ILLEGAL. */
         op = x86_dynarec_opcodes_3DNOW[0xff];
     else
         op = op_table[((opcode >> opcode_shift) | op_32) & opcode_mask];
 
-    if (!test_modrm || (op_table == x86_dynarec_opcodes && opcode_modrm[opcode]) || (op_table == x86_dynarec_opcodes_0f && opcode_0f_modrm[opcode]) || (op_table == x86_dynarec_opcodes_3DNOW)) {
+    if (!test_modrm || (op_table == x86_dynarec_opcodes && opcode_modrm[opcode])
+    || (op_table == x86_dynarec_opcodes_0f && opcode_0f_modrm[opcode])
+    || (op_table == x86_dynarec_opcodes_0f_38 && opcode_0f_38_modrm[opcode])
+    || (op_table == x86_dynarec_opcodes_0f_3a && opcode_0f_3a_modrm[opcode])
+    || (op_table == x86_dynarec_opcodes_REPE_0f && opcode_0f_modrm[opcode])
+    || (op_table == x86_dynarec_opcodes_REPNE_0f && opcode_0f_modrm[opcode])
+    || (op_table == x86_dynarec_opcodes_3DNOW)) {
         int stack_offset = 0;
 
         if (op_table == x86_dynarec_opcodes && opcode == 0x8f) /*POP*/
@@ -746,13 +841,16 @@ codegen_skip:
         uop_MOV_PTR(ir, IREG_ea_seg, (void *) op_ea_seg);
     if (op_ssegs != last_op_ssegs)
         uop_MOV_IMM(ir, IREG_ssegs, op_ssegs);
+    uop_MOV_IMM(ir, IREG_sse_xmm, op_sse_xmm);
     uop_CALL_INSTRUCTION_FUNC(ir, op, fetchdat);
+    uop_MOV_IMM(ir, IREG_sse_xmm, 0);
     codegen_flags_changed = 0;
     codegen_mark_code_present(block, cs + cpu_state.pc, 8);
 
     last_op_32     = op_32;
     last_op_ea_seg = op_ea_seg;
     last_op_ssegs  = op_ssegs;
+    last_op_sse_xmm = op_sse_xmm;
 #if 0
     codegen_block_ins++;
 #endif
