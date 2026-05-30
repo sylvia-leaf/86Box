@@ -11,7 +11,7 @@
 # Authors: David Hrdlička, <hrdlickadavid@outlook.com>
 #
 #          Copyright 2020-2021 David Hrdlička.
-#          Copyright 2025 starfrost
+#          Copyright 2025 Connor Hyde / starfrost
 #
 
 add_library(vid OBJECT
@@ -140,11 +140,11 @@ add_library(vid OBJECT
     vid_mga.c
 
     # NVidia (pending)
-    nv/nv_rivatimer.c
-
     # Generic
     vid_bochs_vbe.c
 
+    nv/nv_rivatimer.c
+    vid_ati_rage.c
 )
 
 if(CMAKE_SYSTEM_NAME STREQUAL "FreeBSD")

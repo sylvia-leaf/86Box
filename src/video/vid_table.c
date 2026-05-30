@@ -210,6 +210,12 @@ video_cards[] = {
 #endif /*USE_G100 */
     { .device = &s3_trio3d2x_agp_device,                        .flags = VIDEO_FLAG_TYPE_NONE      },
     { .device = &s3_virge_gx2_agp_device,                       .flags = VIDEO_FLAG_TYPE_NONE      },
+#ifndef USE_RAGE
+#define USE_RAGE
+#endif
+#ifdef USE_RAGE
+    { .device = &mach64gt_device,                               .flags = VIDEO_FLAG_TYPE_NONE      },
+#endif
     { .device = NULL,                                           .flags = VIDEO_FLAG_TYPE_NONE      }
   // clang-format on
 };
