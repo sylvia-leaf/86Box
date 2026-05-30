@@ -986,6 +986,7 @@ start_blit_op:
              * This behaviour MUST be tested on real hardware.
              * Todo: write-only bit behaviour
              */
+            ; /* Terrible compile hack, will fix later */
             const uint32_t trail_x = atirage->dst_height_width & 0x1fff; 
             WRITE8(addr, atirage->dst_bres_lnth, val);
             if ((addr & 0x3ff) == 0x123 || (addr & 0x3ff) == 0x147) {
