@@ -67,3 +67,6 @@ CMakeLists.txt.user
 
 # Jetbrains CLion
 .idea
+
+# my build directory
+/86box_build
