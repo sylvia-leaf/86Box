@@ -1,7 +1,7 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2026-05-29 19:36+0000\n"
-"Last-Translator: OBattler <oubattler@gmail.com>\n"
+"PO-Revision-Date: 2026-06-02 17:02+0000\n"
+"Last-Translator: Umut Çağan Uçanok <ucucanok@outlook.com.tr>\n"
 "Language-Team: Turkish <https://weblate.86box.net/projects/86box/86box/tr/>\n"
 "Language: tr-TR\n"
 "MIME-Version: 1.0\n"
@@ -397,7 +397,7 @@ msgid "Internal"
 msgstr "Dahili"
 
 msgid "Wait states:"
-msgstr "Bekleme süreleri:"
+msgstr "Bekleme durumları:"
 
 msgid "MB"
 msgstr "MB"
@@ -452,6 +452,9 @@ msgstr "XGA Grafikleri"
 
 msgid "IBM PS/55 Display Adapter Graphics"
 msgstr "IBM PS/55 Display Adapter Grafikleri"
+
+msgid "Voodoo:"
+msgstr "Voodoo:"
 
 msgid "Keyboard:"
 msgstr "Klavye:"
@@ -690,6 +693,9 @@ msgstr "BPB'yi denetle"
 msgid "CD-ROM drives"
 msgstr "CD-ROM sürücüleri"
 
+msgid "CD-ROM:"
+msgstr "CD-ROM:"
+
 msgid "MO drives"
 msgstr "MO sürücüleri"
 
@@ -840,11 +846,35 @@ msgstr "Seri bağlantı noktaları"
 msgid "Serial ports:"
 msgstr "Seri bağlantı noktaları:"
 
+msgid "COM1:"
+msgstr "COM1:"
+
+msgid "COM2:"
+msgstr "COM2:"
+
+msgid "COM3:"
+msgstr "COM3:"
+
+msgid "COM4:"
+msgstr "COM4:"
+
 msgid "Parallel ports"
 msgstr "Paralel bağlantı noktaları"
 
 msgid "Parallel ports:"
 msgstr "Paralel bağlantı noktaları:"
+
+msgid "LPT1:"
+msgstr "LPT1:"
+
+msgid "LPT2:"
+msgstr "LPT2:"
+
+msgid "LPT3:"
+msgstr "LPT3:"
+
+msgid "LPT4:"
+msgstr "LPT4:"
 
 msgid "Storage controllers"
 msgstr "Depolama denetleyicileri"
@@ -899,7 +929,7 @@ msgstr "Varsayılan"
 
 msgid "%n wait state(s)"
 msgid_plural "%n wait states"
-msgstr[0] "%n Bekleme durumları"
+msgstr[0] "%n Bekleme durumu"
 
 msgid "Type"
 msgstr "Tür"
@@ -2311,6 +2341,9 @@ msgstr "Yüksek DMA"
 msgid "Control PC speaker"
 msgstr "PC hoparlörünü kontrol et"
 
+msgid "Control MIDI volume"
+msgstr "MIDI ses düzeyini kontrol et"
+
 msgid "Memory size"
 msgstr "Bellek boyutu"
 
@@ -3007,6 +3040,9 @@ msgstr "Duraklamayı ayarla"
 msgid "Toggle mute"
 msgstr "Sessize almayı ayarla"
 
+msgid "Toggle on-screen display"
+msgstr ""
+
 msgid "Text files"
 msgstr "Metin dosyaları"
 
@@ -3172,6 +3208,9 @@ msgstr "Dışa aktar…"
 
 msgid "Export EDID"
 msgstr "EDID'i dışa aktar"
+
+msgid "EDID file \"%s\" is invalid."
+msgstr ""
 
 msgid "EDID file \"%s\" is too large."
 msgstr "EDID dosyası \"%s\" çok büyük."
@@ -3383,3 +3422,6 @@ msgstr "932 (Japonca)"
 
 msgid "938 (Traditional Chinese)"
 msgstr "938 (Geleneksel Çince)"
+
+msgid "Sample rate:"
+msgstr "Örnekleme hızı:"

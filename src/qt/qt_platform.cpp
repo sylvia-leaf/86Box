@@ -689,6 +689,7 @@ void
 plat_power_off(void)
 {
     plat_mouse_capture(0);
+    plat_clean_up();
     confirm_exit_cmdl = 0;
     hdd_image_sync_all();
     nvr_save();
@@ -835,9 +836,6 @@ void
 Preferences::reloadStrings()
 {
     translatedstrings.clear();
-    translatedstrings[STRING_MOUSE_CAPTURE]             = QCoreApplication::translate("", "Click to capture mouse").toUtf8();
-    translatedstrings[STRING_MOUSE_RELEASE]             = QCoreApplication::translate("", "Press %1 to release mouse").arg(QKeySequence(acc_keys[FindAccelerator("release_mouse")].seq, QKeySequence::PortableText).toString(QKeySequence::NativeText)).toUtf8();
-    translatedstrings[STRING_MOUSE_RELEASE_MMB]         = QCoreApplication::translate("", "Press %1 or middle button to release mouse").arg(QKeySequence(acc_keys[FindAccelerator("release_mouse")].seq, QKeySequence::PortableText).toString(QKeySequence::NativeText)).toUtf8();
     translatedstrings[STRING_PCAP_ERROR_NO_DEVICES]     = QCoreApplication::translate("", "No PCap devices found. Make sure %1 is installed and that you are on a %1-compatible network connection.").arg(LIB_NAME_PCAP).toUtf8();
     translatedstrings[STRING_PCAP_ERROR_INVALID_DEVICE] = QCoreApplication::translate("", "Invalid PCap device. Make sure %1 is installed and that you are on a %1-compatible network connection.").arg(LIB_NAME_PCAP).toUtf8();
     translatedstrings[STRING_GHOSTSCRIPT_ERROR]         = QCoreApplication::translate("", "Unable to initialize Ghostscript. %1 is required for automatic conversion of PostScript files to PDF.\n\nAny documents sent to the generic PostScript printer will be saved as PostScript (.ps) files.").arg(LIB_NAME_GS).toUtf8();
@@ -848,6 +846,7 @@ Preferences::reloadStrings()
     translatedstrings[STRING_HW_NOT_AVAILABLE_TITLE]    = QCoreApplication::translate("", "Hardware not available").toUtf8();
     translatedstrings[STRING_NET_ERROR]                 = QCoreApplication::translate("", "Failed to initialize network driver:\n\n%s\n\nThe network configuration will be switched to the null driver.").toUtf8();
     translatedstrings[STRING_ESCP_ERROR]                = QCoreApplication::translate("", "Unable to find Dot-Matrix fonts. TrueType fonts in the \"roms/printer/fonts\" directory are required for the emulation of the Generic ESC/P 2 Dot-Matrix Printer.").toUtf8();
+    translatedstrings[STRING_EDID_READ_ERROR]           = QCoreApplication::translate("", "EDID file \"%s\" is invalid.").toUtf8();
     translatedstrings[STRING_EDID_TOO_LARGE]            = QCoreApplication::translate("", "EDID file \"%s\" is too large.").toUtf8();
     translatedstrings[STRING_CDROM_OPEN_ISO_ERROR]      = QCoreApplication::translate("", "Unable to open image or folder \"%s\".").toUtf8();
     translatedstrings[STRING_CDROM_OPEN_CUE_ERROR]      = QCoreApplication::translate("", "Unable to open cue sheet \"%s\".").toUtf8();
@@ -1043,7 +1042,7 @@ plat_get_cpu_string(char *outbuf, uint8_t len)
     auto command_result = QString(process->readAll());
     auto idx = command_result.indexOf(':');
     if (idx > -1)
-        cpu_string = command_result.remove(idx + 1).trimmed();
+        cpu_string = command_result.mid(idx + 1).trimmed();
 #endif
 
     qstrncpy(outbuf, cpu_string.toUtf8().constData(), len);
@@ -1226,7 +1225,7 @@ plat_run_command(const char *cmd, const char **env, const char *title)
         titleq = QStringLiteral("");
     f.write("cd '");
     f.write(process->workingDirectory().replace(QStringLiteral("'"), QStringLiteral("'\\''")).toUtf8());
-    f.write("'\n. /etc/bashrc_Apple_Terminal\nupdate_terminal_cwd\n");
+    f.write("'\n. /etc/$([ -n \"$BASH\" ] && echo ba || ([ -n \"$ZSH_VERSION\" ] && echo z))shrc_$TERM_PROGRAM\nupdate_terminal_cwd\n");
 #    endif
     if (
 #    ifdef Q_OS_MACOS
