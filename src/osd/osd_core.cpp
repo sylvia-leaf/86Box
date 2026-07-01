@@ -70,9 +70,6 @@ static int       menu_sel       = -1;
 static OsdExplorer       explorer;
 static OsdExplorerConfig explorer_config;
 
-static char      files[OSD_FILE_CAPACITY][OSD_PATH_CAPACITY];
-static int       file_count     = 0;
-
 static char      osd_title[512] = "";
 static osd_host_t osd_host       = { nullptr, nullptr };
 static float      osd_layout_scale = 1.0f;
@@ -120,14 +117,9 @@ float osd_core_layout_scale_for_output(int output_w, int output_h)
     return clamp_output_scale(std::min(x_scale, y_scale));
 }
 
-static float osd_scaled(float value)
+float osd_core_scaled(float value)
 {
     return (value > 0.0f) ? (value * osd_layout_scale) : value;
-}
-
-static ImVec2 osd_scaled_size(float width, float height)
-{
-    return ImVec2(osd_scaled(width), osd_scaled(height));
 }
 
 static void apply_layout_scale(void)
@@ -223,37 +215,6 @@ static const char *const mo_exts[] = {
 /* ------------------------------------------------------------------ */
 /*  File browser helpers                                               */
 /* ------------------------------------------------------------------ */
-
-/* Case-insensitive glob: '?' = one char, '*' = any chars. */
-static bool glob_match_ci(const char *pat, const char *str)
-{
-    while (*pat && *str) {
-        if (*pat == '*') {
-            while (*pat == '*') pat++;
-            if (!*pat) return true;
-            while (*str)
-                if (glob_match_ci(pat, str++)) return true;
-            return false;
-        }
-        if (*pat != '?' && tolower((unsigned char)*pat) != tolower((unsigned char)*str))
-            return false;
-        pat++; str++;
-    }
-    while (*pat == '*') pat++;
-    return !*pat && !*str;
-}
-
-/* Match file's extension (including leading '.') against dotted glob patterns. */
-static bool has_ext(const char *name, const char *const *pats)
-{
-    const char *dot = strrchr(name, '.');
-    if (!dot) return false;
-    for (int i = 0; pats[i]; i++)
-        if (glob_match_ci(pats[i], dot))
-            return true;
-    return false;
-}
-
 static const char *const *exts_for_view(OsdView v)
 {
     switch (v) {
@@ -264,44 +225,6 @@ static const char *const *exts_for_view(OsdView v)
         case VIEW_FILE_MO:     return mo_exts;
         default:               return nullptr;
     }
-}
-
-using DirSet = std::set<std::pair<dev_t, ino_t>>;
-
-static void scan_dir_recursive(char path[], size_t path_len, const char *const *exts, DirSet &visited)
-{
-    struct stat dst;
-    if (stat(path, &dst) != 0 || !S_ISDIR(dst.st_mode))
-        return;
-    auto key = std::make_pair(dst.st_dev, dst.st_ino);
-    if (!visited.insert(key).second)
-        return; /* already visited (symlink / bind-mount) */
-
-    DIR *dir = opendir(path);
-    if (!dir)
-        return;
-
-    struct dirent *entry;
-    while ((entry = readdir(dir)) != nullptr) {
-        const char *name = entry->d_name;
-        if (file_count < OSD_FILE_CAPACITY && name[0] != '.') {
-            int added = snprintf(path + path_len, OSD_PATH_CAPACITY - path_len,
-                                 "/%s", name);
-            if (added > 0 && added < (int)(OSD_PATH_CAPACITY - path_len)) {
-                struct stat st;
-                if (stat(path, &st) == 0) {
-                    if (S_ISDIR(st.st_mode))
-                        scan_dir_recursive(path, path_len + (size_t)added, exts, visited);
-                    else if (S_ISREG(st.st_mode) && has_ext(name, exts))
-                        if (snprintf(files[file_count], OSD_PATH_CAPACITY, "%s", path) < OSD_PATH_CAPACITY)
-                            file_count++;
-                }
-            }
-            path[path_len] = '\0';
-        }
-    }
-
-    closedir(dir);
 }
 
 /* ------------------------------------------------------------------ */
@@ -319,6 +242,7 @@ static void mount_path(const char *path)
             floppy_mount(0, (char *) path, 0);
             break;
         case VIEW_FILE_CD:
+        case VIEW_CD_FOLDER:
             cdrom_mount(0, (char *) path);
             break;
         case VIEW_FILE_RDISK:
@@ -565,7 +489,7 @@ static bool draw_menu(void)
         activate_menu_item(menu_sel, &close_osd);
 
     ImGui::SetNextWindowPos(ImGui::GetMainViewport()->GetCenter(), ImGuiCond_Always, ImVec2(0.5f, 0.5f));
-    ImGui::SetNextWindowSize(osd_scaled_size(320.0f, 0.0f), ImGuiCond_Always);
+    ImGui::SetNextWindowSize(ImVec2(osd_core_scaled(320.0f), osd_core_scaled(0.0f)), ImGuiCond_Always);
 
     ImGui::Begin("86Box OSD", nullptr,
                  ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoResize |
@@ -642,7 +566,7 @@ static bool draw_log(void)
         show_main_menu();
 
     ImGui::SetNextWindowPos(ImGui::GetMainViewport()->GetCenter(), ImGuiCond_Always, ImVec2(0.5f, 0.5f));
-    ImGui::SetNextWindowSize(osd_scaled_size(560.0f, 340.0f), ImGuiCond_Always);
+    ImGui::SetNextWindowSize(ImVec2(osd_core_scaled(560.0f), osd_core_scaled(340.0f)), ImGuiCond_Always);
     ImGui::Begin("Log", nullptr,
                  ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoResize |
                  ImGuiWindowFlags_NoMove     | ImGuiWindowFlags_NoNav);
@@ -739,6 +663,24 @@ bool osd_core_build_ui(void)
         case VIEW_LOG:       return draw_log();
         default:             return draw_browser();
     }
+}
+
+int osd_percentage = 0;
+
+void osd_core_draw_indicators(void)
+{
+#if 0
+    ImGuiWindowFlags window_flags = 0;
+    window_flags |= ImGuiWindowFlags_NoBackground;
+    window_flags |= ImGuiWindowFlags_NoTitleBar;
+    bool open_ptr = true;
+    ImGui::SetNextWindowPos(ImVec2(0, 0));
+    ImGui::SetNextWindowSize(ImGui::GetIO().DisplaySize);
+    if (ImGui::Begin("DrawWin", &open_ptr, window_flags)) {
+        ImGui::TextColored(ImVec4(0, 1, 0, 1.0), "%d%%", osd_percentage);
+        ImGui::End();
+    }
+#endif
 }
 
 void osd_core_install_log_hook(void)

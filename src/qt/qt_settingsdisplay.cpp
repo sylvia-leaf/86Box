@@ -240,9 +240,11 @@ SettingsDisplay::on_pushButtonConfigureVideo_clicked()
 {
     int   videoCard = ui->comboBoxVideo->currentData().toInt();
     auto *device    = video_card_getdevice(videoCard);
-    if (videoCard == VID_INTERNAL)
+    if (videoCard == VID_INTERNAL) {
         device = machine_get_vid_device(machineId);
-    gfxcard_cfg_changed[0] |= DeviceConfig::ConfigureDevice(device);
+        gfxcard_cfg_changed[0] |= DeviceConfig::ConfigureDevice(device);
+    } else
+        gfxcard_cfg_changed[0] |= DeviceConfig::ConfigureDevice(device, 1);
 }
 
 void
@@ -418,7 +420,7 @@ void
 SettingsDisplay::on_pushButtonConfigureVideoSecondary_clicked()
 {
     auto *device = video_card_getdevice(ui->comboBoxVideoSecondary->currentData().toInt());
-    gfxcard_cfg_changed[1] |= DeviceConfig::ConfigureDevice(device);
+    gfxcard_cfg_changed[1] |= DeviceConfig::ConfigureDevice(device, 2);
 }
 
 void
