@@ -398,6 +398,7 @@ start_blit_op:
         case 0x1fc ... 0x1ff:
             warning("Attempt to write to SCALE_3D_CNTL addr=%08X,val=%02X",addr,val);
             WRITE8(addr, atirage->scale_3d_cntl, val);
+            atirage->scaler_active = (atirage->scale_3d_cntl & SCALE_3D_FCN) == 0x40 ? 1 : 0; 
             break;
         case 0x200 ... 0x23f:
             atirage_blit(val, 8, atirage);
@@ -1330,6 +1331,8 @@ atirage_blit_rect(uint32_t cpu_dat, int count, atirage_t* atirage)
                         src_dat = atirage->accel.pattern_clr8x1[dst_x & 7];
                         break;
                     }
+                case SRC_SCALER_3D:
+                    warning("Rectangle: Scaler / 3D source set");
 
                 default:
                     src_dat = 0;
@@ -1524,6 +1527,9 @@ atirage_blit_line(uint32_t cpu_dat, int count, atirage_t* atirage)
                             src_dat = atirage->accel.pattern_clr8x1[atirage->accel.dst_x & 7];
                             break;
                         }
+                    case SRC_SCALER_3D:
+                        warning("Line: Scaler / 3D source set");
+                        
                     default:
                         src_dat = 0;
                         break;
@@ -1631,6 +1637,8 @@ atirage_blit_line(uint32_t cpu_dat, int count, atirage_t* atirage)
                     case SRC_BG:
                         src_dat = atirage->accel.dp_bkgd_clr;
                         break;
+                    case SRC_SCALER_3D:
+                        warning("Line: Scaler / 3D source set");
                     default:
                         src_dat = 0;
                         break;
@@ -1955,6 +1963,8 @@ atirage_write_trap(atirage_t *atirage, uint32_t *cpu_dat, int *count)
                     case SRC_BG:
                         src_dat = atirage->accel.dp_bkgd_clr;
                         break;
+                    case SRC_SCALER_3D:
+                        warning("Trapezoid: Scaler / 3D source set");
                     default:
                         src_dat = 0;
                         break;
@@ -2012,6 +2022,8 @@ atirage_write_trap(atirage_t *atirage, uint32_t *cpu_dat, int *count)
                     case SRC_BG:
                         src_dat = atirage->accel.dp_bkgd_clr;
                         break;
+                    case SRC_SCALER_3D:
+                        warning("Trapezoid: Scaler / 3D source set");
                     default:
                         src_dat = 0;
                         break;

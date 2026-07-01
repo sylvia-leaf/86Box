@@ -2359,6 +2359,8 @@ atirage_common_init(const device_t *info)
     atirage->i2c_tv = i2c_gpio_init("tv_atirage");
     atirage->ddc = ddc_init(i2c_gpio_get_bus(atirage->i2c));
 
+    atirage->scaler_active = 0;
+
 #ifdef DMA_BM
     atirage->dma.lock = thread_create_mutex();
 #endif

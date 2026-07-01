@@ -224,7 +224,7 @@ typedef struct atirage_t {
     uint32_t linear_base;
     uint32_t io_base;
 
-    
+
     /* RAGE z-buffer */
     uint32_t z_off_pitch;
     uint32_t z_cntl;
@@ -276,6 +276,8 @@ typedef struct atirage_t {
     /* RAGE scaler */
     uint32_t scale_vacc;
     uint32_t scale_3d_cntl;
+
+    int scaler_active;      /* Is the scaler active? */
 
 
     struct {
@@ -501,6 +503,36 @@ enum {
     TRAIL_BRES_SIGN         = 0x08000,
     BRES_SIGN_AUTO          = 0x10000
 };
+
+enum {
+    SCALE_PIX_EXPAND        = 0x00000001,
+    SCALE_DITHER            = 0x00000002,
+    DITHER_EN               = 0x00000004,
+    DITHER_INIT             = 0x00000008,
+    ROUND_EN                = 0x00000010,
+    TEX_CACHE_DIS           = 0x00000020,
+    SCALE_3D_FCN            = 0x00000060,
+    SCALE_PIX_REP           = 0x00000100,
+    NEAREST_TEX_VIS         = 0x00000200,
+    APPLE_YUV_MODE          = 0x00000400,
+    ALPHA_FOG_EN            = 0x00001800,
+    COLOR_OVERRIDE          = 0x00002000,
+    RED_DITHER_MAX          = 0x00004000,
+    SIGNED_DST_CLAMP        = 0x00008000,
+    ALPHA_BLND_SRC          = 0x00070000,
+    ALPHA_BLND_DST          = 0x00380000,
+    TEX_LIGHT_FCN           = 0x00c00000,
+    MIP_MAP_DISABLE         = 0x01000000,
+    BILINEAR_TEX_EN         = 0x02000000,
+    TEX_BLEND_FCN           = 0x0c000000,
+    TEX_AMASK_AEN           = 0x10000000,
+    TEX_AMASK_MODE          = 0x20000000,
+    TEX_MAP_AEN             = 0x40000000,
+    SRC_3D_SEL              = 0x80000000
+};
+
+
+
 
 enum {
     HOST_BYTE_ALIGN = (1 << 0)
