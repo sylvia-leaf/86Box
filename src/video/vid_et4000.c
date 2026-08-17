@@ -646,7 +646,10 @@ static void
 et4000_recalctimings(svga_t *svga)
 {
     const et4000_t *dev = (et4000_t *) svga->priv;
-    int clk_sel = ((svga->miscout >> 2) & 0x03) | ((svga->crtc[0x34] << 1) & 0x04) | ((svga->crtc[0x31] >> 3) & 0x08);
+    int clk_sel = ((svga->miscout >> 2) & 0x03) | ((svga->crtc[0x34] << 1) & 0x04);
+
+    if (svga->getclock != NULL)
+        clk_sel |= ((svga->crtc[0x31] >> 3) & 0x08);
 
     svga->memaddr_latch |= (svga->crtc[0x33] & 3) << 16;
 
@@ -674,19 +677,25 @@ et4000_recalctimings(svga_t *svga)
     }
 
     if (svga->getclock == NULL) {
-        /* Assume it has the same timings as the ET3000AX. */
-        switch (((svga->miscout >> 2) & 3) | ((svga->crtc[0x24] << 1) & 4)) {
+        switch (clk_sel) {
             case 0:
             case 1:
                 break;
             case 3:
                 svga->clock = (cpuclock * (double) (1ULL << 32)) / 40000000.0;
                 break;
-            case 5:
-                svga->clock = (cpuclock * (double) (1ULL << 32)) / 65000000.0;
-                break;
-            default:
+            case 4:
                 svga->clock = (cpuclock * (double) (1ULL << 32)) / 36000000.0;
+                break;
+            case 5:
+                svga->clock = (cpuclock * (double) (1ULL << 32)) / 45000000.0;
+                break;
+            case 6:
+                svga->clock = (cpuclock * (double) (1ULL << 32)) / 31000000.0;
+                break;
+            case 7:
+                svga->clock = (cpuclock * (double) (1ULL << 32)) / 38000000.0;
+            default:
                 break;
         }
     } else
@@ -949,6 +958,8 @@ et4000_init(const device_t *info)
     dev->svga.translate_address = get_et4000_addr;
 
     dev->svga.packed_chain4 = 1;
+
+    dev->svga.adv_flags    |= FLAG_EXT_AR;
 
     return dev;
 }

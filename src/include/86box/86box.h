@@ -220,6 +220,7 @@ extern int      hdd_format_type;            /* (C) hard disk file format */
 extern int      confirm_reset;              /* (G) enable reset confirmation */
 extern int      confirm_exit;               /* (G) enable exit confirmation */
 extern int      confirm_save;               /* (G) enable save confirmation */
+extern int      chd_precache_level;         /* (G) CHD precache level */
 extern int      enable_discord;             /* (C) enable Discord integration */
 extern int      force_10ms;                 /* (C) force 10ms CPU frame interval */
 extern int      jumpered_internal_ecp_dma;  /* (C) Jumpered internal EPC DMA */
@@ -227,6 +228,7 @@ extern int      other_ide_present;          /* IDE controllers from non-IDE card
 extern int      other_scsi_present;         /* SCSI controllers from non-SCSI cards are present */
 extern int      is_pcjr;                    /* The current machine is PCjr. */
 
+extern int    dump_missing;
 extern int    hard_reset_pending;
 extern int    fixed_size_x;
 extern int    fixed_size_y;
@@ -245,6 +247,7 @@ extern int    fm_driver;                    /* (C) select FM sound driver */
 extern int    hook_enabled;                 /* (C) Keyboard hook is enabled */
 extern int    vmm_disabled;                 /* (G) disable built-in manager */
 extern char   vmm_path_cfg[1024];           /* (G) VMs path (unless -E is used) */
+extern int    gdbstub_port;                 /* (C) The GDB stub port. */
 
 extern char exe_path[2048];        /* path (dir) of executable */
 extern char usr_path[1024];        /* path (dir) of user data */
@@ -335,7 +338,7 @@ struct accelKey {
 	char desc[64];
 	char seq[64];
 };
-#define NUM_ACCELS 15
+#define NUM_ACCELS 17
 extern struct accelKey acc_keys[NUM_ACCELS];
 extern struct accelKey def_acc_keys[NUM_ACCELS];
 extern int FindAccelerator(const char *name);

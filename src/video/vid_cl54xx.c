@@ -749,6 +749,8 @@ gd54xx_out(uint16_t addr, uint8_t val, void *priv)
                 }
             } else {
                 o                                   = svga->attrregs[svga->attraddr & 31];
+                if ((svga->attraddr & 31) > 0x14)
+                    val = o;
                 svga->attrregs[svga->attraddr & 31] = val;
                 if (svga->attraddr < 16)
                     svga->fullchange = changeframecount;
@@ -5134,8 +5136,10 @@ gd54xx_init(const device_t *info)
             break;
 
         case CIRRUS_ID_CLGD5424:
-            if (local & 0x200)
-                romfn = /*NULL*/ "roms/machines/advantage40xxd/AST101.09A";
+            if ((local & 0x200) && (machines[machine].init == machine_at_advantage40xxd_init))
+                romfn = "roms/machines/advantage40xxd/AST101.09A";
+            else if (local & 0x200)
+                romfn = NULL;
             else
                 romfn = BIOS_GD5422_PATH;
             break;

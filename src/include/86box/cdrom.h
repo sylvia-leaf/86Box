@@ -33,6 +33,8 @@
 #define CD_STATUS_HAS_AUDIO         0xc
 #define CD_STATUS_MASK              0x1f
 
+#define CD_SECTOR_FLAG_SCRAMBLED    0x80000000
+
 /* Medium changed flag. */
 #define CD_STATUS_TRANSITION     0x40
 #define CD_STATUS_MEDIUM_CHANGED 0x80
@@ -151,11 +153,13 @@ static const struct cdrom_drive_types_s {
     { "CREATIVE", "CD2422E",          "MC10", "",          "creative_2422",  BUS_TYPE_IDE,  0, 24, 36, 0, 0, {  4,  2,  2,  2 } },
     { "CREATIVE", "CD3621E",          "ZC10", "",          "creative_3621",  BUS_TYPE_IDE,  0, 36, 36, 0, 0, {  4,  2,  2,  2 } },
     { "CREATIVE", "CD5220E",          "2.02", "",          "creative_5220",  BUS_TYPE_IDE,  0, 52, 36, 0, 0, {  4,  2,  2,  4 } },
+    { "CREATIVEDVD-ROM", "DVD2240E",  "1.7A", "",          "creative_d2240", BUS_TYPE_IDE,  0, 20, 36, 0, 1, {  4,  2,  2,  4 } }, /* The "CREATIVEDVD-ROM" name is used by the real drive, not a mistake */
     { "ECS",      "300ESD",           "V200", "",          "ecs_300",        BUS_TYPE_IDE,  0,  3, 36, 0, 0, {  2, -1, -1, -1 } }, /* Firmware revision not yet confirmed */
     { "ECS",      "600ESD",           "V300", "",          "ecs_600",        BUS_TYPE_IDE,  0,  6, 36, 0, 0, {  3, -1, -1, -1 } },
     { "GOLDSTAR", "CRD-8160B",        "3.14", "",          "goldstar",       BUS_TYPE_IDE,  0, 16, 36, 0, 0, {  4,  2,  1, -1 } },
     { "GOLDSTAR", "CRD-8240B",        "1.11", "",          "goldstar_8240b", BUS_TYPE_IDE,  0, 24, 36, 0, 0, {  4,  2,  1, -1 } },
     { "GOLDSTAR", "CRD-8320B",        "1.10", "",          "goldstar_8320b", BUS_TYPE_IDE,  0, 32, 36, 0, 0, {  4,  2,  1, -1 } },
+    { "GOLDSTAR", "CRD-8400B",        "1.03", "",          "gs_8400b_103",   BUS_TYPE_IDE,  0, 40, 36, 0, 0, {  4,  2,  2, -1 } },
     { "GOLDSTAR", "CRD-8400B",        "1.12", "",          "goldstar_8400b", BUS_TYPE_IDE,  0, 40, 36, 0, 0, {  4,  2,  2, -1 } },
     { "GOLDSTAR", "CRD-8484B",        "1.03", "",          "goldstar_8484b", BUS_TYPE_IDE,  0, 48, 36, 0, 0, {  4,  2,  2,  2 } },
     { "GOLDSTAR", "GCD-R542B",        "1.20", "",          "goldstar_r542b", BUS_TYPE_IDE,  0,  4, 36, 0, 0, {  3,  2,  1, -1 } },
@@ -195,6 +199,10 @@ static const struct cdrom_drive_types_s {
     { "LITEON",  "CD-ROM LTR48125S",  "1S07", "LTR48125S", "liteon_48125s",  BUS_TYPE_IDE,  0, 48, 36, 0, 0, {  4,  2,  2,  2 } },
     { "LITEON",  "CD-ROM LTN526D",    "YSR5", "LTN526D",   "liteon_526d",    BUS_TYPE_IDE,  0, 52, 36, 0, 0, {  4,  2,  2,  2 } }, /* Confirmed to be 52x, was the basis for deducing the other one's speed. */
     { "LITEON",  "CD-ROM LTD166",     "9S14", "LTD166",    "liteon_166d",    BUS_TYPE_IDE,  0, 48, 36, 0, 1, {  4,  2,  2,  4 } },
+    { "LITE-ON", " DVD+RW LDW-401S",  "ES0G", "",          "liteon_401s",    BUS_TYPE_IDE,  0, 40, 36, 0, 1, {  4,  2,  2,  4 } },
+    { "LITE-ON", " DVDRW SOHW-812S",  "US0A", "",          "liteon_812s",    BUS_TYPE_IDE,  0, 40, 36, 0, 1, {  4,  2,  2,  4 } },
+    { "LITE-ON", " DVDRW SOHW-1633S", "BS0G", "",          "liteon_812s",    BUS_TYPE_IDE,  0, 48, 36, 0, 1, {  4,  2,  2,  4 } },
+    { "LITE-ON", " DVD SOHD-167T",    "9S13", "",          "liteon_167t",    BUS_TYPE_IDE,  0, 48, 36, 0, 1, {  4,  2,  2,  4 } },
     { "MAD DOG",  "LIGHTNING 56X",    "1.0 ", "",          "maddog_56x",     BUS_TYPE_IDE,  0, 56, 36, 0, 0, {  4,  2,  2,  4 } }, /* TODO: to find the real dump of this CD-ROM model. */
     { "MAD DOG",  "ENTERTAINER 16X",  "1.0 ", "",          "maddog_16x",     BUS_TYPE_IDE,  0, 48, 36, 0, 1, {  4,  2,  2,  4 } }, /* TODO: to find the real dump of this CD-ROM model. */
     { "MATSHITA", "CR-571",           "1.0e", "",          "matshita_571",   BUS_TYPE_IDE,  0,  2, 36, 0, 0, {  0, -1, -1, -1 } },
@@ -311,6 +319,7 @@ static const struct cdrom_drive_types_s {
     { "PIONEER",  "CD-ROM DRM-604X",  "2403", "",          "pioneer_604x",   BUS_TYPE_SCSI, 2,  4, 47, 0, 0, { -1, -1, -1, -1 } }, /* NOTE: The real thing is a CD changer drive! */
     { "PIONEER",  "CD-ROM DR-U124X",  "4021", "",          "pioneer_u124x",  BUS_TYPE_SCSI, 2,  4, 47, 0, 0, { -1, -1, -1, -1 } }, /* Another (updated?) variant of DRM-604X */
     { "PIONEER",  "CD-ROM DR-U16S",   "0066", "",          "pioneer_u16s",   BUS_TYPE_SCSI, 2, 36, 47, 0, 0, { -1, -1, -1, -1 } },
+    { "PIONEER",  "DVD-ROM DVD-305S", "1.00", "",          "pioneer_305s",   BUS_TYPE_SCSI, 2, 40, 47, 0, 1, { -1, -1, -1, -1 } },
     { "PLEXTOR",  "CD-ROM PX-43CH",   "0204", "",          "plextor_43ch",   BUS_TYPE_SCSI, 2,  4, 36, 1, 0, { -1, -1, -1, -1 } }, /* Caddy. */
     { "PLEXTOR",  "CD-ROM PX-83CS",   "1.01", "",          "plextor_83cs",   BUS_TYPE_SCSI, 2,  8, 36, 1, 0, { -1, -1, -1, -1 } }, /* Caddy. */
     { "PLEXTOR",  "CD-ROM PX-12CS",   "1.04", "",          "plextor_12cs",   BUS_TYPE_SCSI, 2, 12, 36, 1, 0, { -1, -1, -1, -1 } }, /* Caddy. */
@@ -366,12 +375,13 @@ typedef struct subchannel_t {
     uint8_t attr;
     uint8_t track;
     uint8_t index;
-    uint8_t abs_m;
-    uint8_t abs_s;
-    uint8_t abs_f;
     uint8_t rel_m;
     uint8_t rel_s;
     uint8_t rel_f;
+    uint8_t reserved;
+    uint8_t abs_m;
+    uint8_t abs_s;
+    uint8_t abs_f;
 } subchannel_t;
 
 typedef struct track_info_t {
@@ -402,7 +412,6 @@ typedef struct cdrom_ops_t {
                                const int end, track_info_t *ti);
     void     (*get_raw_track_info)(const void *local, int *num,
                                    uint8_t *rti);
-    int      (*is_track_pre)(const void *local, const uint32_t sector);
     int      (*read_sector)(const void *local, uint8_t *buffer,
                             const uint32_t sector);
     uint8_t  (*get_track_type)(const void *local, const uint32_t sector);
@@ -500,11 +509,17 @@ typedef struct cdrom {
 
     uint8_t            p_parity[172];
     uint8_t            q_parity[104];
+
+    subchannel_t      cached_subc;
+    int               subc_sector;
+
+    int               audio_read;
+    int               formed_mode2;
 } cdrom_t;
 
 extern cdrom_t cdrom[CDROM_NUM];
 
-#define MSFtoLBA(m, s, f)  ((((m * 60) + s) * 75) + f)
+#define MSFtoLBA(m, s, f)  (((((m) * 60) + (s)) * 75) + (f))
 
 static __inline int
 bin2bcd(int x)
@@ -543,6 +558,7 @@ extern int             cdrom_get_type(const int model);
 
 extern int             cdrom_lba_to_msf_accurate(const int lba);
 extern void            cdrom_interleave_subch(uint8_t *d, const uint8_t *s);
+extern void            cdrom_deinterleave_subch(uint8_t *d, const uint8_t *s);
 extern double          cdrom_seek_time(const cdrom_t *dev);
 extern void            cdrom_stop(cdrom_t *dev);
 extern void            cdrom_seek(cdrom_t *dev, const uint32_t pos, const uint8_t vendor_type);
@@ -552,7 +568,8 @@ extern int             cdrom_audio_callback(cdrom_t *dev, int16_t *output, const
 extern uint8_t         cdrom_audio_play(cdrom_t *dev, const uint32_t pos, const uint32_t len, const int ismsf);
 extern uint8_t         cdrom_audio_track_search(cdrom_t *dev, const uint32_t pos,
                                                 const int type, const uint8_t playbit);
-extern uint8_t         cdrom_audio_track_search_pioneer(cdrom_t *dev, const uint32_t pos, const uint8_t playbit);
+extern uint8_t         cdrom_audio_track_search_pioneer(cdrom_t *dev, const uint32_t pos,
+                                                const int type, const uint8_t playbit);
 extern uint8_t         cdrom_audio_play_pioneer(cdrom_t *dev, const uint32_t pos);
 extern uint8_t         cdrom_audio_play_toshiba(cdrom_t *dev, const uint32_t pos, const int type);
 extern uint8_t         cdrom_audio_scan(cdrom_t *dev, const uint32_t pos);
@@ -571,10 +588,14 @@ extern int             cdrom_read_toc_sony(const cdrom_t *dev, uint8_t *b, const
                                            const int msf, const int max_len);
 #ifdef USE_CDROM_MITSUMI
 extern void            cdrom_get_track_buffer(cdrom_t *dev, uint8_t *buf);
-extern void            cdrom_get_q(cdrom_t *dev, uint8_t *buf, int *curtoctrk, uint8_t mode);
+extern int             cdrom_get_q(cdrom_t *dev, uint8_t *buf, int curtoctrk, uint8_t mode);
 extern uint8_t         cdrom_mitsumi_audio_play(cdrom_t *dev, uint32_t pos, uint32_t len);
 #endif
 extern uint8_t         cdrom_read_disc_info_toc(cdrom_t *dev, uint8_t *b,
+                                                const uint8_t track, const int type);
+extern uint8_t         cdrom_read_toc_nec(cdrom_t *dev, uint8_t *b,
+                                                const uint8_t track, const int type, const int len);
+extern uint8_t         cdrom_read_toc_pioneer(cdrom_t *dev, uint8_t *b,
                                                 const uint8_t track, const int type);
 extern int             cdrom_is_track_audio(cdrom_t *dev, const int sector, const int ismsf,
                                             int cdrom_sector_type, const uint8_t vendor_type);
@@ -583,6 +604,7 @@ extern int             cdrom_readsector_raw(cdrom_t *dev, uint8_t *buffer, const
                                             int *len, const uint8_t vendor_type);
 extern int             cdrom_read_dvd_structure(const cdrom_t *dev, const uint8_t layer, const uint8_t format,
                                                 uint8_t *buffer, uint32_t *info);
+extern void            cdrom_generate_scramble_lut(uint8_t *b);
 extern void            cdrom_read_disc_information(const cdrom_t *dev, uint8_t *buffer);
 extern int             cdrom_read_track_information(cdrom_t *dev, const uint8_t *cdb, uint8_t *buffer);
 extern uint8_t         cdrom_get_current_mode(cdrom_t *dev);
@@ -606,8 +628,16 @@ extern void            cdrom_compute_ecc_block(cdrom_t *dev, uint8_t *parity, co
                                                uint32_t major_mult, uint32_t minor_inc, int m2f1);
 extern unsigned long   cdrom_crc32(unsigned long crc, const unsigned char *buf,
                                    size_t len);
+extern unsigned short  cdrom_crc16(unsigned short crc, const unsigned char *buf,
+                                   size_t len);
+
+extern int             cdrom_image_is_aaru(const char *fn);
+extern int             cdrom_image_is_chd(const char *fn);
+extern int             cdrom_image_is_ccd(const char *fn);
 
 extern int             cdrom_assigned_letters;
+
+extern uint8_t __attribute__((aligned(16))) cdrom_scramble_table[2352];
 
 #ifdef __cplusplus
 }

@@ -191,6 +191,7 @@ int      time_sync                              = 0;              /* (C) enable 
 int      confirm_reset                          = 1;              /* (G) enable reset confirmation */
 int      confirm_exit                           = 1;              /* (G) enable exit confirmation */
 int      confirm_save                           = 1;              /* (G) enable save confirmation */
+int      chd_precache_level                     = 0;              /* (G) CHD precache level */
 int      enable_discord                         = 0;              /* (C) enable Discord integration */
 int      pit_mode                               = -1;             /* (C) force setting PIT mode */
 int      fm_driver                              = 0;              /* (C) select FM sound driver */
@@ -229,6 +230,9 @@ double   video_gl_input_scale = 1.0;                              /* (C) OpenGL 
 int      video_gl_input_scale_mode = FULLSCR_SCALE_FULL;          /* (C) OpenGL 3.x input stretch mode */
 int      color_scheme = 0;                                        /* (C) Color scheme of UI (Windows-only) */
 int      fdd_sounds_enabled = 1;                                  /* (C) Floppy drive sounds enabled */
+int      is_new_808x = 0;                                         /* (C) Use the new 808x code. */
+
+int      gdbstub_port = 12345;                                    /* (C) The GDB stub port. */
 
 // Accelerator key array
 struct accelKey acc_keys[NUM_ACCELS];
@@ -288,7 +292,7 @@ struct accelKey def_acc_keys[NUM_ACCELS] = {
     {
         .name="hard_reset",
         .desc="Hard reset",
-        .seq="Ctrl+Alt+F12"
+        .seq="Ctrl+Shift+F12"
     },
     {
         .name="pause",
@@ -306,9 +310,20 @@ struct accelKey def_acc_keys[NUM_ACCELS] = {
         .seq="Ctrl+Alt+I"
     },
     {
+        .name="nmi",
+        .desc="Non-maskable interrupt",
+        .seq=""
+    },
+    {
         .name="toggle_osd",
         .desc="Toggle on-screen display",
         .seq="Ctrl+Alt+O"
+    }
+,
+    {
+        .name="exit",
+        .desc="Exit",
+        .seq=""
     }
 };
 
@@ -1382,10 +1397,12 @@ usage:
 void
 pc_speed_changed(void)
 {
-    if (cpu_s->cpu_type >= CPU_286)
-        pit_set_clock(cpu_s->rspeed);
-    else
-        pit_set_clock((uint32_t) 14318184.0);
+    if (cpu_s != NULL) {
+        if (cpu_s->cpu_type >= CPU_286)
+            pit_set_clock(cpu_s->rspeed);
+        else
+            pit_set_clock((uint32_t) 14318184.0);
+    }
 }
 
 void
@@ -1407,8 +1424,6 @@ pc_init_roms(void)
     char    tempc[512];
 
     if (dump_missing) {
-        dump_missing = 0;
-
         c = 0;
         while (machine_get_internal_name_ex(c) != NULL) {
             m = machine_available(c);
@@ -1428,6 +1443,8 @@ pc_init_roms(void)
                 pclog("Missing video card: %s\n", tempc);
             c++;
         }
+
+        dump_missing = 0;
     }
 
     pc_log("Scanning for ROM images:\n");
