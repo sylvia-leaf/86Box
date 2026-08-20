@@ -738,12 +738,31 @@ void
 atirage_queue(atirage_t *atirage, uint32_t addr, uint32_t val, uint32_t type)
 {
     fifo_entry_t *fifo = &atirage->fifo[atirage->fifo_write_idx & FIFO_MASK];
+    int           limit = 0;
 
-    // Before me, there was some code that checked if the address was 0x11b (if a byte), 0x11a (if a word), or 0x118 (if a dword), and only fired the FIFO thread
-    // if there were 16 or more entries in the FIFO. It was introduced in a commit on 8/21/2024 with no discussion that I can find even related to it. 
-    // It didn't break anything to remove it and I can't think of any design reason for it to exist.
+    /* The 3D RAGE GT parameter FIFO is 48 entries deep (RRG-G02700, GUI_STAT). */
+    switch (type) {
+        case FIFO_WRITE_BYTE:
+            if ((addr & 0x3ff) == 0x11b)
+                limit = 1;
+            break;
+        case FIFO_WRITE_WORD:
+            if ((addr & 0x3fe) == 0x11a)
+                limit = 1;
+            break;
+        case FIFO_WRITE_DWORD:
+            if ((addr & 0x3fc) == 0x118)
+                limit = 1;
+            break;
+        default:
+            break;
+    }
 
-    if (FIFO_FULL) {
+    if (limit && (FIFO_ENTRIES >= 48)) {
+        thread_reset_event(atirage->fifo_not_full_event);
+        if (FIFO_ENTRIES >= 48)
+            thread_wait_event(atirage->fifo_not_full_event, -1); /* Wait for a GT FIFO slot. */
+    } else if (FIFO_FULL) {
         thread_reset_event(atirage->fifo_not_full_event);
         if (FIFO_FULL)
             thread_wait_event(atirage->fifo_not_full_event, -1); /*Wait for room in ringbuffer*/

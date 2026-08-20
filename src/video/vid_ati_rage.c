@@ -268,6 +268,22 @@ atirage_updatemapping(atirage_t *atirage)
             break;
     }
 
+
+    /*
+       The small aperture is only available in accelerated modes and only if
+       bit 2 of the Config_Cntl (6AECh) register is set.
+     */
+    if (atirage->config_cntl & 4) {
+        mem_mapping_set_handler(&svga->mapping, atirage_read, atirage_readw, atirage_readl, atirage_write, atirage_writew, atirage_writel);
+        mem_mapping_set_p(&svga->mapping, atirage);
+        mem_mapping_enable(&atirage->mmio_mapping);
+    } else {
+        mem_mapping_set_handler(&svga->mapping, svga_read, svga_readw, svga_readl, svga_write, svga_writew, svga_writel);
+        mem_mapping_set_p(&svga->mapping, svga);
+        mem_mapping_disable(&atirage->mmio_mapping);
+    }
+
+
     if (atirage->linear_base) {
         /*2*8 MB aperture*/
         mem_mapping_set_addr(&atirage->linear_mapping, atirage->linear_base, (8 << 20) - 4096);
@@ -371,6 +387,12 @@ atirage_ext_readb(uint32_t addr, void *priv)
     svga_t   *svga   = &atirage->svga;
 
     uint8_t ret = 0xff;
+
+    if ((addr >= 0x000a0000) && (addr < 0x000bf800))
+        return svga->mapping.read_b(addr, svga->mapping.priv);
+    if (!((addr < 0x000a0000) || ((addr >= 0x000bf800) && (addr <= 0x000bffff)) || (addr >= 0x00100000)))
+        return ret;
+
     if (!(addr & 0x400)) {
         // pclog( "atirage_ext_readb: addr=%04x\n", addr);
         switch (addr & 0x3ff) {
@@ -1062,7 +1084,13 @@ uint16_t
 atirage_ext_readw(uint32_t addr, void *priv)
 {
     const atirage_t *atirage = (atirage_t *) priv;
-    uint16_t  ret;
+    const svga_t    *svga    = &atirage->svga;
+    uint16_t         ret     = 0xffff;
+
+    if ((addr >= 0x000a0000) && (addr < 0x000bf800))
+        return svga->mapping.read_w(addr, svga->mapping.priv);
+    if (!((addr < 0x000a0000) || ((addr >= 0x000bf800) && (addr <= 0x000bffff)) || (addr >= 0x00100000)))
+        return ret;
 
     if (!(addr & 0x400)) {
         // pclog( "atirage_ext_readw: addr=%04x\n", addr);
@@ -1070,10 +1098,10 @@ atirage_ext_readw(uint32_t addr, void *priv)
         ret |= atirage_ext_readb(addr + 1, priv) << 8;
     } else // optimise
         switch (addr & 0x3ff) {
-            case 0xb4 ... 0xb6:
+            case 0xb4: case 0xb6:
                 ret = (atirage->bank_w[(addr & 2) >> 1] >> 15);
                 break;
-            case 0xb8 ... 0xba:
+            case 0xb8: case 0xba:
                 ret = (atirage->bank_r[(addr & 2) >> 1] >> 15);
                 break;
             default:
@@ -1089,7 +1117,13 @@ uint32_t
 atirage_ext_readl(uint32_t addr, void *priv)
 {
     const atirage_t *atirage = (atirage_t *) priv;
-    uint32_t        ret;
+    const svga_t    *svga    = &atirage->svga;
+    uint32_t         ret     = 0xffffffff;
+
+    if ((addr >= 0x000a0000) && (addr < 0x000bf800))
+        return svga->mapping.read_l(addr, svga->mapping.priv);
+    if (!((addr < 0x000a0000) || ((addr >= 0x000bf800) && (addr <= 0x000bffff)) || (addr >= 0x00100000)))
+        return ret;
 
     if (!(addr & 0x400)) {
         // pclog( "atirage_ext_readl: addr=%04x\n", addr);
@@ -1123,6 +1157,13 @@ atirage_ext_writeb(uint32_t addr, uint8_t val, void *priv)
 {
     atirage_t *atirage = (atirage_t *) priv;
     svga_t   *svga   = &atirage->svga;
+
+    if ((addr >= 0x000a0000) && (addr < 0x000bf800)) {
+        svga->mapping.write_b(addr, val, svga->mapping.priv);
+        return;
+    }
+    if (!((addr < 0x000a0000) || ((addr >= 0x000bf800) && (addr <= 0x000bffff)) || (addr >= 0x00100000)))
+        return;
 
     // pclog( "atirage_ext_writeb : addr %08X val %02X\n", addr, val);
 
@@ -1382,7 +1423,7 @@ atirage_ext_writeb(uint32_t addr, uint8_t val, void *priv)
                 atirage->bank_w[0] = val << 15; // *32768
                 // pclog( "atirage : write bank A0000-A7FFF set to %08X\n", atirage->bank_w[0]);
                 break;
-            case 0xb5 ... 0xb6:
+            case 0xb6:
                 atirage->bank_w[1] = val << 15; // *32768
                 // pclog( "atirage : write bank A8000-AFFFF set to %08X\n", atirage->bank_w[1]);
                 break;
@@ -1390,7 +1431,7 @@ atirage_ext_writeb(uint32_t addr, uint8_t val, void *priv)
                 atirage->bank_r[0] = val << 15; // *32768
                 // pclog( "atirage :  read bank A0000-A7FFF set to %08X\n", atirage->bank_r[0]);
                 break;
-            case 0xb9 ... 0xba:
+            case 0xba:
                 atirage->bank_r[1] = val << 15; // *32768
                 // pclog( "atirage :  read bank A8000-AFFFF set to %08X\n", atirage->bank_r[1]);
                 break;
@@ -1430,6 +1471,15 @@ void
 atirage_ext_writew(uint32_t addr, uint16_t val, void *priv)
 {
     atirage_t *atirage = (atirage_t *) priv;
+    svga_t    *svga    = &atirage->svga;
+
+    if ((addr >= 0x000a0000) && (addr < 0x000bf800)) {
+        svga->mapping.write_w(addr, val, svga->mapping.priv);
+        return;
+    }
+    if (!((addr < 0x000a0000) || ((addr >= 0x000bf800) && (addr <= 0x000bffff)) || (addr >= 0x00100000)))
+        return;
+
     // pclog( "atirage_ext_writew : addr %08X val %04X\n", addr, val);
     if (!(addr & 0x400)) {
         // pclog( "atirage_ext_writew: addr=%04x val=%04x\n", addr, val);
@@ -1446,6 +1496,15 @@ void
 atirage_ext_writel(uint32_t addr, uint32_t val, void *priv)
 {
     atirage_t *atirage = (atirage_t *) priv;
+    svga_t    *svga    = &atirage->svga;
+
+    if ((addr >= 0x000a0000) && (addr < 0x000bf800)) {
+        svga->mapping.write_l(addr, val, svga->mapping.priv);
+        return;
+    }
+    if (!((addr < 0x000a0000) || ((addr >= 0x000bf800) && (addr <= 0x000bffff)) || (addr >= 0x00100000)))
+        return;
+
     if ((addr & 0x3c0) != 0x200)
         ; // pclog( "atirage_ext_writel : addr %08X val %08X\n", addr, val);
     if (!(addr & 0x400)) {
@@ -1497,12 +1556,12 @@ atirage_ext_inb(uint16_t port, void *priv)
                 if (port_high == 0x5a)
                     addr_or_value = 0xb8;    
 
-                if (port_low == 0xEF)
+                if ((port_low == 0xED) || (port_low == 0xEF))
                     ret = 0x00;
                 else if (port_low == 0xEC)                 
                     ret = atirage_ext_readb(0x400 | addr_or_value, priv);
                 else
-                    ret = atirage_ext_readb(0x400 | (addr_or_value + 1), priv);
+                    ret = atirage_ext_readb(0x400 | (addr_or_value + 2), priv);
                 break; 
             case 0x5e: // 5eec-5eef
                 uint16_t port_list[4] = { 0x3c8, 0x3c9, 0x3c6, 0x3c7 }; 
@@ -1597,20 +1656,20 @@ atirage_ext_outb(uint16_t port, uint8_t val, void *priv)
         switch (port_high)
         {
              case 0x56: // 56ec-56ef
-                if (port_low == 0xEF)
+                if ((port_low == 0xED) || (port_low == 0xEF))
                     break;
                 if (port_low == 0xEC)                 
                     atirage_ext_writeb(0x400 | 0xb4, val, priv);
                 else
-                    atirage_ext_writeb(0x400 | 0xb5, val, priv);
+                    atirage_ext_writeb(0x400 | 0xb6, val, priv);
                 break; 
             case 0x5a: // 5aec-5aef
-                if (port_low == 0xEF)
+                if ((port_low == 0xED) || (port_low == 0xEF))
                     break;
                 if (port_low == 0xEC)                 
                     atirage_ext_writeb(0x400 | 0xb8, val, priv);
                 else
-                    atirage_ext_writeb(0x400 | 0xb9, val, priv);
+                    atirage_ext_writeb(0x400 | 0xba, val, priv);
                 break; 
             case 0x5e: // 5eec-5eef
                 uint16_t port_list[4] = { 0x3c8, 0x3c9, 0x3c6, 0x3c7 }; 
@@ -1727,29 +1786,68 @@ atirage_block_outl(uint16_t port, uint32_t val, void *priv)
     atirage_ext_writel(0x400 | (port & 0x3ff), val, atirage);
 }
 
+static uint32_t
+atirage_decode_addr(atirage_t *atirage, uint32_t addr, int write)
+{
+    const svga_t *svga            = &atirage->svga;
+    const int     memory_map_mode = (svga->gdcreg[6] >> 2) & 3;
+
+    addr &= 0x1ffff;
+
+    switch (memory_map_mode) {
+        case 0:
+            break;
+        case 1:
+            if (addr >= 0x10000)
+                return 0xffffffff;
+            break;
+        case 2:
+            addr -= 0x10000;
+            if (addr >= 0x8000)
+                return 0xffffffff;
+            break;
+        default:
+        case 3:
+            addr -= 0x18000;
+            if (addr >= 0x8000)
+                return 0xffffffff;
+            break;
+    }
+
+    if (write)
+        addr = (addr & 0x7fff) + atirage->bank_w[(addr >> 15) & 1];
+    else
+        addr = (addr & 0x7fff) + atirage->bank_r[(addr >> 15) & 1];
+
+    return addr;
+}
+
 void
 atirage_write(uint32_t addr, uint8_t val, void *priv)
 {
     atirage_t *atirage = (atirage_t *) priv;
     svga_t   *svga   = &atirage->svga;
-    addr             = (addr & 0x7fff) + atirage->bank_w[(addr >> 15) & 1];
-    svga_write_linear(addr, val, svga);
+    addr = atirage_decode_addr(atirage, addr, 1);
+    if (addr != 0xffffffff)
+        svga_write_linear(addr, val, svga);
 }
 void
 atirage_writew(uint32_t addr, uint16_t val, void *priv)
 {
     atirage_t *atirage = (atirage_t *) priv;
     svga_t   *svga   = &atirage->svga;
-    addr             = (addr & 0x7fff) + atirage->bank_w[(addr >> 15) & 1];
-    svga_writew_linear(addr, val, svga);
+    addr = atirage_decode_addr(atirage, addr, 1);
+    if (addr != 0xffffffff)
+        svga_writew_linear(addr, val, svga);
 }
 void
 atirage_writel(uint32_t addr, uint32_t val, void *priv)
 {
     atirage_t *atirage = (atirage_t *) priv;
     svga_t   *svga   = &atirage->svga;
-    addr             = (addr & 0x7fff) + atirage->bank_w[(addr >> 15) & 1];
-    svga_writel_linear(addr, val, svga);
+    addr = atirage_decode_addr(atirage, addr, 1);
+    if (addr != 0xffffffff)
+        svga_writel_linear(addr, val, svga);
 }
 
 uint8_t
@@ -1757,9 +1855,10 @@ atirage_read(uint32_t addr, void *priv)
 {
     atirage_t *atirage = (atirage_t *) priv;
     svga_t   *svga   = &atirage->svga;
-    uint8_t   ret;
-    addr = (addr & 0x7fff) + atirage->bank_r[(addr >> 15) & 1];
-    ret  = svga_read_linear(addr, svga);
+    uint8_t   ret = 0xff;
+    addr = atirage_decode_addr(atirage, addr, 0);
+    if (addr != 0xffffffff)
+        ret = svga_read_linear(addr, svga);
     return ret;
 }
 uint16_t
@@ -1767,9 +1866,10 @@ atirage_readw(uint32_t addr, void *priv)
 {
     atirage_t *atirage = (atirage_t *) priv;
     svga_t   *svga   = &atirage->svga;
-    uint16_t  ret;
-    addr = (addr & 0x7fff) + atirage->bank_r[(addr >> 15) & 1];
-    ret  = svga_readw_linear(addr, svga);
+    uint16_t  ret = 0xffff;
+    addr = atirage_decode_addr(atirage, addr, 0);
+    if (addr != 0xffffffff)
+        ret = svga_readw_linear(addr, svga);
     return ret;
 }
 uint32_t
@@ -1777,9 +1877,10 @@ atirage_readl(uint32_t addr, void *priv)
 {
     atirage_t *atirage = (atirage_t *) priv;
     svga_t   *svga   = &atirage->svga;
-    uint32_t  ret;
-    addr = (addr & 0x7fff) + atirage->bank_r[(addr >> 15) & 1];
-    ret  = svga_readl_linear(addr, svga);
+    uint32_t  ret = 0xffffffff;
+    addr = atirage_decode_addr(atirage, addr, 0);
+    if (addr != 0xffffffff)
+        ret = svga_readl_linear(addr, svga);
     return ret;
 }
 
