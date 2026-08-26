@@ -159,6 +159,46 @@ spd_populate(uint16_t *rows, uint8_t slot_count, uint16_t total_size, uint16_t m
     }
 }
 
+/* Populate one RDRAM channel, RIMMs must be matched between channels, the output is copied to all channels */
+void
+spd_populate_rdram(uint16_t *rimm_configs, uint8_t slots_per_channel, uint16_t channel_size, uint16_t max_module_size, uint8_t rdram_device_mask)
+{
+    
+    memset(rimm_configs, 0, SPD_MAX_SLOTS << 1);
+
+
+    for (uint8_t channel_slot = 0; (channel_slot < slots_per_channel); channel_slot++) {
+        uint8_t device_size;
+
+        if ((rdram_device_mask & SPD_RDRAM_256MBIT) && (channel_size >= 32))
+            device_size = SPD_RDRAM_256MBIT;
+        else if ((rdram_device_mask & SPD_RDRAM_128MBIT) && (channel_size >= 16))
+            device_size = SPD_RDRAM_128MBIT;
+        else if ((rdram_device_mask & SPD_RDRAM_64MBIT) && (channel_size >= 8))
+            device_size = SPD_RDRAM_64MBIT;
+        else
+            break;
+
+        uint16_t max_usable_rimm  = MIN(max_module_size, device_size * 16);
+        uint8_t  device_count     = MIN(channel_size, max_usable_rimm) / device_size;
+
+        if (device_count == 0)
+            break;
+
+        uint16_t target_rimm_size = device_count * device_size;
+
+        rimm_configs[channel_slot] = (device_size << 8) | device_count;
+        channel_size -= target_rimm_size;
+
+        spd_log("SPD: RIMM channel slot %d = %d MB (%d x %d-Mbit devices)\n",
+            channel_slot, target_rimm_size, device_count, device_size * 8);
+    }
+
+    if (channel_size)
+        spd_log("SPD: Not enough RIMM slots in channel (%d) to cover memory (%d MB short)\n",
+            slots_per_channel, channel_size);
+}
+
 static int
 spd_write_part_no(char *part_no, char *type, uint16_t size)
 {
@@ -339,6 +379,151 @@ spd_register(uint8_t ram_type, uint8_t slot_mask, uint16_t max_module_size)
 
     device_add(&spd_device);
 }
+
+void
+spd_register_rdram(uint8_t slot_mask, uint8_t channel_count, uint16_t max_module_size, uint8_t rdram_device_mask)
+{
+    uint16_t     rimm_configs[SPD_MAX_SLOTS];
+    spd_rdram_t *rdram_data;
+
+    /* Count how many slots are enabled. */
+    uint8_t slot_count = 0;
+    for (uint8_t slot = 0; slot < SPD_MAX_SLOTS; slot++) {
+        rimm_configs[slot] = 0;
+        if (slot_mask & (1 << slot))
+            slot_count++;
+    }  
+
+    uint8_t  slots_per_channel = slot_count / channel_count;
+    uint16_t channel_size      = (mem_size >> 10) / channel_count;
+
+    /* Populate groups. */
+    spd_populate_rdram(rimm_configs, slots_per_channel, channel_size, max_module_size, rdram_device_mask);
+
+    for (uint8_t channel_slot = 0; channel_slot < slots_per_channel; channel_slot++) {
+        uint8_t  device_size  = rimm_configs[channel_slot] >> 8;
+        uint8_t  device_count = rimm_configs[channel_slot] & 0xff;
+        uint16_t rimm_size    = device_size * device_count;
+        uint8_t  address_bits;
+        uint8_t  bank_bits;
+
+        /* Address and bank bits required for i820/i850 */
+        switch(device_size) {
+            /*
+             * Nibbles are bit counts, and a Direct RDRAM column is a 16-byte
+             * dualoct: size = 2^(rows + cols + banks) * 16 bytes. The bank
+             * count sits in the low three bits of the bank byte; the upper
+             * bits describe the bank architecture, and POST only accepts the
+             * combinations 84h (16 banks) and c5h (32 banks).
+             */
+            case 32: /* 256 Mbit */
+                address_bits = 0xa6; /* 1024 rows x 64 cols */
+                bank_bits    = 0xc5; /* 32 banks */
+                break;
+            case 16: /* 128 Mbit */
+                address_bits = 0x96; /* 512 rows x 64 cols */
+                bank_bits    = 0xc5; /* 32 banks */
+                break;
+            case 8:  /* 64 Mbit */
+                address_bits = 0x96; /* 512 rows x 64 cols */
+                bank_bits    = 0x84; /* 16 banks */
+                break;
+            default:
+                spd_log("SPD: Unsupported RDRAM device size %d MB on channel slot %d\n", device_size, channel_slot);
+                continue;
+        }
+        
+        uint16_t device_enable_mask = (1U << device_count) - 1;
+        uint8_t  base_slot          = channel_slot * channel_count; 
+
+        /* Allocate and populate first channel. */
+        spd_modules[base_slot] = (spd_t *) calloc(1, sizeof(spd_t));
+        spd_modules[base_slot]->slot = base_slot;
+        spd_modules[base_slot]->size = rimm_size;
+        spd_modules[base_slot]->row1 = 0;
+        spd_modules[base_slot]->row2 = 0;
+
+        rdram_data = &spd_modules[base_slot]->rdram_data;
+        rdram_data->spd_revision       = 0x20;
+        rdram_data->spd_size           = 0x08; /* 256 bytes */
+        rdram_data->device_type        = 0x01; /* Direct RDRAM */
+        rdram_data->module_type        = 0x01; /* RIMM */
+        rdram_data->address_bits       = address_bits;
+        rdram_data->bank_bits_byte     = bank_bits;
+        rdram_data->refresh_bank_bits  = 0x04; /* 16 banks refreshed */
+        /*
+         * Refresh row count, in units of 32 rows, so it tracks the row-bit
+         * count in address_bits. POST rejects the module (code 11) unless
+         * this covers every row between refreshes.
+         */
+        rdram_data->refresh_interval   = 1 << ((address_bits >> 4) - 5);
+        rdram_data->protocol_version   = 0x01;
+
+        /* Standard PC800 timings */
+        rdram_data->trp_min        = 0x28; /* 40 ns */
+        rdram_data->tras_min       = 0x32; /* 50 ns */
+        rdram_data->trcd_min       = 0x14; /* 20 ns */
+        rdram_data->trr_min        = 0x14;
+        rdram_data->tpp_min        = 0x14;
+        /*
+         * POST probes each timing range for a target value (19 ns, then 26 ns
+         * on the retry) and requires min <= target <= max, giving up with POST
+         * code 06 once all four ranges are rejected. Range A brackets both.
+         */
+        rdram_data->timing_range_a[0] = 0x13; /* min - 19 ns */
+        rdram_data->timing_range_a[1] = 0x1a; /* max - 26 ns */
+
+        /*
+         * 12-bit divisor POST uses as clocks = t_ns * f_MHz / fras. It is the
+         * ns-to-clock scale, so 1000; a zero here is rejected with POST 14.
+         */
+        rdram_data->fras_high = 0x03;
+        rdram_data->fras_low  = 0xe8;
+
+        rdram_data->frequency_high = 0x03;
+        rdram_data->fimax_low      = 0x20; /* 800 MHz */
+
+        rdram_data->device_count     = device_count;
+        rdram_data->device_width     = 16;
+        rdram_data->device_enable[0] = device_enable_mask & 0xFF;
+        rdram_data->device_enable[1] = (device_enable_mask >> 8) & 0xFF;
+
+        rdram_data->voltage_interface = 0x01;
+        rdram_data->voltage_tolerance = 0x05;
+
+        for (int i = spd_write_part_no(rdram_data->part_number, "RDR", rimm_size);
+             i < sizeof(rdram_data->part_number); i++)
+            rdram_data->part_number[i] = ' ';
+
+        rdram_data->revision_code[0]   = BCD8(EMU_VERSION_MAJ);
+        rdram_data->revision_code[1]   = BCD8(EMU_VERSION_MIN);
+        rdram_data->manufacturing_year = 26;
+        rdram_data->manufacturing_week = 35;
+        
+        /* Checksums */
+        for (uint8_t i = 0; i < 63; i++)
+            rdram_data->checksum += spd_modules[base_slot]->data[i];
+        for (uint8_t i = 99; i < 127; i++)
+            rdram_data->checksum2 += spd_modules[base_slot]->data[i];
+
+        /* Duplicate the first channel's SPD to other channels. */
+        for (uint8_t channel = 1; channel < channel_count; channel++) {
+            uint8_t slot = base_slot + channel;
+
+            spd_modules[slot] = (spd_t *) calloc(1, sizeof(spd_t));
+            spd_modules[slot]->slot = slot;
+            spd_modules[slot]->size = rimm_size;
+            spd_modules[slot]->row1 = 0;
+            spd_modules[slot]->row2 = 0;
+
+            memcpy(&spd_modules[slot]->rdram_data, &spd_modules[base_slot]->rdram_data, sizeof(spd_rdram_t));
+        }
+    }
+    device_add(&spd_device);
+}
+
+
+
 
 void
 spd_write_drbs(uint8_t *regs, uint8_t reg_min, uint8_t reg_max, uint8_t drb_unit)
@@ -735,6 +920,96 @@ spd_write_drbs_intel_845(uint8_t *regs)
 
     regs[0x66] = regs[0x65];
     regs[0x67] = regs[0x65];
+}
+
+uint16_t
+spd_write_gar_gbar_intel_850(uint8_t *regs)
+{
+    uint8_t  group = 0;
+    uint16_t cumulative_mb = 0;
+
+    /* Initialise GARs to 0x80 */
+    memset(&regs[0x40], 0x80, 16);
+
+    /* Initialise GBARs to 0x0001 */
+    for (int gbar = 0x60; gbar <= 0x7e; gbar += 2) {
+        regs[gbar] = 0x01;
+        regs[gbar + 1] = 0x00;
+    }
+
+    if (!spd_present) {
+        /* Fallback: Get total RAM in MB from mem_size */
+        uint16_t remaining = mem_size >> 10;
+
+        /* Break total RAM into 256MB/128MB group chunks */
+        while ((remaining > 0) && (group < 8)) {
+            uint16_t chunk = MIN(remaining, 256);
+            cumulative_mb += chunk;
+
+            /* Manually program GAR */
+            regs[0x40 + group] = (chunk >= 64) ? 0x84 : 0x82;
+
+            /* Manually program GBAR */
+            uint16_t gbar_val = ((cumulative_mb >> 4) & 0x07ff) | ((group & 0x07) << 11);
+            regs[0x60 + (group << 1)]     = gbar_val & 0xff;
+            regs[0x60 + (group << 1) + 1] = (gbar_val >> 8) & 0x3f;
+
+            remaining -= chunk;
+            group++;
+        }
+    }
+
+    /* Iterate over RIMM slot pairs (0,1), (2,3) */
+    for (uint8_t slot = 0; (slot < SPD_MAX_SLOTS) && (group < 16); slot += 2) {
+        if (!spd_modules[slot] || !spd_modules[slot + 1])
+            continue; /* Unpopulated pair / CRIMM */
+
+        spd_rdram_t *rdram = &spd_modules[slot]->rdram_data;
+        uint8_t      device_count = rdram->device_count;
+        uint16_t     pair_size_mb;
+        uint8_t      gar_val;
+
+        /* Determine technology and device-pair size */
+        if (rdram->address_bits == 0xd9 || (rdram->bank_bits_byte >= 0x05)) {
+            pair_size_mb = 64;   /* 256-Mb: 32 MB on ChA + 32 MB on ChB */
+            gar_val      = 0x84; /* 1 KB page (0x84) or 2 KB page (0xD4), DDT = 10b */
+        } else {
+            pair_size_mb = 32;   /* 128-Mb: 16 MB on ChA + 16 MB on ChB */
+            gar_val      = 0x82; /* 1 KB page, DDT = 01b */
+        }
+
+        uint8_t device_pairs = device_count;
+
+        /* Each active group can hold up to 4 device-pairs */
+        while ((device_pairs > 0) && (group < 8)) {
+            uint8_t  group_pairs = MIN(device_pairs, 4);
+            uint16_t group_size  = group_pairs * pair_size_mb;
+            cumulative_mb += group_size;
+
+            /* Set GAR: technology code with Bit 7 (disabled) = 0 */
+            regs[0x40 + group] = gar_val;
+
+            /* Set GBAR: boundary in 16MB units + GID in bits [13:11] */
+            uint16_t gbar_val = (cumulative_mb >> 4) & 0x07ff;
+            gbar_val |= ((group & 0x07) << 11);
+
+            regs[0x60 + (group << 1)]     = gbar_val & 0xff;
+            regs[0x60 + (group << 1) + 1] = (gbar_val >> 8) & 0x3f;
+
+            device_pairs -= group_pairs;
+            group++;
+        }
+    }
+
+    /* Fill all trailing unpopulated GBARs up to GBAR15 with Top-of-Memory */
+    uint16_t last_boundary = (cumulative_mb >> 4) & 0x07ff;
+    for (uint8_t g = group; g < 16; g++) {
+        uint16_t gbar_val = last_boundary | ((g & 0x07) << 11);
+        regs[0x60 + (g << 1)]     = gbar_val & 0xff;
+        regs[0x60 + (g << 1) + 1] = (gbar_val >> 8) & 0x3f;
+    }
+
+    return cumulative_mb;
 }
 
 static const device_t spd_device = {

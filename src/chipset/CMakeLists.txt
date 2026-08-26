@@ -102,4 +102,6 @@ add_library(chipset OBJECT
     vl82c480.c
     vl82c59x.c
     wd76c10.c
+
+    intel_850.c
 )
