@@ -518,6 +518,24 @@ acpi_reg_read_intel(int size, uint16_t addr, void *priv)
     return ret;
 }
 
+/*
+ * GPE1_STS (PMBASE+2Ch, 16-bit, R/WC, resume well) tracks the GPI pins: a bit
+ * reads 1 while its pin is asserted - low by default, or high where the
+ * matching GP_INV bit is set - and per the ICH2 datasheet software "cannot
+ * clear [the bit] while the corresponding signal is still active". A strap
+ * sitting at its asserted level therefore re-arms the bit as fast as a
+ * write-1-to-clear knocks it down.
+ *
+ * The Gigabyte GA-8ITX3 is the only board that cares: its AMIBIOS bootblock
+ * samples GPI8 as the BIOS recovery strap and diverts to the recovery loader
+ * when it reads back clear, having cleared the whole register on the way past.
+ */
+static uint16_t
+acpi_ich2_gpi_level(void)
+{
+    return (machines[machine].init == machine_at_8itx3_init) ? 0x0100 : 0x0000;
+}
+
 static uint32_t
 acpi_reg_read_intel_ich2(int size, uint16_t addr, void *priv)
 {
@@ -1424,14 +1442,17 @@ acpi_reg_write_intel_ich2(int size, uint16_t addr, uint8_t val, void *priv)
         case 0x2c:
         case 0x2d:
             /* GPE1_STS - General Purpose Event 1 Status Register */
-            dev->regs.gpsts1 &= ~((val << shift16) & 0x09fb);
+            /* GPI[15:6], GPI[4:3] and GPI[1:0]; 5 and 2 are not implemented. */
+            dev->regs.gpsts1 &= ~((val << shift16) & 0xffdb);
+            /* A still-asserted pin re-arms its status; it cannot be cleared. */
+            dev->regs.gpsts1 |= acpi_ich2_gpi_level();
             acpi_update_irq(dev);
             break;
 
         case 0x2e:
         case 0x2f:
             /* GPE1_EN - General Purpose Event 1 Enable Register */
-            dev->regs.gpen1 = ((dev->regs.gpen1 & ~(0xff << shift16)) | (val << shift16)) & 0x097d;
+            dev->regs.gpen1 = ((dev->regs.gpen1 & ~(0xff << shift16)) | (val << shift16)) & 0xffdb;
             acpi_update_irq(dev);
             break;
 
@@ -2775,6 +2796,10 @@ acpi_reset(void *priv)
         dev->regs.glbctl |= 0x02000000;
 
     acpi_rtc_status = 0;
+
+    /* Straps are already at their asserted level as the machine leaves reset. */
+    if (dev->vendor == VEN_INTEL_ICH2)
+        dev->regs.gpsts1 |= acpi_ich2_gpi_level();
 
     acpi_update_irq(dev);
     dev->irq_state = 0;

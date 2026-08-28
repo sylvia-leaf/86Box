@@ -470,8 +470,9 @@ spd_register_rdram(uint8_t slot_mask, uint8_t channel_count, uint16_t max_module
          * on the retry) and requires min <= target <= max, giving up with POST
          * code 06 once all four ranges are rejected. Range A brackets both.
          */
-        rdram_data->timing_range_a[0] = 0x13; /* min - 19 ns */
-        rdram_data->timing_range_a[1] = 0x1a; /* max - 26 ns */
+        rdram_data->timing_range_a[0] = 0x13; /* min tCYCLE - 1.9 ns */
+        rdram_data->timing_range_a[1] = 0x1a; /* max tCYCLE - 2.6 ns, brackets PC800 */
+        rdram_data->timing_range_a[2] = 0x28; /* tRAC - 40 ns, i.e. PC800-40 */
 
         /*
          * 12-bit divisor POST uses as clocks = t_ns * f_MHz / fras. It is the

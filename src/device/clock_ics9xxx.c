@@ -880,6 +880,12 @@ static const ics9xxx_model_t ics9xxx_models[] = {
     .regs = {0x07, 0xff, 0xff, 0x00, 0x00},
     .fs_regs = {{-1, -1, -1, -1}, {-1, -1, -1, -1}, {-1, -1, -1, -1}, {-1, -1, -1, -1}, {-1, -1, -1, -1}}
     ICS9xxx_MODEL_END()
+#endif
+/*
+ * Kept outside ENABLE_ICS9xxx_DETECT: ics9xxx_write() special-cases this
+ * model unconditionally, and Socket 423 i850 boards need it - it is the
+ * only modelled part with an RDRAM ratio and a 100 MHz entry.
+ */
     ICS9xxx_MODEL(ICS9250_38)
     .max_reg = 6,
     .regs = {0x18, 0x07, 0xfe, 0xc7, 0xfc, 0x00, 0x80},
@@ -897,6 +903,7 @@ static const ics9xxx_model_t ics9xxx_models[] = {
         {0}
     }
     ICS9xxx_MODEL_END()
+#ifdef ENABLE_ICS9xxx_DETECT
     ICS9xxx_MODEL(ICS9250_50)
     .max_reg = 6,
     .regs = {0x02, 0x6f, 0xff, 0xff, 0xef, 0xff, 0x06},

@@ -83,6 +83,60 @@ machine_at_p4ita_init(const machine_t *model)
 }
 
 int
+machine_at_8itx3_init(const machine_t *model)
+{
+    int ret;
+
+    ret = bios_load_linear("roms/machines/8itx3/8ITX3.F3A",
+                            0x000c0000, 262144, 0);
+
+    if (bios_only || !ret)
+        return ret;
+
+    machine_at_common_init(model);
+
+    pci_init(PCI_CONFIG_TYPE_1);
+    pci_register_bus_slot(0, 0x00, PCI_CARD_NORTHBRIDGE, 0, 0, 0, 0);
+    pci_register_bus_slot(0, 0x01, PCI_CARD_AGPBRIDGE,   1, 2, 0, 0);
+    pci_register_bus_slot(0, 0x1e, PCI_CARD_BRIDGE,      0, 0, 0, 0);
+    pci_register_bus_slot(0, 0x1f, PCI_CARD_SOUTHBRIDGE, 1, 2, 8, 4);
+    /*
+     * Transcribed from the $PIR this BIOS builds at F7AD0h, read out of
+     * memory at run time: 13 entries, router 00:1f.0. Links 60h-63h are
+     * PIRQA-D and 68h-6Bh are PIRQE-H. The AGP bridge routes INTA and INTB
+     * only, and the ICH2 entry carries FEh for INTA, which is not a PIRQ link
+     * at all - it is left on PIRQA, the value the board booted with.
+     */
+    pci_register_bus_slot(2, 0x00, PCI_CARD_NORMAL,      3, 6, 7, 1);
+    pci_register_bus_slot(2, 0x01, PCI_CARD_NORMAL,      6, 7, 1, 3);
+    pci_register_bus_slot(2, 0x02, PCI_CARD_NORMAL,      7, 1, 3, 6);
+    pci_register_bus_slot(2, 0x03, PCI_CARD_NORMAL,      1, 3, 6, 7);
+    pci_register_bus_slot(2, 0x04, PCI_CARD_NORMAL,      3, 6, 7, 1);
+    pci_register_bus_slot(2, 0x05, PCI_CARD_NORMAL,      6, 7, 1, 3);
+    /* The BIOS marks these five as onboard rather than as slots. */
+    pci_register_bus_slot(2, 0x07, PCI_CARD_NORMAL,      1, 3, 6, 7);
+    pci_register_bus_slot(2, 0x08, PCI_CARD_NORMAL,      5, 6, 7, 8);
+    pci_register_bus_slot(2, 0x09, PCI_CARD_NORMAL,      6, 7, 1, 3);
+    pci_register_bus_slot(2, 0x0a, PCI_CARD_NORMAL,      7, 1, 3, 6);
+    pci_register_bus_slot(2, 0x0c, PCI_CARD_NORMAL,      3, 6, 7, 1);
+
+    device_add(&intel_850_device);          /* Intel 850 MCH */
+    device_add(&intel_ich2_device);         /* Intel ICH2 */
+    /*
+     * Super I/O is inherited from the P4ITA and is NOT verified for this board.
+     * The real clock chip is an ICS9250-37, which is not modelled; the -38 is
+     * the adjacent part in the same sub-family and the closest match we have.
+     */
+    device_add(&w83627hf_no_port_92_device); /* Winbond W83627HF */
+    device_add(&sst_flash_49lf002_device);   /* SST 49LF002 2 Mbit Firmware Hub */
+    device_add(ics9xxx_get(ICS9250_38));     /* ICS9250-38, stands in for the -37 */
+
+    spd_register_rdram(0x0f, 2, 512, SPD_RDRAM_128MBIT | SPD_RDRAM_256MBIT);
+
+    return ret;
+}
+
+int
 machine_at_ms6529_init(const machine_t *model)
 {
     int ret;
