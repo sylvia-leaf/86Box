@@ -426,6 +426,9 @@ msgstr "Verwende den 486-Interpreter für 286- und 386-Prozessoren"
 msgid "Dynamic recompiler"
 msgstr "Dynamischer Recompiler"
 
+msgid "Accurate FPU environment on the dynamic recompiler"
+msgstr ""
+
 msgid "CPU frame size"
 msgstr "CPU-Framegröße"
 
@@ -1485,6 +1488,18 @@ msgstr "Über ACPI herunterfahren"
 
 msgid "ACP&I shutdown"
 msgstr "Über ACP&I herunterfahren"
+
+msgid "Power off"
+msgstr ""
+
+msgid "Power &off…"
+msgstr ""
+
+msgid "Power &off"
+msgstr ""
+
+msgid "Powering off the emulated machine may cause data loss. Are you sure you want to continue?"
+msgstr ""
 
 msgid "Hard disk (%1)"
 msgstr "Festplatte (%1)"

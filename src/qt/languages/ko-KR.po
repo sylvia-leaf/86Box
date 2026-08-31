@@ -426,6 +426,9 @@ msgstr "286/386 프로세서에 486 인터프리터 사용"
 msgid "Dynamic recompiler"
 msgstr "동적 리컴파일러"
 
+msgid "Accurate FPU environment on the dynamic recompiler"
+msgstr ""
+
 msgid "CPU frame size"
 msgstr "CPU 프레임 크기"
 
@@ -1518,6 +1521,18 @@ msgstr "ACPI 종료"
 
 msgid "ACP&I shutdown"
 msgstr "ACPI 종료(&I)"
+
+msgid "Power off"
+msgstr ""
+
+msgid "Power &off…"
+msgstr ""
+
+msgid "Power &off"
+msgstr ""
+
+msgid "Powering off the emulated machine may cause data loss. Are you sure you want to continue?"
+msgstr ""
 
 msgid "Hard disk (%1)"
 msgstr "하드 디스크 (%1)"

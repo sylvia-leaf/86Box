@@ -427,6 +427,9 @@ msgstr "Использовать интерпретатор 486 для проц�
 msgid "Dynamic recompiler"
 msgstr "Динамический рекомпилятор"
 
+msgid "Accurate FPU environment on the dynamic recompiler"
+msgstr ""
+
 msgid "CPU frame size"
 msgstr "Размер кадра ЦП"
 
@@ -1503,6 +1506,18 @@ msgstr "Сигнал завершения ACPI"
 
 msgid "ACP&I shutdown"
 msgstr "Сигнал завершения ACP&I"
+
+msgid "Power off"
+msgstr ""
+
+msgid "Power &off…"
+msgstr ""
+
+msgid "Power &off"
+msgstr ""
+
+msgid "Powering off the emulated machine may cause data loss. Are you sure you want to continue?"
+msgstr ""
 
 msgid "Hard disk (%1)"
 msgstr "Жёсткий диск (%1)"

@@ -921,6 +921,10 @@ extern int             machine_at_hot433a_init(const machine_t *);
 extern int             machine_at_g486vpa_init(const machine_t *);
 extern int             machine_at_486vipio2_init(const machine_t *);
 
+/* m_at_socket3_4.c */
+/* OPTi 571 */
+extern int             machine_at_pat45pv_init(const machine_t *);
+
 /* m_at_stpc.c */
 /* STPC Client */
 extern int             machine_at_itoxstar_init(const machine_t *);
@@ -938,9 +942,6 @@ extern int             machine_at_pcm9340_init(const machine_t *);
 
 /* STPC Atlas */
 extern int             machine_at_pcm5330_init(const machine_t *);
-
-/* m_at_socket3_4.c */
-extern int             machine_at_pat45pv_init(const machine_t *);
 
 /* m_at_socket4.c */
 /* i430LX */
@@ -1175,6 +1176,10 @@ extern int             machine_at_p55t2s_init(const machine_t *);
 extern int             machine_at_ap5vm_init(const machine_t *);
 extern int             machine_at_p55tvp4_init(const machine_t *);
 extern int             machine_at_5ivg_init(const machine_t *);
+#ifdef EMU_DEVICE_H
+extern const device_t  pb810_device;
+#endif
+extern int             machine_at_pb810_init(const machine_t *);
 extern int             machine_at_8500tvxa_init(const machine_t *);
 extern int             machine_at_presario2240_init(const machine_t *);
 extern int             machine_at_presario4500_init(const machine_t *);
@@ -1191,7 +1196,6 @@ extern const device_t  lgibmx52_device;
 #endif
 extern int             machine_at_lgibmx52_init(const machine_t *);
 extern int             machine_at_pb680_init(const machine_t *);
-extern int             machine_at_pb810_init(const machine_t *);
 extern int             machine_at_mb520n_init(const machine_t *);
 extern int             machine_at_i430vx_init(const machine_t *);
 
@@ -1336,10 +1340,23 @@ extern const device_t  lx6_device;
 #endif
 extern int             machine_at_lx6_init(const machine_t *);
 extern int             machine_at_optiplexgxa_init(const machine_t *);
+#ifdef EMU_DEVICE_H
+extern const device_t  al440lx_device;
+#endif
+extern int             machine_at_al440lx_init(const machine_t *);
 extern int             machine_at_spitfire_init(const machine_t *);
 extern int             machine_at_ma30d_init(const machine_t *);
 
 /* i440EX */
+#ifdef EMU_DEVICE_H
+extern const device_t  in440ex_device;
+#endif
+extern int             machine_at_in440ex_init(const machine_t *);
+#ifdef EMU_DEVICE_H
+extern const device_t  in440exd_device;
+#endif
+extern int             machine_at_in440exd_init(const machine_t *);
+extern int             machine_at_optiplexe1_init(const machine_t *);
 extern int             machine_at_brio83xx_init(const machine_t *);
 extern int             machine_at_p6i440e2_init(const machine_t *);
 #ifdef EMU_DEVICE_H
@@ -1363,6 +1380,7 @@ extern const device_t  ax6bc_device;
 extern int             machine_at_ax6bc_init(const machine_t *);
 extern int             machine_at_p2bls_init(const machine_t *);
 extern int             machine_at_p3bf_init(const machine_t *);
+extern int             machine_at_optiplexgx1_init(const machine_t *);
 #ifdef EMU_DEVICE_H
 extern const device_t  ga686_device;
 #endif

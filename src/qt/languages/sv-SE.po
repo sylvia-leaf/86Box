@@ -426,6 +426,9 @@ msgstr "Använd 486-programtolk för 286- och 386-processorer"
 msgid "Dynamic recompiler"
 msgstr "Dynamisk omkompilator"
 
+msgid "Accurate FPU environment on the dynamic recompiler"
+msgstr ""
+
 msgid "CPU frame size"
 msgstr "Ramstorlek för processor"
 
@@ -1485,6 +1488,18 @@ msgstr "ACPI-avstängning"
 
 msgid "ACP&I shutdown"
 msgstr "ACP&I-avstängning"
+
+msgid "Power off"
+msgstr ""
+
+msgid "Power &off…"
+msgstr ""
+
+msgid "Power &off"
+msgstr ""
+
+msgid "Powering off the emulated machine may cause data loss. Are you sure you want to continue?"
+msgstr ""
 
 msgid "Hard disk (%1)"
 msgstr "Hårddisk (%1)"

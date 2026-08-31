@@ -426,6 +426,9 @@ msgstr "Käytä 486-tulkintaa 286- ja 386-prosessoreille"
 msgid "Dynamic recompiler"
 msgstr "Dynaaminen uudelleenkääntäjä"
 
+msgid "Accurate FPU environment on the dynamic recompiler"
+msgstr ""
+
 msgid "CPU frame size"
 msgstr "CPU frame-koko"
 
@@ -1489,6 +1492,18 @@ msgstr "ACPI-sammutus"
 
 msgid "ACP&I shutdown"
 msgstr "ACP&I-sammutus"
+
+msgid "Power off"
+msgstr ""
+
+msgid "Power &off…"
+msgstr ""
+
+msgid "Power &off"
+msgstr ""
+
+msgid "Powering off the emulated machine may cause data loss. Are you sure you want to continue?"
+msgstr ""
 
 msgid "Hard disk (%1)"
 msgstr "Kiintolevy (%1)"

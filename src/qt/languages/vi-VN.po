@@ -427,6 +427,9 @@ msgstr "Sử dụng trình thông dịch 486 cho các bộ xử lý 286 và 386"
 msgid "Dynamic recompiler"
 msgstr "Bộ tái biên dịch động (Dynamic recompiler)"
 
+msgid "Accurate FPU environment on the dynamic recompiler"
+msgstr ""
+
 msgid "CPU frame size"
 msgstr "Cỡ khung CPU"
 
@@ -1481,6 +1484,18 @@ msgstr "Tắt máy theo ACPI"
 
 msgid "ACP&I shutdown"
 msgstr "Tắt máy theo ACP&I"
+
+msgid "Power off"
+msgstr ""
+
+msgid "Power &off…"
+msgstr ""
+
+msgid "Power &off"
+msgstr ""
+
+msgid "Powering off the emulated machine may cause data loss. Are you sure you want to continue?"
+msgstr ""
 
 msgid "Hard disk (%1)"
 msgstr "Ổ cứng (%1)"
