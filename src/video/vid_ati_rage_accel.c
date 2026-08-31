@@ -1713,92 +1713,8 @@ atirage_blit_trap(uint32_t cpu_dat, int count, atirage_t *atirage)
     int cmp_clr = 0;
     if (((atirage->crtc_gen_cntl >> 8) & 7) == BPP_24) {
         warning("Trapezoid draw in 24bpp mode currently unsupported");
-
-        int x = 0;
-        while (count) {
-            int      old_y       = atirage->accel.dst_y;
-            int      span_done;
-            int      decrement_count = 0;
-
-            /* Todo: TEST ON REAL HARDWARE */
-            if (atirage->dst_cntl & DST_POLYGON_EN) {
-                warning("Attempted to draw trapezoid in polygon mode");
-                atirage->accel.busy = 0;
-                return;
-            }
-        
-            
-            if (atirage->dst_cntl & DST_Y_MAJOR) {
-
-
-
-
-
-
-
-                atirage->accel.dst_y += atirage->accel.yinc;
-                atirage->accel.src_y += atirage->accel.yinc;
-
-                if ((atirage->accel.err > 0) || (atirage->accel.err == 0 && (((atirage->dst_cntl & BRES_SIGN_AUTO) & !(atirage->dst_cntl & DST_X_DIR)) | !(atirage->dst_cntl & (BRES_SIGN_AUTO | DST_BRES_SIGN))))) {
-                    atirage->accel.err += atirage->dst_bres_dec;
-                    atirage->accel.dst_x += atirage->accel.xinc;
-                } else {
-                    atirage->accel.err += atirage->dst_bres_inc;
-                }
-                
-                if ((atirage->accel.trail_err > 0) || (atirage->accel.trail_err == 0 && (((atirage->dst_cntl & BRES_SIGN_AUTO) & !(atirage->dst_cntl & TRAIL_X_DIR)) | !(atirage->dst_cntl & (BRES_SIGN_AUTO | DST_BRES_SIGN))))) {
-                    atirage->accel.trail_err += atirage->trail_bres_dec;
-                    atirage->accel.trail_x += atirage->accel.trail_xinc; 
-                } else {
-                    atirage->accel.trail_err += atirage->trail_bres_inc;
-                }
-            } else {
-                if (!atirage->accel.y_count && atirage->accel.temp_cnt < 0) {
-                    atirage->accel.dst_x += atirage->accel.xinc;
-                    atirage->accel.src_x += atirage->accel.xinc;
-                    if ((atirage->accel.err > 0) || (atirage->accel.err == 0 && (((atirage->dst_cntl & BRES_SIGN_AUTO) & !(atirage->dst_cntl & DST_Y_DIR)) | !(atirage->dst_cntl & (BRES_SIGN_AUTO | DST_BRES_SIGN))))) {
-                        atirage->accel.err += atirage->dst_bres_dec;
-                        atirage->accel.dst_y += atirage->accel.yinc;
-                    } else {
-                        atirage->accel.err += atirage->dst_bres_inc;
-                    }
-
-                    atirage->accel.trail_x += atirage->accel.trail_xinc; 
-
-                    if ((atirage->accel.trail_err > 0) || (atirage->accel.trail_err == 0 && (((atirage->dst_cntl & BRES_SIGN_AUTO) & !(atirage->dst_cntl & DST_Y_DIR)) | !(atirage->dst_cntl & (BRES_SIGN_AUTO | DST_BRES_SIGN))))) {
-                        atirage->accel.trail_err += atirage->trail_bres_dec;
-                    } else {
-                        atirage->accel.trail_err += atirage->trail_bres_inc;
-                    }
-                }
-
-
-
-
-
-
-
-
-
-
-
-            }
-        
-            x++;
-            if (x >= atirage->accel.x_count) {
-                atirage->accel.busy = 0;
-                atirage_log("mach64 trapezoid 24bpp finished\n");
-                return;
-            }
-        
-        
-        
-        }
-
-
-
-
         atirage->accel.busy = 0;
+        return;
     } else {
         while (count) {
             int      old_y       = atirage->accel.dst_y;
@@ -1900,7 +1816,7 @@ atirage_write_trap(atirage_t *atirage, uint32_t *cpu_dat, int *count)
 
     uint32_t src_dat = 0;
     uint32_t dest_dat;
-    uint32_t host_dat;
+    uint32_t host_dat = 0;
 
     if (atirage->accel.temp_cnt < 0)
         atirage->accel.temp_cnt = (atirage->dst_cntl & TRAP_FILL_DIR) ? draw_left : draw_right;
