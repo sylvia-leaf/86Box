@@ -630,6 +630,18 @@ atirage_ext_readb(uint32_t addr, void *priv)
             case 0xb0 ... 0xb3:
                 READ8(addr, atirage->mem_cntl);
                 break;
+            case 0xb4:
+                ret = (atirage->bank_w[0] >> 15);
+                break;
+            case 0xb6:
+                ret = (atirage->bank_w[1] >> 15);
+                break;
+            case 0xb8:
+                ret = (atirage->bank_r[0] >> 15);
+                break;
+            case 0xba:
+                ret = (atirage->bank_r[0] >> 15);
+                break;
             case 0xc0 ... 0xc3:
                 uint16_t port_list[4] = { 0x3c8, 0x3c9, 0x3c6, 0x3c7 }; 
                 ret = svga_in(port_list[addr & 3], svga);
@@ -1097,7 +1109,7 @@ atirage_ext_readw(uint32_t addr, void *priv)
         ret = atirage_ext_readb(addr, priv);
         ret |= atirage_ext_readb(addr + 1, priv) << 8;
     } else // optimise
-        switch (addr & 0x3ff) {
+        switch (addr & 0x3fe) {
             case 0xb4: case 0xb6:
                 ret = (atirage->bank_w[(addr & 2) >> 1] >> 15);
                 break;
@@ -1130,7 +1142,7 @@ atirage_ext_readl(uint32_t addr, void *priv)
         ret = atirage_ext_readw(addr, priv);
         ret |= atirage_ext_readw(addr + 2, priv) << 16;
     } else
-        switch (addr & 0x3ff) {
+        switch (addr & 0x3fc) {
             case 0x18:
                 ret = atirage->crtc_int_cntl & ~1;
                 if (atirage->svga.cgastat & 8)
@@ -1488,8 +1500,20 @@ atirage_ext_writew(uint32_t addr, uint16_t val, void *priv)
     } else if (addr & 0x300) {
         atirage_queue(atirage, addr & 0x3fe, val, FIFO_WRITE_WORD);
     } else {
-        atirage_ext_writeb(addr, val, priv);
-        atirage_ext_writeb(addr + 1, val >> 8, priv);
+        switch (addr & 0x3fe) {
+            case 0xb4:
+            case 0xb6:
+                atirage->bank_w[(addr & 2) >> 1] = val << 15;
+                break;
+            case 0xb8:
+            case 0xba:
+                atirage->bank_r[(addr & 2) >> 1] = val << 15;
+                break;
+            default:
+                atirage_ext_writeb(addr, val, priv);
+                atirage_ext_writeb(addr + 1, val >> 8, priv);
+                break;
+        }
     }
 }
 void
@@ -1515,8 +1539,20 @@ atirage_ext_writel(uint32_t addr, uint32_t val, void *priv)
     } else if (addr & 0x300) {
         atirage_queue(atirage, addr & 0x3fc, val, FIFO_WRITE_DWORD);
     } else {
-        atirage_ext_writew(addr, val, priv);
-        atirage_ext_writew(addr + 2, val >> 16, priv);
+        switch (addr & 0x3fc) {
+            case 0xb4:
+                atirage->bank_w[0] = val << 15;
+                atirage->bank_w[1] = ((val >> 16) << 15);
+                break;
+            case 0xb8:
+                atirage->bank_r[0] = val << 15;
+                atirage->bank_r[1] = ((val >> 16) << 15);
+                break;
+            default:
+                atirage_ext_writew(addr, val, priv);
+                atirage_ext_writew(addr + 2, val >> 16, priv);
+                break;
+        }
     }
 }
 
@@ -1561,7 +1597,7 @@ atirage_ext_inb(uint16_t port, void *priv)
                 else if (port_low == 0xEC)                 
                     ret = atirage_ext_readb(0x400 | addr_or_value, priv);
                 else
-                    ret = atirage_ext_readb(0x400 | (addr_or_value + 2), priv);
+                    ret = atirage_ext_readb(0x400 | addr_or_value, priv);
                 break; 
             case 0x5e: // 5eec-5eef
                 uint16_t port_list[4] = { 0x3c8, 0x3c9, 0x3c6, 0x3c7 }; 
