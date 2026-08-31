@@ -244,7 +244,7 @@ start_blit_op:
                         atirage->dst_height_width = ((atirage->dst_bres_lnth & 0xffff) << 16) | ((atirage->dst_bres_lnth & 0x7fff0000) >> 16);
                         break; 
                     case 0x80008000:  /* Bit 31 set, bit 15 set: initiate trapezoid draw operation, write TRAIL_X */ 
-                        atirage->dst_height_width = ((atirage->dst_bres_lnth & 0xffff) << 16) | ((atirage->type >= MACH64_GTPRO) ? (atirage->dst_height_width & 0x7fff) : (atirage->dst_height_width & 0x1fff));
+                        atirage->dst_height_width = ((atirage->dst_bres_lnth & 0xffff) << 16) | (((atirage->dst_bres_lnth >> 16)) & ((atirage->type >= MACH64_GTPRO) ? 0x7fff : 0x1fff));
                         if (atirage->trapezoid_debug)
                             warning("Trapezoid operation not implemented yet, TRAIL_X written");
                         atirage_start_trap(atirage);
