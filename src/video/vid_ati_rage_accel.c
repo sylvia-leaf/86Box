@@ -1800,14 +1800,12 @@ atirage_write_trap(atirage_t *atirage, uint32_t *cpu_dat, int *count)
     svga_t *svga    = &atirage->svga;
     int cmp_clr = 0;
 
-    int span_left   = ((atirage->accel.dst_x) > (atirage->accel.trail_x)) ? (atirage->accel.trail_x) : (atirage->accel.dst_x);
-    int span_right  = ((atirage->accel.dst_x) <= (atirage->accel.trail_x)) ? (atirage->accel.trail_x) : (atirage->accel.dst_x);
-
-    int draw_left   = (span_left < atirage->accel.sc_left) ? atirage->accel.sc_left : span_left;
-    int draw_right  = (span_right > atirage->accel.sc_right) ? atirage->accel.sc_right : span_right;
+    const uint32_t coord_mask = (atirage->type >= MACH64_GTPRO) ? 0x7fff : 0x1fff;
+    const uint32_t trail_x    = atirage->accel.trail_x & coord_mask;
+    int draw_left             = atirage->accel.sc_left;
+    int draw_right            = atirage->accel.sc_right;
 
     int mix = 0;
-    int span_inc = (atirage->dst_cntl & TRAP_FILL_DIR) ? 1 : -1;
 
 
     uint32_t src_dat = 0;
@@ -1815,9 +1813,9 @@ atirage_write_trap(atirage_t *atirage, uint32_t *cpu_dat, int *count)
     uint32_t host_dat = 0;
 
     if (atirage->accel.temp_cnt < 0)
-        atirage->accel.temp_cnt = (atirage->dst_cntl & TRAP_FILL_DIR) ? span_left : span_right;
+        atirage->accel.temp_cnt = atirage->accel.dst_x & coord_mask;
 
-    if (span_left <= span_right) {
+    if ((uint32_t) atirage->accel.temp_cnt != trail_x) {
         
         if (atirage->trapezoid_debug) {
             warning("dst_pitch=%d",atirage->accel.dst_pitch);
@@ -1825,7 +1823,7 @@ atirage_write_trap(atirage_t *atirage, uint32_t *cpu_dat, int *count)
         }
 
         if (atirage->dst_cntl & TRAP_FILL_DIR) {
-            for (int s = atirage->accel.temp_cnt; s < span_right; s++) {
+            for (uint32_t s = atirage->accel.temp_cnt; s != trail_x; s = (s + 1) & coord_mask) {
                 if (*count <= 0 && (atirage->accel.source_host || atirage->accel.source_mix == MONO_SRC_HOST)) { /* Count is -1 if non-host */
                     atirage->accel.temp_cnt = s;
                     return 0;
@@ -1911,7 +1909,7 @@ atirage_write_trap(atirage_t *atirage, uint32_t *cpu_dat, int *count)
                 }
             }
         } else {
-            for (int s = atirage->accel.temp_cnt; s > span_left; s--) {
+            for (uint32_t s = atirage->accel.temp_cnt; s != trail_x; s = (s - 1) & coord_mask) {
                 if (*count <= 0 && (atirage->accel.source_host || atirage->accel.source_mix == MONO_SRC_HOST)) { /* Count is -1 if non-host */
                     atirage->accel.temp_cnt = s;
                     return 0;
