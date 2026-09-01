@@ -1805,11 +1805,9 @@ atirage_write_trap(atirage_t *atirage, uint32_t *cpu_dat, int *count)
     uint32_t host_dat = 0;
 
     if (atirage->accel.temp_cnt < 0)
-        atirage->accel.temp_cnt = (atirage->dst_cntl & TRAP_FILL_DIR) ? draw_left : draw_right;
+        atirage->accel.temp_cnt = (atirage->dst_cntl & TRAP_FILL_DIR) ? span_left : span_right;
 
-    if (draw_left <= draw_right &&
-        atirage->accel.dst_y >= atirage->accel.sc_top &&
-        atirage->accel.dst_y <= atirage->accel.sc_bottom) {
+    if (span_left <= span_right) {
         
         if (atirage->trapezoid_debug) {
             warning("dst_pitch=%d",atirage->accel.dst_pitch);
@@ -1817,7 +1815,7 @@ atirage_write_trap(atirage_t *atirage, uint32_t *cpu_dat, int *count)
         }
 
         if (atirage->dst_cntl & TRAP_FILL_DIR) {
-            for (int s = atirage->accel.temp_cnt; s <= draw_right; s++) {
+            for (int s = atirage->accel.temp_cnt; s <= span_right; s++) {
                 if (*count <= 0 && atirage->accel.source_host) { /* Count is -1 if non-host */
                     atirage->accel.temp_cnt = s;
                     return 0;
@@ -1892,7 +1890,9 @@ atirage_write_trap(atirage_t *atirage, uint32_t *cpu_dat, int *count)
                 }
                 if (((atirage->crtc_gen_cntl >> 8) & 7) == BPP_24) {
                     /* According to the Rage Pro programmer's guide line drawing is unsupported in 24bpp mode, might implement later */
-                } else {
+                } else if (s >= draw_left && s <= draw_right &&
+                           atirage->accel.dst_y >= atirage->accel.sc_top &&
+                           atirage->accel.dst_y <= atirage->accel.sc_bottom) {
                     READ(atirage->accel.dst_offset + (atirage->accel.dst_y * atirage->accel.dst_pitch) + s, dest_dat, atirage->accel.dst_size);
                     cmp_clr = atirage_blit_calc_cmp_clr(atirage, src_dat, dest_dat);
                     if (!cmp_clr)
@@ -1901,7 +1901,7 @@ atirage_write_trap(atirage_t *atirage, uint32_t *cpu_dat, int *count)
                 }
             }
         } else {
-            for (int s = atirage->accel.temp_cnt; s >= draw_left; s--) {
+            for (int s = atirage->accel.temp_cnt; s >= span_left; s--) {
                 if (*count <= 0 && atirage->accel.source_host) { /* Count is -1 if non-host */
                     atirage->accel.temp_cnt = s;
                     return 0;
@@ -1951,7 +1951,9 @@ atirage_write_trap(atirage_t *atirage, uint32_t *cpu_dat, int *count)
                 }
                 if (((atirage->crtc_gen_cntl >> 8) & 7) == BPP_24) {
                     /* According to the Rage Pro programmer's guide line drawing is unsupported in 24bpp mode, might implement later */
-                } else {
+                } else if (s >= draw_left && s <= draw_right &&
+                           atirage->accel.dst_y >= atirage->accel.sc_top &&
+                           atirage->accel.dst_y <= atirage->accel.sc_bottom) {
                     READ(atirage->accel.dst_offset + (atirage->accel.dst_y * atirage->accel.dst_pitch) + s, dest_dat, atirage->accel.dst_size);
                     cmp_clr = atirage_blit_calc_cmp_clr(atirage, src_dat, dest_dat);
                     if (!cmp_clr)
