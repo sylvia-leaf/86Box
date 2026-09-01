@@ -1714,6 +1714,13 @@ atirage_blit_trap(uint32_t cpu_dat, int count, atirage_t *atirage)
         atirage->accel.busy = 0;
         return;
     } else {
+        if (atirage->accel.source_host && !(atirage->dst_cntl & TRAP_FILL_DIR)) {
+            if (atirage->accel.host_size == 0)
+                cpu_dat = bswap32(cpu_dat);
+            else if (atirage->accel.host_size == 1)
+                cpu_dat = (cpu_dat << 16) | (cpu_dat >> 16);
+        }
+
         while (count) {
             int span_done;
 
