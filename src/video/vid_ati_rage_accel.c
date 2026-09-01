@@ -1804,6 +1804,7 @@ atirage_write_trap(atirage_t *atirage, uint32_t *cpu_dat, int *count)
     const uint32_t trail_x    = atirage->accel.trail_x & coord_mask;
     int draw_left             = atirage->accel.sc_left;
     int draw_right            = atirage->accel.sc_right;
+    int fill_step             = (atirage->dst_cntl & TRAP_FILL_DIR) ? 1 : -1;
 
     int mix = 0;
 
@@ -1822,8 +1823,7 @@ atirage_write_trap(atirage_t *atirage, uint32_t *cpu_dat, int *count)
             warning("dst_y=%d, dst_x=%d, trail_x=%d\n", atirage->accel.dst_y, atirage->accel.dst_x, atirage->accel.trail_x);
         }
 
-        if (atirage->dst_cntl & TRAP_FILL_DIR) {
-            for (uint32_t s = atirage->accel.temp_cnt; s != trail_x; s = (s + 1) & coord_mask) {
+        for (uint32_t s = atirage->accel.temp_cnt; s != trail_x; s = (s + fill_step) & coord_mask) {
                 if (*count <= 0 && (atirage->accel.source_host || atirage->accel.source_mix == MONO_SRC_HOST)) { /* Count is -1 if non-host */
                     atirage->accel.temp_cnt = s;
                     return 0;
@@ -1907,68 +1907,6 @@ atirage_write_trap(atirage_t *atirage, uint32_t *cpu_dat, int *count)
                         MIX
                     WRITE(atirage->accel.dst_offset + (atirage->accel.dst_y * atirage->accel.dst_pitch) + s, atirage->accel.dst_size);
                 }
-            }
-        } else {
-            for (uint32_t s = atirage->accel.temp_cnt; s != trail_x; s = (s - 1) & coord_mask) {
-                if (*count <= 0 && (atirage->accel.source_host || atirage->accel.source_mix == MONO_SRC_HOST)) { /* Count is -1 if non-host */
-                    atirage->accel.temp_cnt = s;
-                    return 0;
-                }
-                
-                if (atirage->accel.source_host) {
-                    host_dat = *cpu_dat;
-                    if (atirage->accel.host_size < 2)
-                        *cpu_dat >>= (8 << atirage->accel.host_size); // shift by 8 for a word, 16 for a word, not at all for a dword.
-                    *count -= (8 << atirage->accel.host_size);
-                } else {
-                    (*count)--;
-                }
-
-                switch (atirage->accel.source_mix) {
-                    case MONO_SRC_HOST:
-                        mix = *cpu_dat >> 31;
-                        *cpu_dat <<= 1;
-                        break;
-                    case MONO_SRC_PAT:
-                        mix = atirage->accel.pattern[atirage->accel.dst_y & 7][s & 7];
-                        break;
-                    case MONO_SRC_1:
-                    default:
-                        mix = 1;
-                        break;
-                }
-                
-                switch (mix ? atirage->accel.source_fg : atirage->accel.source_bg) {
-                    case SRC_HOST:
-                        src_dat = host_dat;
-                        break;
-                    case SRC_BLITSRC:
-                        READ(atirage->accel.src_offset + (atirage->accel.src_y * atirage->accel.src_pitch) + atirage->accel.src_x, src_dat, atirage->accel.src_size);
-                        break;
-                    case SRC_FG:
-                        src_dat = atirage->accel.dp_frgd_clr;
-                        break;
-                    case SRC_BG:
-                        src_dat = atirage->accel.dp_bkgd_clr;
-                        break;
-                    case SRC_SCALER_3D:
-                        warning("Trapezoid: Scaler / 3D source set");
-                    default:
-                        src_dat = 0;
-                        break;
-                }
-                if (((atirage->crtc_gen_cntl >> 8) & 7) == BPP_24) {
-                    /* According to the Rage Pro programmer's guide line drawing is unsupported in 24bpp mode, might implement later */
-                } else if (s >= draw_left && s <= draw_right &&
-                           atirage->accel.dst_y >= atirage->accel.sc_top &&
-                           atirage->accel.dst_y <= atirage->accel.sc_bottom) {
-                    READ(atirage->accel.dst_offset + (atirage->accel.dst_y * atirage->accel.dst_pitch) + s, dest_dat, atirage->accel.dst_size);
-                    cmp_clr = atirage_blit_calc_cmp_clr(atirage, src_dat, dest_dat);
-                    if (!cmp_clr)
-                        MIX
-                    WRITE(atirage->accel.dst_offset + (atirage->accel.dst_y * atirage->accel.dst_pitch) + s, atirage->accel.dst_size);
-                }
-            }
         }
         atirage->accel.temp_cnt = -1;
         return 1;
