@@ -1815,7 +1815,7 @@ atirage_write_trap(atirage_t *atirage, uint32_t *cpu_dat, int *count)
         }
 
         if (atirage->dst_cntl & TRAP_FILL_DIR) {
-            for (int s = atirage->accel.temp_cnt; s <= span_right; s++) {
+            for (int s = atirage->accel.temp_cnt; s < span_right; s++) {
                 if (*count <= 0 && atirage->accel.source_host) { /* Count is -1 if non-host */
                     atirage->accel.temp_cnt = s;
                     return 0;
@@ -1901,7 +1901,7 @@ atirage_write_trap(atirage_t *atirage, uint32_t *cpu_dat, int *count)
                 }
             }
         } else {
-            for (int s = atirage->accel.temp_cnt; s >= span_left; s--) {
+            for (int s = atirage->accel.temp_cnt; s > span_left; s--) {
                 if (*count <= 0 && atirage->accel.source_host) { /* Count is -1 if non-host */
                     atirage->accel.temp_cnt = s;
                     return 0;
