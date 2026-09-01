@@ -1747,6 +1747,16 @@ atirage_blit_trap(uint32_t cpu_dat, int count, atirage_t *atirage)
             if (!span_done)
                 return;
 
+            if ((atirage->host_cntl & HOST_BYTE_ALIGN) &&
+                atirage->accel.source_mix == MONO_SRC_HOST) {
+                if (atirage->dp_pix_width & DP_BYTE_PIX_ORDER)
+                    cpu_dat >>= (count & 7);
+                else
+                    cpu_dat <<= (count & 7);
+
+                count &= ~7;
+            }
+
             atirage->accel.dst_y += atirage->accel.yinc;
             atirage->accel.src_y += atirage->accel.yinc;
 
