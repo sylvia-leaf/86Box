@@ -1709,17 +1709,13 @@ atirage_blit_line(uint32_t cpu_dat, int count, atirage_t* atirage)
 void
 atirage_blit_trap(uint32_t cpu_dat, int count, atirage_t *atirage)
 {
-    svga_t *svga    = &atirage->svga;
-    int cmp_clr = 0;
     if (((atirage->crtc_gen_cntl >> 8) & 7) == BPP_24) {
         warning("Trapezoid draw in 24bpp mode currently unsupported");
         atirage->accel.busy = 0;
         return;
     } else {
         while (count) {
-            int      old_y       = atirage->accel.dst_y;
-            int      span_done;
-            int      decrement_count = 0;
+            int span_done;
 
             /* Todo: TEST ON REAL HARDWARE */
             if (atirage->dst_cntl & DST_POLYGON_EN) {
@@ -1728,64 +1724,47 @@ atirage_blit_trap(uint32_t cpu_dat, int count, atirage_t *atirage)
                 return;
             }
 
-            if (atirage->dst_cntl & DST_Y_MAJOR) { 
-                span_done = atirage_write_trap(atirage, &cpu_dat, &count);
-                if (!span_done)
-                    return;
-
-                decrement_count = 1;
-
-                atirage->accel.dst_y += atirage->accel.yinc;
-                atirage->accel.src_y += atirage->accel.yinc;
-
-                if ((atirage->accel.err > 0) || (atirage->accel.err == 0 && (((atirage->dst_cntl & BRES_SIGN_AUTO) & !(atirage->dst_cntl & DST_X_DIR)) | !(atirage->dst_cntl & (BRES_SIGN_AUTO | DST_BRES_SIGN))))) {
+            if ((atirage->dst_cntl & DST_Y_MAJOR) && (atirage->accel.temp_cnt < 0)) {
+                while ((atirage->accel.err > 0) || (atirage->accel.err == 0 && (((atirage->dst_cntl & BRES_SIGN_AUTO) && !(atirage->dst_cntl & DST_X_DIR)) || !(atirage->dst_cntl & (BRES_SIGN_AUTO | DST_BRES_SIGN))))) {
+                    atirage->accel.dst_x += atirage->accel.xinc;
                     atirage->accel.err += atirage->dst_bres_dec;
-                    atirage->accel.dst_x += atirage->accel.xinc;
-                } else {
-                    atirage->accel.err += atirage->dst_bres_inc;
                 }
-                
-                if ((atirage->accel.trail_err > 0) || (atirage->accel.trail_err == 0 && (((atirage->dst_cntl & BRES_SIGN_AUTO) & !(atirage->dst_cntl & TRAIL_X_DIR)) | !(atirage->dst_cntl & (BRES_SIGN_AUTO | DST_BRES_SIGN))))) {
+
+                while ((atirage->accel.trail_err > 0) || (atirage->accel.trail_err == 0 && (((atirage->dst_cntl & BRES_SIGN_AUTO) && !(atirage->dst_cntl & TRAIL_X_DIR)) || !(atirage->dst_cntl & (BRES_SIGN_AUTO | TRAIL_BRES_SIGN))))) {
+                    atirage->accel.trail_x += atirage->accel.trail_xinc;
                     atirage->accel.trail_err += atirage->trail_bres_dec;
-                    atirage->accel.trail_x += atirage->accel.trail_xinc; 
-                } else {
-                    atirage->accel.trail_err += atirage->trail_bres_inc;
                 }
+            }
 
+            span_done = atirage_write_trap(atirage, &cpu_dat, &count);
+            if (!span_done)
+                return;
+
+            atirage->accel.dst_y += atirage->accel.yinc;
+            atirage->accel.src_y += atirage->accel.yinc;
+
+            if (atirage->dst_cntl & DST_Y_MAJOR) {
+                atirage->accel.err += atirage->dst_bres_inc;
+                atirage->accel.trail_err += atirage->trail_bres_inc;
             } else {
-                if (!atirage->accel.y_count && atirage->accel.temp_cnt < 0) {
+                atirage->accel.err += atirage->dst_bres_inc;
+
+                if ((atirage->accel.err > 0) || (atirage->accel.err == 0 && (((atirage->dst_cntl & BRES_SIGN_AUTO) && !(atirage->dst_cntl & DST_X_DIR)) || !(atirage->dst_cntl & (BRES_SIGN_AUTO | DST_BRES_SIGN))))) {
                     atirage->accel.dst_x += atirage->accel.xinc;
-                    atirage->accel.src_x += atirage->accel.xinc;
-                    if ((atirage->accel.err > 0) || (atirage->accel.err == 0 && (((atirage->dst_cntl & BRES_SIGN_AUTO) & !(atirage->dst_cntl & DST_Y_DIR)) | !(atirage->dst_cntl & (BRES_SIGN_AUTO | DST_BRES_SIGN))))) {
-                        atirage->accel.err += atirage->dst_bres_dec;
-                        atirage->accel.dst_y += atirage->accel.yinc;
-                    } else {
-                        atirage->accel.err += atirage->dst_bres_inc;
-                    }
-
-                    atirage->accel.trail_x += atirage->accel.trail_xinc; 
-
-                    if ((atirage->accel.trail_err > 0) || (atirage->accel.trail_err == 0 && (((atirage->dst_cntl & BRES_SIGN_AUTO) & !(atirage->dst_cntl & DST_Y_DIR)) | !(atirage->dst_cntl & (BRES_SIGN_AUTO | DST_BRES_SIGN))))) {
-                        atirage->accel.trail_err += atirage->trail_bres_dec;
-                    } else {
-                        atirage->accel.trail_err += atirage->trail_bres_inc;
-                    }
+                    atirage->accel.err += atirage->dst_bres_dec;
                 }
-                
-                if ((atirage->accel.dst_y != old_y) || atirage->accel.y_count) {
-                    span_done = atirage_write_trap(atirage, &cpu_dat, &count);
-                    if (!span_done)
-                        return;
 
-                    atirage->accel.src_y += atirage->accel.yinc;
-                    decrement_count = 1;
+                atirage->accel.trail_err += atirage->trail_bres_inc;
+
+                if ((atirage->accel.trail_err > 0) || (atirage->accel.trail_err == 0 && (((atirage->dst_cntl & BRES_SIGN_AUTO) && !(atirage->dst_cntl & TRAIL_X_DIR)) || !(atirage->dst_cntl & (BRES_SIGN_AUTO | TRAIL_BRES_SIGN))))) {
+                    atirage->accel.trail_x += atirage->accel.trail_xinc;
+                    atirage->accel.trail_err += atirage->trail_bres_dec;
                 }
             }
 
             /* Todo: SRC_LINEAR_EN */
 
-            if (decrement_count)
-                atirage->accel.x_count--;
+            atirage->accel.x_count--;
             if (atirage->accel.x_count <= 0) {
                 /*Blit finished*/
                 atirage_log("mach64 trapezoid finished\n");
