@@ -213,6 +213,7 @@ extern const device_t via_apro_device;
 extern const device_t via_apro133_device;
 extern const device_t via_apro133a_device;
 extern const device_t via_vt8601_device;
+extern const device_t via_vt8371_device;
 
 #define VIA_PIPC_NO_KBC 0x0000000100000000ULL
 
