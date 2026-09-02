@@ -205,6 +205,7 @@ enum {
     MACHINE_TYPE_SLOT1_2,
     MACHINE_TYPE_SLOT1_370,
     MACHINE_TYPE_SLOT2,
+    MACHINE_TYPE_SLOTA,
     MACHINE_TYPE_SOCKET370,
     MACHINE_TYPE_SOCKET423,
     MACHINE_TYPE_SOCKET478,
@@ -309,6 +310,7 @@ enum {
     MACHINE_CHIPSET_VIA_APOLLO_PRO,
     MACHINE_CHIPSET_VIA_APOLLO_PRO_133,
     MACHINE_CHIPSET_VIA_APOLLO_PRO_133A,
+    MACHINE_CHIPSET_VIA_APOLLO_KX133,
     MACHINE_CHIPSET_VLSI_SCAMP,
     MACHINE_CHIPSET_VLSI_VL82C480,
     MACHINE_CHIPSET_VLSI_VL82C481,
@@ -1523,6 +1525,7 @@ extern int             machine_at_platinix2_init(const machine_t *);
 
 /* m_at_slota.c */
 extern int machine_at_k7m_init(const machine_t *);
+extern int machine_at_7kxa_init(const machine_t *);
 
 /* m_at_misc.c */
 extern int             machine_at_vpc2007_init(const machine_t *);

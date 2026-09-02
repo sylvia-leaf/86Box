@@ -1,8 +1,10 @@
+#include <stdarg.h>
 #include <stdio.h>
 #include <stdint.h>
 #include <stdlib.h>
 #include <string.h>
 #include <wchar.h>
+#define HAVE_STDARG_H
 #include <86box/86box.h>
 #include "cpu.h"
 #include <86box/mem.h>
@@ -14,6 +16,24 @@
 #include <86box/plat_unused.h>
 #include <86box/spd.h>
 #include <86box/agpgart.h>
+
+#ifdef ENABLE_VIA_VT8371_LOG
+int via_vt8371_do_log = ENABLE_VIA_VT8371_LOG;
+
+static void
+via_vt8371_log(const char *fmt, ...)
+{
+    va_list ap;
+
+    if (via_vt8371_do_log) {
+        va_start(ap, fmt);
+        pclog_ex(fmt, ap);
+        va_end(ap);
+    }
+}
+#else
+#    define via_vt8371_log(fmt, ...)
+#endif
 
 typedef struct via_vt8371_t {
     uint8_t   drb_unit;
@@ -163,6 +183,8 @@ via_vt8371_host_bridge_write(int func, int addr, UNUSED(int len), uint8_t val, v
     if (func)
         return;
 
+    via_vt8371_log("VT8371: [W] %02X = %02X\n", addr, val);
+
     /* Read-only and reserved addresses */
     if ((addr < 4) || (addr == 6) || ((addr >= 8) && (addr < 0x0d)) ||
         ((addr >= 0x0e) && (addr < 0x12)) || ((addr >= 0x14) && (addr < 0x2c)) ||
@@ -221,11 +243,11 @@ via_vt8371_host_bridge_write(int func, int addr, UNUSED(int len), uint8_t val, v
             break;
 
         case 0x58:
-            dev->pci_conf[0x58] = (dev->pci_conf[0x58] & ~0xee) | (val & 0xee);
+            dev->pci_conf[0x58] = val;
             break;
 
         case 0x59:
-            dev->pci_conf[0x59] = (dev->pci_conf[0x59] & ~0xee) | (val & 0xee);
+            dev->pci_conf[0x59] = val;
             break;
 
         case 0x61: /* Shadow RAM Control 1 */
@@ -297,11 +319,11 @@ via_vt8371_host_bridge_write(int func, int addr, UNUSED(int len), uint8_t val, v
             break;
 
         case 0x6d:
-            dev->pci_conf[0x6d] = (dev->pci_conf[0x6d] & ~0x7f) | (val & 0x7f);
+            dev->pci_conf[0x6d] = val;
             break;
 
         case 0x6e:
-            dev->pci_conf[0x6e] = (dev->pci_conf[0x6e] & ~0xb7) | (val & 0xb7);
+            dev->pci_conf[0x6e] = (dev->pci_conf[0x6e] & ~0xbf) | (val & 0xbf);
             break;
 
         case 0x70:
@@ -339,7 +361,7 @@ via_vt8371_host_bridge_write(int func, int addr, UNUSED(int len), uint8_t val, v
             break;
 
         case 0x7a:
-            dev->pci_conf[0x7a] = (dev->pci_conf[0x7a] & ~0x89) | (val & 0x89);
+            dev->pci_conf[0x7a] = (dev->pci_conf[0x7a] & ~0x99) | (val & 0x99);
             break;
 
         case 0x7b:
@@ -447,6 +469,9 @@ via_vt8371_read(int func, int addr, UNUSED(int len), void *priv)
         default:
             break;
     }
+
+    if (addr >= 0x50)
+        via_vt8371_log("VT8371: [R] %02X = %02X\n", addr, ret);
 
     return ret;
 }

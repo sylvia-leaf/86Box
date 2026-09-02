@@ -115,6 +115,7 @@ uint8_t is_smint = 0;
 
 uint16_t io_port = 0x0000;
 uint32_t io_val  = 0x00000000;
+uint32_t smi_enter_count = 0; /* TEMPORARY */
 
 int opcode_has_modrm[256] = {
     1, 1, 1, 1,  0, 0, 0, 0,  1, 1, 1, 1,  0, 0, 0, 0, /*00*/
@@ -1291,6 +1292,7 @@ enter_smm(int in_hlt)
     if (!is_am486 && !is_pentium && !is_k5 && !is_k6 && !is_p6 && !is_cxsmm && !is_athlon)
         return;
 
+smi_enter_count++;
     x386_common_log("enter_smm(): smbase = %08X\n", smbase);
     x386_common_log("CS : seg = %04X, base = %08X, limit = %08X, limit_low = %08X, limit_high = %08X, access = %02X, ar_high = %02X\n",
                     cpu_state.seg_cs.seg, cpu_state.seg_cs.base, cpu_state.seg_cs.limit, cpu_state.seg_cs.limit_low,
@@ -1505,7 +1507,7 @@ leave_smm(void)
     uint32_t smram_state = smbase + 0x10000;
 
     /* If it's a CPU on which SMM is not supported (or not implemented in 86Box), do nothing. */
-    if (!is_am486 && !is_pentium && !is_k5 && !is_k6 && !is_p6 && !is_cxsmm)
+    if (!is_am486 && !is_pentium && !is_k5 && !is_k6 && !is_p6 && !is_cxsmm && !is_athlon)
         return;
 
     memset(saved_state, 0x00, SMM_SAVE_STATE_MAP_SIZE * sizeof(uint32_t));
@@ -1547,7 +1549,7 @@ leave_smm(void)
         smram_restore_state_cyrix(saved_state);
     else if (is_pentium || is_am486) /* Am486 / 5x86 / Intel P5 (Pentium) */
         smram_restore_state_p5(saved_state);
-    else if (is_k5 || is_k6) /* AMD K5 and K6 */
+    else if (is_k5 || is_k6 || is_athlon) /* AMD K5 and K6 */
         smram_restore_state_amd_k(saved_state);
     else if (is_p6) /* Intel P6 (Pentium Pro, Pentium II, Celeron) */
         smram_restore_state_p6(saved_state);

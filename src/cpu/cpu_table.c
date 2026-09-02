@@ -6197,7 +6197,6 @@ const cpu_family_t cpu_families[] = {
             { .name = "", 0 }
         }
     },
-#ifdef USE_ATHLON
     {
         .package       = CPU_PKG_SLOTA,
         .manufacturer  = "AMD",
@@ -6258,7 +6257,6 @@ const cpu_family_t cpu_families[] = {
             { .name = "", 0 }
         }
     },
-#endif
         {
         .package       = CPU_PKG_SOCKET5_7,
         .manufacturer  = "Cyrix",
