@@ -27,7 +27,9 @@ via_vt8371_log(const char *fmt, ...)
 
     if (via_vt8371_do_log) {
         va_start(ap, fmt);
-        pclog_ex(fmt, ap);
+        char buf[256];
+        vsnprintf(buf, sizeof(buf), fmt, ap);
+        pclog("%s", buf);
         va_end(ap);
     }
 }

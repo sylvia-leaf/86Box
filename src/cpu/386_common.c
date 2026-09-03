@@ -1220,8 +1220,10 @@ smram_restore_state_amd_k(uint32_t *saved_state)
     cpu_state.seg_gs.ar_high = (saved_state[SMRAM_FIELD_AMD_K_GS_ACCESS] >> 16) & 0xff;
     smm_seg_load(&cpu_state.seg_gs);
 
-    if (SMM_REVISION_ID & SMM_SMBASE_RELOCATION)
-        smbase = saved_state[SMRAM_FIELD_AMD_K_SMBASE_OFFSET];
+    if (SMM_REVISION_ID & SMM_SMBASE_RELOCATION) {
+        smbase         = saved_state[SMRAM_FIELD_AMD_K_SMBASE_OFFSET];
+        msr.amd_smbase = smbase;
+    }
 }
 
 static void

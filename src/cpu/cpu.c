@@ -604,7 +604,7 @@ cpu_set(void)
        and the WinChip datasheet claims those are Pentium-compatible as well. AMD Am486DXL/DXL2 also has compatible SMM, or would if not for it's different SMBase*/
     is_pentium = (cpu_isintel && (cpu_s->cpu_type >= CPU_i486SX_SLENH) && (cpu_s->cpu_type < CPU_PENTIUMPRO)) || !strcmp(cpu_f->manufacturer, "IDT") || (cpu_s->cpu_type == CPU_Am486DXL);
     is_k5      = !strcmp(cpu_f->manufacturer, "AMD") && (cpu_s->cpu_type > CPU_ENH_Am486DX) && (cpu_s->cpu_type < CPU_K6);
-    is_k6      = (cpu_s->cpu_type >= CPU_K6) && !strcmp(cpu_f->manufacturer, "AMD");
+    is_k6      = !strcmp(cpu_f->manufacturer, "AMD") && (cpu_s->cpu_type >= CPU_K6) && (cpu_s->cpu_type < CPU_ATHLON);
     is_athlon  = (cpu_s->cpu_type >= CPU_ATHLON) && !strcmp(cpu_f->manufacturer, "AMD");
     /* The Samuel 2 datasheet claims it's Celeron-compatible. */
     is_p6     = (cpu_isintel && (cpu_s->cpu_type >= CPU_PENTIUMPRO)) || !strcmp(cpu_f->manufacturer, "VIA");
@@ -4995,6 +4995,31 @@ p4w_invalid_rdmsr:
     cpu_log("RDMSR %08X %08X%08X\n", ECX, EDX, EAX);
 }
 
+/*
+ * AMD K7 SMM region remapping (SMM_ADDR / SMM_MASK, MSRs 0xC0010112 / 0xC0010113).
+ *
+ * The ASeg (A0000-BFFFF) and TSeg regions are only hidden from non-SMM accesses
+ * when their respective valid bits in SMM_MASK are set; until then the BIOS sees
+ * plain memory there, which is how it stages the SMM handler in the first place.
+ */
+static void
+amd_k7_smm_remap(void)
+{
+    uint32_t tseg_size = (~((uint32_t) msr.amd_smmmask) & 0xfffe0000) + 0x00020000;
+
+    smram_disable(amd_k7_smram_aseg);
+    smram_disable(amd_k7_smram_tseg);
+
+    if (msr.amd_smmmask & 0x02) /* AValid */
+        smram_enable(amd_k7_smram_aseg, 0x000a0000, 0x000a0000, 0x00020000, 0, 1);
+
+    if (msr.amd_smmmask & 0x01) /* TValid */
+        smram_enable(amd_k7_smram_tseg, (uint32_t) msr.amd_smmaddr & 0xfffe0000,
+                     (uint32_t) msr.amd_smmaddr & 0xfffe0000, tseg_size, 0, 1);
+
+    flushmmucache();
+}
+
 void
 cpu_WRMSR(void)
 {
@@ -5516,26 +5541,20 @@ cpu_WRMSR(void)
                 case 0xc0010111:
                     if (cpu_s->cpu_type < CPU_ATHLON)
                         goto amd_k_invalid_wrmsr;
-                    smram_disable(amd_k7_smram_aseg);
                     msr.amd_smbase = EAX | ((uint64_t) EDX << 32);
-                    smram_enable(amd_k7_smram_aseg, msr.amd_smbase, msr.amd_smbase, 0x10000, 0, 1);
-                    flushmmucache();
+                    smbase         = msr.amd_smbase;
                     break;
                 case 0xc0010112:
                     if (cpu_s->cpu_type < CPU_ATHLON)
                         goto amd_k_invalid_wrmsr;
-                    smram_disable(amd_k7_smram_tseg);
                     msr.amd_smmaddr = EAX | ((uint64_t) EDX << 32);
-                    smram_enable(amd_k7_smram_tseg, msr.amd_smmaddr, msr.amd_smmaddr, msr.amd_smmmask + 1, 0, 1);
-                    flushmmucache();
+                    amd_k7_smm_remap();
                     break;
                 case 0xc0010113:
                     if (cpu_s->cpu_type < CPU_ATHLON)
                         goto amd_k_invalid_wrmsr;
-                    smram_disable(amd_k7_smram_tseg);
                     msr.amd_smmmask = EAX | ((uint64_t) EDX << 32);
-                    smram_enable(amd_k7_smram_tseg, msr.amd_smmaddr, msr.amd_smmaddr, msr.amd_smmmask + 1, 0, 1);
-                    flushmmucache();
+                    amd_k7_smm_remap();
                     break;
                 case 0xc0011000 ... 0xc001100c:
                 case 0xc0011010 ... 0xc0011014:
