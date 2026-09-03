@@ -44,7 +44,11 @@ sf_fx_save_stor_common(uint32_t fetchdat, int bits)
     floatx80 reg;
     uint32_t old_eaaddr = 0;
 
-    if (CPUID < 0x650)
+    /* AMD Athlon advertises FXSR (and permits CR4.OSFXSR) starting at CPUID 0x620,
+       well below Intel's 0x650 (Pentium III) threshold - gating on the Intel value
+       alone made FXSAVE/FXRSTOR fault as illegal on Pluto/Thunderbird after Windows
+       enabled OSFXSR from the (correctly) advertised CPUID feature bit. */
+    if ((CPUID < 0x650) && !(is_athlon && (CPUID >= 0x620)))
         return ILLEGAL(fetchdat);
 
     if (bits == 32) {
@@ -345,7 +349,9 @@ fx_save_stor_common(uint32_t fetchdat, int bits)
                                       /* M is the most significant bit of the franction, so it is impossible
                                          for M to o be 1 when the fraction is all 0's. */
 
-    if (CPUID < 0x650)
+    /* See the matching note in sf_fx_save_stor_common(): the Athlon advertises FXSR
+       from CPUID 0x620, below Intel's 0x650 threshold. */
+    if ((CPUID < 0x650) && !(is_athlon && (CPUID >= 0x620)))
         return ILLEGAL(fetchdat);
 
     if (bits == 32) {
