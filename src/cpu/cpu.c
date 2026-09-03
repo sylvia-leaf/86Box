@@ -3478,6 +3478,8 @@ cpu_ven_reset(void)
         
         case CPU_ATHLON:
             msr.mtrr_cap = 0x00000508ULL;
+            if ((cpu_dmulti >= 5.0) && (cpu_dmulti <= 10.0))
+                msr.amd_hwcr_athlon = (uint64_t) ((cpu_dmulti * 2.0) - 6.0) << 24;
             /* FALLTHROUGH */
 
         case CPU_K6_2P:
@@ -3870,6 +3872,12 @@ cpu_RDMSR(void)
                     cpu_log("APIC_BASE read : %08X%08X\n", EDX, EAX);
                     break;
                 case 0x8b:
+                    break;
+                case 0xfe:
+                    if (cpu_s->cpu_type < CPU_ATHLON)
+                        goto amd_k_invalid_rdmsr;
+                    EAX = msr.mtrr_cap & 0xffffffff;
+                    EDX = msr.mtrr_cap >> 32;
                     break;
                 case 0x17a:
                     if (cpu_s->cpu_type < CPU_ATHLON)
@@ -5297,11 +5305,6 @@ cpu_WRMSR(void)
                     msr.apic_base = EAX | ((uint64_t) EDX << 32);
                     break;
                 case 0x8b:
-                    break;
-                case 0xfe:
-                    if (cpu_s->cpu_type != CPU_ATHLON)
-                        goto amd_k_invalid_wrmsr;
-                    msr.mtrr_cap = EAX | ((uint64_t) EDX << 32);
                     break;
                 case 0x179:
                     if (cpu_s->cpu_type != CPU_ATHLON)
