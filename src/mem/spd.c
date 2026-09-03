@@ -321,7 +321,7 @@ spd_register(uint8_t ram_type, uint8_t slot_mask, uint16_t max_module_size)
                 sdram_data->mfg_year    = 20;
                 sdram_data->mfg_week    = 13;
 
-                sdram_data->freq     = 100;
+                sdram_data->freq     = 133; /* match tclk (0x75 = 133.3 MHz); was 100, contradicting it */
                 sdram_data->features = 0xFF;
 
                 for (uint8_t i = 0; i < 63; i++)

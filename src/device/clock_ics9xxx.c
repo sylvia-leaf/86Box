@@ -547,6 +547,57 @@ static const ics9xxx_model_t ics9xxx_models[] = {
     .hw_select = {0, 3},
     .frequencies_ref = ICS9250_08
     ICS9xxx_MODEL_END()
+/*
+ * Kept outside ENABLE_ICS9xxx_DETECT: the KX133 EPoX EP-7KXA needs this
+ * unconditionally. Cypress/IC Works W210 ("Spread Spectrum FTG for VIA K7
+ * Chipset"), SMBus address 0x69 - same bus address and write-only protocol
+ * as the ICS9xxx family it's modelled alongside here, but a different
+ * vendor's part; see Table 4/5/6 of the W210 datasheet for the byte
+ * layout and frequency tables this entry is built from.
+ */
+    ICS9xxx_MODEL(CY_W210)
+    .max_reg = 7,
+    .regs = {0x04, 0x0f, 0x5f, 0x37, 0x00, 0x13, 0x00, 0x00},
+    /* Byte 0: bit6=SEL_2, bit5=SEL_1, bit4=SEL_0, bit3=HW/SW, bit2=SEL_4, bit1=SEL_3. */
+    .fs_regs = {{0, 4, -1, -1}, {0, 5, -1, -1}, {0, 6, -1, -1}, {0, 1, -1, -1}, {0, 2, -1, -1}},
+    .hw_select = {0, 3},
+    .frequencies = (const ics9xxx_frequency_t[]) {
+        /* Table 6, indexed by SEL_4:SEL_0 (SEL_4=1 reproduces Table 2, the pin-strapped set). */
+        {.bus = 20000, .ram_mult = 1, .pci_div = 5}, /* 00000: 200.0/40.0 */
+        {.bus = 19000, .ram_mult = 1, .pci_div = 5}, /* 00001: 190.0/38.0 */
+        {.bus = 18000, .ram_mult = 1, .pci_div = 5}, /* 00010: 180.0/36.0 */
+        {.bus = 17100, .ram_mult = 1, .pci_div = 5}, /* 00011: 171.0/34.2 */
+        {.bus = 16600, .ram_mult = 1, .pci_div = 5}, /* 00100: 166.0/33.2 */
+        {.bus = 16200, .ram_mult = 1, .pci_div = 5}, /* 00101: 162.0/32.4 */
+        {.bus = 15900, .ram_mult = 1, .pci_div = 5}, /* 00110: 159.0/31.8 */
+        {.bus = 15700, .ram_mult = 1, .pci_div = 5}, /* 00111: 157.0/31.4 */
+        {.bus = 15400, .ram_mult = 1, .pci_div = 5}, /* 01000: 154.0/30.8 */
+        {.bus = 15200, .ram_mult = 1, .pci_div = 5}, /* 01001: 152.0/30.4 */
+        {.bus = 14700, .ram_mult = 1, .pci_div = 4}, /* 01010: 147.0/36.8 */
+        {.bus =  9500, .ram_mult = 1, .pci_div = 3}, /* 01011: 95.0/31.7 */
+        {.bus =  9250, .ram_mult = 1, .pci_div = 3}, /* 01100: 92.5/30.8 */
+        {.bus =  9000, .ram_mult = 1, .pci_div = 3}, /* 01101: 90.0/30.0 */
+        {.bus =  8750, .ram_mult = 1, .pci_div = 3}, /* 01110: 87.5/29.2 */
+        {.bus =  8500, .ram_mult = 1, .pci_div = 3}, /* 01111: 85.0/28.3 */
+        {.bus = 14300, .ram_mult = 1, .pci_div = 4}, /* 10000: 143.0/35.8 */
+        {.bus = 13800, .ram_mult = 1, .pci_div = 4}, /* 10001: 138.0/34.5 */
+        {.bus = 12900, .ram_mult = 1, .pci_div = 4}, /* 10010: 129.0/32.3 */
+        {.bus = 12400, .ram_mult = 1, .pci_div = 4}, /* 10011: 124.0/31.0 */
+        {.bus =  6680, .ram_mult = 1, .pci_div = 2}, /* 10100: 66.8/33.4 */
+        {.bus = 10020, .ram_mult = 1, .pci_div = 3}, /* 10101: 100.2/33.3 */
+        {.bus =  8330, .ram_mult = 1, .pci_div = 3}, /* 10110: 83.3/27.7 */
+        {.bus = 13330, .ram_mult = 1, .pci_div = 4}, /* 10111: 133.3/33.3 */
+        {.bus = 12000, .ram_mult = 1, .pci_div = 4}, /* 11000: 120.0/30.0 */
+        {.bus = 11500, .ram_mult = 1, .pci_div = 3}, /* 11001: 115.0/38.3 */
+        {.bus = 11000, .ram_mult = 1, .pci_div = 3}, /* 11010: 110.0/36.7 */
+        {.bus =  7900, .ram_mult = 1, .pci_div = 2}, /* 11011: 79.0/39.5 */
+        {.bus =  6680, .ram_mult = 1, .pci_div = 2}, /* 11100: 66.8/33.4 */
+        {.bus = 10020, .ram_mult = 1, .pci_div = 3}, /* 11101: 100.2/33.3 */
+        {.bus =  7500, .ram_mult = 1, .pci_div = 2}, /* 11110: 75.0/37.5 */
+        {.bus = 13330, .ram_mult = 1, .pci_div = 4}, /* 11111: 133.3/33.3 */
+        {0}
+    }
+    ICS9xxx_MODEL_END()
 #ifdef ENABLE_ICS9xxx_DETECT
     ICS9xxx_MODEL(ICS9250_10)
     .max_reg = 5,
@@ -880,6 +931,12 @@ static const ics9xxx_model_t ics9xxx_models[] = {
     .regs = {0x07, 0xff, 0xff, 0x00, 0x00},
     .fs_regs = {{-1, -1, -1, -1}, {-1, -1, -1, -1}, {-1, -1, -1, -1}, {-1, -1, -1, -1}, {-1, -1, -1, -1}}
     ICS9xxx_MODEL_END()
+#endif
+/*
+ * Kept outside ENABLE_ICS9xxx_DETECT: ics9xxx_write() special-cases this
+ * model unconditionally, and Socket 423 i850 boards need it - it is the
+ * only modelled part with an RDRAM ratio and a 100 MHz entry.
+ */
     ICS9xxx_MODEL(ICS9250_38)
     .max_reg = 6,
     .regs = {0x18, 0x07, 0xfe, 0xc7, 0xfc, 0x00, 0x80},
@@ -897,6 +954,7 @@ static const ics9xxx_model_t ics9xxx_models[] = {
         {0}
     }
     ICS9xxx_MODEL_END()
+#ifdef ENABLE_ICS9xxx_DETECT
     ICS9xxx_MODEL(ICS9250_50)
     .max_reg = 6,
     .regs = {0x02, 0x6f, 0xff, 0xff, 0xef, 0xff, 0x06},

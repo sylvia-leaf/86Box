@@ -2171,6 +2171,105 @@ cpu_set(void)
             amd_k7_smram_tseg = smram_add();
             break;
 
+        case CPU_GENERICAMD:
+#ifdef USE_DYNAREC
+            x86_setopcodes(ops_386, ops_genericintel_0f, dynarec_ops_386, dynarec_ops_genericintel_0f);
+            if (fpu_softfloat) {
+                x86_dynarec_opcodes_da_a16 = dynarec_ops_sf_fpu_686_da_a16;
+                x86_dynarec_opcodes_da_a32 = dynarec_ops_sf_fpu_686_da_a32;
+                x86_dynarec_opcodes_db_a16 = dynarec_ops_sf_fpu_sse3_db_a16;
+                x86_dynarec_opcodes_db_a32 = dynarec_ops_sf_fpu_sse3_db_a32;
+                x86_dynarec_opcodes_dd_a16 = dynarec_ops_sf_fpu_sse3_dd_a16;
+                x86_dynarec_opcodes_dd_a32 = dynarec_ops_sf_fpu_sse3_dd_a32;
+                x86_dynarec_opcodes_df_a16 = dynarec_ops_sf_fpu_sse3_df_a16;
+                x86_dynarec_opcodes_df_a32 = dynarec_ops_sf_fpu_sse3_df_a32;
+            } else {
+                x86_dynarec_opcodes_da_a16 = dynarec_ops_fpu_686_da_a16;
+                x86_dynarec_opcodes_da_a32 = dynarec_ops_fpu_686_da_a32;
+                x86_dynarec_opcodes_db_a16 = dynarec_ops_fpu_sse3_db_a16;
+                x86_dynarec_opcodes_db_a32 = dynarec_ops_fpu_sse3_db_a32;
+                x86_dynarec_opcodes_dd_a16 = dynarec_ops_fpu_sse3_dd_a16;
+                x86_dynarec_opcodes_dd_a32 = dynarec_ops_fpu_sse3_dd_a32;
+                x86_dynarec_opcodes_df_a16 = dynarec_ops_fpu_sse3_df_a16;
+                x86_dynarec_opcodes_df_a32 = dynarec_ops_fpu_sse3_df_a32;
+            }
+            x86_dynarec_opcodes_REPE_0f = dynarec_ops_genericintel_REPE_0f;
+            x86_dynarec_opcodes_REPNE_0f = dynarec_ops_genericintel_REPNE_0f;
+            x86_dynarec_opcodes_0f_38 = dynarec_ops_genericintel_0f_38;
+            x86_dynarec_opcodes_0f_3a = dynarec_ops_genericintel_0f_3a;
+            x86_dynarec_opcodes_3DNOW = dynarec_ops_3DNOWE;
+#else
+            x86_setopcodes(ops_386, ops_genericintel_0f);
+#endif
+            x86_opcodes_REPE_0f = ops_genericintel_REPE_0f;
+            x86_opcodes_REPNE_0f = ops_genericintel_REPNE_0f;
+            x86_opcodes_0f_38 = ops_genericintel_0f_38;
+            x86_opcodes_0f_3a = ops_genericintel_0f_3a;
+            x86_opcodes_3DNOW = ops_3DNOWE;
+            if (fpu_softfloat) {
+                x86_opcodes_da_a16 = ops_sf_fpu_686_da_a16;
+                x86_opcodes_da_a32 = ops_sf_fpu_686_da_a32;
+                x86_opcodes_db_a16 = ops_sf_fpu_sse3_db_a16;
+                x86_opcodes_db_a32 = ops_sf_fpu_sse3_db_a32;
+                x86_opcodes_dd_a16 = ops_sf_fpu_sse3_dd_a16;
+                x86_opcodes_dd_a32 = ops_sf_fpu_sse3_dd_a32;
+                x86_opcodes_df_a16 = ops_sf_fpu_sse3_df_a16;
+                x86_opcodes_df_a32 = ops_sf_fpu_sse3_df_a32;
+            } else {
+                x86_opcodes_da_a16 = ops_fpu_686_da_a16;
+                x86_opcodes_da_a32 = ops_fpu_686_da_a32;
+                x86_opcodes_db_a16 = ops_fpu_sse3_db_a16;
+                x86_opcodes_db_a32 = ops_fpu_sse3_db_a32;
+                x86_opcodes_dd_a16 = ops_fpu_sse3_dd_a16;
+                x86_opcodes_dd_a32 = ops_fpu_sse3_dd_a32;
+                x86_opcodes_df_a16 = ops_fpu_sse3_df_a16;
+                x86_opcodes_df_a32 = ops_fpu_sse3_df_a32;
+            }
+
+            timing_rr  = 1;
+            timing_rm  = 2;
+            timing_mr  = 3;
+            timing_mm  = 3;
+            timing_rml = 2;
+            timing_mrl = 3;
+            timing_mml = 3;
+            timing_bt  = 0;
+            timing_bnt = 1;
+
+            timing_int                = 6;
+            timing_int_rm             = 11;
+            timing_int_v86            = 54;
+            timing_int_pm             = 25;
+            timing_int_pm_outer       = 42;
+            timing_iret_rm            = 7;
+            timing_iret_v86           = 27;
+            timing_iret_pm            = 10;
+            timing_iret_pm_outer      = 27;
+            timing_call_rm            = 4;
+            timing_call_pm            = 4;
+            timing_call_pm_gate       = 22;
+            timing_call_pm_gate_inner = 44;
+            timing_retf_rm            = 4;
+            timing_retf_pm            = 4;
+            timing_retf_pm_outer      = 23;
+            timing_jmp_rm             = 3;
+            timing_jmp_pm             = 3;
+            timing_jmp_pm_gate        = 18;
+
+            timing_misaligned = 3;
+
+            cpu_features = CPU_FEATURE_RDTSC | CPU_FEATURE_MSR | CPU_FEATURE_CR4 | CPU_FEATURE_VME | CPU_FEATURE_MMX | CPU_FEATURE_PSE36 | CPU_FEATURE_SSE | CPU_FEATURE_SSE2 | CPU_FEATURE_CLFLUSH | CPU_FEATURE_NX | CPU_FEATURE_3DNOW | CPU_FEATURE_3DNOWE | CPU_FEATURE_LAPIC;
+            msr.fcr      = (1 << 8) | (1 << 9) | (1 << 12) | (1 << 16) | (1 << 19) | (1 << 21);
+            cpu_CR4_mask = CR4_VME | CR4_PVI | CR4_TSD | CR4_DE | CR4_PSE | CR4_MCE | CR4_PAE | CR4_PCE | CR4_PGE;
+            cpu_CR4_mask |= CR4_OSFXSR | CR4_OSXMMEXCPT;
+
+#ifdef USE_DYNAREC
+            codegen_timing_set(&codegen_timing_686);
+#endif
+            amd_k7_smram_aseg = smram_add();
+            amd_k7_smram_tseg = smram_add();
+            break;
+
         case CPU_CYRIX3S:
 #ifdef USE_DYNAREC
             x86_setopcodes(ops_386, ops_winchip2_0f, dynarec_ops_386, dynarec_ops_winchip2_0f);
@@ -3477,6 +3576,7 @@ cpu_ven_reset(void)
             break;
         
         case CPU_ATHLON:
+        case CPU_GENERICAMD:
             msr.mtrr_cap = 0x00000508ULL;
             if ((cpu_dmulti >= 5.0) && (cpu_dmulti <= 10.0))
                 msr.amd_hwcr_athlon = (uint64_t) ((cpu_dmulti * 2.0) - 6.0) << 24;
@@ -3838,6 +3938,7 @@ cpu_RDMSR(void)
         case CPU_K6_2P:
         case CPU_K6_3P:
         case CPU_ATHLON:
+        case CPU_GENERICAMD:
             EAX = 0;
             /* EDX is left unchanged when reading this MSR! */
             if (ECX != 0x82)
@@ -4144,7 +4245,7 @@ cpu_RDMSR(void)
                 case 0xc0011000 ... 0xc001100c:
                 case 0xc0011010 ... 0xc0011014:
                 case 0xc0011020 ... 0xc0011028:
-                    if (cpu_s->cpu_type != CPU_ATHLON)
+                    if (cpu_s->cpu_type < CPU_ATHLON)
                         goto amd_k_invalid_rdmsr;
                     if(EDI != 0x9c5a203a)
                         goto amd_k_invalid_rdmsr;
@@ -5269,6 +5370,7 @@ cpu_WRMSR(void)
         case CPU_K6_2P:
         case CPU_K6_3P:
         case CPU_ATHLON:
+        case CPU_GENERICAMD:
             switch (ECX) {
                 /* Machine Check Address Register */
                 case 0x00000000:
@@ -5562,7 +5664,7 @@ cpu_WRMSR(void)
                 case 0xc0011000 ... 0xc001100c:
                 case 0xc0011010 ... 0xc0011014:
                 case 0xc0011020 ... 0xc0011028:
-                    if (cpu_s->cpu_type != CPU_ATHLON)
+                    if (cpu_s->cpu_type < CPU_ATHLON)
                         goto amd_k_invalid_wrmsr;
                     if(EDI != 0x9c5a203a)
                         goto amd_k_invalid_wrmsr;

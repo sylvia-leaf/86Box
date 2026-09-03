@@ -115,6 +115,7 @@ machine_at_7kxa_init(const machine_t *model)
     device_add(&via_vt8371_device);             /* VIA Apollo KX133 */
     device_add(&via_vt82c686a_device);          /* VIA VT82C686A */
     device_add(&sst_flash_39sf020_device);      /* SST 4Mbit Flash */
+    device_add(ics9xxx_get(CY_W210));           /* Cypress/IC Works W210 Clock Chip */
     spd_register(SPD_TYPE_SDRAM, 0x7, 512);     /* UNVERIFIED: DIMM slot count not confirmed against the board; KX133 silicon supports 4. */
 
     return ret;

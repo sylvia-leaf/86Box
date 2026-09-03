@@ -87,6 +87,7 @@ enum {
     CPU_PENTIUM3,
     CPU_PENTIUM4W,
     CPU_GENERICINTEL,
+    CPU_GENERICAMD
 };
 
 enum {

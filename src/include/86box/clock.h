@@ -50,6 +50,7 @@ enum {
     ICS9250_38,
     ICS9250_50,
     ICS9502_08,
+    CY_W210,
     ICS9xxx_MAX
 };
 
