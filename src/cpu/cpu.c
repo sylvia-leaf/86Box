@@ -88,6 +88,7 @@ enum {
 };
 
 /* Additional flags returned by CPUID function 0x80000001 */
+#define CPUID_MMXEXT (1UL << 22UL) /* AMD MMX Extensions */
 #define CPUID_3DNOWE (1UL << 30UL) /* Extended 3DNow! instructions */
 #define CPUID_3DNOW  (1UL << 31UL) /* 3DNow! instructions */
 
@@ -1742,7 +1743,9 @@ cpu_set(void)
                 cpu_features |= CPU_FEATURE_3DNOW;
             if ((cpu_s->cpu_type == CPU_K6_2P) || (cpu_s->cpu_type == CPU_K6_3P))
                 cpu_features |= CPU_FEATURE_3DNOWE;
-            cpu_CR4_mask = CR4_VME | CR4_PVI | CR4_TSD | CR4_DE | CR4_PSE | CR4_MCE;
+            cpu_CR4_mask = CR4_VME | CR4_PVI | CR4_TSD | CR4_DE | CR4_PSE | CR4_MCE | CR4_PAE | CR4_PGE | CR4_PCE;
+            if (CPUID >= 0x620)
+                cpu_CR4_mask |= CR4_OSFXSR;
             if (cpu_s->cpu_type == CPU_K6)
                 cpu_CR4_mask |= CR4_PCE;
             else if (cpu_s->cpu_type >= CPU_K6_2C)
@@ -2162,7 +2165,9 @@ cpu_set(void)
 
             cpu_features = CPU_FEATURE_RDTSC | CPU_FEATURE_MSR | CPU_FEATURE_CR4 | CPU_FEATURE_VME | CPU_FEATURE_MMX | CPU_FEATURE_3DNOW | CPU_FEATURE_3DNOWE | CPU_FEATURE_LAPIC;
             msr.fcr = (1 << 8) | (1 << 9) | (1 << 12) | (1 << 16) | (1 << 19) | (1 << 21);
-            cpu_CR4_mask = CR4_VME | CR4_PVI | CR4_TSD | CR4_DE | CR4_PSE | CR4_MCE;
+            cpu_CR4_mask = CR4_VME | CR4_PVI | CR4_TSD | CR4_DE | CR4_PSE | CR4_MCE | CR4_PAE | CR4_PGE | CR4_PCE;
+            if (CPUID >= 0x620)
+                cpu_CR4_mask |= CR4_OSFXSR;
 
 #ifdef USE_DYNAREC
             codegen_timing_set(&codegen_timing_k6);
@@ -3009,16 +3014,29 @@ cpu_CPUID(void)
                 case 1:
                     EAX = CPUID;
                     EBX = ECX = 0;
-                    EDX       = CPUID_FPU | CPUID_VME | CPUID_PSE | CPUID_TSC | CPUID_MSR | CPUID_MCE | CPUID_CMPXCHG8B | CPUID_MMX;
+                    EDX       = CPUID_FPU | CPUID_VME | CPUID_DE | CPUID_PSE | CPUID_TSC |
+                                CPUID_MSR | CPUID_PAE | CPUID_MCE | CPUID_CMPXCHG8B |
+                                CPUID_SEP | CPUID_MTRR | CPUID_PGE | CPUID_MCA |
+                                CPUID_CMOV | CPUID_PAT | CPUID_PSE36 | CPUID_MMX;
+                    if (CPUID >= 0x620)
+                        EDX |= CPUID_FXSR;
+                    if (current_lapic && (msr.apic_base & (1 << 11)))
+                        EDX |= CPUID_LAPIC;
                     break;
                 case 0x80000000:
-                    EAX = 0x80000007;
+                    EAX = 0x80000006;
                     EBX = ECX = EDX = 0;
                     break;
                 case 0x80000001:
-                    EAX = CPUID + 0x100;
+                    EAX = CPUID;
                     EBX = ECX = 0;
-                    EDX       = CPUID_FPU | CPUID_VME | CPUID_PSE | CPUID_TSC | CPUID_MSR | CPUID_MCE | CPUID_CMPXCHG8B | CPUID_AMDSEP | CPUID_MMX | CPUID_3DNOW | CPUID_3DNOWE;
+                    EDX       = CPUID_FPU | CPUID_VME | CPUID_DE | CPUID_PSE | CPUID_TSC |
+                                CPUID_MSR | CPUID_PAE | CPUID_MCE | CPUID_CMPXCHG8B |
+                                CPUID_SEP | CPUID_MTRR | CPUID_PGE | CPUID_MCA |
+                                CPUID_CMOV | CPUID_PAT | CPUID_PSE36 | CPUID_MMX |
+                                CPUID_MMXEXT | CPUID_3DNOW | CPUID_3DNOWE;
+                    if (CPUID >= 0x620)
+                        EDX |= CPUID_FXSR;
                     break;
                 case 0x80000002:      /* Processor name string */
                     EAX = 0x20444d41; /* AMD Athlon(tm) P */
@@ -3032,22 +3050,94 @@ cpu_CPUID(void)
                     ECX = 0x00000000;
                     EDX = 0x00000000;
                     break;
+                case 0x80000004:      /* Processor name string */
+                    EAX = EBX = ECX = EDX = 0;
+                    break;
                 case 0x80000005: /* Cache information */
-                    EAX = 0;
-                    EBX = 0x02800140; /* TLBs */
-                    ECX = 0x20020220; /* L1 data cache */
-                    EDX = 0x20020220; /* L1 instruction cache */
+                    EAX = 0x04080418; /* 2MB/4MB TLBs */
+                    EBX = 0x04400440; /* 4KB TLBs */
+                    ECX = 0x40020140; /* L1 data cache: 64KB, 2-way, 1 line/tag, 64-byte line */
+                    EDX = 0x40020140; /* L1 instruction cache: 64KB, 2-way, 1 line/tag, 64-byte line */
                     break;
                 case 0x80000006: /* L2 Cache information */
                     EAX = EBX = EDX = 0;
-                    if (cpu_s->cpu_type == CPU_K6_3P)
-                        ECX = 0x01004220;
+                    if (CPUID >= 0x640)
+                        ECX = 0x01008140; /* 256 KB on-die L2 (Thunderbird) */
                     else
-                        ECX = 0x00804220;
+                        ECX = 0x02004140; /* 512 KB off-die L2 (Argon / Pluto) */
                     break;
                 case 0x80000007: /* PowerNow information */
                     EAX = EBX = ECX = 0;
-                    EDX             = 7;
+                    EDX             = 0;
+                    break;
+                default:
+                    EAX = EBX = ECX = EDX = 0;
+                    break;
+            }
+            break;
+
+        case CPU_GENERICAMD:
+            switch (EAX) {
+                case 0:
+                    EAX = 1;
+                    EBX = 0x68747541; /* AuthenticAMD */
+                    ECX = 0x444d4163;
+                    EDX = 0x69746e65;
+                    break;
+                case 1:
+                    EAX = CPUID;
+                    EBX = (8 << 8) | (1 << 16);
+                    ECX = CPUID_SSE3 | CPUID_SSSE3;
+                    EDX = CPUID_FPU | CPUID_VME | CPUID_DE | CPUID_PSE | CPUID_TSC |
+                          CPUID_MSR | CPUID_PAE | CPUID_MCE | CPUID_CMPXCHG8B |
+                          CPUID_SEP | CPUID_MTRR | CPUID_PGE | CPUID_MCA |
+                          CPUID_CMOV | CPUID_PAT | CPUID_PSE36 | CPUID_MMX |
+                          CPUID_FXSR | CPUID_SSE | CPUID_SSE2 | CPUID_CLFLUSH;
+                    if (current_lapic && (msr.apic_base & (1 << 11)))
+                        EDX |= CPUID_LAPIC;
+                    break;
+                case 0x80000000:
+                    EAX = 0x80000006;
+                    EBX = ECX = EDX = 0;
+                    break;
+                case 0x80000001:
+                    EAX = CPUID;
+                    EBX = ECX = 0;
+                    EDX = CPUID_FPU | CPUID_VME | CPUID_DE | CPUID_PSE | CPUID_TSC |
+                          CPUID_MSR | CPUID_PAE | CPUID_MCE | CPUID_CMPXCHG8B |
+                          CPUID_SEP | CPUID_MTRR | CPUID_PGE | CPUID_MCA |
+                          CPUID_CMOV | CPUID_PAT | CPUID_PSE36 | CPUID_MMX |
+                          CPUID_FXSR | CPUID_MMXEXT | CPUID_3DNOW | CPUID_3DNOWE |
+                          CPUID_SSE | CPUID_NX;
+                    break;
+                case 0x80000002:      /* Processor name string */
+                    EAX = 0x20444d41; /* AMD  */
+                    EBX = 0x656e6547; /* Gene */
+                    ECX = 0x20636972; /* ric  */
+                    EDX = 0x636f7250; /* Proc */
+                    break;
+                case 0x80000003:      /* Processor name string */
+                    EAX = 0x6f737365; /* esso */
+                    EBX = 0x00000072; /* r\0\0\0 */
+                    ECX = 0x00000000;
+                    EDX = 0x00000000;
+                    break;
+                case 0x80000004:      /* Processor name string */
+                    EAX = EBX = ECX = EDX = 0;
+                    break;
+                case 0x80000005: /* Cache information */
+                    EAX = 0x04080418; /* 2MB/4MB TLBs */
+                    EBX = 0x04400440; /* 4KB TLBs */
+                    ECX = 0x40020140; /* L1 data cache: 64KB, 2-way, 1 line/tag, 64-byte line */
+                    EDX = 0x40020140; /* L1 instruction cache: 64KB, 2-way, 1 line/tag, 64-byte line */
+                    break;
+                case 0x80000006: /* L2 Cache information */
+                    EAX = EBX = EDX = 0;
+                    ECX = 0x01008140; /* 256 KB on-die L2 */
+                    break;
+                case 0x80000007: /* PowerNow information */
+                    EAX = EBX = ECX = 0;
+                    EDX             = 0;
                     break;
                 default:
                     EAX = EBX = ECX = EDX = 0;
@@ -3578,9 +3668,11 @@ cpu_ven_reset(void)
         case CPU_ATHLON:
         case CPU_GENERICAMD:
             msr.mtrr_cap = 0x00000508ULL;
+            if (current_lapic)
+                msr.apic_base = 0xFEE00000ULL | (1 << 11) | (1 << 8);
             if ((cpu_dmulti >= 5.0) && (cpu_dmulti <= 10.0))
                 msr.amd_hwcr_athlon = (uint64_t) ((cpu_dmulti * 2.0) - 6.0) << 24;
-            /* FALLTHROUGH */
+            break;
 
         case CPU_K6_2P:
         case CPU_K6_3P:
