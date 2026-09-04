@@ -2112,7 +2112,7 @@ cpu_set(void)
 
         case CPU_ATHLON:
 #ifdef USE_DYNAREC
-            x86_setopcodes(ops_386, ops_k62_0f, dynarec_ops_386, dynarec_ops_k62_0f);
+            x86_setopcodes(ops_386, ops_athlon_0f, dynarec_ops_386, dynarec_ops_athlon_0f);
             x86_dynarec_opcodes_da_a16  = dynarec_ops_fpu_686_da_a16;
             x86_dynarec_opcodes_da_a32  = dynarec_ops_fpu_686_da_a32;
             x86_dynarec_opcodes_db_a16  = dynarec_ops_fpu_686_db_a16;
@@ -2121,7 +2121,7 @@ cpu_set(void)
             x86_dynarec_opcodes_df_a32  = dynarec_ops_fpu_686_df_a32;
             x86_dynarec_opcodes_3DNOW = dynarec_ops_3DNOWE;
 #else
-            x86_setopcodes(ops_386, ops_k62_0f);
+            x86_setopcodes(ops_386, ops_athlon_0f);
 #endif
             x86_opcodes_3DNOW = ops_3DNOWE;
             x86_opcodes_da_a16  = ops_fpu_686_da_a16;
