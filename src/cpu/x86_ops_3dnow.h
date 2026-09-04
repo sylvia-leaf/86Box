@@ -68,6 +68,21 @@ opPF2ID(UNUSED(uint32_t fetchdat))
 
     return 0;
 }
+/* PF2IW truncates towards zero and saturates to a signed word, then sign
+   extends that word into the full doubleword. */
+static int32_t
+pf2iw_sat(float f)
+{
+    if (isnan(f))
+        return 0;
+    if (f >= 32767.0f)
+        return 32767;
+    if (f <= -32768.0f)
+        return -32768;
+
+    return (int32_t) (int16_t) f;
+}
+
 static int
 opPF2IW(UNUSED(uint32_t fetchdat))
 {
@@ -76,8 +91,8 @@ opPF2IW(UNUSED(uint32_t fetchdat))
 
     MMX_GETSRC();
 
-    dst->sw[0] = (int32_t) src.f[0];
-    dst->sw[1] = (int32_t) src.f[1];
+    dst->sl[0] = pf2iw_sat(src.f[0]);
+    dst->sl[1] = pf2iw_sat(src.f[1]);
 
     MMX_SETEXP(cpu_reg);
 
@@ -139,16 +154,16 @@ opPSWAPD(UNUSED(uint32_t fetchdat))
 {
     MMX_REG  src;
     MMX_REG *dst = MMX_GETREGP(cpu_reg);
-    float    tempf;
-    float    tempf2;
+    uint32_t tempf;
+    uint32_t tempf2;
 
     MMX_GETSRC();
 
     /* We have to do this in case source and destination overlap. */
-    tempf     = src.f[0];
-    tempf2    = src.f[1];
-    dst->f[1] = tempf;
-    dst->f[0] = tempf2;
+    tempf     = src.l[0];
+    tempf2    = src.l[1];
+    dst->l[1] = tempf;
+    dst->l[0] = tempf2;
 
     MMX_SETEXP(cpu_reg);
 

@@ -44,13 +44,6 @@ sf_fx_save_stor_common(uint32_t fetchdat, int bits)
     floatx80 reg;
     uint32_t old_eaaddr = 0;
 
-    /* AMD Athlon advertises FXSR (and permits CR4.OSFXSR) starting at CPUID 0x620,
-       well below Intel's 0x650 (Pentium III) threshold - gating on the Intel value
-       alone made FXSAVE/FXRSTOR fault as illegal on Pluto/Thunderbird after Windows
-       enabled OSFXSR from the (correctly) advertised CPUID feature bit. */
-    if ((CPUID < 0x650) && !(is_athlon && (CPUID >= 0x620)))
-        return ILLEGAL(fetchdat);
-
     if (bits == 32) {
         fetch_ea_32(fetchdat);
     } else {
@@ -59,7 +52,19 @@ sf_fx_save_stor_common(uint32_t fetchdat, int bits)
 
     fxinst = (rmdat >> 3) & 7;
 
-    if ((fxinst > 1) && !(cpu_features & CPU_FEATURE_SSE)) {
+    /* FXSAVE (/0) and FXRSTOR (/1) need FXSR: CPUID 0x650 (Pentium III) on Intel,
+       but 0x620 on AMD, where the Athlon advertises it and permits CR4.OSFXSR.
+       This has to be tested after the ModR/M is decoded - gating the whole 0F AE
+       opcode on it also rejected SFENCE. */
+    if ((fxinst <= 1) && (CPUID < 0x650) && !(is_athlon && (CPUID >= 0x620)))
+        return ILLEGAL(fetchdat);
+
+    /* SFENCE (/7, register form) is part of the AMD MMX extensions, so it is
+       present on every Athlon - Argon included, at CPUID 0x612 - and on the
+       K6-2+/K6-III+, despite those having 3DNow! rather than SSE. */
+    if ((fxinst > 1) && !(cpu_features & CPU_FEATURE_SSE)
+        && !((fxinst == 7) && (cpu_mod == 3)
+             && ((cpu_features & CPU_FEATURE_3DNOWE) || is_athlon))) {
         x86illegal();
         return cpu_state.abrt;
     }
@@ -349,11 +354,6 @@ fx_save_stor_common(uint32_t fetchdat, int bits)
                                       /* M is the most significant bit of the franction, so it is impossible
                                          for M to o be 1 when the fraction is all 0's. */
 
-    /* See the matching note in sf_fx_save_stor_common(): the Athlon advertises FXSR
-       from CPUID 0x620, below Intel's 0x650 threshold. */
-    if ((CPUID < 0x650) && !(is_athlon && (CPUID >= 0x620)))
-        return ILLEGAL(fetchdat);
-
     if (bits == 32) {
         fetch_ea_32(fetchdat);
     } else {
@@ -362,7 +362,19 @@ fx_save_stor_common(uint32_t fetchdat, int bits)
 
     fxinst = (rmdat >> 3) & 7;
 
-    if ((fxinst > 1) && !(cpu_features & CPU_FEATURE_SSE)) {
+    /* FXSAVE (/0) and FXRSTOR (/1) need FXSR: CPUID 0x650 (Pentium III) on Intel,
+       but 0x620 on AMD, where the Athlon advertises it and permits CR4.OSFXSR.
+       This has to be tested after the ModR/M is decoded - gating the whole 0F AE
+       opcode on it also rejected SFENCE. */
+    if ((fxinst <= 1) && (CPUID < 0x650) && !(is_athlon && (CPUID >= 0x620)))
+        return ILLEGAL(fetchdat);
+
+    /* SFENCE (/7, register form) is part of the AMD MMX extensions, so it is
+       present on every Athlon - Argon included, at CPUID 0x612 - and on the
+       K6-2+/K6-III+, despite those having 3DNow! rather than SSE. */
+    if ((fxinst > 1) && !(cpu_features & CPU_FEATURE_SSE)
+        && !((fxinst == 7) && (cpu_mod == 3)
+             && ((cpu_features & CPU_FEATURE_3DNOWE) || is_athlon))) {
         x86illegal();
         return cpu_state.abrt;
     }
