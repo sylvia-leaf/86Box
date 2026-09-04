@@ -24161,11 +24161,11 @@ const machine_t machines[] = {
         .cpu               = {
             .package     = CPU_PKG_SLOTA,
             .block       = CPU_BLOCK_NONE,
-            .min_bus     = 100000000,
-            .max_bus     = 100000000,
+            .min_bus     = 83333333,
+            .max_bus     = 115000000,
             .min_voltage = 1600,
             .max_voltage = 1800,
-            .min_multi   = 5.0,
+            .min_multi   = 1.5,
             .max_multi   = 10.0
         },
         .bus_flags = MACHINE_PS2_AGP | MACHINE_BUS_USB,

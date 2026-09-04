@@ -26,7 +26,9 @@ Enough of the Athlon (including the SMM, which is famous for its documentation s
 
 ### Current limitations
 
-Performance on an Argon-500 with a Voodoo3 is currently at around 60% running 3DMark 2000 on a Ryzen 5 9600X host system. Current host systems are not fast enough to run high-speed Athlons. This is exacerbated by the fact that most downclocked Athlon CPUs are unselectable due to AMD's decision to represent the multiplier as an MSR. MSR representations for multipliers below 5.0x are currently not implemented, and need more research. While the system works fine, the BIOS clock display becomes incorrect because it reads a multiplier of 1 and due to an unsigned-byte representation of the bus speed, wraps around modulo 256. For example, a 300 MHz CPU would appear as 44 MHz (44x1.0).
+Performance on an Argon-500 with a Voodoo3 is currently at around 60% running 3DMark 2000 on a Ryzen 5 9600X host system. Current host systems are not fast enough to run high-speed Athlons. This is exacerbated by the fact that most downclocked Athlon CPUs are unselectable due to AMD's decision to represent the multiplier as an MSR. The minimum multiplier represented by FIDs is indeed 5.0x, and for downclocked Athlons, we keep the FID representation at 5.0x.
+
+Without such a mitigation, the BIOS clock display becomes incorrect because it reads a multiplier of 1 and due to an unsigned-byte representation of the bus speed, wraps around modulo 256. For example, a 300 MHz CPU would appear as 44 MHz (44x1.0). While forcing FID to be 5.0x causes calculated bus speeds to be incorrect, we see this as causing less problems; it is a tradeoff because Athlon CPUs with clock speeds below 500 MHz were never released in real life. For this reason, the DRAM clock can also be incorrectly reported and result in the BIOS complaining that it should be 133 MT/s.
 
 The KX133 implementation is based on publicly-available PCR files, particularly the ones from H.Orca and maybe other sources, which means that behaviour cannot be guaranteed to be identical to a real hardware KX133. Such behaviour must be tested in more detail at a later date. If the KX133 datasheet resurfaces, more work will be done to ensure that the emulation is accurate.
 
@@ -42,7 +44,7 @@ Right now, work will be done to get more KX133 machines up and running to valida
 
 AMD 751 support is currently postponed. Support for AMD 751 motherboards is planned to include only those that used a hybrid chipset (i.e. 751 northbridge + VIA southbridge). Emulation of the AMD 756 (Viper) southbridge and motherboards with a full-AMD chipset (751 + 756) comes afterwards. Similarly, we plan on waiting for full DDR support on PCBox's main branch (which is a requirement for Intel 845E emulation, which is planned) before starting work on KT266-era and AMD 760-series chipsets.
 
-Some dynarec support is planned to increase speed slightly. However, because it won't make a 500 MHz Athlon functional on most host systems, the plan remains to research and potentially complete MSR multiplier representation emulation to allow downclocked Athlons to be selected. 
+Some dynarec support is planned to increase speed slightly, but don't expect it to make a 500 MHz Athlon run at full speed on most host systems.
 
 ### Phased work
 

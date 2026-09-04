@@ -3670,8 +3670,22 @@ cpu_ven_reset(void)
             msr.mtrr_cap = 0x00000508ULL;
             if (current_lapic)
                 msr.apic_base = 0xFEE00000ULL | (1 << 11) | (1 << 8);
-            if ((cpu_dmulti >= 5.0) && (cpu_dmulti <= 10.0))
-                msr.amd_hwcr_athlon = (uint64_t) ((cpu_dmulti * 2.0) - 6.0) << 24;
+            {
+                /* K7 FID[3:0] in bits 27:24, encoded as (multi * 2) - 6, which only
+                   covers 5.0x to 10.5x. AMD wraps 11.0x to 12.5x onto codes 0 to 3,
+                   but the Award BIOSes do not decode those - they treat code 0 as
+                   "no FID" and fall back to timing the CPU, truncating the result to
+                   a byte and reporting it as 1.0x. So clamp into the encodable range
+                   rather than leaving the field at 0 for anything outside it. */
+                double fid_multi = cpu_dmulti;
+
+                if (fid_multi < 5.0)
+                    fid_multi = 5.0;
+                else if (fid_multi > 10.5)
+                    fid_multi = 10.5;
+
+                msr.amd_hwcr_athlon = (uint64_t) ((int) ((fid_multi * 2.0) - 6.0)) << 24;
+            }
             break;
 
         case CPU_K6_2P:
