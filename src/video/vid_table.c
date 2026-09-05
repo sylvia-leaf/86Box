@@ -216,6 +216,8 @@ video_cards[] = {
     { .device = &riva128_pci_device,                            .flags = VIDEO_FLAG_TYPE_NONE },
     { .device = &rivatnt_pci_device,                            .flags = VIDEO_FLAG_TYPE_NONE },
 #endif
+    /* LPT */
+    { .device = &hd44780_device,                                .flags = VIDEO_FLAG_TYPE_SPECIAL   },
     { .device = NULL,                                           .flags = VIDEO_FLAG_TYPE_NONE      }
   // clang-format on
 };

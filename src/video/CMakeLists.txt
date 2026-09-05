@@ -144,6 +144,8 @@ add_library(vid OBJECT
 
     # Generic
     vid_bochs_vbe.c
+    
+    vid_hd44780.c
 
     nv/nv_rivatimer.c
 
