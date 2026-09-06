@@ -49,8 +49,12 @@
 #define RIVA128_VENDOR_ID 0x12d2
 #define RIVA128_DEVICE_ID 0x0018
 
-#define RIVA128_PGRAPH_SURF_FORMAT_Y16 0
-#define RIVA128_PGRAPH_SURF_FORMAT_Y8 1
+/* NV_PGRAPH_SURFACE format codes.  nv3rm.vxd selects these by depth when it
+   programs the register directly at mode set: it writes 4 (format 0 | valid)
+   for 8bpp, 6 (format 2 | valid) for 16bpp and 7 (format 3 | valid) for
+   32bpp, so format 0 is the 8-bit format, not the 16-bit one. */
+#define RIVA128_PGRAPH_SURF_FORMAT_Y8 0
+#define RIVA128_PGRAPH_SURF_FORMAT_Y16 1
 #define RIVA128_PGRAPH_SURF_FORMAT_X1R5G5B5 2
 #define RIVA128_PGRAPH_SURF_FORMAT_X8R8G8B8 3
 
@@ -1599,17 +1603,18 @@ riva128_read_pixel_from_buffer(UNUSED(uint32_t graphobj0), uint16_t x, uint16_t 
 	uint32_t *vram_l = (uint32_t *)svga->vram;
 
 	switch((riva128->pgraph.surf_config >> (buffer << 2)) & 3) {
-	case 1: {
+	case RIVA128_PGRAPH_SURF_FORMAT_Y8: {
         uint32_t addr = ((x + (riva128->pgraph.surf_pitch[buffer]
 			* y))) + riva128->pgraph.surf_offset[buffer];
 		return svga->vram[addr & riva128->vram_mask];
 		}
-	case 0: case 2: {
+	case RIVA128_PGRAPH_SURF_FORMAT_Y16:
+	case RIVA128_PGRAPH_SURF_FORMAT_X1R5G5B5: {
         uint32_t addr = (((x << 1) + (riva128->pgraph.surf_pitch[buffer]
 			* y))) + riva128->pgraph.surf_offset[buffer];
 		return vram_w[(addr & riva128->vram_mask) >> 1];
 		}
-	case 3: {
+	case RIVA128_PGRAPH_SURF_FORMAT_X8R8G8B8: {
         uint32_t addr = (((x << 2) + (riva128->pgraph.surf_pitch[buffer]
 			* y))) + riva128->pgraph.surf_offset[buffer];
 		return vram_l[(addr & riva128->vram_mask) >> 2];
@@ -1664,17 +1669,18 @@ riva128_pgraph_write_pixel_to_buffer(uint32_t graphobj0, uint16_t x, uint16_t y,
 
 	switch((riva128->pgraph.surf_config >> (buffer * 4)) & 3)
 	{
-		case 1:
+		case RIVA128_PGRAPH_SURF_FORMAT_Y8:
 		addr = ((x + (riva128->pgraph.surf_pitch[buffer]
 			* y))) + riva128->pgraph.surf_offset[buffer];
 		dst = svga->vram[addr & riva128->vram_mask];
 		break;
-		case 0: case 2:
+		case RIVA128_PGRAPH_SURF_FORMAT_Y16:
+		case RIVA128_PGRAPH_SURF_FORMAT_X1R5G5B5:
 		addr = (((x << 1) + (riva128->pgraph.surf_pitch[buffer]
 			* y))) + riva128->pgraph.surf_offset[buffer];
 		dst = vram_w[(addr & riva128->vram_mask) >> 1];
 		break;
-		case 3:
+		case RIVA128_PGRAPH_SURF_FORMAT_X8R8G8B8:
 		addr = (((x << 2) + (riva128->pgraph.surf_pitch[buffer]
 			* y))) + riva128->pgraph.surf_offset[buffer];
 		dst = vram_l[(addr & riva128->vram_mask) >> 2];
@@ -1695,7 +1701,8 @@ riva128_pgraph_write_pixel_to_buffer(uint32_t graphobj0, uint16_t x, uint16_t y,
 		src = ((src_exp.r >> 5) << 10) | ((src_exp.g >> 5) << 5) | ((src_exp.b >> 5) & 0x1f);
 		riva128_pgraph_color_t pat_exp = riva128_pgraph_expand_color(2, pattern, riva128);
 		pat = ((pat_exp.r >> 5) << 10) | ((pat_exp.g >> 5) << 5) | ((pat_exp.b >> 5) & 0x1f);
-		if(((riva128->pgraph.surf_config >> (buffer * 4)) & 3) == 3)
+		if(((riva128->pgraph.surf_config >> (buffer * 4)) & 3)
+				== RIVA128_PGRAPH_SURF_FORMAT_X8R8G8B8)
 		{
 			src = video_15to32[src];
 			pat = video_15to32[pat];
@@ -1725,17 +1732,18 @@ riva128_pgraph_write_pixel_to_buffer(uint32_t graphobj0, uint16_t x, uint16_t y,
 	}
 	switch((riva128->pgraph.surf_config >> (buffer * 4)) & 3)
 	{
-		case 1:
+		case RIVA128_PGRAPH_SURF_FORMAT_Y8:
 		svga->vram[addr & riva128->vram_mask] =
 			video_rop_gdi_ternary(rop,
 					src, dst, pat) & 0xff;
 		break;
-		case 0: case 2:
+		case RIVA128_PGRAPH_SURF_FORMAT_Y16:
+		case RIVA128_PGRAPH_SURF_FORMAT_X1R5G5B5:
 		vram_w[(addr & riva128->vram_mask) >> 1] =
 			video_rop_gdi_ternary(rop,
 					src, dst, pat) & 0xffff;
 		break;
-		case 3:
+		case RIVA128_PGRAPH_SURF_FORMAT_X8R8G8B8:
 		vram_l[(addr & riva128->vram_mask) >> 2] =
 			video_rop_gdi_ternary(rop,
 					src, dst, pat);
@@ -2902,17 +2910,23 @@ riva128_pgraph_execute_command(uint16_t method, uint32_t param, uint32_t ctx,
 		switch(method) {
 		case 0x300: {
 			int surf_num = (graphobj0 >> 16) & 3;
-			uint32_t format = 1;
-			if (param & 1)
-				format = 0;
-			if (!(param & 0x00010000))
-				format = 2;
-			if (!(param & 0x01000000))
-				format = 3;
-			/* NV_PGRAPH_SURFACE (0x4006a8) packs each surface into a
-			   nibble: bits 0-1 format, bit 2 valid.  nv3rm.vxd reads and
-			   writes it that way (>> 4 & 3 for surface 1, >> 8 for 2,
-			   >> 0xc for 3), so the stride is 4 bits, not 16. */
+			uint32_t format = 0;
+			switch(param)
+			{
+				case 0x1010000:
+				format = RIVA128_SURF_FORMAT_Y8;
+				break;
+				case 0x1010101:
+				format = RIVA128_SURF_FORMAT_Y16;
+				break;
+				case 0x1000000:
+				format = RIVA128_SURF_FORMAT_X1R5G5B5;
+				break;
+				case 0x1:
+				format = RIVA128_SURF_FORMAT_X8R8G8B8;
+				break;
+
+			}
 			riva128->pgraph.surf_config &= ~(7 << (surf_num << 2));
 			/* bit 2 of the format being set means it's valid: */
 			riva128->pgraph.surf_config |= ((format | 4)
