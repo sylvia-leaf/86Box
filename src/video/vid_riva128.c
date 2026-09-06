@@ -2914,16 +2914,16 @@ riva128_pgraph_execute_command(uint16_t method, uint32_t param, uint32_t ctx,
 			switch(param)
 			{
 				case 0x1010000:
-				format = RIVA128_SURF_FORMAT_Y8;
+				format = RIVA128_PGRAPH_SURF_FORMAT_Y8;
 				break;
 				case 0x1010101:
-				format = RIVA128_SURF_FORMAT_Y16;
+				format = RIVA128_PGRAPH_SURF_FORMAT_Y16;
 				break;
 				case 0x1000000:
-				format = RIVA128_SURF_FORMAT_X1R5G5B5;
+				format = RIVA128_PGRAPH_SURF_FORMAT_X1R5G5B5;
 				break;
 				case 0x1:
-				format = RIVA128_SURF_FORMAT_X8R8G8B8;
+				format = RIVA128_PGRAPH_SURF_FORMAT_X8R8G8B8;
 				break;
 
 			}
