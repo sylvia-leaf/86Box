@@ -101,7 +101,8 @@
 #define MACHINE_UART_QUA          0x0000000000008000ULL /* sys has int qua UART */
 #define MACHINE_GAMEPORT          0x0000000000010000ULL /* sys has int game port */
 #define MACHINE_SOUND             0x0000000000020000ULL /* sys has int sound */
-#define MACHINE_NIC               0x0000000000040000ULL /* sys has int NIC */
+#define MACHINE_NIC_PRI           0x0000000000040000ULL /* sys has int pri NIC */
+#define MACHINE_NIC_SEC           0x0000000400000000ULL /* sys has int sec NIC */
 /* Feature flags for advanced devices. */
 #define MACHINE_APM               0x0000000000080000ULL /* sys has APM */
 #define MACHINE_ACPI              0x0000000000100000ULL /* sys has ACPI */
@@ -121,7 +122,7 @@
 #define MACHINE_ZENITH            0x0000000100000000ULL /* sys is Zenith */
 #define MACHINE_COREBOOT          0x0000000200000000ULL /* sys has coreboot BIOS */
 /* Combined flags. */
-#define MACHINE_LPT               (MACHINE_LPT-PRI | MACHINE_LPT_SEC | \
+#define MACHINE_LPT               (MACHINE_LPT_PRI | MACHINE_LPT_SEC | \
                                    MACHINE_LPT_TER | MACHINE_LPT_QUA)
 #define MACHINE_UART              (MACHINE_UART_PRI | MACHINE_UART_SEC | \
                                    MACHINE_UART_TER | MACHINE_UART_QUA)
@@ -132,6 +133,7 @@
                                    MACHINE_UART_TER | MACHINE_UART_QUA)
 #define MACHINE_AV                (MACHINE_VIDEO | MACHINE_SOUND)    /* sys has video and sound */
 #define MACHINE_AG                (MACHINE_SOUND | MACHINE_GAMEPORT) /* sys has sound and game port */
+#define MACHINE_NIC               (MACHINE_NIC_PRI)
 /* Combined flag for internal storage controllerss. */
 #define MACHINE_IDE               (MACHINE_IDE_PRI) /* sys has int single IDE/ATAPI - mark as pri IDE/ATAPI */
 #define MACHINE_IDE_DUAL          (MACHINE_IDE_PRI | MACHINE_IDE_SEC) /* sys has int dual IDE/ATAPI - mark as both pri and sec IDE/ATAPI */
@@ -1417,6 +1419,7 @@ extern int machine_at_p3bf_coreboot_init(const machine_t *);
 extern const device_t  optiplexgx1_device;
 #endif
 extern int             machine_at_optiplexgx1_init(const machine_t *);
+extern int             machine_at_ergox365_init(const machine_t *);
 #ifdef EMU_DEVICE_H
 extern const device_t  ga686_device;
 #endif

@@ -1013,4 +1013,6 @@ extern void    wait_cycs(int c, int bus);
 #define prefetch_queue_set_suspended(s) prefetch_queue_set_prefetching(!s)
 #define prefetch_queue_get_suspended !prefetch_queue_get_prefetching
 
+extern void    fpu_postamble(void);
+
 #endif /*EMU_CPU_H*/

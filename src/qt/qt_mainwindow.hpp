@@ -184,6 +184,7 @@ private:
     // NON-modal dialogs - these use ::show() and therefore have to be maintained as objects     
     std::unique_ptr<MachineStatus> status;
     std::shared_ptr<MediaMenu>     mm;
+    QMenu                         *dynarecMenu = nullptr;
 
     void updateShortcuts();
     void processKeyboardInput(bool down, uint32_t keycode);
