@@ -76,7 +76,7 @@ ddma_reg_read(uint16_t addr, void *priv)
         case 0x05:
             ret = (dma[ch].cc >> 8) & 0xff;
             break;
-        case 0x09:
+        case 0x08:
             ret = inb(dmab + 0x08);
             break;
 
