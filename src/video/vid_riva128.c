@@ -1687,7 +1687,18 @@ riva128_pgraph_write_pixel_to_buffer(uint32_t graphobj0, uint16_t x, uint16_t y,
 		break;
 	}
 
-	switch(graphobj0 & 7) {
+	/* RGB operands are already expanded to A1R10G10B10.  Pack them for
+	   the destination before applying the ROP, whose destination operand
+	   is still in framebuffer format.  The object's format describes the
+	   incoming command data, not the framebuffer pixel layout. */
+	if ((graphobj0 & 7) <= 2 &&
+	    ((riva128->pgraph.surf_config >> (buffer * 4)) & 3)
+	        == RIVA128_PGRAPH_SURF_FORMAT_X1R5G5B5) {
+		riva128_pgraph_color_t src_exp = riva128_pgraph_expand_color(2, color, riva128);
+		riva128_pgraph_color_t pat_exp = riva128_pgraph_expand_color(2, pattern, riva128);
+		src = ((src_exp.r >> 5) << 10) | ((src_exp.g >> 5) << 5) | (src_exp.b >> 5);
+		pat = ((pat_exp.r >> 5) << 10) | ((pat_exp.g >> 5) << 5) | (pat_exp.b >> 5);
+	} else switch(graphobj0 & 7) {
 	case 3: {
 		riva128_pgraph_color_t src_exp = riva128_pgraph_expand_color(2, color, riva128);
 		src = src_exp.i;
@@ -2998,24 +3009,26 @@ method_end:
 			changeframecount;
 }
 
-void
+int
 riva128_pgraph_command_submit(uint16_t method, uint8_t chanid, int subchanid,
 		uint32_t param, uint32_t ctx, void *p)
 {
 	riva128_t *riva128 = (riva128_t *)p;
-	if (!riva128->pgraph.fifo_access)
-		return;
-	
-	uint8_t current_chanid = (riva128->pgraph.ctx_user >> 24) & 0x7f;
-	if (chanid != current_chanid) {
-		/* PGRAPH context switch. */
-		riva128_pgraph_interrupt(4, riva128);
-	}
+	if (!riva128->pgraph.fifo_access || (riva128->pgraph.intr_0 & (1 << 4)))
+		return 0;
 
+	uint8_t current_chanid = (riva128->pgraph.ctx_user >> 24) & 0x7f;
 	uint32_t ctx_user = (ctx & 0x001f0000) | (subchanid << 13)
 			| (chanid << 24);
-
 	riva128->pgraph.ctx_user = ctx_user;
+
+	if (chanid != current_chanid) {
+		/* The RM must restore the channel before this method executes.
+		   Keep the method queued: executing it now lets the restore
+		   overwrite its effects (notably the surface colour format). */
+		riva128_pgraph_interrupt(4, riva128);
+		return 0;
+	}
 
 	uint16_t instance_addr = ctx & 0xffff;
 
@@ -3027,6 +3040,7 @@ riva128_pgraph_command_submit(uint16_t method, uint8_t chanid, int subchanid,
 
 	riva128_pgraph_execute_command(method, param, ctx, graphobj[0],
 	graphobj[1], graphobj[2], graphobj[3], riva128);
+	return 1;
 }
 
 void
@@ -3052,13 +3066,11 @@ riva128_do_cache0_puller(void *p)
 		if (error)
 			return;
 
-		riva128->pfifo.caches[0].get ^= 4;
-		
 		uint32_t ctx = riva128->pfifo.caches[0].ctx[0];
-		/* TODO: forward to PGRAPH. */
-		pclog("[RIVA 128] CTX = %08x\n", ctx);
-		riva128_pgraph_command_submit(method, chanid,
-				subchanid, param, ctx, riva128);
+		if (!riva128_pgraph_command_submit(method, chanid,
+				subchanid, param, ctx, riva128))
+			return;
+		riva128->pfifo.caches[0].get ^= 4;
 		return;
 	}
 
@@ -3073,10 +3085,9 @@ riva128_do_cache0_puller(void *p)
 		return;
 	}
 
-	riva128->pfifo.caches[0].get ^= 4;
-	/* TODO: forward to PGRAPH. */
-	riva128_pgraph_command_submit(method, chanid,
-			subchanid, param, ctx, riva128);
+	if (riva128_pgraph_command_submit(method, chanid,
+			subchanid, param, ctx, riva128))
+		riva128->pfifo.caches[0].get ^= 4;
 }
 
 void
@@ -3114,6 +3125,10 @@ riva128_do_cache1_puller(void *p)
 				subchanid, riva128);
 		if (error)
 			return;
+		uint32_t ctx = riva128->pfifo.caches[1].ctx[subchanid];
+		if (!riva128_pgraph_command_submit(method, chanid,
+				subchanid, param, ctx, riva128))
+			return;
 		uint32_t next_get = riva128_pfifo_gray2normal(
 				riva128->pfifo.caches[1].get >> 2);
 		next_get++;
@@ -3121,12 +3136,6 @@ riva128_do_cache1_puller(void *p)
 		riva128->pfifo.caches[1].get =
 				riva128_pfifo_normal2gray(next_get) << 2;
 
-		uint32_t ctx = riva128->pfifo.caches[1].ctx[subchanid];
-
-		/* TODO: forward to PGRAPH. */
-		//pclog("[RIVA 128] CTX = %08x\n", ctx);
-		riva128_pgraph_command_submit(method, chanid,
-				subchanid, param, ctx, riva128);
 		return;
 	}
 
@@ -3141,6 +3150,9 @@ riva128_do_cache1_puller(void *p)
 		return;
 	}
 
+	if (!riva128_pgraph_command_submit(method, chanid,
+			subchanid, param, ctx, riva128))
+		return;
 	uint32_t next_get = riva128_pfifo_gray2normal(
 			riva128->pfifo.caches[1].get >> 2);
 	next_get++;
@@ -3148,9 +3160,6 @@ riva128_do_cache1_puller(void *p)
 	riva128->pfifo.caches[1].get =
 			riva128_pfifo_normal2gray(next_get)
 					<< 2;
-	/* TODO: forward to PGRAPH. */
-	riva128_pgraph_command_submit(method, chanid,
-			subchanid, param, ctx, riva128);
 }
 
 void
