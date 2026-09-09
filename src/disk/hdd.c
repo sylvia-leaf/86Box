@@ -26,6 +26,8 @@
 #include <86box/ui.h>
 #include <86box/hdd.h>
 #include <86box/cdrom.h>
+#include <86box/scsi_device.h>
+#include <86box/scsi_tape.h>
 #include <86box/video.h>
 #include <86box/hdd_audio.h>
 #include "cpu.h"
@@ -65,12 +67,19 @@ hdd_string_to_bus(char *str, int cdrom)
 
     if (!strcmp(str, "scsi"))
         return HDD_BUS_SCSI;
-    
+
     if (!strcmp(str, "mitsumi") && cdrom)
         return CDROM_BUS_MITSUMI;
 
     if (!strcmp(str, "mke") && cdrom)
         return CDROM_BUS_MKE;
+
+    /* Removable-mode only: the QIC-117 tape buses. */
+    if (!strcmp(str, "lpt") && cdrom)
+        return TAPE_BUS_LPT;
+
+    if (!strcmp(str, "fdc") && cdrom)
+        return TAPE_BUS_FDC;
 
     return HDD_BUS_DISABLED;
 }
@@ -119,6 +128,17 @@ hdd_bus_to_string(int bus, int cdrom)
         case CDROM_BUS_MKE:
             if (cdrom)
                 s = "mke";
+            break;
+
+        /* Removable-mode only: the QIC-117 tape buses. */
+        case TAPE_BUS_LPT:
+            if (cdrom)
+                s = "lpt";
+            break;
+
+        case TAPE_BUS_FDC:
+            if (cdrom)
+                s = "fdc";
             break;
     }
 
@@ -930,7 +950,7 @@ static hdd_preset_t hdd_speed_presets[] = {
     { .name = "[ATA-4] Western Digital Caviar 33200",             .internal_name = "AC33200",                          .model = "WDC AC33200L",                                                .zones = 16, .avg_spt = 310, .heads =  5, .rpm = 5200,  .full_stroke_ms = 40, .track_seek_ms = 3,   .rcache_num_seg = 16, .rcache_seg_size =  256, .max_multiple = 32 },
     { .name = "[ATA-4] Western Digital Caviar 34000",             .internal_name = "AC34000",                          .model = "WDC AC34000R",                                                .zones = 16, .avg_spt = 210, .heads =  4, .rpm = 5400,  .full_stroke_ms = 40, .track_seek_ms = 3,   .rcache_num_seg =  8, .rcache_seg_size =  256, .max_multiple = 32 },
     { .name = "[ATA-4] Western Digital Caviar 34300",             .internal_name = "AC34300",                          .model = "WDC AC34300L",                                                .zones = 16, .avg_spt = 311, .heads =  5, .rpm = 5400,  .full_stroke_ms = 40, .track_seek_ms = 3,   .rcache_num_seg = 16, .rcache_seg_size =  256, .max_multiple = 32 },
-    { .name = "[ATA-4] Western Digital Caviar 35100",             .internal_name = "AC35100",                          .model = "WDC AC35100L",                         .version = "09.09M08", .zones = 16, .avg_spt = 315, .heads =  5, .rpm = 5400,  .full_stroke_ms = 40, .track_seek_ms = 3,   .rcache_num_seg = 16, .rcache_seg_size =  256, .max_multiple = 32 },
+    { .name = "[ATA-4] Western Digital Caviar 35100",             .internal_name = "AC35100",                          .model = "WDC AC35100L",                         .version = "09.09M08", .zones = 16, .avg_spt = 187, .heads =  6, .rpm = 5400,  .full_stroke_ms = 10, .track_seek_ms = 6,   .rcache_num_seg = 16, .rcache_seg_size =  256, .max_multiple = 16 },
     { .name = "[ATA-4] Western Digital Caviar 38400",             .internal_name = "AC38400",                          .model = "WDC AC38400L",                                                .zones = 12, .avg_spt = 310, .heads =  6, .rpm = 5400,  .full_stroke_ms = 18, .track_seek_ms = 3,   .rcache_num_seg = 16, .rcache_seg_size =  256, .max_multiple = 32 },
     { .name = "[ATA-4] Western Digital Caviar 310100",            .internal_name = "AC310100",                         .model = "WDC AC310100-00RN",                                           .zones = 12, .avg_spt = 310, .heads =  8, .rpm = 5400,  .full_stroke_ms = 18, .track_seek_ms = 3,   .rcache_num_seg = 16, .rcache_seg_size =  256, .max_multiple = 32 },
     { .name = "[ATA-4] Western Digital Caviar 64AA",              .internal_name = "WD64AA",                           .model = "WDC WD64AA-32AAA4",                                           .zones = 16, .avg_spt = 295, .heads =  6, .rpm = 5400,  .full_stroke_ms = 21, .track_seek_ms = 2,   .rcache_num_seg = 16, .rcache_seg_size =  512, .max_multiple = 32 },

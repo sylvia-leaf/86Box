@@ -135,12 +135,28 @@ option(DEBUGREGS486 "Enable debug register opeartion on 486+ CPUs"              
 option(LIBASAN      "Enable compilation with the addresss sanitizer"             OFF)
 option(QT           "Use the Qt-based user interface"                            ON)
 option(SDL2         "Use SDL2 instead of SDL3"                                   OFF)
+option(BUILD_TESTING "Build the unit test suite"                                  OFF)
+option(BUILD_BENCHMARKS "Build performance benchmarks"                            OFF)
 
-if((ARCH STREQUAL "arm64"))
-    set(NEW_DYNAREC ON)
-else()
-    option(NEW_DYNAREC "Use the PCem v15 (\"new\") dynamic recompiler" OFF)
+if(BUILD_TESTING)
+    enable_testing()
+    find_package(GTest CONFIG REQUIRED)
 endif()
+if(BUILD_BENCHMARKS)
+    find_package(benchmark CONFIG REQUIRED)
+endif()
+if(BUILD_TESTING OR BUILD_BENCHMARKS)
+    add_subdirectory(tests)
+endif()
+
+# The "new" (PCem v15 style) dynamic recompiler is the only recompiler that
+# supports the Pentium 4 (Socket 423/478) CPUs; without it those machines fall
+# back to the interpreter and run unusably slowly, so enable it by default on
+# all platforms.
+option(NEW_DYNAREC "Use the PCem v15 (\"new\") dynamic recompiler" ON)
+# Fast dynarec sacrifices timing accuracy for speed, as an optional runtime
+# selectable mode. It is built whenever DYNAREC is enabled.
+option(FAST_DYNAREC "Enable fast dynamic recompiler (sacrifice timing for speed)" ON)
 
 if(CMAKE_SYSTEM_NAME STREQUAL "NetBSD")
     option(AUDIO4 "Use audio(4) as sound backend" ON)
@@ -186,7 +202,6 @@ endif()
 #                      Option         Description                                Def.  Condition     Otherwise
 #                      ------         -----------                                ----  ------------  ---------
 cmake_dependent_option(AMD_K5         "AMD K5"                                   ON    "DEV_BRANCH"  OFF)
-cmake_dependent_option(CDROM_MITSUMI  "Mitsumi CDROM"                            ON    "DEV_BRANCH"  OFF)
 cmake_dependent_option(G100           "Matrox Productiva G100"                   ON    "DEV_BRANCH"  OFF)
 cmake_dependent_option(ISAMEM_RAMPAGE "AST Rampage"                              ON    "DEV_BRANCH"  OFF)
 cmake_dependent_option(ISAMEM_IAB     "Intel Above Board"                        ON    "DEV_BRANCH"  OFF)

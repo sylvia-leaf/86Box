@@ -199,7 +199,9 @@ extern int      bugger_enabled;             /* (C) enable ISAbugger */
 extern int      novell_keycard_enabled;     /* (C) enable Novell NetWare 2.x key card emulation. */
 extern int      postcard_enabled;           /* (C) enable POST card */
 extern int      unittester_enabled;         /* (C) enable unit tester device */
+extern int      softpower_enabled;            /* (C) enable PC Convertible-style soft power card */
 extern int      gameport_type[];            /* (C) enable gameports */
+extern int      mcamem_type[];              /* (C) enable MCA mem cards */
 extern int      isamem_type[];              /* (C) enable ISA mem cards */
 extern int      isarom_type[];              /* (C) enable ISA ROM cards */
 extern int      isartc_type;                /* (C) enable ISA RTC card */
@@ -213,6 +215,7 @@ extern uint32_t mem_size;                   /* (C) memory size (Installed on sys
 extern uint32_t isa_mem_size;               /* (C) memory size (ISA Memory Cards) */
 extern int      cpu;                        /* (C) cpu type */
 extern int      cpu_use_dynarec;            /* (C) cpu uses/needs Dyna */
+extern int      cpu_use_dynarec_fast;       /* (C) use fast dynarec (sacrifice timing for speed) */
 extern int      fpu_type;                   /* (C) fpu type */
 extern int      fpu_softfloat;              /* (C) fpu uses softfloat */
 extern int      time_sync;                  /* (C) enable time sync */

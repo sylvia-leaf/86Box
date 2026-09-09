@@ -49,8 +49,12 @@
 #define RIVA128_VENDOR_ID 0x12d2
 #define RIVA128_DEVICE_ID 0x0018
 
-#define RIVA128_PGRAPH_SURF_FORMAT_Y16 0
-#define RIVA128_PGRAPH_SURF_FORMAT_Y8 1
+/* NV_PGRAPH_SURFACE format codes.  nv3rm.vxd selects these by depth when it
+   programs the register directly at mode set: it writes 4 (format 0 | valid)
+   for 8bpp, 6 (format 2 | valid) for 16bpp and 7 (format 3 | valid) for
+   32bpp, so format 0 is the 8-bit format, not the 16-bit one. */
+#define RIVA128_PGRAPH_SURF_FORMAT_Y8 0
+#define RIVA128_PGRAPH_SURF_FORMAT_Y16 1
 #define RIVA128_PGRAPH_SURF_FORMAT_X1R5G5B5 2
 #define RIVA128_PGRAPH_SURF_FORMAT_X8R8G8B8 3
 
@@ -195,6 +199,12 @@ typedef struct riva128_t
 
 		int fifo_access;
 		uint32_t surf_config;
+
+		/* The method PGRAPH last refused, latched for the RM to pick
+		   up and emulate in software.  cur_* track the method being
+		   executed right now so the trap can be built from it. */
+		uint32_t trapped_addr, trapped_data, trapped_instance;
+		uint32_t cur_addr, cur_data, cur_instance;
 
 		uint16_t lin_start_x, lin_end_x, lin_start_y, lin_end_y;
 		uint32_t lin_color;
@@ -423,10 +433,10 @@ riva128_pci_write(int func, int addr, UNUSED(int len), uint8_t val, void *p)
 	switch (addr) {
 	case PCI_REG_COMMAND:
 		riva128->pci_regs[PCI_REG_COMMAND] = val & 0x37;
-		io_removehandler(0x03c0, 0x0020, riva128_in, NULL, NULL,
+		io_removehandler(0x03a0, 0x0040, riva128_in, NULL, NULL,
 				riva128_out, NULL, NULL, riva128);
 		if (val & PCI_COMMAND_IO)
-			io_sethandler(0x03c0, 0x0020, riva128_in, NULL, NULL,
+			io_sethandler(0x03a0, 0x0040, riva128_in, NULL, NULL,
 					riva128_out, NULL, NULL, riva128);
 		riva128_recalc_mapping(riva128);
 		break;
@@ -1099,12 +1109,26 @@ riva128_pgraph_invalid_interrupt(int num, void *p)
 {
 	riva128_t *riva128 = (riva128_t *)p;
 
-	riva128->pgraph.intr_1 |= (1 << num);
-	if (riva128->pgraph.intr_en_0 & 1)
-		riva128->pgraph.intr_0 |= (1 << 0);
+	/* A method PGRAPH has no hardware for is not necessarily an error:
+	   the RM implements the context/patchcord methods (0x200, 0x204, ...)
+	   in software and expects the trap.  It reads NV_PGRAPH_TRAPPED_ADDR
+	   /_DATA/_INSTANCE to find out what to emulate and does nothing at
+	   all if they read back as zero, so latch them here.  Don't overwrite
+	   a trap the RM hasn't collected yet. */
+	if (!(riva128->pgraph.intr_0 & 1)) {
+		riva128->pgraph.trapped_addr = riva128->pgraph.cur_addr;
+		riva128->pgraph.trapped_data = riva128->pgraph.cur_data;
+		riva128->pgraph.trapped_instance = riva128->pgraph.cur_instance;
+	}
 
-	if (riva128->pgraph.intr_en_1 & (1u << num))
-		riva128_pmc_recompute_intr(1, riva128);
+	riva128->pgraph.intr_1 |= (1 << num);
+	riva128->pgraph.intr_0 |= (1 << 0);
+
+	/* nv3rm.vxd leaves NV_PGRAPH_INTR_EN_1 at zero and enables only
+	   INTR_EN_0, so gating delivery on INTR_EN_1 loses every trap.
+	   riva128_pmc_recompute_intr() already masks INTR_0 against
+	   INTR_EN_0. */
+	riva128_pmc_recompute_intr(1, riva128);
 }
 
 uint32_t
@@ -1155,6 +1179,16 @@ riva128_pgraph_read(uint32_t addr, void *p)
 		return riva128->pgraph.fifo_access;
 	case 0x4006a8:
 		return riva128->pgraph.surf_config;
+	case 0x4006b0:
+		/* NV_PGRAPH_STATUS: the RM spins on this until PGRAPH goes
+		   idle, and everything here completes synchronously. */
+		return 0;
+	case 0x4006b4:
+		return riva128->pgraph.trapped_addr;
+	case 0x4006b8:
+		return riva128->pgraph.trapped_data;
+	case 0x4006bc:
+		return riva128->pgraph.trapped_instance;
 	}
 	return 0;
 }
@@ -1170,13 +1204,13 @@ riva128_pgraph_write(uint32_t addr, uint32_t val, void *p)
 		break;
 	case 0x400100:
 		riva128->pgraph.intr_0 &= ~val;
-		pci_clear_irq(riva128->pci_slot, PCI_INTA, &riva128->irq_state);
+		/* Recompute rather than dropping the line outright - PFIFO,
+		   PTIMER or another PGRAPH source may still be pending. */
+		riva128_pmc_recompute_intr(1, riva128);
 		break;
 	case 0x400104:
 		riva128->pgraph.intr_1 &= ~val;
-		/* if (!riva128->pgraph.intr_1)
-			riva128->pgraph.intr_0 &= ~1; */
-		pci_clear_irq(riva128->pci_slot, PCI_INTA, &riva128->irq_state);
+		riva128_pmc_recompute_intr(1, riva128);
 		break;
 	case 0x400140:
 		riva128->pgraph.intr_en_0 = val & 0x11111111;
@@ -1555,8 +1589,12 @@ riva128_translate_rop(uint32_t graphobj0, uint8_t rop)
 	return result;
 }
 
+/* The pixel size in memory is a property of the surface, not of the object's
+   colour format - riva128_pgraph_write_pixel_to_buffer() already reads it out
+   of NV_PGRAPH_SURFACE, and a blit's source has to be addressed the same way
+   or the two ends of the copy disagree about the stride. */
 uint32_t
-riva128_read_pixel_from_buffer(uint32_t graphobj0, uint16_t x, uint16_t y, int buffer, void *p)
+riva128_read_pixel_from_buffer(UNUSED(uint32_t graphobj0), uint16_t x, uint16_t y, int buffer, void *p)
 {
 	riva128_t *riva128 = (riva128_t *)p;
 	svga_t *svga = &riva128->svga;
@@ -1564,18 +1602,19 @@ riva128_read_pixel_from_buffer(uint32_t graphobj0, uint16_t x, uint16_t y, int b
 	uint16_t *vram_w = (uint16_t *)svga->vram;
 	uint32_t *vram_l = (uint32_t *)svga->vram;
 
-	switch(graphobj0 & 7) {
-	case 3: {
+	switch((riva128->pgraph.surf_config >> (buffer << 2)) & 3) {
+	case RIVA128_PGRAPH_SURF_FORMAT_Y8: {
         uint32_t addr = ((x + (riva128->pgraph.surf_pitch[buffer]
 			* y))) + riva128->pgraph.surf_offset[buffer];
 		return svga->vram[addr & riva128->vram_mask];
 		}
-	case 0: case 4: {
+	case RIVA128_PGRAPH_SURF_FORMAT_Y16:
+	case RIVA128_PGRAPH_SURF_FORMAT_X1R5G5B5: {
         uint32_t addr = (((x << 1) + (riva128->pgraph.surf_pitch[buffer]
 			* y))) + riva128->pgraph.surf_offset[buffer];
 		return vram_w[(addr & riva128->vram_mask) >> 1];
 		}
-	case 1: case 2: {
+	case RIVA128_PGRAPH_SURF_FORMAT_X8R8G8B8: {
         uint32_t addr = (((x << 2) + (riva128->pgraph.surf_pitch[buffer]
 			* y))) + riva128->pgraph.surf_offset[buffer];
 		return vram_l[(addr & riva128->vram_mask) >> 2];
@@ -1599,8 +1638,9 @@ riva128_pgraph_write_pixel_to_buffer(uint32_t graphobj0, uint16_t x, uint16_t y,
 	uint16_t clipy_min = riva128->pgraph.clipy_min;
 	uint16_t clipy_max = riva128->pgraph.clipy_min + riva128->pgraph.cliph;
 
-	if ((((x < clipx_min) || (x > clipx_max))
-			|| ((y < clipy_min) || (y > clipy_max))) && (graphobj0 & 0x8000))
+	/* The clip object gives a point and a size, so the far edge is exclusive. */
+	if ((((x < clipx_min) || (x >= clipx_max))
+			|| ((y < clipy_min) || (y >= clipy_max))) && (graphobj0 & 0x8000))
 		return;
 
 	int chroma_key_enabled = (graphobj0 >> 13) & 1;
@@ -1629,24 +1669,36 @@ riva128_pgraph_write_pixel_to_buffer(uint32_t graphobj0, uint16_t x, uint16_t y,
 
 	switch((riva128->pgraph.surf_config >> (buffer * 4)) & 3)
 	{
-		case 1:
+		case RIVA128_PGRAPH_SURF_FORMAT_Y8:
 		addr = ((x + (riva128->pgraph.surf_pitch[buffer]
 			* y))) + riva128->pgraph.surf_offset[buffer];
 		dst = svga->vram[addr & riva128->vram_mask];
 		break;
-		case 0: case 2:
+		case RIVA128_PGRAPH_SURF_FORMAT_Y16:
+		case RIVA128_PGRAPH_SURF_FORMAT_X1R5G5B5:
 		addr = (((x << 1) + (riva128->pgraph.surf_pitch[buffer]
 			* y))) + riva128->pgraph.surf_offset[buffer];
 		dst = vram_w[(addr & riva128->vram_mask) >> 1];
 		break;
-		case 3:
+		case RIVA128_PGRAPH_SURF_FORMAT_X8R8G8B8:
 		addr = (((x << 2) + (riva128->pgraph.surf_pitch[buffer]
 			* y))) + riva128->pgraph.surf_offset[buffer];
 		dst = vram_l[(addr & riva128->vram_mask) >> 2];
 		break;
 	}
 
-	switch(graphobj0 & 7) {
+	/* RGB operands are already expanded to A1R10G10B10.  Pack them for
+	   the destination before applying the ROP, whose destination operand
+	   is still in framebuffer format.  The object's format describes the
+	   incoming command data, not the framebuffer pixel layout. */
+	if ((graphobj0 & 7) <= 2 &&
+	    ((riva128->pgraph.surf_config >> (buffer * 4)) & 3)
+	        == RIVA128_PGRAPH_SURF_FORMAT_X1R5G5B5) {
+		riva128_pgraph_color_t src_exp = riva128_pgraph_expand_color(2, color, riva128);
+		riva128_pgraph_color_t pat_exp = riva128_pgraph_expand_color(2, pattern, riva128);
+		src = ((src_exp.r >> 5) << 10) | ((src_exp.g >> 5) << 5) | (src_exp.b >> 5);
+		pat = ((pat_exp.r >> 5) << 10) | ((pat_exp.g >> 5) << 5) | (pat_exp.b >> 5);
+	} else switch(graphobj0 & 7) {
 	case 3: {
 		riva128_pgraph_color_t src_exp = riva128_pgraph_expand_color(2, color, riva128);
 		src = src_exp.i;
@@ -1660,7 +1712,8 @@ riva128_pgraph_write_pixel_to_buffer(uint32_t graphobj0, uint16_t x, uint16_t y,
 		src = ((src_exp.r >> 5) << 10) | ((src_exp.g >> 5) << 5) | ((src_exp.b >> 5) & 0x1f);
 		riva128_pgraph_color_t pat_exp = riva128_pgraph_expand_color(2, pattern, riva128);
 		pat = ((pat_exp.r >> 5) << 10) | ((pat_exp.g >> 5) << 5) | ((pat_exp.b >> 5) & 0x1f);
-		if(((riva128->pgraph.surf_config >> (buffer * 4)) & 3) == 3)
+		if(((riva128->pgraph.surf_config >> (buffer * 4)) & 3)
+				== RIVA128_PGRAPH_SURF_FORMAT_X8R8G8B8)
 		{
 			src = video_15to32[src];
 			pat = video_15to32[pat];
@@ -1690,17 +1743,18 @@ riva128_pgraph_write_pixel_to_buffer(uint32_t graphobj0, uint16_t x, uint16_t y,
 	}
 	switch((riva128->pgraph.surf_config >> (buffer * 4)) & 3)
 	{
-		case 1:
+		case RIVA128_PGRAPH_SURF_FORMAT_Y8:
 		svga->vram[addr & riva128->vram_mask] =
 			video_rop_gdi_ternary(rop,
 					src, dst, pat) & 0xff;
 		break;
-		case 0: case 2:
+		case RIVA128_PGRAPH_SURF_FORMAT_Y16:
+		case RIVA128_PGRAPH_SURF_FORMAT_X1R5G5B5:
 		vram_w[(addr & riva128->vram_mask) >> 1] =
 			video_rop_gdi_ternary(rop,
 					src, dst, pat) & 0xffff;
 		break;
-		case 3:
+		case RIVA128_PGRAPH_SURF_FORMAT_X8R8G8B8:
 		vram_l[(addr & riva128->vram_mask) >> 2] =
 			video_rop_gdi_ternary(rop,
 					src, dst, pat);
@@ -1732,6 +1786,14 @@ riva128_pgraph_execute_command(uint16_t method, uint32_t param, uint32_t ctx,
 	svga_t *svga = &riva128->svga;
 
 	uint8_t objclass = (ctx >> 16) & 0x1f;
+
+	/* NV_PGRAPH_TRAPPED_ADDR is channel << 24 | class << 16 | method;
+	   riva128_pgraph_invalid_interrupt() latches this if the method
+	   turns out to have no hardware behind it. */
+	riva128->pgraph.cur_addr = (((riva128->pgraph.ctx_user >> 24) & 0x7f) << 24)
+			| (objclass << 16) | (method & 0x7ff);
+	riva128->pgraph.cur_data = param;
+	riva128->pgraph.cur_instance = ctx & 0xffff;
 
 	if(objclass != 0x1c && objclass != 0x05) pclog("[RIVA 128] PGRAPH execute grobj0 %08x grobj1 %08x grobj2 %08x objclass %02x method %04x param %08x\n", graphobj0, graphobj1, graphobj2, objclass, method, param);
 
@@ -2333,6 +2395,8 @@ riva128_pgraph_execute_command(uint16_t method, uint32_t param, uint32_t ctx,
 			riva128->pgraph.m2mf_pitch_in = param;
 			break;
 			case 0x318:
+			/* A zero output pitch means "same as the input pitch"; the
+			   driver relies on that. */
 			riva128->pgraph.m2mf_pitch_out = !param ? riva128->pgraph.m2mf_pitch_in : param;
 			break;
 			case 0x31c:
@@ -2352,9 +2416,14 @@ riva128_pgraph_execute_command(uint16_t method, uint32_t param, uint32_t ctx,
 		    }
 		    riva128->pgraph.notify_impending = 1;
 		    riva128->pgraph.m2mf_obj = (param & 0xf) << 20;
+		    riva128->pgraph.notifier_obj = (param & 0xf) << 20;
 
-			uint32_t src_obj_addr = ((graphobj1 >> 16) & 0xffff) << 4;
-			uint32_t dst_obj_addr = (graphobj1 & 0xffff) << 4;
+			/* nv3rm.vxd stores the DMA objects bound to a graphics object in
+			   RAMIN as: word 1 = notifier << 16 | DMA A, word 2 = DMA B (with
+			   bit 16 flagging whether DMA A is the source or is shared with
+			   the notifier - either way word 1's low half is the source). */
+			uint32_t src_obj_addr = (graphobj1 & 0xffff) << 4;
+			uint32_t dst_obj_addr = (graphobj2 & 0xffff) << 4;
 			uint32_t src_flags = riva128_ramin_read_l(src_obj_addr,
 				riva128);
 			uint32_t dst_flags = riva128_ramin_read_l(dst_obj_addr,
@@ -2373,8 +2442,8 @@ riva128_pgraph_execute_command(uint16_t method, uint32_t param, uint32_t ctx,
 			uint32_t dst_adjust = dst_flags & 0xfff;
 			int src_target = (src_flags >> 24) & 3;
 			int dst_target = (dst_flags >> 24) & 3;
-			int inc_in = riva128->pgraph.m2mf_format & 7;
-			int inc_out = (riva128->pgraph.m2mf_format >> 8) & 7;
+			uint32_t inc_in = riva128->pgraph.m2mf_format & 7;
+			uint32_t inc_out = (riva128->pgraph.m2mf_format >> 8) & 7;
 
 			if(!(src_flags & (1 << 16)) && (src_target == 2))
 			{
@@ -2394,27 +2463,43 @@ riva128_pgraph_execute_command(uint16_t method, uint32_t param, uint32_t ctx,
     			break;
 			}
 
-				for(int scan = 0; scan < riva128->pgraph.m2mf_scan_num; scan++)
+			{
+				/* LINE_LENGTH_IN counts bytes on the input side, so the number
+				   of elements per scanline is that divided by the input
+				   increment. */
+				uint32_t elements = riva128->pgraph.m2mf_scan_len / inc_in;
+				uint32_t copy_size = (inc_in < inc_out) ? inc_in : inc_out;
+				/* Cache the last PTE looked up: a transfer walks memory
+				   linearly, so this keeps it to one RAMIN read per page. */
+				uint32_t src_pte_cached_idx = 0xffffffffu, src_pte_cached = 0;
+				uint32_t dst_pte_cached_idx = 0xffffffffu, dst_pte_cached = 0;
+
+				for(uint32_t scan = 0; scan < riva128->pgraph.m2mf_scan_num; scan++)
 				{
-					for(uint32_t pixel = 0; pixel < riva128->pgraph.m2mf_scan_len; pixel++)
+					for(uint32_t element = 0; element < elements; element++)
 					{
-						uint32_t in_off  = riva128->pgraph.m2mf_in_dma_cur  + (pixel * inc_in);
-        				uint32_t out_off = riva128->pgraph.m2mf_out_dma_cur + (pixel * inc_out);
+						uint32_t in_off  = riva128->pgraph.m2mf_in_dma_cur  + (element * inc_in);
+        				uint32_t out_off = riva128->pgraph.m2mf_out_dma_cur + (element * inc_out);
 
 						uint32_t src_logical_addr = in_off + src_adjust;
-						uint32_t src_limit_check = (pixel * inc_in) + src_adjust;
 						uint32_t dst_logical_addr = out_off + dst_adjust;
-						uint32_t dst_limit_check = (pixel * inc_out) + dst_adjust;
 
-						uint32_t src_unpaged_addr = src_pte_frame + src_adjust;
+						uint32_t src_unpaged_addr = src_pte_frame + src_logical_addr;
 						uint32_t src_pte_index = src_logical_addr >> 12;
 						uint32_t src_pte_byte = src_logical_addr & 0xfff;
-						uint32_t src_pte_frame_new = riva128_ramin_read_l(src_obj_addr + (src_pte_index << 2) + 8, riva128);
-						if(src_limit_check >= src_limit)
+						if(in_off + inc_in - 1 > src_limit)
 						{
+							pclog("RIVA 128 M2MF: source offset %08x past limit %08x\n",
+									in_off, src_limit);
 							riva128_pdma_interrupt(12, riva128);
 							goto method_end;
 						}
+						if(src_pte_index != src_pte_cached_idx)
+						{
+							src_pte_cached = riva128_ramin_read_l(src_obj_addr + (src_pte_index << 2) + 8, riva128);
+							src_pte_cached_idx = src_pte_index;
+						}
+						uint32_t src_pte_frame_new = src_pte_cached;
 						if(src_target == 2)
 						{
 							if(src_pte_frame_new == 0xffffffffu)
@@ -2431,15 +2516,22 @@ riva128_pgraph_execute_command(uint16_t method, uint32_t param, uint32_t ctx,
 						src_pte_frame_new &= 0xfffff000;
 						uint32_t src_paged_addr = src_pte_frame_new | src_pte_byte;
 
-						uint32_t dst_unpaged_addr = dst_pte_frame + dst_adjust;
+						uint32_t dst_unpaged_addr = dst_pte_frame + dst_logical_addr;
 						uint32_t dst_pte_index = dst_logical_addr >> 12;
 						uint32_t dst_pte_byte = dst_logical_addr & 0xfff;
-						uint32_t dst_pte_frame_new = riva128_ramin_read_l(dst_obj_addr + (dst_pte_index << 2) + 8, riva128);
-						if(dst_limit_check >= dst_limit)
+						if(out_off + copy_size - 1 > dst_limit)
 						{
+							pclog("RIVA 128 M2MF: dest offset %08x past limit %08x\n",
+									out_off, dst_limit);
 							riva128_pdma_interrupt(12, riva128);
 							goto method_end;
 						}
+						if(dst_pte_index != dst_pte_cached_idx)
+						{
+							dst_pte_cached = riva128_ramin_read_l(dst_obj_addr + (dst_pte_index << 2) + 8, riva128);
+							dst_pte_cached_idx = dst_pte_index;
+						}
+						uint32_t dst_pte_frame_new = dst_pte_cached;
 						if(dst_target == 2)
 						{
 							if(dst_pte_frame_new == 0xffffffffu)
@@ -2453,7 +2545,7 @@ riva128_pgraph_execute_command(uint16_t method, uint32_t param, uint32_t ctx,
 								goto method_end;
 							}
 							if(!(dst_pte_frame_new & 2))
-							{	
+							{
 								riva128_pdma_interrupt(8, riva128);
 								goto method_end;
 							}
@@ -2462,24 +2554,21 @@ riva128_pgraph_execute_command(uint16_t method, uint32_t param, uint32_t ctx,
 						uint32_t dst_paged_addr = dst_pte_frame_new | dst_pte_byte;
 
 						uint8_t buf[4] = { 0 };
-						//dma_bm_read(paged_addr + riva128->pgraph.m2mf_in_dma_cur + pixel, (uint8_t*)&buf, 1, 1);
-						if(src_target == 0) memcpy(buf, &svga->vram[(src_unpaged_addr) & 0x3fffff], inc_in);
+						if(src_target == 0) memcpy(buf, &svga->vram[src_unpaged_addr & riva128->vram_mask], inc_in);
 						else dma_bm_read(src_paged_addr, buf, inc_in, inc_in);
 
-						uint32_t copy_size = (inc_in < inc_out) ? inc_in : inc_out;
 						if(dst_target == 0)
 						{
-							memcpy(&svga->vram[(dst_unpaged_addr) & 0x3fffff], buf, copy_size);
-							svga->changedvram[((dst_unpaged_addr) & 0x3fffff) >> 12] = changeframecount;
+							memcpy(&svga->vram[dst_unpaged_addr & riva128->vram_mask], buf, copy_size);
+							svga->changedvram[(dst_unpaged_addr & riva128->vram_mask) >> 12] = changeframecount;
 						}
 						else dma_bm_write(dst_paged_addr, (uint8_t*)&buf, copy_size, copy_size);
-						//svga->vram[(paged_addr + riva128->pgraph.m2mf_out_dma_cur) & 0x3fffff] = buf;
-						//svga->changedvram[((paged_addr + riva128->pgraph.m2mf_out_dma_cur) & 0x3fffff) >> 12] = changeframecount;
 					}
 
 					riva128->pgraph.m2mf_in_dma_cur += riva128->pgraph.m2mf_pitch_in;
 					riva128->pgraph.m2mf_out_dma_cur += riva128->pgraph.m2mf_pitch_out;
 				}
+			}
 			}
 		    break;
         }
@@ -2496,19 +2585,37 @@ riva128_pgraph_execute_command(uint16_t method, uint32_t param, uint32_t ctx,
 			riva128->pgraph.blit_out_y = (param >> 16) & 0xffff;
 			break;
 			case 0x308:
+			{
 			riva128->pgraph.blit_size_w = param & 0xffff;
 			riva128->pgraph.blit_size_h = (param >> 16) & 0xffff;
-			for(int x = 0; x < riva128->pgraph.blit_size_w; x++)
+
+			int src_buf = (graphobj0 >> 16) & 3;
+			int w = riva128->pgraph.blit_size_w;
+			int h = riva128->pgraph.blit_size_h;
+
+			/* nv3disp.drv fires a single blit for a screen-to-screen move and
+			   never splits or reorders overlapping rectangles itself, so the
+			   traversal order has to be picked here the way the hardware
+			   does it - otherwise scrolling a window smears it. */
+			int y_back = riva128->pgraph.blit_out_y > riva128->pgraph.blit_in_y;
+			int x_back = !y_back
+					&& (riva128->pgraph.blit_out_y == riva128->pgraph.blit_in_y)
+					&& (riva128->pgraph.blit_out_x > riva128->pgraph.blit_in_x);
+
+			for(int row = 0; row < h; row++)
 			{
-				for(int y = 0; y < riva128->pgraph.blit_size_h; y++)
+				int y = y_back ? (h - 1 - row) : row;
+				for(int col = 0; col < w; col++)
 				{
+					int x = x_back ? (w - 1 - col) : col;
 					riva128_pgraph_write_pixel(graphobj0, riva128->pgraph.blit_out_x + x, riva128->pgraph.blit_out_y + y,
 							riva128_pgraph_to_a1r10g10b10(riva128_pgraph_expand_color(graphobj0,
-								riva128_read_pixel_from_buffer(graphobj0, riva128->pgraph.blit_in_x + x, riva128->pgraph.blit_in_y + y, (graphobj0 >> 16) & 3, riva128), riva128)),
+								riva128_read_pixel_from_buffer(graphobj0, riva128->pgraph.blit_in_x + x, riva128->pgraph.blit_in_y + y, src_buf, riva128), riva128)),
 							0xff, riva128);
 				}
 			}
 			break;
+			}
 		}
 		break;
 	case 0x11:
@@ -2814,17 +2921,27 @@ riva128_pgraph_execute_command(uint16_t method, uint32_t param, uint32_t ctx,
 		switch(method) {
 		case 0x300: {
 			int surf_num = (graphobj0 >> 16) & 3;
-			uint32_t format = 1;
-			if (param & 1)
-				format = 0;
-			if (!(param & 0x00010000))
-				format = 2;
-			if (!(param & 0x01000000))
-				format = 3;
-			riva128->pgraph.surf_config &= ~(7 << (surf_num << 4));
+			uint32_t format = 0;
+			switch(param)
+			{
+				case 0x1010000:
+				format = RIVA128_PGRAPH_SURF_FORMAT_Y8;
+				break;
+				case 0x1010101:
+				format = RIVA128_PGRAPH_SURF_FORMAT_Y16;
+				break;
+				case 0x1000000:
+				format = RIVA128_PGRAPH_SURF_FORMAT_X1R5G5B5;
+				break;
+				case 0x1:
+				format = RIVA128_PGRAPH_SURF_FORMAT_X8R8G8B8;
+				break;
+
+			}
+			riva128->pgraph.surf_config &= ~(7 << (surf_num << 2));
 			/* bit 2 of the format being set means it's valid: */
 			riva128->pgraph.surf_config |= ((format | 4)
-					<< (surf_num << 4));
+					<< (surf_num << 2));
 			break;
 		}
 		case 0x304:
@@ -2886,32 +3003,32 @@ method_end:
 		return;
 	}
 	//pclog("[RIVA 128] VRAM notifier at %08x\n", unpaged_addr);
-	vram_l[(unpaged_addr >> 2) & 0xfffff] = notifier[0];
-	vram_l[((unpaged_addr >> 2) + 1) & 0xfffff] = notifier[1];
-	vram_l[((unpaged_addr >> 2) + 2) & 0xfffff] = notifier[2];
-	vram_l[((unpaged_addr >> 2) + 3) & 0xfffff] = notifier[3];
-    svga->changedvram[unpaged_addr >> 12] =
+	for (int i = 0; i < 4; i++)
+		vram_l[((unpaged_addr & riva128->vram_mask) >> 2) + i] = notifier[i];
+    svga->changedvram[(unpaged_addr & riva128->vram_mask) >> 12] =
 			changeframecount;
 }
 
-void
+int
 riva128_pgraph_command_submit(uint16_t method, uint8_t chanid, int subchanid,
 		uint32_t param, uint32_t ctx, void *p)
 {
 	riva128_t *riva128 = (riva128_t *)p;
-	if (!riva128->pgraph.fifo_access)
-		return;
-	
-	uint8_t current_chanid = (riva128->pgraph.ctx_user >> 24) & 0x7f;
-	if (chanid != current_chanid) {
-		/* PGRAPH context switch. */
-		riva128_pgraph_interrupt(4, riva128);
-	}
+	if (!riva128->pgraph.fifo_access || (riva128->pgraph.intr_0 & (1 << 4)))
+		return 0;
 
+	uint8_t current_chanid = (riva128->pgraph.ctx_user >> 24) & 0x7f;
 	uint32_t ctx_user = (ctx & 0x001f0000) | (subchanid << 13)
 			| (chanid << 24);
-
 	riva128->pgraph.ctx_user = ctx_user;
+
+	if (chanid != current_chanid) {
+		/* The RM must restore the channel before this method executes.
+		   Keep the method queued: executing it now lets the restore
+		   overwrite its effects (notably the surface colour format). */
+		riva128_pgraph_interrupt(4, riva128);
+		return 0;
+	}
 
 	uint16_t instance_addr = ctx & 0xffff;
 
@@ -2923,6 +3040,7 @@ riva128_pgraph_command_submit(uint16_t method, uint8_t chanid, int subchanid,
 
 	riva128_pgraph_execute_command(method, param, ctx, graphobj[0],
 	graphobj[1], graphobj[2], graphobj[3], riva128);
+	return 1;
 }
 
 void
@@ -2948,13 +3066,11 @@ riva128_do_cache0_puller(void *p)
 		if (error)
 			return;
 
-		riva128->pfifo.caches[0].get ^= 4;
-		
 		uint32_t ctx = riva128->pfifo.caches[0].ctx[0];
-		/* TODO: forward to PGRAPH. */
-		pclog("[RIVA 128] CTX = %08x\n", ctx);
-		riva128_pgraph_command_submit(method, chanid,
-				subchanid, param, ctx, riva128);
+		if (!riva128_pgraph_command_submit(method, chanid,
+				subchanid, param, ctx, riva128))
+			return;
+		riva128->pfifo.caches[0].get ^= 4;
 		return;
 	}
 
@@ -2969,10 +3085,9 @@ riva128_do_cache0_puller(void *p)
 		return;
 	}
 
-	riva128->pfifo.caches[0].get ^= 4;
-	/* TODO: forward to PGRAPH. */
-	riva128_pgraph_command_submit(method, chanid,
-			subchanid, param, ctx, riva128);
+	if (riva128_pgraph_command_submit(method, chanid,
+			subchanid, param, ctx, riva128))
+		riva128->pfifo.caches[0].get ^= 4;
 }
 
 void
@@ -3010,6 +3125,10 @@ riva128_do_cache1_puller(void *p)
 				subchanid, riva128);
 		if (error)
 			return;
+		uint32_t ctx = riva128->pfifo.caches[1].ctx[subchanid];
+		if (!riva128_pgraph_command_submit(method, chanid,
+				subchanid, param, ctx, riva128))
+			return;
 		uint32_t next_get = riva128_pfifo_gray2normal(
 				riva128->pfifo.caches[1].get >> 2);
 		next_get++;
@@ -3017,12 +3136,6 @@ riva128_do_cache1_puller(void *p)
 		riva128->pfifo.caches[1].get =
 				riva128_pfifo_normal2gray(next_get) << 2;
 
-		uint32_t ctx = riva128->pfifo.caches[1].ctx[subchanid];
-
-		/* TODO: forward to PGRAPH. */
-		//pclog("[RIVA 128] CTX = %08x\n", ctx);
-		riva128_pgraph_command_submit(method, chanid,
-				subchanid, param, ctx, riva128);
 		return;
 	}
 
@@ -3037,6 +3150,9 @@ riva128_do_cache1_puller(void *p)
 		return;
 	}
 
+	if (!riva128_pgraph_command_submit(method, chanid,
+			subchanid, param, ctx, riva128))
+		return;
 	uint32_t next_get = riva128_pfifo_gray2normal(
 			riva128->pfifo.caches[1].get >> 2);
 	next_get++;
@@ -3044,9 +3160,6 @@ riva128_do_cache1_puller(void *p)
 	riva128->pfifo.caches[1].get =
 			riva128_pfifo_normal2gray(next_get)
 					<< 2;
-	/* TODO: forward to PGRAPH. */
-	riva128_pgraph_command_submit(method, chanid,
-			subchanid, param, ctx, riva128);
 }
 
 void
@@ -3918,7 +4031,7 @@ static void
 
 	svga->vblank_start = riva128_vblank_start;
 
-	io_sethandler(0x03c0, 0x0020, riva128_in, NULL, NULL, riva128_out,
+	io_sethandler(0x03a0, 0x0040, riva128_in, NULL, NULL, riva128_out,
 			NULL, NULL, riva128);
 
 	pci_add_card(PCI_ADD_NORMAL, riva128_pci_read,

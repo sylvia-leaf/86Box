@@ -457,6 +457,10 @@ cpu_is_eligible(const cpu_family_t *cpu_family, int cpu, int machine)
 
     bus_speed = cpu_s->rspeed / cpu_s->multi;
 
+    /* The IBM PC 700 firmware has no speed entry for the 50 MHz / 2x setting. */
+    if ((machine_s->init == machine_at_ibm_pc700_init) && (bus_speed == 50000000) && (cpu_s->multi == 2.0))
+        return 0;
+
     /* Minimum bus speed with ~0.84 MHz (for 8086) tolerance. */
     if (machine_s->cpu.min_bus && (bus_speed < (machine_s->cpu.min_bus - 840907)))
         return 0;
@@ -2341,12 +2345,25 @@ cpu_set(void)
             x87_concurrency = x87_concurrency_486;
     }
 
+    /* Fast dynarec: optionally override accurate timing with fast timing
+       that sacrifices accuracy for speed. */
+#if defined(USE_DYNAREC) && defined(USE_FAST_DYNAREC)
+    if (cpu_use_dynarec_fast) {
+        /* Use zero-cycle timing for maximum speed - no cycle accounting
+           code emitted, TSC advanced coarsely by fast exec loop. */
+        codegen_timing_set(&codegen_timing_fast_zero);
+    }
+#endif
+
     cpu_use_exec = 0;
 
     if (is386) {
 #if defined(USE_DYNAREC) && !defined(USE_GDBSTUB)
-        if (cpu_use_dynarec) {
-            cpu_exec = exec386_dynarec;
+        if (cpu_use_dynarec || cpu_use_dynarec_fast) {
+            if (cpu_use_dynarec_fast)
+                cpu_exec = exec386_dynarec_fast;
+            else
+                cpu_exec = exec386_dynarec;
             cpu_use_exec = 1;
         } else
 #endif /* defined(USE_DYNAREC) && !defined(USE_GDBSTUB) */

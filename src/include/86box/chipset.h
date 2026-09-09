@@ -28,6 +28,9 @@ extern const device_t ali1435_device;
 extern const device_t ali1489_device;
 extern const device_t ali1531_device;
 extern const device_t ali1541_device;
+
+#define ALI1543_SIO_370 0x10000ULL
+
 extern const device_t ali1543_device;
 extern const device_t ali1543c_device;
 extern const device_t ali1621_device;
@@ -180,6 +183,7 @@ extern const device_t sis_5511_device;
 extern const device_t sis_5571_device;
 extern const device_t sis_5581_device;
 extern const device_t sis_5591_1997_device;
+extern const device_t sis_530_device;
 extern const device_t sis_5591_device;
 extern const device_t sis_5600_1997_device;
 extern const device_t sis_5600_device;
@@ -201,6 +205,9 @@ extern const device_t umc_8886af_device;
 extern const device_t umc_8886bf_device;
 extern const device_t umc_8890_device;
 extern const device_t umc_hb4_device;
+
+/* Utron */
+extern const device_t ut85c50x_device;
 
 /* VIA */
 extern const device_t via_vt82c49x_device;

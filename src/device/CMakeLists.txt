@@ -38,6 +38,8 @@ add_library(dev OBJECT
     inboard386.c
     intel_ich2_gpio.c
     intel_ich2_trap.c
+    ibm_xma.c
+    mcamem.c
     isamem.c
     isarom.c
     isartc.c
@@ -66,6 +68,7 @@ add_library(dev OBJECT
     postcard.c
     radisys_config.c
     serial.c
+    softpower.c
     smbus_ali7101.c
     smbus_piix4.c
     smbus_sis5595.c
