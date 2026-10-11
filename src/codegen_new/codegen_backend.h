@@ -32,6 +32,11 @@ void codegen_backend_mem_call_128(codeblock_t *block, int store, int data_offset
 void codegen_backend_sse_recheck(codeblock_t *block, struct uop_t *uop);
 #endif
 
+#ifdef CODEGEN_BACKEND_HAS_SSE_MXCSR
+void codegen_backend_sse_mxcsr_begin(codeblock_t *block);
+void codegen_backend_sse_mxcsr_end(codeblock_t *block);
+#endif
+
 struct ir_data_t *codegen_get_ir_data(void);
 
 typedef int (*uOpFn)(codeblock_t *codeblock, struct uop_t *uop);

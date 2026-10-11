@@ -120,6 +120,48 @@ codegen_mem_lookup_kind(const uop_t *uop)
 }
 #endif
 
+#ifdef CODEGEN_BACKEND_HAS_SSE_MXCSR
+/* 1 starts/continues native SSE, -1 preserves its MXCSR, 0 ends the run.
+   Only allow operations that cannot observe status, fault, call out or do
+   host floating-point work on behalf of x87. New uops default to a flush. */
+static int
+codegen_sse_mxcsr_kind(const uop_t *uop)
+{
+    if (uop->type & UOP_TYPE_FP_STATUS)
+        return 1;
+    switch (uop->type & UOP_MASK) {
+        case UOP_RCPPS & UOP_MASK:
+        case UOP_RCPSS & UOP_MASK:
+        case UOP_RSQRTPS & UOP_MASK:
+        case UOP_RSQRTSS & UOP_MASK:
+            return 1;
+        case UOP_INVALID:
+        case UOP_MOV & UOP_MASK:
+        case UOP_MOV_IMM & UOP_MASK:
+        case UOP_MOVSS & UOP_MASK:
+        case UOP_MOVSD & UOP_MASK:
+        case UOP_SHUFPS & UOP_MASK:
+        case UOP_MOVHLPS & UOP_MASK:
+        case UOP_MOVLHPS & UOP_MASK:
+        case UOP_MOVMSKPS & UOP_MASK:
+        case UOP_ADD & UOP_MASK:
+        case UOP_ADD_IMM & UOP_MASK:
+        case UOP_SUB & UOP_MASK:
+        case UOP_SUB_IMM & UOP_MASK:
+        case UOP_AND & UOP_MASK:
+        case UOP_AND_IMM & UOP_MASK:
+        case UOP_ANDN & UOP_MASK:
+        case UOP_OR & UOP_MASK:
+        case UOP_OR_IMM & UOP_MASK:
+        case UOP_XOR & UOP_MASK:
+        case UOP_XOR_IMM & UOP_MASK:
+            return -1;
+        default:
+            return 0;
+    }
+}
+#endif
+
 void
 codegen_ir_compile(ir_data_t *ir, codeblock_t *block)
 {
@@ -132,6 +174,9 @@ codegen_ir_compile(ir_data_t *ir, codeblock_t *block)
 #ifdef CODEGEN_HAS_SSE
     enum { SSE_UNCHECKED, SSE_CHECKED, SSE_AFTER_MEMORY };
     int sse_entered = SSE_UNCHECKED;
+#endif
+#ifdef CODEGEN_BACKEND_HAS_SSE_MXCSR
+    int sse_mxcsr_active = 0;
 #endif
 
     if (codegen_unroll_count) {
@@ -209,6 +254,17 @@ codegen_ir_compile(ir_data_t *ir, codeblock_t *block)
             sse_entered = SSE_UNCHECKED;
 #endif
 
+#ifdef CODEGEN_BACKEND_HAS_SSE_MXCSR
+        int sse_mxcsr_kind = codegen_sse_mxcsr_kind(uop);
+        if (sse_mxcsr_active && (!sse_mxcsr_kind
+                || (uop->type & (UOP_TYPE_BARRIER | UOP_TYPE_ORDER_BARRIER | UOP_TYPE_JUMP | UOP_TYPE_JUMP_DEST)))) {
+            /* Flush the fallthrough path before fixing the branch target.
+               Incoming branches have already restored host MXCSR. */
+            codegen_backend_sse_mxcsr_end(block);
+            sse_mxcsr_active = 0;
+        }
+#endif
+
 #ifdef CODEGEN_BACKEND_HAS_MEM_LOOKUP_REUSE
         uop->type &= ~(UOP_TYPE_MEM_REUSE | UOP_TYPE_MEM_SAME_ADDR);
         int lookup = codegen_mem_lookup_kind(uop);
@@ -251,6 +307,15 @@ codegen_ir_compile(ir_data_t *ir, codeblock_t *block)
 
         if ((uop->type & UOP_MASK) == UOP_INVALID)
             continue;
+
+#ifdef CODEGEN_BACKEND_HAS_SSE_MXCSR
+        if (sse_mxcsr_kind == 1 && !sse_mxcsr_active) {
+            /* This must be after the branch target: a taken branch may have
+               skipped every earlier SSE operation in the block. */
+            codegen_backend_sse_mxcsr_begin(block);
+            sse_mxcsr_active = 1;
+        }
+#endif
 
 #ifdef CODEGEN_BACKEND_HAS_MOV_IMM
         if ((uop->type & UOP_MASK) == (UOP_MOV_IMM & UOP_MASK) && reg_is_native_size(uop->dest_reg_a) && !codegen_reg_is_loaded(uop->dest_reg_a) && reg_version[IREG_GET_REG(uop->dest_reg_a.reg)][uop->dest_reg_a.version].refcount <= 0) {
@@ -326,6 +391,10 @@ codegen_ir_compile(ir_data_t *ir, codeblock_t *block)
         }
     }
 
+#ifdef CODEGEN_BACKEND_HAS_SSE_MXCSR
+    if (sse_mxcsr_active)
+        codegen_backend_sse_mxcsr_end(block);
+#endif
     codegen_reg_flush_invalidate(ir, block);
 
     if (jump_target_at_end != -1) {

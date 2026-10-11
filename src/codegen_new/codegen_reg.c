@@ -1202,8 +1202,8 @@ codegen_reg_process_dead_list(ir_data_t *ir)
         reg_version_t *regv    = &reg_version[reg][version];
         uop_t         *uop     = &ir->uops[regv->parent_uop];
 
-        /*Barrier uOPs should be preserved*/
-        if (!(uop->type & (UOP_TYPE_BARRIER | UOP_TYPE_ORDER_BARRIER))) {
+        /* Preserve barriers and status updates even when their result is dead. */
+        if (!(uop->type & (UOP_TYPE_BARRIER | UOP_TYPE_ORDER_BARRIER | UOP_TYPE_FP_STATUS))) {
             uop->type = UOP_INVALID;
             /*Adjust refcounts on source registers. If these drop to
               zero then those registers can be considered for removal*/

@@ -1547,7 +1547,7 @@ static int
 uop_run(const p6_uop_t *uop, int decode_time)
 {
     p6_unit_t *best_unit        = NULL;
-    int        best_start_cycle = 99999;
+    int        best_start_cycle = 0;
 
     /*UOP_FXCH does not require execution*/
     if (uop->type == UOP_FXCH)
@@ -1556,7 +1556,8 @@ uop_run(const p6_uop_t *uop, int decode_time)
     /*Find execution unit for this uOP*/
     for (int c = 0; c < nr_units; c++) {
         if (units[c].uop_mask & (1 << uop->type)) {
-            if (units[c].first_available_cycle < best_start_cycle) {
+            /* Seed from a real unit; WBINVD can exceed 99,999 cycles. */
+            if (!best_unit || units[c].first_available_cycle < best_start_cycle) {
                 best_unit        = &units[c];
                 best_start_cycle = units[c].first_available_cycle;
             }

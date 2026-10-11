@@ -318,6 +318,24 @@ host_x86_LDMXCSR_BASE_OFFSET(codeblock_t *block, int base_reg, int offset)
 }
 
 void
+host_x86_STMXCSR_BASE_OFFSET(codeblock_t *block, int base_reg, int offset)
+{
+    if (offset >= -128 && offset <= 127) {
+        if ((base_reg & 7) == REG_RSP) {
+            codegen_alloc_bytes(block, 6);
+            add_rex_if_needed(block, 0, 0, 0, base_reg);
+            codegen_addbyte3(block, 0x0f, 0xae, 0x58 | (base_reg & 7));
+            codegen_addbyte2(block, 0x24, offset);
+        } else {
+            codegen_alloc_bytes(block, 5);
+            add_rex_if_needed(block, 0, 0, 0, base_reg);
+            codegen_addbyte4(block, 0x0f, 0xae, 0x58 | (base_reg & 7), offset);
+        }
+    } else
+        fatal("STMXCSR_BASE_OFFSET - offset %i\n", offset);
+}
+
+void
 host_x86_MAXSD_XREG_XREG(codeblock_t *block, int dst_reg, int src_reg)
 {
     sse_op_reg_reg(block, 0xf2, 0x5f, dst_reg, src_reg); /*MAXSD dst_reg, src_reg*/

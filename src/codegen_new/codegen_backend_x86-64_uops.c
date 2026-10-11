@@ -2758,14 +2758,30 @@ codegen_MOVSD(codeblock_t *block, uop_t *uop)
     return 0;
 }
 
-static void
-codegen_load_guest_sse_rounding(codeblock_t *block)
+void
+codegen_backend_sse_mxcsr_begin(codeblock_t *block)
 {
+    /* Accumulate sticky exceptions across a straight-line native SSE run.
+       Clear host status on entry and keep host exceptions masked. */
     host_x86_MOV32_REG_ABS(block, REG_ECX, &cpu_state.mxcsr);
     host_x86_AND32_REG_IMM(block, REG_ECX, 0x6040);
     host_x86_OR32_REG_IMM(block, REG_ECX, 0x1f80);
     host_x86_MOV32_BASE_OFFSET_REG(block, REG_RSP, STACK_TEMP_MXCSR, REG_ECX);
     host_x86_LDMXCSR_BASE_OFFSET(block, REG_RSP, STACK_TEMP_MXCSR);
+}
+
+void
+codegen_backend_sse_mxcsr_end(codeblock_t *block)
+{
+    /* Guest exception flags are sticky; restoring the host MXCSR first
+       would discard the flags raised by the native operation. */
+    host_x86_STMXCSR_BASE_OFFSET(block, REG_RSP, STACK_TEMP_MXCSR);
+    host_x86_MOV32_REG_BASE_OFFSET(block, REG_ECX, REG_RSP, STACK_TEMP_MXCSR);
+    host_x86_AND32_REG_IMM(block, REG_ECX, 0x3f);
+    host_x86_MOV32_REG_ABS(block, REG_ESI, &cpu_state.mxcsr);
+    host_x86_OR32_REG_REG(block, REG_ECX, REG_ESI);
+    host_x86_MOV32_ABS_REG(block, &cpu_state.mxcsr, REG_ECX);
+    host_x86_LDMXCSR(block, &cpu_state.old_fp_control);
 }
 
 static int
@@ -2781,9 +2797,7 @@ codegen_ADDPS(codeblock_t *block, uop_t *uop)
     if (REG_IS_DQ(dest_size) && REG_IS_DQ(src_size_a) && REG_IS_DQ(src_size_b)) {
         if (dest_reg != src_reg_a)
             host_x86_MOVDQA_XREG_XREG(block, dest_reg, src_reg_a);
-        codegen_load_guest_sse_rounding(block);
         host_x86_ADDPS_XREG_XREG(block, dest_reg, src_reg_b);
-        host_x86_LDMXCSR(block, &cpu_state.old_fp_control);
     }
 #    ifdef RECOMPILER_DEBUG
     else
@@ -2805,9 +2819,7 @@ codegen_ADDPD(codeblock_t *block, uop_t *uop)
     if (REG_IS_DQ(dest_size) && REG_IS_DQ(src_size_a) && REG_IS_DQ(src_size_b)) {
         if (dest_reg != src_reg_a)
             host_x86_MOVDQA_XREG_XREG(block, dest_reg, src_reg_a);
-        codegen_load_guest_sse_rounding(block);
         host_x86_ADDPD_XREG_XREG(block, dest_reg, src_reg_b);
-        host_x86_LDMXCSR(block, &cpu_state.old_fp_control);
     }
 #    ifdef RECOMPILER_DEBUG
     else
@@ -2829,9 +2841,7 @@ codegen_ADDSS(codeblock_t *block, uop_t *uop)
     if (REG_IS_DQ(dest_size) && REG_IS_DQ(src_size_a) && REG_IS_DQ(src_size_b)) {
         if (dest_reg != src_reg_a)
             host_x86_MOVDQA_XREG_XREG(block, dest_reg, src_reg_a);
-        codegen_load_guest_sse_rounding(block);
         host_x86_ADDSS_XREG_XREG(block, dest_reg, src_reg_b);
-        host_x86_LDMXCSR(block, &cpu_state.old_fp_control);
     }
 #    ifdef RECOMPILER_DEBUG
     else
@@ -2853,9 +2863,7 @@ codegen_ADDSD(codeblock_t *block, uop_t *uop)
     if (REG_IS_DQ(dest_size) && REG_IS_DQ(src_size_a) && (REG_IS_DQ(src_size_b) || REG_IS_Q(src_size_b))) {
         if (dest_reg != src_reg_a)
             host_x86_MOVDQA_XREG_XREG(block, dest_reg, src_reg_a);
-        codegen_load_guest_sse_rounding(block);
         host_x86_ADDSD_XREG_XREG(block, dest_reg, src_reg_b);
-        host_x86_LDMXCSR(block, &cpu_state.old_fp_control);
     }
 #    ifdef RECOMPILER_DEBUG
     else
@@ -2877,9 +2885,7 @@ codegen_SSE_ARITH(codeblock_t *block, uop_t *uop, void (*host_func)(codeblock_t 
     if (REG_IS_DQ(dest_size) && REG_IS_DQ(src_size_a) && (REG_IS_DQ(src_size_b) || (allow_q_src && REG_IS_Q(src_size_b)))) {
         if (dest_reg != src_reg_a)
             host_x86_MOVDQA_XREG_XREG(block, dest_reg, src_reg_a);
-        codegen_load_guest_sse_rounding(block);
         host_func(block, dest_reg, src_reg_b);
-        host_x86_LDMXCSR(block, &cpu_state.old_fp_control);
     }
 #    ifdef RECOMPILER_DEBUG
     else
@@ -3077,9 +3083,7 @@ codegen_SQRTPS(codeblock_t *block, uop_t *uop)
 
     if (REG_IS_DQ(dest_size) && REG_IS_DQ(src_size))
     {
-        codegen_load_guest_sse_rounding(block);
         host_x86_SQRTPS_XREG_XREG(block, dest_reg, src_reg);
-        host_x86_LDMXCSR(block, &cpu_state.old_fp_control);
     }
 #    ifdef RECOMPILER_DEBUG
     else
@@ -3104,9 +3108,7 @@ codegen_RCPPS(codeblock_t *block, uop_t *uop)
 
     if (REG_IS_DQ(dest_size) && REG_IS_DQ(src_size))
     {
-        codegen_load_guest_sse_rounding(block);
         host_x86_RCPPS_XREG_XREG(block, dest_reg, src_reg);
-        host_x86_LDMXCSR(block, &cpu_state.old_fp_control);
     }
 #    ifdef RECOMPILER_DEBUG
     else
@@ -3131,9 +3133,7 @@ codegen_RSQRTPS(codeblock_t *block, uop_t *uop)
 
     if (REG_IS_DQ(dest_size) && REG_IS_DQ(src_size))
     {
-        codegen_load_guest_sse_rounding(block);
         host_x86_RSQRTPS_XREG_XREG(block, dest_reg, src_reg);
-        host_x86_LDMXCSR(block, &cpu_state.old_fp_control);
     }
 #    ifdef RECOMPILER_DEBUG
     else
@@ -3161,9 +3161,7 @@ codegen_CVTSI2SS(codeblock_t *block, uop_t *uop)
     if (REG_IS_DQ(dest_size) && REG_IS_DQ(src_size_a) && REG_IS_L(src_size_b)) {
         if (dest_reg != src_reg_a)
             host_x86_MOVDQA_XREG_XREG(block, dest_reg, src_reg_a);
-        codegen_load_guest_sse_rounding(block);
         host_x86_CVTSI2SS_XREG_REG(block, dest_reg, src_reg_b);
-        host_x86_LDMXCSR(block, &cpu_state.old_fp_control);
     }
 #    ifdef RECOMPILER_DEBUG
     else
@@ -3180,8 +3178,9 @@ codegen_CVTTSS2SI(codeblock_t *block, uop_t *uop)
     int dest_size = IREG_GET_SIZE(uop->dest_reg_a_real);
     int src_size  = IREG_GET_SIZE(uop->src_reg_a_real);
 
-    if (REG_IS_L(dest_size) && REG_IS_DQ(src_size))
+    if (REG_IS_L(dest_size) && REG_IS_DQ(src_size)) {
         host_x86_CVTTSS2SI_REG_XREG(block, dest_reg, src_reg);
+    }
 #    ifdef RECOMPILER_DEBUG
     else
         fatal("CVTTSS2SI %02x %02x\n", uop->dest_reg_a_real, uop->src_reg_a_real);
@@ -3198,9 +3197,7 @@ codegen_CVTSS2SI(codeblock_t *block, uop_t *uop)
     int src_size  = IREG_GET_SIZE(uop->src_reg_a_real);
 
     if (REG_IS_L(dest_size) && REG_IS_DQ(src_size)) {
-        codegen_load_guest_sse_rounding(block);
         host_x86_CVTSS2SI_REG_XREG(block, dest_reg, src_reg);
-        host_x86_LDMXCSR(block, &cpu_state.old_fp_control);
     }
 #    ifdef RECOMPILER_DEBUG
     else
@@ -3223,9 +3220,7 @@ codegen_CVTPI2PS(codeblock_t *block, uop_t *uop)
         if (dest_reg != src_reg_a)
             host_x86_MOVDQA_XREG_XREG(block, dest_reg, src_reg_a);
         host_x86_MOVQ_XREG_XREG(block, REG_XMM_TEMP, src_reg_b);
-        codegen_load_guest_sse_rounding(block);
         host_x86_CVTDQ2PS_XREG_XREG(block, REG_XMM_TEMP, REG_XMM_TEMP);
-        host_x86_LDMXCSR(block, &cpu_state.old_fp_control);
         host_x86_MOVSD_XREG_XREG(block, dest_reg, REG_XMM_TEMP);
     }
 #    ifdef RECOMPILER_DEBUG
@@ -3243,8 +3238,12 @@ codegen_CVTTPS2PI(codeblock_t *block, uop_t *uop)
     int dest_size = IREG_GET_SIZE(uop->dest_reg_a_real);
     int src_size  = IREG_GET_SIZE(uop->src_reg_a_real);
 
-    if (REG_IS_Q(dest_size) && (REG_IS_DQ(src_size) || REG_IS_Q(src_size)))
-        host_x86_CVTTPS2DQ_XREG_XREG(block, dest_reg, src_reg);
+    if (REG_IS_Q(dest_size) && (REG_IS_DQ(src_size) || REG_IS_Q(src_size))) {
+        /* Only the low two lanes belong to CVTTPS2PI. Upper lanes must not
+           raise exceptions in the four-lane host conversion. */
+        host_x86_MOVQ_XREG_XREG(block, REG_XMM_TEMP, src_reg);
+        host_x86_CVTTPS2DQ_XREG_XREG(block, dest_reg, REG_XMM_TEMP);
+    }
 #    ifdef RECOMPILER_DEBUG
     else
         fatal("CVTTPS2PI %02x %02x\n", uop->dest_reg_a_real, uop->src_reg_a_real);
@@ -3261,9 +3260,9 @@ codegen_CVTPS2PI(codeblock_t *block, uop_t *uop)
     int src_size  = IREG_GET_SIZE(uop->src_reg_a_real);
 
     if (REG_IS_Q(dest_size) && (REG_IS_DQ(src_size) || REG_IS_Q(src_size))) {
-        codegen_load_guest_sse_rounding(block);
-        host_x86_CVTPS2DQ_XREG_XREG(block, dest_reg, src_reg);
-        host_x86_LDMXCSR(block, &cpu_state.old_fp_control);
+        /* Discard inactive lanes before collecting host exception status. */
+        host_x86_MOVQ_XREG_XREG(block, REG_XMM_TEMP, src_reg);
+        host_x86_CVTPS2DQ_XREG_XREG(block, dest_reg, REG_XMM_TEMP);
     }
 #    ifdef RECOMPILER_DEBUG
     else
