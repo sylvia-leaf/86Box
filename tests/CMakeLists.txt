@@ -9,6 +9,7 @@ add_subdirectory(mem)
 add_subdirectory(cpu)
 add_subdirectory(sound)
 add_subdirectory(machine)
+add_subdirectory(utils)
 
 if(BUILD_TESTING)
     add_library(pcjx_floppy_engine OBJECT
