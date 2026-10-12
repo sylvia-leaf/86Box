@@ -35,6 +35,7 @@ void host_x86_DIVSS_XREG_XREG(codeblock_t *block, int dst_reg, int src_reg);
 
 void host_x86_LDMXCSR(codeblock_t *block, void *p);
 void host_x86_LDMXCSR_BASE_OFFSET(codeblock_t *block, int base_reg, int offset);
+void host_x86_STMXCSR_BASE_OFFSET(codeblock_t *block, int base_reg, int offset);
 
 void host_x86_MAXSD_XREG_XREG(codeblock_t *block, int dst_reg, int src_reg);
 
