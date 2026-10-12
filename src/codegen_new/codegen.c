@@ -8,6 +8,7 @@
 #include "x86_ops.h"
 #include "codegen.h"
 #include "x86.h"
+#include "x86_flags.h"
 #include "x86seg_common.h"
 #include "x86seg.h"
 #include "x87_sf.h"
@@ -32,15 +33,17 @@ static struct {
     int      op_sse_xmm;
     int      first_uop;
     int      TOP;
+    int      flags_op;
 } codegen_instructions[MAX_INSTRUCTION_COUNT];
 
 int
-codegen_get_instruction_uop(codeblock_t *block, uint32_t pc, int *first_instruction, int *TOP)
+codegen_get_instruction_uop(codeblock_t *block, uint32_t pc, int *first_instruction, int *TOP, int *flags_op)
 {
     for (uint8_t c = 0; c <= block->ins; c++) {
         if (codegen_instructions[c].pc == pc) {
             *first_instruction = c;
             *TOP               = codegen_instructions[c].TOP;
+            *flags_op          = codegen_instructions[c].flags_op;
             return codegen_instructions[c].first_uop;
         }
     }
@@ -805,6 +808,7 @@ generate_call:
     codegen_instructions[block->ins].op_sse_xmm = last_op_sse_xmm;
     codegen_instructions[block->ins].TOP       = cpu_state.TOP;
     codegen_instructions[block->ins].first_uop = ir->wr_pos;
+    codegen_instructions[block->ins].flags_op  = codegen_flags_changed ? cpu_state.flags_op : FLAGS_UNKNOWN;
 
     codegen_timing_opcode(opcode, fetchdat, op_32, op_pc);
 

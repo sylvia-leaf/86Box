@@ -39,12 +39,13 @@ static OpFn selected_opcodes[1024];
 const OpFn *x86_dynarec_opcodes_0f = selected_opcodes;
 
 static int unroll_count;
-int codegen_get_instruction_uop(codeblock_t *block, uint32_t pc, int *first, int *top)
+int codegen_get_instruction_uop(codeblock_t *block, uint32_t pc, int *first, int *top, int *flags_op)
 {
     (void) block;
     (void) pc;
     *first = 0;
     *top = cpu_state.TOP;
+    *flags_op = 0; /* FLAGS_UNKNOWN: no incoming specialization in this fixture. */
     return 0;
 }
 void codegen_ir_set_unroll(int count, int start, int first)

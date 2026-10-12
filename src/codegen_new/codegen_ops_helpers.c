@@ -5,6 +5,7 @@
 #include <86box/plat_unused.h>
 
 #include "x86.h"
+#include "x86_flags.h"
 #include "x86seg_common.h"
 #include "x86seg.h"
 #include "386_common.h"
@@ -44,10 +45,11 @@ codegen_can_unroll_full(codeblock_t *block, ir_data_t *ir, UNUSED(uint32_t next_
     int start;
     int max_unroll;
     int first_instruction;
-    int TOP = -1;
+    int TOP      = -1;
+    int flags_op = FLAGS_UNKNOWN;
 
     /*Check that dest instruction was actually compiled into block*/
-    start = codegen_get_instruction_uop(block, dest_addr, &first_instruction, &TOP);
+    start = codegen_get_instruction_uop(block, dest_addr, &first_instruction, &TOP, &flags_op);
 
     /*Couldn't find any uOPs corresponding to the destination instruction*/
     if (start == -1) {
@@ -61,6 +63,16 @@ codegen_can_unroll_full(codeblock_t *block, ir_data_t *ir, UNUSED(uint32_t next_
     }
 
     if (TOP != cpu_state.TOP)
+        return 0;
+
+    /* Flag consumers may have specialized the loop's incoming lazy state.
+     * For example, XOR before an SBB/DEC loop folds the first carry to zero;
+     * copying that IR would discard the borrow on subsequent iterations.
+     * Keep such a block's first iteration, then dispatch to the loop head.
+     * A block compiled from that head starts with unknown flags and can still
+     * be unrolled, as can loops whose incoming flag representation is stable. */
+    if (flags_op != FLAGS_UNKNOWN
+        && (!codegen_flags_changed || flags_op != cpu_state.flags_op))
         return 0;
 
     for (int c = start; c < ir->wr_pos; c++) {
