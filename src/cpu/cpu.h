@@ -991,6 +991,8 @@ extern void exec386_dynarec_dyn(void);
 #endif
 
 
+extern int  inrecomp;
+
 extern void mmx_init(void);
 extern void prefetch_flush(void);
 
