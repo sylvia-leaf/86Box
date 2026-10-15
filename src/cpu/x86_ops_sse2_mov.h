@@ -913,6 +913,7 @@ static int
 opMOVQ2DQ_a16(uint32_t fetchdat)
 {
     MMX_REG src;
+    SSE_ENTER();
     MMX_ENTER();
     fetch_ea_16(fetchdat);
     ILLEGAL_ON(cpu_mod != 3);
@@ -928,6 +929,7 @@ static int
 opMOVQ2DQ_a32(uint32_t fetchdat)
 {
     MMX_REG src;
+    SSE_ENTER();
     MMX_ENTER();
     fetch_ea_32(fetchdat);
     ILLEGAL_ON(cpu_mod != 3);
@@ -943,6 +945,7 @@ static int
 opMOVDQ2Q_a16(uint32_t fetchdat)
 {
     MMX_REG *dst;
+    SSE_ENTER();
     MMX_ENTER();
     fetch_ea_16(fetchdat);
     ILLEGAL_ON(cpu_mod != 3);
@@ -958,6 +961,7 @@ static int
 opMOVDQ2Q_a32(uint32_t fetchdat)
 {
     MMX_REG *dst;
+    SSE_ENTER();
     MMX_ENTER();
     fetch_ea_32(fetchdat);
     ILLEGAL_ON(cpu_mod != 3);

@@ -3,6 +3,7 @@ static int
 opCVTPI2PD_xmm_mm_a16(uint32_t fetchdat)
 {
     MMX_REG src;
+    SSE_ENTER();
     MMX_ENTER();
     fetch_ea_16(fetchdat);
     MMX_GETSRC();
@@ -17,6 +18,7 @@ static int
 opCVTPI2PD_xmm_mm_a32(uint32_t fetchdat)
 {
     MMX_REG src;
+    SSE_ENTER();
     MMX_ENTER();
     fetch_ea_32(fetchdat);
     MMX_GETSRC();
