@@ -16,6 +16,86 @@ typedef struct {
     unsigned length, cr0_bits, no_osfxsr, trap_p3, trap_p4, setup, only_p4;
 } opcode_case;
 static const opcode_case opcases[] = {
+    {"CMOV 0 a16 w16", {0x64,0x67,0x66,0xf,0x40,0x7},6,0x80010000,0,14,14,19},
+    {"CMOV 0 a16 w32", {0x64,0x67,0xf,0x40,0x7},5,0x80010000,0,14,14,19},
+    {"CMOV 0 a32 w16", {0x64,0x66,0xf,0x40,0x7},5,0x80010000,0,14,14,19},
+    {"CMOV 0 a32 w32", {0x64,0xf,0x40,0x7},4,0x80010000,0,14,14,19},
+    {"CMOV 0 segment limit", {0x64,0x0f,0x40,0},4,0,0,13,13,1},
+    {"CMOV 1 a16 w16", {0x64,0x67,0x66,0xf,0x41,0x7},6,0x80010000,0,14,14,19},
+    {"CMOV 1 a16 w32", {0x64,0x67,0xf,0x41,0x7},5,0x80010000,0,14,14,19},
+    {"CMOV 1 a32 w16", {0x64,0x66,0xf,0x41,0x7},5,0x80010000,0,14,14,19},
+    {"CMOV 1 a32 w32", {0x64,0xf,0x41,0x7},4,0x80010000,0,14,14,19},
+    {"CMOV 1 segment limit", {0x64,0x0f,0x41,0},4,0,0,13,13,1},
+    {"CMOV 2 a16 w16", {0x64,0x67,0x66,0xf,0x42,0x7},6,0x80010000,0,14,14,19},
+    {"CMOV 2 a16 w32", {0x64,0x67,0xf,0x42,0x7},5,0x80010000,0,14,14,19},
+    {"CMOV 2 a32 w16", {0x64,0x66,0xf,0x42,0x7},5,0x80010000,0,14,14,19},
+    {"CMOV 2 a32 w32", {0x64,0xf,0x42,0x7},4,0x80010000,0,14,14,19},
+    {"CMOV 2 segment limit", {0x64,0x0f,0x42,0},4,0,0,13,13,1},
+    {"CMOV 3 a16 w16", {0x64,0x67,0x66,0xf,0x43,0x7},6,0x80010000,0,14,14,19},
+    {"CMOV 3 a16 w32", {0x64,0x67,0xf,0x43,0x7},5,0x80010000,0,14,14,19},
+    {"CMOV 3 a32 w16", {0x64,0x66,0xf,0x43,0x7},5,0x80010000,0,14,14,19},
+    {"CMOV 3 a32 w32", {0x64,0xf,0x43,0x7},4,0x80010000,0,14,14,19},
+    {"CMOV 3 segment limit", {0x64,0x0f,0x43,0},4,0,0,13,13,1},
+    {"CMOV 4 a16 w16", {0x64,0x67,0x66,0xf,0x44,0x7},6,0x80010000,0,14,14,19},
+    {"CMOV 4 a16 w32", {0x64,0x67,0xf,0x44,0x7},5,0x80010000,0,14,14,19},
+    {"CMOV 4 a32 w16", {0x64,0x66,0xf,0x44,0x7},5,0x80010000,0,14,14,19},
+    {"CMOV 4 a32 w32", {0x64,0xf,0x44,0x7},4,0x80010000,0,14,14,19},
+    {"CMOV 4 segment limit", {0x64,0x0f,0x44,0},4,0,0,13,13,1},
+    {"CMOV 5 a16 w16", {0x64,0x67,0x66,0xf,0x45,0x7},6,0x80010000,0,14,14,19},
+    {"CMOV 5 a16 w32", {0x64,0x67,0xf,0x45,0x7},5,0x80010000,0,14,14,19},
+    {"CMOV 5 a32 w16", {0x64,0x66,0xf,0x45,0x7},5,0x80010000,0,14,14,19},
+    {"CMOV 5 a32 w32", {0x64,0xf,0x45,0x7},4,0x80010000,0,14,14,19},
+    {"CMOV 5 segment limit", {0x64,0x0f,0x45,0},4,0,0,13,13,1},
+    {"CMOV 6 a16 w16", {0x64,0x67,0x66,0xf,0x46,0x7},6,0x80010000,0,14,14,19},
+    {"CMOV 6 a16 w32", {0x64,0x67,0xf,0x46,0x7},5,0x80010000,0,14,14,19},
+    {"CMOV 6 a32 w16", {0x64,0x66,0xf,0x46,0x7},5,0x80010000,0,14,14,19},
+    {"CMOV 6 a32 w32", {0x64,0xf,0x46,0x7},4,0x80010000,0,14,14,19},
+    {"CMOV 6 segment limit", {0x64,0x0f,0x46,0},4,0,0,13,13,1},
+    {"CMOV 7 a16 w16", {0x64,0x67,0x66,0xf,0x47,0x7},6,0x80010000,0,14,14,19},
+    {"CMOV 7 a16 w32", {0x64,0x67,0xf,0x47,0x7},5,0x80010000,0,14,14,19},
+    {"CMOV 7 a32 w16", {0x64,0x66,0xf,0x47,0x7},5,0x80010000,0,14,14,19},
+    {"CMOV 7 a32 w32", {0x64,0xf,0x47,0x7},4,0x80010000,0,14,14,19},
+    {"CMOV 7 segment limit", {0x64,0x0f,0x47,0},4,0,0,13,13,1},
+    {"CMOV 8 a16 w16", {0x64,0x67,0x66,0xf,0x48,0x7},6,0x80010000,0,14,14,19},
+    {"CMOV 8 a16 w32", {0x64,0x67,0xf,0x48,0x7},5,0x80010000,0,14,14,19},
+    {"CMOV 8 a32 w16", {0x64,0x66,0xf,0x48,0x7},5,0x80010000,0,14,14,19},
+    {"CMOV 8 a32 w32", {0x64,0xf,0x48,0x7},4,0x80010000,0,14,14,19},
+    {"CMOV 8 segment limit", {0x64,0x0f,0x48,0},4,0,0,13,13,1},
+    {"CMOV 9 a16 w16", {0x64,0x67,0x66,0xf,0x49,0x7},6,0x80010000,0,14,14,19},
+    {"CMOV 9 a16 w32", {0x64,0x67,0xf,0x49,0x7},5,0x80010000,0,14,14,19},
+    {"CMOV 9 a32 w16", {0x64,0x66,0xf,0x49,0x7},5,0x80010000,0,14,14,19},
+    {"CMOV 9 a32 w32", {0x64,0xf,0x49,0x7},4,0x80010000,0,14,14,19},
+    {"CMOV 9 segment limit", {0x64,0x0f,0x49,0},4,0,0,13,13,1},
+    {"CMOV a a16 w16", {0x64,0x67,0x66,0xf,0x4a,0x7},6,0x80010000,0,14,14,19},
+    {"CMOV a a16 w32", {0x64,0x67,0xf,0x4a,0x7},5,0x80010000,0,14,14,19},
+    {"CMOV a a32 w16", {0x64,0x66,0xf,0x4a,0x7},5,0x80010000,0,14,14,19},
+    {"CMOV a a32 w32", {0x64,0xf,0x4a,0x7},4,0x80010000,0,14,14,19},
+    {"CMOV a segment limit", {0x64,0x0f,0x4a,0},4,0,0,13,13,1},
+    {"CMOV b a16 w16", {0x64,0x67,0x66,0xf,0x4b,0x7},6,0x80010000,0,14,14,19},
+    {"CMOV b a16 w32", {0x64,0x67,0xf,0x4b,0x7},5,0x80010000,0,14,14,19},
+    {"CMOV b a32 w16", {0x64,0x66,0xf,0x4b,0x7},5,0x80010000,0,14,14,19},
+    {"CMOV b a32 w32", {0x64,0xf,0x4b,0x7},4,0x80010000,0,14,14,19},
+    {"CMOV b segment limit", {0x64,0x0f,0x4b,0},4,0,0,13,13,1},
+    {"CMOV c a16 w16", {0x64,0x67,0x66,0xf,0x4c,0x7},6,0x80010000,0,14,14,19},
+    {"CMOV c a16 w32", {0x64,0x67,0xf,0x4c,0x7},5,0x80010000,0,14,14,19},
+    {"CMOV c a32 w16", {0x64,0x66,0xf,0x4c,0x7},5,0x80010000,0,14,14,19},
+    {"CMOV c a32 w32", {0x64,0xf,0x4c,0x7},4,0x80010000,0,14,14,19},
+    {"CMOV c segment limit", {0x64,0x0f,0x4c,0},4,0,0,13,13,1},
+    {"CMOV d a16 w16", {0x64,0x67,0x66,0xf,0x4d,0x7},6,0x80010000,0,14,14,19},
+    {"CMOV d a16 w32", {0x64,0x67,0xf,0x4d,0x7},5,0x80010000,0,14,14,19},
+    {"CMOV d a32 w16", {0x64,0x66,0xf,0x4d,0x7},5,0x80010000,0,14,14,19},
+    {"CMOV d a32 w32", {0x64,0xf,0x4d,0x7},4,0x80010000,0,14,14,19},
+    {"CMOV d segment limit", {0x64,0x0f,0x4d,0},4,0,0,13,13,1},
+    {"CMOV e a16 w16", {0x64,0x67,0x66,0xf,0x4e,0x7},6,0x80010000,0,14,14,19},
+    {"CMOV e a16 w32", {0x64,0x67,0xf,0x4e,0x7},5,0x80010000,0,14,14,19},
+    {"CMOV e a32 w16", {0x64,0x66,0xf,0x4e,0x7},5,0x80010000,0,14,14,19},
+    {"CMOV e a32 w32", {0x64,0xf,0x4e,0x7},4,0x80010000,0,14,14,19},
+    {"CMOV e segment limit", {0x64,0x0f,0x4e,0},4,0,0,13,13,1},
+    {"CMOV f a16 w16", {0x64,0x67,0x66,0xf,0x4f,0x7},6,0x80010000,0,14,14,19},
+    {"CMOV f a16 w32", {0x64,0x67,0xf,0x4f,0x7},5,0x80010000,0,14,14,19},
+    {"CMOV f a32 w16", {0x64,0x66,0xf,0x4f,0x7},5,0x80010000,0,14,14,19},
+    {"CMOV f a32 w32", {0x64,0xf,0x4f,0x7},4,0x80010000,0,14,14,19},
+    {"CMOV f segment limit", {0x64,0x0f,0x4f,0},4,0,0,13,13,1},
     {"MOVLPD store a16 register", {0x67,0x66,0xf,0x13,0xc1},5,0,0,6,6,18,1},
     {"MOVLPD store a16 valid", {0x67,0x66,0xf,0x13,0x7},5,0,0,6,0,17,1},
     {"MOVLPD store a32 register", {0x66,0xf,0x13,0xc1},4,0,0,6,6,18,1},
@@ -155,7 +235,7 @@ static void initialize(void) {
     b(0xc3);
     exception_tables();
     if (probe->setup==1) cpu_state.seg_fs.limit=cpu_state.seg_fs.limit_high=0xfff;
-    if (probe->setup==2 || probe->setup==3 || probe->setup==11 || probe->setup==12) {
+    if (probe->setup==2 || probe->setup==3 || probe->setup==11 || probe->setup==12 || probe->setup==19) {
         memset(ram+0x30000,0,0x5000);
         for (unsigned n=0;n<4;n++) {
             put32(0x30000+4*n,(0x31000+0x1000*n)|3);
@@ -199,7 +279,7 @@ int main(int argc,char **argv) {
                 memset(ram + DATA + 0x1800, 0x5a, 16);
             }
             put32(DATA,0x3f80); put32(TRAP,0); put32(FAULT_PC,0);
-            if (probe->setup==2 || probe->setup==3 || probe->setup==11 || probe->setup==12) {
+            if (probe->setup==2 || probe->setup==3 || probe->setup==11 || probe->setup==12 || probe->setup==19) {
                 cpu_state.seg_fs.base=0x40000; EBX=0;
                 EDI=probe->setup==11 ? 0x40ffc : 0x40000; EAX=0x1234; put32(0x40000,0x89abcdef); put32(0x40004,0x76543210);
                 flushmmucache();
@@ -232,18 +312,22 @@ int main(int argc,char **argv) {
             if (probe->setup==17) {
                 EAX=EBX=0x4001;memset(ram+0x4000,0x5a,16);cpu_state.XMM[0].q[1]=UINT64_C(0x2222222222222222);
             }
-            if (probe->setup == 12) {
+            if (probe->setup == 12 || probe->setup == 19) {
                 put32(0x31000+4*0x40, ((call / 8) & 1) ? 0 : 0x40003);
                 flushmmucache();
             }
             if (probe->setup == 1) EDI = DATA + 0x1800;
+            if (probe->setup==19) {
+                EDI=EBX=0;EAX=0x12345678;cpu_state.flags_op=0;
+                cpu_state.flags=2 | (call&1) | ((call&2)<<1) | ((call&4)<<4) | ((call&8)<<4) | ((call&16)<<7);
+            }
             cpu_state.pc=DRIVER; done=0; cycles=cycles_main=0;
             for(unsigned n=0;!done;n++) {
                 if(n>10000)fatal("Audit did not stop");
                 if(engine) exec386_dynarec(10000); else exec386(10000);
             }
             unsigned expected = p3 ? probe->trap_p3 : probe->trap_p4;
-            if ((probe->setup == 12 || probe->setup == 9 || probe->setup == 27) && !((call / 8) & 1)) expected = 0;
+            if ((probe->setup == 12 || probe->setup == 19 || probe->setup == 9 || probe->setup == 27) && !((call / 8) & 1)) expected = 0;
             if (get32(TRAP) != expected) {
                 fprintf(stderr, "%s call %u: trap %u, expected %u\n", probe->name, call, get32(TRAP), expected);
                 return 1;
@@ -306,6 +390,14 @@ int main(int argc,char **argv) {
             if (probe->setup==18) {
                 for(unsigned n=0;n<16;n++) if(cpu_state.XMM[1].b[n]!=0x80) fatal("Invalid store changed register");
                 if(get32(FAULT_PC)!=BODY) fatal("Invalid store fault EIP");
+            }
+            if (probe->setup==19) {
+                unsigned condition=probe->bytes[probe->length-2]&15;
+                unsigned c=!!(call&1),p=!!(call&2),z=!!(call&4),sign=!!(call&8),o=!!(call&16);
+                unsigned conditions[8]={o,c,z,c|z,sign,p,sign^o,z|(sign^o)};
+                unsigned selected=conditions[condition>>1] ^ (condition&1);
+                uint32_t value = !expected && selected ? (strstr(probe->name,"w16") ? 0x1234cdef : 0x89abcdef) : 0x12345678;
+                if(EAX!=value || (expected && get32(FAULT_PC)!=BODY)) fatal("CMOV result or fault EIP: %s",probe->name);
             }
             ++checked;
         }
