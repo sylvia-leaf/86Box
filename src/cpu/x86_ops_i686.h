@@ -122,18 +122,12 @@ sf_fx_save_stor_common(uint32_t fetchdat, int bits)
         /* The lower 11 bits contain the FPU opcode, upper 5 bits are reserved */
         fpu_state.foo = readmemw(easeg, cpu_state.eaaddr + 6) & 0x7FF;
 
-        if (bits == 32)
-            fpu_state.fip = readmeml(easeg, cpu_state.eaaddr + 8);
-        else
-            fpu_state.fip = readmemw(easeg, cpu_state.eaaddr + 8);
+        fpu_state.fip = readmeml(easeg, cpu_state.eaaddr + 8);
         fpu_state.fcs = readmemw(easeg, cpu_state.eaaddr + 12);
 
         tag_byte = readmemb(easeg, cpu_state.eaaddr + 4);
 
-        if (bits == 32)
-            fpu_state.fdp = readmeml(easeg, cpu_state.eaaddr + 16);
-        else
-            fpu_state.fdp = readmemw(easeg, cpu_state.eaaddr + 16);
+        fpu_state.fdp = readmeml(easeg, cpu_state.eaaddr + 16);
         fpu_state.fds = readmemw(easeg, cpu_state.eaaddr + 20);
 
         /* load i387 register file */
@@ -185,45 +179,10 @@ sf_fx_save_stor_common(uint32_t fetchdat, int bits)
         /* The lower 11 bits contain the FPU opcode, upper 5 bits are reserved */
         writememw(easeg, cpu_state.eaaddr + 6, cpu_state.fpu_op);
 
-        /*
-         * x87 FPU IP Offset (32/64 bits)
-         * The contents of this field differ depending on the current
-         * addressing mode (16/32/64 bit) when the FXSAVE instruction was executed:
-         *   + 64-bit mode - 64-bit IP offset
-         *   + 32-bit mode - 32-bit IP offset
-         *   + 16-bit mode - low 16 bits are IP offset; high 16 bits are reserved.
-         * x87 CS FPU IP Selector
-         *   + 16 bit, in 16/32 bit mode only
-         *
-         * x87 FPU Instruction Operand (Data) Pointer Offset (32/64 bits)
-         * The contents of this field differ depending on the current
-         * addressing mode (16/32 bit) when the FXSAVE instruction was executed:
-         *   + 64-bit mode - 64-bit offset
-         *   + 32-bit mode - 32-bit offset
-         *   + 16-bit mode - low 16 bits are offset; high 16 bits are reserved.
-         * x87 DS FPU Instruction Operand (Data) Pointer Selector
-         *   + 16 bit, in 16/32 bit mode only
-         */
-        switch ((cr0 & 1) | (cpu_state.op32 & 0x100)) {
-            case 0x000: {
-                /*16-bit real mode*/
-                writememl(easeg, cpu_state.eaaddr + 8, cpu_state.fpu_pc & 0xffff);
-                writememl(easeg, cpu_state.eaaddr + 16, cpu_state.fpu_ea & 0xffff);
-                break;
-            } case 0x001: /*16-bit protected mode*/
-                writememl(easeg, cpu_state.eaaddr + 8, cpu_state.fpu_pc & 0xffff);
-                writememl(easeg, cpu_state.eaaddr + 16, cpu_state.fpu_ea & 0xffff);
-                break;
-            case 0x100: {
-                /*32-bit real mode*/
-                writememl(easeg, cpu_state.eaaddr + 8, cpu_state.fpu_pc);
-                writememl(easeg, cpu_state.eaaddr + 16, cpu_state.fpu_ea);
-                break;
-            } case 0x101: /*32-bit protected mode*/
-                writememl(easeg, cpu_state.eaaddr + 8, cpu_state.fpu_pc);
-                writememl(easeg, cpu_state.eaaddr + 16, cpu_state.fpu_ea);
-                break;
-        }
+        /* The legacy FXSAVE image always contains 32-bit offsets, regardless
+           of operand/address size or protected/real mode (Intel SDM Vol. 2A). */
+        writememl(easeg, cpu_state.eaaddr + 8, cpu_state.fpu_pc);
+        writememl(easeg, cpu_state.eaaddr + 16, cpu_state.fpu_ea);
 
         writememl(easeg, cpu_state.eaaddr + 12, cpu_state.fpu_CS);
         writememl(easeg, cpu_state.eaaddr + 20, cpu_state.fpu_DS);
@@ -436,19 +395,13 @@ fx_save_stor_common(uint32_t fetchdat, int bits)
            dropped status bits the guest had set). */
         cpu_state.npxs = fpus;
 
-        if (bits == 32)
-            x87_pc_off = readmeml(easeg, cpu_state.eaaddr + 8);
-        else
-            x87_pc_off = readmemw(easeg, cpu_state.eaaddr + 8);
+        x87_pc_off = readmeml(easeg, cpu_state.eaaddr + 8);
         x87_pc_seg = readmemw(easeg, cpu_state.eaaddr + 12);
 
         ftwb = readmemb(easeg, cpu_state.eaaddr + 4);
         x87_op = readmemw(easeg, cpu_state.eaaddr + 6) & 0x07ff;
 
-        if (bits == 32)
-            x87_op_off = readmeml(easeg, cpu_state.eaaddr + 16);
-        else
-            x87_op_off = readmemw(easeg, cpu_state.eaaddr +16);
+        x87_op_off = readmeml(easeg, cpu_state.eaaddr + 16);
         x87_op_seg = readmemw(easeg, cpu_state.eaaddr + 20);
 
         if ((cpu_features & CPU_FEATURE_SSE) && (cr4 & CR4_OSFXSR)) {
@@ -554,45 +507,10 @@ fx_save_stor_common(uint32_t fetchdat, int bits)
         /* The lower 11 bits contain the FPU opcode, upper 5 bits are reserved */
         writememw(easeg, cpu_state.eaaddr + 6, cpu_state.fpu_op);
 
-        /*
-         * x87 FPU IP Offset (32/64 bits)
-         * The contents of this field differ depending on the current
-         * addressing mode (16/32/64 bit) when the FXSAVE instruction was executed:
-         *   + 64-bit mode - 64-bit IP offset
-         *   + 32-bit mode - 32-bit IP offset
-         *   + 16-bit mode - low 16 bits are IP offset; high 16 bits are reserved.
-         * x87 CS FPU IP Selector
-         *   + 16 bit, in 16/32 bit mode only
-         *
-         * x87 FPU Instruction Operand (Data) Pointer Offset (32/64 bits)
-         * The contents of this field differ depending on the current
-         * addressing mode (16/32 bit) when the FXSAVE instruction was executed:
-         *   + 64-bit mode - 64-bit offset
-         *   + 32-bit mode - 32-bit offset
-         *   + 16-bit mode - low 16 bits are offset; high 16 bits are reserved.
-         * x87 DS FPU Instruction Operand (Data) Pointer Selector
-         *   + 16 bit, in 16/32 bit mode only
-         */
-        switch ((cr0 & 1) | (cpu_state.op32 & 0x100)) {
-            case 0x000: {
-                /*16-bit real mode*/
-                writememl(easeg, cpu_state.eaaddr + 8, cpu_state.fpu_pc & 0xffff);
-                writememl(easeg, cpu_state.eaaddr + 16, cpu_state.fpu_ea & 0xffff);
-                break;
-            } case 0x001: /*16-bit protected mode*/
-                writememl(easeg, cpu_state.eaaddr + 8, cpu_state.fpu_pc & 0xffff);
-                writememl(easeg, cpu_state.eaaddr + 16, cpu_state.fpu_ea & 0xffff);
-                break;
-            case 0x100: {
-                /*32-bit real mode*/
-                writememl(easeg, cpu_state.eaaddr + 8, cpu_state.fpu_pc);
-                writememl(easeg, cpu_state.eaaddr + 16, cpu_state.fpu_ea);
-                break;
-            } case 0x101: /*32-bit protected mode*/
-                writememl(easeg, cpu_state.eaaddr + 8, cpu_state.fpu_pc);
-                writememl(easeg, cpu_state.eaaddr + 16, cpu_state.fpu_ea);
-                break;
-        }
+        /* The legacy FXSAVE image always contains 32-bit offsets, regardless
+           of operand/address size or protected/real mode (Intel SDM Vol. 2A). */
+        writememl(easeg, cpu_state.eaaddr + 8, cpu_state.fpu_pc);
+        writememl(easeg, cpu_state.eaaddr + 16, cpu_state.fpu_ea);
 
         writememl(easeg, cpu_state.eaaddr + 12, cpu_state.fpu_CS);
         writememl(easeg, cpu_state.eaaddr + 20, cpu_state.fpu_DS);

@@ -16,6 +16,14 @@ typedef struct {
     unsigned length, cr0_bits, no_osfxsr, trap_p3, trap_p4, setup;
 } opcode_case;
 static const opcode_case opcases[] = {
+    {"FXRSTOR pointer width a32 o32", {0xf,0xae,0x8},3,0,0,0,0,4},
+    {"FXSAVE pointer width a32 o32", {0xf,0xae,0x0},3,0,0,0,0,14},
+    {"FXRSTOR pointer width a32 o16", {0x66,0xf,0xae,0x8},4,0,0,0,0,4},
+    {"FXSAVE pointer width a32 o16", {0x66,0xf,0xae,0x0},4,0,0,0,0,14},
+    {"FXRSTOR pointer width a16 o32", {0x67,0xf,0xae,0xf},4,0,0,0,0,4},
+    {"FXSAVE pointer width a16 o32", {0x67,0xf,0xae,0x7},4,0,0,0,0,14},
+    {"FXRSTOR pointer width a16 o16", {0x67,0x66,0xf,0xae,0xf},5,0,0,0,0,4},
+    {"FXSAVE pointer width a16 o16", {0x67,0x66,0xf,0xae,0x7},5,0,0,0,0,14},
     {"FXSAVE edit FTW FXRSTOR", {0x0f,0x6f,0xc1,0x0f,0xae,0x00,0xc6,0x40,0x04,0x00,0x0f,0xae,0x08},13,0,0,0,0},
     {"FXRSTOR reserved tail", {0x0f,0xae,0x08},3,0,0,0,0,5},
     {"FXRSTOR mixed physical tags", {0x0f,0xae,0x08,0x0f,0xae,0x00},6,0,0,0,0,13},
@@ -167,10 +175,13 @@ int main(int argc,char **argv) {
                 EDI=probe->setup==11 ? 0x40ffc : 0x40000; EAX=0x1234; put32(0x40000,0x89abcdef); put32(0x40004,0x76543210);
                 flushmmucache();
             }
-            if (probe->setup==4 || probe->setup==5 || probe->setup==13) {
+            if (probe->setup==4 || probe->setup==5 || probe->setup==13 || probe->setup==14) {
                 EAX=EBX=0x4000;
                 memset(ram+0x4000,0,512);
                 put32(0x4000,0x037f); put32(0x4008,0x12345678); put32(0x4010,0x87654321); put32(0x4018,0x1f80);
+                if (probe->setup==14) {
+                    cpu_state.fpu_pc=0x12345678;cpu_state.fpu_ea=0x87654321;
+                }
                 if (probe->setup==13) {
                     ram[0x4003]=0x18; ram[0x4004]=0xa5;
                     for(unsigned n=0;n<8;n++){put32(0x4020+16*n+4,0x80000000);ram[0x4020+16*n+8]=0xff;ram[0x4020+16*n+9]=0x3f;}
@@ -243,6 +254,10 @@ int main(int argc,char **argv) {
                 for(unsigned n=400;n<512;n++) if(ram[0x4000+n]!=0x5a) fatal("FXSAVE wrote private state");
             }
             if (strstr(probe->name, "MMX payload") && MMP[0]->q!=UINT64_C(0x8080808080808080)) fatal("FXRSTOR lost MMX payload");
+            if (probe->setup==4) {
+                if ((fpu_softfloat ? fpu_state.fip : x87_pc_off)!=0x12345678 || (fpu_softfloat ? fpu_state.fdp : x87_op_off)!=0x87654321) fatal("FXRSTOR truncated pointers");
+            }
+            if (probe->setup==14 && (get32(0x4008)!=0x12345678 || get32(0x4010)!=0x87654321)) fatal("FXSAVE truncated pointers");
             ++checked;
         }
 
