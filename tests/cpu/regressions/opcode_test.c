@@ -16,6 +16,26 @@ typedef struct {
     unsigned length, cr0_bits, no_osfxsr, trap_p3, trap_p4, setup, only_p4;
 } opcode_case;
 static const opcode_case opcases[] = {
+    {"CMPXCHG w8 a16 lock0 cross0", {0x64,0x67,0xf,0xb0,0xe,0x0,0x0,0x9c,0x5e},9,0x80010000,0,14,14,20},
+    {"CMPXCHG w8 a16 lock1 cross0", {0xf0,0x64,0x67,0xf,0xb0,0xe,0x0,0x0,0x9c,0x5e},10,0x80010000,0,14,14,20},
+    {"CMPXCHG w8 a32 lock0 cross0", {0x64,0xf,0xb0,0xf,0x9c,0x5e},6,0x80010000,0,14,14,20},
+    {"CMPXCHG w8 a32 lock1 cross0", {0xf0,0x64,0xf,0xb0,0xf,0x9c,0x5e},7,0x80010000,0,14,14,20},
+    {"CMPXCHG w16 a16 lock0 cross0", {0x64,0x67,0x66,0xf,0xb1,0xe,0x0,0x0,0x9c,0x5e},10,0x80010000,0,14,14,20},
+    {"CMPXCHG w16 a16 lock1 cross0", {0xf0,0x64,0x67,0x66,0xf,0xb1,0xe,0x0,0x0,0x9c,0x5e},11,0x80010000,0,14,14,20},
+    {"CMPXCHG w16 a32 lock0 cross0", {0x64,0x66,0xf,0xb1,0xf,0x9c,0x5e},7,0x80010000,0,14,14,20},
+    {"CMPXCHG w16 a32 lock1 cross0", {0xf0,0x64,0x66,0xf,0xb1,0xf,0x9c,0x5e},8,0x80010000,0,14,14,20},
+    {"CMPXCHG w32 a16 lock0 cross0", {0x64,0x67,0xf,0xb1,0xe,0x0,0x0,0x9c,0x5e},9,0x80010000,0,14,14,20},
+    {"CMPXCHG w32 a16 lock1 cross0", {0xf0,0x64,0x67,0xf,0xb1,0xe,0x0,0x0,0x9c,0x5e},10,0x80010000,0,14,14,20},
+    {"CMPXCHG w32 a32 lock0 cross0", {0x64,0xf,0xb1,0xf,0x9c,0x5e},6,0x80010000,0,14,14,20},
+    {"CMPXCHG w32 a32 lock1 cross0", {0xf0,0x64,0xf,0xb1,0xf,0x9c,0x5e},7,0x80010000,0,14,14,20},
+    {"CMPXCHG w64 a16 lock0 cross0", {0x64,0x67,0xf,0xc7,0xe,0x0,0x0,0x9c,0x5e},9,0x80010000,0,14,14,20},
+    {"CMPXCHG w64 a16 lock0 cross1", {0x64,0x67,0xf,0xc7,0xe,0xfc,0xf,0x9c,0x5e},9,0x80010000,0,14,14,21},
+    {"CMPXCHG w64 a16 lock1 cross0", {0xf0,0x64,0x67,0xf,0xc7,0xe,0x0,0x0,0x9c,0x5e},10,0x80010000,0,14,14,20},
+    {"CMPXCHG w64 a16 lock1 cross1", {0xf0,0x64,0x67,0xf,0xc7,0xe,0xfc,0xf,0x9c,0x5e},10,0x80010000,0,14,14,21},
+    {"CMPXCHG w64 a32 lock0 cross0", {0x64,0xf,0xc7,0xf,0x9c,0x5e},6,0x80010000,0,14,14,20},
+    {"CMPXCHG w64 a32 lock0 cross1", {0x64,0xf,0xc7,0xf,0x9c,0x5e},6,0x80010000,0,14,14,21},
+    {"CMPXCHG w64 a32 lock1 cross0", {0xf0,0x64,0xf,0xc7,0xf,0x9c,0x5e},7,0x80010000,0,14,14,20},
+    {"CMPXCHG w64 a32 lock1 cross1", {0xf0,0x64,0xf,0xc7,0xf,0x9c,0x5e},7,0x80010000,0,14,14,21},
     {"CMOV 0 a16 w16", {0x64,0x67,0x66,0xf,0x40,0x7},6,0x80010000,0,14,14,19},
     {"CMOV 0 a16 w32", {0x64,0x67,0xf,0x40,0x7},5,0x80010000,0,14,14,19},
     {"CMOV 0 a32 w16", {0x64,0x66,0xf,0x40,0x7},5,0x80010000,0,14,14,19},
@@ -235,7 +255,7 @@ static void initialize(void) {
     b(0xc3);
     exception_tables();
     if (probe->setup==1) cpu_state.seg_fs.limit=cpu_state.seg_fs.limit_high=0xfff;
-    if (probe->setup==2 || probe->setup==3 || probe->setup==11 || probe->setup==12 || probe->setup==19) {
+    if (probe->setup==2 || probe->setup==3 || probe->setup==11 || probe->setup==12 || probe->setup==19 || probe->setup==20 || probe->setup==21) {
         memset(ram+0x30000,0,0x5000);
         for (unsigned n=0;n<4;n++) {
             put32(0x30000+4*n,(0x31000+0x1000*n)|3);
@@ -279,7 +299,7 @@ int main(int argc,char **argv) {
                 memset(ram + DATA + 0x1800, 0x5a, 16);
             }
             put32(DATA,0x3f80); put32(TRAP,0); put32(FAULT_PC,0);
-            if (probe->setup==2 || probe->setup==3 || probe->setup==11 || probe->setup==12 || probe->setup==19) {
+            if (probe->setup==2 || probe->setup==3 || probe->setup==11 || probe->setup==12 || probe->setup==19 || probe->setup==20 || probe->setup==21) {
                 cpu_state.seg_fs.base=0x40000; EBX=0;
                 EDI=probe->setup==11 ? 0x40ffc : 0x40000; EAX=0x1234; put32(0x40000,0x89abcdef); put32(0x40004,0x76543210);
                 flushmmucache();
@@ -321,13 +341,23 @@ int main(int argc,char **argv) {
                 EDI=EBX=0;EAX=0x12345678;cpu_state.flags_op=0;
                 cpu_state.flags=2 | (call&1) | ((call&2)<<1) | ((call&4)<<4) | ((call&8)<<4) | ((call&16)<<7);
             }
+            uint32_t cmp_address = probe->setup==21 ? 0x40ffc : 0x40000;
+            if (probe->setup==20 || probe->setup==21) {
+                if (probe->setup==21) put32(0x31000+4*0x40,0x40003);
+                put32(0x31000+4*(probe->setup==21 ? 0x41 : 0x40), (probe->setup==21 ? 0x41000 : 0x40000) | (((call/8)&1) ? 1 : 3));
+                flushmmucache();
+                EDI=probe->setup==21 ? 0xffc : 0;
+                EAX=(call&1) ? 0x89abcdef : 0x12345678;EDX=(call&1) ? 0x76543210 : 0;EBX=0x87654321;ESI=0;
+                put32(cmp_address,0x89abcdef);put32(cmp_address+4,0x76543210);
+                cpu_state.flags=2;cpu_state.flags_op=0;
+            }
             cpu_state.pc=DRIVER; done=0; cycles=cycles_main=0;
             for(unsigned n=0;!done;n++) {
                 if(n>10000)fatal("Audit did not stop");
                 if(engine) exec386_dynarec(10000); else exec386(10000);
             }
             unsigned expected = p3 ? probe->trap_p3 : probe->trap_p4;
-            if ((probe->setup == 12 || probe->setup == 19 || probe->setup == 9 || probe->setup == 27) && !((call / 8) & 1)) expected = 0;
+            if ((probe->setup == 12 || probe->setup == 19 || probe->setup == 20 || probe->setup == 21 || probe->setup == 9 || probe->setup == 27) && !((call / 8) & 1)) expected = 0;
             if (get32(TRAP) != expected) {
                 fprintf(stderr, "%s call %u: trap %u, expected %u\n", probe->name, call, get32(TRAP), expected);
                 return 1;
@@ -398,6 +428,20 @@ int main(int argc,char **argv) {
                 unsigned selected=conditions[condition>>1] ^ (condition&1);
                 uint32_t value = !expected && selected ? (strstr(probe->name,"w16") ? 0x1234cdef : 0x89abcdef) : 0x12345678;
                 if(EAX!=value || (expected && get32(FAULT_PC)!=BODY)) fatal("CMOV result or fault EIP: %s",probe->name);
+            }
+            if (probe->setup==20 || probe->setup==21) {
+                unsigned width = strstr(probe->name,"w64") ? 64 : strstr(probe->name,"w32") ? 32 : strstr(probe->name,"w16") ? 16 : 8;
+                uint32_t original_eax=(call&1) ? 0x89abcdef : 0x12345678;
+                if(expected) {
+                    if(EAX!=original_eax || EDX!=((call&1)?0x76543210:0) || get32(FAULT_PC)!=BODY || (cpu_state.flags&0x8d5)) fatal("CMPXCHG fault changed registers/flags");
+                    if(get32(cmp_address)!=0x89abcdef || get32(cmp_address+4)!=0x76543210) fatal("CMPXCHG fault changed memory");
+                } else {
+                    uint32_t mask=width>=32 ? UINT32_MAX : (1u<<width)-1;
+                    uint32_t value=width==64 ? 0x87654321 : ((0x89abcdef & ~mask) | (0x12345678 & mask));
+                    if(get32(cmp_address)!=((call&1)?value:0x89abcdef) || !!(ESI&0x40)!=!!(call&1)) fatal("CMPXCHG write/flags result");
+                    uint32_t eax_expected=(call&1) ? original_eax : ((original_eax&~mask)|(0x89abcdef&mask));
+                    if(EAX!=eax_expected) fatal("CMPXCHG accumulator result");
+                }
             }
             ++checked;
         }

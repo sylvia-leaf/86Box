@@ -14,8 +14,15 @@ opCMPXCHG_b_a16(uint32_t fetchdat)
         return 1;
     if (AL == temp)
         seteab(getr8(cpu_reg));
-    else
+    else {
+        /* CMPXCHG performs a write cycle even when the comparison fails. */
+        if (cpu_mod != 3) {
+            seteab(temp);
+            if (cpu_state.abrt)
+                return 1;
+        }
         AL = temp;
+    }
     if (cpu_state.abrt)
         return 1;
     setsub8(temp2, temp);
@@ -38,8 +45,15 @@ opCMPXCHG_b_a32(uint32_t fetchdat)
         return 1;
     if (AL == temp)
         seteab(getr8(cpu_reg));
-    else
+    else {
+        /* CMPXCHG performs a write cycle even when the comparison fails. */
+        if (cpu_mod != 3) {
+            seteab(temp);
+            if (cpu_state.abrt)
+                return 1;
+        }
         AL = temp;
+    }
     if (cpu_state.abrt)
         return 1;
     setsub8(temp2, temp);
@@ -63,8 +77,15 @@ opCMPXCHG_w_a16(uint32_t fetchdat)
         return 1;
     if (AX == temp)
         seteaw(cpu_state.regs[cpu_reg].w);
-    else
+    else {
+        /* CMPXCHG performs a write cycle even when the comparison fails. */
+        if (cpu_mod != 3) {
+            seteaw(temp);
+            if (cpu_state.abrt)
+                return 1;
+        }
         AX = temp;
+    }
     if (cpu_state.abrt)
         return 1;
     setsub16(temp2, temp);
@@ -87,8 +108,15 @@ opCMPXCHG_w_a32(uint32_t fetchdat)
         return 1;
     if (AX == temp)
         seteaw(cpu_state.regs[cpu_reg].w);
-    else
+    else {
+        /* CMPXCHG performs a write cycle even when the comparison fails. */
+        if (cpu_mod != 3) {
+            seteaw(temp);
+            if (cpu_state.abrt)
+                return 1;
+        }
         AX = temp;
+    }
     if (cpu_state.abrt)
         return 1;
     setsub16(temp2, temp);
@@ -112,8 +140,15 @@ opCMPXCHG_l_a16(uint32_t fetchdat)
         return 1;
     if (EAX == temp)
         seteal(cpu_state.regs[cpu_reg].l);
-    else
+    else {
+        /* CMPXCHG performs a write cycle even when the comparison fails. */
+        if (cpu_mod != 3) {
+            seteal(temp);
+            if (cpu_state.abrt)
+                return 1;
+        }
         EAX = temp;
+    }
     if (cpu_state.abrt)
         return 1;
     setsub32(temp2, temp);
@@ -136,8 +171,15 @@ opCMPXCHG_l_a32(uint32_t fetchdat)
         return 1;
     if (EAX == temp)
         seteal(cpu_state.regs[cpu_reg].l);
-    else
+    else {
+        /* CMPXCHG performs a write cycle even when the comparison fails. */
+        if (cpu_mod != 3) {
+            seteal(temp);
+            if (cpu_state.abrt)
+                return 1;
+        }
         EAX = temp;
+    }
     if (cpu_state.abrt)
         return 1;
     setsub32(temp2, temp);
@@ -173,15 +215,16 @@ opCMPXCHG8B_a16(uint32_t fetchdat)
     temp_hi = readmeml(easeg, cpu_state.eaaddr + 4);
     if (cpu_state.abrt)
         return 1;
-    if (EAX == temp && EDX == temp_hi) {
-        seteal(EBX);
-        writememl(easeg, cpu_state.eaaddr + 4, ECX);
-    } else {
+    int equal = EAX == temp && EDX == temp_hi;
+    /* The quadword helper checks both pages before changing either half. */
+    uint64_t value = equal ? ((uint64_t) ECX << 32) | EBX : ((uint64_t) temp_hi << 32) | temp;
+    writememq(easeg, cpu_state.eaaddr, value);
+    if (cpu_state.abrt)
+        return 1;
+    if (!equal) {
         EAX = temp;
         EDX = temp_hi;
     }
-    if (cpu_state.abrt)
-        return 1;
     flags_rebuild();
     if (temp == temp2 && temp_hi == temp2_hi)
         cpu_state.flags |= Z_FLAG;
@@ -214,15 +257,16 @@ opCMPXCHG8B_a32(uint32_t fetchdat)
     temp_hi = readmeml(easeg, cpu_state.eaaddr + 4);
     if (cpu_state.abrt)
         return 1;
-    if (EAX == temp && EDX == temp_hi) {
-        seteal(EBX);
-        writememl(easeg, cpu_state.eaaddr + 4, ECX);
-    } else {
+    int equal = EAX == temp && EDX == temp_hi;
+    /* The quadword helper checks both pages before changing either half. */
+    uint64_t value = equal ? ((uint64_t) ECX << 32) | EBX : ((uint64_t) temp_hi << 32) | temp;
+    writememq(easeg, cpu_state.eaaddr, value);
+    if (cpu_state.abrt)
+        return 1;
+    if (!equal) {
         EAX = temp;
         EDX = temp_hi;
     }
-    if (cpu_state.abrt)
-        return 1;
     flags_rebuild();
     if (temp == temp2 && temp_hi == temp2_hi)
         cpu_state.flags |= Z_FLAG;
