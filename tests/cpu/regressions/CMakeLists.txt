@@ -26,3 +26,8 @@ target_compile_definitions(address_dependencies_test PRIVATE USE_DYNAREC USE_NEW
 target_include_directories(address_dependencies_test PRIVATE
     "${CPU_SOURCE_ROOT}/src/cpu" "${CPU_SOURCE_ROOT}/src/codegen_new" "${CPU_SOURCE_ROOT}/src/include")
 add_test(NAME address_dependencies COMMAND address_dependencies_test)
+add_executable(p6_dependencies_test p6_dependencies_test.c "${CPU_SOURCE_ROOT}/src/cpu/codegen_timing_common.c")
+target_compile_definitions(p6_dependencies_test PRIVATE USE_DYNAREC USE_NEW_DYNAREC)
+target_include_directories(p6_dependencies_test PRIVATE
+    "${CPU_SOURCE_ROOT}/src/cpu" "${CPU_SOURCE_ROOT}/src/include" "${CPU_SOURCE_ROOT}/src/codegen_new")
+add_test(NAME p6_dependencies COMMAND p6_dependencies_test)

@@ -1584,6 +1584,7 @@ static struct {
       part of a dependency chain and the start time is the completion time of
       the previous uop*/
     int earliest_start[6];
+    uint8_t dst_mask[6];
 } decode_buffer;
 
 #define NR_OPSEQS 3
@@ -1624,6 +1625,9 @@ decode_flush_p6(void)
             start_timestamp = decode_buffer.earliest_start[c];
 
         last_uop_timestamp = uop_run(decode_buffer.uops[c], start_timestamp);
+        for (int reg = 0; reg < 8; ++reg)
+            if (decode_buffer.dst_mask[c] & (1 << reg))
+                reg_available_timestamp[reg] = last_uop_timestamp;
         if (last_uop_timestamp > uop_timestamp)
             uop_timestamp = last_uop_timestamp;
     }
@@ -1643,6 +1647,7 @@ decode_flush_p6(void)
 
     decode_timestamp++;
     decode_buffer.nr_uops = 0;
+    memset(decode_buffer.dst_mask, 0, sizeof(decode_buffer.dst_mask));
 }
 
 /*The instruction is only of interest here if it's longer than 7 bytes, as that's the
@@ -1696,29 +1701,38 @@ decode_instruction(const macro_op_t *ins, uint64_t deps, uint32_t fetchdat, int 
     uint32_t      regmask_modified;
     int           c;
     int           d              = 0; /*Complex decoder uOPs*/
-    int           earliest_start = 0;
+    int           earliest_start;
     decode_type_t decode_type    = ins->decode_type;
     int           instr_length   = codegen_timing_instr_length(deps, fetchdat, op_32);
 
     /*Generate input register mask, and determine the earliest time this
       instruction can start. This is not accurate, as this is calculated per
       x86 instruction when it should be handled per uop*/
-    regmask_required = get_dstdep_mask(deps, fetchdat, bit8);
-    regmask_required |= get_addr_regmask(deps, fetchdat, op_32);
+    regmask_required = get_srcdep_mask(deps, fetchdat, bit8, op_32);
+    regmask_modified = get_dstdep_mask(deps, fetchdat, bit8);
+    /* A queued producer has no completion timestamp yet. Submit it before
+     * reading its result, or replacing the same architectural destination. */
+    for (c = 0; c < 8; ++c) {
+        if (((regmask_required | regmask_modified) & (1 << c)) && reg_available_timestamp[c] < 0) {
+            decode_flush_p6();
+            break;
+        }
+    }
+    earliest_start = decode_timestamp;
     for (c = 0; c < 8; c++) {
         if (regmask_required & (1 << c)) {
-            if (reg_available_timestamp[c] > decode_timestamp)
+            if (reg_available_timestamp[c] > earliest_start)
                 earliest_start = reg_available_timestamp[c];
         }
     }
-    if ((deps & FPU_RW_ST0) && fpu_st_timestamp[0] > decode_timestamp)
+    if ((deps & FPU_READ_ST0) && fpu_st_timestamp[0] > earliest_start)
         earliest_start = fpu_st_timestamp[0];
-    if ((deps & FPU_RW_ST1) && fpu_st_timestamp[1] > decode_timestamp)
+    if ((deps & FPU_READ_ST1) && fpu_st_timestamp[1] > earliest_start)
         earliest_start = fpu_st_timestamp[1];
-    if (deps & FPU_RW_STREG) {
+    if (deps & FPU_READ_STREG) {
         int reg = fetchdat & 7;
 
-        if (fpu_st_timestamp[reg] > decode_timestamp)
+        if (fpu_st_timestamp[reg] > earliest_start)
             earliest_start = fpu_st_timestamp[reg];
     }
 
@@ -1777,10 +1791,11 @@ decode_instruction(const macro_op_t *ins, uint64_t deps, uint32_t fetchdat, int 
     }
 
     /*Update write timestamps for any output registers*/
-    regmask_modified = get_dstdep_mask(deps, fetchdat, bit8);
+    if (decode_buffer.nr_uops)
+        decode_buffer.dst_mask[decode_buffer.nr_uops - 1] = regmask_modified & 0xff;
     for (c = 0; c < 8; c++) {
         if (regmask_modified & (1 << c))
-            reg_available_timestamp[c] = last_complete_timestamp;
+            reg_available_timestamp[c] = decode_buffer.nr_uops ? -1 : last_uop_timestamp;
     }
     if (deps & FPU_POP) {
         for (c = 0; c < 7; c++)
@@ -1834,6 +1849,7 @@ codegen_timing_p6_block_start(void)
        pending uops and dependency-chain timestamp so they cannot carry
        into this block and inflate its unit timestamps without bound. */
     decode_buffer.nr_uops = 0;
+    memset(decode_buffer.dst_mask, 0, sizeof(decode_buffer.dst_mask));
     last_uop_timestamp    = 0;
 }
 
