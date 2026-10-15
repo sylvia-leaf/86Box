@@ -2,15 +2,15 @@ msgid ""
 msgstr ""
 "Project-Id-Version: \n"
 "POT-Creation-Date: \n"
-"PO-Revision-Date: 2026-08-15 19:20+0200\n"
+"PO-Revision-Date: 2026-09-30 05:47+0000\n"
 "Last-Translator: Alexander Babikov <lemondrops358@gmail.com>\n"
 "Language-Team: Italian <https://weblate.86box.net/projects/86box/86box/it/>\n"
-"Language: it_IT\n"
+"Language: it-IT\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=n != 1;\n"
-"X-Generator: Poedit 3.5\n"
+"X-Generator: Weblate 5.12.2\n"
 "X-Language: it_IT\n"
 "X-Source-Language: en_US\n"
 
@@ -82,6 +82,9 @@ msgstr "Specifica dim&ensioni…"
 
 msgid "Force &4:3 display ratio"
 msgstr "Forza rapporto d'aspetto &4:3"
+
+msgid "Force &%1:%2 display ratio"
+msgstr "Forza rapporto d'aspetto &%1:%2"
 
 msgid "&Window scale factor"
 msgstr "Fa&ttore di scala della finestra"
@@ -429,7 +432,7 @@ msgid "Dynamic recompiler"
 msgstr "Ricompilatore dinamico"
 
 msgid "Accurate FPU environment on the dynamic recompiler"
-msgstr ""
+msgstr "Ambiente FPU accurato con il ricompilatore dinamico"
 
 msgid "CPU frame size"
 msgstr "Dimensione blocchi CPU"
@@ -949,6 +952,9 @@ msgstr "Premi %1 per rilasciare il mouse"
 
 msgid "Press %1 or middle button to release mouse"
 msgstr "Premi %1 o pulsante centrale per rilasciare il mouse"
+
+msgid "Press %1 or side button to release mouse"
+msgstr ""
 
 msgid "Bus"
 msgstr "Bus"
@@ -1540,16 +1546,16 @@ msgid "ACP&I shutdown"
 msgstr "Arresto ACP&I"
 
 msgid "Power off"
-msgstr ""
+msgstr "Arresta"
 
 msgid "Power &off…"
-msgstr ""
+msgstr "&Arresta…"
 
 msgid "Power &off"
-msgstr ""
+msgstr "&Arresta"
 
 msgid "Powering off the emulated machine may cause data loss. Are you sure you want to continue?"
-msgstr ""
+msgstr "L'arresto della macchina emulata potrebbe causare la perdita di dati. Sei sicuro di voler continuare?"
 
 msgid "Hard disk (%1)"
 msgstr "Disco rigido (%1)"
@@ -3009,8 +3015,14 @@ msgstr "[Generico] 1989 (3500 RPM)"
 msgid "[Generic] 1992 (3600 RPM)"
 msgstr "[Generico] 1992 (3600 RPM)"
 
+msgid "[Generic] 1993 (4000 RPM)"
+msgstr "[Generico] 1993 (4000 RPM)"
+
 msgid "[Generic] 1994 (4500 RPM)"
 msgstr "[Generico] 1994 (4500 RPM)"
+
+msgid "[Generic] 1995 (5200 RPM)"
+msgstr "[Generico] 1995 (5200 RPM)"
 
 msgid "[Generic] 1996 (5400 RPM)"
 msgstr "[Generico] 1996 (5400 RPM)"
@@ -3023,6 +3035,9 @@ msgstr "[Generico] 1998 (5400 RPM)"
 
 msgid "[Generic] 2000 (7200 RPM)"
 msgstr "[Generico] 2000 (7200 RPM)"
+
+msgid "[Generic] 2004 (10000 RPM)"
+msgstr "[Generico] 2004 (10000 RPM)"
 
 msgid "IBM 8514/A clone"
 msgstr "Clone IBM 8514/A"
@@ -3074,6 +3089,15 @@ msgstr "Modello"
 
 msgid "Model:"
 msgstr "Modello:"
+
+msgid "Brand:"
+msgstr "Marchio:"
+
+msgid "Revision:"
+msgstr "Revisione:"
+
+msgid "[Generic HDD] Device Configuration"
+msgstr "[HDD generico] Configurazione del dispositivo"
 
 msgid "Failed to initialize Vulkan renderer."
 msgstr "Impossibile inizializzare il renderizzatore Vulkan."
@@ -3603,8 +3627,80 @@ msgstr "938 (cinese tradizionale)"
 msgid "Sample rate:"
 msgstr "Frequenza di campionamento:"
 
+msgid "Enable audio input (mic/line-in)"
+msgstr ""
+
+msgid "Audio input device:"
+msgstr ""
+
+msgid "Audio input sample rate:"
+msgstr ""
+
+msgid "Rate the emulator mixes to the host output device."
+msgstr ""
+
+msgid "Rate the host input capture device is opened at.\n\n44100 divides evenly by SB16/AWE32 rates of 44.1/22/11 kHz."
+msgstr ""
+
 msgid "CGA lightpen"
 msgstr "Penna ottica CGA"
 
 msgid "Luminance threshold (%)"
 msgstr "Soglia di luminanza (%)"
+
+msgid "VFIO: Could not open /dev/vfio/vfio: %s. Make sure the vfio-pci module is loaded."
+msgstr ""
+
+msgid "VFIO %s: Invalid device location."
+msgstr ""
+
+msgid "VFIO %s: Device not found."
+msgstr ""
+
+msgid "VFIO %s: Device has no IOMMU group. Make sure VT-d or IOMMU is enabled on your system."
+msgstr ""
+
+msgid "VFIO %s: Device is not bound to vfio-pci."
+msgstr ""
+
+msgid "VFIO %s: Could not open IOMMU group %d: %s"
+msgstr ""
+
+msgid "VFIO %s: IOMMU group %d is not viable. All devices in the group must be bound to vfio-pci."
+msgstr ""
+
+msgid "VFIO: Could not map guest memory for DMA: %s. The locked memory limit (ulimit -l) may be too low."
+msgstr ""
+
+msgid "VFIO %s: Could not read ROM file \"%s\"; using the device's own ROM."
+msgstr ""
+
+msgid "VFIO %s: Could not read ROM file \"%s\"; the ROM is disabled."
+msgstr ""
+
+msgid "VFIO %s: The ROM looks invalid. A custom ROM can be loaded through the VFIO settings."
+msgstr ""
+
+msgid "VFIO: These devices must be bound to vfio-pci, which requires administrator rights:\n\n%s\nBind them now?"
+msgstr ""
+
+msgid "VFIO: Administrator rights are required to give 86Box access to the passed-through devices. Continue?"
+msgstr ""
+
+msgid "These devices were not selected, but share an IOMMU group with a selected device, so they will be bound as well:"
+msgstr ""
+
+msgid "VFIO %s: IOMMU group %d also contains %s, which the host needs. The group will not be bound to vfio-pci."
+msgstr ""
+
+msgid "VFIO: Could not prepare the devices for passthrough:\n%s"
+msgstr ""
+
+msgid "VFIO: Administrator rights could not be requested. To prepare the devices for passthrough, run this command, then hard reset:\n\n%s"
+msgstr ""
+
+msgid "Prepare PCI devices for VFIO passthrough"
+msgstr ""
+
+msgid "Authentication is required to prepare PCI devices for passthrough to 86Box."
+msgstr ""

@@ -155,12 +155,7 @@ opPSxxQ_xmm_imm(uint32_t fetchdat)
                 }
             }
             break;
-        case 0x20: /*PSRAQ*/
-            if (shift > 63)
-                shift = 63;
-            cpu_state.XMM[reg].sq[0] >>= shift;
-            cpu_state.XMM[reg].sq[1] >>= shift;
-            break;
+        /*There is no PSRAQ: 66 0F 73 /4 is undefined*/
         case 0x30: /*PSLLQ*/
             if (shift > 63) {
                 cpu_state.XMM[reg].q[0] = 0;
@@ -210,6 +205,7 @@ opPSxxQ_xmm_imm(uint32_t fetchdat)
         CLOCK_CYCLES(1);                           \
     } else {                                       \
         SEG_CHECK_READ(cpu_state.ea_seg);          \
+        CHECK_READ(cpu_state.ea_seg, cpu_state.eaaddr, cpu_state.eaaddr + 15UL); \
         if (cpu_state.eaaddr & 0xf) {              \
             x86gpf(NULL, 0);                       \
             if (cpu_state.abrt)                    \
@@ -217,7 +213,7 @@ opPSxxQ_xmm_imm(uint32_t fetchdat)
         }                                          \
         shift = readmemq(easeg, cpu_state.eaaddr); \
         if (cpu_state.abrt)                        \
-            return 0;                              \
+            return 1;                              \
         CLOCK_CYCLES(2);                           \
     }
 

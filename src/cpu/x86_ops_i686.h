@@ -83,6 +83,19 @@ sf_fx_save_stor_common(uint32_t fetchdat, int bits)
             x86illegal();
             return cpu_state.abrt;
         }
+        SEG_CHECK_READ(cpu_state.ea_seg);
+        CHECK_READ(cpu_state.ea_seg, cpu_state.eaaddr, cpu_state.eaaddr + 511UL);
+        uint32_t restored_mxcsr = cpu_state.mxcsr;
+        if ((cpu_features & CPU_FEATURE_SSE) && (cr4 & CR4_OSFXSR)) {
+            uint32_t mxcsr_mask = (cpu_features & CPU_FEATURE_SSE2) ? 0xffff : 0xffbf;
+            restored_mxcsr = readmeml(easeg, old_eaaddr + 24);
+            if (cpu_state.abrt)
+                return cpu_state.abrt;
+            if (restored_mxcsr & ~mxcsr_mask) {
+                x86gpf(NULL, 0);
+                return cpu_state.abrt;
+            }
+        }
         fpu_state.cwd = readmemw(easeg, cpu_state.eaaddr);
         fpu_state.swd = readmemw(easeg, cpu_state.eaaddr + 2);
         fpu_state.tos = (fpu_state.swd >> 11) & 7;
@@ -129,10 +142,7 @@ sf_fx_save_stor_common(uint32_t fetchdat, int bits)
         }
 
         if ((cpu_features & CPU_FEATURE_SSE) && (cr4 & CR4_OSFXSR)) {
-            if (!(cpu_features & CPU_FEATURE_SSE2))
-                cpu_state.mxcsr = readmeml(easeg, old_eaaddr + 24) & 0xffbf;
-            else
-                cpu_state.mxcsr = readmeml(easeg, old_eaaddr + 24) & 0xffff;
+            cpu_state.mxcsr = restored_mxcsr;
 
             for(int i = 0; i < 8; i++)
             {
@@ -150,6 +160,8 @@ sf_fx_save_stor_common(uint32_t fetchdat, int bits)
             x86gpf(NULL, 0);
             return cpu_state.abrt;
         }
+        SEG_CHECK_WRITE(cpu_state.ea_seg);
+        CHECK_WRITE(cpu_state.ea_seg, cpu_state.eaaddr, cpu_state.eaaddr + 511UL);
         writememw(easeg, cpu_state.eaaddr, i387_get_control_word());
         writememw(easeg, cpu_state.eaaddr + 2, i387_get_status_word());
         writememw(easeg, cpu_state.eaaddr + 4, pack_FPU_TW(fpu_state.tag));
@@ -238,6 +250,7 @@ sf_fx_save_stor_common(uint32_t fetchdat, int bits)
             mxcsr_mask = 0xffbf;
 
         SEG_CHECK_READ(cpu_state.ea_seg);
+        CHECK_READ(cpu_state.ea_seg, cpu_state.eaaddr, cpu_state.eaaddr + 3UL);
         src = readmeml(easeg, cpu_state.eaaddr);
         if (cpu_state.abrt)
             return 1;
@@ -253,6 +266,7 @@ sf_fx_save_stor_common(uint32_t fetchdat, int bits)
             return cpu_state.abrt;
         }
         SEG_CHECK_WRITE(cpu_state.ea_seg);
+        CHECK_WRITE(cpu_state.ea_seg, cpu_state.eaaddr, cpu_state.eaaddr + 3UL);
         writememl(easeg, cpu_state.eaaddr, cpu_state.mxcsr);
         if (cpu_state.abrt)
             return 1;
@@ -263,6 +277,7 @@ sf_fx_save_stor_common(uint32_t fetchdat, int bits)
         {
             //Emulate CLFLUSH as a single byte read.
             SEG_CHECK_READ(cpu_state.ea_seg);
+            CHECK_READ(cpu_state.ea_seg, cpu_state.eaaddr, cpu_state.eaaddr);
             (void)readmemb(easeg, cpu_state.eaaddr);
         }
     }
@@ -382,9 +397,24 @@ fx_save_stor_common(uint32_t fetchdat, int bits)
             x86illegal();
             return cpu_state.abrt;
         }
+        SEG_CHECK_READ(cpu_state.ea_seg);
+        CHECK_READ(cpu_state.ea_seg, cpu_state.eaaddr, cpu_state.eaaddr + 511UL);
+        uint32_t restored_mxcsr = cpu_state.mxcsr;
+        if ((cpu_features & CPU_FEATURE_SSE) && (cr4 & CR4_OSFXSR)) {
+            uint32_t mxcsr_mask = (cpu_features & CPU_FEATURE_SSE2) ? 0xffff : 0xffbf;
+            restored_mxcsr = readmeml(easeg, old_eaaddr + 24);
+            if (cpu_state.abrt)
+                return cpu_state.abrt;
+            if (restored_mxcsr & ~mxcsr_mask) {
+                x86gpf(NULL, 0);
+                return cpu_state.abrt;
+            }
+        }
         fpus = readmemw(easeg, cpu_state.eaaddr + 2);
         x87_set_control_word((readmemw(easeg, cpu_state.eaaddr) & ~FPU_CW_Reserved_Bits) | 0x0040);
         cpu_state.TOP = (fpus >> 11) & 7;
+        /* TOP loaded from memory: end the block, see FSTOR in x87_ops_misc.h. */
+        CPU_BLOCK_END();
         /* Restore the full status word, like FRSTOR does (the previous AND-in
            dropped status bits the guest had set). */
         cpu_state.npxs = fpus;
@@ -405,10 +435,7 @@ fx_save_stor_common(uint32_t fetchdat, int bits)
         x87_op_seg = readmemw(easeg, cpu_state.eaaddr + 20);
 
         if ((cpu_features & CPU_FEATURE_SSE) && (cr4 & CR4_OSFXSR)) {
-            if (!(cpu_features & CPU_FEATURE_SSE2))
-                cpu_state.mxcsr = readmeml(easeg, old_eaaddr + 24) & 0xffbf;
-            else
-                cpu_state.mxcsr = readmeml(easeg, old_eaaddr + 24) & 0xffff;
+            cpu_state.mxcsr = restored_mxcsr;
 
             for(int i = 0; i < 8; i++)
             {
@@ -452,11 +479,11 @@ fx_save_stor_common(uint32_t fetchdat, int bits)
            into a hardware-defined image), but it dramatically cuts the residual
            MMX-mode misclassification until the proper register-model refactor is
            implemented. */
-        if (readmeml(easeg, old_eaaddr + 464) == 0x54474553UL) {
+        if (readmeml(easeg, old_eaaddr + 400) == 0x54474553UL) {
             have_exact = 1;
             for (i = 0; i <= 7; i++)
-                exact_tag[i] = readmemb(easeg, old_eaaddr + 468 + i);
-            exact_ismmx = readmemb(easeg, old_eaaddr + 476);
+                exact_tag[i] = readmemb(easeg, old_eaaddr + 404 + i);
+            exact_ismmx = readmemb(easeg, old_eaaddr + 412);
         }
 
         cpu_state.ismmx = 0;
@@ -502,6 +529,8 @@ fx_save_stor_common(uint32_t fetchdat, int bits)
             x86illegal();
             return cpu_state.abrt;
         }
+        SEG_CHECK_WRITE(cpu_state.ea_seg);
+        CHECK_WRITE(cpu_state.ea_seg, cpu_state.eaaddr, cpu_state.eaaddr + 511UL);
         if ((twd & 0x0003) != 0x0003)
             ftwb |= 0x01;
         if ((twd & 0x000c) != 0x000c)
@@ -601,10 +630,10 @@ fx_save_stor_common(uint32_t fetchdat, int bits)
         }
 
         /* Reserved-area hijack: stash exact ismmx/tag in the PII-unused reserved tail. */
-        writememl(easeg, old_eaaddr + 464, 0x54474553UL);
+        writememl(easeg, old_eaaddr + 400, 0x54474553UL);
         for (i = 0; i <= 7; i++)
-            writememb(easeg, old_eaaddr + 468 + i, cpu_state.tag[i]);
-        writememb(easeg, old_eaaddr + 476, cpu_state.ismmx);
+            writememb(easeg, old_eaaddr + 404 + i, cpu_state.tag[i]);
+        writememb(easeg, old_eaaddr + 412, cpu_state.ismmx);
 
         cpu_state.eaaddr = old_eaaddr;
 
@@ -622,6 +651,7 @@ fx_save_stor_common(uint32_t fetchdat, int bits)
             mxcsr_mask = 0xffbf;
 
         SEG_CHECK_READ(cpu_state.ea_seg);
+        CHECK_READ(cpu_state.ea_seg, cpu_state.eaaddr, cpu_state.eaaddr + 3UL);
         src = readmeml(easeg, cpu_state.eaaddr);
         if (cpu_state.abrt)
             return 1;
@@ -638,6 +668,7 @@ fx_save_stor_common(uint32_t fetchdat, int bits)
             return cpu_state.abrt;
         }
         SEG_CHECK_WRITE(cpu_state.ea_seg);
+        CHECK_WRITE(cpu_state.ea_seg, cpu_state.eaaddr, cpu_state.eaaddr + 3UL);
         writememl(easeg, cpu_state.eaaddr, cpu_state.mxcsr);
         if (cpu_state.abrt)
             return 1;
@@ -653,6 +684,7 @@ fx_save_stor_common(uint32_t fetchdat, int bits)
         {
             //Emulate CLFLUSH as a single byte read.
             SEG_CHECK_READ(cpu_state.ea_seg);
+            CHECK_READ(cpu_state.ea_seg, cpu_state.eaaddr, cpu_state.eaaddr);
             (void)readmemb(easeg, cpu_state.eaaddr);
         }
     }

@@ -36,6 +36,7 @@ ropMOVD_r_d(codeblock_t *block, ir_data_t *ir, UNUSED(uint8_t opcode), uint32_t 
         uop_MOV_IMM(ir, IREG_oldpc, cpu_state.oldpc);
         target_seg = codegen_generate_ea(ir, op_ea_seg, fetchdat, op_ssegs, &op_pc, op_32, 0);
         codegen_check_seg_read(block, ir, target_seg);
+        CHECK_SEG_LIMITS(block, ir, target_seg, IREG_eaaddr, 3);
         uop_MEM_LOAD_REG(ir, IREG_temp0, ireg_seg_base(target_seg), IREG_eaaddr);
         uop_MOVZX(ir, IREG_MM(dest_reg), IREG_temp0);
     }
@@ -64,8 +65,7 @@ ropMOVD_d_r(codeblock_t *block, ir_data_t *ir, UNUSED(uint8_t opcode), uint32_t 
 
         uop_MOV_IMM(ir, IREG_oldpc, cpu_state.oldpc);
         target_seg = codegen_generate_ea(ir, op_ea_seg, fetchdat, op_ssegs, &op_pc, op_32, 0);
-        codegen_check_seg_write(block, ir, target_seg);
-        CHECK_SEG_LIMITS(block, ir, target_seg, IREG_eaaddr, 3);
+        codegen_check_seg_write(block, ir, target_seg, IREG_eaaddr, 4);
         uop_MOVZX(ir, IREG_temp0, IREG_MM(src_reg));
         uop_MEM_STORE_REG(ir, ireg_seg_base(target_seg), IREG_eaaddr, IREG_temp0);
     }
@@ -93,6 +93,7 @@ ropMOVQ_r_q(codeblock_t *block, ir_data_t *ir, UNUSED(uint8_t opcode), uint32_t 
         uop_MOV_IMM(ir, IREG_oldpc, cpu_state.oldpc);
         target_seg = codegen_generate_ea(ir, op_ea_seg, fetchdat, op_ssegs, &op_pc, op_32, 0);
         codegen_check_seg_read(block, ir, target_seg);
+        CHECK_SEG_LIMITS(block, ir, target_seg, IREG_eaaddr, 7);
         uop_MEM_LOAD_REG(ir, IREG_MM(dest_reg), ireg_seg_base(target_seg), IREG_eaaddr);
     }
 
@@ -118,8 +119,7 @@ ropMOVQ_q_r(codeblock_t *block, ir_data_t *ir, UNUSED(uint8_t opcode), uint32_t 
 
         uop_MOV_IMM(ir, IREG_oldpc, cpu_state.oldpc);
         target_seg = codegen_generate_ea(ir, op_ea_seg, fetchdat, op_ssegs, &op_pc, op_32, 0);
-        codegen_check_seg_write(block, ir, target_seg);
-        CHECK_SEG_LIMITS(block, ir, target_seg, IREG_eaaddr, 7);
+        codegen_check_seg_write(block, ir, target_seg, IREG_eaaddr, 8);
         uop_MEM_STORE_REG(ir, ireg_seg_base(target_seg), IREG_eaaddr, IREG_MM(src_reg));
     }
 

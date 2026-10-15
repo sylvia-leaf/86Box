@@ -65,7 +65,7 @@ machine_at_ap61_init(const machine_t *model)
 
     device_add(&i450kx_device);
     device_add(&sio_zb_device);
-    device_add(&ide_cmd646_device);
+    device_add(machine_get_ide_device(machine));
     device_add_params(machine_get_kbc_device(machine), (void *) model->kbc_params);
     device_add_params(&fdc37c6xx_device, (void *) FDC37C665);
     device_add(&sst_flash_29ee010_device);
@@ -86,8 +86,8 @@ static const device_config_t aurora_config[] = {
         .selection      = { { 0 } },
         .bios           = {
             {
-                .name          = "Intel AMIBIOS - Revision 1.00.01.CG0Q (AST Bravo MS-T 6___)",
-                .internal_name = "bravomst6xxx",
+                .name          = "Intel AMIBIOS - Revision 1.00.01.CG0Q (AST Bravo MS-T 6150)",
+                .internal_name = "bravomst6150",
                 .bios_type     = BIOS_NORMAL,
                 .files_no      = 5,
                 .local         = 0,
@@ -185,7 +185,7 @@ int
 machine_at_aurora_init(const machine_t *model)
 {
     int         ret = 0;
-    const char *fn[5];
+    const char *fn;
 
     /* No ROMs available */
     if (!device_available(model->device))
@@ -193,14 +193,14 @@ machine_at_aurora_init(const machine_t *model)
 
     device_context(model->device);
     int is_dell = !strcmp(device_get_config_bios("bios"), "dimensionxpspro");
-    for (uint8_t i = 0; i < 5; i++)
-        fn[i] = device_get_bios_file(machine_get_device(machine), device_get_config_bios("bios"), i);
+
+    fn = device_get_bios_file(machine_get_device(machine), device_get_config_bios("bios"), 0);
 
     if (is_dell)
-        ret = bios_load_linear_inverted(fn[0], 0x000c0000, 262144, 0);
-    else {
-        ret = bios_load_linear_combined2(fn[0], fn[1], fn[2], fn[3], fn[4], 0x3a000, 128);
-    }
+        ret = bios_load_linear_inverted(fn, 0x000c0000, 262144, 0);
+    else
+        ret = bios_load_intel(fn, NULL, 262144, 1);
+
     device_context_restore();
 
     machine_at_common_init(model);
@@ -248,7 +248,7 @@ machine_at_p6rp4_init(const machine_t *model)
 
     device_add(&i450kx_device); /* 450GX is a superset of the 450KX */
     device_add(&sio_zb_device);
-    device_add(&ide_cmd646_device);
+    device_add(machine_get_ide_device(machine));
     /* Input port bit 2 must be 1 or CMOS Setup is disabled. */
     device_add_params(machine_get_kbc_device(machine), (void *) model->kbc_params);
     device_add_params(&fdc37c6xx_device, (void *) FDC37C665);
@@ -337,7 +337,7 @@ machine_at_ficpo6000_init(const machine_t *model)
 
     device_add(&i450kx_device);
     device_add(&sio_zb_device);
-    device_add(&ide_cmd646_device);
+    device_add(machine_get_ide_device(machine));
     /* Input port bit 2 must be 1 or CMOS Setup is disabled. */
     device_add_params(&pc87306_device, (void *) PCX730X_PHOENIX_42);
     device_add(&intel_flash_bxt_device);
@@ -467,12 +467,10 @@ machine_at_ap440fx_init(const machine_t *model)
 {
     int ret;
 
-    ret = bios_load_linear_combined2("roms/machines/ap440fx/1011CT1_.BIO",
-                                     "roms/machines/ap440fx/1011CT1_.BI1",
-                                     "roms/machines/ap440fx/1011CT1_.BI2",
-                                     "roms/machines/ap440fx/1011CT1_.BI3",
-                                     "roms/machines/ap440fx/1011CT1_.RCV",
-                                     0x3a000, 128);
+    ret = bios_load_intel("roms/machines/ap440fx/1011CT1_.BIO",
+                          "roms/machines/ap440fx/1011CT1_.RCV",
+                          262144, 1);
+
 
     if (bios_only || !ret)
         return ret;
@@ -514,7 +512,40 @@ static const device_config_t vs440fx_config[] = {
         .selection      = { { 0 } },
         .bios           = {
             {
-                .name          = "Intel AMIBIOS - Revision 1.00.06.CS1J (Dell Dimension XPS Pro___n)",
+                .name          = "Intel AMIBIOS - Revision 1.00.02.CS1K (NEC)",
+                .internal_name = "powermate17x0_02",
+                .bios_type     = BIOS_NORMAL,
+                .files_no      = 5,
+                .local         = 0,
+                .size          = 262144,
+                .files         = { "roms/machines/vs440fx/1002cs1k.bio", "roms/machines/vs440fx/1002cs1k.bi1",
+                                   "roms/machines/vs440fx/1002cs1k.bi2", "roms/machines/vs440fx/1002cs1k.bi3",
+                                   "roms/machines/vs440fx/1002cs1k.rcv", "" }
+            },
+            {
+                .name          = "Intel AMIBIOS - Revision 1.00.03.CS1K (NEC)",
+                .internal_name = "powermate17x0",
+                .bios_type     = BIOS_NORMAL,
+                .files_no      = 5,
+                .local         = 0,
+                .size          = 262144,
+                .files         = { "roms/machines/vs440fx/1003cs1k.bio", "roms/machines/vs440fx/1003cs1k.bi1",
+                                   "roms/machines/vs440fx/1003cs1k.bi2", "roms/machines/vs440fx/1003cs1k.bi3",
+                                   "roms/machines/vs440fx/1003cs1k.rcv", "" }
+            },
+            {
+                .name          = "Intel AMIBIOS - Revision 1.00.05.CS1Q (AST)",
+                .internal_name = "bravomst6200",
+                .bios_type     = BIOS_NORMAL,
+                .files_no      = 5,
+                .local         = 0,
+                .size          = 262144,
+                .files         = { "roms/machines/vs440fx/1005CS1Q.BIO", "roms/machines/vs440fx/1005CS1Q.BI1",
+                                   "roms/machines/vs440fx/1005CS1Q.BI2", "roms/machines/vs440fx/1005CS1Q.BI3",
+                                   "roms/machines/vs440fx/1005CS1Q.RCV", "" }
+            },
+            {
+                .name          = "Intel AMIBIOS - Revision 1.00.06.CS1J (Dell)",
                 .internal_name = "dellvenus",
                 .bios_type     = BIOS_NORMAL,
                 .files_no      = 5,
@@ -525,7 +556,7 @@ static const device_config_t vs440fx_config[] = {
                                    "roms/machines/vs440fx/1006CS1J.RCV", "" }
             },
             {
-                .name          = "Intel AMIBIOS - Revision 1.00.07.CS15 (Micron Millennia Pro 1/ClientPro XVI)",
+                .name          = "Intel AMIBIOS - Revision 1.00.07.CS15 (Micron)",
                 .internal_name = "millenniapro1",
                 .bios_type     = BIOS_NORMAL,
                 .files_no      = 5,
@@ -582,16 +613,16 @@ int
 machine_at_vs440fx_init(const machine_t *model)
 {
     int         ret = 0;
-    const char *fn[5];
+    const char *fn[2];
 
     /* No ROMs available */
     if (!device_available(model->device))
         return ret;
 
     device_context(model->device);
-    for (uint8_t i = 0; i < 5; i++)
-        fn[i] = device_get_bios_file(machine_get_device(machine), device_get_config_bios("bios"), i);
-    ret = bios_load_linear_combined2(fn[0], fn[1], fn[2], fn[3], fn[4], 0x3a000, 128);
+    for (uint8_t i = 0; i < 2; i++)
+        fn[i] = device_get_bios_file(machine_get_device(machine), device_get_config_bios("bios"), i * 4);
+    ret = bios_load_intel(fn[0], fn[1], 262144, 1);
     device_context_restore();
 
     machine_at_common_init(model);

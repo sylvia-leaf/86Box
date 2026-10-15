@@ -62,6 +62,10 @@ hdd_string_to_bus(char *str, int cdrom)
     if (!strcmp(str, "atapi"))
         return HDD_BUS_ATAPI;
 
+    /* Removable disks only: reached through a parallel-port bridge. */
+    if (!strcmp(str, "lpt") && cdrom)
+        return CDROM_BUS_LPT;
+
     if (!strcmp(str, "xta"))
         return HDD_BUS_XTA;
 
@@ -70,6 +74,18 @@ hdd_string_to_bus(char *str, int cdrom)
 
     if (!strcmp(str, "mitsumi") && cdrom)
         return CDROM_BUS_MITSUMI;
+
+    if (!strcmp(str, "sony") && cdrom)
+        return CDROM_BUS_SONY;
+
+    if (!strcmp(str, "philips") && cdrom)
+        return CDROM_BUS_PHILIPS;
+
+    if (!strcmp(str, "philips_cm100") && cdrom)
+        return CDROM_BUS_CM100;
+
+    if (!strcmp(str, "hitachi") && cdrom)
+        return CDROM_BUS_HITACHI;
 
     if (!strcmp(str, "mke") && cdrom)
         return CDROM_BUS_MKE;
@@ -123,6 +139,26 @@ hdd_bus_to_string(int bus, int cdrom)
         case CDROM_BUS_MITSUMI:
             if (cdrom)
                 s = "mitsumi";
+            break;
+
+        case CDROM_BUS_PHILIPS:
+            if (cdrom)
+                s = "philips";
+            break;
+
+        case CDROM_BUS_SONY:
+            if (cdrom)
+                s = "sony";
+            break;
+
+        case CDROM_BUS_CM100:
+            if (cdrom)
+                s = "philips_cm100";
+            break;
+
+        case CDROM_BUS_HITACHI:
+            if (cdrom)
+                s = "hitachi";
             break;
 
         case CDROM_BUS_MKE:
@@ -1107,6 +1143,13 @@ hdd_preset_get_from_internal_name(char *s)
     return 0;
 }
 
+int
+hdd_preset_is_generic(int preset)
+{
+    return (preset >= 0 && preset < hdd_preset_get_num() &&
+            !strncmp(hdd_speed_presets[preset].name, "[Generic]", 9));
+}
+
 void
 hdd_preset_apply(int hdd_id)
 {
@@ -1132,6 +1175,14 @@ hdd_preset_apply(int hdd_id)
     hd->vendor  = preset->vendor;
     hd->model   = preset->model;
     hd->version = preset->version;
+    if (hdd_preset_is_generic(hd->speed_preset)) {
+        if (hd->custom_vendor[0])
+            hd->vendor = hd->custom_vendor;
+        if (hd->custom_model[0])
+            hd->model = hd->custom_model;
+        if (hd->custom_version[0])
+            hd->version = hd->custom_version;
+    }
 
     if (!hd->speed_preset)
         return;

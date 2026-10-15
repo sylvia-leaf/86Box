@@ -81,12 +81,20 @@ extern void pic_kbd_latch(int enable);
 extern void pic_mouse_latch(int enable);
 extern void pic_init(void);
 extern void pic_init_pcjr(void);
+extern void pic_init_ibm5140(void (*wake)(void));
+extern uint8_t pic_ibm5140_diag_read(uint8_t selector);
+extern void pic_ibm5140_diag_write(uint8_t value);
+extern void pic_ibm5140_diag_enable(int enabled);
+extern void pic_handler(int set, uint16_t base, int size);
 extern void pic2_init(void);
 extern void pic_reset(void);
 
 extern uint8_t pic_read_icw(uint8_t pic_id, uint8_t icw);
 extern uint8_t pic_read_ocw(uint8_t pic_id, uint8_t ocw);
 extern int     picint_is_level(int irq);
+#ifdef USE_VFIO
+extern void    pic_resample_mark(int irq);
+#endif
 extern void    picint_common(uint16_t num, int level, int set, uint8_t *irq_state);
 extern int     picinterrupt(void);
 extern int     picinterrupt_common(void);
@@ -97,6 +105,7 @@ extern int     picinterrupt_common(void);
 #define PIC_SLAVE_PENDING               0x01
 #define PIC_FREEZE                      0x02
 #define PIC_MASTER_CLEAR                0x04
+#define PIC_IBM5140                 0x08
 
 /* Legacy defines. */
 #define picint(num)                     picint_common(num, PIC_IRQ_EDGE,  1, NULL)

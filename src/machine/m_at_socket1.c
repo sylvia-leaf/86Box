@@ -239,7 +239,6 @@ machine_at_svc486wb_init(const machine_t *model)
     device_add(&opti493_device);
 
     device_add_params(machine_get_kbc_device(machine), (void *) model->kbc_params);
-    device_add(&ide_isa_device);
 
     if (fdc_current[0] == FDC_INTERNAL)
         device_add(&fdc_at_device);
@@ -570,7 +569,8 @@ machine_at_sensation1_init(const machine_t *model)
     if (fdc_current[0] == FDC_INTERNAL)
         device_add(&fdc_at_nsc_dp8473_device);
 
-    /* TODO: Add onboard WD90C31 once it's implemented */
+    if (gfxcard[0] == VID_INTERNAL)
+        device_add(machine_get_vid_device(machine));
 
     if (sound_card_current[0] == SOUND_INTERNAL)
         machine_snd = device_add(machine_get_snd_device(machine));

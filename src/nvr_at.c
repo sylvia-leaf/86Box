@@ -638,7 +638,7 @@ nvr_reg_write(uint16_t reg, uint8_t val, void *priv)
         case RTC_REGD: /* R/O */
             /* This is needed for VIA, where writing to this register changes a write-only
                bit whose value is read from power management register 42. */
-            nvr->regs[RTC_REGD] = val & 0x80;
+            nvr->regs[RTC_REGD] = (nvr->regs[RTC_REGD] & 0xbf) | ((val & 0x80) >> 1);
             break;
 
         case 0x32:
@@ -749,9 +749,15 @@ nvr_read(uint16_t addr, void *priv)
                 break;
 
             case RTC_REGD:
-                /* Bits 6-0 of this register always read 0. Bit 7 is battery state,
-                   we should always return it set, as that means the battery is OK. */
-                ret = REGD_VRT;
+                /* Bits 6-0 of this register always read 0. Bit 7 is the battery state
+                   (VRT): it can only be set by reading Register D and only cleared by
+                   pulling the PS pin low, so a battery/power-loss event is reported
+                   for exactly once. */
+                ret = nvr->regs[RTC_REGD] & REGD_VRT;
+                if ((nvr->regs[RTC_REGD] & REGD_VRT) != REGD_VRT) {
+                    nvr->regs[RTC_REGD] = (nvr->regs[RTC_REGD] & 0x7f) | REGD_VRT;
+                    nvr_dosave          = 1;
+                }
                 break;
 
             case 0x11:
@@ -958,7 +964,10 @@ nvr_reset(nvr_t *nvr)
     if (local->cent != 0xFF)
         nvr->regs[local->cent] = RTC_BCD(19);
 
-    nvr->regs[RTC_REGD] = REGD_VRT;
+    /* A power loss pulls the PS pin low, which clears VRT on real hardware; the first
+       read of Register D latches it back to 1, so a machine with no saved NVR reports
+       a battery/configuration error exactly once. */
+    nvr->regs[RTC_REGD] = 0x00;
 }
 
 /* Process after loading from file. */
@@ -978,6 +987,9 @@ nvr_start(nvr_t *nvr)
     if (default_found == nvr->size)
         nvr->regs[0x0e] = 0xff; /* If load failed or it loaded an uninitialized NVR,
                                    mark everything as bad. */
+    else if (!nvr->is_new && !(nvr->regs[0x0d] & REGD_VRT))
+        nvr->regs[0x0d] = REGD_VRT; /* If it is not new and the VRT bit is clear,
+                                       then set the VRT bit to valid. */
 
     if (machines[machine].flags & MACHINE_COREBOOT) {
         /* Sync floppy drive types on coreboot machines, as SeaBIOS
@@ -987,29 +999,6 @@ nvr_start(nvr_t *nvr)
         nvr->regs[RTC_FDD_TYPES] = 0x00;
         nvr->regs[RTC_INST_EQUIP] |= 0xc0;
 
-        for (uint8_t i = 0; i <= 1; i++) {
-            if (!fdd_get_type(i))
-                continue; /* No floppy drive. */
-
-            if (fdd_is_525(i)) {
-                if (fdd_is_hd(i))
-                    fdd = 2; /* 1.2 MB */
-                else if (fdd_doublestep_40(i))
-                    fdd = 3; /* 720 KB */
-                else
-                    fdd = 1; /* 360 KB */
-            } else {
-                if (fdd_is_hd(i))
-                    fdd = 4; /* 1.44 MB */
-                else if (fdd_is_double_sided(i))
-                    fdd = 3; /* 720 KB */
-                else
-                    fdd = 1; /* 360 KB */
-            }
-
-            nvr->regs[RTC_FDD_TYPES] |= (fdd << ((1 - i) * 4));
-            nvr->regs[RTC_INST_EQUIP] &= 0x3f; /* At least one drive installed. */
-        }
 
         if ((nvr->regs[RTC_FDD_TYPES] >> 4) && (nvr->regs[RTC_FDD_TYPES] & 0xf))
             nvr->regs[RTC_INST_EQUIP] |= 0x40; /* Two drives installed. */
@@ -1025,9 +1014,16 @@ nvr_start(nvr_t *nvr)
 
     /* Initialize the internal and chip times. */
     if (time_sync & TIME_SYNC_ENABLED) {
-        /* Use the internal clock's time. */
+        /* Use the internal clock's time. As in timer_update(), leave the
+           century byte alone unless the NVR is uninitialized: it is ordinary
+           RAM maintained by the firmware, and some firmware checksums it. */
+        const int     seed_cent = (local->cent == 0xff) || (default_found == nvr->size);
+        const uint8_t old_cent  = seed_cent ? 0x00 : nvr->regs[local->cent];
+
         nvr_time_get(&tm);
         time_set(nvr, &tm);
+        if (!seed_cent)
+            nvr->regs[local->cent] = old_cent;
     } else {
         /* Set the internal clock from the chip time. */
         time_get(nvr, &tm);
@@ -1223,6 +1219,11 @@ nvr_at_init(const device_t *info)
 
     if (nvr->is_new && (machines[machine].init == machine_at_bx6_init))
         local->flags |= FLAG_BX6_HACK;
+
+    if (machines[machine].init == machine_at_cobalt3k_init) {
+        local->def  = 0xff; /* BIOS expects FF init to load defaults on first boot... */
+        local->cent = 0xff; /* ...and uses century for storage instead */
+    }
 
     local->read_addr = 1;
 

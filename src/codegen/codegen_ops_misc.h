@@ -20,7 +20,7 @@ ropSTD(UNUSED(uint8_t opcode), UNUSED(uint32_t fetchdat), UNUSED(uint32_t op_32)
 static uint32_t
 ropCLI(UNUSED(uint8_t opcode), UNUSED(uint32_t fetchdat), UNUSED(uint32_t op_32), uint32_t op_pc, UNUSED(codeblock_t *block))
 {
-    if (!IOPLp && (cr4 & (CR4_VME | CR4_PVI)))
+    if (cpu_cur_status & CPU_STATUS_PMODE)
         return 0;
     CLEAR_BITS((uintptr_t) &cpu_state.flags, I_FLAG);
 #ifdef CHECK_INT
@@ -31,7 +31,7 @@ ropCLI(UNUSED(uint8_t opcode), UNUSED(uint32_t fetchdat), UNUSED(uint32_t op_32)
 static uint32_t
 ropSTI(UNUSED(uint8_t opcode), UNUSED(uint32_t fetchdat), UNUSED(uint32_t op_32), uint32_t op_pc, UNUSED(codeblock_t *block))
 {
-    if (!IOPLp && (cr4 & (CR4_VME | CR4_PVI)))
+    if (cpu_cur_status & CPU_STATUS_PMODE)
         return 0;
     SET_BITS((uintptr_t) &cpu_state.flags, I_FLAG);
     return op_pc;
@@ -156,11 +156,11 @@ ropFF_16(UNUSED(uint8_t opcode), uint32_t fetchdat, uint32_t op_32, uint32_t op_
             SP_MODIFY(-2);
 
             host_reg = LOAD_VAR_W((uintptr_t) &codegen_temp);
-            STORE_HOST_REG_ADDR_W((uintptr_t) &cpu_state.pc, host_reg);
+            STORE_HOST_REG_ADDR((uintptr_t) &cpu_state.pc, host_reg);
             return -1;
 
         case 0x20: /*JMP*/
-            STORE_HOST_REG_ADDR((uintptr_t) &cpu_state.pc, host_reg);
+            STORE_HOST_REG_ADDR_WL((uintptr_t) &cpu_state.pc, host_reg);
             return -1;
 
         case 0x30: /*PUSH*/

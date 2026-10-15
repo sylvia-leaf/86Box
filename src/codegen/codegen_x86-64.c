@@ -296,10 +296,32 @@ codegen_block_start_recompile(codeblock_t *block)
     addlong((uint32_t) rip_rel);
 #    endif
     block_pos = BLOCK_EXIT_OFFSET; /*Exit code*/
+#if _WIN64
+    /* XMM6 holds guest FPU/MMX values and XMM15 is scratch, and the
+       Windows x64 ABI makes both the caller's: put back what it had. */
+    addbyte(0xf3); /*MOVDQU XMM6, [RSP+0x28]*/
+    addbyte(0x0f);
+    addbyte(0x6f);
+    addbyte(0x74);
+    addbyte(0x24);
+    addbyte(0x28);
+    addbyte(0xf3); /*MOVDQU XMM15, [RSP+0x38]*/
+    addbyte(0x44);
+    addbyte(0x0f);
+    addbyte(0x6f);
+    addbyte(0x7c);
+    addbyte(0x24);
+    addbyte(0x38);
+    addbyte(0x48); /*ADDL $72,%rsp*/
+    addbyte(0x83);
+    addbyte(0xC4);
+    addbyte(0x48);
+#else
     addbyte(0x48);                 /*ADDL $40,%rsp*/
     addbyte(0x83);
     addbyte(0xC4);
     addbyte(0x28);
+#endif
     addbyte(0x41); /*POP R15*/
     addbyte(0x5f);
     addbyte(0x41); /*POP R14*/
@@ -327,10 +349,30 @@ codegen_block_start_recompile(codeblock_t *block)
     addbyte(0x56);
     addbyte(0x41); /*PUSH R15*/
     addbyte(0x57);
+#if _WIN64
+    addbyte(0x48); /*SUBL $72,%rsp*/
+    addbyte(0x83);
+    addbyte(0xEC);
+    addbyte(0x48);
+    addbyte(0xf3); /*MOVDQU [RSP+0x28], XMM6*/
+    addbyte(0x0f);
+    addbyte(0x7f);
+    addbyte(0x74);
+    addbyte(0x24);
+    addbyte(0x28);
+    addbyte(0xf3); /*MOVDQU [RSP+0x38], XMM15*/
+    addbyte(0x44);
+    addbyte(0x0f);
+    addbyte(0x7f);
+    addbyte(0x7c);
+    addbyte(0x24);
+    addbyte(0x38);
+#else
     addbyte(0x48); /*SUBL $40,%rsp*/
     addbyte(0x83);
     addbyte(0xEC);
     addbyte(0x28);
+#endif
     addbyte(0x48); /*MOVL RBP, &cpu_state*/
     addbyte(0xBD);
     addquad(((uintptr_t) &cpu_state) + 128);
@@ -446,10 +488,32 @@ codegen_block_end_recompile(codeblock_t *block)
 
     codegen_accumulate_flush();
 
+#if _WIN64
+    /* XMM6 holds guest FPU/MMX values and XMM15 is scratch, and the
+       Windows x64 ABI makes both the caller's: put back what it had. */
+    addbyte(0xf3); /*MOVDQU XMM6, [RSP+0x28]*/
+    addbyte(0x0f);
+    addbyte(0x6f);
+    addbyte(0x74);
+    addbyte(0x24);
+    addbyte(0x28);
+    addbyte(0xf3); /*MOVDQU XMM15, [RSP+0x38]*/
+    addbyte(0x44);
+    addbyte(0x0f);
+    addbyte(0x6f);
+    addbyte(0x7c);
+    addbyte(0x24);
+    addbyte(0x38);
+    addbyte(0x48); /*ADDL $72,%rsp*/
+    addbyte(0x83);
+    addbyte(0xC4);
+    addbyte(0x48);
+#else
     addbyte(0x48); /*ADDL $40,%rsp*/
     addbyte(0x83);
     addbyte(0xC4);
     addbyte(0x28);
+#endif
     addbyte(0x41); /*POP R15*/
     addbyte(0x5f);
     addbyte(0x41); /*POP R14*/
@@ -838,7 +902,7 @@ codegen_generate_call(uint8_t opcode, OpFn op, uint32_t fetchdat, uint32_t new_p
     int          over            = 0;
     int          pc_off          = 0;
     int          test_modrm      = 1;
-    int          in_lock         = 0;
+    int          lock_illegal    = 0;
     int          is_fpu          = 0;
     int          c;
     int is_repe = 0;
@@ -999,7 +1063,6 @@ codegen_generate_call(uint8_t opcode, OpFn op, uint32_t fetchdat, uint32_t new_p
                 break;
 
             case 0xf0: /*LOCK*/
-                in_lock         = 0;
                 break;
 
             case 0xf2: /*REPNE*/
@@ -1022,6 +1085,8 @@ codegen_generate_call(uint8_t opcode, OpFn op, uint32_t fetchdat, uint32_t new_p
         codegen_timing_prefix(opcode, fetchdat);
         if (cpu_state.abrt)
             return;
+        if (opcode == 0xf0) /*LOCK*/
+            lock_illegal = !is_lock_legal(fetchdat);
         opcode = fetchdat & 0xff;
         if (!pc_off)
             fetchdat >>= 8;
@@ -1061,7 +1126,7 @@ generate_call:
         STORE_IMM_ADDR_L((uintptr_t) &x87_op, op87);
     }
 
-    if (in_lock && ((opcode == 0x90) || (opcode == 0xec)))
+    if (lock_illegal)
         goto codegen_skip;
 
     if (recomp_op_table && recomp_op_table[(opcode | op_32) & 0x1ff]) {
@@ -1125,7 +1190,7 @@ generate_call:
     }
 
 codegen_skip:
-    if (in_lock && ((opcode == 0x90) || (opcode == 0xec)))
+    if (lock_illegal)
         /* This is always ILLEGAL. */
         op = x86_dynarec_opcodes_3DNOW[0xff];
     else

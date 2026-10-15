@@ -4,9 +4,10 @@
         CLOCK_CYCLES(1);                           \
     } else {                                       \
         SEG_CHECK_READ(cpu_state.ea_seg);          \
+        CHECK_READ(cpu_state.ea_seg, cpu_state.eaaddr, cpu_state.eaaddr + 7UL); \
         shift = readmemq(easeg, cpu_state.eaaddr); \
         if (cpu_state.abrt)                        \
-            return 0;                              \
+            return 1;                              \
         CLOCK_CYCLES(2);                           \
     }
 
@@ -491,12 +492,7 @@ opPSxxQ_imm(uint32_t fetchdat)
             else
                 dst->q >>= shift;
             break;
-        case 0x20: /*PSRAW*/
-            if (shift > 63)
-                shift = 63;
-
-            dst->sq >>= shift;
-            break;
+        /*There is no PSRAQ: 0F 73 /4 is undefined*/
         case 0x30: /*PSLLW*/
             if (shift > 63)
                 dst->q = 0;

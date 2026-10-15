@@ -17,7 +17,7 @@
 uint32_t
 ropJMP_r8(codeblock_t *block, ir_data_t *ir, UNUSED(uint8_t opcode), UNUSED(uint32_t fetchdat), uint32_t op_32, uint32_t op_pc)
 {
-    uint32_t offset    = (int32_t) (int8_t) fastreadb(cs + op_pc);
+    int32_t  offset    = (int8_t) fastreadb(cs + op_pc);
     uint32_t dest_addr = op_pc + 1 + offset;
 
     if (!(op_32 & 0x100))
@@ -31,24 +31,24 @@ ropJMP_r8(codeblock_t *block, ir_data_t *ir, UNUSED(uint8_t opcode), UNUSED(uint
 uint32_t
 ropJMP_r16(codeblock_t *block, ir_data_t *ir, UNUSED(uint8_t opcode), UNUSED(uint32_t fetchdat), UNUSED(uint32_t op_32), uint32_t op_pc)
 {
-    uint32_t offset    = (int32_t) (int16_t) fastreadw(cs + op_pc);
+    int32_t  offset    = (int16_t) fastreadw(cs + op_pc);
     uint32_t dest_addr = op_pc + 2 + offset;
 
     dest_addr &= 0xffff;
 
     if (offset < 0)
-        codegen_can_unroll(block, ir, op_pc + 1, dest_addr);
+        codegen_can_unroll(block, ir, op_pc + 2, dest_addr);
     codegen_mark_code_present(block, cs + op_pc, 2);
     return dest_addr;
 }
 uint32_t
 ropJMP_r32(codeblock_t *block, ir_data_t *ir, UNUSED(uint8_t opcode), UNUSED(uint32_t fetchdat), UNUSED(uint32_t op_32), uint32_t op_pc)
 {
-    uint32_t offset    = fastreadl(cs + op_pc);
+    int32_t  offset    = (int32_t) fastreadl(cs + op_pc);
     uint32_t dest_addr = op_pc + 4 + offset;
 
     if (offset < 0)
-        codegen_can_unroll(block, ir, op_pc + 1, dest_addr);
+        codegen_can_unroll(block, ir, op_pc + 4, dest_addr);
     codegen_mark_code_present(block, cs + op_pc, 4);
     return dest_addr;
 }
@@ -79,7 +79,7 @@ ropJMP_far_32(codeblock_t *block, ir_data_t *ir, UNUSED(uint8_t opcode), UNUSED(
     uop_MOV_IMM(ir, IREG_oldpc, cpu_state.oldpc);
     uop_MOV_IMM(ir, IREG_pc, new_pc);
     uop_LOAD_FUNC_ARG_IMM(ir, 0, new_cs);
-    uop_LOAD_FUNC_ARG_IMM(ir, 1, op_pc + 4);
+    uop_LOAD_FUNC_ARG_IMM(ir, 1, op_pc + 6);
     uop_CALL_FUNC(ir, loadcsjmp);
 
     codegen_mark_code_present(block, cs + op_pc, 6);
@@ -100,6 +100,7 @@ ropCALL_r16(codeblock_t *block, ir_data_t *ir, UNUSED(uint8_t opcode), UNUSED(ui
 
     uop_MOV_IMM(ir, IREG_oldpc, cpu_state.oldpc);
     sp_reg = LOAD_SP_WITH_OFFSET(ir, -2);
+    CHECK_STACK_LIMITS(block, ir, sp_reg, 2);
     uop_MEM_STORE_IMM_16(ir, IREG_SS_base, sp_reg, ret_addr);
     SUB_SP(ir, 2);
     uop_MOV_IMM(ir, IREG_pc, dest_addr);
@@ -119,6 +120,7 @@ ropCALL_r32(codeblock_t *block, ir_data_t *ir, UNUSED(uint8_t opcode), UNUSED(ui
 
     uop_MOV_IMM(ir, IREG_oldpc, cpu_state.oldpc);
     sp_reg = LOAD_SP_WITH_OFFSET(ir, -4);
+    CHECK_STACK_LIMITS(block, ir, sp_reg, 4);
     uop_MEM_STORE_IMM_32(ir, IREG_SS_base, sp_reg, ret_addr);
     SUB_SP(ir, 4);
     uop_MOV_IMM(ir, IREG_pc, dest_addr);
@@ -134,10 +136,12 @@ ropRET_16(UNUSED(codeblock_t *block), ir_data_t *ir, UNUSED(uint8_t opcode), UNU
 {
     uop_MOV_IMM(ir, IREG_oldpc, cpu_state.oldpc);
 
-    if (stack32)
+    if (stack32) {
+        CHECK_STACK_LIMITS(block, ir, IREG_ESP, 2);
         uop_MEM_LOAD_REG(ir, IREG_temp0_W, IREG_SS_base, IREG_ESP);
-    else {
+    } else {
         uop_MOVZX(ir, IREG_eaaddr, IREG_SP);
+        CHECK_STACK_LIMITS(block, ir, IREG_eaaddr, 2);
         uop_MEM_LOAD_REG(ir, IREG_temp0_W, IREG_SS_base, IREG_eaaddr);
     }
     ADD_SP(ir, 2);
@@ -152,10 +156,12 @@ ropRET_32(UNUSED(codeblock_t *block), ir_data_t *ir, UNUSED(uint8_t opcode), UNU
 {
     uop_MOV_IMM(ir, IREG_oldpc, cpu_state.oldpc);
 
-    if (stack32)
+    if (stack32) {
+        CHECK_STACK_LIMITS(block, ir, IREG_ESP, 4);
         uop_MEM_LOAD_REG(ir, IREG_pc, IREG_SS_base, IREG_ESP);
-    else {
+    } else {
         uop_MOVZX(ir, IREG_eaaddr, IREG_SP);
+        CHECK_STACK_LIMITS(block, ir, IREG_eaaddr, 4);
         uop_MEM_LOAD_REG(ir, IREG_pc, IREG_SS_base, IREG_eaaddr);
     }
     ADD_SP(ir, 4);
@@ -178,10 +184,12 @@ ropRET_imm_16(codeblock_t *block, ir_data_t *ir, UNUSED(uint8_t opcode), UNUSED(
 
     uop_MOV_IMM(ir, IREG_oldpc, cpu_state.oldpc);
 
-    if (stack32)
+    if (stack32) {
+        CHECK_STACK_LIMITS(block, ir, IREG_ESP, 2);
         uop_MEM_LOAD_REG(ir, IREG_temp0_W, IREG_SS_base, IREG_ESP);
-    else {
+    } else {
         uop_MOVZX(ir, IREG_eaaddr, IREG_SP);
+        CHECK_STACK_LIMITS(block, ir, IREG_eaaddr, 2);
         uop_MEM_LOAD_REG(ir, IREG_temp0_W, IREG_SS_base, IREG_eaaddr);
     }
     if (block->flags & CODEBLOCK_NO_IMMEDIATES) {
@@ -217,10 +225,12 @@ ropRET_imm_32(codeblock_t *block, ir_data_t *ir, UNUSED(uint8_t opcode), UNUSED(
 
     uop_MOV_IMM(ir, IREG_oldpc, cpu_state.oldpc);
 
-    if (stack32)
+    if (stack32) {
+        CHECK_STACK_LIMITS(block, ir, IREG_ESP, 4);
         uop_MEM_LOAD_REG(ir, IREG_pc, IREG_SS_base, IREG_ESP);
-    else {
+    } else {
         uop_MOVZX(ir, IREG_eaaddr, IREG_SP);
+        CHECK_STACK_LIMITS(block, ir, IREG_eaaddr, 4);
         uop_MEM_LOAD_REG(ir, IREG_pc, IREG_SS_base, IREG_eaaddr);
     }
 
@@ -252,10 +262,12 @@ ropRETF_16(UNUSED(codeblock_t *block), ir_data_t *ir, UNUSED(uint8_t opcode), UN
     uop_MOV_IMM(ir, IREG_oldpc, cpu_state.oldpc);
 
     if (stack32) {
+        CHECK_STACK_LIMITS(block, ir, IREG_ESP, 4);
         uop_MEM_LOAD_REG(ir, IREG_temp0_W, IREG_SS_base, IREG_ESP);
         uop_MEM_LOAD_REG_OFFSET(ir, IREG_temp1_W, IREG_SS_base, IREG_ESP, 2);
     } else {
         uop_MOVZX(ir, IREG_eaaddr, IREG_SP);
+        CHECK_STACK_LIMITS(block, ir, IREG_eaaddr, 4);
         uop_MEM_LOAD_REG(ir, IREG_temp0_W, IREG_SS_base, IREG_eaaddr);
         uop_MEM_LOAD_REG_OFFSET(ir, IREG_temp1_W, IREG_SS_base, IREG_eaaddr, 2);
     }
@@ -277,10 +289,12 @@ ropRETF_32(UNUSED(codeblock_t *block), ir_data_t *ir, UNUSED(uint8_t opcode), UN
     uop_MOV_IMM(ir, IREG_oldpc, cpu_state.oldpc);
 
     if (stack32) {
+        CHECK_STACK_LIMITS(block, ir, IREG_ESP, 6);
         uop_MEM_LOAD_REG(ir, IREG_temp0, IREG_SS_base, IREG_ESP);
         uop_MEM_LOAD_REG_OFFSET(ir, IREG_temp1_W, IREG_SS_base, IREG_ESP, 4);
     } else {
         uop_MOVZX(ir, IREG_eaaddr, IREG_SP);
+        CHECK_STACK_LIMITS(block, ir, IREG_eaaddr, 6);
         uop_MEM_LOAD_REG(ir, IREG_temp0, IREG_SS_base, IREG_eaaddr);
         uop_MEM_LOAD_REG_OFFSET(ir, IREG_temp1_W, IREG_SS_base, IREG_eaaddr, 4);
     }
@@ -311,10 +325,12 @@ ropRETF_imm_16(codeblock_t *block, ir_data_t *ir, UNUSED(uint8_t opcode), UNUSED
     uop_MOV_IMM(ir, IREG_oldpc, cpu_state.oldpc);
 
     if (stack32) {
+        CHECK_STACK_LIMITS(block, ir, IREG_ESP, 4);
         uop_MEM_LOAD_REG(ir, IREG_temp0_W, IREG_SS_base, IREG_ESP);
         uop_MEM_LOAD_REG_OFFSET(ir, IREG_temp1_W, IREG_SS_base, IREG_ESP, 2);
     } else {
         uop_MOVZX(ir, IREG_eaaddr, IREG_SP);
+        CHECK_STACK_LIMITS(block, ir, IREG_eaaddr, 4);
         uop_MEM_LOAD_REG(ir, IREG_temp0_W, IREG_SS_base, IREG_eaaddr);
         uop_MEM_LOAD_REG_OFFSET(ir, IREG_temp1_W, IREG_SS_base, IREG_eaaddr, 2);
     }
@@ -357,10 +373,12 @@ ropRETF_imm_32(codeblock_t *block, ir_data_t *ir, UNUSED(uint8_t opcode), UNUSED
     uop_MOV_IMM(ir, IREG_oldpc, cpu_state.oldpc);
 
     if (stack32) {
+        CHECK_STACK_LIMITS(block, ir, IREG_ESP, 6);
         uop_MEM_LOAD_REG(ir, IREG_temp0, IREG_SS_base, IREG_ESP);
         uop_MEM_LOAD_REG_OFFSET(ir, IREG_temp1_W, IREG_SS_base, IREG_ESP, 4);
     } else {
         uop_MOVZX(ir, IREG_eaaddr, IREG_SP);
+        CHECK_STACK_LIMITS(block, ir, IREG_eaaddr, 6);
         uop_MEM_LOAD_REG(ir, IREG_temp0, IREG_SS_base, IREG_eaaddr);
         uop_MEM_LOAD_REG_OFFSET(ir, IREG_temp1_W, IREG_SS_base, IREG_eaaddr, 4);
     }

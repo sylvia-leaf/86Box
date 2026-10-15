@@ -26,6 +26,11 @@ elseif(ARCH STREQUAL "arm64")
     else()
         add_compile_options(-march=armv8-a)
     endif()
+elseif(ARCH STREQUAL "loongarch64")
+    # LSX is a hard requirement for the new dynarec on LoongArch64
+    # (codegen_backend_loongarch64_defs.h gates on __loongarch_sx).
+    # -march=la464 targets 3A5000-class cores; use la664 for 3A6000-class.
+    add_compile_options(-march=la464 -mabi=lp64d -mlsx)
 endif()
 
 # Configuration-specific flags.
@@ -41,11 +46,11 @@ add_compile_options(
     "$<$<CONFIG:Optimized>:-mtune=native>"
     "$<$<CONFIG:Optimized>:-O3>"
     "$<$<CONFIG:Optimized>:-ffp-contract=fast>"
-    "$<$<CONFIG:Optimized>:-flto>"
+    "$<$<CONFIG:Optimized>:-flto=auto>"
 )
 
 add_link_options(
-    "$<$<CONFIG:Optimized>:-flto>"
+    "$<$<CONFIG:Optimized>:-flto=auto>"
 )
 
 add_compile_definitions(CMAKE)

@@ -266,12 +266,22 @@ reset_common(int hard)
         }
     }
 
+    /* A reset leaves no NMI in progress and none pending: the processor
+       comes out of RESET accepting NMIs, and an NMI that was latched or
+       being serviced is gone with the state it was taken in. Only the
+       blocking and the pending request are the processor's; the chipset's
+       NMI mask (port 70h) is not, and stays where it is. */
+    nmi_enable     = 1;
+    nmi            = 0;
+    nmi_auto_clear = 0;
+
     use32          = 0;
     cpu_cur_status = 0;
     stack32        = 0;
     msr.fcr        = (1 << 8) | (1 << 9) | (1 << 12) | (1 << 16) | (1 << 19) | (1 << 21);
     msw            = 0;
     new_ne         = 0;
+    fpu_ignne      = 0;
     x87_op         = 0;
 
     ccr0 = ccr1 = ccr2 = ccr3 = ccr4 = ccr5 = ccr6 = ccr7 = 0;
@@ -329,13 +339,17 @@ reset_common(int hard)
     }
     x86seg_reset();
 #ifdef USE_DYNAREC
-    if (hard)
+    /* A reset raised from inside a recompiled block (a timer run by RDTSC)
+       must not free the block still running; the dynarec loop flushes once
+       the block has returned. */
+    if (hard && !inrecomp)
         codegen_reset();
 #endif
     cpu_flush_pending = 0;
     cpu_old_paging = 0;
     if (!hard)
         flushmmucache();
+    cpu_cache_invalidate();
     x86_was_reset = 1;
     cpu_alt_reset = 0;
 
@@ -357,9 +371,7 @@ reset_common(int hard)
 
     if (hard) {
         reset_on_hlt = hlt_reset_pending = 0;
-        cache_index                      = 0;
-        memset(_tr, 0x00, sizeof(_tr));
-        memset(_cache, 0x00, sizeof(_cache));
+        cpu_tr_reset();
 
         /* If we have an AT or PS/2 keyboard controller, make sure the A20 state
            is correct. */

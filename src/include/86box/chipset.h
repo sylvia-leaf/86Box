@@ -28,6 +28,7 @@ extern const device_t ali1435_device;
 extern const device_t ali1489_device;
 extern const device_t ali1531_device;
 extern const device_t ali1541_device;
+extern const device_t ali1541_rowdecode_device;
 
 #define ALI1543_SIO_370 0x10000ULL
 
@@ -106,16 +107,22 @@ extern const device_t i440gx_device;
 extern const device_t i440zx_device;
 extern const device_t i450kx_device;
 
+extern const device_t pceb_device;
+extern const device_t esc_device;
+
 extern const device_t sio_device;
 extern const device_t sio_zb_device;
 
 #define PIIX4_NVR_AMI_1995  0x0000000100000000
 #define PIIX4_NVR_AMI_1995J 0x0000000200000000
+/* Function 2 (USB) absent, for an emulated board whose PIIX4 has none. */
+#define PIIX4_NO_USB        0x0000000400000000
 
 extern const device_t piix_device;
 extern const device_t piix_no_mirq_device;
 extern const device_t piix_old_device;
 extern const device_t piix_rev02_device;
+extern void           piix_extsmi_raise(void);
 extern const device_t piix3_device;
 extern const device_t piix3_ioapic_device;
 extern const device_t piix4_device;
@@ -123,6 +130,7 @@ extern const device_t piix4e_device;
 extern const device_t slc90e66_device;
 
 extern const device_t ioapic_device;
+extern const device_t ioapic_ami_device;
 
 /* Intel ICH2 */
 extern const device_t intel_815ep_device;
@@ -170,6 +178,8 @@ extern const device_t sanyo_device;
 /* SiS */
 extern const device_t rabbit_device;
 extern const device_t sis_85c401_device;
+extern const device_t sis_85c411_device;
+extern void           sis_85c411_set_board_id(const char *mfg, uint16_t product, uint8_t rev);
 extern const device_t sis_85c460_device;
 extern const device_t sis_85c461_device;
 extern const device_t sis_85c471_device;
@@ -232,8 +242,14 @@ extern const device_t via_vt82c686b_device;
 extern const device_t via_vt8231_device;
 
 /* VLSI */
+/* Size of the secondary cache SRAM, for the Direct Access mode of CACHCTL. */
+#define VL82C480_CACHE_128K  0x0400
+#define VL82C480_CACHE_256K  0x0800
+#define VL82C480_CACHE_SHIFT 8
+
 extern const device_t vl82c480_device;
 extern const device_t vl82c486_device;
+extern int            vl82c486_cpu_cache_enable(void *priv);
 extern const device_t vl82c59x_device;
 extern const device_t vl82c59x_compaq_device;
 extern const device_t vl82c59x_wildcat_device;

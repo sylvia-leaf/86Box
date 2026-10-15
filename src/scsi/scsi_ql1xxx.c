@@ -4115,6 +4115,27 @@ ql_pci_read(UNUSED(int func), int addr, UNUSED(int len), void *priv)
     return ret;
 }
 
+/* The SCSI buses a chip has: the 12x0 parts are dual-channel. */
+static uint8_t
+ql_bus_count(uint32_t isp_type)
+{
+    switch (isp_type) {
+        case QL_ISP1240:
+        case QL_ISP1280:
+        case QL_ISP12160:
+            return 2;
+
+        default:
+            return 1;
+    }
+}
+
+static uint32_t
+ql_scsi_buses(const device_t *dev)
+{
+    return ql_bus_count((dev->local & QL_DEV_CHIP_TYPE_MASK) >> QL_DEV_CHIP_TYPE_SHIFT);
+}
+
 static void ql_init_scsi(ql_t *dev) {
     switch (dev->isp_type) {
         case QL_ISP1040:
@@ -4125,39 +4146,37 @@ static void ql_init_scsi(ql_t *dev) {
                 /* Ultra SCSI, 40 MB/s */
                 dev->xfer_rate_bps = 40 * 1000000.0;
             }
-            dev->max_bus_count = 1;
             break;
         case QL_ISP1080:
             /* Ultra2 SCSI, 80 MB/s */
             dev->xfer_rate_bps = 80 * 1000000.0;
-            dev->max_bus_count = 1;
             break;
         case QL_ISP1240:
             /* Ultra SCSI, 40 MB/s */
             dev->xfer_rate_bps = 40 * 1000000.0;
-            dev->max_bus_count = 2;
             break;
         case QL_ISP1280:
             /* Ultra2 SCSI, 80 MB/s */
             dev->xfer_rate_bps = 80 * 1000000.0;
-            dev->max_bus_count = 2;
             break;
         case QL_ISP12160:
             /* Ultra3 SCSI, 160 MB/s */
             dev->xfer_rate_bps = 160 * 1000000.0;
-            dev->max_bus_count = 2;
             break;
 
         default:
             /* Should not happen */
-            dev->max_bus_count = 1;
             assert(false);
             break;
     }
 
-    for (uint32_t path_id = 0; path_id < dev->max_bus_count; path_id++) {
-        dev->scsi_bus[path_id] = scsi_get_bus();
-        scsi_bus_set_speed(dev->scsi_bus[path_id], dev->xfer_rate_bps);
+    dev->max_bus_count = ql_bus_count(dev->isp_type);
+
+    if (dev->max_bus_count <= QL_MAX_PATHS) {
+        for (uint8_t path_id = 0; path_id < dev->max_bus_count; path_id++) {
+            dev->scsi_bus[path_id] = scsi_get_bus();
+            scsi_bus_set_speed(dev->scsi_bus[path_id], dev->xfer_rate_bps);
+        }
     }
 
     timer_add(&dev->cmd_timer, ql_sxp_timer_callback, dev, 0);
@@ -5044,6 +5063,8 @@ const device_t isp1020a_device = {
     .speed_changed = NULL,
     .force_redraw  = NULL,
     .config        = isp1020_config,
+    .short_name    = "ISP1020A",
+    .scsi_buses    = ql_scsi_buses
 };
 
 const device_t qla1040b_device = {
@@ -5058,6 +5079,8 @@ const device_t qla1040b_device = {
     .speed_changed = NULL,
     .force_redraw  = NULL,
     .config        = qla1040b_config,
+    .short_name    = "ISP1040B",
+    .scsi_buses    = ql_scsi_buses
 };
 
 const device_t qla1080_device = {
@@ -5072,6 +5095,8 @@ const device_t qla1080_device = {
     .speed_changed = NULL,
     .force_redraw  = NULL,
     .config        = qla1080_config,
+    .short_name    = "ISP1080",
+    .scsi_buses    = ql_scsi_buses
 };
 
 const device_t qla1240_device = {
@@ -5086,6 +5111,8 @@ const device_t qla1240_device = {
     .speed_changed = NULL,
     .force_redraw  = NULL,
     .config        = qla1240_config,
+    .short_name    = "ISP1240",
+    .scsi_buses    = ql_scsi_buses
 };
 
 const device_t qla1280_device = {
@@ -5100,6 +5127,8 @@ const device_t qla1280_device = {
     .speed_changed = NULL,
     .force_redraw  = NULL,
     .config        = qla1280_config,
+    .short_name    = "ISP1280",
+    .scsi_buses    = ql_scsi_buses
 };
 
 const device_t qla12160a_device = {
@@ -5114,4 +5143,6 @@ const device_t qla12160a_device = {
     .speed_changed = NULL,
     .force_redraw  = NULL,
     .config        = qla12160a_config,
+    .short_name    = "ISP12160A",
+    .scsi_buses    = ql_scsi_buses
 };

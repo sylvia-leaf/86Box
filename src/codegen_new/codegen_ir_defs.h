@@ -17,6 +17,21 @@
   the code block to exit (eg memory load/store functions).*/
 #define UOP_TYPE_ORDER_BARRIER (1 << 27)
 
+/*Memory accesses remain ordering barriers for liveness and fault recovery.
+  Backends with an inline RAM path can defer writeback until that path misses.*/
+#define UOP_TYPE_MEM (1 << 24)
+
+/*Set during emission when a memory helper must invalidate an earlier SSE check.*/
+#define UOP_TYPE_SSE_INVALIDATE (1 << 23)
+
+/* The preceding straight-line access left a reusable RAM page lookup. */
+#define UOP_TYPE_MEM_REUSE (1 << 22)
+/* The address operands also have the same IR versions and displacement. */
+#define UOP_TYPE_MEM_SAME_ADDR (1 << 21)
+
+/* Updates floating-point status even when the register result is discarded. */
+#define UOP_TYPE_FP_STATUS (1 << 20)
+
 /*uOP uses source and dest registers*/
 #define UOP_TYPE_PARAMS_REGS (1 << 28)
 /*uOP uses pointer*/
@@ -122,29 +137,29 @@
 /*UOP_UMUL_HI - dest_reg = ((uint64_t)src_reg_a * (uint64_t)src_reg_b) >> 32*/
 #define UOP_UMUL_HI (UOP_TYPE_PARAMS_REGS | 0x3f)
 /*UOP_MEM_LOAD_ABS - dest_reg = src_reg_a:[immediate]*/
-#define UOP_MEM_LOAD_ABS (UOP_TYPE_PARAMS_REGS | UOP_TYPE_PARAMS_IMM | 0x40 | UOP_TYPE_ORDER_BARRIER)
+#define UOP_MEM_LOAD_ABS (UOP_TYPE_PARAMS_REGS | UOP_TYPE_PARAMS_IMM | 0x40 | UOP_TYPE_ORDER_BARRIER | UOP_TYPE_MEM)
 /*UOP_MEM_LOAD_REG - dest_reg = src_reg_a:[src_reg_b]*/
-#define UOP_MEM_LOAD_REG (UOP_TYPE_PARAMS_REGS | UOP_TYPE_PARAMS_IMM | 0x41 | UOP_TYPE_ORDER_BARRIER)
+#define UOP_MEM_LOAD_REG (UOP_TYPE_PARAMS_REGS | UOP_TYPE_PARAMS_IMM | 0x41 | UOP_TYPE_ORDER_BARRIER | UOP_TYPE_MEM)
 /*UOP_MEM_STORE_ABS - src_reg_a:[immediate] = src_reg_b*/
-#define UOP_MEM_STORE_ABS (UOP_TYPE_PARAMS_REGS | UOP_TYPE_PARAMS_IMM | 0x42 | UOP_TYPE_ORDER_BARRIER)
+#define UOP_MEM_STORE_ABS (UOP_TYPE_PARAMS_REGS | UOP_TYPE_PARAMS_IMM | 0x42 | UOP_TYPE_ORDER_BARRIER | UOP_TYPE_MEM)
 /*UOP_MEM_STORE_REG - src_reg_a:[src_reg_b] = src_reg_c*/
-#define UOP_MEM_STORE_REG (UOP_TYPE_PARAMS_REGS | 0x43 | UOP_TYPE_ORDER_BARRIER)
+#define UOP_MEM_STORE_REG (UOP_TYPE_PARAMS_REGS | 0x43 | UOP_TYPE_ORDER_BARRIER | UOP_TYPE_MEM)
 /*UOP_MEM_STORE_IMM_8 - byte src_reg_a:[src_reg_b] = imm_data*/
-#define UOP_MEM_STORE_IMM_8 (UOP_TYPE_PARAMS_REGS | UOP_TYPE_PARAMS_IMM | 0x44 | UOP_TYPE_ORDER_BARRIER)
+#define UOP_MEM_STORE_IMM_8 (UOP_TYPE_PARAMS_REGS | UOP_TYPE_PARAMS_IMM | 0x44 | UOP_TYPE_ORDER_BARRIER | UOP_TYPE_MEM)
 /*UOP_MEM_STORE_IMM_16 - word src_reg_a:[src_reg_b] = imm_data*/
-#define UOP_MEM_STORE_IMM_16 (UOP_TYPE_PARAMS_REGS | UOP_TYPE_PARAMS_IMM | 0x45 | UOP_TYPE_ORDER_BARRIER)
+#define UOP_MEM_STORE_IMM_16 (UOP_TYPE_PARAMS_REGS | UOP_TYPE_PARAMS_IMM | 0x45 | UOP_TYPE_ORDER_BARRIER | UOP_TYPE_MEM)
 /*UOP_MEM_STORE_IMM_32 - long src_reg_a:[src_reg_b] = imm_data*/
-#define UOP_MEM_STORE_IMM_32 (UOP_TYPE_PARAMS_REGS | UOP_TYPE_PARAMS_IMM | 0x46 | UOP_TYPE_ORDER_BARRIER)
+#define UOP_MEM_STORE_IMM_32 (UOP_TYPE_PARAMS_REGS | UOP_TYPE_PARAMS_IMM | 0x46 | UOP_TYPE_ORDER_BARRIER | UOP_TYPE_MEM)
 /*UOP_MEM_LOAD_SINGLE - dest_reg = (float)src_reg_a:[src_reg_b]*/
-#define UOP_MEM_LOAD_SINGLE (UOP_TYPE_PARAMS_REGS | UOP_TYPE_PARAMS_IMM | 0x47 | UOP_TYPE_ORDER_BARRIER)
+#define UOP_MEM_LOAD_SINGLE (UOP_TYPE_PARAMS_REGS | UOP_TYPE_PARAMS_IMM | 0x47 | UOP_TYPE_ORDER_BARRIER | UOP_TYPE_MEM)
 /*UOP_CMP_IMM_JZ - if (src_reg_a == imm_data) then jump to ptr*/
 #define UOP_CMP_IMM_JZ (UOP_TYPE_PARAMS_REGS | UOP_TYPE_PARAMS_IMM | UOP_TYPE_PARAMS_POINTER | 0x48 | UOP_TYPE_ORDER_BARRIER)
 /*UOP_MEM_LOAD_DOUBLE - dest_reg = (double)src_reg_a:[src_reg_b]*/
-#define UOP_MEM_LOAD_DOUBLE (UOP_TYPE_PARAMS_REGS | UOP_TYPE_PARAMS_IMM | 0x49 | UOP_TYPE_ORDER_BARRIER)
+#define UOP_MEM_LOAD_DOUBLE (UOP_TYPE_PARAMS_REGS | UOP_TYPE_PARAMS_IMM | 0x49 | UOP_TYPE_ORDER_BARRIER | UOP_TYPE_MEM)
 /*UOP_MEM_STORE_SINGLE - src_reg_a:[src_reg_b] = src_reg_c*/
-#define UOP_MEM_STORE_SINGLE (UOP_TYPE_PARAMS_REGS | 0x4a | UOP_TYPE_ORDER_BARRIER)
+#define UOP_MEM_STORE_SINGLE (UOP_TYPE_PARAMS_REGS | 0x4a | UOP_TYPE_ORDER_BARRIER | UOP_TYPE_MEM)
 /*UOP_MEM_STORE_DOUBLE - src_reg_a:[src_reg_b] = src_reg_c*/
-#define UOP_MEM_STORE_DOUBLE (UOP_TYPE_PARAMS_REGS | 0x4b | UOP_TYPE_ORDER_BARRIER)
+#define UOP_MEM_STORE_DOUBLE (UOP_TYPE_PARAMS_REGS | 0x4b | UOP_TYPE_ORDER_BARRIER | UOP_TYPE_MEM)
 /*UOP_CMP_JB - if (src_reg_a < src_reg_b) then jump to ptr*/
 #define UOP_CMP_JB (UOP_TYPE_PARAMS_REGS | UOP_TYPE_PARAMS_POINTER | 0x4c | UOP_TYPE_ORDER_BARRIER)
 /*UOP_CMP_JNBE - if (src_reg_a > src_reg_b) then jump to ptr*/
@@ -372,7 +387,7 @@
 
 /*UOP_SSE_ENTER - must be called before any SSE registers accessed*/
 #define UOP_SSE_ENTER (0xce | UOP_TYPE_BARRIER)
-#define UOP_CHECK_ALIGN (0xcf | UOP_TYPE_BARRIER)
+#define UOP_CHECK_ALIGN (UOP_TYPE_PARAMS_REGS | UOP_TYPE_PARAMS_IMM | 0xcf | UOP_TYPE_BARRIER)
 
 /*UOP_UNPCKLPS - dest_reg = interleave low packed singles from src_reg_a/src_reg_b*/
 #define UOP_UNPCKLPS (UOP_TYPE_PARAMS_REGS | 0xd0)
@@ -385,37 +400,37 @@
 #define UOP_UNPCKHPD (UOP_TYPE_PARAMS_REGS | 0xd3)
 
 /*UOP_ADDPS - dest_reg = packed single src_reg_a + src_reg_b*/
-#define UOP_ADDPS (UOP_TYPE_PARAMS_REGS | 0xd4)
+#define UOP_ADDPS (UOP_TYPE_PARAMS_REGS | UOP_TYPE_FP_STATUS | 0xd4)
 /*UOP_ADDPD - dest_reg = packed double src_reg_a + src_reg_b*/
-#define UOP_ADDPD (UOP_TYPE_PARAMS_REGS | 0xd5)
+#define UOP_ADDPD (UOP_TYPE_PARAMS_REGS | UOP_TYPE_FP_STATUS | 0xd5)
 /*UOP_ADDSS - dest_reg[31:0] = src_reg_a[31:0] + src_reg_b[31:0], dest_reg[127:32] = src_reg_a[127:32]*/
-#define UOP_ADDSS (UOP_TYPE_PARAMS_REGS | 0xd6)
+#define UOP_ADDSS (UOP_TYPE_PARAMS_REGS | UOP_TYPE_FP_STATUS | 0xd6)
 /*UOP_ADDSD - dest_reg[63:0] = src_reg_a[63:0] + src_reg_b[63:0], dest_reg[127:64] = src_reg_a[127:64]*/
-#define UOP_ADDSD (UOP_TYPE_PARAMS_REGS | 0xd7)
+#define UOP_ADDSD (UOP_TYPE_PARAMS_REGS | UOP_TYPE_FP_STATUS | 0xd7)
 /*UOP_MULPS - dest_reg = packed single src_reg_a * src_reg_b*/
-#define UOP_MULPS (UOP_TYPE_PARAMS_REGS | 0xd8)
+#define UOP_MULPS (UOP_TYPE_PARAMS_REGS | UOP_TYPE_FP_STATUS | 0xd8)
 /*UOP_MULPD - dest_reg = packed double src_reg_a * src_reg_b*/
-#define UOP_MULPD (UOP_TYPE_PARAMS_REGS | 0xd9)
+#define UOP_MULPD (UOP_TYPE_PARAMS_REGS | UOP_TYPE_FP_STATUS | 0xd9)
 /*UOP_MULSS - dest_reg[31:0] = src_reg_a[31:0] * src_reg_b[31:0], dest_reg[127:32] = src_reg_a[127:32]*/
-#define UOP_MULSS (UOP_TYPE_PARAMS_REGS | 0xda)
+#define UOP_MULSS (UOP_TYPE_PARAMS_REGS | UOP_TYPE_FP_STATUS | 0xda)
 /*UOP_MULSD - dest_reg[63:0] = src_reg_a[63:0] * src_reg_b[63:0], dest_reg[127:64] = src_reg_a[127:64]*/
-#define UOP_MULSD (UOP_TYPE_PARAMS_REGS | 0xdb)
+#define UOP_MULSD (UOP_TYPE_PARAMS_REGS | UOP_TYPE_FP_STATUS | 0xdb)
 /*UOP_SUBPS - dest_reg = packed single src_reg_a - src_reg_b*/
-#define UOP_SUBPS (UOP_TYPE_PARAMS_REGS | 0xdc)
+#define UOP_SUBPS (UOP_TYPE_PARAMS_REGS | UOP_TYPE_FP_STATUS | 0xdc)
 /*UOP_SUBPD - dest_reg = packed double src_reg_a - src_reg_b*/
-#define UOP_SUBPD (UOP_TYPE_PARAMS_REGS | 0xdd)
+#define UOP_SUBPD (UOP_TYPE_PARAMS_REGS | UOP_TYPE_FP_STATUS | 0xdd)
 /*UOP_SUBSS - dest_reg[31:0] = src_reg_a[31:0] - src_reg_b[31:0], dest_reg[127:32] = src_reg_a[127:32]*/
-#define UOP_SUBSS (UOP_TYPE_PARAMS_REGS | 0xde)
+#define UOP_SUBSS (UOP_TYPE_PARAMS_REGS | UOP_TYPE_FP_STATUS | 0xde)
 /*UOP_SUBSD - dest_reg[63:0] = src_reg_a[63:0] - src_reg_b[63:0], dest_reg[127:64] = src_reg_a[127:64]*/
-#define UOP_SUBSD (UOP_TYPE_PARAMS_REGS | 0xdf)
+#define UOP_SUBSD (UOP_TYPE_PARAMS_REGS | UOP_TYPE_FP_STATUS | 0xdf)
 /*UOP_DIVPS - dest_reg = packed single src_reg_a / src_reg_b*/
-#define UOP_DIVPS (UOP_TYPE_PARAMS_REGS | 0xe0)
+#define UOP_DIVPS (UOP_TYPE_PARAMS_REGS | UOP_TYPE_FP_STATUS | 0xe0)
 /*UOP_DIVPD - dest_reg = packed double src_reg_a / src_reg_b*/
-#define UOP_DIVPD (UOP_TYPE_PARAMS_REGS | 0xe1)
+#define UOP_DIVPD (UOP_TYPE_PARAMS_REGS | UOP_TYPE_FP_STATUS | 0xe1)
 /*UOP_DIVSS - dest_reg[31:0] = src_reg_a[31:0] / src_reg_b[31:0], dest_reg[127:32] = src_reg_a[127:32]*/
-#define UOP_DIVSS (UOP_TYPE_PARAMS_REGS | 0xe2)
+#define UOP_DIVSS (UOP_TYPE_PARAMS_REGS | UOP_TYPE_FP_STATUS | 0xe2)
 /*UOP_DIVSD - dest_reg[63:0] = src_reg_a[63:0] / src_reg_b[63:0], dest_reg[127:64] = src_reg_a[127:64]*/
-#define UOP_DIVSD (UOP_TYPE_PARAMS_REGS | 0xe3)
+#define UOP_DIVSD (UOP_TYPE_PARAMS_REGS | UOP_TYPE_FP_STATUS | 0xe3)
 
 /*UOP_PADDQ - (packed quad) dest_reg = src_reg_a + src_reg_b*/
 #define UOP_PADDQ (UOP_TYPE_PARAMS_REGS | 0xe4)
@@ -430,25 +445,25 @@
 #define UOP_MOVHLPS  (UOP_TYPE_PARAMS_REGS | 0xe8)
 #define UOP_MOVLHPS  (UOP_TYPE_PARAMS_REGS | 0xe9)
 #define UOP_MOVMSKPS (UOP_TYPE_PARAMS_REGS | 0xea)
-#define UOP_MINPS    (UOP_TYPE_PARAMS_REGS | 0xeb)
-#define UOP_MINSS    (UOP_TYPE_PARAMS_REGS | 0xec)
-#define UOP_MAXPS    (UOP_TYPE_PARAMS_REGS | 0xed)
-#define UOP_MAXSS    (UOP_TYPE_PARAMS_REGS | 0xee)
-#define UOP_SQRTPS   (UOP_TYPE_PARAMS_REGS | 0xef)
-#define UOP_SQRTSS   (UOP_TYPE_PARAMS_REGS | 0xf0)
-#define UOP_CMPPS    (UOP_TYPE_PARAMS_REGS | UOP_TYPE_PARAMS_IMM | 0xf1)
-#define UOP_CMPSS    (UOP_TYPE_PARAMS_REGS | UOP_TYPE_PARAMS_IMM | 0xf2)
-#define UOP_COMISS   (UOP_TYPE_PARAMS_REGS | UOP_TYPE_PARAMS_IMM | 0xf3)
+#define UOP_MINPS    (UOP_TYPE_PARAMS_REGS | UOP_TYPE_FP_STATUS | 0xeb)
+#define UOP_MINSS    (UOP_TYPE_PARAMS_REGS | UOP_TYPE_FP_STATUS | 0xec)
+#define UOP_MAXPS    (UOP_TYPE_PARAMS_REGS | UOP_TYPE_FP_STATUS | 0xed)
+#define UOP_MAXSS    (UOP_TYPE_PARAMS_REGS | UOP_TYPE_FP_STATUS | 0xee)
+#define UOP_SQRTPS   (UOP_TYPE_PARAMS_REGS | UOP_TYPE_FP_STATUS | 0xef)
+#define UOP_SQRTSS   (UOP_TYPE_PARAMS_REGS | UOP_TYPE_FP_STATUS | 0xf0)
+#define UOP_CMPPS    (UOP_TYPE_PARAMS_REGS | UOP_TYPE_PARAMS_IMM | UOP_TYPE_FP_STATUS | 0xf1)
+#define UOP_CMPSS    (UOP_TYPE_PARAMS_REGS | UOP_TYPE_PARAMS_IMM | UOP_TYPE_FP_STATUS | 0xf2)
+#define UOP_COMISS   (UOP_TYPE_PARAMS_REGS | UOP_TYPE_PARAMS_IMM | UOP_TYPE_FP_STATUS | 0xf3)
 #define UOP_RCPPS    (UOP_TYPE_PARAMS_REGS | 0xf4)
 #define UOP_RCPSS    (UOP_TYPE_PARAMS_REGS | 0xf5)
 #define UOP_RSQRTPS  (UOP_TYPE_PARAMS_REGS | 0xf6)
 #define UOP_RSQRTSS  (UOP_TYPE_PARAMS_REGS | 0xf7)
-#define UOP_CVTSI2SS   (UOP_TYPE_PARAMS_REGS | 0xf8)
-#define UOP_CVTTSS2SI  (UOP_TYPE_PARAMS_REGS | 0xf9)
-#define UOP_CVTSS2SI   (UOP_TYPE_PARAMS_REGS | 0xfa)
-#define UOP_CVTPI2PS   (UOP_TYPE_PARAMS_REGS | 0xfb)
-#define UOP_CVTTPS2PI  (UOP_TYPE_PARAMS_REGS | 0xfc)
-#define UOP_CVTPS2PI   (UOP_TYPE_PARAMS_REGS | 0xfd)
+#define UOP_CVTSI2SS   (UOP_TYPE_PARAMS_REGS | UOP_TYPE_FP_STATUS | 0xf8)
+#define UOP_CVTTSS2SI  (UOP_TYPE_PARAMS_REGS | UOP_TYPE_FP_STATUS | 0xf9)
+#define UOP_CVTSS2SI   (UOP_TYPE_PARAMS_REGS | UOP_TYPE_FP_STATUS | 0xfa)
+#define UOP_CVTPI2PS   (UOP_TYPE_PARAMS_REGS | UOP_TYPE_FP_STATUS | 0xfb)
+#define UOP_CVTTPS2PI  (UOP_TYPE_PARAMS_REGS | UOP_TYPE_FP_STATUS | 0xfc)
+#define UOP_CVTPS2PI   (UOP_TYPE_PARAMS_REGS | UOP_TYPE_FP_STATUS | 0xfd)
 
 #define UOP_PSHUFW   (UOP_TYPE_PARAMS_REGS | UOP_TYPE_PARAMS_IMM | 0x100)
 #define UOP_PINSRW   (UOP_TYPE_PARAMS_REGS | UOP_TYPE_PARAMS_IMM | 0x101)
@@ -462,7 +477,33 @@
 #define UOP_PMAXSW   (UOP_TYPE_PARAMS_REGS | 0x109)
 #define UOP_PSADBW   (UOP_TYPE_PARAMS_REGS | 0x10a)
 
-#define UOP_MAX     0x10b
+/* Byte/word/dword comparisons with matching source widths and a dword
+   boolean destination: dest = (src_a < src_b) ^ imm (0 or 1). */
+#define UOP_CMP_ULT (UOP_TYPE_PARAMS_REGS | UOP_TYPE_PARAMS_IMM | 0x10b)
+#define UOP_CMP_SLT (UOP_TYPE_PARAMS_REGS | UOP_TYPE_PARAMS_IMM | 0x10c)
+
+/* DIVMOD returns a fault status and leaves quotient/remainder in backend
+   scratch. Read both results immediately after the exception branch, before
+   emitting another memory operation or helper call on the success path.
+   imm_data holds the quotient width, with bit 8 selecting signed division. */
+#define UOP_DIVMOD (UOP_TYPE_PARAMS_REGS | UOP_TYPE_PARAMS_IMM | 0x10d)
+#define UOP_DIV_RESULT (UOP_TYPE_PARAMS_REGS | UOP_TYPE_PARAMS_IMM | 0x10e)
+
+/* 32-bit zero comparison: dest = (src_a == 0) ^ imm (0 or 1). */
+#define UOP_CMP_Z (UOP_TYPE_PARAMS_REGS | UOP_TYPE_PARAMS_IMM | 0x10f)
+
+/* Even parity of the low byte, optionally inverted by imm (0 or 1). */
+#define UOP_PARITY (UOP_TYPE_PARAMS_REGS | UOP_TYPE_PARAMS_IMM | 0x110)
+#define UOP_PARITY_JUMP (UOP_TYPE_PARAMS_REGS | UOP_TYPE_PARAMS_IMM | UOP_TYPE_PARAMS_POINTER | UOP_TYPE_ORDER_BARRIER | UOP_TYPE_JUMP | 0x111)
+
+/* Select src_b or src_a directly from (src_c == 0) ^ imm. */
+#define UOP_CMOV_Z (UOP_TYPE_PARAMS_REGS | UOP_TYPE_PARAMS_IMM | 0x112)
+
+/* Overflow from two dword sources, returned as a dword boolean. imm bit 0
+   inverts, bit 1 selects subtraction; bits 2-3 select width (0=32, 1=8, 2=16). */
+#define UOP_OVERFLOW (UOP_TYPE_PARAMS_REGS | UOP_TYPE_PARAMS_IMM | 0x113)
+
+#define UOP_MAX     0x114
 
 #define UOP_INVALID 0xffff
 
@@ -474,7 +515,7 @@ typedef struct uop_t {
     ir_reg_t      src_reg_a;
     ir_reg_t      src_reg_b;
     ir_reg_t      src_reg_c;
-#if defined __ARM_EABI__ || defined _ARM_ || defined _M_ARM || defined __aarch64__ || defined _M_ARM64
+#if defined __ARM_EABI__ || defined _ARM_ || defined _M_ARM || defined __aarch64__ || defined _M_ARM64 || defined __loongarch_lp64
     uintptr_t     imm_data;
 #else
     uint32_t      imm_data;
@@ -756,7 +797,7 @@ uop_gen_reg_src3_imm(uint32_t uop_type, ir_data_t *ir, int src_reg_a, int src_re
 }
 
 static inline void
-#if defined __ARM_EABI__ || defined _ARM_ || defined _M_ARM || defined __aarch64__ || defined _M_ARM64
+#if defined __ARM_EABI__ || defined _ARM_ || defined _M_ARM || defined __aarch64__ || defined _M_ARM64 || defined __loongarch_lp64
 uop_gen_imm(uint32_t uop_type, ir_data_t *ir, uintptr_t imm)
 #else
 uop_gen_imm(uint32_t uop_type, ir_data_t *ir, uint32_t imm)
@@ -847,6 +888,8 @@ extern int codegen_fp_enter(void);
 #define uop_UMUL(ir, dst_reg, src_reg_a, src_reg_b)              uop_gen_reg_dst_src2(UOP_UMUL, ir, dst_reg, src_reg_a, src_reg_b)
 #define uop_UMUL_HI(ir, dst_reg, src_reg_a, src_reg_b)           uop_gen_reg_dst_src2(UOP_UMUL_HI, ir, dst_reg, src_reg_a, src_reg_b)
 #define uop_UDIV_CHECK(ir, dst_reg, src_reg_a, src_reg_b, src_reg_c, bits) uop_gen_reg_dst_src3_imm(UOP_UDIV_CHECK, ir, dst_reg, src_reg_a, src_reg_b, src_reg_c, bits)
+#define uop_DIVMOD(ir, dst_reg, low, high, divisor, mode) uop_gen_reg_dst_src3_imm(UOP_DIVMOD, ir, dst_reg, low, high, divisor, mode)
+#define uop_DIV_RESULT(ir, dst_reg, remainder) uop_gen_reg_dst_imm(UOP_DIV_RESULT, ir, dst_reg, remainder)
 #define uop_IDIV_CHECK(ir, dst_reg, src_reg_a, src_reg_b, src_reg_c, bits) uop_gen_reg_dst_src3_imm(UOP_IDIV_CHECK, ir, dst_reg, src_reg_a, src_reg_b, src_reg_c, bits)
 #define uop_UDIV(ir, dst_reg, src_reg_a, src_reg_b, src_reg_c)    uop_gen_reg_dst_src3(UOP_UDIV, ir, dst_reg, src_reg_a, src_reg_b, src_reg_c)
 #define uop_UMOD(ir, dst_reg, src_reg_a, src_reg_b, src_reg_c)    uop_gen_reg_dst_src3(UOP_UMOD, ir, dst_reg, src_reg_a, src_reg_b, src_reg_c)
@@ -901,7 +944,7 @@ extern int codegen_fp_enter(void);
 #define uop_FROUND_S(ir, dst_reg, src_reg)                       uop_gen_reg_dst_src1(UOP_FROUND_S, ir, dst_reg, src_reg)
 #define uop_FTST(ir, dst_reg, src_reg)                           uop_gen_reg_dst_src1(UOP_FTST, ir, dst_reg, src_reg)
 
-#if defined __ARM_EABI__ || defined _ARM_ || defined _M_ARM || defined __aarch64__ || defined _M_ARM64
+#if defined __ARM_EABI__ || defined _ARM_ || defined _M_ARM || defined __aarch64__ || defined _M_ARM64 || defined __loongarch_lp64
 #define uop_FP_ENTER(ir)                                    \
     do {                                                    \
         if (!codegen_fpu_entered) {                         \
@@ -949,13 +992,17 @@ extern int codegen_fp_enter(void);
     } while (0)
 #endif
 
+#if defined __amd64__ || defined _M_X64
+#define uop_CHECK_ALIGN(ir) uop_gen_reg_src1_imm(UOP_CHECK_ALIGN, ir, IREG_eaaddr, cpu_state.oldpc)
+#else
 #define uop_CHECK_ALIGN(ir) \
  do {                                                     \
             uop_MOV_IMM(ir, IREG_oldpc, cpu_state.oldpc);            \
             uop_LOAD_FUNC_ARG_REG(ir, 0, IREG_eaaddr); \
             uop_CALL_FUNC_RESULT(ir, IREG_temp0, codegen_sse_check_align); \
             uop_CMP_IMM_JZ(ir, IREG_temp0, 1, codegen_gpf_rout); \
-    } while (0) \
+    } while (0)
+#endif
 
 #define uop_JMP(ir, p)                                                   uop_gen_pointer(UOP_JMP, ir, p)
 #define uop_JMP_DEST(ir)                                                 uop_gen(UOP_JMP_DEST, ir)
@@ -990,6 +1037,13 @@ extern int codegen_fp_enter(void);
 #define uop_MOV_INT_DOUBLE(ir, dst_reg, src_reg /*, nrc, orc*/)          uop_gen_reg_dst_src1(UOP_MOV_INT_DOUBLE, ir, dst_reg, src_reg /*, nrc, orc*/)
 #define uop_MOV_INT_DOUBLE_64(ir, dst_reg, src_reg_d, src_reg_q, tag)    uop_gen_reg_dst_src3(UOP_MOV_INT_DOUBLE_64, ir, dst_reg, src_reg_d, src_reg_q, tag)
 #define uop_CMOVNZ(ir, dst_reg, old_reg, src_reg, cond_reg)              uop_gen_reg_dst_src3(UOP_CMOVNZ, ir, dst_reg, old_reg, src_reg, cond_reg)
+#define uop_CMOV_Z(ir, dst_reg, old_reg, src_reg, cond_reg, invert)      uop_gen_reg_dst_src3_imm(UOP_CMOV_Z, ir, dst_reg, old_reg, src_reg, cond_reg, invert)
+#define uop_OVERFLOW(ir, dst_reg, a, b, mode)                         uop_gen_reg_dst_src2_imm(UOP_OVERFLOW, ir, dst_reg, a, b, mode)
+#define uop_CMP_ULT(ir, dst_reg, a, b, invert)                         uop_gen_reg_dst_src2_imm(UOP_CMP_ULT, ir, dst_reg, a, b, invert)
+#define uop_CMP_SLT(ir, dst_reg, a, b, invert)                         uop_gen_reg_dst_src2_imm(UOP_CMP_SLT, ir, dst_reg, a, b, invert)
+#define uop_CMP_Z(ir, dst_reg, src_reg, invert)                        uop_gen_reg_dst_src_imm(UOP_CMP_Z, ir, dst_reg, src_reg, invert)
+#define uop_PARITY(ir, dst_reg, src_reg, invert)                       uop_gen_reg_dst_src_imm(UOP_PARITY, ir, dst_reg, src_reg, invert)
+#define uop_PARITY_JUMP(ir, src_reg, invert)                           uop_gen_reg_src1_imm(UOP_PARITY_JUMP, ir, src_reg, invert)
 
 #define uop_NOP_BARRIER(ir)                                              uop_gen(UOP_NOP_BARRIER, ir)
 

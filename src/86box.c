@@ -65,6 +65,7 @@
 #include <86box/postcard.h>
 #include <86box/unittester.h>
 #include <86box/softpower.h>
+#include <86box/ibm5140_power.h>
 #include <86box/novell_cardkey.h>
 #include <86box/mcamem.h>
 #include <86box/isamem.h>
@@ -163,6 +164,7 @@ int      video_fullscreen_scale                 = 0;              /* (C) video *
 int      fullscreen_ui_visible                  = 0;              /* (C) video */
 int      enable_overscan                        = 0;              /* (C) video */
 int      force_43                               = 0;              /* (C) video */
+int      force_device_aspect                    = 0;              /* (C) video */
 int      video_filter_method                    = 1;              /* (C) video */
 int      video_vsync                            = 0;              /* (C) video */
 int      video_framerate                        = -1;             /* (C) video */
@@ -180,7 +182,10 @@ int      isartc_type                            = 0;              /* (C) enable 
 int      gfxcard[GFXCARD_MAX]                   = { 0, 0 };       /* (C) graphics/video card */
 int      show_second_monitors                   = 1;              /* (C) show non-primary monitors */
 int      sound_is_float                         = 1;              /* (C) sound uses FP values */
+char     sound_input_dev_name[512]              = { 0 };          /* (C) name of sound input device  */
+int      sound_input_enabled                    = 0;              /* (C) enable sound input  */
 int      sound_sample_rate                      = FREQ_48000;     /* (C) sound output sample rate */
+int      sb_input_rate                          = FREQ_44100;     /* (C) SB16/AWE32 hardware sample rate */
 int      voodoo_enabled                         = 0;              /* (C) video option */
 int      ibm8514_standalone_enabled             = 0;              /* (C) video option */
 int      xga_standalone_enabled                 = 0;              /* (C) video option */
@@ -231,6 +236,9 @@ int      global_cfg_overridden = 0;                               /* Global conf
 
 int      monitor_edid = 0;                                        /* (C) Which EDID to use. 0=default, 1=custom. */
 char     monitor_edid_path[1024] = { 0 };                         /* (C) Path to custom EDID */
+#ifdef USE_VFIO
+vfio_device_conf_t vfio_device_conf[VFIO_DEVICE_MAX] = { 0 };    /* (C) VFIO passthrough devices */
+#endif
 
 double   video_gl_input_scale = 1.0;                              /* (C) OpenGL 3.x input scale */
 int      video_gl_input_scale_mode = FULLSCR_SCALE_FULL;          /* (C) OpenGL 3.x input stretch mode */
@@ -346,8 +354,6 @@ static uint32_t fps_sample_elapsed_ms = 1000;
 
 extern int output;
 int        atfullspeed;
-
-extern double exp_pow_table[0x800];
 
 char  exe_path[2048]; /* path (dir) of executable */
 char  usr_path[1024]; /* path (dir) of user data */
@@ -885,6 +891,12 @@ pc_init(int argc, char *argv[])
     plat_getcwd(rom_path, sizeof(rom_path) - 1);
     plat_getcwd(asset_path, sizeof(asset_path) - 1);
 
+    for (uint8_t i = 0; i < FDD_NUM; i++) {
+        fdd_drive_t *drv = &drives[i];
+
+        memset(drv, 0x00, sizeof(fdd_drive_t));
+    }
+
     for (c = 1; c < argc; c++) {
         if (argv[c][0] != '-')
             break;
@@ -1365,13 +1377,31 @@ usage:
         mo_global_init();
         tape_global_init();
 
-        /* Load the configuration file. */
-        config_load();
+        /*
+           Set the ID of all the floppy drives so their configuration
+           can load.
+         */
+        for (uint8_t i = 0; i < FDD_NUM; i++) {
+            fdd_drive_t *drv = &drives[i];
+
+            drv->id    = i;
+            drv->empty = 1;
+        }
+
+        /*
+           Load the configuration file; the user may choose not to, for a
+           machine this build does not have, and then nothing is saved.
+         */
+        if (!config_load())
+            return 0;
+
         /* To save the global key binds. */
         config_save_global();
 
-        /* Clear the CMOS and/or BIOS flash file, if we were started with
-           the relevant parameter(s). */
+        /*
+           Clear the CMOS and/or BIOS flash file, if we were started with
+           the relevant parameter(s).
+         */
         if (clear_cmos) {
             delete_nvr_file(0);
             clear_cmos = 0;
@@ -1383,9 +1413,10 @@ usage:
         }
 
         for (uint8_t i = 0; i < FDD_NUM; i++) {
+            fdd_drive_t *drv = &drives[i];
             if (fn[i] != NULL) {
                 if (strlen(fn[i]) <= 511)
-                    strncpy(floppyfns[i], fn[i], 511);
+                    strncpy(drv->image_path, fn[i], 511);
                 free(fn[i]);
                 fn[i] = NULL;
             }
@@ -1575,11 +1606,6 @@ pc_init_modules(void)
 
     lpt_set_3bc_used(0);
     lpt_set_next_inst(0);
-
-    for (c = 0; c <= 0x7ff; c++) {
-        int64_t exp = c - 1023; /* 1023 = BIAS64 */
-        exp_pow_table[c] = pow(2.0, (double) exp);
-    }
 
     if (do_nothing) {
         do_nothing = 0;
@@ -1886,20 +1912,29 @@ pc_reset_hard_init(void)
         device_add(&postcard_device);
     if (unittester_enabled)
         device_add(&unittester_device);
-    if (softpower_enabled)
+    if (softpower_enabled && (machines[machine].init != machine_ibm5140_init))
         device_add(&softpower_device);
 
     if (novell_keycard_enabled)
         device_add(&novell_keycard_device);
 
-    if (IS_ARCH(machine, MACHINE_BUS_PCI)) {
+    if (IS_ARCH(machine, MACHINE_BUS_PCI) ||
+        IS_ARCH(machine, MACHINE_BUS_AGP) ||
+        machine_has_flags(machine, MACHINE_PCI_INTERNAL) ||
+        machine_has_flags(machine, MACHINE_AGP_INTERNAL)) {
         pci_register_cards();
-        device_reset_all(DEVICE_PCI);
+        /* The AGP slot shares the bus RST# signal. */
+        device_reset_all(DEVICE_PCI | DEVICE_AGP);
     }
 
     /* Mark IDE shadow drives (slaves with a present master) as such in case
        the IDE controllers present are not some form of PCI. */
     ide_drives_set_shadow();
+
+    /* Every IDE board is up by now: check them against what the settings
+       show for each. */
+    ide_plan_check();
+    scsi_plan_check();
 
     /* Make sure to disable any sound timers with no handlers. */
     sound_recalc_timers();
@@ -1959,7 +1994,7 @@ pc_close(UNUSED(thread_t *ptr))
     serial_devices_close(0);
 
     for (uint8_t i = 0; i < FDD_NUM; i++)
-        fdd_close(i);
+        fdd_close(&drives[i]);
 
 #ifdef ENABLE_808X_LOG
     if (dump_on_exit)
@@ -2019,6 +2054,7 @@ pc_run(void)
     /* Trigger a hard reset if one is pending. */
     if (hard_reset_pending) {
         hard_reset_pending = 0;
+        ibm5140_power_hard_off();
         pc_reset_hard_close();
         pc_reset_hard_init();
     }
@@ -2156,6 +2192,11 @@ set_screen_size_monitor(int x, int y, int monitor_index)
                 dy = (dx / 4.0) * 3.0;
         }
         monitors[monitor_index].mon_unscaled_size_y = (int) dy;
+    } else if (force_device_aspect && monitors[monitor_index].mon_device_aspect_x > 0 &&
+               monitors[monitor_index].mon_device_aspect_y > 0) {
+        monitors[monitor_index].mon_unscaled_size_y =
+            x * monitors[monitor_index].mon_device_aspect_y /
+            monitors[monitor_index].mon_device_aspect_x;
     } else
         monitors[monitor_index].mon_unscaled_size_y = monitors[monitor_index].mon_efscrnsz_y;
 

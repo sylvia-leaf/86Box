@@ -38,12 +38,15 @@ typedef struct codeblock_t {
     uint16_t flags;
     uint8_t  ins;
     uint8_t  TOP;
-#if defined(__aarch64__) || defined(_M_ARM64)
-    /* ARM64-only: per-block retry counter used to delay NO_IMMEDIATES
-      promotion until churn repeats, reducing premature slow-immediate mode. */
+#if defined(__aarch64__) || defined(_M_ARM64) || defined(__loongarch_lp64)
+    /* ARM64/LoongArch64: per-block retry counter used to delay
+       NO_IMMEDIATES promotion until churn repeats, reducing premature
+       slow-immediate mode. (The 386_dynarec.c policy consuming these
+       fields is currently ARM64-only; LoongArch64 wires it up in M5.) */
     uint8_t  dirty_list_recompile_hits;
-    /* ARM64-only: tracks the most recent dirty-list epoch seen by this
-      block so promotion can require a dense burst, not stale spaced-out hits. */
+    /* ARM64/LoongArch64: tracks the most recent dirty-list epoch seen by
+       this block so promotion can require a dense burst, not stale
+       spaced-out hits. */
     uint16_t dirty_list_last_epoch;
 #endif
     int      valid;
@@ -348,7 +351,8 @@ extern void codegen_check_flush(struct page_t *page, uint64_t mask, uint32_t phy
 struct ir_data_t;
 x86seg     *codegen_generate_ea(struct ir_data_t *ir, x86seg *op_ea_seg, uint32_t fetchdat, int op_ssegs, uint32_t *op_pc, uint32_t op_32, int stack_offset);
 extern void codegen_check_seg_read(codeblock_t *block, struct ir_data_t *ir, x86seg *seg);
-extern void codegen_check_seg_write(codeblock_t *block, struct ir_data_t *ir, x86seg *seg);
+extern void codegen_check_seg_write(codeblock_t *block, struct ir_data_t *ir, x86seg *seg, int addr_reg, int size);
+extern void codegen_check_seg_write_abs(codeblock_t *block, struct ir_data_t *ir, x86seg *seg, uint32_t addr, int size);
 extern void codegen_check_regs(void);
 
 extern int codegen_purge_purgable_list(void);
@@ -418,7 +422,7 @@ extern int codegen_in_recompile;
 
 void codegen_generate_reset(void);
 
-int  codegen_get_instruction_uop(codeblock_t *block, uint32_t pc, int *first_instruction, int *TOP);
+int  codegen_get_instruction_uop(codeblock_t *block, uint32_t pc, int *first_instruction, int *TOP, int *flags_op);
 void codegen_set_loop_start(struct ir_data_t *ir, int first_instruction);
 
 #ifdef DEBUG_EXTRA

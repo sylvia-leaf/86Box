@@ -2,10 +2,19 @@
 #define QT_SETTINGSOTHERPERIPHERALS_HPP
 
 #include <QWidget>
+#ifdef USE_VFIO
+#    include <QList>
+#    include <QPair>
+#    include <QString>
+#endif
 
 namespace Ui {
 class SettingsOtherPeripherals;
 }
+
+#ifdef USE_VFIO
+class VFIODeviceModel;
+#endif
 
 class SettingsOtherPeripherals : public QWidget {
     Q_OBJECT
@@ -63,11 +72,27 @@ private:
     int                           unittester_cfg_changed     = 0;
     int                           novell_keycard_cfg_changed = 0;
     int                           softpower_cfg_changed      = 0;
+    bool                          softpower_card_enabled     = false;
 
     SettingsCompleter            *scRTC;
 
     SettingsCompleter            *scMemExpCard[4];
     SettingsCompleter            *scIsaRomCard[4];
+
+#ifdef USE_VFIO
+    /* Location and custom ROM file of each device to pass through. */
+    using VFIODeviceList = QList<QPair<QString, QString>>;
+
+    void           vfioEnumerate();
+    void           vfioRestore();
+    void           vfioUpdateControls();
+    VFIODeviceList vfioSelectedDevices() const;
+    int            vfioChanged() const;
+    void           vfioSave();
+
+    VFIODeviceModel              *vfioModel;
+    bool                          vfioUpdating = false;
+#endif
 };
 
 #endif // QT_SETTINGSOTHERPERIPHERALS_HPP
