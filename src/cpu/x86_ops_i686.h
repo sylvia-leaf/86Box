@@ -254,6 +254,7 @@ sf_fx_save_stor_common(uint32_t fetchdat, int bits)
 
         CLOCK_CYCLES((cr0 & 1) ? 56 : 67);
     } else if (fxinst == 2) {
+        SSE_ENTER();
         if (cpu_mod == 3) {
             x86illegal();
             return cpu_state.abrt;
@@ -276,6 +277,7 @@ sf_fx_save_stor_common(uint32_t fetchdat, int bits)
         }
         return sse_set_mxcsr(src);
     } else if (fxinst == 3) {
+        SSE_ENTER();
         if (cpu_mod == 3) {
             x86illegal();
             return cpu_state.abrt;
@@ -658,6 +660,7 @@ fx_save_stor_common(uint32_t fetchdat, int bits)
 
         CLOCK_CYCLES(1);
     } else if (fxinst == 2) {
+        SSE_ENTER();
         //LDMXCSR
         if (cpu_mod == 3) {
             x86illegal();
@@ -681,6 +684,7 @@ fx_save_stor_common(uint32_t fetchdat, int bits)
         }
         return sse_set_mxcsr(src);
     } else if (fxinst == 3) {
+        SSE_ENTER();
         //STMXCSR
         if (cpu_mod == 3) {
             x86illegal();

@@ -273,8 +273,8 @@ checkio(uint32_t port, int mask)
 #ifndef OPS_286_386
 #    include "softfloat3e/softfloat-compare.h"
 #    include "softfloat3e/fpu_trans.h"
-#    include "x86_ops_i686.h"
 #    include "x86_ops_mmx.h"
+#    include "x86_ops_i686.h"
 #    include "x86_ops_sse2_arith.h"
 #    include "x86_ops_sse2_cmp.h"
 #    include "x86_ops_sse2_cvt.h"
