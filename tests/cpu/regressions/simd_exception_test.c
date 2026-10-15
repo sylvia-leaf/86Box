@@ -19,11 +19,12 @@ extern int32_t cycles_main;
 enum { DRIVER = 0x10000, BODY = 0x11000, DATA = 0x20000,
        RESULT = 0x20100, TRAP = 0x20200, FAULT_PC = 0x20204,
        GDT_ADDR = 0x8000, IDT_ADDR = 0x9000, HANDLERS = 0xa000, CALLS = 64 };
-enum { XMM_RESULT, GPR_RESULT, FLAGS_RESULT, MMX_RESULT };
+enum { XMM_RESULT, GPR_RESULT, FLAGS_RESULT, MMX_RESULT, FTZ_RESULT };
 typedef struct {
     const char *name;
     uint8_t prefix, opcode, imm, has_imm, sse2, result_kind, exception;
     uint32_t a[4], b[4];
+    uint32_t expected[4], control;
 } simd_case;
 #define FONE 0x3f800000
 #define DLO 0, 0x3ff00000
@@ -54,7 +55,13 @@ static const simd_case cases[] = {
     { "COMISD invalid", 0x66, 0x2f, 0, 0, 1, FLAGS_RESULT, 1, {DLO,3,4}, {0,0x7ff80000} },
     { "UCOMISD signaling", 0x66, 0x2e, 0, 0, 1, FLAGS_RESULT, 1, {DLO,3,4}, {1,0x7ff00000} },
     { "CMPPS invalid", 0, 0xc2, 1, 1, 0, XMM_RESULT, 1, {FONE,FONE,FONE,FONE}, {FONE,FONE,FONE,0x7fc12345} },
-    { "CMPPD invalid", 0x66, 0xc2, 1, 1, 1, XMM_RESULT, 1, {DLO,DLO}, {DLO,0,0x7ff80000} }
+    { "CMPPD invalid", 0x66, 0xc2, 1, 1, 1, XMM_RESULT, 1, {DLO,DLO}, {DLO,0,0x7ff80000} },
+    { "FTZ MULSS positive", 0xf3, 0x59, 0, 0, 0, FTZ_RESULT, 0x30, {0x00800000,2,3,4}, {0x3effffff}, {0,2,3,4}, 0x9f80 },
+    { "FTZ MULSS negative", 0xf3, 0x59, 0, 0, 0, FTZ_RESULT, 0x30, {0x80800000,2,3,4}, {0x3effffff}, {0x80000000,2,3,4}, 0x9f80 },
+    { "FTZ MULPS", 0, 0x59, 0, 0, 0, FTZ_RESULT, 0x30, {0x00800000,0x80800000,FONE,FONE}, {0x3effffff,0x3effffff,FONE,FONE}, {0,0x80000000,FONE,FONE}, 0x9f80 },
+    { "FTZ MULSD", 0xf2, 0x59, 0, 0, 1, FTZ_RESULT, 0x30, {0,0x00100000,3,4}, {0xffffffff,0x3fdfffff}, {0,0,3,4}, 0x9f80 },
+    { "FTZ MULPD", 0x66, 0x59, 0, 0, 1, FTZ_RESULT, 0x30, {0,0x00100000,0,0x80100000}, {0xffffffff,0x3fdfffff,0xffffffff,0x3fdfffff}, {0,0,0,0x80000000}, 0x9f80 },
+    { "gradual MULSS", 0xf3, 0x59, 0, 0, 0, FTZ_RESULT, 0x30, {0x00800000,2,3,4}, {0x3effffff}, {0x00400000,2,3,4}, 0x1f80 }
 };
 static const simd_case *test;
 static unsigned completed, failures, compiled_results;
@@ -90,8 +97,10 @@ void outl(uint16_t port, uint32_t value) {
     (void)value;
     if (port == 0xec) { done = 1; return; }
     if (port != 0xe9 || completed >= CALLS) fatal("Bad mailbox");
-    unsigned trap = unmasked(completed) ? (osxmm ? 19 : 6) : 0;
+    unsigned trap = test->result_kind != FTZ_RESULT && unmasked(completed) ? (osxmm ? 19 : 6) : 0;
     check(get32(TRAP) == trap, "exception vector");
+    if (test->result_kind == FTZ_RESULT)
+        check(!memcmp(ram + RESULT, test->expected, 16), "underflow result and preserved lanes");
     if (trap) {
         check(get32(FAULT_PC) == test_pc, "fault EIP");
         if (test->result_kind == GPR_RESULT) check(get32(RESULT) == 0x12345678, "GPR destination");
@@ -99,10 +108,11 @@ void outl(uint16_t port, uint32_t value) {
         else if (test->result_kind == MMX_RESULT) check(get32(RESULT) == 0x12345678 && get32(RESULT+4) == 0x87654321, "MMX destination");
         else check(!memcmp(ram + RESULT, test->a, 16), "XMM destination");
     }
-    check((get32(RESULT+16) & test->exception) != 0, "MXCSR sticky flag");
+    check((get32(RESULT+16) & test->exception) == test->exception, "MXCSR sticky flag");
     compiled_results += !!inrecomp;
     ++completed;
     uint32_t mxcsr = 0x1f80 & ~(unmasked(completed) ? test->exception << 7 : 0);
+    if (test->result_kind == FTZ_RESULT) mxcsr = test->control;
     put32(DATA+32, mxcsr); put32(DATA+0x218, mxcsr);
     if (completed == CALLS) { done = 1; cycles = cycles_main = 0; }
 }
@@ -138,10 +148,10 @@ static void run_case(void) {
     cycles=cycles_main=0; tsc=0; timer_target=1000; x86_was_reset=0;
     mem_a20_alt=1; mem_a20_recalc(); flushmmucache();
     memset(ram+DATA,0,0x1000); memcpy(ram+DATA,test->a,16); memcpy(ram+DATA+16,test->b,16);
-    memcpy(ram+0x6000,test->b,16); put32(DATA+32,0x1f80);
+    memcpy(ram+0x6000,test->b,16); put32(DATA+32,test->control ? test->control : 0x1f80);
     put32(DATA+40,0x12345678); put32(DATA+44,0x87654321);
     /* Minimal FXSAVE image: masked x87, empty tags, controlled MXCSR. */
-    put32(DATA+0x200,0x37f); put32(DATA+0x218,0x1f80);
+    put32(DATA+0x200,0x37f); put32(DATA+0x218,test->control ? test->control : 0x1f80);
     static const uint8_t driver[] = {0xbf,CALLS,0,0,0,0xe8,0xf6,0x0f,0,0,
         0x66,0xba,0xe9,0,0xef,0x4f,0x75,0xf3,0x66,0xba,0xec,0,0xef,0xeb,0xfe};
     memcpy(ram+DRIVER,driver,sizeof(driver)); emit_pos=BODY;
