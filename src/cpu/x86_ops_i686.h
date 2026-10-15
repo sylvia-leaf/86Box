@@ -70,6 +70,8 @@ sf_fx_save_stor_common(uint32_t fetchdat, int bits)
 
     fxinst = (rmdat >> 3) & 7;
     ILLEGAL_ON(fxinst <= 1 && cpu_mod == 3);
+    ILLEGAL_ON((fxinst == 5 || fxinst == 6) && cpu_mod != 3);
+    ILLEGAL_ON(fxinst == 7 && cpu_mod != 3 && !(cpu_features & CPU_FEATURE_CLFLUSH));
 
     if ((fxinst > 1) && !(cpu_features & CPU_FEATURE_SSE)) {
         x86illegal();
@@ -355,6 +357,8 @@ fx_save_stor_common(uint32_t fetchdat, int bits)
 
     fxinst = (rmdat >> 3) & 7;
     ILLEGAL_ON(fxinst <= 1 && cpu_mod == 3);
+    ILLEGAL_ON((fxinst == 5 || fxinst == 6) && cpu_mod != 3);
+    ILLEGAL_ON(fxinst == 7 && cpu_mod != 3 && !(cpu_features & CPU_FEATURE_CLFLUSH));
 
     if ((fxinst > 1) && !(cpu_features & CPU_FEATURE_SSE)) {
         x86illegal();
