@@ -733,6 +733,8 @@ static int
 opLOCK(uint32_t fetchdat)
 {
     int legal;
+    if (cpu_check_prefix_length())
+        return 1;
     fetchdat = fastreadl_fetch(cs + cpu_state.pc);
     if (cpu_state.abrt)
         return 0;
@@ -751,6 +753,8 @@ static int
 opLOCK(uint32_t fetchdat)
 {
     int legal;
+    if (cpu_check_prefix_length())
+        return 1;
     fetchdat = fastreadl(cs + cpu_state.pc);
     if (cpu_state.abrt)
         return 0;
