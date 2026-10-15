@@ -129,6 +129,13 @@ sf_fx_save_stor_common(uint32_t fetchdat, int bits)
 
         fpu_state.fdp = readmeml(easeg, cpu_state.eaaddr + 16);
         fpu_state.fds = readmemw(easeg, cpu_state.eaaddr + 20);
+        /* FXSAVE and the x87 environment stores share these pointer fields. */
+        cpu_state.fpu_pc = fpu_state.fip;
+        cpu_state.fpu_ea = fpu_state.fdp;
+        cpu_state.fpu_CS = fpu_state.fcs;
+        cpu_state.fpu_DS = fpu_state.fds;
+        cpu_state.fpu_cs = cpu_state.fpu_ds = 0;
+        cpu_state.fpu_op = fpu_state.foo;
 
         /* load i387 register file */
         for (index = 0; index < 8; index++) {
@@ -403,6 +410,13 @@ fx_save_stor_common(uint32_t fetchdat, int bits)
 
         x87_op_off = readmeml(easeg, cpu_state.eaaddr + 16);
         x87_op_seg = readmemw(easeg, cpu_state.eaaddr + 20);
+        /* FXSAVE and the x87 environment stores share these pointer fields. */
+        cpu_state.fpu_pc = x87_pc_off;
+        cpu_state.fpu_ea = x87_op_off;
+        cpu_state.fpu_CS = x87_pc_seg;
+        cpu_state.fpu_DS = x87_op_seg;
+        cpu_state.fpu_cs = cpu_state.fpu_ds = 0;
+        cpu_state.fpu_op = x87_op;
 
         if ((cpu_features & CPU_FEATURE_SSE) && (cr4 & CR4_OSFXSR)) {
             sse_set_mxcsr(restored_mxcsr);

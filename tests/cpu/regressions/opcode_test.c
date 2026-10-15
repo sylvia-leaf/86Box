@@ -16,6 +16,7 @@ typedef struct {
     unsigned length, cr0_bits, no_osfxsr, trap_p3, trap_p4, setup;
 } opcode_case;
 static const opcode_case opcases[] = {
+    {"FXRSTOR FXSAVE environment", {0x0f,0xae,0x08,0x0f,0xae,0x00},6,0,0,0,0,15},
     {"FXRSTOR pointer width a32 o32", {0xf,0xae,0x8},3,0,0,0,0,4},
     {"FXSAVE pointer width a32 o32", {0xf,0xae,0x0},3,0,0,0,0,14},
     {"FXRSTOR pointer width a32 o16", {0x66,0xf,0xae,0x8},4,0,0,0,0,4},
@@ -175,10 +176,14 @@ int main(int argc,char **argv) {
                 EDI=probe->setup==11 ? 0x40ffc : 0x40000; EAX=0x1234; put32(0x40000,0x89abcdef); put32(0x40004,0x76543210);
                 flushmmucache();
             }
-            if (probe->setup==4 || probe->setup==5 || probe->setup==13 || probe->setup==14) {
+            if (probe->setup==4 || probe->setup==5 || probe->setup==13 || probe->setup==14 || probe->setup==15) {
                 EAX=EBX=0x4000;
                 memset(ram+0x4000,0,512);
                 put32(0x4000,0x037f); put32(0x4008,0x12345678); put32(0x4010,0x87654321); put32(0x4018,0x1f80);
+                if (probe->setup==15) {
+                    ram[0x4006]=0x23;ram[0x4007]=1;ram[0x400c]=0x28;ram[0x4014]=0x30;
+                    cpu_state.fpu_pc=0;cpu_state.fpu_ea=0;cpu_state.fpu_op=0;cpu_state.fpu_CS=cpu_state.fpu_DS=0;
+                }
                 if (probe->setup==14) {
                     cpu_state.fpu_pc=0x12345678;cpu_state.fpu_ea=0x87654321;
                 }
@@ -258,6 +263,9 @@ int main(int argc,char **argv) {
                 if ((fpu_softfloat ? fpu_state.fip : x87_pc_off)!=0x12345678 || (fpu_softfloat ? fpu_state.fdp : x87_op_off)!=0x87654321) fatal("FXRSTOR truncated pointers");
             }
             if (probe->setup==14 && (get32(0x4008)!=0x12345678 || get32(0x4010)!=0x87654321)) fatal("FXSAVE truncated pointers");
+            if (probe->setup==15) {
+                if(get32(0x4008)!=0x12345678 || get32(0x4010)!=0x87654321 || ram[0x4006]!=0x23 || ram[0x4007]!=1 || ram[0x400c]!=0x28 || ram[0x4014]!=0x30) fatal("FXRSTOR/FXSAVE lost environment");
+            }
             ++checked;
         }
 
