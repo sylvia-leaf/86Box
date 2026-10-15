@@ -16,6 +16,10 @@ typedef struct {
     unsigned length, cr0_bits, no_osfxsr, trap_p3, trap_p4, setup;
 } opcode_case;
 static const opcode_case opcases[] = {
+    {"FXSAVE edit FTW FXRSTOR", {0x0f,0x6f,0xc1,0x0f,0xae,0x00,0xc6,0x40,0x04,0x00,0x0f,0xae,0x08},13,0,0,0,0},
+    {"FXRSTOR reserved tail", {0x0f,0xae,0x08},3,0,0,0,0,5},
+    {"FXRSTOR mixed physical tags", {0x0f,0xae,0x08,0x0f,0xae,0x00},6,0,0,0,0,13},
+    {"FXRSTOR MMX payload", {0x0f,0x6f,0xc1,0x0f,0xae,0x00,0x0f,0x77,0x0f,0xae,0x08},11,0,0,0,0},
     {"MMX pending x87 exception", {0x0f,0x6f,0xc1},3,0x20,0,16,16,9},
     {"MMX pending x87 exception in counted loop", {0x0f,0xfe,0xc1,0x49,0x75,0xfa},6,0x20,0,16,16,27},
     {"EMMS pending x87 exception", {0x0f,0x77},2,0x20,0,16,16,9},
@@ -147,6 +151,7 @@ int main(int argc,char **argv) {
             cpu_state.eaaddr=DATA; easeg=0; EAX=DATA; EDI=DATA+0x800; ESP=0x700000;
             ECX=0x12345678; EDX=0;
             memset(&cpu_state.XMM[0],0x11,16); memset(&cpu_state.XMM[1],0x80,16);
+            MMP[0]->q=UINT64_C(0x1111111111111111); MMP[1]->q=UINT64_C(0x8080808080808080);
             cpu_state.MM[0].q=UINT64_C(0x1111111111111111); cpu_state.MM[1].q=UINT64_C(0x8080808080808080);
             unsigned mask = (call / 8) % 3;
             if (strstr(probe->name, "MASKMOV")) {
@@ -162,10 +167,15 @@ int main(int argc,char **argv) {
                 EDI=probe->setup==11 ? 0x40ffc : 0x40000; EAX=0x1234; put32(0x40000,0x89abcdef); put32(0x40004,0x76543210);
                 flushmmucache();
             }
-            if (probe->setup==4 || probe->setup==5) {
+            if (probe->setup==4 || probe->setup==5 || probe->setup==13) {
                 EAX=EBX=0x4000;
                 memset(ram+0x4000,0,512);
                 put32(0x4000,0x037f); put32(0x4008,0x12345678); put32(0x4010,0x87654321); put32(0x4018,0x1f80);
+                if (probe->setup==13) {
+                    ram[0x4003]=0x18; ram[0x4004]=0xa5;
+                    for(unsigned n=0;n<8;n++){put32(0x4020+16*n+4,0x80000000);ram[0x4020+16*n+8]=0xff;ram[0x4020+16*n+9]=0x3f;}
+                    memset(ram+0x4000+400,0x5a,112);
+                }
                 if(probe->setup==5){put32(0x4000+400,0x54474553);memset(ram+0x4000+404,1,9);}
             }
             if (probe->setup==9 || probe->setup==27) {
@@ -225,6 +235,14 @@ int main(int argc,char **argv) {
                 if (expected && (fpu_softfloat ? fpu_state.tag : x87_gettag()) != 0xffff)
                     fatal("Counted MMX loop changed tags before #MF");
             }
+            if (strstr(probe->name, "edit FTW") || probe->setup==5) {
+                if ((fpu_softfloat ? fpu_state.tag : x87_gettag()) != 0xffff) fatal("FXRSTOR ignored empty FTW");
+            }
+            if (probe->setup==13) {
+                if(ram[0x4004]!=0xa5 || (get32(0x4000)&0x38000000)!=0x18000000) fatal("FXRSTOR physical tags/TOP");
+                for(unsigned n=400;n<512;n++) if(ram[0x4000+n]!=0x5a) fatal("FXSAVE wrote private state");
+            }
+            if (strstr(probe->name, "MMX payload") && MMP[0]->q!=UINT64_C(0x8080808080808080)) fatal("FXRSTOR lost MMX payload");
             ++checked;
         }
 
