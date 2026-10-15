@@ -20,6 +20,15 @@ disabling native SSE is a failure. sse_fastpath also requires one MXCSR region
 and one SSE entry check for adjacent arithmetic. It preserves the memory-helper
 rechecks covered by the existing fixture.
 
+opcode_test exercises the decoder, MMU, exception delivery and both engines on
+Pentium III and Willamette, with both FPU implementations. It checks implicit
+MASKMOV addresses, faulting MOVQ destinations, SIMD availability, MMX/x87 entry
+and pending exceptions, architectural FXSAVE/FXRSTOR images, invalid encodings,
+CMOV memory faults, CMPXCHG write faults, LOCK prefixes, the fifteen-byte length
+limit and RDPMC selectors. Memory permissions change after code has warmed up.
+Scalar and packed double-to-single conversions cover subnormals, exact/inexact
+significands, both signs, all rounding modes, DAZ and masked/unmasked underflow.
+RDPMC coverage validates selectors; performance counters still return zero.
 Counted MMX loops alternate pending x87 exceptions after warm-up and check
 unchanged destinations/tags on #MF as well as carry preservation on success.
 IR coverage retains checks at unchecked joins and after memory/general calls,
@@ -45,6 +54,9 @@ coverage includes every mod/scale/base/index combination. Pending P6 producers
 must publish their completion times before consumers are scheduled.
 
 Sources:
+  Intel SDM 253666-013/253667-013 (2004), Vol.2 instruction semantics:
+  https://kib.kiev.ua/x86docs/Intel/SDMs/253666-013.pdf
+  https://kib.kiev.ua/x86docs/Intel/SDMs/253667-013.pdf
   Agner Fog, Instruction tables, Pentium II/III, pp.187-188 (2025-09-20):
   https://www.agner.org/optimize/instruction_tables.pdf
   Intel Pentium 4/Xeon Optimization Reference Manual 248966-004, Appendix C:

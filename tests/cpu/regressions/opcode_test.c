@@ -16,6 +16,14 @@ typedef struct {
     unsigned length, cr0_bits, no_osfxsr, trap_p3, trap_p4, setup, only_p4;
 } opcode_case;
 static const opcode_case opcases[] = {
+    {"CVTSD2SS denormal reg a32", {0xf2,0x0f,0x5a,0xc1},4,0,0,6,0,26,1},
+    {"CVTSD2SS denormal reg a16", {0x67,0xf2,0x0f,0x5a,0xc1},5,0,0,6,0,26,1},
+    {"CVTSD2SS denormal mem a32", {0xf2,0x0f,0x5a,0x00},4,0,0,6,0,26,1},
+    {"CVTSD2SS denormal mem a16", {0x67,0xf2,0x0f,0x5a,0x07},5,0,0,6,0,26,1},
+    {"CVTPD2PS denormal reg a32", {0x66,0x0f,0x5a,0xc1},4,0,0,6,0,26,1},
+    {"CVTPD2PS denormal reg a16", {0x67,0x66,0x0f,0x5a,0xc1},5,0,0,6,0,26,1},
+    {"CVTPD2PS denormal mem a32", {0x66,0x0f,0x5a,0x00},4,0,0,6,0,26,1},
+    {"CVTPD2PS denormal mem a16", {0x67,0x66,0x0f,0x5a,0x07},5,0,0,6,0,26,1},
     {"RDPMC selector 00000000", {0xb9,0x0,0x0,0x0,0x0,0xf,0x33},7,0,0,0,0,25},
     {"RDPMC selector 00000001", {0xb9,0x1,0x0,0x0,0x0,0xf,0x33},7,0,0,0,0,25},
     {"RDPMC selector 00000002", {0xb9,0x2,0x0,0x0,0x0,0xf,0x33},7,0,0,13,0,25},
@@ -403,7 +411,7 @@ int main(int argc,char **argv) {
         probe=&opcases[i]; if(argc>4&&!strstr(probe->name,argv[4]))continue;
         if (p3 && probe->only_p4) continue;
         initialize(); finished_compiled=0;
-        for(unsigned call=0;call<64;call++) {
+        for(unsigned call=0;call<(probe->setup==26 ? 256u : 64u);call++) {
             cr0=1|probe->cr0_bits; cr4=CR4_OSXMMEXCPT|(probe->no_osfxsr?0:CR4_OSFXSR);
             cpu_state.mxcsr=0x1f80; cpu_state.flags=2; cpu_state.eflags=0;
             cpu_state.npxc=fpu_state.cwd=0x37f; cpu_state.npxs=fpu_state.swd=0;
@@ -477,12 +485,30 @@ int main(int argc,char **argv) {
                 cpu_state.flags=2;cpu_state.flags_op=0;
             }
             if (probe->setup==23 || probe->setup==24) { EAX=DATA;put32(0x4000,0x3f80); }
+            uint32_t conversion_mxcsr = 0x1f80;
+            if (probe->setup==26) {
+                static const uint64_t fractions[] = {
+                    1, 2, 3, UINT64_C(1)<<22, (UINT64_C(1)<<23)-1,
+                    (UINT64_C(1)<<24)+1, UINT64_C(1)<<51, (UINT64_C(1)<<52)-1
+                };
+                uint64_t input = fractions[call & 7] | ((uint64_t)((call >> 3) & 1) << 63);
+                EAX=EBX=0x4000;
+                cpu_state.XMM[1].q[0]=input; cpu_state.XMM[1].q[1]=0;
+                memcpy(ram+0x4000,&cpu_state.XMM[1],16);
+                conversion_mxcsr |= ((call >> 4) & 3) << 13;
+                if (call & 64) conversion_mxcsr &= ~0x800u;
+                if (call & 128) conversion_mxcsr |= 0x40;
+                cpu_state.mxcsr = conversion_mxcsr;
+                cpu_cur_status &= ~CPU_STATUS_SSE_UNMASKED;
+                if (call & 64) cpu_cur_status |= CPU_STATUS_SSE_UNMASKED;
+            }
             cpu_state.pc=DRIVER; done=0; cycles=cycles_main=0;
             for(unsigned n=0;!done;n++) {
                 if(n>10000)fatal("Audit did not stop");
                 if(engine) exec386_dynarec(10000); else exec386(10000);
             }
             unsigned expected = p3 ? probe->trap_p3 : probe->trap_p4;
+            if (probe->setup==26) expected = (call & 64) && !(call & 128) ? 19 : 0;
             if ((probe->setup == 12 || probe->setup == 19 || probe->setup == 20 || probe->setup == 21 || probe->setup == 9 || probe->setup == 27) && !((call / 8) & 1)) expected = 0;
             if (get32(TRAP) != expected) {
                 fprintf(stderr, "%s call %u: trap %u, expected %u\n", probe->name, call, get32(TRAP), expected);
@@ -587,6 +613,22 @@ int main(int argc,char **argv) {
             if (probe->setup==25) {
                 if (expected && (get32(FAULT_PC)!=BODY+5 || EAX!=DATA || EDX)) fatal("RDPMC invalid selector state");
                 if (!expected && (EAX || EDX)) fatal("RDPMC reset counter value");
+            }
+            if (probe->setup==26) {
+                unsigned fraction=call&7, sign=(call>>3)&1, rounding=(call>>4)&3;
+                unsigned flags = (call&128) ? 0 : expected ? (0x12 | ((fraction==5 || fraction==7) ? 0x20 : 0)) : 0x32;
+                if (cpu_state.mxcsr != (conversion_mxcsr | flags))
+                    fatal("%s call %u: MXCSR %x, expected %x",probe->name,call,cpu_state.mxcsr,conversion_mxcsr|flags);
+                if (expected) {
+                    if (get32(FAULT_PC)!=BODY) fatal("Conversion underflow fault EIP");
+                    for(unsigned n=0;n<4;n++) if(cpu_state.XMM[0].l[n]!=0x11111111) fatal("Conversion fault changed destination");
+                } else {
+                    uint32_t result = sign << 31;
+                    if (!(call&128) && ((sign && rounding==1) || (!sign && rounding==2))) result |= 1;
+                    if(cpu_state.XMM[0].l[0]!=result) fatal("Denormal conversion result");
+                    uint32_t upper = strstr(probe->name,"CVTPD") ? 0 : 0x11111111;
+                    for(unsigned n=1;n<4;n++) if(cpu_state.XMM[0].l[n]!=upper) fatal("Conversion upper lanes");
+                }
             }
             ++checked;
         }

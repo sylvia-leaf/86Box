@@ -70,6 +70,11 @@ float32 f64_to_f32(float64 a, struct softfloat_status_t *status)
         if (softfloat_denormalsAreZeros(status))
             return packToF32UI(sign, 0, 0);
         softfloat_raiseFlags(status, softfloat_flag_denormal);
+        /* Unmasked underflow tests precision before exponent-range rounding.
+           Normalize first so the implicit bit and discarded bits are real. */
+        struct exp16_sig64 norm = softfloat_normSubnormalF64Sig(frac);
+        exp  = norm.exp;
+        frac = norm.sig;
     }
     /*------------------------------------------------------------------------
     *------------------------------------------------------------------------*/
