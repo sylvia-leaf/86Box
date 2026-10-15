@@ -8,6 +8,9 @@ function(pcbox_full_cpu_target target)
         codegen_timing_k6.c codegen_timing_pentium.c codegen_timing_p6.c
         codegen_timing_winchip.c codegen_timing_winchip2.c)
     list(TRANSFORM cpu_sources PREPEND "${core}/cpu/")
+    if(EXISTS "${core}/cpu/codegen_timing_p4.c")
+        list(APPEND cpu_sources "${core}/cpu/codegen_timing_p4.c")
+    endif()
     file(GLOB jit_sources CONFIGURE_DEPENDS "${core}/codegen_new/*.c")
     list(FILTER jit_sources EXCLUDE REGEX "codegen_backend_(arm64|loongarch64)")
     # The main project defines softfloat3e later in src/cpu. Only a standalone

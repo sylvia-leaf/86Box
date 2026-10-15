@@ -2055,7 +2055,7 @@ cpu_set(void)
             cpu_CR4_mask |= CR4_OSFXSR | CR4_OSXMMEXCPT;
 
 #ifdef USE_DYNAREC
-            codegen_timing_set(&codegen_timing_p6);
+            codegen_timing_set(&codegen_timing_p4);
 #endif
             break;
 

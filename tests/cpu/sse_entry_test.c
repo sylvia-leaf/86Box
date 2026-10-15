@@ -28,6 +28,7 @@ int max_version_refcount;
 static uint8_t code_buffer[1];
 static uint32_t entry_pcs[32];
 static int entries, rechecks, arithmetic, full_flushes, order_flushes, patched_jumps;
+static int mxcsr_begins, mxcsr_ends;
 
 void fatal(const char *fmt, ...)
 {
@@ -40,9 +41,14 @@ void fatal(const char *fmt, ...)
 
 uint8_t *codeblock_allocator_get_ptr(struct mem_block_t *block) { (void)block; return code_buffer; }
 void codegen_backend_prologue(codeblock_t *block) { (void)block; }
+#ifdef CODEGEN_BACKEND_HAS_SELECTIVE_XMM
+void codegen_backend_ir_prologue(codeblock_t *block) { (void)block; }
+#endif
 void codegen_backend_epilogue(codeblock_t *block) { (void)block; }
 void codegen_backend_mem_begin(void) { }
 void codegen_backend_mem_finish(codeblock_t *block) { (void)block; }
+void codegen_backend_sse_mxcsr_begin(codeblock_t *block) { (void)block; mxcsr_begins++; }
+void codegen_backend_sse_mxcsr_end(codeblock_t *block) { (void)block; mxcsr_ends++; }
 void codegen_set_jump_dest(codeblock_t *block, void *p) { (void)block; (void)p; patched_jumps++; }
 void codegen_reg_mark_as_required(void) { }
 void codegen_reg_process_dead_list(ir_data_t *ir) { (void)ir; }
@@ -96,6 +102,7 @@ const uOpFn uop_handlers[UOP_MAX] = {
 static ir_data_t *start_block(void)
 {
     entries = rechecks = arithmetic = full_flushes = order_flushes = patched_jumps = 0;
+    mxcsr_begins = mxcsr_ends = 0;
     memset(reg_last_version, 0, sizeof(reg_last_version));
     memset(reg_version, 0, sizeof(reg_version));
     dirty_ir_regs[0] = dirty_ir_regs[1] = 0;
@@ -131,6 +138,7 @@ int main(void)
         compile(ir);
         CHECK(entries == 1 && entry_pcs[0] == (uint32_t)(0x100 + run * 0x100));
         CHECK(arithmetic == 3);
+        CHECK(mxcsr_begins == 1 && mxcsr_ends == 1); /* Preserve batching. */
         CHECK(full_flushes == 1); /* Only the final block writeback. */
     }
 
