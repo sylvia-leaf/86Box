@@ -31,3 +31,8 @@ target_compile_definitions(p6_dependencies_test PRIVATE USE_DYNAREC USE_NEW_DYNA
 target_include_directories(p6_dependencies_test PRIVATE
     "${CPU_SOURCE_ROOT}/src/cpu" "${CPU_SOURCE_ROOT}/src/include" "${CPU_SOURCE_ROOT}/src/codegen_new")
 add_test(NAME p6_dependencies COMMAND p6_dependencies_test)
+add_executable(simd_timing_test simd_timing_test.c "${CPU_SOURCE_ROOT}/src/cpu/codegen_timing_common.c")
+target_compile_definitions(simd_timing_test PRIVATE USE_DYNAREC USE_NEW_DYNAREC)
+target_include_directories(simd_timing_test PRIVATE
+    "${CPU_SOURCE_ROOT}/src/cpu" "${CPU_SOURCE_ROOT}/src/include" "${CPU_SOURCE_ROOT}/src/codegen_new")
+add_test(NAME simd_timing COMMAND simd_timing_test)
