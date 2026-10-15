@@ -21,3 +21,8 @@ foreach(cpu p3 p4)
 endforeach()
 set_tests_properties(simd_exceptions_p3_sf0 simd_exceptions_p3_sf1
     simd_exceptions_p4_sf0 simd_exceptions_p4_sf1 PROPERTIES TIMEOUT 60)
+add_executable(address_dependencies_test address_dependencies_test.c)
+target_compile_definitions(address_dependencies_test PRIVATE USE_DYNAREC USE_NEW_DYNAREC)
+target_include_directories(address_dependencies_test PRIVATE
+    "${CPU_SOURCE_ROOT}/src/cpu" "${CPU_SOURCE_ROOT}/src/codegen_new" "${CPU_SOURCE_ROOT}/src/include")
+add_test(NAME address_dependencies COMMAND address_dependencies_test)

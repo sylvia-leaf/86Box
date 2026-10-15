@@ -129,11 +129,12 @@ get_addr_regmask(uint64_t data, uint32_t fetchdat, int op_32)
                 if ((modrm & 0x7) == 4) {
                     uint8_t sib = (fetchdat >> 8) & 0xff;
 
-                    if ((modrm & 0xc0) != 0xc0 && (sib & 7) != 5) {
+                    /* base=5 omits EBP only with mod=00. The index is
+                     * independent of that displacement-only base encoding. */
+                    if ((modrm & 0xc0) != 0 || (sib & 7) != 5)
                         addr_regmask = 1 << (sib & 7);
-                        if ((sib & 0x38) != 0x20)
-                            addr_regmask |= 1 << ((sib >> 3) & 7);
-                    }
+                    if ((sib & 0x38) != 0x20)
+                        addr_regmask |= 1 << ((sib >> 3) & 7);
                 } else if ((modrm & 0xc7) != 5) {
                     addr_regmask = 1 << (modrm & 7);
                 }
