@@ -540,6 +540,11 @@ codegen_generate_call(uint8_t opcode, OpFn op, uint32_t fetchdat, uint32_t new_p
     int          lock_illegal       = 0;
     int          is_fpu             = 0;
     uint32_t     next_pc            = 0;
+#ifdef CODEGEN_HAS_SSE
+    /* The masked specialization retains native SSE and MXCSR batching.
+     * Unmasked operations use precise, destination-atomic interpreter calls. */
+    int native_sse = !fpu_softfloat && !(block->status & CPU_STATUS_SSE_UNMASKED);
+#endif
     int is_0f = 0;
     int is_repe = 0;
     int is_repne = 0;
@@ -564,13 +569,13 @@ codegen_generate_call(uint8_t opcode, OpFn op, uint32_t fetchdat, uint32_t new_p
 #ifndef CODEGEN_HAS_SSE
                 recomp_op_table = (fpu_softfloat || (cpu_features & CPU_FEATURE_SSE2)) ? recomp_opcodes_0f_no_mmx : recomp_opcodes_0f;
 #else
-                recomp_op_table = fpu_softfloat ? recomp_opcodes_0f_no_mmx : recomp_opcodes_0f;
+                recomp_op_table = native_sse ? recomp_opcodes_0f : recomp_opcodes_0f_no_mmx;
 #endif
                 if(is_repe)
                 {
                     op_table        = x86_dynarec_opcodes_REPE_0f;
 #ifdef CODEGEN_HAS_SSE
-                    recomp_op_table = fpu_softfloat ? NULL : recomp_opcodes_REPE_0f;
+                    recomp_op_table = native_sse ? recomp_opcodes_REPE_0f : NULL;
 #else
                     recomp_op_table = NULL;
 #endif
@@ -579,7 +584,7 @@ codegen_generate_call(uint8_t opcode, OpFn op, uint32_t fetchdat, uint32_t new_p
                 {
                     op_table        = x86_dynarec_opcodes_REPNE_0f;
 #ifdef CODEGEN_HAS_SSE
-                    recomp_op_table = fpu_softfloat ? NULL : recomp_opcodes_REPNE_0f;
+                    recomp_op_table = native_sse ? recomp_opcodes_REPNE_0f : NULL;
 #else
                     recomp_op_table = NULL;
 #endif

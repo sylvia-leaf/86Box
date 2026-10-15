@@ -14,6 +14,9 @@ foreach(cpu p3 p4)
     foreach(softfloat 0 1)
         add_test(NAME simd_exceptions_${cpu}_sf${softfloat}
             COMMAND simd_exception_test ${cpu} 0 ${softfloat})
+        add_test(NAME simd_exceptions_jit_${cpu}_sf${softfloat}
+            COMMAND simd_exception_test ${cpu} 1 ${softfloat})
+        set_tests_properties(simd_exceptions_jit_${cpu}_sf${softfloat} PROPERTIES TIMEOUT 60)
     endforeach()
 endforeach()
 set_tests_properties(simd_exceptions_p3_sf0 simd_exceptions_p3_sf1
