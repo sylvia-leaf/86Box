@@ -2,7 +2,9 @@
 
 #include <cctype>
 #include <cstdint>
+#include <cstdlib>
 #include <cstring>
+#include <cstdlib>
 #include <iterator>
 #include <memory>
 #include <string>

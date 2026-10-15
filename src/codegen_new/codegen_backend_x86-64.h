@@ -1,7 +1,10 @@
 #include "codegen_backend_x86-64_defs.h"
 
-#define BLOCK_SIZE  0x4000
-#define BLOCK_MASK  0x3fff
+/* Raised from 0x4000 - too small to hold both status variants (16/32-bit,
+   flat/non-flat) of hot code at once, causing recompile thrash. This is the
+   max: block indices are uint16_t. */
+#define BLOCK_SIZE  0x10000
+#define BLOCK_MASK  0xffff
 #define BLOCK_START 0
 
 #define HASH_SIZE   0x20000
@@ -12,6 +15,25 @@
 #define BLOCK_MAX   0x3c0
 
 #define CODEGEN_BACKEND_HAS_MOV_IMM
+#define CODEGEN_BACKEND_HAS_MEM_REGS
+#define CODEGEN_BACKEND_HAS_SSE_REGS
+#define CODEGEN_BACKEND_HAS_SSE_RECHECK
+#define CODEGEN_BACKEND_HAS_SSE_MXCSR
+#define CODEGEN_BACKEND_HAS_MEM_STUBS
+#define CODEGEN_BACKEND_HAS_MEM_LOOKUP_REUSE
+#define CODEGEN_BACKEND_HAS_CMP_ULT
+#define CODEGEN_BACKEND_HAS_CMP_SLT
+#define CODEGEN_BACKEND_HAS_CMP_Z
+#define CODEGEN_BACKEND_HAS_PARITY
+#define CODEGEN_BACKEND_HAS_OVERFLOW
+#define CODEGEN_BACKEND_HAS_CMOV_Z
+#define CODEGEN_BACKEND_HAS_DIVMOD
+
+#ifdef _WIN64
+#    define CODEGEN_BACKEND_HAS_SELECTIVE_XMM
+/* The allocator records every XMM register loaded or written by this block. */
+extern uint16_t codegen_win64_xmm_used;
+#endif
 
 #define CODEGEN_HAS_SSE
 

@@ -21,9 +21,9 @@
 #define VMA_DYNAMIC_VULKAN_FUNCTIONS 1
 #include "qt_vulkanwindowrenderer.hpp"
 #include "qt_vulkanshadermanagerdialog.hpp"
+#include "qt_util.hpp"
 
 #include <QApplication>
-#include <QClipboard>
 #include <QMessageBox>
 #include <QWindow>
 
@@ -754,6 +754,7 @@ VulkanWindowRenderer::render()
     }
     vmaFlushAllocation(allocator, img_allocation, 0, VK_WHOLE_SIZE);
 
+#ifdef LIBRA_RUNTIME_VULKAN
     if (shaderSrcImageTransitioned[swapchain_image_index] && !noshadersloaded) {
         const VkImageMemoryBarrier image3_memory_barrier {
             .sType            = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER,
@@ -773,6 +774,7 @@ VulkanWindowRenderer::render()
 
         m_devFuncs->vkCmdPipelineBarrier(cmdBufs, VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT, VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT, 0, 0, nullptr, 0, 0, 1, &image3_memory_barrier);
     }
+#endif
 
     VkClearColorValue clr_val = {};
     clr_val.float32[0] = 0;
@@ -1015,8 +1017,8 @@ VulkanWindowRenderer::render()
     info.viewMask = 0;
     info.layerCount = 1;
     fn_vkCmdBeginRendering(cmdBufs, &info);
-    
-    if (qt_osd_is_visible()) {
+
+    if (qt_osd_needs_render()) {
         qt_osd_set_layout_scale_hint(osdLayoutScaleHint());
         qt_osd_render(width(), height(), devicePixelRatio(), (void*)cmdBufs);
     }
@@ -1207,8 +1209,7 @@ VulkanWindowRenderer::render()
             }
 
             QImage image((uchar*)rgb, width, height, (scrShotImagePitch / 4) * 3, QImage::Format_RGB888);
-            QClipboard *clipboard = QApplication::clipboard();
-            clipboard->setImage(image.rgbSwapped(), QClipboard::Clipboard);
+            util::copyImageToClipboard(image.rgbSwapped());
             free(rgb);
             monitors[r_monitor_index].mon_screenshots_clipboard--;
         }

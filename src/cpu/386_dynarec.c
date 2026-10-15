@@ -143,7 +143,7 @@ fetch_ea_32_long(uint32_t rmdat)
             cpu_state.eaaddr = getlong();
         }
     }
-    if (easeg != 0xFFFFFFFF && ((easeg + cpu_state.eaaddr) & 0xFFF) <= 0xFFC) {
+    if (easeg != 0xFFFFFFFF && EA_FASTPATH_OK() && ((easeg + cpu_state.eaaddr) & 0xFFF) <= 0xFFC) {
         uint32_t addr = easeg + cpu_state.eaaddr;
         if (readlookup2[addr >> 12] != (uintptr_t) -1)
             eal_r = (uint32_t *) (readlookup2[addr >> 12] + addr);
@@ -179,7 +179,7 @@ fetch_ea_16_long(uint32_t rmdat)
         }
         cpu_state.eaaddr &= 0xFFFF;
     }
-    if (easeg != 0xFFFFFFFF && ((easeg + cpu_state.eaaddr) & 0xFFF) <= 0xFFC) {
+    if (easeg != 0xFFFFFFFF && EA_FASTPATH_OK() && ((easeg + cpu_state.eaaddr) & 0xFFF) <= 0xFFC) {
         uint32_t addr = easeg + cpu_state.eaaddr;
         if (readlookup2[addr >> 12] != (uintptr_t) -1)
             eal_r = (uint32_t *) (readlookup2[addr >> 12] + addr);
@@ -238,7 +238,7 @@ fetch_ea_64_long(uint32_t rmdat)
             else cpu_state.eaaddr = cpu_state.pc + getlong();
         }
     }
-    if (easeg != 0xFFFFFFFF && ((easeg + cpu_state.eaaddr) & 0xFFF) <= 0xFFC) {
+    if (easeg != 0xFFFFFFFF && EA_FASTPATH_OK() && ((easeg + cpu_state.eaaddr) & 0xFFF) <= 0xFFC) {
         uint32_t addr = easeg + cpu_state.eaaddr;
         if (readlookup2[addr >> 12] != (uintptr_t) -1)
             eal_r = (uint32_t *) (readlookup2[addr >> 12] + addr);
@@ -319,7 +319,37 @@ fetch_ea_64_long(uint32_t rmdat)
 #include "386_ops.h"
 
 #ifdef USE_DEBUG_REGS_486
-#    define CACHE_ON() (!(cr0 & (1 << 30)) && !(cpu_state.flags & T_FLAG) && !(dr[7] & 0xFF))
+/* Compiled blocks hold no debug-register checks. Data and I/O breakpoints can
+   fire on any access, so they still disable the recompiler outright; an
+   execution breakpoint only blocks the block covering it, and a block spans at
+   most two pages. */
+static __inline int
+dr_blocks_cache(void)
+{
+    uint32_t page;
+
+    if (!(dr[7] & 0xFF))
+        return 0;
+
+    page = (cs + cpu_state.pc) >> 12;
+
+    for (uint8_t i = 0; i < 4; i++) {
+        /* Neither Ln nor Gn set - slot is disabled. */
+        if (!((dr[7] >> (i << 1)) & 0x03))
+            continue;
+
+        /* RW 00 is execution; DR0-3 and cs + pc are both linear. */
+        if ((dr[7] >> (16 + (i << 2))) & 0x03)
+            return 1;
+
+        if (((dr[i] >> 12) == page) || ((dr[i] >> 12) == (page + 1)))
+            return 1;
+    }
+
+    return 0;
+}
+
+#    define CACHE_ON() (!(cr0 & (1 << 30)) && !(cpu_state.flags & T_FLAG) && !dr_blocks_cache())
 #else
 #    define CACHE_ON() (!(cr0 & (1 << 30)) && !(cpu_state.flags & T_FLAG))
 #endif
@@ -409,7 +439,7 @@ update_tsc(void)
     }
 }
 
-static __inline void
+void
 exec386_dynarec_int(void)
 {
     cpu_block_end = 0;
@@ -429,6 +459,29 @@ exec386_dynarec_int(void)
 
         cpu_state.ea_seg = &cpu_state.seg_ds;
         cpu_state.ssegs  = 0;
+
+#    ifdef USE_DEBUG_REGS_486
+        /* Breakpoint fault has priority over other faults. x86gen() delivers
+           #DB right away, so fold any still-pending trap into the same DR6
+           image and clear it, otherwise the epilogue raises a second #DB. A
+           pending BS is always stale here - trap's TF bit is only set further
+           down, once an instruction is about to retire - so it is dropped. */
+        if ((cpu_state.abrt == 0) && is386 && cpu_386_check_instruction_fault()) {
+            if (trap & 2)
+                dr[6] |= 0x8000;
+            if (trap & 16)
+                dr[6] |= 0x2000;
+            trap = 0;
+            /* RF must be set in the EFLAGS image x86gen() pushes, so the
+               handler's IRET resumes the instruction instead of faulting on it
+               again; delivery itself leaves RF clear for the handler. */
+            cpu_state.eflags |= RF_FLAG;
+            x86gen();
+            cpu_state.eflags &= ~RF_FLAG;
+            /* No instructions executed at this point. */
+            break;
+        }
+#    endif
 
         fetchdat = fastreadl_fetch(cs + cpu_state.pc);
 #    ifdef ENABLE_386_DYNAREC_LOG
@@ -459,10 +512,13 @@ exec386_dynarec_int(void)
             cpu_state.sse_xmm = 0;
         }
 
-#    ifndef USE_NEW_DYNAREC
-        if (!use32)
-            cpu_state.pc &= 0xffff;
-#    endif
+        if (cpu_flush_pending == 1)
+            cpu_flush_pending++;
+        else if (cpu_flush_pending == 2) {
+            cpu_flush_pending = 0;
+            flushmmucache_pc();
+            CPU_BLOCK_END();
+        }
 
 #    ifdef USE_DEBUG_REGS_486
         if (!cpu_state.abrt) {
@@ -516,9 +572,9 @@ block_ended:
 }
 
 #if defined(__linux__) && !defined(__clang__) && defined(USE_NEW_DYNAREC)
-static inline void __attribute__((optimize("O2")))
+void __attribute__((optimize("O2")))
 #else
-static __inline void
+void
 #endif
 exec386_dynarec_dyn(void)
 {
@@ -532,6 +588,15 @@ exec386_dynarec_dyn(void)
 #    endif
     int valid_block = 0;
 
+    /* Code in device memory (a BIOS copying a routine into video memory) is
+       fetched through the device's read handlers, and nothing tracks writes
+       there, so it is interpreted every time rather than kept in a block. */
+    if (!cpu_state.abrt && (_mem_exec[phys_addr >> MEM_GRANULARITY_BITS] == NULL)) {
+        exec386_dynarec_int();
+        return;
+    }
+    cpu_fetch_device = 0;
+
     /* Refresh before the lookup AND before a fresh compile: the old
        dynarec skips the lookup on an empty hash slot, and the new block
        still takes its key from cpu_cur_status. */
@@ -539,6 +604,10 @@ exec386_dynarec_dyn(void)
         cpu_cur_status &= ~CPU_STATUS_FPU_PC24;
     else
         cpu_cur_status |= CPU_STATUS_FPU_PC24;
+    if ((cpu_state.npxc >> 10) & 3)
+        cpu_cur_status |= CPU_STATUS_FPU_RC_NZ;
+    else
+        cpu_cur_status &= ~CPU_STATUS_FPU_RC_NZ;
 
 #    ifdef USE_NEW_DYNAREC
     if (!cpu_state.abrt)
@@ -724,10 +793,8 @@ exec386_dynarec_dyn(void)
 #    endif
         inrecomp = 0;
 
-#    ifndef USE_NEW_DYNAREC
-        if (!use32)
-            cpu_state.pc &= 0xffff;
-#    endif
+        if (x86_was_reset)
+            codegen_reset();
     } else if (valid_block && !cpu_state.abrt) {
 #    ifdef USE_NEW_DYNAREC
         start_pc                 = cs + cpu_state.pc;
@@ -783,11 +850,6 @@ exec386_dynarec_dyn(void)
                     break;
             }
 
-#    ifndef USE_NEW_DYNAREC
-            if (!use32)
-                cpu_state.pc &= 0xffff;
-#    endif
-
                 /* Cap source code at 4000 bytes per block; this
                    will prevent any block from spanning more than
                    2 pages. In practice this limit will never be
@@ -819,6 +881,13 @@ exec386_dynarec_dyn(void)
                     CPU_BLOCK_END();
             }
 
+            /* An instruction ran on into device memory: interpreted, never kept. */
+            if (cpu_fetch_device) {
+                if (!cpu_state.abrt || (cpu_state.abrt & ABRT_EXPECTED))
+                    codegen_block_remove();
+                CPU_BLOCK_END();
+            }
+
             if (cpu_state.abrt) {
                 if (!(cpu_state.abrt & ABRT_EXPECTED))
                     codegen_block_remove();
@@ -828,7 +897,7 @@ exec386_dynarec_dyn(void)
 
         cpu_end_block_after_ins = 0;
 
-        if ((!cpu_state.abrt || (cpu_state.abrt & ABRT_EXPECTED)) && !new_ne && !x86_was_reset)
+        if ((!cpu_state.abrt || (cpu_state.abrt & ABRT_EXPECTED)) && !new_ne && !x86_was_reset && !cpu_fetch_device)
             codegen_block_end_recompile(block);
 
         if (x86_was_reset)
@@ -890,11 +959,6 @@ exec386_dynarec_dyn(void)
                     break;
             }
 
-#    ifndef USE_NEW_DYNAREC
-            if (!use32)
-                cpu_state.pc &= 0xffff;
-#    endif
-
                 /* Cap source code at 4000 bytes per block; this
                    will prevent any block from spanning more than
                    2 pages. In practice this limit will never be
@@ -926,6 +990,13 @@ exec386_dynarec_dyn(void)
                     CPU_BLOCK_END();
             }
 
+            /* An instruction ran on into device memory: interpreted, never kept. */
+            if (cpu_fetch_device) {
+                if (!cpu_state.abrt || (cpu_state.abrt & ABRT_EXPECTED))
+                    codegen_block_remove();
+                CPU_BLOCK_END();
+            }
+
             if (cpu_state.abrt) {
                 if (!(cpu_state.abrt & ABRT_EXPECTED))
                     codegen_block_remove();
@@ -935,7 +1006,7 @@ exec386_dynarec_dyn(void)
 
         cpu_end_block_after_ins = 0;
 
-        if ((!cpu_state.abrt || (cpu_state.abrt & ABRT_EXPECTED)) && !new_ne && !x86_was_reset)
+        if ((!cpu_state.abrt || (cpu_state.abrt & ABRT_EXPECTED)) && !new_ne && !x86_was_reset && !cpu_fetch_device)
             codegen_block_end();
 
         if (x86_was_reset)
@@ -984,11 +1055,15 @@ exec386_dynarec(int32_t cycs)
             cycles_old       = cycles;
             oldtsc           = tsc;
             tsc_old          = tsc;
-            if (cpu_force_interpreter || cpu_override_dynarec ||  (!CACHE_ON())) /*Interpret block*/
+            if (cpu_cache_enabled || cpu_force_interpreter || cpu_override_dynarec || cpu_flush_pending || (!CACHE_ON())) /*Interpret block*/
             {
                 exec386_dynarec_int();
             } else {
                 exec386_dynarec_dyn();
+                /* A CR0 paging toggle ends the block it is in, so it was the
+                   last instruction executed. */
+                if (cpu_flush_pending == 1)
+                    cpu_flush_pending++;
             }
 
             if (cpu_init) {
@@ -1082,6 +1157,7 @@ exec386_dynarec(int32_t cycs)
         cycles_main -= (cycles_start - cycles);
     }
 }
+
 #endif
 
 int
@@ -1090,7 +1166,11 @@ is_dynarec_active(void)
 #ifndef USE_DYNAREC
     return false;
 #else
-    return cpu_exec == exec386_dynarec && cpu_use_dynarec && !(cpu_force_interpreter || cpu_override_dynarec || (!CACHE_ON()));
+#ifdef USE_FAST_DYNAREC
+    return (cpu_exec == exec386_dynarec || cpu_exec == exec386_dynarec_fast) && (cpu_use_dynarec || cpu_use_dynarec_fast) && !(cpu_cache_enabled || cpu_force_interpreter || cpu_override_dynarec || (!CACHE_ON()));
+#else
+    return cpu_exec == exec386_dynarec && cpu_use_dynarec && !(cpu_cache_enabled || cpu_force_interpreter || cpu_override_dynarec || (!CACHE_ON()));
+#endif
 #endif
 }
 
@@ -1342,7 +1422,12 @@ exec386(int32_t cycs)
 
             /* Breakpoint fault has priority over other faults. */
             if ((cpu_state.abrt == 0) & ins_fetch_fault) {
+                /* RF must be set in the EFLAGS image x86gen() pushes, so the
+                   handler's IRET resumes the instruction instead of faulting on
+                   it again; delivery leaves RF clear for the handler. */
+                cpu_state.eflags |= RF_FLAG;
                 x86gen();
+                cpu_state.eflags &= ~RF_FLAG;
                 ins_fetch_fault = 0;
                 /* No instructions executed at this point. */
                 goto block_ended;
@@ -1389,11 +1474,6 @@ exec386(int32_t cycs)
                 cpu_flush_pending = 0;
                 flushmmucache_pc();
             }
-
-#ifndef USE_NEW_DYNAREC
-            if (!use32)
-                cpu_state.pc &= 0xffff;
-#endif
 
             if (cpu_end_block_after_ins)
                 cpu_end_block_after_ins--;

@@ -291,7 +291,7 @@ opF7_w_a16(uint32_t fetchdat)
     uint32_t templ;
     uint32_t templ2 = 0;
     int      tempws;
-    int      tempws2 = 0;
+    int64_t  tempws2 = 0;
     int16_t  temps16;
     uint16_t src;
     uint16_t dst;
@@ -376,9 +376,10 @@ opF7_w_a16(uint32_t fetchdat)
             PREFETCH_RUN((is486 && !cpu_iscyrix) ? 24 : 22, 2, rmdat, (cpu_mod == 3) ? 0 : 1, 0, 0, 0, 0);
             break;
         case 0x38: /*IDIV AX,w*/
-            tempws = (int) ((DX << 16) | AX);
+            tempws = (int32_t) (((uint32_t) DX << 16) | AX);
+            /*Divide in 64 bits: INT32_MIN / -1 traps on x86 hosts*/
             if (dst)
-                tempws2 = tempws / (int) ((int16_t) dst);
+                tempws2 = (int64_t) tempws / (int16_t) dst;
             temps16 = tempws2 & 0xffff;
             if ((dst != 0) && ((int) temps16 == tempws2)) {
                 DX = tempws % (int) ((int16_t) dst);
@@ -404,7 +405,7 @@ opF7_w_a32(uint32_t fetchdat)
     uint32_t templ;
     uint32_t templ2 = 0;
     int      tempws;
-    int      tempws2 = 1;
+    int64_t  tempws2 = 1;
     int16_t  temps16;
     uint16_t src;
     uint16_t dst;
@@ -490,9 +491,10 @@ opF7_w_a32(uint32_t fetchdat)
             PREFETCH_RUN((is486 && !cpu_iscyrix) ? 24 : 22, 2, rmdat, (cpu_mod == 3) ? 0 : 1, 0, 0, 0, 1);
             break;
         case 0x38: /*IDIV AX,w*/
-            tempws = (int) ((DX << 16) | AX);
+            tempws = (int32_t) (((uint32_t) DX << 16) | AX);
+            /*Divide in 64 bits: INT32_MIN / -1 traps on x86 hosts*/
             if (dst)
-                tempws2 = tempws / (int) ((int16_t) dst);
+                tempws2 = (int64_t) tempws / (int16_t) dst;
             temps16 = tempws2 & 0xffff;
             if ((dst != 0) && ((int) temps16 == tempws2)) {
                 DX = tempws % (int) ((int16_t) dst);
@@ -748,12 +750,15 @@ opLOCK(uint32_t fetchdat)
 static int
 opLOCK(uint32_t fetchdat)
 {
+    int legal;
     fetchdat = fastreadl(cs + cpu_state.pc);
     if (cpu_state.abrt)
         return 0;
     cpu_state.pc++;
 
-    ILLEGAL_ON(((fetchdat & 0xff) == 0x90) || ((fetchdat & 0xff) == 0xec));
+    legal = is_lock_legal(fetchdat);
+
+    ILLEGAL_ON(legal == 0);
 
     CLOCK_CYCLES(4);
     PREFETCH_PREFIX();
@@ -770,6 +775,7 @@ opBOUND_w_a16(uint32_t fetchdat)
     fetch_ea_16(fetchdat);
     ILLEGAL_ON(cpu_mod == 3);
     SEG_CHECK_READ(cpu_state.ea_seg);
+    CHECK_READ(cpu_state.ea_seg, cpu_state.eaaddr, cpu_state.eaaddr + 3UL);
     low  = geteaw();
     high = readmemw(easeg, cpu_state.eaaddr + 2);
     if (cpu_state.abrt)
@@ -793,6 +799,7 @@ opBOUND_w_a32(uint32_t fetchdat)
     fetch_ea_32(fetchdat);
     ILLEGAL_ON(cpu_mod == 3);
     SEG_CHECK_READ(cpu_state.ea_seg);
+    CHECK_READ(cpu_state.ea_seg, cpu_state.eaaddr, cpu_state.eaaddr + 3UL);
     low  = geteaw();
     high = readmemw(easeg, cpu_state.eaaddr + 2);
     if (cpu_state.abrt)
@@ -817,6 +824,7 @@ opBOUND_l_a16(uint32_t fetchdat)
     fetch_ea_16(fetchdat);
     ILLEGAL_ON(cpu_mod == 3);
     SEG_CHECK_READ(cpu_state.ea_seg);
+    CHECK_READ(cpu_state.ea_seg, cpu_state.eaaddr, cpu_state.eaaddr + 7UL);
     low  = geteal();
     high = readmeml(easeg, cpu_state.eaaddr + 4);
     if (cpu_state.abrt)
@@ -840,6 +848,7 @@ opBOUND_l_a32(uint32_t fetchdat)
     fetch_ea_32(fetchdat);
     ILLEGAL_ON(cpu_mod == 3);
     SEG_CHECK_READ(cpu_state.ea_seg);
+    CHECK_READ(cpu_state.ea_seg, cpu_state.eaaddr, cpu_state.eaaddr + 7UL);
     low  = geteal();
     high = readmeml(easeg, cpu_state.eaaddr + 4);
     if (cpu_state.abrt)
@@ -871,7 +880,12 @@ opCLTS(UNUSED(uint32_t fetchdat))
 static int
 opINVD(UNUSED(uint32_t fetchdat))
 {
+    if ((CPL || (cpu_state.eflags & VM_FLAG)) && (cr0 & 1)) {
+        x86gpf(NULL, 0);
+        return 1;
+    }
     cpu_INVD(0);
+    cpu_cache_invalidate();
     CLOCK_CYCLES(1000);
     CPU_BLOCK_END();
     return 0;
@@ -884,6 +898,8 @@ opWBINVD(UNUSED(uint32_t fetchdat))
         return 1;
     }
     cpu_INVD(1);
+    /* The i486 cache is write-through, so there are no dirty lines to drain. */
+    cpu_cache_invalidate();
     CLOCK_CYCLES(10000);
     CPU_BLOCK_END();
     return 0;

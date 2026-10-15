@@ -20,6 +20,8 @@ public:
 
     void restore();
     void save(int soft);
+    /* The machine selected on the page, saved or not. */
+    int  currentMachineId() const;
 
 signals:
     void currentMachineChanged(int machineId);
@@ -33,6 +35,7 @@ private slots:
     void on_comboBoxMachineType_currentIndexChanged(int index);
     void on_checkBoxFPUSoftfloat_stateChanged(int state);
     void on_checkBoxDynamicRecompiler_stateChanged(int state);
+    void on_checkBoxFastRecompiler_stateChanged(int state);
 
     void on_radioButtonSmallerFrames_clicked();
 

@@ -212,6 +212,18 @@ do_seg_v86_init(x86seg *s)
     s->limit_high = 0xffff;
 }
 
+/* Load a null selector the way protected mode does, even while VM is still set. */
+static void
+load_null_seg(x86seg *s)
+{
+    s->seg     = 0;
+    s->access  = 0x80;
+    s->ar_high = 0x10;
+    s->base    = -1;
+    if (s == &cpu_state.seg_ds)
+        cpu_cur_status |= CPU_STATUS_NOTFLATDS;
+}
+
 static void
 check_seg_valid(x86seg *s)
 {
@@ -290,7 +302,7 @@ loadseg(uint16_t seg, x86seg *s)
     if ((msw & 1) && !(cpu_state.eflags & VM_FLAG)) {
         if (!(seg & 0xfffc)) {
             if (s == &cpu_state.seg_ss) {
-                x86ss(NULL, 0);
+                x86gpf(NULL, 0);
 #ifdef USE_NEW_DYNAREC
                 return 1;
 #else
@@ -448,6 +460,11 @@ loadseg(uint16_t seg, x86seg *s)
         s->base    = seg << 4;
         s->seg     = seg;
         s->checked = 1;
+        /* In V86 mode every segment load also resets the limit to 64K, unlike
+           real mode where the cached limit is kept. Otherwise a task switch
+           into a V86 task inherits stale protected-mode limits. */
+        if (cpu_state.eflags & VM_FLAG)
+            do_seg_v86_init(s);
 #ifdef USE_DYNAREC
         if (s == &cpu_state.seg_ds)
             codegen_flat_ds = 0;
@@ -543,10 +560,6 @@ loadcs(uint16_t seg)
             cpl_override = 0;
         } else {
             /* System segment */
-            if (!(segdat[2] & 0x8000)) {
-                x86np("Load CS system seg not present", seg & 0xfffc);
-                return;
-            }
             switch (segdat[2] & 0x0f00) {
                 default:
                     x86gpf("Load CS system segment has bits 0-3 of access rights set", seg & 0xfffc);
@@ -638,10 +651,6 @@ loadcsjmp(uint16_t seg, uint32_t old_pc)
 #endif
             cycles -= timing_jmp_pm;
         } else { /* System segment */
-            if (!(segdat[2] & 0x8000)) {
-                x86np("Load CS JMP system selector not present", seg & 0xfffc);
-                return;
-            }
             type  = segdat[2] & 0x0f00;
             newpc = segdat[0];
             if (type & 0x0800)
@@ -727,8 +736,12 @@ loadcsjmp(uint16_t seg, uint32_t old_pc)
                     cycles -= timing_jmp_pm_gate;
                     break;
 
-                case 0x100: /* 286 Task gate */
-                case 0x900: /* 386 Task gate */
+                case 0x100: /* 286 TSS */
+                case 0x900: /* 386 TSS */
+                    if (!(segdat[2] & 0x8000)) {
+                        x86np("Load CS JMP TSS not present", seg & 0xfffc);
+                        return;
+                    }
                     cpu_state.pc = old_pc;
                     optype       = JMP;
                     cpl_override = 1;
@@ -738,7 +751,7 @@ loadcsjmp(uint16_t seg, uint32_t old_pc)
                     return;
 
                 default:
-                    x86gpf("Load CS JMP call gate selector unknown type", 0);
+                    x86gpf("Load CS JMP system selector unknown type", seg & 0xfffc);
                     return;
             }
         }
@@ -1053,7 +1066,7 @@ loadcscall(uint16_t seg)
                                 addr = newss & 0xfff8;
                                 dt   = (newss & 0x0004) ? &ldt : &gdt;
                                 if ((addr + 7) > dt->limit) {
-                                    fatal("Bigger than DT limit %04X %08X %04X CSC SS\n", newss, addr, dt->limit);
+                                    //fatal("Bigger than DT limit %04X %08X %04X CSC SS\n", newss, addr, dt->limit);
                                     x86ts(NULL, newss & ~3);
                                     return;
                                 }
@@ -1230,13 +1243,16 @@ loadcscall(uint16_t seg)
                     }
                     break;
 
-                case 0x0100: /* 286 Task gate */
-                case 0x0900: /* 386 Task gate */
+                case 0x0100: /* 286 TSS */
+                case 0x0900: /* 386 TSS */
 #ifdef USE_NEW_DYNAREC
                     cpu_state.pc = old_pc;
 #else
                     cpu_state.pc = oxpc;
 #endif
+                    /* A task switch links the tasks through the TSS back-link and NT,
+                       it does not push a return address on the new task's stack. */
+                    cgate_task   = 1;
                     cpl_override = 1;
                     op_taskswitch286(seg, segdat, segdat[2] & 0x0800);
                     cpl_override = 0;
@@ -1472,7 +1488,7 @@ pmoderetf(int is32, uint16_t off)
         }
         if (!(segdat2[2] & 0x8000)) {
             ESP = oldsp;
-            x86np("RETF loading SS not present", newss & 0xfffc);
+            x86ss("RETF loading SS not present", newss & 0xfffc);
             return;
         }
         if (DPL2 != (seg & 3)) {
@@ -1649,14 +1665,20 @@ pmodeint(int num, int soft)
                             newsp = readmemw(0, addr);
                         }
                         cpl_override = 0;
+                        /* The new stack from the TSS is checked as the TSS's:
+                           #TS for a null, out-of-table, wrong-privilege or
+                           wrong-type SS, #SS only for one not present
+                           (Pentium Vol. 3, INT n, inter-privilege-level
+                           interrupt). The null SS's error code is the EXT
+                           bit alone, 0 for a software interrupt. */
                         if (!(newss & 0xfffc)) {
-                            x86ss("pmodeint(): Interrupt or trap gate stack segment is NULL", newss & 0xfffc);
+                            x86ts("pmodeint(): Interrupt or trap gate stack segment is NULL", 0);
                             return;
                         }
                         addr = newss & 0xfff8;
                         dt   = (newss & 0x0004) ? &ldt : &gdt;
                         if ((addr + 7) > dt->limit) {
-                            x86ss("pmodeint(): Interrupt or trap gate stack segment > DT", newss & 0xfffc);
+                            x86ts("pmodeint(): Interrupt or trap gate stack segment > DT", newss & 0xfffc);
                             return;
                         }
                         addr += dt->base;
@@ -1664,19 +1686,19 @@ pmodeint(int num, int soft)
                         if (cpu_state.abrt)
                             return;
                         if ((newss & 3) != DPL2) {
-                            x86ss("pmodeint(): Interrupt or trap gate tack segment RPL > DPL", newss & 0xfffc);
+                            x86ts("pmodeint(): Interrupt or trap gate stack segment RPL != DPL", newss & 0xfffc);
                             return;
                         }
                         if (DPL3 != DPL2) {
-                            x86ss("pmodeint(): Interrupt or trap gate tack segment DPL > DPL", newss & 0xfffc);
+                            x86ts("pmodeint(): Interrupt or trap gate stack segment DPL != DPL", newss & 0xfffc);
                             return;
                         }
                         if ((segdat3[2] & 0x1a00) != 0x1200) {
-                            x86ss("pmodeint(): Interrupt or trap gate stack segment bad type", newss & 0xfffc);
+                            x86ts("pmodeint(): Interrupt or trap gate stack segment bad type", newss & 0xfffc);
                             return;
                         }
                         if (!(segdat3[2] & 0x8000)) {
-                            x86np("Int gate loading SS not present", newss & 0xfffc);
+                            x86ss("Int gate loading SS not present", newss & 0xfffc);
                             return;
                         }
                         SS = newss;
@@ -1708,10 +1730,14 @@ pmodeint(int num, int soft)
                                 }
                                 if (cpu_state.abrt)
                                     return;
-                                op_loadseg(0, &cpu_state.seg_ds);
-                                op_loadseg(0, &cpu_state.seg_es);
-                                op_loadseg(0, &cpu_state.seg_fs);
-                                op_loadseg(0, &cpu_state.seg_gs);
+                                /* The data segment registers are left holding null selectors,
+                                   unusable until protected mode code reloads them. VM is still
+                                   set at this point, so op_loadseg() would instead load them as
+                                   usable V86 segments with a base of 0. */
+                                load_null_seg(&cpu_state.seg_ds);
+                                load_null_seg(&cpu_state.seg_es);
+                                load_null_seg(&cpu_state.seg_fs);
+                                load_null_seg(&cpu_state.seg_gs);
                             }
                             is586 ? PUSHL(oldss) : PUSHL_SEL(oldss);
                             PUSHL(oldsp);
@@ -1811,6 +1837,9 @@ pmodeint(int num, int soft)
                 x86np("Int task gate not present", segdat[1] & 0xfffc);
                 return;
             }
+            /* The error code, if any, is pushed onto the new task's stack with
+               the size of the target TSS (word for a 286 TSS, dword for a 386 one). */
+            intgatesize  = (segdat2[2] & 0x0800) ? 32 : 16;
             optype       = OPTYPE_INT;
             cpl_override = 1;
             op_taskswitch286(seg, segdat2, segdat2[2] & 0x0800);
@@ -1837,6 +1866,7 @@ pmodeiret(int is32)
     uint16_t      segs[4];
     uint32_t      tempflags;
     uint32_t      flagmask;
+    uint16_t      eflagmask;
     uint32_t      newpc;
     uint32_t      newsp;
     uint32_t      addr;
@@ -1910,6 +1940,14 @@ pmodeiret(int is32)
         flagmask &= ~0x3000;
     if (IOPL < CPL)
         flagmask &= ~0x200;
+    /* Per RETURN-TO-{SAME,OUTER}-PRIVILEGE-LEVEL, a 32-bit IRET loads RF, AC
+       and ID at any CPL and loads VIF and VIP only at CPL 0. VM is never
+       loaded here: entry to V86 mode is the separate CPL 0 path below. Like
+       flagmask above, this is decided by the CPL of the IRET itself, before
+       CS is reloaded. */
+    eflagmask = RF_FLAG | AC_FLAG | VID_FLAG;
+    if (CPL == 0)
+        eflagmask |= VIF_FLAG | VIP_FLAG;
     if (is32) {
         newpc     = POPL();
         seg       = POPL();
@@ -1918,7 +1956,7 @@ pmodeiret(int is32)
             ESP = oldsp;
             return;
         }
-        if (is386 && ((tempflags >> 16) & VM_FLAG)) {
+        if (is386 && (CPL == 0) && ((tempflags >> 16) & VM_FLAG)) {
             newsp   = POPL();
             newss   = POPL();
             segs[0] = POPL();
@@ -2091,7 +2129,7 @@ pmodeiret(int is32)
             return;
         }
         if ((newss & 3) != (seg & 3)) {
-            SP = oldsp;
+            ESP = oldsp;
             x86gpf("pmodeiret(): New SS RPL > CS RPL", newss & 0xfffc);
             return;
         }
@@ -2107,7 +2145,7 @@ pmodeiret(int is32)
         }
         if (!(segdat2[2] & 0x8000)) {
             ESP = oldsp;
-            x86np("IRET loading SS not present", newss & 0xfffc);
+            x86ss("IRET loading SS not present", newss & 0xfffc);
             return;
         }
         SS = newss;
@@ -2145,7 +2183,8 @@ pmodeiret(int is32)
     cpu_state.pc    = newpc;
     cpu_state.flags = (cpu_state.flags & ~flagmask) | (tempflags & flagmask & 0xffd5) | 2;
     if (is32)
-        cpu_state.eflags = tempflags >> 16;
+        cpu_state.eflags = (cpu_state.eflags & (uint16_t) ~eflagmask) |
+                           ((tempflags >> 16) & eflagmask);
 }
 
 void

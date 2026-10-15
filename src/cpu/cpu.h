@@ -34,6 +34,7 @@ enum {
 
 enum {
     CPU_8088 = 1, /* 808x class CPUs */
+    CPU_80C88,
     CPU_8086,
     CPU_8086_MAZOVIA,
     CPU_V20, /* NEC 808x class CPUs */
@@ -91,6 +92,7 @@ enum {
 
 enum {
     CPU_PKG_8088             = (1 << 0),
+    CPU_PKG_80C88            = (1 << 28),
     CPU_PKG_8088_EUROPC      = (1 << 1),
     CPU_PKG_8088_VTECH       = (1 << 2),
     CPU_PKG_8086             = (1 << 3),
@@ -189,6 +191,7 @@ typedef struct {
 
 #define RF_FLAG    0x0001 /* in EFLAGS */
 #define VM_FLAG    0x0002 /* in EFLAGS */
+#define AC_FLAG    0x0004 /* in EFLAGS */
 #define VIF_FLAG   0x0008 /* in EFLAGS */
 #define VIP_FLAG   0x0010 /* in EFLAGS */
 #define VID_FLAG   0x0020 /* in EFLAGS */
@@ -435,7 +438,7 @@ typedef struct {
     MMX_REG MM[8];
 
 #ifdef USE_NEW_DYNAREC
-#    if (defined(__APPLE__) && defined(__aarch64__)) || defined(__aarch64__)
+#    if (defined(__APPLE__) && defined(__aarch64__)) || defined(__aarch64__) || defined(__loongarch_lp64)
     uint64_t old_fp_control;
     uint64_t new_fp_control;
 #    else
@@ -527,6 +530,10 @@ typedef struct {
    ADD/SUB/MUL/DIV/SQRT results to single, so such blocks are compiled
    with a round-to-single uop after each of those ops. */
 #define CPU_STATUS_FPU_PC24 (1 << 5)
+/* x87 rounding control != nearest: only FADD's memory-operand form
+   bails to the interpreter for it (other FPU arith always rounds to
+   nearest); such blocks must not be reused once RC changes. */
+#define CPU_STATUS_FPU_RC_NZ (1 << 6)
 #ifdef USE_NEW_DYNAREC
 #    define CPU_STATUS_FLAGS 0xff
 #else
@@ -612,7 +619,12 @@ extern int    cpu_cyrix_alignment; /* Cyrix 5x86/6x86 only has data misalignment
                                       penalties when crossing 8-byte boundaries. */
 extern int    cpu_cpurst_on_sr;    /* SiS 551x and 5571: Issue CPURST on soft reset. */
 
+/* 80C88 only: board-supplied stoppable-clock control. See cpu.c. */
+extern int  cpu_clock_gated;
+extern int (*cpu_clock_stop_query)(void);
+
 extern int is8086;
+extern int is80c88;
 extern int is186;
 extern int is286;
 extern int is386;
@@ -705,8 +717,6 @@ extern uint32_t cr3;
 extern uint32_t cr4;
 extern uint32_t dr[8];
 extern uint32_t _tr[8];
-extern uint32_t cache_index;
-extern uint8_t  _cache[2048];
 
 /* For the Cyrix 6x86(MX) */
 extern uint8_t ccr0;
@@ -817,6 +827,19 @@ extern char *cpu_current_pc(char *bufp);
 
 extern void cpu_update_waitstates(void);
 extern void cpu_set(void);
+extern void cpu_tr_reset(void);
+/* Optional functional write-through i486 cache. The chipset supplies KEN# and
+   write-protect policy; unregistered machines retain the timing-only model. */
+#define CPU_CACHE_FILL          1
+#define CPU_CACHE_WRITE_PROTECT 2
+extern int  cpu_cache_enabled;
+extern void cpu_cache_set_handler(int (*policy)(uint32_t, void *), void *priv);
+extern void cpu_cache_invalidate(void);
+extern void cpu_cache_snoop(uint32_t addr, unsigned size);
+extern int  cpu_cache_read(uint32_t addr, unsigned size, int pcd, uint64_t *value);
+extern int  cpu_cache_write(uint32_t addr, unsigned size, uint64_t value);
+extern uint32_t cpu_tr_read(int reg);
+extern void cpu_tr_write(int reg, uint32_t val);
 extern void cpu_close(void);
 extern void cpu_set_isa_speed(int speed);
 extern void cpu_set_pci_speed(int speed);
@@ -950,6 +973,25 @@ extern int  cpu_block_end;
 
 extern int  cpu_force_interpreter;
 extern int  cpu_override_dynarec;
+extern int  cpu_use_dynarec_fast;
+
+/* Fast dynarec timing */
+#if defined(USE_DYNAREC) && defined(USE_FAST_DYNAREC)
+extern struct codegen_timing_t codegen_timing_fast;
+extern struct codegen_timing_t codegen_timing_fast_zero;
+#endif
+
+#if defined(USE_DYNAREC) && defined(USE_FAST_DYNAREC)
+extern void exec386_dynarec_fast(int32_t cycs);
+extern void exec386_dynarec_int(void);
+extern void exec386_dynarec_dyn(void);
+#else
+/* Fallback: define as regular dynarec if fast not compiled */
+#define exec386_dynarec_fast exec386_dynarec
+#endif
+
+
+extern int  inrecomp;
 
 extern void mmx_init(void);
 extern void prefetch_flush(void);
@@ -959,11 +1001,13 @@ extern void prefetch_run(int instr_cycles, int bytes, int modrm, int reads, int 
 extern int lock_legal[256];
 extern int lock_legal_0f[256];
 extern int lock_legal_ba[8];
+extern int lock_legal_c7[8];
 extern int lock_legal_80[8];
 extern int lock_legal_f6[8];
 extern int lock_legal_fe[8];
 
 extern int new_ne;
+extern int fpu_ignne;
 
 extern int in_lock;
 extern int cpu_override_interpreter;
@@ -995,5 +1039,7 @@ extern void    wait_cycs(int c, int bus);
 
 #define prefetch_queue_set_suspended(s) prefetch_queue_set_prefetching(!s)
 #define prefetch_queue_get_suspended !prefetch_queue_get_prefetching
+
+extern void    fpu_postamble(void);
 
 #endif /*EMU_CPU_H*/

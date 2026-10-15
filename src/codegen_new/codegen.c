@@ -8,6 +8,7 @@
 #include "x86_ops.h"
 #include "codegen.h"
 #include "x86.h"
+#include "x86_flags.h"
 #include "x86seg_common.h"
 #include "x86seg.h"
 #include "x87_sf.h"
@@ -32,15 +33,17 @@ static struct {
     int      op_sse_xmm;
     int      first_uop;
     int      TOP;
+    int      flags_op;
 } codegen_instructions[MAX_INSTRUCTION_COUNT];
 
 int
-codegen_get_instruction_uop(codeblock_t *block, uint32_t pc, int *first_instruction, int *TOP)
+codegen_get_instruction_uop(codeblock_t *block, uint32_t pc, int *first_instruction, int *TOP, int *flags_op)
 {
     for (uint8_t c = 0; c <= block->ins; c++) {
         if (codegen_instructions[c].pc == pc) {
             *first_instruction = c;
             *TOP               = codegen_instructions[c].TOP;
+            *flags_op          = codegen_instructions[c].flags_op;
             return codegen_instructions[c].first_uop;
         }
     }
@@ -107,8 +110,16 @@ codegen_check_seg_read(UNUSED(codeblock_t *block), ir_data_t *ir, x86seg *seg)
     /*Segments always valid in real/V86 mode*/
     if (!(cr0 & 1) || (cpu_state.eflags & VM_FLAG))
         return;
-    /*CS and SS must always be valid*/
-    if (seg == &cpu_state.seg_cs || seg == &cpu_state.seg_ss)
+    /*CS and SS must always be valid, but CS can be an execute-only code
+      segment, which the interpreter's CHECK_READ refuses to read. Blocks do
+      not reset CS's flag, so check it every time.*/
+    if (seg == &cpu_state.seg_cs) {
+        uop_MOVZX_REG_PTR_8(ir, IREG_temp3, &seg->access);
+        uop_AND_IMM(ir, IREG_temp3, IREG_temp3, 0x0a);
+        uop_CMP_IMM_JZ(ir, IREG_temp3, 0x08, codegen_gpf_rout);
+        return;
+    }
+    if (seg == &cpu_state.seg_ss)
         return;
     if (seg->checked)
         return;
@@ -119,32 +130,77 @@ codegen_check_seg_read(UNUSED(codeblock_t *block), ir_data_t *ir, x86seg *seg)
 
     seg->checked = 1;
 }
-void
-codegen_check_seg_write(UNUSED(codeblock_t *block), ir_data_t *ir, x86seg *seg)
+/*Set in x86seg.checked once this block has verified the segment is a writable
+  data segment. Every segment load clears checked, and this bit with it.*/
+#define SEG_CHECKED_WRITABLE 2
+
+/*The per-segment half of the interpreter's SEG_CHECK_WRITE and
+  CHECK_WRITE_COMMON: a null selector, a read-only data segment or a code
+  segment raises #GP(0).*/
+static void
+codegen_check_seg_writable(ir_data_t *ir, x86seg *seg)
 {
     /*Segments always valid in real/V86 mode*/
     if (!(cr0 & 1) || (cpu_state.eflags & VM_FLAG))
         return;
-    /*CS and SS must always be valid*/
-    if (seg == &cpu_state.seg_cs || seg == &cpu_state.seg_ss)
-        return;
-    if (seg->checked)
+    /*SS can only hold a writable data segment*/
+    if (seg == &cpu_state.seg_ss)
         return;
     if (seg == &cpu_state.seg_ds && codegen_flat_ds && !(cpu_cur_status & CPU_STATUS_NOTFLATDS))
         return;
+    /*Blocks do not reset CS's flag, so check it every time. Code segments are
+      never writable, so this always faults.*/
+    if (seg != &cpu_state.seg_cs && (seg->checked & SEG_CHECKED_WRITABLE))
+        return;
 
-    uop_CMP_IMM_JZ(ir, ireg_seg_base(seg), (uint32_t) -1, codegen_gpf_rout);
+    if (seg != &cpu_state.seg_cs && !seg->checked)
+        uop_CMP_IMM_JZ(ir, ireg_seg_base(seg), (uint32_t) -1, codegen_gpf_rout);
 
-    seg->checked = 1;
+    uop_MOVZX_REG_PTR_8(ir, IREG_temp3, &seg->access);
+    uop_AND_IMM(ir, IREG_temp3, IREG_temp3, 0x0a);
+    uop_CMP_IMM_JZ(ir, IREG_temp3, 0x00, codegen_gpf_rout); /*Read-only data*/
+    uop_AND_IMM(ir, IREG_temp3, IREG_temp3, 0x08);
+    uop_CMP_IMM_JZ(ir, IREG_temp3, 0x08, codegen_gpf_rout); /*Code*/
+
+    if (seg != &cpu_state.seg_cs)
+        seg->checked = 1 | SEG_CHECKED_WRITABLE;
+}
+
+/*Checks a write of size bytes at seg:addr_reg the way the interpreter's
+  seteab()/seteaw()/seteal() do. Uses IREG_temp3.*/
+void
+codegen_check_seg_write(codeblock_t *block, ir_data_t *ir, x86seg *seg, int addr_reg, int size)
+{
+    codegen_check_seg_writable(ir, seg);
+    CHECK_SEG_LIMITS(block, ir, seg, addr_reg, size - 1);
+}
+
+/*As codegen_check_seg_write(), for a write to a constant offset. Uses
+  IREG_eaaddr and IREG_temp3.*/
+void
+codegen_check_seg_write_abs(codeblock_t *block, ir_data_t *ir, x86seg *seg, uint32_t addr, int size)
+{
+    codegen_check_seg_writable(ir, seg);
+    if (!codegen_seg_is_flat(seg)) {
+        uop_MOV_IMM(ir, IREG_eaaddr, addr);
+        CHECK_SEG_LIMITS(block, ir, seg, IREG_eaaddr, size - 1);
+    }
 }
 
 static x86seg *
 codegen_generate_ea_16_long(ir_data_t *ir, x86seg *op_ea_seg, uint32_t fetchdat, int op_ssegs, uint32_t *op_pc)
 {
+    codeblock_t *block  = ir->block;
     uint32_t old_pc = (*op_pc) + 1;
     if (!cpu_mod && cpu_rm == 6) {
-        uint16_t addr = (fetchdat >> 8) & 0xffff;
-        uop_MOV_IMM(ir, IREG_eaaddr, addr);
+        if (block->flags & CODEBLOCK_NO_IMMEDIATES) {
+            LOAD_IMMEDIATE_FROM_RAM_16(block, ir, IREG_temp0_W, cs + (*op_pc) + 1);
+            uop_MOVZX(ir, IREG_eaaddr, IREG_temp0_W);
+        }
+        else {
+            uint16_t addr = (fetchdat >> 8) & 0xffff;
+            uop_MOV_IMM(ir, IREG_eaaddr, addr);
+        }
         (*op_pc) += 2;
     } else {
         int base_reg;
@@ -183,13 +239,27 @@ codegen_generate_ea_16_long(ir_data_t *ir, x86seg *op_ea_seg, uint32_t fetchdat,
 
         switch (cpu_mod) {
             case 1:
-                offset = (int) (int8_t) ((fetchdat >> 8) & 0xff);
-                uop_ADD_IMM(ir, IREG_eaaddr, IREG_eaaddr, offset);
+                if (block->flags & CODEBLOCK_NO_IMMEDIATES) {
+                    LOAD_IMMEDIATE_FROM_RAM_8(block, ir, IREG_temp0_B, cs + (*op_pc) + 1);
+                    uop_MOVSX(ir, IREG_temp0, IREG_temp0_B);
+                    uop_ADD(ir, IREG_eaaddr, IREG_eaaddr, IREG_temp0);
+                }
+                else {
+                    offset = (int) (int8_t) ((fetchdat >> 8) & 0xff);
+                    uop_ADD_IMM(ir, IREG_eaaddr, IREG_eaaddr, offset);
+                }
                 (*op_pc)++;
                 break;
             case 2:
-                offset = (fetchdat >> 8) & 0xffff;
-                uop_ADD_IMM(ir, IREG_eaaddr, IREG_eaaddr, offset);
+                if (block->flags & CODEBLOCK_NO_IMMEDIATES) {
+                    LOAD_IMMEDIATE_FROM_RAM_16(block, ir, IREG_temp0_W, cs + (*op_pc) + 1);
+                    uop_MOVSX(ir, IREG_temp0, IREG_temp0_W);
+                    uop_ADD(ir, IREG_eaaddr, IREG_eaaddr, IREG_temp0);
+                }
+                else {
+                    offset = (fetchdat >> 8) & 0xffff;
+                    uop_ADD_IMM(ir, IREG_eaaddr, IREG_eaaddr, offset);
+                }
                 (*op_pc) += 2;
                 break;
 
@@ -449,22 +519,7 @@ static uint8_t opcode_0f_3a_modrm[256] = {
 static void
 fpu_sf_check_exceptions(void)
 {
-    cpu_state.sf_exc = 0;
-    if (fpu_state.swd & FPU_SW_Summary) {
-        if (cr0 & 0x20)
-            new_ne = 1;
-        else
-            picint(1 << 13);
-        cpu_state.sf_exc = 1;
-    }
-}
-
-static void
-fpu_postamble(void)
-{
-    cpu_state.fpu_DS = cpu_state.ea_seg->seg;
-    cpu_state.fpu_ds = cpu_state.ea_seg->base;
-    cpu_state.fpu_ea = cpu_state.eaaddr;
+    cpu_state.sf_exc = fpu_sf_report_exception();
 }
 
 void
@@ -482,13 +537,14 @@ codegen_generate_call(uint8_t opcode, OpFn op, uint32_t fetchdat, uint32_t new_p
     int          over               = 0;
     int          test_modrm         = 1;
     int          pc_off             = 0;
-    int          in_lock            = 0;
+    int          lock_illegal       = 0;
     int          is_fpu             = 0;
     uint32_t     next_pc            = 0;
     int is_0f = 0;
     int is_repe = 0;
     int is_repne = 0;
     uint16_t     op87               = 0x0000;
+    uint32_t     fetchdat_pc;
 #ifdef DEBUG_EXTRA
     uint8_t last_prefix = 0;
 #endif
@@ -708,7 +764,6 @@ codegen_generate_call(uint8_t opcode, OpFn op, uint32_t fetchdat, uint32_t new_p
                 break;
 
             case 0xf0: /*LOCK*/
-                in_lock         = 1;
                 break;
 
             case 0xf2: /*REPNE*/
@@ -737,6 +792,8 @@ codegen_generate_call(uint8_t opcode, OpFn op, uint32_t fetchdat, uint32_t new_p
         codegen_timing_prefix(opcode, fetchdat);
         if (cpu_state.abrt)
             return;
+        if (opcode == 0xf0) /*LOCK*/
+            lock_illegal = !is_lock_legal(fetchdat);
         opcode = fetchdat & 0xff;
         if (!pc_off)
             fetchdat >>= 8;
@@ -745,6 +802,7 @@ codegen_generate_call(uint8_t opcode, OpFn op, uint32_t fetchdat, uint32_t new_p
     }
 
 generate_call:
+    fetchdat_pc = op_pc + pc_off;
     codegen_instructions[block->ins].pc        = cpu_state.oldpc;
     codegen_instructions[block->ins].op_ssegs  = last_op_ssegs;
     codegen_instructions[block->ins].op_ea_seg = last_op_ea_seg;
@@ -752,6 +810,7 @@ generate_call:
     codegen_instructions[block->ins].op_sse_xmm = last_op_sse_xmm;
     codegen_instructions[block->ins].TOP       = cpu_state.TOP;
     codegen_instructions[block->ins].first_uop = ir->wr_pos;
+    codegen_instructions[block->ins].flags_op  = codegen_flags_changed ? cpu_state.flags_op : FLAGS_UNKNOWN;
 
     codegen_timing_opcode(opcode, fetchdat, op_32, op_pc);
 
@@ -813,6 +872,7 @@ generate_call:
         }
 
         opcode_3dnow = fastreadb(cs + opcode_pc);
+        codegen_mark_code_present(block, cs + opcode_pc, 1);
         if (!fpu_softfloat && recomp_opcodes_3DNOW[opcode_3dnow]) {
             next_pc = opcode_pc + 1;
 
@@ -833,7 +893,7 @@ generate_call:
     if ((recomp_op_table == recomp_opcodes) && (opcode == 0x48))
         goto codegen_skip;
 #endif
-    if (in_lock && ((opcode == 0x90) || (opcode == 0xec)))
+    if (lock_illegal)
         goto codegen_skip;
 
     if (recomp_op_table && recomp_op_table[(opcode | op_32) & recomp_opcode_mask]) {
@@ -872,7 +932,7 @@ codegen_skip:
         recomp_op_table = recomp_opcodes_0f_no_mmx;
     }
 
-    if (in_lock && ((opcode == 0x90) || (opcode == 0xec)))
+    if (lock_illegal)
         /* This is always ILLEGAL. */
         op = x86_dynarec_opcodes_3DNOW[0xff];
     else
@@ -937,7 +997,11 @@ codegen_skip:
             uop_CMP_IMM_JZ(ir, IREG_sf_exc, (uint32_t) 1, codegen_exit_rout);
     }
     codegen_flags_changed = 0;
-    codegen_mark_code_present(block, cs + cpu_state.pc, 8);
+    /* The handler gets the bytes after the opcode through fetchdat, and reads
+       anything further from memory as it runs. Marking more than fetchdat
+       covers would claim the data that often follows an instruction such as
+       RET or IRET, and every write to it would throw the block away. */
+    codegen_mark_code_present(block, cs + fetchdat_pc, pc_off ? 4 : 3);
 
     last_op_32     = op_32;
     last_op_ea_seg = op_ea_seg;

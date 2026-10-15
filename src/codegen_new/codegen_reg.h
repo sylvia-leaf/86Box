@@ -446,9 +446,31 @@ ir_reg_is_invalid(ir_reg_t ir_reg)
 
 struct ir_data_t;
 
+#ifdef CODEGEN_BACKEND_HAS_MEM_REGS
+/* Resolve liveness at the memory site, before later allocations consume it.
+   IR versions do not affect these backing-state transfers. */
+typedef struct codegen_mem_reg_state_t {
+    uint8_t regs[CODEGEN_HOST_REGS + CODEGEN_HOST_FP_REGS];
+    /* The x64 backend has 8 GPRs plus 15 SIMD registers. A 16-bit mask
+       drops the last seven SIMD slots on helper and fault paths. */
+    uint32_t write_mask, reload_mask;
+    uint8_t write_uses_top, reload_uses_top;
+} codegen_mem_reg_state_t;
+
+void codegen_reg_capture_mem(codegen_mem_reg_state_t *state, ir_reg_t dest_reg);
+void codegen_reg_sync_mem(codeblock_t *block, const codegen_mem_reg_state_t *state, int reload, int stack_offset);
+#endif
+
 void codegen_reg_reset(void);
 /*Write back all dirty registers*/
 void codegen_reg_flush(struct ir_data_t *ir, codeblock_t *block);
+/*Memory slow paths write back state without changing the RAM-hit allocation.*/
+void codegen_reg_flush_mem_dest(codeblock_t *block, ir_reg_t dest_reg);
+void codegen_reg_reload_mem(codeblock_t *block, ir_reg_t dest_reg);
+/*Conditional slow/fault paths write back state without changing allocation.*/
+void codegen_reg_flush_conditional(codeblock_t *block, ir_reg_t dest_reg);
+/* Return a cached integer register for an implicit update, or -1 if uncached. */
+int codegen_reg_get_dirty_host_reg(int reg);
 /*Write back and evict all registers*/
 void codegen_reg_flush_invalidate(struct ir_data_t *ir, codeblock_t *block);
 

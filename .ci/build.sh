@@ -707,7 +707,7 @@ else
         grep -q " trixie " /etc/apt/sources.list.d/debian.sources || echo [!] WARNING: System not running the expected Debian version
 
 	# Establish general dependencies.
-	pkgs="cmake ninja-build pkg-config git wget p7zip-full extra-cmake-modules wayland-protocols tar gzip file appstream qttranslations5-l10n python3-pip python3-venv squashfs-tools curl"
+	pkgs="cmake ninja-build pkg-config git wget p7zip-full wayland-protocols tar gzip file appstream qttranslations5-l10n python3-pip python3-venv squashfs-tools curl"
 	if [ "$(dpkg --print-architecture)" = "$arch_deb" ]
 	then
 		pkgs="$pkgs build-essential"
@@ -1213,6 +1213,9 @@ else
 	# Archive Discord Game SDK library.
 	7z e -y -o"archive_tmp/usr/lib" "$discord_zip" "lib/$arch_discord/discord_game_sdk.so"
 	[ ! -e "archive_tmp/usr/lib/discord_game_sdk.so" ] && echo [!] No Discord Game SDK for architecture [$arch_discord]
+
+	# Archive mdsx library.
+	mv "archive_tmp/mdsx.so" "archive_tmp/usr/lib/"
 
 	# Archive libaaruformat library.
 	mv "archive_tmp/libaaruformat.so" "archive_tmp/usr/lib/"

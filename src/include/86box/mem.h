@@ -352,6 +352,7 @@ extern void     do_mmutranslate_2386(uint32_t addr, uint32_t *a64, int num, int 
 
 extern uint8_t *getpccache_execute(uint32_t a);
 extern uint8_t *getpccache(uint32_t a);
+extern int      cpu_fetch_device;
 extern uint64_t mmutranslatereal(uint32_t addr, int rw);
 extern uint32_t mmutranslatereal32(uint32_t addr, int rw);
 extern void     addreadlookup(uint32_t virt, uint32_t phys);
@@ -426,6 +427,7 @@ extern void     mem_write_ramw(uint32_t addr, uint16_t val, void *priv);
 extern void     mem_write_raml(uint32_t addr, uint32_t val, void *priv);
 
 extern int mem_addr_is_ram(uint32_t addr);
+extern void mem_read_cache_line(uint32_t addr, uint32_t *data);
 
 extern uint64_t mmutranslate_noabrt(uint32_t addr, int rw);
 
@@ -447,6 +449,7 @@ extern void mem_debug_check_addr(uint32_t addr, int write);
 
 extern void mem_a20_init(void);
 extern void mem_a20_recalc(void);
+extern void mem_a20_reset_vector_bypass_once(void);
 
 extern void mem_init(void);
 extern void mem_close(void);

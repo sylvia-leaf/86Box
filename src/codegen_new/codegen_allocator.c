@@ -48,10 +48,11 @@ remove_from_block_list(mem_code_block_t* block)
             mem_code_block_tail = block->prev;
         }
     } else if (block->next) {
-        mem_code_block_head = block->next;
-        if (mem_code_block_head && mem_code_block_head->next) {
-            mem_code_block_head->next->prev = mem_code_block_head;
-        }
+        /* This node was head; its successor becomes head and must lose its
+           now-stale prev (it pointed at this node), or a later removal of
+           the new head takes the wrong branch below. */
+        mem_code_block_head       = block->next;
+        mem_code_block_head->prev = NULL;
     } else if (block == mem_code_block_head) {
         mem_code_block_head = mem_code_block_tail = NULL;
     }
@@ -87,9 +88,10 @@ static uint8_t    *mem_block_alloc = NULL;
 int codegen_allocator_usage = 0;
 
 /* Matches the per-arch direct-branch ranges the header comment above
-   documents (128MB on ARMv8, 2GB on x86) - same arch check already used
-   elsewhere in this codebase (cpu.h, 386_common.h). */
-#if defined(__aarch64__) || defined(_M_ARM64)
+   documents (128MB on ARMv8 and LoongArch64 (`b`/`bl` +/-128MiB), 2GB on
+   x86) - same arch check already used elsewhere in this codebase (cpu.h,
+   386_common.h). */
+#if defined(__aarch64__) || defined(_M_ARM64) || defined(__loongarch_lp64)
 #    define CODEGEN_ALLOCATOR_MAX_POOL_BYTES (128ull * 1024 * 1024)
 #else
 #    define CODEGEN_ALLOCATOR_MAX_POOL_BYTES (2ull * 1024 * 1024 * 1024)
@@ -126,25 +128,20 @@ codegen_allocator_allocate(mem_block_t *parent, int code_block)
     uint32_t     block_nr;
 
     if (!mem_block_free_list) {
-        if (mem_code_block_head == mem_code_block_tail) {
-            fatal("Out of memory blocks!\n");
-        } else {
-            mem_code_block_t* mem_code_block = mem_code_block_head;
-            while (mem_code_block) {
-                if (code_block != mem_code_block->number) {
-                    codegen_delete_block(&codeblock[mem_code_block->number]);
-                }
-                mem_code_block = mem_code_block->next;
-            }
-
-            if (mem_block_free_list)
-                goto block_allocate;
-
-            fatal("Out of memory blocks!\n");
+        mem_code_block_t *oldest = mem_code_block_head;
+        /* One guest block may own several chunks. Stop once it has freed
+           space instead of throwing away the rest of the compiled cache. */
+        while (oldest && !mem_block_free_list) {
+            /* Deletion unlinks this node and clears its next pointer. */
+            mem_code_block_t *next = oldest->next;
+            if (oldest->number != code_block)
+                codegen_delete_block(&codeblock[oldest->number]);
+            oldest = next;
         }
+        if (!mem_block_free_list)
+            fatal("Out of memory blocks!\n");
     }
 
-block_allocate:
     /*Remove from free list*/
     block_nr            = mem_block_free_list;
     block               = &mem_blocks[block_nr - 1];
@@ -203,12 +200,20 @@ codeblock_allocator_get_ptr(mem_block_t *block)
     return &mem_block_alloc[block->offset];
 }
 
+/* On LoongArch64 glibc does not provide the legacy __clear_cache()
+   helper; use GCC's __builtin___clear_cache, which emits `ibar 0`. */
+#if defined(__loongarch_lp64)
+#    define CODEGEN_HOST_CLEAR_CACHE __builtin___clear_cache
+#else
+#    define CODEGEN_HOST_CLEAR_CACHE __clear_cache
+#endif
+
 void
 codegen_allocator_clean_blocks(UNUSED(struct mem_block_t *block))
 {
-#if defined __ARM_EABI__ || defined __aarch64__ || defined _M_ARM64
+#if defined __ARM_EABI__ || defined __aarch64__ || defined _M_ARM64 || defined(__loongarch_lp64)
     while (1) {
-        __clear_cache(&mem_block_alloc[block->offset], &mem_block_alloc[block->offset + MEM_BLOCK_SIZE]);
+        CODEGEN_HOST_CLEAR_CACHE(&mem_block_alloc[block->offset], &mem_block_alloc[block->offset + MEM_BLOCK_SIZE]);
         if (block->next)
             block = &mem_blocks[block->next - 1];
         else

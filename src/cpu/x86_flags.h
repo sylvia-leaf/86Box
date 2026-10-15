@@ -61,7 +61,10 @@ enum {
 
     FLAGS_IMUL8,
     FLAGS_IMUL16,
-    FLAGS_IMUL32
+    FLAGS_IMUL32,
+    
+    FLAGS_SHRD16,
+    FLAGS_SHRD32
 #endif
 };
 
@@ -100,6 +103,8 @@ ZF_SET(void)
         case FLAGS_SBC8:
         case FLAGS_SBC16:
         case FLAGS_SBC32:
+        case FLAGS_SHRD16:
+        case FLAGS_SHRD32:
 #endif
             return !cpu_state.flags_res;
 
@@ -159,6 +164,7 @@ NF_SET(void)
 #ifdef USE_NEW_DYNAREC
         case FLAGS_ADC16:
         case FLAGS_SBC16:
+        case FLAGS_SHRD16:
 #endif
             return cpu_state.flags_res & 0x8000;
 
@@ -173,6 +179,7 @@ NF_SET(void)
 #ifdef USE_NEW_DYNAREC
         case FLAGS_ADC32:
         case FLAGS_SBC32:
+        case FLAGS_SHRD32:
 #endif
             return cpu_state.flags_res & 0x80000000;
 
@@ -238,6 +245,8 @@ PF_SET(void)
         case FLAGS_SBC8:
         case FLAGS_SBC16:
         case FLAGS_SBC32:
+        case FLAGS_SHRD16:
+        case FLAGS_SHRD32:
 #endif
             return znptable8[cpu_state.flags_res & 0xff] & P_FLAG;
 
@@ -362,6 +371,11 @@ VF_SET(void)
             int64_t res = (int64_t)(int32_t)cpu_state.flags_op1 * (int64_t)(int32_t)cpu_state.flags_op2;
             return ((res >> 31) != 0 && (res >> 31) != -1);
         }
+
+        case FLAGS_SHRD16:
+            return ((cpu_state.flags_res ^ cpu_state.flags_op1) & 0x8000) ? 1 : 0;
+        case FLAGS_SHRD32:
+            return ((cpu_state.flags_res ^ cpu_state.flags_op1) & 0x80000000) ? 1 : 0;
 #endif
 
         case FLAGS_UNKNOWN:
@@ -393,6 +407,10 @@ AF_SET(void)
         case FLAGS_SAR8:
         case FLAGS_SAR16:
         case FLAGS_SAR32:
+#ifdef USE_NEW_DYNAREC
+        case FLAGS_SHRD16:
+        case FLAGS_SHRD32:
+#endif
             return 0;
 
         case FLAGS_ADD8:
@@ -404,12 +422,12 @@ AF_SET(void)
             return ((cpu_state.flags_op1 & 0xF) + (cpu_state.flags_op2 & 0xF)) & 0x10;
 
 #ifdef USE_NEW_DYNAREC
+        /*A carry out of bit 3 leaves the low nibble below op1's, except when
+          op2's low nibble plus the carry in is exactly 16*/
         case FLAGS_ADC8:
-            return ((cpu_state.flags_res & 0xf) < (cpu_state.flags_op1 & 0xf)) || ((cpu_state.flags_res & 0xf) == (cpu_state.flags_op1 & 0xf) && cpu_state.flags_op2 == 0xff);
         case FLAGS_ADC16:
-            return ((cpu_state.flags_res & 0xf) < (cpu_state.flags_op1 & 0xf)) || ((cpu_state.flags_res & 0xf) == (cpu_state.flags_op1 & 0xf) && cpu_state.flags_op2 == 0xffff);
         case FLAGS_ADC32:
-            return ((cpu_state.flags_res & 0xf) < (cpu_state.flags_op1 & 0xf)) || ((cpu_state.flags_res & 0xf) == (cpu_state.flags_op1 & 0xf) && cpu_state.flags_op2 == 0xffffffff);
+            return ((cpu_state.flags_res & 0xf) < (cpu_state.flags_op1 & 0xf)) || ((cpu_state.flags_res & 0xf) == (cpu_state.flags_op1 & 0xf) && (cpu_state.flags_op2 & 0xf) == 0xf);
 #endif
 
         case FLAGS_SUB8:
@@ -494,6 +512,10 @@ CF_SET(void)
         case FLAGS_SHR8:
         case FLAGS_SHR16:
         case FLAGS_SHR32:
+#ifdef USE_NEW_DYNAREC
+        case FLAGS_SHRD16:
+        case FLAGS_SHRD32:
+#endif
             return (cpu_state.flags_op1 >> (cpu_state.flags_op2 - 1)) & 1;
 
         case FLAGS_SAR8:
@@ -525,7 +547,7 @@ CF_SET(void)
         case FLAGS_MUL32:
             return cpu_state.flags_res != 0;
         case FLAGS_IMUL8: {
-            int32_t res = cpu_state.flags_res;
+            int32_t res = (int32_t)(int8_t)cpu_state.flags_op1 * (int32_t)(int8_t)cpu_state.flags_op2;
             return ((res >> 7) != 0 && (res >> 7) != -1);
         }
         case FLAGS_IMUL16: {
@@ -626,7 +648,7 @@ flags_res_valid(void)
 {
     if ((cpu_state.flags_op == FLAGS_UNKNOWN) || ((cpu_state.flags_op >= FLAGS_ROL8) && (cpu_state.flags_op <= FLAGS_ROR32))
         || (cpu_state.flags_op == FLAGS_MUL8) || (cpu_state.flags_op == FLAGS_MUL16) || (cpu_state.flags_op == FLAGS_MUL32)
-        || (cpu_state.flags_op == FLAGS_IMUL16) || (cpu_state.flags_op == FLAGS_IMUL32))
+        || (cpu_state.flags_op == FLAGS_IMUL8) ||(cpu_state.flags_op == FLAGS_IMUL16) || (cpu_state.flags_op == FLAGS_IMUL32))
         return 0;
 
     return 1;

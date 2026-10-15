@@ -42,6 +42,7 @@ public:
     void         reloadAllRenderers();
     QShortcut   *windowedShortcut;
     QKeySequence FindAcceleratorSeq(const char *name);
+    bool         keyMatchesAccelerator(const QKeyEvent *ke, const char *name);
 
     QString mouseStringUncaptured;
     QString mouseStringCaptured;
@@ -122,6 +123,7 @@ private slots:
     void on_actionAbout_86Box_triggered();
     void on_actionAbout_Qt_triggered();
     void on_actionForce_4_3_display_ratio_triggered();
+    void on_actionForce_device_aspect_ratio_triggered();
     void on_actionRemember_size_and_position_triggered();
     void on_actionSpecify_dimensions_triggered();
     void on_actionHiDPI_scaling_triggered();
@@ -184,8 +186,10 @@ private:
     // NON-modal dialogs - these use ::show() and therefore have to be maintained as objects     
     std::unique_ptr<MachineStatus> status;
     std::shared_ptr<MediaMenu>     mm;
+    QMenu                         *dynarecMenu = nullptr;
 
     void updateShortcuts();
+    void refreshDisplayRatioActions();
     void processKeyboardInput(bool down, uint32_t keycode);
 #ifdef Q_OS_MACOS
     uint32_t last_modifiers = 0;
@@ -223,6 +227,8 @@ private:
     bool isShowMessage  = false;
     bool isNonPause     = false;
     bool window_blocked = false;
+
+    bool skip_exit_confirmation = false;
 };
 
 #endif // QT_MAINWINDOW_HPP

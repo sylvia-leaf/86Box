@@ -15,6 +15,7 @@
         CLOCK_CYCLES(1);                           \
     } else {                                       \
         SEG_CHECK_READ(cpu_state.ea_seg);          \
+        CHECK_READ(cpu_state.ea_seg, cpu_state.eaaddr, cpu_state.eaaddr + 7UL); \
         src.q = readmemq(easeg, cpu_state.eaaddr); \
         if (cpu_state.abrt)                        \
             return 1;                              \
@@ -27,6 +28,7 @@
         CLOCK_CYCLES(1);                                  \
     } else {                                              \
         SEG_CHECK_READ(cpu_state.ea_seg);                 \
+        CHECK_READ(cpu_state.ea_seg, cpu_state.eaaddr, cpu_state.eaaddr + 3UL); \
         src.l[0] = readmeml(easeg, cpu_state.eaaddr);     \
         if (cpu_state.abrt)                               \
             return 1;                                     \
@@ -41,6 +43,7 @@
         CLOCK_CYCLES(1);                                  \
     } else {                                              \
         SEG_CHECK_READ(cpu_state.ea_seg);                 \
+        CHECK_READ(cpu_state.ea_seg, cpu_state.eaaddr, cpu_state.eaaddr + 7UL); \
         src.q[0] = readmemq(easeg, cpu_state.eaaddr);     \
         if (cpu_state.abrt)                               \
             return 1;                                     \
@@ -54,7 +57,7 @@
         CLOCK_CYCLES(1);                                  \
     } else {                                              \
         SEG_CHECK_READ(cpu_state.ea_seg);                 \
-        CHECK_READ(cpu_state.ea_seg, cpu_state.eaaddr, cpu_state.eaaddr + 15) \
+        CHECK_READ(cpu_state.ea_seg, cpu_state.eaaddr, cpu_state.eaaddr + 15); \
         if (cpu_state.eaaddr & 0xf) {                     \
             x86gpf(NULL, 0);                              \
             if (cpu_state.abrt)                           \
@@ -79,6 +82,12 @@
         x86_int(7);                          \
         return 1;                            \
     }                                        \
+    /* Resetting a non-zero TOP, or entering MMX mode, changes the stack \
+       mapping a recompiled block was compiled against: end the block, \
+       see FSTOR in x87_ops_misc.h. Not on every MMX instruction, or   \
+       each would become a block of its own. */                        \
+    if ((cpu_state.TOP & 7) || !cpu_state.ismmx)                       \
+        CPU_BLOCK_END();                                               \
     x87_set_mmx()
 
 #define SSE_ENTER()  \
@@ -130,6 +139,7 @@ static int softfloat_status_word_to_mxcsr(struct softfloat_status_t status)
         if (cr4 & CR4_OSXMMEXCPT)
             x86_int(0x13);
         ILLEGAL_ON(!(cr4 & CR4_OSXMMEXCPT));
+        return 1;
     }
     return 0;
 }

@@ -33,6 +33,10 @@
 #include <QFile>
 #include <QTextStream>
 
+#ifdef Q_OS_MACOS
+#    include <pthread/qos.h>
+#endif
+
 #ifdef QT_STATIC
 /* Static builds need plugin imports */
 #    include <QtPlugin>
@@ -55,10 +59,6 @@ extern "C" {
 #include <86box/gdbstub.h>
 #include <86box/version.h>
 #include <86box/renderdefs.h>
-#ifdef Q_OS_LINUX
-#    define GAMEMODE_AUTO
-#    include "../unix/gamemode/gamemode_client.h"
-#endif
 }
 
 #ifdef Q_OS_WINDOWS
@@ -452,6 +452,12 @@ main_thread_fn()
     int frames;
 
     QThread::currentThread()->setPriority(QThread::HighestPriority);
+#ifdef Q_OS_MACOS
+    /* QoS class, not just pthread priority: without it this thread is
+       E-core-eligible and its sleeps are coalescible, which measurably
+       destabilizes realtime pacing under render load. */
+    pthread_set_qos_class_self_np(QOS_CLASS_USER_INTERACTIVE, 0);
+#endif
     plat_set_thread_name(nullptr, "main_thread");
     framecountx = 0;
     // title_update = 1;

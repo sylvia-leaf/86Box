@@ -43,8 +43,6 @@ extern void fpu_log(const char *fmt, ...);
 #    endif
 #endif
 
-extern double exp_pow_table[0x800];
-
 #ifndef X87_INLINE_ASM
 static int rounding_modes[4] = { FE_TONEAREST, FE_DOWNWARD, FE_UPWARD, FE_TOWARDZERO };
 #endif
@@ -85,16 +83,16 @@ typedef union {
             (r) = (double) (float) (r);       \
     } while (0)
 
-/* Dynarec blocks are keyed on PC=24, but FLDCW/FLDENV/FRSTOR/FSAVE run
-   as helper calls inside a block: a precision change must end the block
-   so the ops after it are compiled under the new precision. */
-#define x87_set_control_word(w)                                              \
-    do {                                                                     \
-        uint16_t old_npxc_ = cpu_state.npxc;                                 \
-        cpu_state.npxc     = (w);                                            \
-        codegen_set_rounding_mode((cpu_state.npxc >> 10) & 3);               \
-        if ((!(old_npxc_ & 0x300)) != (!(cpu_state.npxc & 0x300)))           \
-            CPU_BLOCK_END();                                                 \
+/* Dynarec blocks are keyed on PC=24 and RC!=nearest, but FLDCW/FLDENV/
+   FRSTOR/FSAVE run as helper calls inside a block: a change to either must
+   end the block so the ops after it are compiled under the new value. */
+#define x87_set_control_word(w)                                                                                                 \
+    do {                                                                                                                        \
+        uint16_t old_npxc_ = cpu_state.npxc;                                                                                    \
+        cpu_state.npxc     = (w);                                                                                               \
+        codegen_set_rounding_mode((cpu_state.npxc >> 10) & 3);                                                                  \
+        if (((!(old_npxc_ & 0x300)) != (!(cpu_state.npxc & 0x300))) || ((!(old_npxc_ & 0xc00)) != (!(cpu_state.npxc & 0xc00)))) \
+            CPU_BLOCK_END();                                                                                                    \
     } while (0)
 
 #ifdef FPU_8087
@@ -193,84 +191,6 @@ x87_pop(void)
     return t;
 }
 
-static __inline int16_t
-x87_fround16(double b)
-{
-    double da;
-    double dc;
-    int16_t a;
-    int16_t c;
-
-    switch ((cpu_state.npxc >> 10) & 3) {
-        case 0: /*Nearest*/
-            da = floor(b);
-            dc = floor(b + 1.0);
-            a = (int16_t) da;
-            c = (int16_t) dc;
-            if ((b - a) < (c - b))
-                return a;
-            else if ((b - a) > (c - b))
-                return c;
-            else
-                return (a & 1) ? c : a;
-        case 1: /*Down*/
-            da = floor(b);
-            return (int16_t) da;
-        case 2: /*Up*/
-            da = ceil(b);
-            return (int16_t) da;
-        case 3: /*Chop*/
-            return (int16_t) b;
-    }
-
-    return 0;
-}
-
-static __inline int64_t
-x87_fround16_64(double b)
-{
-    return (int64_t) x87_fround16(b);
-}
-
-static __inline int32_t
-x87_fround32(double b)
-{
-    double da;
-    double dc;
-    int32_t a;
-    int32_t c;
-
-    switch ((cpu_state.npxc >> 10) & 3) {
-        case 0: /*Nearest*/
-            da = floor(b);
-            dc = floor(b + 1.0);
-            a = (int32_t) da;
-            c = (int32_t) dc;
-            if ((b - a) < (c - b))
-                return a;
-            else if ((b - a) > (c - b))
-                return c;
-            else
-                return (a & 1) ? c : a;
-        case 1: /*Down*/
-            da = floor(b);
-            return (int32_t) da;
-        case 2: /*Up*/
-            da = ceil(b);
-            return (int32_t) da;
-        case 3: /*Chop*/
-            return (int32_t) b;
-    }
-
-    return 0;
-}
-
-static __inline int64_t
-x87_fround32_64(double b)
-{
-    return (int64_t) x87_fround32(b);
-}
-
 static __inline int64_t
 x87_fround_nearest(double b)
 {
@@ -320,6 +240,89 @@ x87_fround(double b)
     }
 
     return 0LL;
+}
+
+/*A value outside -32768..32767 after rounding, or a NaN, stores the integer
+  indefinite (0x8000) as the chip does with IE masked. The range is checked on
+  the double first: converting an out-of-range double is undefined on the host.*/
+static __inline int16_t
+x87_fround16(double b)
+{
+    int64_t r;
+
+    if (!((b > -32769.0) && (b < 32768.0)))
+        return (int16_t) 0x8000;
+    r = x87_fround(b);
+    if ((r < -32768) || (r > 32767))
+        return (int16_t) 0x8000;
+    return (int16_t) r;
+}
+
+static __inline int64_t
+x87_fround16_64(double b)
+{
+    return (int64_t) x87_fround16(b);
+}
+
+/*x87_fround16() for FIST m32: the integer indefinite is 0x80000000. Rounding
+  in 64 bits keeps the neighbours of INT32_MAX from overflowing on the way.*/
+static __inline int32_t
+x87_fround32(double b)
+{
+    int64_t r;
+
+    if (!((b > -2147483649.0) && (b < 2147483648.0)))
+        return INT32_MIN;
+    r = x87_fround(b);
+    if ((r < INT32_MIN) || (r > INT32_MAX))
+        return INT32_MIN;
+    return (int32_t) r;
+}
+
+static __inline int64_t
+x87_fround32_64(double b)
+{
+    return (int64_t) x87_fround32(b);
+}
+
+/*x87_fround16() for FISTTP, which always truncates. Truncation keeps every
+  value in (-32769, 32768) in range.*/
+static __inline int16_t
+x87_ftrunc16(double b)
+{
+    if (!((b > -32769.0) && (b < 32768.0)))
+        return (int16_t) 0x8000;
+    return (int16_t) b;
+}
+
+/*b narrowed to single precision as FST m32 stores it, rounded by RC rather
+  than the host's mode. The nearest single is one of the two around b, so a
+  directed mode at most steps it once; this also covers overflow (infinity
+  steps back to the largest finite value) and underflow.*/
+static __inline float
+x87_fround_single(double b)
+{
+    float f = (float) b;
+
+    if (isnan(b) || ((double) f == b))
+        return f;
+
+    switch ((cpu_state.npxc >> 10) & 3) {
+        case 1: /*Down*/
+            if ((double) f > b)
+                f = nextafterf(f, -INFINITY);
+            break;
+        case 2: /*Up*/
+            if ((double) f < b)
+                f = nextafterf(f, INFINITY);
+            break;
+        case 3: /*Chop*/
+            if (fabs((double) f) > fabs(b))
+                f = nextafterf(f, 0.0f);
+            break;
+    }
+
+    return f;
 }
 
 static __inline double

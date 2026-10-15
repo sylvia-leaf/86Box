@@ -25,6 +25,7 @@
 #include <QStandardItem>
 #include <QStandardItemModel>
 #include <QCompleter>
+#include <QSignalBlocker>
 #include <QTimer>
 
 #include <algorithm>
@@ -60,12 +61,13 @@ SettingsMachine::SettingsMachine(QWidget *parent)
     int         j                   = 0;
     int         cur_j               = 0;
     const void *miname;
+    Models::Batch machineTypeRows(machineTypesModel);
     do {
         miname = machine_get_internal_name_ex(j);
 
         if ((miname == nullptr) || (machine_get_type(j) != i)) {
             if ((i != -1) && (cur_j != 0)) {
-                int row = Models::AddEntry(machineTypesModel, tr(machine_types[i].name), machine_types[i].id);
+                int row = machineTypeRows.add(tr(machine_types[i].name), machine_types[i].id);
                 if (machine_types[i].id == machine_get_type(machine))
                     selectedMachineType = row;
             }
@@ -82,6 +84,7 @@ SettingsMachine::SettingsMachine(QWidget *parent)
 
         j++;
     } while (miname != nullptr);
+    machineTypeRows.commit();
 
     auto warning_icon = QIcon(":/misc/qt/icons/warning.ico");
     ui->softFloatWarningIcon->setPixmap(warning_icon.pixmap(warning_icon.actualSize(QSize(16, 16))));
@@ -138,6 +141,10 @@ SettingsMachine::SettingsMachine(QWidget *parent)
 #ifndef USE_DYNAREC
     ui->checkBoxDynamicRecompiler->setEnabled(false);
     ui->checkBoxDynamicRecompiler->setVisible(false);
+    ui->checkBoxFastRecompiler->setEnabled(true);
+    ui->checkBoxFastRecompiler->setVisible(true);
+#else
+    ui->checkBoxFastRecompiler->setChecked(cpu_use_dynarec_fast ? true : false);
 #endif
 }
 
@@ -163,6 +170,7 @@ SettingsMachine::changed()
 #ifdef USE_DYNAREC
     has_changed |= (cpu_use_dynarec            != (ui->checkBoxDynamicRecompiler->isChecked() ? 1 : 0));
     has_changed |= (cpu_dyn_accurate_fpu_env   != (ui->checkBoxAccurateFPUEnvironment->isChecked() ? 1 : 0));
+    has_changed |= (cpu_use_dynarec_fast       != (ui->checkBoxFastRecompiler->isChecked() ? 1 : 0));
 #endif
     has_changed |= (fpu_softfloat              != (ui->checkBoxFPUSoftfloat->isChecked() ? 1 : 0));
     has_changed |= (force_10ms                 != (ui->radioButtonLargerFrames->isChecked() ? 1 : 0));
@@ -173,7 +181,10 @@ SettingsMachine::changed()
     else
         temp_mem_size = ui->spinBoxRAM->value() * 1024;
 
-    temp_mem_size &= ~(machine_get_ram_granularity(machine) - 1);
+    const int gran = machine_get_ram_granularity(machine);
+    const int min  = machine_get_min_ram(machine);
+    if (temp_mem_size > min)
+        temp_mem_size = min + ((temp_mem_size - min) / gran) * gran;
     if (temp_mem_size < machine_get_min_ram(machine))
         temp_mem_size = machine_get_min_ram(machine);
     else if (temp_mem_size > machine_get_max_ram(machine))
@@ -203,6 +214,12 @@ SettingsMachine::restore()
 {
 }
 
+int
+SettingsMachine::currentMachineId() const
+{
+    return ui->comboBoxMachine->currentData().toInt();
+}
+
 void
 SettingsMachine::save(int soft)
 {
@@ -218,6 +235,7 @@ SettingsMachine::save(int soft)
     cpu_use_dynarec          = ui->checkBoxDynamicRecompiler->isChecked() ? 1 : 0;
     cpu_dyn_accurate_fpu_env = ui->checkBoxAccurateFPUEnvironment->isChecked() ? 1 : 0;
 #endif
+    cpu_use_dynarec_fast     = ui->checkBoxFastRecompiler->isChecked() ? 1 : 0;
     fpu_softfloat            = ui->checkBoxFPUSoftfloat->isChecked() ? 1 : 0;
     force_10ms               = ui->radioButtonLargerFrames->isChecked() ? 1 : 0;
 
@@ -227,7 +245,10 @@ SettingsMachine::save(int soft)
     else
         temp_mem_size = ui->spinBoxRAM->value() * 1024;
 
-    temp_mem_size &= ~(machine_get_ram_granularity(machine) - 1);
+    const int gran = machine_get_ram_granularity(machine);
+    const int min  = machine_get_min_ram(machine);
+    if (temp_mem_size > min)
+        temp_mem_size = min + ((temp_mem_size - min) / gran) * gran;
     if (temp_mem_size < machine_get_min_ram(machine))
         temp_mem_size = machine_get_min_ram(machine);
     else if (temp_mem_size > machine_get_max_ram(machine))
@@ -256,16 +277,26 @@ SettingsMachine::on_comboBoxMachineType_currentIndexChanged(int index)
         int   removeRows = model->rowCount();
 
         int selectedMachineRow = 0;
-        for (int i = 0; i < machine_count(); ++i) {
-            if ((machine_get_type(i) == ui->comboBoxMachineType->currentData().toInt()) && machine_available(i)) {
-                int row = Models::AddEntry(model, machines[i].name, i);
-                if (i == machine)
-                    selectedMachineRow = row - removeRows;
-            }
-        }
-        model->removeRows(0, removeRows);
+        {
+            /* Swapping the list over moves the selection through machines
+               nobody chose; only the one it lands on is announced, so the
+               other pages are not rebuilt for the others, nor drop devices
+               those machines cannot take. */
+            const QSignalBlocker blocker(ui->comboBoxMachine);
 
-        ui->comboBoxMachine->setCurrentIndex(-1);
+            Models::Batch rows(model);
+            for (int i = 0; i < machine_count(); ++i) {
+                if ((machine_get_type(i) == ui->comboBoxMachineType->currentData().toInt()) && machine_available(i)) {
+                    int row = rows.add(machines[i].name, i);
+                    if (i == machine)
+                        selectedMachineRow = row - removeRows;
+                }
+            }
+            rows.commit();
+            model->removeRows(0, removeRows);
+
+            ui->comboBoxMachine->setCurrentIndex(-1);
+        }
         ui->comboBoxMachine->setCurrentIndex(selectedMachineRow);
     }
 }
@@ -285,15 +316,17 @@ SettingsMachine::on_comboBoxMachine_currentIndexChanged(int index)
         int i                    = 0;
         int eligibleRows         = 0;
         int selectedCpuFamilyRow = 0;
+        Models::Batch cpuRows(modelCpu);
         while (cpu_families[i].package != 0) {
             if (cpu_family_is_eligible(&cpu_families[i], machineId)) {
-                Models::AddEntry(modelCpu, QString("%1 %2").arg(cpu_families[i].manufacturer, cpu_families[i].name), i);
+                cpuRows.add(QString("%1 %2").arg(cpu_families[i].manufacturer, cpu_families[i].name), i);
                 if (&cpu_families[i] == cpu_f)
                     selectedCpuFamilyRow = eligibleRows;
                 ++eligibleRows;
             }
             ++i;
         }
+        cpuRows.commit();
         modelCpu->removeRows(0, removeRows);
         ui->comboBoxCPU->setEnabled(eligibleRows > 1);
         ui->comboBoxCPU->setCurrentIndex(-1);
@@ -332,15 +365,17 @@ SettingsMachine::on_comboBoxCPU_currentIndexChanged(int index)
         int i                = 0;
         int eligibleRows     = 0;
         int selectedSpeedRow = 0;
+        Models::Batch speedRows(modelSpeed);
         while (cpuFamily->cpus[i].cpu_type != 0) {
             if (cpu_is_eligible(cpuFamily, i, machineId)) {
-                Models::AddEntry(modelSpeed, QString("%1").arg(cpuFamily->cpus[i].name), i);
+                speedRows.add(QString("%1").arg(cpuFamily->cpus[i].name), i);
                 if (cpu == i)
                     selectedSpeedRow = eligibleRows;
                 ++eligibleRows;
             }
             ++i;
         }
+        speedRows.commit();
         modelSpeed->removeRows(0, removeRows);
         ui->comboBoxSpeed->setEnabled(eligibleRows > 1);
         ui->comboBoxSpeed->setCurrentIndex(-1);
@@ -371,14 +406,20 @@ SettingsMachine::on_comboBoxSpeed_currentIndexChanged(int index)
         if (!(flags & CPU_SUPPORTS_DYNAREC)) {
             ui->checkBoxDynamicRecompiler->setChecked(false);
             ui->checkBoxDynamicRecompiler->setEnabled(false);
+            ui->checkBoxFastRecompiler->setChecked(false);
+            ui->checkBoxFastRecompiler->setEnabled(false);
             ui->checkBoxAccurateFPUEnvironment->setEnabled(false);
         } else if ((flags & CPU_REQUIRES_DYNAREC) && !cpu_override) {
             ui->checkBoxDynamicRecompiler->setChecked(true);
             ui->checkBoxDynamicRecompiler->setEnabled(false);
+            ui->checkBoxFastRecompiler->setChecked(cpu_use_dynarec_fast);
+            ui->checkBoxFastRecompiler->setEnabled(true);
             ui->checkBoxAccurateFPUEnvironment->setEnabled(true);
         } else {
             ui->checkBoxDynamicRecompiler->setChecked(cpu_use_dynarec);
             ui->checkBoxDynamicRecompiler->setEnabled(true);
+            ui->checkBoxFastRecompiler->setChecked(cpu_use_dynarec_fast);
+            ui->checkBoxFastRecompiler->setEnabled(ui->checkBoxDynamicRecompiler->isChecked());
             ui->checkBoxAccurateFPUEnvironment->setEnabled(cpu_use_dynarec);
         }
 #endif
@@ -398,14 +439,16 @@ SettingsMachine::on_comboBoxSpeed_currentIndexChanged(int index)
 
         int i              = 0;
         int selectedFpuRow = 0;
+        Models::Batch fpuRows(modelFpu);
         for (const char *fpuName         = fpu_get_name_from_index(cpuFamily, cpuId, i);
              fpuName != nullptr; fpuName = fpu_get_name_from_index(cpuFamily, cpuId, ++i)) {
             auto fpuType = fpu_get_type_from_index(cpuFamily, cpuId, i);
-            Models::AddEntry(modelFpu, tr(fpuName), fpuType);
+            fpuRows.add(tr(fpuName), fpuType);
             if (fpu_type == fpuType)
                 selectedFpuRow = i;
         }
 
+        fpuRows.commit();
         modelFpu->removeRows(0, removeRows);
         ui->comboBoxFPU->setEnabled(modelFpu->rowCount() > 1);
         ui->comboBoxFPU->setCurrentIndex(-1);
@@ -472,3 +515,11 @@ SettingsMachine::on_radioButtonLargerFrames_clicked()
 {
     ui->radioButtonSmallerFrames->setChecked(false);
 }
+
+void
+SettingsMachine::on_checkBoxFastRecompiler_stateChanged(int state)
+{
+    ui->checkBoxFastRecompiler->setChecked(state);
+    /* No additional logic needed, but keep for future warning icon */
+}
+

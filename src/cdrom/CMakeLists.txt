@@ -28,7 +28,16 @@ add_library(cdrom OBJECT
     cdrom_aaru.c
     cdrom_image.c
     cdrom_image_viso.c
+    cdrom_mitsumi.c
     cdrom_mke.c
+    cdrom_hitachi.c
+    cdrom_philips.c
+    cdrom_sony.c
+    cdrom_cm153.c
+    cm100.c
+    cm100_protocol.c
+    cm100_datapath.c
+    cm153_uart.c
     cdrom_chd.c
 )
 target_link_libraries(cdrom chdr-static)
@@ -39,11 +48,6 @@ if(CMAKE_SYSTEM_NAME STREQUAL "FreeBSD")
 	target_include_directories(cdrom PRIVATE /usr/local/include)
 endif()
 target_link_libraries(PCBox PkgConfig::SNDFILE)
-
-if(CDROM_MITSUMI)
-    target_compile_definitions(cdrom PRIVATE USE_CDROM_MITSUMI)
-    target_sources(cdrom PRIVATE cdrom_mitsumi.c)
-endif()
 
 if (WIN32)
     # MSYS2

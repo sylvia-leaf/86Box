@@ -111,7 +111,7 @@ opFISTTPiw_a16(uint32_t fetchdat)
     FP_ENTER();
     fetch_ea_16(fetchdat);
     SEG_CHECK_WRITE(cpu_state.ea_seg);
-    seteaw((int16_t)ST(0));
+    seteaw(x87_ftrunc16(ST(0)));
     if (cpu_state.abrt)
         return 1;
     x87_pop();
@@ -126,7 +126,7 @@ opFISTTPiw_a32(uint32_t fetchdat)
     FP_ENTER();
     fetch_ea_32(fetchdat);
     SEG_CHECK_WRITE(cpu_state.ea_seg);
-    seteaw((int16_t)ST(0));
+    seteaw(x87_ftrunc16(ST(0)));
     if (cpu_state.abrt)
         return 1;
     x87_pop();
@@ -249,6 +249,7 @@ FBLD_a16(UNUSED(uint32_t fetchdat))
     FP_ENTER();
     fetch_ea_16(fetchdat);
     SEG_CHECK_READ(cpu_state.ea_seg);
+    CHECK_READ(cpu_state.ea_seg, cpu_state.eaaddr, cpu_state.eaaddr + 9UL);
     load_reg_lo = readmemq(easeg, cpu_state.eaaddr);
     load_reg_hi = readmemw(easeg, cpu_state.eaaddr + 8);
     if (cpu_state.abrt)
@@ -290,6 +291,7 @@ FBLD_a32(uint32_t fetchdat)
     FP_ENTER();
     fetch_ea_32(fetchdat);
     SEG_CHECK_READ(cpu_state.ea_seg);
+    CHECK_READ(cpu_state.ea_seg, cpu_state.eaaddr, cpu_state.eaaddr + 9UL);
     load_reg_lo = readmemq(easeg, cpu_state.eaaddr);
     load_reg_hi = readmemw(easeg, cpu_state.eaaddr + 8);
     if (cpu_state.abrt)
@@ -320,34 +322,49 @@ FBLD_a32(uint32_t fetchdat)
 }
 #endif
 
+/*FBSTP's store: ST(0) rounded by RC to an 18-digit packed BCD integer, the
+  sign in the top bit of byte 9. Out of range, an infinity or a NaN stores the
+  BCD indefinite (FFFF C000 0000 0000 0000) and sets IE, as with IE masked.*/
+static __inline void
+x87_fbstp(void)
+{
+    double   st0     = ST(0);
+    int      invalid = 1;
+    uint64_t lo      = 0xc000000000000000ULL;
+    uint16_t hi      = 0xffff;
+
+    /*Checked on the double first: x87_fround() must stay in int64 range.*/
+    if (fabs(st0) < 1e18) {
+        int64_t  r   = x87_fround(st0);
+        uint64_t mag = (r < 0) ? -(uint64_t) r : (uint64_t) r;
+
+        if (mag <= 999999999999999999ULL) {
+            invalid = 0;
+            lo      = 0;
+            for (int i = 0; i < 16; i++) {
+                lo |= (mag % 10) << (i * 4);
+                mag /= 10;
+            }
+            hi = (uint16_t) ((mag % 10) | ((mag / 10) << 4));
+            if (signbit(st0))
+                hi |= 0x8000;
+        }
+    }
+    writememl(easeg, cpu_state.eaaddr, lo & 0xffffffff);
+    writememl(easeg, cpu_state.eaaddr + 4, lo >> 32);
+    writememw(easeg, cpu_state.eaaddr + 8, hi);
+    if (invalid && !cpu_state.abrt)
+        cpu_state.npxs |= FPU_SW_Invalid;
+}
+
 static int
 FBSTP_a16(UNUSED(uint32_t fetchdat))
 {
-    double  dt;
-    double tempd;
-    int    c;
     FP_ENTER();
     fetch_ea_16(fetchdat);
     SEG_CHECK_WRITE(cpu_state.ea_seg);
-    tempd = ST(0);
-    if (tempd < 0.0)
-        tempd = -tempd;
-    for (c = 0; c < 9; c++) {
-        dt = floor(fmod(tempd, 10.0));
-        uint8_t tempc = (uint8_t) dt;
-        tempd -= floor(fmod(tempd, 10.0));
-        tempd /= 10.0;
-        dt = floor(fmod(tempd, 10.0));
-        tempc |= ((uint8_t) dt) << 4;
-        tempd -= floor(fmod(tempd, 10.0));
-        tempd /= 10.0;
-        writememb(easeg, cpu_state.eaaddr + c, tempc);
-    }
-    dt = floor(fmod(tempd, 10.0));
-    tempc = (uint8_t) dt;
-    if (ST(0) < 0.0)
-        tempc |= 0x80;
-    writememb(easeg, cpu_state.eaaddr + 9, tempc);
+    CHECK_WRITE(cpu_state.ea_seg, cpu_state.eaaddr, cpu_state.eaaddr + 9UL);
+    x87_fbstp();
     if (cpu_state.abrt)
         return 1;
     x87_pop();
@@ -359,27 +376,11 @@ FBSTP_a16(UNUSED(uint32_t fetchdat))
 static int
 FBSTP_a32(uint32_t fetchdat)
 {
-    double tempd;
-    int    c;
     FP_ENTER();
     fetch_ea_32(fetchdat);
     SEG_CHECK_WRITE(cpu_state.ea_seg);
-    tempd = ST(0);
-    if (tempd < 0.0)
-        tempd = -tempd;
-    for (c = 0; c < 9; c++) {
-        uint8_t tempc = (uint8_t) floor(fmod(tempd, 10.0));
-        tempd -= floor(fmod(tempd, 10.0));
-        tempd /= 10.0;
-        tempc |= ((uint8_t) floor(fmod(tempd, 10.0))) << 4;
-        tempd -= floor(fmod(tempd, 10.0));
-        tempd /= 10.0;
-        writememb(easeg, cpu_state.eaaddr + c, tempc);
-    }
-    tempc = (uint8_t) floor(fmod(tempd, 10.0));
-    if (ST(0) < 0.0)
-        tempc |= 0x80;
-    writememb(easeg, cpu_state.eaaddr + 9, tempc);
+    CHECK_WRITE(cpu_state.ea_seg, cpu_state.eaaddr, cpu_state.eaaddr + 9UL);
+    x87_fbstp();
     if (cpu_state.abrt)
         return 1;
     x87_pop();
@@ -388,13 +389,38 @@ FBSTP_a32(uint32_t fetchdat)
 }
 #endif
 
+/* Shared by both address sizes and by the recompiler's interpreter fallback. */
 static int
-FISTPiq_a16(UNUSED(uint32_t fetchdat))
+x87_fistp64(void)
 {
     int64_t temp64;
-    FP_ENTER();
-    fetch_ea_16(fetchdat);
-    SEG_CHECK_WRITE(cpu_state.ea_seg);
+#ifndef FPU_8087
+    uint16_t status = cpu_state.npxs & ~FPU_SW_C1;
+#    ifdef USE_NEW_DYNAREC
+    int empty = cpu_state.tag[cpu_state.TOP & 7] == TAG_EMPTY;
+#    else
+    int empty = cpu_state.tag[cpu_state.TOP & 7] == X87_TAG_EMPTY;
+#    endif
+
+    /* Reject NaNs, infinities and out-of-range doubles before the C integer
+       conversion. FILD's exact integer copy does not use the double value. */
+    if (empty || (!(cpu_state.tag[cpu_state.TOP & 7] & TAG_UINT64) &&
+                  !(ST(0) >= -9223372036854775808.0 && ST(0) < 9223372036854775808.0))) {
+        /* An unmasked invalid operation neither stores nor pops. */
+        status |= FPU_SW_Invalid;
+        if (empty)
+            status |= FPU_SW_Stack_Fault;
+        if (!(cpu_state.npxc & FPU_SW_Invalid)) {
+            cpu_state.npxs = status | FPU_SW_Summary | FPU_SW_Backward;
+            if (is486 && (cr0 & 0x20))
+                new_ne = 1;
+            else
+                picint(1 << 13);
+            goto done;
+        }
+        temp64 = INT64_MIN;
+    } else
+#endif
     if (cpu_state.tag[cpu_state.TOP & 7] & TAG_UINT64)
         temp64 = cpu_state.MM[cpu_state.TOP & 7].q;
     else
@@ -402,30 +428,35 @@ FISTPiq_a16(UNUSED(uint32_t fetchdat))
     seteaq(temp64);
     if (cpu_state.abrt)
         return 1;
+#ifndef FPU_8087
+    /* A memory fault must leave the original status and stack intact. */
+    cpu_state.npxs = status;
+#endif
     x87_pop();
+#ifndef FPU_8087
+ done:
+#endif
     CLOCK_CYCLES_FPU((fpu_type >= FPU_487SX) ? (x87_timings.fist_64) : (x87_timings.fist_64 * cpu_multi));
     CONCURRENCY_CYCLES((fpu_type >= FPU_487SX) ? (x87_concurrency.fist_64) : (x87_concurrency.fist_64 * cpu_multi));
     return 0;
+}
+
+static int
+FISTPiq_a16(UNUSED(uint32_t fetchdat))
+{
+    FP_ENTER();
+    fetch_ea_16(fetchdat);
+    SEG_CHECK_WRITE(cpu_state.ea_seg);
+    return x87_fistp64();
 }
 #ifndef FPU_8087
 static int
 FISTPiq_a32(uint32_t fetchdat)
 {
-    int64_t temp64;
     FP_ENTER();
     fetch_ea_32(fetchdat);
     SEG_CHECK_WRITE(cpu_state.ea_seg);
-    if (cpu_state.tag[cpu_state.TOP & 7] & TAG_UINT64)
-        temp64 = cpu_state.MM[cpu_state.TOP & 7].q;
-    else
-        temp64 = x87_fround(ST(0));
-    seteaq(temp64);
-    if (cpu_state.abrt)
-        return 1;
-    x87_pop();
-    CLOCK_CYCLES_FPU((fpu_type >= FPU_487SX) ? (x87_timings.fist_64) : (x87_timings.fist_64 * cpu_multi));
-    CONCURRENCY_CYCLES((fpu_type >= FPU_487SX) ? (x87_concurrency.fist_64) : (x87_concurrency.fist_64 * cpu_multi));
-    return 0;
+    return x87_fistp64();
 }
 #endif
 
@@ -525,6 +556,7 @@ opFLDe_a16(UNUSED(uint32_t fetchdat))
     FP_ENTER();
     fetch_ea_16(fetchdat);
     SEG_CHECK_READ(cpu_state.ea_seg);
+    CHECK_READ(cpu_state.ea_seg, cpu_state.eaaddr, cpu_state.eaaddr + 9UL);
     t = x87_ld80();
     if (cpu_state.abrt)
         return 1;
@@ -541,6 +573,7 @@ opFLDe_a32(uint32_t fetchdat)
     FP_ENTER();
     fetch_ea_32(fetchdat);
     SEG_CHECK_READ(cpu_state.ea_seg);
+    CHECK_READ(cpu_state.ea_seg, cpu_state.eaaddr, cpu_state.eaaddr + 9UL);
     t = x87_ld80();
     if (cpu_state.abrt)
         return 1;
@@ -557,6 +590,7 @@ opFSTPe_a16(UNUSED(uint32_t fetchdat))
     FP_ENTER();
     fetch_ea_16(fetchdat);
     SEG_CHECK_WRITE(cpu_state.ea_seg);
+    CHECK_WRITE(cpu_state.ea_seg, cpu_state.eaaddr, cpu_state.eaaddr + 9UL);
     x87_st80(ST(0));
     if (cpu_state.abrt)
         return 1;
@@ -572,6 +606,7 @@ opFSTPe_a32(uint32_t fetchdat)
     FP_ENTER();
     fetch_ea_32(fetchdat);
     SEG_CHECK_WRITE(cpu_state.ea_seg);
+    CHECK_WRITE(cpu_state.ea_seg, cpu_state.eaaddr, cpu_state.eaaddr + 9UL);
     x87_st80(ST(0));
     if (cpu_state.abrt)
         return 1;
@@ -719,7 +754,7 @@ opFSTs_a16(UNUSED(uint32_t fetchdat))
     FP_ENTER();
     fetch_ea_16(fetchdat);
     SEG_CHECK_WRITE(cpu_state.ea_seg);
-    ts.s = (float) ST(0);
+    ts.s = x87_fround_single(ST(0));
     seteal(ts.i);
     CLOCK_CYCLES_FPU((fpu_type >= FPU_487SX) ? (x87_timings.fst_32) : (x87_timings.fst_32 * cpu_multi));
     CONCURRENCY_CYCLES((fpu_type >= FPU_487SX) ? (x87_concurrency.fst_32) : (x87_concurrency.fst_32 * cpu_multi));
@@ -733,7 +768,7 @@ opFSTs_a32(uint32_t fetchdat)
     FP_ENTER();
     fetch_ea_32(fetchdat);
     SEG_CHECK_WRITE(cpu_state.ea_seg);
-    ts.s = (float) ST(0);
+    ts.s = x87_fround_single(ST(0));
     seteal(ts.i);
     CLOCK_CYCLES_FPU((fpu_type >= FPU_487SX) ? (x87_timings.fst_32) : (x87_timings.fst_32 * cpu_multi));
     CONCURRENCY_CYCLES((fpu_type >= FPU_487SX) ? (x87_concurrency.fst_32) : (x87_concurrency.fst_32 * cpu_multi));
@@ -748,7 +783,7 @@ opFSTPs_a16(UNUSED(uint32_t fetchdat))
     FP_ENTER();
     fetch_ea_16(fetchdat);
     SEG_CHECK_WRITE(cpu_state.ea_seg);
-    ts.s = (float) ST(0);
+    ts.s = x87_fround_single(ST(0));
     seteal(ts.i);
     if (cpu_state.abrt)
         return 1;
@@ -765,7 +800,7 @@ opFSTPs_a32(uint32_t fetchdat)
     FP_ENTER();
     fetch_ea_32(fetchdat);
     SEG_CHECK_WRITE(cpu_state.ea_seg);
-    ts.s = (float) ST(0);
+    ts.s = x87_fround_single(ST(0));
     seteal(ts.i);
     if (cpu_state.abrt)
         return 1;
