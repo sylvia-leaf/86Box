@@ -159,11 +159,11 @@ int opcode_length[256] = { 3, 3, 3, 3, 3, 3, 1, 1, 3, 3, 3, 3, 3, 3, 1, 3,   /* 
                            2, 2, 2, 2, 2, 2, 2, 2, 3, 3, 3, 2, 1, 1, 1, 1,   /* 0xex */
                            1, 1, 1, 1, 1, 1, 3, 3, 1, 1, 1, 1, 1, 1, 3, 3 }; /* 0xfx */
 
-/* 0 = no, 1 = always, 2 = depends on second opcode, 3 = depends on mod/rm */
-int lock_legal[256]    = { 1, 1, 1, 1, 1, 1, 0, 0, 1, 1, 1, 1, 1, 1, 0, 2,   /* 0x0x */
-                           1, 1, 1, 1, 1, 1, 0, 0, 1, 1, 1, 1, 1, 1, 0, 0,   /* 0x1x */
-                           1, 1, 1, 1, 1, 1, 4, 0, 1, 1, 1, 1, 1, 1, 4, 0,   /* 0x2x */
-                           1, 1, 1, 1, 1, 1, 4, 0, 0, 0, 0, 0, 0, 0, 4, 0,   /* 0x3x */
+/* 0 = no, 1 = memory destination, 2 = two-byte opcode, 3 = group, 4 = prefix */
+int lock_legal[256]    = { 1, 1, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 2,   /* 0x0x */
+                           1, 1, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0,   /* 0x1x */
+                           1, 1, 0, 0, 0, 0, 4, 0, 1, 1, 0, 0, 0, 0, 4, 0,   /* 0x2x */
+                           1, 1, 0, 0, 0, 0, 4, 0, 0, 0, 0, 0, 0, 0, 4, 0,   /* 0x3x */
                            0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,   /* 0x4x */
                            0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,   /* 0x5x */
                            0, 0, 0, 0, 4, 4, 4, 4, 0, 0, 0, 0, 0, 0, 0, 0,   /* 0x6x */
@@ -466,7 +466,7 @@ x386_common_log(const char *fmt, ...)
 #endif
 
 int
-is_lock_legal(uint32_t fetchdat)
+is_lock_legal_at(uint32_t fetchdat, uint32_t opcode_pc)
 {
     int legal = 1;
 
@@ -475,8 +475,19 @@ is_lock_legal(uint32_t fetchdat)
         fetch_dat.fd = fetchdat;
 
         legal = lock_legal[fetch_dat.b[0]];
+        /* Segment and size prefixes after LOCK do not bypass validation. */
+        while (legal == 4) {
+            if (opcode_pc - cpu_state.oldpc >= 14) {
+                x86gpf(NULL, 0);
+                return 1;
+            }
+            fetch_dat.fd = fastreadl(cs + ++opcode_pc);
+            if (cpu_state.abrt)
+                return 1;
+            legal = lock_legal[fetch_dat.b[0]];
+        }
         if (legal == 1)
-            legal = 1; // ((fetch_dat.b[1] >> 6) != 0x03);    /* reg is illegal */
+            legal = ((fetch_dat.b[1] >> 6) != 0x03);    /* reg is illegal */
         else if (legal == 2) {
             legal = lock_legal_0f[fetch_dat.b[1]];
             if (legal == 1)
@@ -512,6 +523,12 @@ is_lock_legal(uint32_t fetchdat)
     }
 
     return legal;
+}
+
+int
+is_lock_legal(uint32_t fetchdat)
+{
+    return is_lock_legal_at(fetchdat, cpu_state.pc - 1);
 }
 
 /*Prefetch emulation is a fairly simplistic model:

@@ -1086,7 +1086,7 @@ codegen_generate_call(uint8_t opcode, OpFn op, uint32_t fetchdat, uint32_t new_p
         if (cpu_state.abrt)
             return;
         if (opcode == 0xf0) /*LOCK*/
-            lock_illegal = !is_lock_legal(fetchdat);
+            lock_illegal = !is_lock_legal_at(fetchdat, op_pc);
         opcode = fetchdat & 0xff;
         if (!pc_off)
             fetchdat >>= 8;

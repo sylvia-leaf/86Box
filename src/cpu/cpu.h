@@ -1017,6 +1017,7 @@ extern int cpu_override_interpreter;
 extern int cpu_dyn_accurate_fpu_env;
 
 extern int is_lock_legal(uint32_t fetchdat);
+extern int is_lock_legal_at(uint32_t fetchdat, uint32_t opcode_pc);
 
 extern void cpu_INVD(uint8_t wb);
 

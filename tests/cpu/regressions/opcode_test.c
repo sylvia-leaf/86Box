@@ -16,6 +16,56 @@ typedef struct {
     unsigned length, cr0_bits, no_osfxsr, trap_p3, trap_p4, setup, only_p4;
 } opcode_case;
 static const opcode_case opcases[] = {
+    {"LOCK 00 register", {0xf0,0x0,0xc8},3,0,0,6,6,22},
+    {"LOCK 00 memory", {0xf0,0x0,0x8},3,0,0,0,0,22},
+    {"LOCK 01 register", {0xf0,0x1,0xc8},3,0,0,6,6,22},
+    {"LOCK 01 memory", {0xf0,0x1,0x8},3,0,0,0,0,22},
+    {"LOCK 08 register", {0xf0,0x8,0xc8},3,0,0,6,6,22},
+    {"LOCK 08 memory", {0xf0,0x8,0x8},3,0,0,0,0,22},
+    {"LOCK 09 register", {0xf0,0x9,0xc8},3,0,0,6,6,22},
+    {"LOCK 09 memory", {0xf0,0x9,0x8},3,0,0,0,0,22},
+    {"LOCK 10 register", {0xf0,0x10,0xc8},3,0,0,6,6,22},
+    {"LOCK 10 memory", {0xf0,0x10,0x8},3,0,0,0,0,22},
+    {"LOCK 11 register", {0xf0,0x11,0xc8},3,0,0,6,6,22},
+    {"LOCK 11 memory", {0xf0,0x11,0x8},3,0,0,0,0,22},
+    {"LOCK 18 register", {0xf0,0x18,0xc8},3,0,0,6,6,22},
+    {"LOCK 18 memory", {0xf0,0x18,0x8},3,0,0,0,0,22},
+    {"LOCK 19 register", {0xf0,0x19,0xc8},3,0,0,6,6,22},
+    {"LOCK 19 memory", {0xf0,0x19,0x8},3,0,0,0,0,22},
+    {"LOCK 20 register", {0xf0,0x20,0xc8},3,0,0,6,6,22},
+    {"LOCK 20 memory", {0xf0,0x20,0x8},3,0,0,0,0,22},
+    {"LOCK 21 register", {0xf0,0x21,0xc8},3,0,0,6,6,22},
+    {"LOCK 21 memory", {0xf0,0x21,0x8},3,0,0,0,0,22},
+    {"LOCK 28 register", {0xf0,0x28,0xc8},3,0,0,6,6,22},
+    {"LOCK 28 memory", {0xf0,0x28,0x8},3,0,0,0,0,22},
+    {"LOCK 29 register", {0xf0,0x29,0xc8},3,0,0,6,6,22},
+    {"LOCK 29 memory", {0xf0,0x29,0x8},3,0,0,0,0,22},
+    {"LOCK 30 register", {0xf0,0x30,0xc8},3,0,0,6,6,22},
+    {"LOCK 30 memory", {0xf0,0x30,0x8},3,0,0,0,0,22},
+    {"LOCK 31 register", {0xf0,0x31,0xc8},3,0,0,6,6,22},
+    {"LOCK 31 memory", {0xf0,0x31,0x8},3,0,0,0,0,22},
+    {"LOCK 86 register", {0xf0,0x86,0xc8},3,0,0,6,6,22},
+    {"LOCK 86 memory", {0xf0,0x86,0x8},3,0,0,0,0,22},
+    {"LOCK 87 register", {0xf0,0x87,0xc8},3,0,0,6,6,22},
+    {"LOCK 87 memory", {0xf0,0x87,0x8},3,0,0,0,0,22},
+    {"LOCK 02 invalid direction", {0xf0,0x2,0x0},3,0,0,6,6,22},
+    {"LOCK 03 invalid direction", {0xf0,0x3,0x0},3,0,0,6,6,22},
+    {"LOCK 04 invalid direction", {0xf0,0x4,0x0},3,0,0,6,6,22},
+    {"LOCK 05 invalid direction", {0xf0,0x5,0x0,0x0,0x0,0x0},6,0,0,6,6,22},
+    {"LOCK 0a invalid direction", {0xf0,0xa,0x0},3,0,0,6,6,22},
+    {"LOCK 0b invalid direction", {0xf0,0xb,0x0},3,0,0,6,6,22},
+    {"LOCK 0c invalid direction", {0xf0,0xc,0x0},3,0,0,6,6,22},
+    {"LOCK 0d invalid direction", {0xf0,0xd,0x0,0x0,0x0,0x0},6,0,0,6,6,22},
+    {"LOCK 12 invalid direction", {0xf0,0x12,0x0},3,0,0,6,6,22},
+    {"LOCK 13 invalid direction", {0xf0,0x13,0x0},3,0,0,6,6,22},
+    {"LOCK 22 invalid direction", {0xf0,0x22,0x0},3,0,0,6,6,22},
+    {"LOCK 23 invalid direction", {0xf0,0x23,0x0},3,0,0,6,6,22},
+    {"LOCK 32 invalid direction", {0xf0,0x32,0x0},3,0,0,6,6,22},
+    {"LOCK 33 invalid direction", {0xf0,0x33,0x0},3,0,0,6,6,22},
+    {"LOCK size prefix order0 mem0", {0xf0,0x66,0x1,0xc8},4,0,0,6,6,22},
+    {"LOCK size prefix order0 mem1", {0xf0,0x66,0x1,0x8},4,0,0,0,0,22},
+    {"LOCK size prefix order1 mem0", {0x66,0xf0,0x1,0xc8},4,0,0,6,6,22},
+    {"LOCK size prefix order1 mem1", {0x66,0xf0,0x1,0x8},4,0,0,0,0,22},
     {"CMPXCHG w8 a16 lock0 cross0", {0x64,0x67,0xf,0xb0,0xe,0x0,0x0,0x9c,0x5e},9,0x80010000,0,14,14,20},
     {"CMPXCHG w8 a16 lock1 cross0", {0xf0,0x64,0x67,0xf,0xb0,0xe,0x0,0x0,0x9c,0x5e},10,0x80010000,0,14,14,20},
     {"CMPXCHG w8 a32 lock0 cross0", {0x64,0xf,0xb0,0xf,0x9c,0x5e},6,0x80010000,0,14,14,20},
@@ -442,6 +492,9 @@ int main(int argc,char **argv) {
                     uint32_t eax_expected=(call&1) ? original_eax : ((original_eax&~mask)|(0x89abcdef&mask));
                     if(EAX!=eax_expected) fatal("CMPXCHG accumulator result");
                 }
+            }
+            if (probe->setup==22 && expected) {
+                if(EAX!=DATA || ECX!=0x12345678 || get32(DATA)!=0x3f80 || get32(FAULT_PC)!=BODY) fatal("Illegal LOCK changed architectural state");
             }
             ++checked;
         }
