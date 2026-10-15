@@ -13,6 +13,21 @@
  * Authors: Miran Grca, <mgrca8@gmail.com>
  *          Copyright 2016-2020 Miran Grca.
  */
+/* Keep the block key in step with both LDMXCSR and FXRSTOR. Changing this
+ * specialization must also leave an already-running compiled block. */
+static int
+sse_set_mxcsr(uint32_t value)
+{
+    int status = (value & 0x1f80) == 0x1f80 ? 0 : CPU_STATUS_SSE_UNMASKED;
+    int changed = (cpu_cur_status ^ status) & CPU_STATUS_SSE_UNMASKED;
+
+    cpu_state.mxcsr = value;
+    cpu_cur_status = (cpu_cur_status & ~CPU_STATUS_SSE_UNMASKED) | status;
+    if (changed)
+        CPU_BLOCK_END();
+    return !!changed;
+}
+
 static int
 opSYSENTER(uint32_t fetchdat)
 {
@@ -74,7 +89,7 @@ sf_fx_save_stor_common(uint32_t fetchdat, int bits)
 
         FP_ENTER();
 
-        if (cpu_state.eaaddr & 0xf) {
+        if ((easeg + cpu_state.eaaddr) & 0xf) {
             x386_dynarec_log("Effective address %08X not on 16-byte boundary\n", cpu_state.eaaddr);
             x86gpf(NULL, 0);
             return cpu_state.abrt;
@@ -142,7 +157,7 @@ sf_fx_save_stor_common(uint32_t fetchdat, int bits)
         }
 
         if ((cpu_features & CPU_FEATURE_SSE) && (cr4 & CR4_OSFXSR)) {
-            cpu_state.mxcsr = restored_mxcsr;
+            sse_set_mxcsr(restored_mxcsr);
 
             for(int i = 0; i < 8; i++)
             {
@@ -155,7 +170,7 @@ sf_fx_save_stor_common(uint32_t fetchdat, int bits)
     } else if (fxinst == 0) {
         /* FXSAVE */
         FP_ENTER();
-        if (cpu_state.eaaddr & 0xf) {
+        if ((easeg + cpu_state.eaaddr) & 0xf) {
             x386_dynarec_log("Effective address %08X not on 16-byte boundary\n", cpu_state.eaaddr);
             x86gpf(NULL, 0);
             return cpu_state.abrt;
@@ -259,7 +274,7 @@ sf_fx_save_stor_common(uint32_t fetchdat, int bits)
             x86gpf(NULL, 0);
             return 1;
         }
-        cpu_state.mxcsr = src;// & mxcsr_mask;
+        return sse_set_mxcsr(src);
     } else if (fxinst == 3) {
         if (cpu_mod == 3) {
             x86illegal();
@@ -282,6 +297,10 @@ sf_fx_save_stor_common(uint32_t fetchdat, int bits)
         }
     }
 
+    if (fxinst == 1) {
+        CPU_BLOCK_END();
+        return 1;
+    }
     return cpu_state.abrt;
 }
 
@@ -388,7 +407,7 @@ fx_save_stor_common(uint32_t fetchdat, int bits)
     if (fxinst == 1) {
         /* FXRSTOR */
         FP_ENTER();
-        if (cpu_state.eaaddr & 0xf) {
+        if ((easeg + cpu_state.eaaddr) & 0xf) {
             x386_dynarec_log("Effective address %08X not on 16-byte boundary\n", cpu_state.eaaddr);
             x86gpf(NULL, 0);
             return cpu_state.abrt;
@@ -435,7 +454,7 @@ fx_save_stor_common(uint32_t fetchdat, int bits)
         x87_op_seg = readmemw(easeg, cpu_state.eaaddr + 20);
 
         if ((cpu_features & CPU_FEATURE_SSE) && (cr4 & CR4_OSFXSR)) {
-            cpu_state.mxcsr = restored_mxcsr;
+            sse_set_mxcsr(restored_mxcsr);
 
             for(int i = 0; i < 8; i++)
             {
@@ -520,7 +539,7 @@ fx_save_stor_common(uint32_t fetchdat, int bits)
     } else if (fxinst == 0) {
         /* FXSAVE */
         FP_ENTER();
-        if (cpu_state.eaaddr & 0xf) {
+        if ((easeg + cpu_state.eaaddr) & 0xf) {
             x386_dynarec_log("Effective address %08X not on 16-byte boundary\n", cpu_state.eaaddr);
             x86gpf(NULL, 0);
             return cpu_state.abrt;
@@ -660,7 +679,7 @@ fx_save_stor_common(uint32_t fetchdat, int bits)
             x86gpf(NULL, 0);
             return 1;
         }
-        cpu_state.mxcsr = src;// & mxcsr_mask;
+        return sse_set_mxcsr(src);
     } else if (fxinst == 3) {
         //STMXCSR
         if (cpu_mod == 3) {
@@ -689,6 +708,10 @@ fx_save_stor_common(uint32_t fetchdat, int bits)
         }
     }
 
+    if (fxinst == 1) {
+        CPU_BLOCK_END();
+        return 1;
+    }
     return cpu_state.abrt;
 }
 

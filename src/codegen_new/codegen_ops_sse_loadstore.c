@@ -181,7 +181,7 @@ ropUNPCKLPS(codeblock_t *block, ir_data_t *ir, UNUSED(uint8_t opcode), uint32_t 
 
         uop_MOV_IMM(ir, IREG_oldpc, cpu_state.oldpc);
         target_seg = codegen_generate_ea(ir, op_ea_seg, fetchdat, op_ssegs, &op_pc, op_32, 0);
-        uop_CHECK_ALIGN(ir);
+        codegen_check_sse_align(ir, target_seg);
         codegen_check_seg_read(block, ir, target_seg);
         CHECK_SEG_LIMITS(block, ir, target_seg, IREG_eaaddr, 15);
         uop_MEM_LOAD_REG(ir, IREG_temp0_DQ, ireg_seg_base(target_seg), IREG_eaaddr);
@@ -213,7 +213,7 @@ ropUNPCKHPS(codeblock_t *block, ir_data_t *ir, UNUSED(uint8_t opcode), uint32_t 
 
         uop_MOV_IMM(ir, IREG_oldpc, cpu_state.oldpc);
         target_seg = codegen_generate_ea(ir, op_ea_seg, fetchdat, op_ssegs, &op_pc, op_32, 0);
-        uop_CHECK_ALIGN(ir);
+        codegen_check_sse_align(ir, target_seg);
         codegen_check_seg_read(block, ir, target_seg);
         CHECK_SEG_LIMITS(block, ir, target_seg, IREG_eaaddr, 15);
         uop_MEM_LOAD_REG(ir, IREG_temp0_DQ, ireg_seg_base(target_seg), IREG_eaaddr);
@@ -244,7 +244,7 @@ ropMOVAPS_r_d(codeblock_t *block, ir_data_t *ir, UNUSED(uint8_t opcode), uint32_
         target_seg = codegen_generate_ea(ir, op_ea_seg, fetchdat, op_ssegs, &op_pc, op_32, 0);
         codegen_check_seg_read(block, ir, target_seg);
         CHECK_SEG_LIMITS(block, ir, target_seg, IREG_eaaddr, 15);
-        uop_CHECK_ALIGN(ir);
+        codegen_check_sse_align(ir, target_seg);
         uop_MEM_LOAD_REG(ir, IREG_temp0_DQ, ireg_seg_base(target_seg), IREG_eaaddr);
         uop_MOV(ir, IREG_XMM(dest_reg), IREG_temp0_DQ);
     }
@@ -269,7 +269,7 @@ ropMOVAPS_d_r(codeblock_t *block, ir_data_t *ir, UNUSED(uint8_t opcode), uint32_
         uop_MOV_IMM(ir, IREG_oldpc, cpu_state.oldpc);
         target_seg = codegen_generate_ea(ir, op_ea_seg, fetchdat, op_ssegs, &op_pc, op_32, 0);
         codegen_check_seg_write(block, ir, target_seg, IREG_eaaddr, 16);
-        uop_CHECK_ALIGN(ir);
+        codegen_check_sse_align(ir, target_seg);
         uop_MEM_STORE_REG(ir, ireg_seg_base(target_seg), IREG_eaaddr, IREG_XMM(src_reg));
     }
 
@@ -405,7 +405,7 @@ ropSHUFPS(codeblock_t *block, ir_data_t *ir, UNUSED(uint8_t opcode), uint32_t fe
         target_seg = codegen_generate_ea(ir, op_ea_seg, fetchdat, op_ssegs, &op_pc, op_32, 0);
         codegen_check_seg_read(block, ir, target_seg);
         CHECK_SEG_LIMITS(block, ir, target_seg, IREG_eaaddr, 15);
-        uop_CHECK_ALIGN(ir);
+        codegen_check_sse_align(ir, target_seg);
         uop_MEM_LOAD_REG(ir, IREG_temp0_DQ, ireg_seg_base(target_seg), IREG_eaaddr);
         uop_SHUFPS(ir, IREG_XMM(dest_reg), IREG_XMM(dest_reg), IREG_temp0_DQ, fastreadb(cs + op_pc + 1));
     }

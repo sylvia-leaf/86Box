@@ -58,7 +58,7 @@
     } else {                                              \
         SEG_CHECK_READ(cpu_state.ea_seg);                 \
         CHECK_READ(cpu_state.ea_seg, cpu_state.eaaddr, cpu_state.eaaddr + 15); \
-        if (cpu_state.eaaddr & 0xf) {                     \
+        if ((easeg + cpu_state.eaaddr) & 0xf) {                     \
             x86gpf(NULL, 0);                              \
             if (cpu_state.abrt)                           \
                 return 1;                                 \
@@ -72,7 +72,7 @@
         CLOCK_CYCLES(2);                                  \
     }
 
-#define MMX_ENTER()                          \
+#define MMX_CHECK()                          \
     if (!cpu_has_feature(CPU_FEATURE_MMX) || (cr0 & 0x4)) { \
         cpu_state.pc = cpu_state.oldpc;      \
         x86illegal();                        \
@@ -81,7 +81,10 @@
     if (cr0 & 0x8) {                         \
         x86_int(7);                          \
         return 1;                            \
-    }                                        \
+    }
+
+#define MMX_ENTER() \
+    MMX_CHECK(); \
     /* Resetting a non-zero TOP, or entering MMX mode, changes the stack \
        mapping a recompiled block was compiled against: end the block, \
        see FSTOR in x87_ops_misc.h. Not on every MMX instruction, or   \
@@ -138,7 +141,10 @@ static int softfloat_status_word_to_mxcsr(struct softfloat_status_t status)
     if (cpu_state.mxcsr & unmasked & 0x3f) {
         if (cr4 & CR4_OSXMMEXCPT)
             x86_int(0x13);
-        ILLEGAL_ON(!(cr4 & CR4_OSXMMEXCPT));
+        else {
+            cpu_state.pc = cpu_state.oldpc;
+            x86illegal();
+        }
         return 1;
     }
     return 0;

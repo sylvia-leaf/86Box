@@ -534,6 +534,8 @@ typedef struct {
    bails to the interpreter for it (other FPU arith always rounds to
    nearest); such blocks must not be reused once RC changes. */
 #define CPU_STATUS_FPU_RC_NZ (1 << 6)
+/* Native SSE batches sticky flags only while every guest exception is masked. */
+#define CPU_STATUS_SSE_UNMASKED (1 << 7)
 #ifdef USE_NEW_DYNAREC
 #    define CPU_STATUS_FLAGS 0xff
 #else

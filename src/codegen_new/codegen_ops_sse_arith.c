@@ -116,7 +116,7 @@ rop_sse_arith_packed(codeblock_t *block, ir_data_t *ir, UNUSED(uint8_t opcode), 
         target_seg = codegen_generate_ea(ir, op_ea_seg, fetchdat, op_ssegs, &op_pc, op_32, 0);
         codegen_check_seg_read(block, ir, target_seg);
         CHECK_SEG_LIMITS(block, ir, target_seg, IREG_eaaddr, 15);
-        uop_CHECK_ALIGN(ir);
+        codegen_check_sse_align(ir, target_seg);
         uop_MEM_LOAD_REG(ir, IREG_temp0_DQ, ireg_seg_base(target_seg), IREG_eaaddr);
         uop_sse_arith_packed(ir, op, IREG_XMM(dest_reg), IREG_XMM(dest_reg), IREG_temp0_DQ);
     }
@@ -271,7 +271,7 @@ rop_sse_minmax_packed(codeblock_t *block, ir_data_t *ir, uint32_t fetchdat, uint
         target_seg = codegen_generate_ea(ir, op_ea_seg, fetchdat, op_ssegs, &op_pc, op_32, 0);
         codegen_check_seg_read(block, ir, target_seg);
         CHECK_SEG_LIMITS(block, ir, target_seg, IREG_eaaddr, 15);
-        uop_CHECK_ALIGN(ir);
+        codegen_check_sse_align(ir, target_seg);
         uop_MEM_LOAD_REG(ir, IREG_temp0_DQ, ireg_seg_base(target_seg), IREG_eaaddr);
         if (is_max)
             uop_MAXPS(ir, IREG_XMM(dest_reg), IREG_XMM(dest_reg), IREG_temp0_DQ);
@@ -358,7 +358,7 @@ ropSQRTPS(codeblock_t *block, ir_data_t *ir, UNUSED(uint8_t opcode), uint32_t fe
         target_seg = codegen_generate_ea(ir, op_ea_seg, fetchdat, op_ssegs, &op_pc, op_32, 0);
         codegen_check_seg_read(block, ir, target_seg);
         CHECK_SEG_LIMITS(block, ir, target_seg, IREG_eaaddr, 15);
-        uop_CHECK_ALIGN(ir);
+        codegen_check_sse_align(ir, target_seg);
         uop_MEM_LOAD_REG(ir, IREG_temp0_DQ, ireg_seg_base(target_seg), IREG_eaaddr);
         uop_SQRTPS(ir, IREG_XMM(dest_reg), IREG_temp0_DQ);
     }
@@ -414,7 +414,7 @@ rop_sse_approx_packed(codeblock_t *block, ir_data_t *ir, uint32_t fetchdat, uint
         target_seg = codegen_generate_ea(ir, op_ea_seg, fetchdat, op_ssegs, &op_pc, op_32, 0);
         codegen_check_seg_read(block, ir, target_seg);
         CHECK_SEG_LIMITS(block, ir, target_seg, IREG_eaaddr, 15);
-        uop_CHECK_ALIGN(ir);
+        codegen_check_sse_align(ir, target_seg);
         uop_MEM_LOAD_REG(ir, IREG_temp0_DQ, ireg_seg_base(target_seg), IREG_eaaddr);
         if (rsqrt)
             uop_RSQRTPS(ir, IREG_XMM(dest_reg), IREG_temp0_DQ);
@@ -656,7 +656,7 @@ rop_sse_cmp(codeblock_t *block, ir_data_t *ir, uint32_t fetchdat, uint32_t op_32
             uop_CMPSS(ir, IREG_XMM(dest_reg), IREG_XMM(dest_reg), IREG_temp0_DQ, fastreadb(cs + op_pc + 1));
         } else {
             CHECK_SEG_LIMITS(block, ir, target_seg, IREG_eaaddr, 15);
-            uop_CHECK_ALIGN(ir);
+            codegen_check_sse_align(ir, target_seg);
             uop_MEM_LOAD_REG(ir, IREG_temp0_DQ, ireg_seg_base(target_seg), IREG_eaaddr);
             uop_CMPPS(ir, IREG_XMM(dest_reg), IREG_XMM(dest_reg), IREG_temp0_DQ, fastreadb(cs + op_pc + 1));
         }

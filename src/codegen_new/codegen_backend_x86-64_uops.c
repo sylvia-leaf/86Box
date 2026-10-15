@@ -2764,7 +2764,8 @@ codegen_backend_sse_mxcsr_begin(codeblock_t *block)
     /* Accumulate sticky exceptions across a straight-line native SSE run.
        Clear host status on entry and keep host exceptions masked. */
     host_x86_MOV32_REG_ABS(block, REG_ECX, &cpu_state.mxcsr);
-    host_x86_AND32_REG_IMM(block, REG_ECX, 0x6040);
+    /* Only all-masked blocks reach this path, so FTZ is effective here. */
+    host_x86_AND32_REG_IMM(block, REG_ECX, 0xe040);
     host_x86_OR32_REG_IMM(block, REG_ECX, 0x1f80);
     host_x86_MOV32_BASE_OFFSET_REG(block, REG_RSP, STACK_TEMP_MXCSR, REG_ECX);
     host_x86_LDMXCSR_BASE_OFFSET(block, REG_RSP, STACK_TEMP_MXCSR);

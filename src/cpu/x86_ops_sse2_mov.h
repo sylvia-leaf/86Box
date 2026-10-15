@@ -399,7 +399,7 @@ opMOVDQA_l_xmm_a16(uint32_t fetchdat)
     } else {
         uint64_t dst[2];
 
-        if (cpu_state.eaaddr & 0xf) {
+        if ((easeg + cpu_state.eaaddr) & 0xf) {
             x86gpf(NULL, 0);
             if (cpu_state.abrt)
                 return 1;
@@ -433,7 +433,7 @@ opMOVDQA_l_xmm_a32(uint32_t fetchdat)
     } else {
         uint64_t dst[2];
 
-        if (cpu_state.eaaddr & 0xf) {
+        if ((easeg + cpu_state.eaaddr) & 0xf) {
             x86gpf(NULL, 0);
             if (cpu_state.abrt)
                 return 1;
@@ -721,7 +721,7 @@ opMOVDQA_xmm_q_a16(uint32_t fetchdat)
         cpu_state.XMM[cpu_rm].q[1] = cpu_state.XMM[cpu_reg].q[1];
         CLOCK_CYCLES(1);
     } else {
-        if (cpu_state.eaaddr & 0xf) {
+        if ((easeg + cpu_state.eaaddr) & 0xf) {
             x86gpf(NULL, 0);
             if (cpu_state.abrt)
                 return 1;
@@ -748,7 +748,7 @@ opMOVDQA_xmm_q_a32(uint32_t fetchdat)
         cpu_state.XMM[cpu_rm].q[1] = cpu_state.XMM[cpu_reg].q[1];
         CLOCK_CYCLES(1);
     } else {
-        if (cpu_state.eaaddr & 0xf) {
+        if ((easeg + cpu_state.eaaddr) & 0xf) {
             x86gpf(NULL, 0);
             if (cpu_state.abrt)
                 return 1;
@@ -974,7 +974,7 @@ opMOVNTDQ_a16(uint32_t fetchdat)
     fetch_ea_16(fetchdat);
     ILLEGAL_ON(cpu_mod == 3);
 
-    if (cpu_state.eaaddr & 0xf) {
+    if ((easeg + cpu_state.eaaddr) & 0xf) {
         x86gpf(NULL, 0);
         if (cpu_state.abrt)
             return 1;
@@ -997,7 +997,7 @@ opMOVNTDQ_a32(uint32_t fetchdat)
     fetch_ea_32(fetchdat);
     ILLEGAL_ON(cpu_mod == 3);
 
-    if (cpu_state.eaaddr & 0xf) {
+    if ((easeg + cpu_state.eaaddr) & 0xf) {
         x86gpf(NULL, 0);
         if (cpu_state.abrt)
             return 1;

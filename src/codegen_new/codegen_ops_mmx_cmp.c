@@ -55,7 +55,7 @@
                 target_seg = codegen_generate_ea(ir, op_ea_seg, fetchdat, op_ssegs, &op_pc, op_32, 0); \
                 codegen_check_seg_read(block, ir, target_seg);                                         \
                 CHECK_SEG_LIMITS(block, ir, target_seg, IREG_eaaddr, 15);                              \
-                uop_CHECK_ALIGN(ir); \
+                codegen_check_sse_align(ir, target_seg); \
                 uop_MEM_LOAD_REG(ir, IREG_temp0_DQ, ireg_seg_base(target_seg), IREG_eaaddr);            \
                 uop_##func(ir, IREG_XMM(dest_reg), IREG_XMM(dest_reg), IREG_temp0_DQ);                    \
             } \

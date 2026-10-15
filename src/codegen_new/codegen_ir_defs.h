@@ -993,16 +993,18 @@ extern int codegen_fp_enter(void);
 #endif
 
 #if defined __amd64__ || defined _M_X64
-#define uop_CHECK_ALIGN(ir) uop_gen_reg_src1_imm(UOP_CHECK_ALIGN, ir, IREG_eaaddr, cpu_state.oldpc)
+#define uop_CHECK_ALIGN_REG(ir, addr) uop_gen_reg_src1_imm(UOP_CHECK_ALIGN, ir, addr, cpu_state.oldpc)
 #else
-#define uop_CHECK_ALIGN(ir) \
+#define uop_CHECK_ALIGN_REG(ir, addr) \
  do {                                                     \
             uop_MOV_IMM(ir, IREG_oldpc, cpu_state.oldpc);            \
-            uop_LOAD_FUNC_ARG_REG(ir, 0, IREG_eaaddr); \
+            uop_LOAD_FUNC_ARG_REG(ir, 0, addr); \
             uop_CALL_FUNC_RESULT(ir, IREG_temp0, codegen_sse_check_align); \
             uop_CMP_IMM_JZ(ir, IREG_temp0, 1, codegen_gpf_rout); \
     } while (0)
 #endif
+
+#define uop_CHECK_ALIGN(ir) uop_CHECK_ALIGN_REG(ir, IREG_eaaddr)
 
 #define uop_JMP(ir, p)                                                   uop_gen_pointer(UOP_JMP, ir, p)
 #define uop_JMP_DEST(ir)                                                 uop_gen(UOP_JMP_DEST, ir)

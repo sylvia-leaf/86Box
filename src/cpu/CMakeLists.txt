@@ -68,6 +68,7 @@ if(DYNAREC)
         codegen_timing_k6.c
         codegen_timing_pentium.c
         codegen_timing_p6.c
+        codegen_timing_p4.c
         codegen_timing_winchip.c
         codegen_timing_winchip2.c
     )
