@@ -16,6 +16,10 @@ typedef struct {
     unsigned length, cr0_bits, no_osfxsr, trap_p3, trap_p4, setup;
 } opcode_case;
 static const opcode_case opcases[] = {
+    {"MOVQ xmm absent a32", {0xf3,0x0f,0x7e,0x07},4,0x80010000,0,6,14,3},
+    {"MOVQ xmm absent a16", {0x64,0x67,0xf3,0x0f,0x7e,0x07},6,0x80010000,0,6,14,3},
+    {"MOVQ xmm cross-page", {0xf3,0x0f,0x7e,0x07},4,0x80010000,0,6,14,11},
+    {"MOVQ xmm valid", {0xf3,0x0f,0x7e,0x00},4,0,0,6,0},
     {"MASKMOVQ FS limit a32", {0x8b,0x15,0,2,0,0,0x64,0x0f,0xf7,0xc1},10,0,0,13,13,1},
     {"MASKMOVQ FS limit a16", {0x8b,0x15,0,2,0,0,0x64,0x67,0x0f,0xf7,0xc1},11,0,0,13,13,1},
     {"MASKMOVDQU FS limit a32", {0x8b,0x15,0,2,0,0,0x64,0x66,0x0f,0xf7,0xc1},11,0,0,6,13,1},
@@ -63,13 +67,13 @@ static void initialize(void) {
     b(0xc3);
     exception_tables();
     if (probe->setup==1) cpu_state.seg_fs.limit=cpu_state.seg_fs.limit_high=0xfff;
-    if (probe->setup==2 || probe->setup==3) {
+    if (probe->setup==2 || probe->setup==3 || probe->setup==11) {
         memset(ram+0x30000,0,0x5000);
         for (unsigned n=0;n<4;n++) {
             put32(0x30000+4*n,(0x31000+0x1000*n)|3);
             for (unsigned p=0;p<1024;p++) put32(0x31000+0x1000*n+4*p,((n*1024+p)*4096)|3);
         }
-        put32(0x31000+4*0x40,probe->setup==2 ? 0x40001 : 0);
+        put32(0x31000+4*(probe->setup==11 ? 0x41 : 0x40),probe->setup==2 ? 0x40001 : 0);
         cr3=0x30000;
     }
 }
@@ -105,8 +109,9 @@ int main(int argc,char **argv) {
                 memset(ram + DATA + 0x1800, 0x5a, 16);
             }
             put32(DATA,0x3f80); put32(TRAP,0); put32(FAULT_PC,0);
-            if (probe->setup==2 || probe->setup==3) {
-                EDI=0x40000; EAX=0x1234; put32(0x40000,0x89abcdef); put32(0x40004,0x76543210);
+            if (probe->setup==2 || probe->setup==3 || probe->setup==11) {
+                cpu_state.seg_fs.base=0x40000; EBX=0;
+                EDI=probe->setup==11 ? 0x40ffc : 0x40000; EAX=0x1234; put32(0x40000,0x89abcdef); put32(0x40004,0x76543210);
                 flushmmucache();
             }
             if (probe->setup==4 || probe->setup==5) {
@@ -137,6 +142,12 @@ int main(int argc,char **argv) {
                     unsigned written = !expected && (mask == 1 || (mask == 2 && (n & 1)));
                     if (ram[address + n] != (written ? 0x11 : 0x5a)) fatal("Masked store byte %u", n);
                 }
+            }
+            if (strstr(probe->name, "MOVQ xmm")) {
+                if (expected) {
+                    for (unsigned n=0;n<4;n++) if(cpu_state.XMM[0].l[n]!=0x11111111) fatal("MOVQ changed destination on fault");
+                    if (get32(FAULT_PC)!=BODY) fatal("MOVQ fault EIP");
+                } else if (cpu_state.XMM[0].q[0]!=0x3f80 || cpu_state.XMM[0].q[1]) fatal("MOVQ result");
             }
             ++checked;
         }

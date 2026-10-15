@@ -877,9 +877,10 @@ opMOVQ_q_xmm_a16(uint32_t fetchdat)
     } else {
         SEG_CHECK_READ(cpu_state.ea_seg);
         CHECK_READ(cpu_state.ea_seg, cpu_state.eaaddr, cpu_state.eaaddr + 7);
-        cpu_state.XMM[cpu_reg].q[0] = readmemq(easeg, cpu_state.eaaddr);
+        uint64_t src = readmemq(easeg, cpu_state.eaaddr);
         if (cpu_state.abrt)
             return 1;
+        cpu_state.XMM[cpu_reg].q[0] = src;
         cpu_state.XMM[cpu_reg].q[1] = 0;
         CLOCK_CYCLES(2);
     }
@@ -898,9 +899,10 @@ opMOVQ_q_xmm_a32(uint32_t fetchdat)
     } else {
         SEG_CHECK_READ(cpu_state.ea_seg);
         CHECK_READ(cpu_state.ea_seg, cpu_state.eaaddr, cpu_state.eaaddr + 7);
-        cpu_state.XMM[cpu_reg].q[0] = readmemq(easeg, cpu_state.eaaddr);
+        uint64_t src = readmemq(easeg, cpu_state.eaaddr);
         if (cpu_state.abrt)
             return 1;
+        cpu_state.XMM[cpu_reg].q[0] = src;
         cpu_state.XMM[cpu_reg].q[1] = 0;
         CLOCK_CYCLES(2);
     }
