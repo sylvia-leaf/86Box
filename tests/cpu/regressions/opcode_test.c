@@ -16,6 +16,14 @@ typedef struct {
     unsigned length, cr0_bits, no_osfxsr, trap_p3, trap_p4, setup, only_p4;
 } opcode_case;
 static const opcode_case opcases[] = {
+    {"MOVLPD store a16 register", {0x67,0x66,0xf,0x13,0xc1},5,0,0,6,6,18,1},
+    {"MOVLPD store a16 valid", {0x67,0x66,0xf,0x13,0x7},5,0,0,6,0,17,1},
+    {"MOVLPD store a32 register", {0x66,0xf,0x13,0xc1},4,0,0,6,6,18,1},
+    {"MOVLPD store a32 valid", {0x66,0xf,0x13,0x0},4,0,0,6,0,17,1},
+    {"MOVHPD store a16 register", {0x67,0x66,0xf,0x17,0xc1},5,0,0,6,6,18,1},
+    {"MOVHPD store a16 valid", {0x67,0x66,0xf,0x17,0x7},5,0,0,6,0,17,1},
+    {"MOVHPD store a32 register", {0x66,0xf,0x17,0xc1},4,0,0,6,6,18,1},
+    {"MOVHPD store a32 valid", {0x66,0xf,0x17,0x0},4,0,0,6,0,17,1},
     {"LFENCE r/m0", {0x0f,0xae,0xe8},3,0,0,6,0},
     {"LFENCE r/m3", {0x0f,0xae,0xeb},3,0,0,6,0},
     {"LFENCE r/m7", {0x0f,0xae,0xef},3,0,0,6,0},
@@ -221,6 +229,9 @@ int main(int argc,char **argv) {
                 ECX=32; cpu_state.flags=2|(call&1); cpu_state.flags_op=0;
                 MMP[0]->q=0; MMP[1]->q=UINT64_C(0x0000000200000001);
             }
+            if (probe->setup==17) {
+                EAX=EBX=0x4001;memset(ram+0x4000,0x5a,16);cpu_state.XMM[0].q[1]=UINT64_C(0x2222222222222222);
+            }
             if (probe->setup == 12) {
                 put32(0x31000+4*0x40, ((call / 8) & 1) ? 0 : 0x40003);
                 flushmmucache();
@@ -287,6 +298,15 @@ int main(int argc,char **argv) {
                 if(get32(0x4008)!=0x12345678 || get32(0x4010)!=0x87654321 || ram[0x4006]!=0x23 || ram[0x4007]!=1 || ram[0x400c]!=0x28 || ram[0x4014]!=0x30) fatal("FXRSTOR/FXSAVE lost environment");
             }
             if (probe->setup==16 && get32(FAULT_PC)!=BODY+6) fatal("FX register form fault EIP");
+            if (probe->setup==17) {
+                unsigned byte = strstr(probe->name,"MOVH") ? 0x22 : 0x11;
+                for(unsigned n=1;n<=8;n++) if(ram[0x4000+n]!=byte) fatal("MOVLPD/MOVHPD stored wrong lane");
+                if(ram[0x4000]!=0x5a || ram[0x4009]!=0x5a) fatal("MOVLPD/MOVHPD store width");
+            }
+            if (probe->setup==18) {
+                for(unsigned n=0;n<16;n++) if(cpu_state.XMM[1].b[n]!=0x80) fatal("Invalid store changed register");
+                if(get32(FAULT_PC)!=BODY) fatal("Invalid store fault EIP");
+            }
             ++checked;
         }
 
