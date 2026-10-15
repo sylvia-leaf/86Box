@@ -49,3 +49,15 @@ if(Python3_Interpreter_FOUND)
     add_test(NAME performance_gate COMMAND "${Python3_EXECUTABLE}"
         "${CMAKE_CURRENT_SOURCE_DIR}/performance_gate_test.py")
 endif()
+
+add_executable(opcode_test opcode_test.c)
+pcbox_full_cpu_target(opcode_test)
+foreach(cpu p3 p4)
+    foreach(softfloat 0 1)
+        foreach(engine 0 1)
+            add_test(NAME opcodes_${cpu}_sf${softfloat}_engine${engine}
+                COMMAND opcode_test ${cpu} ${engine} ${softfloat})
+            set_tests_properties(opcodes_${cpu}_sf${softfloat}_engine${engine} PROPERTIES TIMEOUT 120)
+        endforeach()
+    endforeach()
+endforeach()

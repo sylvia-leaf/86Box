@@ -1239,7 +1239,7 @@ opMASKMOVQ_l_mm_a16(uint32_t fetchdat)
         dst = MMX_GETREG(cpu_reg);
         src = MMX_GETREG(cpu_rm);
         SEG_CHECK_WRITE(cpu_state.ea_seg);
-        CHECK_WRITE(cpu_state.ea_seg, cpu_state.eaaddr, cpu_state.eaaddr + 7);
+        CHECK_WRITE(cpu_state.ea_seg, DI, DI + 7);
         if (src.b[0] & (1 << 7)) {
             writememb(easeg, DI, dst.b[0]);
             if (cpu_state.abrt)
@@ -1301,7 +1301,7 @@ opMASKMOVQ_l_mm_a32(uint32_t fetchdat)
         dst = MMX_GETREG(cpu_reg);
         src = MMX_GETREG(cpu_rm);
         SEG_CHECK_WRITE(cpu_state.ea_seg);
-        CHECK_WRITE(cpu_state.ea_seg, cpu_state.eaaddr, cpu_state.eaaddr + 7);
+        CHECK_WRITE(cpu_state.ea_seg, EDI, EDI + 7);
         if (src.b[0] & (1 << 7)) {
             writememb(easeg, EDI, dst.b[0]);
             if (cpu_state.abrt)
