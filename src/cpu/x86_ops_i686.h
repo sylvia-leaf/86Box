@@ -89,7 +89,7 @@ sf_fx_save_stor_common(uint32_t fetchdat, int bits)
 
         FP_ENTER();
 
-        if (cpu_state.eaaddr & 0xf) {
+        if ((easeg + cpu_state.eaaddr) & 0xf) {
             x386_dynarec_log("Effective address %08X not on 16-byte boundary\n", cpu_state.eaaddr);
             x86gpf(NULL, 0);
             return cpu_state.abrt;
@@ -170,7 +170,7 @@ sf_fx_save_stor_common(uint32_t fetchdat, int bits)
     } else if (fxinst == 0) {
         /* FXSAVE */
         FP_ENTER();
-        if (cpu_state.eaaddr & 0xf) {
+        if ((easeg + cpu_state.eaaddr) & 0xf) {
             x386_dynarec_log("Effective address %08X not on 16-byte boundary\n", cpu_state.eaaddr);
             x86gpf(NULL, 0);
             return cpu_state.abrt;
@@ -407,7 +407,7 @@ fx_save_stor_common(uint32_t fetchdat, int bits)
     if (fxinst == 1) {
         /* FXRSTOR */
         FP_ENTER();
-        if (cpu_state.eaaddr & 0xf) {
+        if ((easeg + cpu_state.eaaddr) & 0xf) {
             x386_dynarec_log("Effective address %08X not on 16-byte boundary\n", cpu_state.eaaddr);
             x86gpf(NULL, 0);
             return cpu_state.abrt;
@@ -539,7 +539,7 @@ fx_save_stor_common(uint32_t fetchdat, int bits)
     } else if (fxinst == 0) {
         /* FXSAVE */
         FP_ENTER();
-        if (cpu_state.eaaddr & 0xf) {
+        if ((easeg + cpu_state.eaaddr) & 0xf) {
             x386_dynarec_log("Effective address %08X not on 16-byte boundary\n", cpu_state.eaaddr);
             x86gpf(NULL, 0);
             return cpu_state.abrt;

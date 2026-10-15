@@ -1781,7 +1781,7 @@ opPAVGB_xmm_xmm_a16(uint32_t fetchdat)
         cpu_state.XMM[cpu_reg].b[15] = (uint8_t) (tmp[15] >> 1);
         CLOCK_CYCLES(1);
     } else {
-        if (cpu_state.eaaddr & 0xf) {
+        if ((easeg + cpu_state.eaaddr) & 0xf) {
             x86gpf(NULL, 0);
             if (cpu_state.abrt)
                 return 1;
@@ -1919,7 +1919,7 @@ opPAVGB_xmm_xmm_a32(uint32_t fetchdat)
         cpu_state.XMM[cpu_reg].b[15] = (uint8_t) (tmp[15] >> 1);
         CLOCK_CYCLES(1);
     } else {
-        if (cpu_state.eaaddr & 0xf) {
+        if ((easeg + cpu_state.eaaddr) & 0xf) {
             x86gpf(NULL, 0);
             if (cpu_state.abrt)
                 return 1;
@@ -2121,7 +2121,7 @@ opPAVGW_xmm_xmm_a16(uint32_t fetchdat)
         cpu_state.XMM[cpu_reg].w[7] = (uint16_t) (tmp[7] >> 1);
         CLOCK_CYCLES(1);
     } else {
-        if (cpu_state.eaaddr & 0xf) {
+        if ((easeg + cpu_state.eaaddr) & 0xf) {
             x86gpf(NULL, 0);
             if (cpu_state.abrt)
                 return 1;
@@ -2203,7 +2203,7 @@ opPAVGW_xmm_xmm_a32(uint32_t fetchdat)
         cpu_state.XMM[cpu_reg].w[7] = (uint16_t) (tmp[7] >> 1);
         CLOCK_CYCLES(1);
     } else {
-        if (cpu_state.eaaddr & 0xf) {
+        if ((easeg + cpu_state.eaaddr) & 0xf) {
             x86gpf(NULL, 0);
             if (cpu_state.abrt)
                 return 1;
@@ -2341,7 +2341,7 @@ opPMULHUW_xmm_xmm_a16(uint32_t fetchdat)
         cpu_state.XMM[cpu_reg].w[7] = ((uint32_t) cpu_state.XMM[cpu_reg].w[7] * (uint32_t) cpu_state.XMM[cpu_rm].w[7]) >> 16;
         CLOCK_CYCLES(1);
     } else {
-        if (cpu_state.eaaddr & 0xf) {
+        if ((easeg + cpu_state.eaaddr) & 0xf) {
             x86gpf(NULL, 0);
             if (cpu_state.abrt)
                 return 1;
@@ -2403,7 +2403,7 @@ opPMULHUW_xmm_xmm_a32(uint32_t fetchdat)
         cpu_state.XMM[cpu_reg].w[7] = ((uint32_t) cpu_state.XMM[cpu_reg].w[7] * (uint32_t) cpu_state.XMM[cpu_rm].w[7]) >> 16;
         CLOCK_CYCLES(1);
     } else {
-        if (cpu_state.eaaddr & 0xf) {
+        if ((easeg + cpu_state.eaaddr) & 0xf) {
             x86gpf(NULL, 0);
             if (cpu_state.abrt)
                 return 1;
@@ -2531,7 +2531,7 @@ opPMINSW_xmm_xmm_a16(uint32_t fetchdat)
         cpu_state.XMM[cpu_reg].sw[7] = (cpu_state.XMM[cpu_reg].sw[7] < cpu_state.XMM[cpu_rm].sw[7]) ? cpu_state.XMM[cpu_reg].sw[7] : cpu_state.XMM[cpu_rm].sw[7];
         CLOCK_CYCLES(1);
     } else {
-        if (cpu_state.eaaddr & 0xf) {
+        if ((easeg + cpu_state.eaaddr) & 0xf) {
             x86gpf(NULL, 0);
             if (cpu_state.abrt)
                 return 1;
@@ -2593,7 +2593,7 @@ opPMINSW_xmm_xmm_a32(uint32_t fetchdat)
         cpu_state.XMM[cpu_reg].sw[7] = (cpu_state.XMM[cpu_reg].sw[7] < cpu_state.XMM[cpu_rm].sw[7]) ? cpu_state.XMM[cpu_reg].sw[7] : cpu_state.XMM[cpu_rm].sw[7];
         CLOCK_CYCLES(1);
     } else {
-        if (cpu_state.eaaddr & 0xf) {
+        if ((easeg + cpu_state.eaaddr) & 0xf) {
             x86gpf(NULL, 0);
             if (cpu_state.abrt)
                 return 1;
@@ -2721,7 +2721,7 @@ opPMAXSW_xmm_xmm_a16(uint32_t fetchdat)
         cpu_state.XMM[cpu_reg].sw[7] = (cpu_state.XMM[cpu_reg].sw[7] > cpu_state.XMM[cpu_rm].sw[7]) ? cpu_state.XMM[cpu_reg].sw[7] : cpu_state.XMM[cpu_rm].sw[7];
         CLOCK_CYCLES(1);
     } else {
-        if (cpu_state.eaaddr & 0xf) {
+        if ((easeg + cpu_state.eaaddr) & 0xf) {
             x86gpf(NULL, 0);
             if (cpu_state.abrt)
                 return 1;
@@ -2783,7 +2783,7 @@ opPMAXSW_xmm_xmm_a32(uint32_t fetchdat)
         cpu_state.XMM[cpu_reg].sw[7] = (cpu_state.XMM[cpu_reg].sw[7] > cpu_state.XMM[cpu_rm].sw[7]) ? cpu_state.XMM[cpu_reg].sw[7] : cpu_state.XMM[cpu_rm].sw[7];
         CLOCK_CYCLES(1);
     } else {
-        if (cpu_state.eaaddr & 0xf) {
+        if ((easeg + cpu_state.eaaddr) & 0xf) {
             x86gpf(NULL, 0);
             if (cpu_state.abrt)
                 return 1;
@@ -2966,7 +2966,7 @@ opPSADBW_xmm_xmm_a16(uint32_t fetchdat)
         cpu_state.XMM[cpu_reg].w[7] = 0;
         CLOCK_CYCLES(1);
     } else {
-        if (cpu_state.eaaddr & 0xf) {
+        if ((easeg + cpu_state.eaaddr) & 0xf) {
             x86gpf(NULL, 0);
             if (cpu_state.abrt)
                 return 1;
@@ -3106,7 +3106,7 @@ opPSADBW_xmm_xmm_a32(uint32_t fetchdat)
         cpu_state.XMM[cpu_reg].w[7] = 0;
         CLOCK_CYCLES(1);
     } else {
-        if (cpu_state.eaaddr & 0xf) {
+        if ((easeg + cpu_state.eaaddr) & 0xf) {
             x86gpf(NULL, 0);
             if (cpu_state.abrt)
                 return 1;

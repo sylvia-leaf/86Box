@@ -96,6 +96,19 @@ codegen_seg_is_flat(x86seg *seg)
     return (seg == &cpu_state.seg_ds && codegen_flat_ds && !(cpu_cur_status & CPU_STATUS_NOTFLATDS)) || (seg == &cpu_state.seg_ss && codegen_flat_ss && !(cpu_cur_status & CPU_STATUS_NOTFLATSS));
 }
 
+/* SIMD alignment applies to the linear address. Do not modify eaaddr: the
+ * memory operation still needs the segment-relative offset for limit checks. */
+static inline void
+codegen_check_sse_align(ir_data_t *ir, x86seg *seg)
+{
+    if (codegen_seg_is_flat(seg)) {
+        uop_CHECK_ALIGN(ir);
+    } else {
+        uop_ADD(ir, IREG_temp0, ireg_seg_base(seg), IREG_eaaddr);
+        uop_CHECK_ALIGN_REG(ir, IREG_temp0);
+    }
+}
+
 /*Limit check for an access to seg:addr_reg..addr_reg+end_offset. Exceeding SS's
   limit is #SS(0), any other segment's #GP(0). Uses IREG_temp3.*/
 static inline void

@@ -66,6 +66,7 @@ static const simd_case cases[] = {
 static const simd_case *test;
 static unsigned completed, failures, compiled_results;
 static int done, osxmm, engine, memory_form, address16, restore;
+static int alignment = -1;
 static uint32_t test_pc, resume_pc, emit_pos;
 uint64_t timer_target = 1000;
 static void put32(uint32_t a, uint32_t v) { memcpy(ram + a, &v, 4); }
@@ -97,6 +98,18 @@ void outl(uint16_t port, uint32_t value) {
     (void)value;
     if (port == 0xec) { done = 1; return; }
     if (port != 0xe9 || completed >= CALLS) fatal("Bad mailbox");
+    if (alignment >= 0) {
+        int store = test->opcode == 0x29 || test->opcode == 0x7f || test->opcode == 0x2b || test->opcode == 0xe7;
+        unsigned trap = (alignment & 1) && test->opcode != 0x10 ? 13 : 0;
+        uint32_t linear = (alignment & 1) ? 0x6021 : 0x6020;
+        check(get32(TRAP) == trap, "linear alignment exception");
+        if (trap) check(get32(FAULT_PC) == test_pc, "alignment fault EIP");
+        check(!memcmp(ram+RESULT, (trap || store) ? test->a : test->expected, 16), "aligned XMM result");
+        if (store) check(!memcmp(ram+linear, trap ? test->b : test->a, 16), "aligned store atomicity");
+        compiled_results += !!inrecomp;
+        if (++completed == CALLS) { done=1; cycles=cycles_main=0; }
+        return;
+    }
     unsigned trap = test->result_kind != FTZ_RESULT && unmasked(completed) ? (osxmm ? 19 : 6) : 0;
     check(get32(TRAP) == trap, "exception vector");
     if (test->result_kind == FTZ_RESULT)
@@ -143,12 +156,14 @@ static void run_case(void) {
     flat_segment(&cpu_state.seg_cs,8,0x9b); flat_segment(&cpu_state.seg_ds,16,0x93);
     flat_segment(&cpu_state.seg_es,16,0x93); flat_segment(&cpu_state.seg_ss,16,0x93);
     flat_segment(&cpu_state.seg_fs,16,0x93); flat_segment(&cpu_state.seg_gs,16,0x93);
+    if (alignment >= 0) cpu_state.seg_fs.base=1;
     cpu_cur_status=CPU_STATUS_PMODE|CPU_STATUS_USE32|CPU_STATUS_STACK32;
     use32=0x300; stack32=1; cpu_state.flags=2; cpu_state.eflags=0; ESP=0x700000;
     cycles=cycles_main=0; tsc=0; timer_target=1000; x86_was_reset=0;
     mem_a20_alt=1; mem_a20_recalc(); flushmmucache();
     memset(ram+DATA,0,0x1000); memcpy(ram+DATA,test->a,16); memcpy(ram+DATA+16,test->b,16);
     memcpy(ram+0x6000,test->b,16); put32(DATA+32,test->control ? test->control : 0x1f80);
+    if (alignment >= 0) memcpy(ram+((alignment&1) ? 0x6021 : 0x6020),test->b,16);
     put32(DATA+40,0x12345678); put32(DATA+44,0x87654321);
     /* Minimal FXSAVE image: masked x87, empty tags, controlled MXCSR. */
     put32(DATA+0x200,0x37f); put32(DATA+0x218,test->control ? test->control : 0x1f80);
@@ -162,12 +177,13 @@ static void run_case(void) {
     b(0xb8); d(0x12345678);
     b(0x68); d(0x892); b(0x9d); /* Set OF,SF,AF before comparisons. */
     test_pc=emit_pos;
+    if (alignment >= 0) b(0x64); /* FS base deliberately misaligned. */
     if (address16) b(0x67);
     if (test->prefix) b(test->prefix);
     b(0x0f); b(test->opcode);
     if (!memory_form) b(0xc1);
-    else if (address16) { b(6); b(0); b(0x60); }
-    else { b(5); d(DATA+16); }
+    else if (address16) { b(6); b(alignment < 0 ? 0 : (alignment&1) ? 0x20 : 0x1f); b(0x60); }
+    else { b(5); d(alignment < 0 ? DATA+16 : (alignment&1) ? 0x6020 : 0x601f); }
     if (test->has_imm) b(test->imm);
     resume_pc=emit_pos;
     if (test->result_kind==FLAGS_RESULT) { b(0x9c); b(0x58); }
@@ -193,6 +209,23 @@ int main(int argc, char **argv) {
             for (memory_form=0;memory_form<2;++memory_form)
                 for (address16=0;address16<2;++address16)
                     for (restore=0;restore<2;++restore) { run_case(); ++runs; }
+    }
+    if (argc <= 4 || !strcmp(argv[4],"alignment")) {
+        static const uint8_t ops[][3] = {
+            {0,0x28,0}, {0,0x29,0}, {0,0x2b,0}, {0,0x58,0}, {0,0x54,0}, {0,0x10,0},
+            {0x66,0x28,1}, {0x66,0x29,1}, {0x66,0x6f,1}, {0x66,0x7f,1}, {0x66,0xe7,1}
+        };
+        for (unsigned i=0;i<sizeof(ops)/sizeof(ops[0]);++i) {
+            if (p3 && ops[i][2]) continue;
+            simd_case aligned={.name="alignment",.prefix=ops[i][0],.opcode=ops[i][1],
+                .a={FONE,FONE,FONE,FONE},.b={0x40000000,0x40000000,0x40000000,0x40000000},
+                .expected={0x40000000,0x40000000,0x40000000,0x40000000}};
+            if (ops[i][1]==0x58) for (int lane=0;lane<4;++lane) aligned.expected[lane]=0x40400000;
+            if (ops[i][1]==0x54) for (int lane=0;lane<4;++lane) aligned.expected[lane]=0;
+            test=&aligned; memory_form=1; restore=0; osxmm=1;
+            for (alignment=0;alignment<2;++alignment)
+                for (address16=0;address16<2;++address16) { run_case(); ++runs; }
+        }
     }
     printf("%u SIMD cases, %u guest calls, %u failures (%s, engine=%d, softfloat=%d)\n",
         runs,runs*CALLS,failures,p3?"P3":"P4",engine,fpu_softfloat);
