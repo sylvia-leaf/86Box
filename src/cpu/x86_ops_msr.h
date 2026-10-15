@@ -29,7 +29,11 @@ opRDTSC(UNUSED(uint32_t fetchdat))
 static int
 opRDPMC(UNUSED(uint32_t fetchdat))
 {
-    if (ECX > 1 || (!(cr4 & CR4_PCE) && (cr0 & 1) && CPL)) {
+    /* Willamette has eighteen counters; bit 31 requests a fast low-dword
+       read. P6 exposes two counters and does not support that selector bit. */
+    int p4 = cpu_s->cpu_type == CPU_PENTIUM4W;
+    uint32_t counter = p4 ? ECX & 0x7fffffff : ECX;
+    if (counter >= (p4 ? 18u : 2u) || (!(cr4 & CR4_PCE) && (cr0 & 1) && CPL)) {
         x86gpf("RDPMC not allowed", 0);
         return 1;
     }
