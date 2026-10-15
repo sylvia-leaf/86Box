@@ -87,6 +87,7 @@ typedef struct intel_ich2_t {
     nvr_t             *nvr;
     sff8038i_t        *ide_drive[2];
     smbus_piix4_t     *smbus;
+    uint8_t            started;   /* cleared only on power-up, see the D5h note in reset */
     tco_t             *tco;
     usb_t             *usb_hub[2];
 } intel_ich2_t;
@@ -813,6 +814,15 @@ static void
 intel_ich2_reset(void *priv)
 {
     intel_ich2_t *dev = (intel_ich2_t *) priv;
+    /*
+     * D5h sits in the resume well, so a platform reset leaves it alone and
+     * only losing RTC power clears it. AMIBIOS keeps the value it wants there
+     * in extended CMOS byte DAh, writes the register, and resets to apply it,
+     * then expects to read the same value back - restoring the default here
+     * instead leaves it resetting forever.
+     */
+    const uint8_t resume_d5 = dev->started ? dev->pci_conf[0][0xd5] : 0x0f;
+
     memset(dev->pci_conf, 0, sizeof(dev->pci_conf)); /* Wash out the Registers */
 
     /* Function 0: LPC Bridge */
@@ -850,7 +860,7 @@ intel_ich2_reset(void *priv)
     dev->pci_conf[0][0x6a] = 0x80;
     dev->pci_conf[0][0x6b] = 0x80;
 
-    dev->pci_conf[0][0xd5] = 0x0f;
+    dev->pci_conf[0][0xd5] = resume_d5;
 
     dev->pci_conf[0][0xe3] = 0xff;
 
@@ -1023,6 +1033,8 @@ intel_ich2_reset(void *priv)
 
     dev->pci_conf[6][0x3d] = 0x02;
 #endif
+
+    dev->started = 1;
 }
 
 static void

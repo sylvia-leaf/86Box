@@ -265,6 +265,7 @@ enum {
     MACHINE_CHIPSET_INTEL_440GX,
     MACHINE_CHIPSET_INTEL_I815EP,
     MACHINE_CHIPSET_INTEL_I845,
+    MACHINE_CHIPSET_INTEL_I850,
     MACHINE_CHIPSET_OPTI_283,
     MACHINE_CHIPSET_OPTI_291,
     MACHINE_CHIPSET_OPTI_381,
@@ -1627,6 +1628,8 @@ extern int             machine_at_ms6318_init(const machine_t *);
 extern int             machine_at_cairo5_init(const machine_t *);
 
 /* m_at_socket423.c */
+extern int             machine_at_p4ita_init(const machine_t *);
+extern int             machine_at_8itx3_init(const machine_t *);
 extern int             machine_at_ms6529_init(const machine_t *);
 extern int             machine_at_wb72_init(const machine_t *);
 extern int             machine_at_abbw7_init(const machine_t *);
