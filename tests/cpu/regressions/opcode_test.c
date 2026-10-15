@@ -16,6 +16,11 @@ typedef struct {
     unsigned length, cr0_bits, no_osfxsr, trap_p3, trap_p4, setup;
 } opcode_case;
 static const opcode_case opcases[] = {
+    {"MMX pending x87 exception", {0x0f,0x6f,0xc1},3,0x20,0,16,16,9},
+    {"MMX pending x87 exception in counted loop", {0x0f,0xfe,0xc1,0x49,0x75,0xfa},6,0x20,0,16,16,27},
+    {"EMMS pending x87 exception", {0x0f,0x77},2,0x20,0,16,16,9},
+    {"FWAIT pending control", {0x9b},1,0x20,0,16,16,9},
+    {"ADDPS pending x87 control", {0x0f,0x58,0xc1},3,0x20,0,0,0,9},
     {"MMX fault MOVQ", {0xf,0x6f,0x7},3,0x80010000,0,14,14,12},
     {"MMX fault MOVD", {0xf,0x6e,0x7},3,0x80010000,0,14,14,12},
     {"MMX fault PADDD", {0xf,0xfe,0x7},3,0x80010000,0,14,14,12},
@@ -135,6 +140,7 @@ int main(int argc,char **argv) {
         for(unsigned call=0;call<64;call++) {
             cr0=1|probe->cr0_bits; cr4=CR4_OSXMMEXCPT|(probe->no_osfxsr?0:CR4_OSFXSR);
             cpu_state.mxcsr=0x1f80; cpu_state.flags=2; cpu_state.eflags=0;
+            cpu_state.npxc=fpu_state.cwd=0x37f; cpu_state.npxs=fpu_state.swd=0;
             cpu_state.ismmx=0;
             cpu_state.TOP=3; x87_settag(0xffff); fpu_state.tos=3; fpu_state.tag=0xffff;
             cpu_state.ssegs=0;
@@ -162,8 +168,12 @@ int main(int argc,char **argv) {
                 put32(0x4000,0x037f); put32(0x4008,0x12345678); put32(0x4010,0x87654321); put32(0x4018,0x1f80);
                 if(probe->setup==5){put32(0x4000+400,0x54474553);memset(ram+0x4000+404,1,9);}
             }
-            if (probe->setup==9) {
-                cpu_state.npxc=fpu_state.cwd=0x37e;cpu_state.npxs=fpu_state.swd=0x8081;
+            if (probe->setup==9 || probe->setup==27) {
+                cpu_state.npxc=fpu_state.cwd=0x37e;cpu_state.npxs=fpu_state.swd=((call / 8) & 1) ? 0x8081 : 0;
+            }
+            if (probe->setup==27) {
+                ECX=32; cpu_state.flags=2|(call&1); cpu_state.flags_op=0;
+                MMP[0]->q=0; MMP[1]->q=UINT64_C(0x0000000200000001);
             }
             if (probe->setup == 12) {
                 put32(0x31000+4*0x40, ((call / 8) & 1) ? 0 : 0x40003);
@@ -176,7 +186,7 @@ int main(int argc,char **argv) {
                 if(engine) exec386_dynarec(10000); else exec386(10000);
             }
             unsigned expected = p3 ? probe->trap_p3 : probe->trap_p4;
-            if (probe->setup == 12 && !((call / 8) & 1)) expected = 0;
+            if ((probe->setup == 12 || probe->setup == 9 || probe->setup == 27) && !((call / 8) & 1)) expected = 0;
             if (get32(TRAP) != expected) {
                 fprintf(stderr, "%s call %u: trap %u, expected %u\n", probe->name, call, get32(TRAP), expected);
                 return 1;
@@ -202,6 +212,18 @@ int main(int argc,char **argv) {
                 if (expected && (top != 3 || tag != 0xffff || cpu_state.ismmx)) fatal("Faulting MMX changed x87 state: %s", probe->name);
                 if (!expected && (top || !cpu_state.ismmx)) fatal("Successful MMX did not enter MMX mode");
                 if (expected && get32(FAULT_PC)!=BODY) fatal("MMX fault EIP");
+            }
+            if ((probe->setup == 9 || probe->setup == 27) && expected) {
+                if (get32(FAULT_PC)!=BODY || cpu_state.ismmx || (fpu_softfloat ? fpu_state.tos : cpu_state.TOP)!=3)
+                    fatal("Pending x87 exception changed MMX state or EIP");
+            }
+            if (probe->setup == 27) {
+                if (MMP[0]->q != (expected ? 0 : UINT64_C(0x0000004000000020)))
+                    fatal("Counted MMX loop changed its result or committed a faulting instruction");
+                if (!expected && (ECX || (cpu_state.flags & 1) != (call & 1)))
+                    fatal("Counted MMX loop changed carry or failed to finish");
+                if (expected && (fpu_softfloat ? fpu_state.tag : x87_gettag()) != 0xffff)
+                    fatal("Counted MMX loop changed tags before #MF");
             }
             ++checked;
         }

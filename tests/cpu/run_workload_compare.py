@@ -203,6 +203,7 @@ def main():
     parser.add_argument("--samples", type=int, default=9)
     parser.add_argument("--sample-ms", type=int, default=75)
     parser.add_argument("--filter", default="")
+    parser.add_argument("--interpreter", action="store_true", help="Measure the interpreter instead of the dynamic recompiler")
     parser.add_argument("--seed", type=int, default=20261012)
     parser.add_argument("--build-only", action="store_true")
     parser.add_argument("--reuse-builds", action="store_true", help="Reuse hash-checked builds and build missing variants")
@@ -299,6 +300,8 @@ def main():
                 stem = runs / f"{index:02d}-r{round_index + 1}-{label}"
                 command = [builds[label]["executable"], "--case", name, "--samples", str(args.samples),
                            "--sample-ms", str(args.sample_ms), "--csv", str(stem.with_suffix(".csv")), *affinity]
+                if args.interpreter:
+                    command.append("--interpreter")
                 with stem.with_suffix(".log").open("w", encoding="utf-8") as stream:
                     subprocess.run(command, stdout=stream, stderr=subprocess.STDOUT, env=env, check=True, timeout=120)
                 rows = samples(stem.with_suffix(".csv"), name, args.samples)

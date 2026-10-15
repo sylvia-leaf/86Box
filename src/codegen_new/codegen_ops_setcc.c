@@ -258,7 +258,7 @@ setcc_rebuild_c(ir_data_t *ir)
             return;
 
         default:
-            uop_CALL_FUNC(ir, jit_flags_rebuild_c);
+            uop_CALL_INT_FLAGS(ir, jit_flags_rebuild_c);
             return;
     }
 }

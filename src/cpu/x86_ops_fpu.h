@@ -124,9 +124,7 @@ opWAIT(UNUSED(uint32_t fetchdat))
         return 1;
     }
 
-    if (fpu_softfloat) {
-        FPU_check_pending_exceptions();
-    }
+    FPU_check_pending_exceptions();
     CLOCK_CYCLES(4);
     return 0;
 }

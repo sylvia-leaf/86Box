@@ -8,6 +8,38 @@ endif()
 add_subdirectory("${CPU_SOURCE_ROOT}/src/cpu/softfloat3e" softfloat3e EXCLUDE_FROM_ALL)
 target_include_directories(softfloat3e PRIVATE "${CPU_SOURCE_ROOT}/src/include")
 include(../full_core.cmake)
+
+# Run the same host-address cases with and without link-time optimization.
+# Explicit negative addresses keep coverage independent of linker placement.
+include(CheckIPOSupported)
+check_ipo_supported(RESULT address_ipo OUTPUT address_ipo_error LANGUAGES C)
+set(address_targets absolute_address_test)
+if(address_ipo)
+    list(APPEND address_targets absolute_address_lto_test)
+else()
+    message(STATUS "LTO address regression unavailable: ${address_ipo_error}")
+endif()
+foreach(target IN LISTS address_targets)
+    add_executable(${target} absolute_address_test.c
+        "${CPU_SOURCE_ROOT}/src/codegen_new/codegen_backend_x86-64_ops.c"
+        "${CPU_SOURCE_ROOT}/src/codegen_new/codegen_backend_x86-64_ops_sse.c")
+    target_compile_definitions(${target} PRIVATE USE_DYNAREC USE_NEW_DYNAREC)
+    target_include_directories(${target} PRIVATE
+        "${CPU_SOURCE_ROOT}/src/include" "${CPU_SOURCE_ROOT}/src/cpu"
+        "${CPU_SOURCE_ROOT}/src/codegen_new")
+    target_compile_options(${target} PRIVATE -O3 -fno-strict-aliasing
+        -ffunction-sections -fdata-sections
+        $<$<PLATFORM_ID:Windows>:-fno-asynchronous-unwind-tables>)
+    target_link_options(${target} PRIVATE
+        $<$<PLATFORM_ID:Darwin>:-Wl,-dead_strip>
+        $<$<NOT:$<PLATFORM_ID:Darwin>>:-Wl,--gc-sections>)
+    add_test(NAME ${target} COMMAND ${target})
+endforeach()
+set_property(TARGET absolute_address_test PROPERTY INTERPROCEDURAL_OPTIMIZATION FALSE)
+if(address_ipo)
+    set_property(TARGET absolute_address_lto_test PROPERTY INTERPROCEDURAL_OPTIMIZATION TRUE)
+endif()
+
 add_executable(simd_exception_test simd_exception_test.c)
 pcbox_full_cpu_target(simd_exception_test)
 if(NOT APPLE)

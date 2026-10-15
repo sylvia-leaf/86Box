@@ -73,7 +73,7 @@
     }
 
 #define MMX_CHECK()                          \
-    if (!cpu_has_feature(CPU_FEATURE_MMX) || (cr0 & 0x4)) { \
+    if (!(cpu_features & CPU_FEATURE_MMX) || (cr0 & 0x4)) { \
         cpu_state.pc = cpu_state.oldpc;      \
         x86illegal();                        \
         return 1;                            \
@@ -81,7 +81,8 @@
     if (cr0 & 0x8) {                         \
         x86_int(7);                          \
         return 1;                            \
-    }
+    }                                        \
+    FPU_check_pending_exceptions()
 
 #define MMX_COMMIT() \
     /* Resetting a non-zero TOP, or entering MMX mode, changes the stack \
@@ -110,15 +111,7 @@
 static int
 opEMMS(UNUSED(uint32_t fetchdat))
 {
-    if (!cpu_has_feature(CPU_FEATURE_MMX) || (cr0 & 0x4)) {
-        cpu_state.pc = cpu_state.oldpc;
-        x86illegal();
-        return 1;
-    }
-    if (cr0 & 0x8) {
-        x86_int(7);
-        return 1;
-    }
+    MMX_CHECK();
     x87_emms();
     CLOCK_CYCLES(100); /*Guess*/
     return 0;

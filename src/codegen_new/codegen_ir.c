@@ -167,6 +167,8 @@ codegen_ir_compile(ir_data_t *ir, codeblock_t *block)
 {
     int jump_target_at_end = -1;
     int c;
+    enum { MMX_UNCHECKED, MMX_CHECKED, MMX_COMMITTED, MMX_UNREACHABLE } mmx_state = MMX_UNCHECKED;
+    uint8_t mmx_incoming[UOP_NR_MAX];
 #ifdef CODEGEN_BACKEND_HAS_MEM_LOOKUP_REUSE
     int mem_lookup = 0;
     const uop_t *last_mem = NULL;
@@ -195,6 +197,16 @@ codegen_ir_compile(ir_data_t *ir, codeblock_t *block)
         }
     }
 
+    /* Meet the state of all forward predecessors at a join. Back edges are
+       deliberately unchecked: a later iteration may have changed FPU state. */
+    for (c = 0; c < ir->wr_pos; c++)
+        mmx_incoming[c] = MMX_UNREACHABLE;
+    for (c = 0; c < ir->wr_pos; c++) {
+        const uop_t *uop = &ir->uops[c];
+        if ((uop->type & UOP_TYPE_JUMP) && uop->jump_dest_uop >= 0 && uop->jump_dest_uop <= c)
+            mmx_incoming[uop->jump_dest_uop] = MMX_UNCHECKED;
+    }
+
     codegen_reg_mark_as_required();
     codegen_reg_process_dead_list(ir);
     block_write_data = codeblock_allocator_get_ptr(block->head_mem_block);
@@ -210,8 +222,34 @@ codegen_ir_compile(ir_data_t *ir, codeblock_t *block)
 
     for (c = 0; c < ir->wr_pos; c++) {
         uop_t *uop = &ir->uops[c];
+        int skip_mmx = 0;
 
         //                pclog("uOP %i : %08x\n", c, uop->type);
+
+        /* Unrolling duplicates the entry check and delayed state update.
+           Register-only MMX cannot change x87 exception state; retain one
+           pair through integer flag materialization and conditional exits.
+           Calls, memory accesses and unchecked incoming paths need a recheck. */
+        if ((uop->type & UOP_TYPE_JUMP_DEST) || mmx_incoming[c] == MMX_UNCHECKED) {
+            if (mmx_incoming[c] == MMX_UNREACHABLE)
+                mmx_state = MMX_UNCHECKED;
+            else if (mmx_incoming[c] < mmx_state)
+                mmx_state = mmx_incoming[c];
+        }
+        if ((uop->type & UOP_MASK) == (UOP_MMX_ENTER & UOP_MASK)) {
+            skip_mmx = mmx_state != MMX_UNCHECKED;
+            if (!skip_mmx)
+                mmx_state = MMX_CHECKED;
+        } else if ((uop->type & UOP_MASK) == (UOP_MMX_COMMIT & UOP_MASK)) {
+            skip_mmx = mmx_state == MMX_COMMITTED;
+            if (mmx_state == MMX_CHECKED)
+                mmx_state = MMX_COMMITTED;
+        } else if ((uop->type & (UOP_TYPE_BARRIER | UOP_TYPE_ORDER_BARRIER))
+                   && !(uop->type & (UOP_TYPE_INT_FLAGS | UOP_TYPE_JUMP))
+                   && (uop->type & UOP_MASK) != (UOP_JMP & UOP_MASK))
+            mmx_state = MMX_UNCHECKED;
+        if (skip_mmx && !(uop->type & UOP_TYPE_JUMP_DEST))
+            continue;
 
 #ifdef CODEGEN_HAS_SSE
         /* Coalesce SSE entry checks after loop unrolling, so duplicated
@@ -305,7 +343,9 @@ codegen_ir_compile(ir_data_t *ir, codeblock_t *block)
             }
         }
 
-        if ((uop->type & UOP_MASK) == UOP_INVALID)
+        /* A redundant entry at a join still needs its register synchronization
+           and branch fixups above. Only omit the runtime check itself. */
+        if (skip_mmx || (uop->type & UOP_MASK) == UOP_INVALID)
             continue;
 
 #ifdef CODEGEN_BACKEND_HAS_SSE_MXCSR
@@ -346,7 +386,11 @@ codegen_ir_compile(ir_data_t *ir, codeblock_t *block)
                 }
             }
 
-            if (uop->type & UOP_TYPE_ORDER_BARRIER) {
+            /* MMX_COMMIT only writes TOP/tags after the first successful MMX
+               instruction. MMX_ENTER already invalidated their cached values;
+               keep the new MMX result live while preserving the IR ordering. */
+            if ((uop->type & UOP_TYPE_ORDER_BARRIER)
+                && (uop->type & UOP_MASK) != (UOP_MMX_COMMIT & UOP_MASK)) {
 #ifdef CODEGEN_BACKEND_HAS_MEM_REGS
                 if (uop->type & UOP_TYPE_MEM)
                     codegen_reg_flush_mem_dest(block, uop->dest_reg_a);
@@ -368,6 +412,9 @@ codegen_ir_compile(ir_data_t *ir, codeblock_t *block)
         }
 
         if (uop->type & UOP_TYPE_JUMP) {
+            if (uop->jump_dest_uop > c && uop->jump_dest_uop < ir->wr_pos
+                && mmx_state < mmx_incoming[uop->jump_dest_uop])
+                mmx_incoming[uop->jump_dest_uop] = mmx_state;
             if (uop->jump_dest_uop == ir->wr_pos) {
                 if (jump_target_at_end == -1)
                     jump_target_at_end = c;
@@ -389,6 +436,9 @@ codegen_ir_compile(ir_data_t *ir, codeblock_t *block)
                 ir->uops[uop->jump_dest_uop].type |= UOP_TYPE_JUMP_DEST;
             }
         }
+        if ((uop->type & UOP_MASK) == (UOP_JMP & UOP_MASK)
+            || (uop->type & UOP_MASK) == (UOP_JMP_DEST & UOP_MASK))
+            mmx_state = MMX_UNREACHABLE;
     }
 
 #ifdef CODEGEN_BACKEND_HAS_SSE_MXCSR

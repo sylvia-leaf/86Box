@@ -32,6 +32,10 @@
 /* Updates floating-point status even when the register result is discarded. */
 #define UOP_TYPE_FP_STATUS (1 << 20)
 
+/* A helper only materializes integer flags; it cannot change MMX/x87 state.
+   The call still needs the ordinary register-cache barrier and ABI handling. */
+#define UOP_TYPE_INT_FLAGS (1 << 19)
+
 /*uOP uses source and dest registers*/
 #define UOP_TYPE_PARAMS_REGS (1 << 28)
 /*uOP uses pointer*/
@@ -911,6 +915,7 @@ extern int codegen_fp_enter(void);
 #define uop_ROR_IMM(ir, dst_reg, src_reg, imm)                   uop_gen_reg_dst_src_imm(UOP_ROR_IMM, ir, dst_reg, src_reg, imm)
 
 #define uop_CALL_FUNC(ir, p)                                     uop_gen_pointer(UOP_CALL_FUNC, ir, p)
+#define uop_CALL_INT_FLAGS(ir, p)                                uop_gen_pointer(UOP_CALL_FUNC | UOP_TYPE_INT_FLAGS, ir, p)
 #define uop_CALL_FUNC_RESULT(ir, dst_reg, p)                     uop_gen_reg_dst_pointer(UOP_CALL_FUNC_RESULT, ir, dst_reg, p)
 #define uop_CALL_INSTRUCTION_FUNC(ir, p, imm)                    uop_gen_pointer_imm(UOP_CALL_INSTRUCTION_FUNC, ir, p, imm)
 

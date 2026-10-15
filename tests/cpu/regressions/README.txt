@@ -20,6 +20,24 @@ disabling native SSE is a failure. sse_fastpath also requires one MXCSR region
 and one SSE entry check for adjacent arithmetic. It preserves the memory-helper
 rechecks covered by the existing fixture.
 
+Counted MMX loops alternate pending x87 exceptions after warm-up and check
+unchanged destinations/tags on #MF as well as carry preservation on success.
+IR coverage retains checks at unchecked joins and after memory/general calls,
+while sharing checks across integer flag helpers and dominated loop exits.
+
+absolute_address_test checks all scalar absolute MOV emitters, LDMXCSR and
+the shared SSE absolute-address path. It decodes effective addresses for
+negative/positive displacements, signed 8/32-bit boundaries, offsets beyond
+4 GB and low absolute addresses on both sides of 2 GB. It also exercises
+allocator block boundaries and executes real loads/stores with memory guards.
+The same fixture is built with -O3 and, when supported, LTO. Explicit negative
+offsets ensure coverage even when the linker happens to place globals after
+cpu_state. A full-core LTO run can additionally be configured with:
+
+  cmake -S tests/cpu/regressions -B build/cpu-lto -G Ninja -DCMAKE_BUILD_TYPE=Release -DCMAKE_INTERPROCEDURAL_OPTIMIZATION=ON
+  cmake --build build/cpu-lto --target opcode_test absolute_address_lto_test
+  ctest --test-dir build/cpu-lto --output-on-failure -R "opcodes_|absolute_address_lto"
+
 The deterministic timing checks use independent register dependency chains and
 eight independent recurrences for throughput. They check 12 Pentium III and 22
 Willamette SIMD/MMX anchors, plus Willamette ADD, IMUL and x87 FADD. SIB dependency
@@ -54,8 +72,11 @@ After the change, reuse that immutable executable and build the candidate:
 Alternatively compare two commits with --variant before=REF --variant after=REF.
 On Windows, add --cpu N to pin both versions to the same logical core. On Linux,
 use taskset. Keep the host idle; do not compile while collecting samples.
+Add --interpreter to measure interpreter speed; the default measures the JIT.
 
-All 17 workloads validate guest output in both engines before measurement.
+All 21 workloads validate guest output in both engines before measurement.
+MMX register and load/add/store loops include EMMS and cover both FPU modes,
+so entry checks and delayed state updates are included in the speed comparison.
 The runner records source/binary hashes, compiler flags, raw samples and paired
 round medians. It alternates version order. Positive time_delta_pct means slower.
 The gate exits 1 for incorrect guests or an overall slowdown exceeding both 3%

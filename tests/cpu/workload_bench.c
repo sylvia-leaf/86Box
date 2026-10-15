@@ -22,7 +22,7 @@ extern int32_t cycles_main;
 extern int x86_was_reset, inrecomp;
 enum { DRIVER = 0x10000, BODY = 0x11000, DATA = 0x600000,
        DEST = 0x610000, CALLS = 256, MAX_SAMPLES = 99 };
-enum { ADD, IMUL, ADC, SBB, SUM, COPY, REP, SSE_REGISTER, SSE_MEM, X87 };
+enum { ADD, IMUL, ADC, SBB, SUM, COPY, REP, SSE_REGISTER, SSE_MEM, X87, MMX_REGISTER, MMX_MEM };
 typedef struct {
     const char *name;
     unsigned kind, count, offset, paged, softfloat;
@@ -45,6 +45,10 @@ static const workload cases[] = {
     { "sse/load-add-store-256", SSE_MEM, 256 },
     { "x87/fadd-64-fast", X87, 64 },
     { "x87/fadd-64-soft", X87, 64, 0, 0, 1 },
+    { "mmx/paddd-32", MMX_REGISTER, 32 },
+    { "mmx/paddd-128", MMX_REGISTER, 128 },
+    { "mmx/load-add-store-128", MMX_MEM, 128 },
+    { "mmx/paddd-128-soft", MMX_REGISTER, 128, 0, 0, 1 },
 };
 static const workload *active;
 static uint32_t expected, checksum;
@@ -176,6 +180,15 @@ static void prepare(const workload *c)
         memcpy(ram + DATA, &one, 4);
         emit8(0xd9); emit8(0xee); /* FLDZ */
     }
+    if (c->kind == MMX_REGISTER || c->kind == MMX_MEM) {
+        for (unsigned i = 0; i < 2; ++i) {
+            uint32_t v = i + 1;
+            memcpy(ram + DATA + i * 4, &v, 4);
+            memcpy(ram + DATA + 8 + i * 4, &v, 4);
+        }
+        emit8(0x0f); emit8(0x6f); emit8(0x06); /* MOVQ MM0,[ESI] */
+        emit8(0x0f); emit8(0x6f); emit8(0x4e); emit8(8); /* MOVQ MM1,[ESI+8] */
+    }
     uint8_t *start = emit;
     switch (c->kind) {
         case ADD: case ADC: case SBB:
@@ -208,6 +221,11 @@ static void prepare(const workload *c)
             if (c->kind == SSE_MEM) { emit8(0x0f); emit8(0x11); emit8(0x02); }
             break;
         case X87: emit8(0xd8); emit8(0x06); break; /* FADD m32 */
+        case MMX_REGISTER: case MMX_MEM:
+            if (c->kind == MMX_MEM) { emit8(0x0f); emit8(0x6f); emit8(0x06); }
+            emit8(0x0f); emit8(0xfe); emit8(0xc1); /* PADDD MM0,MM1 */
+            if (c->kind == MMX_MEM) { emit8(0x0f); emit8(0x7f); emit8(0x02); }
+            break;
     }
     if (c->kind != REP) loop(start, c->kind == ADC || c->kind == SBB);
     if (c->kind == SSE_REGISTER || c->kind == SSE_MEM) {
@@ -215,6 +233,14 @@ static void prepare(const workload *c)
         result_bytes = 16;
         for (unsigned i = 0; i < 4; ++i) {
             float v = (float) ((i + 1) * (c->kind == SSE_MEM ? 2 : c->count + 1));
+            memcpy(expected_memory + 4 * i, &v, 4);
+        }
+    } else if (c->kind == MMX_REGISTER || c->kind == MMX_MEM) {
+        emit8(0x0f); emit8(0x7f); emit8(0x02); /* MOVQ [EDX],MM0 */
+        emit8(0x0f); emit8(0x77); /* EMMS */
+        result_bytes = 8;
+        for (unsigned i = 0; i < 2; ++i) {
+            uint32_t v = (i + 1) * (c->kind == MMX_MEM ? 2 : c->count + 1);
             memcpy(expected_memory + 4 * i, &v, 4);
         }
     } else if (c->kind == X87) {
@@ -226,7 +252,7 @@ static void prepare(const workload *c)
         memcpy(expected_memory, ram + DATA, result_bytes);
         expected = (c->count - 1) * 17 + 3;
     }
-    if (c->kind == SSE_REGISTER || c->kind == SSE_MEM || c->kind == X87) {
+    if (c->kind == SSE_REGISTER || c->kind == SSE_MEM || c->kind == X87 || c->kind == MMX_REGISTER || c->kind == MMX_MEM) {
         emit8(0xa1); word32(DEST);
         memcpy(&expected, expected_memory, 4);
     }

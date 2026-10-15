@@ -245,7 +245,7 @@ FPU_save_regi_tag(extFloat80_t reg, int tag, int stnr)
    from its first byte. */
 #define FPU_check_pending_exceptions()                 \
     do {                                               \
-        if (!(fpu_state.swd & FPU_SW_Summary))         \
+        if (!((fpu_softfloat ? fpu_state.swd : cpu_state.npxs) & FPU_SW_Summary))         \
             fpu_ignne = 0;                             \
         else if ((cr0 & 0x20) || !fpu_ignne) {         \
             if (cr0 & 0x20)                            \
