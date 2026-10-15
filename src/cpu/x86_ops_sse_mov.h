@@ -794,7 +794,7 @@ opPSHUFW_mm_mm_a16(uint32_t fetchdat)
     if ((cpu_features & CPU_FEATURE_SSE2) && cpu_state.sse_xmm)
         return opPSHUFD_a16(fetchdat);
 
-    MMX_ENTER();
+    MMX_CHECK();
     fetch_ea_16(fetchdat);
     uint8_t imm = getbyte();
     if (cpu_state.abrt)
@@ -811,6 +811,7 @@ opPSHUFW_mm_mm_a16(uint32_t fetchdat)
     CLOCK_CYCLES(1);
     MMX_SETEXP(cpu_reg);
 
+    MMX_COMMIT();
     return 0;
 }
 
@@ -823,7 +824,7 @@ opPSHUFW_mm_mm_a32(uint32_t fetchdat)
     if ((cpu_features & CPU_FEATURE_SSE2) && cpu_state.sse_xmm)
         return opPSHUFD_a32(fetchdat);
 
-    MMX_ENTER();
+    MMX_CHECK();
     fetch_ea_32(fetchdat);
     uint8_t imm = getbyte();
     if (cpu_state.abrt)
@@ -840,6 +841,7 @@ opPSHUFW_mm_mm_a32(uint32_t fetchdat)
     CLOCK_CYCLES(1);
     MMX_SETEXP(cpu_reg);
 
+    MMX_COMMIT();
     return 0;
 }
 
@@ -857,7 +859,7 @@ opPINSRW_xmm_w_a16(uint32_t fetchdat)
             cpu_state.XMM[cpu_reg].w[imm & 7] = rm;
         }
         else {
-            MMX_ENTER();
+            MMX_CHECK();
             MMX_REG *dst;
             dst = MMX_GETREGP(cpu_reg);
             dst->w[imm & 3] = rm;
@@ -874,11 +876,15 @@ opPINSRW_xmm_w_a16(uint32_t fetchdat)
         if (cpu_state.sse_xmm) {
             SSE_ENTER();
             src = readmemw(easeg, cpu_state.eaaddr);
+            if (cpu_state.abrt)
+                return 1;
             cpu_state.XMM[cpu_reg].w[imm & 7] = src;
         }
         else {
-            MMX_ENTER();
+            MMX_CHECK();
             src = readmemw(easeg, cpu_state.eaaddr);
+            if (cpu_state.abrt)
+                return 1;
             MMX_REG *dst;
             dst = MMX_GETREGP(cpu_reg);
             dst->w[imm & 3] = src;
@@ -887,6 +893,9 @@ opPINSRW_xmm_w_a16(uint32_t fetchdat)
         CLOCK_CYCLES(2);
     }
 
+    if (!cpu_state.sse_xmm) {
+        MMX_COMMIT();
+    }
     return 0;
 }
 
@@ -904,7 +913,7 @@ opPINSRW_xmm_w_a32(uint32_t fetchdat)
             cpu_state.XMM[cpu_reg].w[imm & 7] = rm;
         }
         else {
-            MMX_ENTER();
+            MMX_CHECK();
             MMX_REG *dst;
             dst = MMX_GETREGP(cpu_reg);
             dst->w[imm & 3] = rm;
@@ -921,17 +930,24 @@ opPINSRW_xmm_w_a32(uint32_t fetchdat)
         if (cpu_state.sse_xmm) {
             SSE_ENTER();
             src = readmemw(easeg, cpu_state.eaaddr);
+            if (cpu_state.abrt)
+                return 1;
             cpu_state.XMM[cpu_reg].w[imm & 7] = src;
         }
         else {
-            MMX_ENTER();
+            MMX_CHECK();
             src = readmemw(easeg, cpu_state.eaaddr);
+            if (cpu_state.abrt)
+                return 1;
             MMX_REG *dst;
             dst = MMX_GETREGP(cpu_reg);
             dst->w[imm & 3] = src;
             MMX_SETEXP(cpu_reg);
         }
         CLOCK_CYCLES(2);
+    }
+    if (!cpu_state.sse_xmm) {
+        MMX_COMMIT();
     }
     return 0;
 }
@@ -951,7 +967,7 @@ opPEXTRW_xmm_w_a16(uint32_t fetchdat)
             setr32(cpu_reg, cpu_state.XMM[cpu_rm].w[imm & 7]);
         }
         else {
-            MMX_ENTER();
+            MMX_CHECK();
             MMX_REG src;
             src = MMX_GETREG(cpu_rm);
             setr32(cpu_reg, src.w[imm & 3]);
@@ -959,6 +975,9 @@ opPEXTRW_xmm_w_a16(uint32_t fetchdat)
         CLOCK_CYCLES(1);
     }
     
+    if (!cpu_state.sse_xmm) {
+        MMX_COMMIT();
+    }
     return 0;
 }
 
@@ -977,7 +996,7 @@ opPEXTRW_xmm_w_a32(uint32_t fetchdat)
             setr32(cpu_reg, cpu_state.XMM[cpu_rm].w[imm & 7]);
         }
         else {
-            MMX_ENTER();
+            MMX_CHECK();
             MMX_REG src;
             src = MMX_GETREG(cpu_rm);
             setr32(cpu_reg, src.w[imm & 3]);
@@ -985,6 +1004,9 @@ opPEXTRW_xmm_w_a32(uint32_t fetchdat)
         CLOCK_CYCLES(1);
     }
     
+    if (!cpu_state.sse_xmm) {
+        MMX_COMMIT();
+    }
     return 0;
 }
 
@@ -1076,7 +1098,7 @@ opPMOVMSKB_l_xmm_a16(uint32_t fetchdat)
             if (cpu_state.XMM[cpu_rm].b[15] & (1 << 7))
                 result |= 0x8000;
         } else {
-            MMX_ENTER();
+            MMX_CHECK();
             MMX_REG src;
             src = MMX_GETREG(cpu_rm);
             if (src.b[0] & (1 << 7))
@@ -1100,6 +1122,9 @@ opPMOVMSKB_l_xmm_a16(uint32_t fetchdat)
         CLOCK_CYCLES(1);
     }
 
+    if (!cpu_state.sse_xmm) {
+        MMX_COMMIT();
+    }
     return 0;
 }
 
@@ -1145,7 +1170,7 @@ opPMOVMSKB_l_xmm_a32(uint32_t fetchdat)
             if (cpu_state.XMM[cpu_rm].b[15] & (1 << 7))
                 result |= 0x8000;
         } else {
-            MMX_ENTER();
+            MMX_CHECK();
             MMX_REG src;
             src = MMX_GETREG(cpu_rm);
             if (src.b[0] & (1 << 7))
@@ -1169,6 +1194,9 @@ opPMOVMSKB_l_xmm_a32(uint32_t fetchdat)
         CLOCK_CYCLES(1);
     }
 
+    if (!cpu_state.sse_xmm) {
+        MMX_COMMIT();
+    }
     return 0;
 }
 
@@ -1178,7 +1206,7 @@ opMOVNTQ_q_mm_a16(uint32_t fetchdat)
     if ((cpu_features & CPU_FEATURE_SSE2) && cpu_state.sse_xmm)
         return opMOVNTDQ_a16(fetchdat);
 
-    MMX_ENTER();
+    MMX_CHECK();
 
     fetch_ea_16(fetchdat);
     ILLEGAL_ON(cpu_mod == 3);
@@ -1195,6 +1223,7 @@ opMOVNTQ_q_mm_a16(uint32_t fetchdat)
 
     CLOCK_CYCLES(2);
 
+    MMX_COMMIT();
     return 0;
 }
 
@@ -1204,7 +1233,7 @@ opMOVNTQ_q_mm_a32(uint32_t fetchdat)
     if ((cpu_features & CPU_FEATURE_SSE2) && cpu_state.sse_xmm)
         return opMOVNTDQ_a32(fetchdat);
 
-    MMX_ENTER();
+    MMX_CHECK();
 
     fetch_ea_32(fetchdat);
     ILLEGAL_ON(cpu_mod == 3);
@@ -1221,6 +1250,7 @@ opMOVNTQ_q_mm_a32(uint32_t fetchdat)
 
     CLOCK_CYCLES(2);
 
+    MMX_COMMIT();
     return 0;
 }
 
@@ -1230,7 +1260,7 @@ opMASKMOVQ_l_mm_a16(uint32_t fetchdat)
     if ((cpu_features & CPU_FEATURE_SSE2) && cpu_state.sse_xmm)
         return opMASKMOVDQU_a16(fetchdat);
 
-    MMX_ENTER();
+    MMX_CHECK();
     fetch_ea_16(fetchdat);
     ILLEGAL_ON(cpu_mod != 3);
     if (cpu_mod == 3) {
@@ -1283,6 +1313,7 @@ opMASKMOVQ_l_mm_a16(uint32_t fetchdat)
         CLOCK_CYCLES(1);
     }
 
+    MMX_COMMIT();
     return 0;
 }
 
@@ -1292,7 +1323,7 @@ opMASKMOVQ_l_mm_a32(uint32_t fetchdat)
     if ((cpu_features & CPU_FEATURE_SSE2) && cpu_state.sse_xmm)
         return opMASKMOVDQU_a32(fetchdat);
 
-    MMX_ENTER();
+    MMX_CHECK();
     fetch_ea_32(fetchdat);
     ILLEGAL_ON(cpu_mod != 3);
     if (cpu_mod == 3) {
@@ -1345,5 +1376,6 @@ opMASKMOVQ_l_mm_a32(uint32_t fetchdat)
         CLOCK_CYCLES(1);
     }
 
+    MMX_COMMIT();
     return 0;
 }

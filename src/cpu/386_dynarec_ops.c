@@ -92,3 +92,17 @@ fetch_ea_16_long(UNUSED(uint32_t rmdat))
 #define CLOCK_CYCLES_ALWAYS(c) cycles -= (c)
 
 #include "386_ops.h"
+
+/* Non-x86 backends use these around the faultable part of an MMX instruction. */
+int
+codegen_mmx_check(void)
+{
+    MMX_CHECK();
+    return 0;
+}
+
+void
+codegen_mmx_commit(void)
+{
+    x87_set_mmx();
+}

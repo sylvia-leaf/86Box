@@ -1610,6 +1610,12 @@ codegen_MMX_ENTER(codeblock_t *block, uop_t *uop)
     host_x86_JMP(block, codegen_exit_rout);
     *branch_offset = (uint32_t) ((uintptr_t) &block_write_data[block_pos] - (uintptr_t) branch_offset) - 4;
 
+    return 0;
+}
+
+static int
+codegen_MMX_COMMIT(codeblock_t *block, UNUSED(uop_t *uop))
+{
     host_x86_MOV32_ABS_IMM(block, &cpu_state.tag[0], 0x01010101);
     host_x86_MOV32_ABS_IMM(block, &cpu_state.tag[4], 0x01010101);
     host_x86_MOV32_ABS_IMM(block, &cpu_state.TOP, 0);
@@ -5551,6 +5557,7 @@ const uOpFn uop_handlers[UOP_MAX] = {
     [UOP_MMX_ENTER &
         UOP_MASK]
     = codegen_MMX_ENTER,
+    [UOP_MMX_COMMIT & UOP_MASK] = codegen_MMX_COMMIT,
 
     [UOP_FADD &
         UOP_MASK]

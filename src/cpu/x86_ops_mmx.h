@@ -83,8 +83,7 @@
         return 1;                            \
     }
 
-#define MMX_ENTER() \
-    MMX_CHECK(); \
+#define MMX_COMMIT() \
     /* Resetting a non-zero TOP, or entering MMX mode, changes the stack \
        mapping a recompiled block was compiled against: end the block, \
        see FSTOR in x87_ops_misc.h. Not on every MMX instruction, or   \
@@ -92,6 +91,10 @@
     if ((cpu_state.TOP & 7) || !cpu_state.ismmx)                       \
         CPU_BLOCK_END();                                               \
     x87_set_mmx()
+
+#define MMX_ENTER() \
+    MMX_CHECK(); \
+    MMX_COMMIT()
 
 #define SSE_ENTER()  \
     if ((cr0 & 0x4) || !(cr4 & CR4_OSFXSR)) { \

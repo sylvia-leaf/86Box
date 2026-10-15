@@ -16,6 +16,17 @@ typedef struct {
     unsigned length, cr0_bits, no_osfxsr, trap_p3, trap_p4, setup;
 } opcode_case;
 static const opcode_case opcases[] = {
+    {"MMX fault MOVQ", {0xf,0x6f,0x7},3,0x80010000,0,14,14,12},
+    {"MMX fault MOVD", {0xf,0x6e,0x7},3,0x80010000,0,14,14,12},
+    {"MMX fault PADDD", {0xf,0xfe,0x7},3,0x80010000,0,14,14,12},
+    {"MMX fault PCMPEQD", {0xf,0x76,0x7},3,0x80010000,0,14,14,12},
+    {"MMX fault PAND", {0xf,0xdb,0x7},3,0x80010000,0,14,14,12},
+    {"MMX fault PACKSSWB", {0xf,0x63,0x7},3,0x80010000,0,14,14,12},
+    {"MMX fault PSLLQ", {0xf,0xf3,0x7},3,0x80010000,0,14,14,12},
+    {"MMX fault PSHUFW", {0xf,0x70,0x7,0x0},4,0x80010000,0,14,14,12},
+    {"MMX fault PINSRW", {0xf,0xc4,0x7,0x0},4,0x80010000,0,14,14,12},
+    {"MMX fault MOVQ store", {0xf,0x7f,0x7},3,0x80010000,0,14,14,12},
+    {"MMX fault MOVD store", {0xf,0x7e,0x7},3,0x80010000,0,14,14,12},
     {"MOVQ2DQ normal a32", {0xf3,0xf,0xd6,0xc1},4,0,0,6,0},
     {"MOVQ2DQ TS a32", {0xf3,0xf,0xd6,0xc1},4,8,0,6,7},
     {"MOVQ2DQ EM a32", {0xf3,0xf,0xd6,0xc1},4,4,0,6,6},
@@ -98,7 +109,7 @@ static void initialize(void) {
     b(0xc3);
     exception_tables();
     if (probe->setup==1) cpu_state.seg_fs.limit=cpu_state.seg_fs.limit_high=0xfff;
-    if (probe->setup==2 || probe->setup==3 || probe->setup==11) {
+    if (probe->setup==2 || probe->setup==3 || probe->setup==11 || probe->setup==12) {
         memset(ram+0x30000,0,0x5000);
         for (unsigned n=0;n<4;n++) {
             put32(0x30000+4*n,(0x31000+0x1000*n)|3);
@@ -140,7 +151,7 @@ int main(int argc,char **argv) {
                 memset(ram + DATA + 0x1800, 0x5a, 16);
             }
             put32(DATA,0x3f80); put32(TRAP,0); put32(FAULT_PC,0);
-            if (probe->setup==2 || probe->setup==3 || probe->setup==11) {
+            if (probe->setup==2 || probe->setup==3 || probe->setup==11 || probe->setup==12) {
                 cpu_state.seg_fs.base=0x40000; EBX=0;
                 EDI=probe->setup==11 ? 0x40ffc : 0x40000; EAX=0x1234; put32(0x40000,0x89abcdef); put32(0x40004,0x76543210);
                 flushmmucache();
@@ -154,6 +165,10 @@ int main(int argc,char **argv) {
             if (probe->setup==9) {
                 cpu_state.npxc=fpu_state.cwd=0x37e;cpu_state.npxs=fpu_state.swd=0x8081;
             }
+            if (probe->setup == 12) {
+                put32(0x31000+4*0x40, ((call / 8) & 1) ? 0 : 0x40003);
+                flushmmucache();
+            }
             if (probe->setup == 1) EDI = DATA + 0x1800;
             cpu_state.pc=DRIVER; done=0; cycles=cycles_main=0;
             for(unsigned n=0;!done;n++) {
@@ -161,6 +176,7 @@ int main(int argc,char **argv) {
                 if(engine) exec386_dynarec(10000); else exec386(10000);
             }
             unsigned expected = p3 ? probe->trap_p3 : probe->trap_p4;
+            if (probe->setup == 12 && !((call / 8) & 1)) expected = 0;
             if (get32(TRAP) != expected) {
                 fprintf(stderr, "%s call %u: trap %u, expected %u\n", probe->name, call, get32(TRAP), expected);
                 return 1;
@@ -179,6 +195,13 @@ int main(int argc,char **argv) {
                     for (unsigned n=0;n<4;n++) if(cpu_state.XMM[0].l[n]!=0x11111111) fatal("MOVQ changed destination on fault");
                     if (get32(FAULT_PC)!=BODY) fatal("MOVQ fault EIP");
                 } else if (cpu_state.XMM[0].q[0]!=0x3f80 || cpu_state.XMM[0].q[1]) fatal("MOVQ result");
+            }
+            if (probe->setup == 12) {
+                unsigned top = fpu_softfloat ? fpu_state.tos : cpu_state.TOP;
+                unsigned tag = fpu_softfloat ? fpu_state.tag : x87_gettag();
+                if (expected && (top != 3 || tag != 0xffff || cpu_state.ismmx)) fatal("Faulting MMX changed x87 state: %s", probe->name);
+                if (!expected && (top || !cpu_state.ismmx)) fatal("Successful MMX did not enter MMX mode");
+                if (expected && get32(FAULT_PC)!=BODY) fatal("MMX fault EIP");
             }
             ++checked;
         }

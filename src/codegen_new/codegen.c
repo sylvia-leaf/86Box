@@ -909,6 +909,10 @@ generate_call:
                 uop_CALL_FUNC(ir, fpu_postamble);
         }
         if (new_pc) {
+            if (codegen_mmx_entered == 2) {
+                uop_MMX_COMMIT(ir);
+                codegen_mmx_entered = 1;
+            }
             if (new_pc != -1)
                 uop_MOV_IMM(ir, IREG_pc, new_pc);
 
