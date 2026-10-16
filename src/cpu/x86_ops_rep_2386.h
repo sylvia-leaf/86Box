@@ -858,6 +858,8 @@ REP_OPS_CMPS_SCAS(a32_E, ECX, ESI, EDI, 1)
 static int
 opREPNE(uint32_t fetchdat)
 {
+    if (cpu_check_prefix_length())
+        return 1;
     fetchdat = fastreadl_fetch(cs + cpu_state.pc);
     if (cpu_state.abrt)
         return 1;
@@ -887,6 +889,8 @@ opREPNE_0f(uint32_t fetchdat)
 static int
 opREPE(uint32_t fetchdat)
 {
+    if (cpu_check_prefix_length())
+        return 1;
     fetchdat = fastreadl_fetch(cs + cpu_state.pc);
     if (cpu_state.abrt)
         return 1;

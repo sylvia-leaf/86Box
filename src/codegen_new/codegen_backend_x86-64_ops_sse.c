@@ -101,7 +101,8 @@ sse_op_abs(codeblock_t *block, uint8_t prefix, uint8_t opcode, int reg, void *p)
     }
     if ((uintptr_t) p >> 32)
         fatal("sse_op_abs - out of range %p\n", p);
-    codegen_alloc_bytes(block, 9);
+    codegen_alloc_bytes(block, 11);
+    codegen_addbyte(block, 0x67); /*Absolute disp32 is zero-extended, including addresses above 2 GB.*/
     sse_prefix_rex(block, prefix, 0, reg, 0, 0);
     codegen_addbyte4(block, 0x0f, opcode, 0x04 | ((reg & 7) << 3), 0x25); /*[disp32]*/
     codegen_addlong(block, (uint32_t) (uintptr_t) p);
@@ -285,12 +286,12 @@ host_x86_DIVSS_XREG_XREG(codeblock_t *block, int dst_reg, int src_reg)
 void
 host_x86_LDMXCSR(codeblock_t *block, void *p)
 {
-    int offset = (uintptr_t) p - (((uintptr_t) &cpu_state) + 128);
+    int64_t offset = (uintptr_t) p - (((uintptr_t) &cpu_state) + 128);
 
-    if (offset >= -128 && offset < 127) {
+    if (offset >= -128 && offset <= 127) {
         codegen_alloc_bytes(block, 4);
         codegen_addbyte4(block, 0x0f, 0xae, 0x50 | REG_EBP, offset); /*LDMXCSR offset[EBP]*/
-    } else if (offset < (1ULL << 32)) {
+    } else if (offset >= INT32_MIN && offset <= INT32_MAX) {
         codegen_alloc_bytes(block, 7);
         codegen_addbyte3(block, 0x0f, 0xae, 0x90 | REG_EBP); /*LDMXCSR offset[EBP]*/
         codegen_addlong(block, offset);

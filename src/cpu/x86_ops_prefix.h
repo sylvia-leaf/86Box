@@ -1,6 +1,8 @@
 #define op_seg(name, seg, opcode_table, normal_opcode_table)                  \
     static int op##name##_w_a16(uint32_t fetchdat)                            \
     {                                                                         \
+        if (cpu_check_prefix_length())                                          \
+            return 1;                                                           \
         fetchdat = fastreadl(cs + cpu_state.pc);                              \
         if (cpu_state.abrt)                                                   \
             return 1;                                                         \
@@ -18,6 +20,8 @@
                                                                               \
     static int op##name##_l_a16(uint32_t fetchdat)                            \
     {                                                                         \
+        if (cpu_check_prefix_length())                                          \
+            return 1;                                                           \
         fetchdat = fastreadl(cs + cpu_state.pc);                              \
         if (cpu_state.abrt)                                                   \
             return 1;                                                         \
@@ -35,6 +39,8 @@
                                                                               \
     static int op##name##_w_a32(uint32_t fetchdat)                            \
     {                                                                         \
+        if (cpu_check_prefix_length())                                          \
+            return 1;                                                           \
         fetchdat = fastreadl(cs + cpu_state.pc);                              \
         if (cpu_state.abrt)                                                   \
             return 1;                                                         \
@@ -52,6 +58,8 @@
                                                                               \
     static int op##name##_l_a32(uint32_t fetchdat)                            \
     {                                                                         \
+        if (cpu_check_prefix_length())                                          \
+            return 1;                                                           \
         fetchdat = fastreadl(cs + cpu_state.pc);                              \
         if (cpu_state.abrt)                                                   \
             return 1;                                                         \
@@ -93,6 +101,8 @@ op_seg(SS_REPNE, cpu_state.seg_ss, x86_opcodes_REPNE, x86_opcodes)
 static int
 op_66(uint32_t fetchdat) /*Data size select*/
 {
+    if (cpu_check_prefix_length())
+        return 1;
     fetchdat = fastreadl(cs + cpu_state.pc);
     if (cpu_state.abrt)
         return 1;
@@ -107,6 +117,8 @@ op_66(uint32_t fetchdat) /*Data size select*/
 static int
 op_67(uint32_t fetchdat) /*Address size select*/
 {
+    if (cpu_check_prefix_length())
+        return 1;
     fetchdat = fastreadl(cs + cpu_state.pc);
     if (cpu_state.abrt)
         return 1;
@@ -121,6 +133,8 @@ op_67(uint32_t fetchdat) /*Address size select*/
 static int
 op_66_REPE(uint32_t fetchdat) /*Data size select*/
 {
+    if (cpu_check_prefix_length())
+        return 1;
     fetchdat = fastreadl(cs + cpu_state.pc);
     if (cpu_state.abrt)
         return 1;
@@ -137,6 +151,8 @@ op_66_REPE(uint32_t fetchdat) /*Data size select*/
 static int
 op_67_REPE(uint32_t fetchdat) /*Address size select*/
 {
+    if (cpu_check_prefix_length())
+        return 1;
     fetchdat = fastreadl(cs + cpu_state.pc);
     if (cpu_state.abrt)
         return 1;
@@ -152,6 +168,8 @@ op_67_REPE(uint32_t fetchdat) /*Address size select*/
 static int
 op_66_REPNE(uint32_t fetchdat) /*Data size select*/
 {
+    if (cpu_check_prefix_length())
+        return 1;
     fetchdat = fastreadl(cs + cpu_state.pc);
     if (cpu_state.abrt)
         return 1;
@@ -168,6 +186,8 @@ op_66_REPNE(uint32_t fetchdat) /*Data size select*/
 static int
 op_67_REPNE(uint32_t fetchdat) /*Address size select*/
 {
+    if (cpu_check_prefix_length())
+        return 1;
     fetchdat = fastreadl(cs + cpu_state.pc);
     if (cpu_state.abrt)
         return 1;

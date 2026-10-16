@@ -426,95 +426,7 @@ codegen_generate_ea(ir_data_t *ir, x86seg *op_ea_seg, uint32_t fetchdat, int op_
     return codegen_generate_ea_16_long(ir, op_ea_seg, fetchdat, op_ssegs, op_pc);
 }
 
-// clang-format off
-static uint8_t opcode_modrm[256] = {
-    1, 1, 1, 1,  0, 0, 0, 0,  1, 1, 1, 1,  0, 0, 0, 0, /*00*/
-    1, 1, 1, 1,  0, 0, 0, 0,  1, 1, 1, 1,  0, 0, 0, 0, /*10*/
-    1, 1, 1, 1,  0, 0, 0, 0,  1, 1, 1, 1,  0, 0, 0, 0, /*20*/
-    1, 1, 1, 1,  0, 0, 0, 0,  1, 1, 1, 1,  0, 0, 0, 0, /*30*/
 
-    0, 0, 0, 0,  0, 0, 0, 0,  0, 0, 0, 0,  0, 0, 0, 0, /*40*/
-    0, 0, 0, 0,  0, 0, 0, 0,  0, 0, 0, 0,  0, 0, 0, 0, /*50*/
-    0, 0, 1, 1,  0, 0, 0, 0,  0, 1, 0, 1,  0, 0, 0, 0, /*60*/
-    0, 0, 0, 0,  0, 0, 0, 0,  0, 0, 0, 0,  0, 0, 0, 0, /*70*/
-
-    1, 1, 1, 1,  1, 1, 1, 1,  1, 1, 1, 1,  1, 1, 1, 1, /*80*/
-    0, 0, 0, 0,  0, 0, 0, 0,  0, 0, 0, 0,  0, 0, 0, 0, /*90*/
-    0, 0, 0, 0,  0, 0, 0, 0,  0, 0, 0, 0,  0, 0, 0, 0, /*a0*/
-    0, 0, 0, 0,  0, 0, 0, 0,  0, 0, 0, 0,  0, 0, 0, 0, /*b0*/
-
-    1, 1, 0, 0,  1, 1, 1, 1,  0, 0, 0, 0,  0, 0, 0, 0, /*c0*/
-    1, 1, 1, 1,  0, 0, 0, 0,  1, 1, 1, 1,  1, 1, 1, 1, /*d0*/
-    0, 0, 0, 0,  0, 0, 0, 0,  0, 0, 0, 0,  0, 0, 0, 0, /*e0*/
-    0, 0, 0, 0,  0, 0, 1, 1,  0, 0, 0, 0,  0, 0, 1, 1, /*f0*/
-};
-
-static uint8_t opcode_0f_modrm[256] = {
-    1, 1, 1, 1,  0, 0, 0, 0,  0, 0, 0, 0,  0, 1, 0, 1, /*00*/
-    1, 1, 1, 1,  1, 1, 1, 1,  1, 1, 1, 1,  1, 1, 1, 1, /*10*/
-    1, 1, 1, 1,  1, 1, 0, 0,  1, 1, 1, 1,  1, 1, 1, 1, /*20*/
-    0, 0, 0, 0,  0, 0, 1, 1,  0, 0, 0, 0,  0, 0, 0, 1, /*30*/
-
-    1, 1, 1, 1,  1, 1, 1, 1,  1, 1, 1, 1,  1, 1, 1, 1, /*40*/
-    1, 1, 1, 1,  1, 1, 1, 1,  1, 1, 1, 1,  1, 1, 1, 1, /*50*/
-    1, 1, 1, 1,  1, 1, 1, 1,  1, 1, 1, 1,  1, 1, 1, 1, /*60*/
-    1, 1, 1, 1,  1, 1, 1, 0,  1, 1, 1, 1,  1, 1, 1, 1, /*70*/
-
-    0, 0, 0, 0,  0, 0, 0, 0,  0, 0, 0, 0,  0, 0, 0, 0, /*80*/
-    1, 1, 1, 1,  1, 1, 1, 1,  1, 1, 1, 1,  1, 1, 1, 1, /*90*/
-    0, 0, 0, 1,  1, 1, 0, 0,  0, 0, 0, 1,  1, 1, 1, 1, /*a0*/
-    1, 1, 1, 1,  1, 1, 1, 1,  0, 0, 1, 1,  1, 1, 1, 1, /*b0*/
-
-    1, 1, 1, 1,  1, 1, 1, 1,  0, 0, 0, 0,  0, 0, 0, 0, /*c0*/
-    1, 1, 1, 1,  1, 1, 1, 1,  1, 1, 1, 1,  1, 1, 1, 1, /*d0*/
-    1, 1, 1, 1,  1, 1, 1, 1,  1, 1, 1, 1,  1, 1, 1, 1, /*e0*/
-    1, 1, 1, 1,  1, 1, 1, 1,  1, 1, 1, 1,  1, 1, 1, 0  /*f0*/
-};
-
-static uint8_t opcode_0f_38_modrm[256] = {
-    1, 1, 1, 1,  1, 1, 1, 1,  1, 1, 1, 1,  0, 0, 0, 0, /*00*/
-    0, 0, 0, 0,  0, 0, 0, 0,  0, 0, 0, 0,  1, 1, 1, 0, /*10*/
-    0, 0, 0, 0,  0, 0, 0, 0,  0, 0, 0, 0,  0, 0, 0, 0, /*20*/
-    0, 0, 0, 0,  0, 0, 0, 0,  0, 0, 0, 0,  0, 0, 0, 0, /*30*/
-
-    0, 0, 0, 0,  0, 0, 0, 0,  0, 0, 0, 0,  0, 0, 0, 0, /*40*/
-    0, 0, 0, 0,  0, 0, 0, 0,  0, 0, 0, 0,  0, 0, 0, 0, /*50*/
-    0, 0, 0, 0,  0, 0, 0, 0,  0, 0, 0, 0,  0, 0, 0, 0, /*60*/
-    0, 0, 0, 0,  0, 0, 0, 0,  0, 0, 0, 0,  0, 0, 0, 0, /*70*/
-
-    0, 0, 0, 0,  0, 0, 0, 0,  0, 0, 0, 0,  0, 0, 0, 0, /*80*/
-    0, 0, 0, 0,  0, 0, 0, 0,  0, 0, 0, 0,  0, 0, 0, 0, /*90*/
-    0, 0, 0, 0,  0, 0, 0, 0,  0, 0, 0, 0,  0, 0, 0, 0, /*a0*/
-    0, 0, 0, 0,  0, 0, 0, 0,  0, 0, 0, 0,  0, 0, 0, 0, /*b0*/
-
-    0, 0, 0, 0,  0, 0, 0, 0,  0, 0, 0, 0,  0, 0, 0, 0, /*c0*/
-    0, 0, 0, 0,  0, 0, 0, 0,  0, 0, 0, 0,  0, 0, 0, 0, /*d0*/
-    0, 0, 0, 0,  0, 0, 0, 0,  0, 0, 0, 0,  0, 0, 0, 0, /*e0*/
-    0, 0, 0, 0,  0, 0, 0, 0,  0, 0, 0, 0,  0, 0, 0, 0  /*f0*/
-};
-
-static uint8_t opcode_0f_3a_modrm[256] = {
-    0, 0, 0, 0,  0, 0, 0, 0,  0, 0, 0, 0,  0, 0, 0, 1, /*00*/
-    0, 0, 0, 0,  0, 0, 0, 0,  0, 0, 0, 0,  0, 0, 0, 0, /*10*/
-    0, 0, 0, 0,  0, 0, 0, 0,  0, 0, 0, 0,  0, 0, 0, 0, /*20*/
-    0, 0, 0, 0,  0, 0, 0, 0,  0, 0, 0, 0,  0, 0, 0, 0, /*30*/
-
-    0, 0, 0, 0,  0, 0, 0, 0,  0, 0, 0, 0,  0, 0, 0, 0, /*40*/
-    0, 0, 0, 0,  0, 0, 0, 0,  0, 0, 0, 0,  0, 0, 0, 0, /*50*/
-    0, 0, 0, 0,  0, 0, 0, 0,  0, 0, 0, 0,  0, 0, 0, 0, /*60*/
-    0, 0, 0, 0,  0, 0, 0, 0,  0, 0, 0, 0,  0, 0, 0, 0, /*70*/
-
-    0, 0, 0, 0,  0, 0, 0, 0,  0, 0, 0, 0,  0, 0, 0, 0, /*80*/
-    0, 0, 0, 0,  0, 0, 0, 0,  0, 0, 0, 0,  0, 0, 0, 0, /*90*/
-    0, 0, 0, 0,  0, 0, 0, 0,  0, 0, 0, 0,  0, 0, 0, 0, /*a0*/
-    0, 0, 0, 0,  0, 0, 0, 0,  0, 0, 0, 0,  0, 0, 0, 0, /*b0*/
-
-    0, 0, 0, 0,  0, 0, 0, 0,  0, 0, 0, 0,  0, 0, 0, 0, /*c0*/
-    0, 0, 0, 0,  0, 0, 0, 0,  0, 0, 0, 0,  0, 0, 0, 0, /*d0*/
-    0, 0, 0, 0,  0, 0, 0, 0,  0, 0, 0, 0,  0, 0, 0, 0, /*e0*/
-    0, 0, 0, 0,  0, 0, 0, 0,  0, 0, 0, 0,  0, 0, 0, 0  /*f0*/
-};
-// clang-format on
 
 static void
 fpu_sf_check_exceptions(void)
@@ -793,12 +705,14 @@ codegen_generate_call(uint8_t opcode, OpFn op, uint32_t fetchdat, uint32_t new_p
             default:
                 goto generate_call;
         }
+        if (op_pc - old_pc == 4 && cpu_check_instruction_length())
+            return;
         fetchdat = fastreadl(cs + op_pc);
         codegen_timing_prefix(opcode, fetchdat);
         if (cpu_state.abrt)
             return;
         if (opcode == 0xf0) /*LOCK*/
-            lock_illegal = !is_lock_legal(fetchdat);
+            lock_illegal = !is_lock_legal_at(fetchdat, op_pc);
         opcode = fetchdat & 0xff;
         if (!pc_off)
             fetchdat >>= 8;
@@ -912,6 +826,10 @@ generate_call:
                 uop_CALL_FUNC(ir, fpu_postamble);
         }
         if (new_pc) {
+            if (codegen_mmx_entered == 2) {
+                uop_MMX_COMMIT(ir);
+                codegen_mmx_entered = 1;
+            }
             if (new_pc != -1)
                 uop_MOV_IMM(ir, IREG_pc, new_pc);
 
@@ -943,12 +861,12 @@ codegen_skip:
     else
         op = op_table[((opcode >> opcode_shift) | op_32) & opcode_mask];
 
-    if (!test_modrm || (op_table == x86_dynarec_opcodes && opcode_modrm[opcode])
-    || (op_table == x86_dynarec_opcodes_0f && opcode_0f_modrm[opcode])
-    || (op_table == x86_dynarec_opcodes_0f_38 && opcode_0f_38_modrm[opcode])
-    || (op_table == x86_dynarec_opcodes_0f_3a && opcode_0f_3a_modrm[opcode])
-    || (op_table == x86_dynarec_opcodes_REPE_0f && opcode_0f_modrm[opcode])
-    || (op_table == x86_dynarec_opcodes_REPNE_0f && opcode_0f_modrm[opcode])
+    if (!test_modrm || (op_table == x86_dynarec_opcodes && x86_opcode_modrm[opcode])
+    || (op_table == x86_dynarec_opcodes_0f && x86_opcode_0f_modrm[opcode])
+    || (op_table == x86_dynarec_opcodes_0f_38 && x86_opcode_0f_38_modrm[opcode])
+    || (op_table == x86_dynarec_opcodes_0f_3a && x86_opcode_0f_3a_modrm[opcode])
+    || (op_table == x86_dynarec_opcodes_REPE_0f && x86_opcode_0f_modrm[opcode])
+    || (op_table == x86_dynarec_opcodes_REPNE_0f && x86_opcode_0f_modrm[opcode])
     || (op_table == x86_dynarec_opcodes_3DNOW)) {
         int stack_offset = 0;
 

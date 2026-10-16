@@ -1408,7 +1408,7 @@ opPMINUB_mm_mm_a16(uint32_t fetchdat)
     MMX_REG  src;
     MMX_REG *dst;
 
-    MMX_ENTER();
+    MMX_CHECK();
     fetch_ea_16(fetchdat);
 
     dst = MMX_GETREGP(cpu_reg);
@@ -1427,6 +1427,7 @@ opPMINUB_mm_mm_a16(uint32_t fetchdat)
     MMX_SETEXP(cpu_reg);
     CLOCK_CYCLES(1);
 
+    MMX_COMMIT();
     return 0;
 }
 
@@ -1436,7 +1437,7 @@ opPMINUB_mm_mm_a32(uint32_t fetchdat)
     MMX_REG  src;
     MMX_REG *dst;
 
-    MMX_ENTER();
+    MMX_CHECK();
     fetch_ea_32(fetchdat);
     dst = MMX_GETREGP(cpu_reg);
 
@@ -1454,6 +1455,7 @@ opPMINUB_mm_mm_a32(uint32_t fetchdat)
     MMX_SETEXP(cpu_reg);
     CLOCK_CYCLES(1);
 
+    MMX_COMMIT();
     return 0;
 }
 
@@ -1537,7 +1539,7 @@ opPMAXUB_mm_mm_a16(uint32_t fetchdat)
     MMX_REG  src;
     MMX_REG *dst;
 
-    MMX_ENTER();
+    MMX_CHECK();
     fetch_ea_16(fetchdat);
 
     dst = MMX_GETREGP(cpu_reg);
@@ -1556,6 +1558,7 @@ opPMAXUB_mm_mm_a16(uint32_t fetchdat)
     MMX_SETEXP(cpu_reg);
     CLOCK_CYCLES(1);
 
+    MMX_COMMIT();
     return 0;
 }
 
@@ -1565,7 +1568,7 @@ opPMAXUB_mm_mm_a32(uint32_t fetchdat)
     MMX_REG  src;
     MMX_REG *dst;
 
-    MMX_ENTER();
+    MMX_CHECK();
     fetch_ea_32(fetchdat);
 
     dst = MMX_GETREGP(cpu_reg);
@@ -1584,6 +1587,7 @@ opPMAXUB_mm_mm_a32(uint32_t fetchdat)
     MMX_SETEXP(cpu_reg);
     CLOCK_CYCLES(1);
 
+    MMX_COMMIT();
     return 0;
 }
 
@@ -1667,7 +1671,7 @@ opPAVGB_mm_mm_a16(uint32_t fetchdat)
     MMX_REG  src;
     MMX_REG *dst;
 
-    MMX_ENTER();
+    MMX_CHECK();
     fetch_ea_16(fetchdat);
 
     dst = MMX_GETREGP(cpu_reg);
@@ -1697,6 +1701,7 @@ opPAVGB_mm_mm_a16(uint32_t fetchdat)
     CLOCK_CYCLES(1);
     MMX_SETEXP(cpu_reg); 
 
+    MMX_COMMIT();
     return 0;
 }
 
@@ -1706,7 +1711,7 @@ opPAVGB_mm_mm_a32(uint32_t fetchdat)
     MMX_REG  src;
     MMX_REG *dst;
 
-    MMX_ENTER();
+    MMX_CHECK();
     fetch_ea_32(fetchdat);
 
     dst = MMX_GETREGP(cpu_reg);
@@ -1736,6 +1741,7 @@ opPAVGB_mm_mm_a32(uint32_t fetchdat)
     CLOCK_CYCLES(1);
     MMX_SETEXP(cpu_reg); 
 
+    MMX_COMMIT();
     return 0;
 }
 
@@ -2039,7 +2045,7 @@ opPAVGW_mm_mm_a16(uint32_t fetchdat)
     MMX_REG  src;
     MMX_REG *dst;
 
-    MMX_ENTER();
+    MMX_CHECK();
     fetch_ea_16(fetchdat);
 
     dst = MMX_GETREGP(cpu_reg);
@@ -2061,6 +2067,7 @@ opPAVGW_mm_mm_a16(uint32_t fetchdat)
     CLOCK_CYCLES(1);
     MMX_SETEXP(cpu_reg); 
 
+    MMX_COMMIT();
     return 0;
 }
 
@@ -2070,7 +2077,7 @@ opPAVGW_mm_mm_a32(uint32_t fetchdat)
     MMX_REG  src;
     MMX_REG *dst;
 
-    MMX_ENTER();
+    MMX_CHECK();
     fetch_ea_32(fetchdat);
 
     dst = MMX_GETREGP(cpu_reg);
@@ -2092,6 +2099,7 @@ opPAVGW_mm_mm_a32(uint32_t fetchdat)
     CLOCK_CYCLES(1);
     MMX_SETEXP(cpu_reg); 
 
+    MMX_COMMIT();
     return 0;
 }
 
@@ -2283,7 +2291,7 @@ opPMULHUW_mm_mm_a16(uint32_t fetchdat)
     MMX_REG  src;
     MMX_REG *dst;
 
-    MMX_ENTER();
+    MMX_CHECK();
     fetch_ea_16(fetchdat);
 
     dst = MMX_GETREGP(cpu_reg);
@@ -2298,6 +2306,7 @@ opPMULHUW_mm_mm_a16(uint32_t fetchdat)
     CLOCK_CYCLES(1);
     MMX_SETEXP(cpu_reg); 
 
+    MMX_COMMIT();
     return 0;
 }
 
@@ -2307,7 +2316,7 @@ opPMULHUW_mm_mm_a32(uint32_t fetchdat)
     MMX_REG  src;
     MMX_REG *dst;
 
-    MMX_ENTER();
+    MMX_CHECK();
     fetch_ea_32(fetchdat);
 
     dst = MMX_GETREGP(cpu_reg);
@@ -2322,6 +2331,7 @@ opPMULHUW_mm_mm_a32(uint32_t fetchdat)
     CLOCK_CYCLES(1);
     MMX_SETEXP(cpu_reg); 
 
+    MMX_COMMIT();
     return 0;
 }
 
@@ -2473,7 +2483,7 @@ opPMINSW_mm_mm_a16(uint32_t fetchdat)
     MMX_REG  src;
     MMX_REG *dst;
 
-    MMX_ENTER();
+    MMX_CHECK();
     fetch_ea_16(fetchdat);
 
     dst = MMX_GETREGP(cpu_reg);
@@ -2488,6 +2498,7 @@ opPMINSW_mm_mm_a16(uint32_t fetchdat)
     CLOCK_CYCLES(1);
     MMX_SETEXP(cpu_reg); 
 
+    MMX_COMMIT();
     return 0;
 }
 
@@ -2497,7 +2508,7 @@ opPMINSW_mm_mm_a32(uint32_t fetchdat)
     MMX_REG  src;
     MMX_REG *dst;
 
-    MMX_ENTER();
+    MMX_CHECK();
     fetch_ea_32(fetchdat);
 
     dst = MMX_GETREGP(cpu_reg);
@@ -2512,6 +2523,7 @@ opPMINSW_mm_mm_a32(uint32_t fetchdat)
     CLOCK_CYCLES(1);
     MMX_SETEXP(cpu_reg); 
 
+    MMX_COMMIT();
     return 0;
 }
 
@@ -2663,7 +2675,7 @@ opPMAXSW_mm_mm_a16(uint32_t fetchdat)
     MMX_REG  src;
     MMX_REG *dst;
 
-    MMX_ENTER();
+    MMX_CHECK();
     fetch_ea_16(fetchdat);
 
     dst = MMX_GETREGP(cpu_reg);
@@ -2678,6 +2690,7 @@ opPMAXSW_mm_mm_a16(uint32_t fetchdat)
     CLOCK_CYCLES(1);
     MMX_SETEXP(cpu_reg); 
 
+    MMX_COMMIT();
     return 0;
 }
 
@@ -2687,7 +2700,7 @@ opPMAXSW_mm_mm_a32(uint32_t fetchdat)
     MMX_REG  src;
     MMX_REG *dst;
 
-    MMX_ENTER();
+    MMX_CHECK();
     fetch_ea_32(fetchdat);
 
     dst = MMX_GETREGP(cpu_reg);
@@ -2702,6 +2715,7 @@ opPMAXSW_mm_mm_a32(uint32_t fetchdat)
     CLOCK_CYCLES(1);
     MMX_SETEXP(cpu_reg); 
 
+    MMX_COMMIT();
     return 0;
 }
 
@@ -2854,7 +2868,7 @@ opPSADBW_mm_mm_a16(uint32_t fetchdat)
     MMX_REG *dst;
     MMX_REG  temp;
 
-    MMX_ENTER();
+    MMX_CHECK();
     fetch_ea_16(fetchdat);
 
     dst = MMX_GETREGP(cpu_reg);
@@ -2882,6 +2896,7 @@ opPSADBW_mm_mm_a16(uint32_t fetchdat)
     CLOCK_CYCLES(1);
     MMX_SETEXP(cpu_reg); 
 
+    MMX_COMMIT();
     return 0;
 }
 
@@ -2892,7 +2907,7 @@ opPSADBW_mm_mm_a32(uint32_t fetchdat)
     MMX_REG *dst;
     MMX_REG  temp;
 
-    MMX_ENTER();
+    MMX_CHECK();
     fetch_ea_32(fetchdat);
 
     dst = MMX_GETREGP(cpu_reg);
@@ -2920,6 +2935,7 @@ opPSADBW_mm_mm_a32(uint32_t fetchdat)
     CLOCK_CYCLES(1);
     MMX_SETEXP(cpu_reg); 
 
+    MMX_COMMIT();
     return 0;
 }
 

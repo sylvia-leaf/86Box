@@ -159,11 +159,11 @@ int opcode_length[256] = { 3, 3, 3, 3, 3, 3, 1, 1, 3, 3, 3, 3, 3, 3, 1, 3,   /* 
                            2, 2, 2, 2, 2, 2, 2, 2, 3, 3, 3, 2, 1, 1, 1, 1,   /* 0xex */
                            1, 1, 1, 1, 1, 1, 3, 3, 1, 1, 1, 1, 1, 1, 3, 3 }; /* 0xfx */
 
-/* 0 = no, 1 = always, 2 = depends on second opcode, 3 = depends on mod/rm */
-int lock_legal[256]    = { 1, 1, 1, 1, 1, 1, 0, 0, 1, 1, 1, 1, 1, 1, 0, 2,   /* 0x0x */
-                           1, 1, 1, 1, 1, 1, 0, 0, 1, 1, 1, 1, 1, 1, 0, 0,   /* 0x1x */
-                           1, 1, 1, 1, 1, 1, 4, 0, 1, 1, 1, 1, 1, 1, 4, 0,   /* 0x2x */
-                           1, 1, 1, 1, 1, 1, 4, 0, 0, 0, 0, 0, 0, 0, 4, 0,   /* 0x3x */
+/* 0 = no, 1 = memory destination, 2 = two-byte opcode, 3 = group, 4 = prefix */
+int lock_legal[256]    = { 1, 1, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 2,   /* 0x0x */
+                           1, 1, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0,   /* 0x1x */
+                           1, 1, 0, 0, 0, 0, 4, 0, 1, 1, 0, 0, 0, 0, 4, 0,   /* 0x2x */
+                           1, 1, 0, 0, 0, 0, 4, 0, 0, 0, 0, 0, 0, 0, 4, 0,   /* 0x3x */
                            0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,   /* 0x4x */
                            0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,   /* 0x5x */
                            0, 0, 0, 0, 4, 4, 4, 4, 0, 0, 0, 0, 0, 0, 0, 0,   /* 0x6x */
@@ -466,7 +466,7 @@ x386_common_log(const char *fmt, ...)
 #endif
 
 int
-is_lock_legal(uint32_t fetchdat)
+is_lock_legal_at(uint32_t fetchdat, uint32_t opcode_pc)
 {
     int legal = 1;
 
@@ -475,8 +475,19 @@ is_lock_legal(uint32_t fetchdat)
         fetch_dat.fd = fetchdat;
 
         legal = lock_legal[fetch_dat.b[0]];
+        /* Segment and size prefixes after LOCK do not bypass validation. */
+        while (legal == 4) {
+            if (opcode_pc - cpu_state.oldpc >= 14) {
+                x86gpf(NULL, 0);
+                return 1;
+            }
+            fetch_dat.fd = fastreadl(cs + ++opcode_pc);
+            if (cpu_state.abrt)
+                return 1;
+            legal = lock_legal[fetch_dat.b[0]];
+        }
         if (legal == 1)
-            legal = 1; // ((fetch_dat.b[1] >> 6) != 0x03);    /* reg is illegal */
+            legal = ((fetch_dat.b[1] >> 6) != 0x03);    /* reg is illegal */
         else if (legal == 2) {
             legal = lock_legal_0f[fetch_dat.b[1]];
             if (legal == 1)
@@ -512,6 +523,12 @@ is_lock_legal(uint32_t fetchdat)
     }
 
     return legal;
+}
+
+int
+is_lock_legal(uint32_t fetchdat)
+{
+    return is_lock_legal_at(fetchdat, cpu_state.pc - 1);
 }
 
 /*Prefetch emulation is a fairly simplistic model:
@@ -2261,3 +2278,203 @@ codegen_set_rounding_mode(int mode)
     /* cpu_state.new_npxc = (cpu_state.old_npxc & ~0xc00) | (mode << 10); */
 }
 #endif
+
+// clang-format off
+const uint8_t x86_opcode_modrm[256] = {
+    1, 1, 1, 1,  0, 0, 0, 0,  1, 1, 1, 1,  0, 0, 0, 0, /*00*/
+    1, 1, 1, 1,  0, 0, 0, 0,  1, 1, 1, 1,  0, 0, 0, 0, /*10*/
+    1, 1, 1, 1,  0, 0, 0, 0,  1, 1, 1, 1,  0, 0, 0, 0, /*20*/
+    1, 1, 1, 1,  0, 0, 0, 0,  1, 1, 1, 1,  0, 0, 0, 0, /*30*/
+
+    0, 0, 0, 0,  0, 0, 0, 0,  0, 0, 0, 0,  0, 0, 0, 0, /*40*/
+    0, 0, 0, 0,  0, 0, 0, 0,  0, 0, 0, 0,  0, 0, 0, 0, /*50*/
+    0, 0, 1, 1,  0, 0, 0, 0,  0, 1, 0, 1,  0, 0, 0, 0, /*60*/
+    0, 0, 0, 0,  0, 0, 0, 0,  0, 0, 0, 0,  0, 0, 0, 0, /*70*/
+
+    1, 1, 1, 1,  1, 1, 1, 1,  1, 1, 1, 1,  1, 1, 1, 1, /*80*/
+    0, 0, 0, 0,  0, 0, 0, 0,  0, 0, 0, 0,  0, 0, 0, 0, /*90*/
+    0, 0, 0, 0,  0, 0, 0, 0,  0, 0, 0, 0,  0, 0, 0, 0, /*a0*/
+    0, 0, 0, 0,  0, 0, 0, 0,  0, 0, 0, 0,  0, 0, 0, 0, /*b0*/
+
+    1, 1, 0, 0,  1, 1, 1, 1,  0, 0, 0, 0,  0, 0, 0, 0, /*c0*/
+    1, 1, 1, 1,  0, 0, 0, 0,  1, 1, 1, 1,  1, 1, 1, 1, /*d0*/
+    0, 0, 0, 0,  0, 0, 0, 0,  0, 0, 0, 0,  0, 0, 0, 0, /*e0*/
+    0, 0, 0, 0,  0, 0, 1, 1,  0, 0, 0, 0,  0, 0, 1, 1, /*f0*/
+};
+
+const uint8_t x86_opcode_0f_modrm[256] = {
+    1, 1, 1, 1,  0, 0, 0, 0,  0, 0, 0, 0,  0, 1, 0, 1, /*00*/
+    1, 1, 1, 1,  1, 1, 1, 1,  1, 1, 1, 1,  1, 1, 1, 1, /*10*/
+    1, 1, 1, 1,  1, 1, 0, 0,  1, 1, 1, 1,  1, 1, 1, 1, /*20*/
+    0, 0, 0, 0,  0, 0, 1, 1,  0, 0, 0, 0,  0, 0, 0, 1, /*30*/
+
+    1, 1, 1, 1,  1, 1, 1, 1,  1, 1, 1, 1,  1, 1, 1, 1, /*40*/
+    1, 1, 1, 1,  1, 1, 1, 1,  1, 1, 1, 1,  1, 1, 1, 1, /*50*/
+    1, 1, 1, 1,  1, 1, 1, 1,  1, 1, 1, 1,  1, 1, 1, 1, /*60*/
+    1, 1, 1, 1,  1, 1, 1, 0,  1, 1, 1, 1,  1, 1, 1, 1, /*70*/
+
+    0, 0, 0, 0,  0, 0, 0, 0,  0, 0, 0, 0,  0, 0, 0, 0, /*80*/
+    1, 1, 1, 1,  1, 1, 1, 1,  1, 1, 1, 1,  1, 1, 1, 1, /*90*/
+    0, 0, 0, 1,  1, 1, 0, 0,  0, 0, 0, 1,  1, 1, 1, 1, /*a0*/
+    1, 1, 1, 1,  1, 1, 1, 1,  0, 0, 1, 1,  1, 1, 1, 1, /*b0*/
+
+    1, 1, 1, 1,  1, 1, 1, 1,  0, 0, 0, 0,  0, 0, 0, 0, /*c0*/
+    1, 1, 1, 1,  1, 1, 1, 1,  1, 1, 1, 1,  1, 1, 1, 1, /*d0*/
+    1, 1, 1, 1,  1, 1, 1, 1,  1, 1, 1, 1,  1, 1, 1, 1, /*e0*/
+    1, 1, 1, 1,  1, 1, 1, 1,  1, 1, 1, 1,  1, 1, 1, 0  /*f0*/
+};
+
+const uint8_t x86_opcode_0f_38_modrm[256] = {
+    1, 1, 1, 1,  1, 1, 1, 1,  1, 1, 1, 1,  0, 0, 0, 0, /*00*/
+    0, 0, 0, 0,  0, 0, 0, 0,  0, 0, 0, 0,  1, 1, 1, 0, /*10*/
+    0, 0, 0, 0,  0, 0, 0, 0,  0, 0, 0, 0,  0, 0, 0, 0, /*20*/
+    0, 0, 0, 0,  0, 0, 0, 0,  0, 0, 0, 0,  0, 0, 0, 0, /*30*/
+
+    0, 0, 0, 0,  0, 0, 0, 0,  0, 0, 0, 0,  0, 0, 0, 0, /*40*/
+    0, 0, 0, 0,  0, 0, 0, 0,  0, 0, 0, 0,  0, 0, 0, 0, /*50*/
+    0, 0, 0, 0,  0, 0, 0, 0,  0, 0, 0, 0,  0, 0, 0, 0, /*60*/
+    0, 0, 0, 0,  0, 0, 0, 0,  0, 0, 0, 0,  0, 0, 0, 0, /*70*/
+
+    0, 0, 0, 0,  0, 0, 0, 0,  0, 0, 0, 0,  0, 0, 0, 0, /*80*/
+    0, 0, 0, 0,  0, 0, 0, 0,  0, 0, 0, 0,  0, 0, 0, 0, /*90*/
+    0, 0, 0, 0,  0, 0, 0, 0,  0, 0, 0, 0,  0, 0, 0, 0, /*a0*/
+    0, 0, 0, 0,  0, 0, 0, 0,  0, 0, 0, 0,  0, 0, 0, 0, /*b0*/
+
+    0, 0, 0, 0,  0, 0, 0, 0,  0, 0, 0, 0,  0, 0, 0, 0, /*c0*/
+    0, 0, 0, 0,  0, 0, 0, 0,  0, 0, 0, 0,  0, 0, 0, 0, /*d0*/
+    0, 0, 0, 0,  0, 0, 0, 0,  0, 0, 0, 0,  0, 0, 0, 0, /*e0*/
+    0, 0, 0, 0,  0, 0, 0, 0,  0, 0, 0, 0,  0, 0, 0, 0  /*f0*/
+};
+
+const uint8_t x86_opcode_0f_3a_modrm[256] = {
+    0, 0, 0, 0,  0, 0, 0, 0,  0, 0, 0, 0,  0, 0, 0, 1, /*00*/
+    0, 0, 0, 0,  0, 0, 0, 0,  0, 0, 0, 0,  0, 0, 0, 0, /*10*/
+    0, 0, 0, 0,  0, 0, 0, 0,  0, 0, 0, 0,  0, 0, 0, 0, /*20*/
+    0, 0, 0, 0,  0, 0, 0, 0,  0, 0, 0, 0,  0, 0, 0, 0, /*30*/
+
+    0, 0, 0, 0,  0, 0, 0, 0,  0, 0, 0, 0,  0, 0, 0, 0, /*40*/
+    0, 0, 0, 0,  0, 0, 0, 0,  0, 0, 0, 0,  0, 0, 0, 0, /*50*/
+    0, 0, 0, 0,  0, 0, 0, 0,  0, 0, 0, 0,  0, 0, 0, 0, /*60*/
+    0, 0, 0, 0,  0, 0, 0, 0,  0, 0, 0, 0,  0, 0, 0, 0, /*70*/
+
+    0, 0, 0, 0,  0, 0, 0, 0,  0, 0, 0, 0,  0, 0, 0, 0, /*80*/
+    0, 0, 0, 0,  0, 0, 0, 0,  0, 0, 0, 0,  0, 0, 0, 0, /*90*/
+    0, 0, 0, 0,  0, 0, 0, 0,  0, 0, 0, 0,  0, 0, 0, 0, /*a0*/
+    0, 0, 0, 0,  0, 0, 0, 0,  0, 0, 0, 0,  0, 0, 0, 0, /*b0*/
+
+    0, 0, 0, 0,  0, 0, 0, 0,  0, 0, 0, 0,  0, 0, 0, 0, /*c0*/
+    0, 0, 0, 0,  0, 0, 0, 0,  0, 0, 0, 0,  0, 0, 0, 0, /*d0*/
+    0, 0, 0, 0,  0, 0, 0, 0,  0, 0, 0, 0,  0, 0, 0, 0, /*e0*/
+    0, 0, 0, 0,  0, 0, 0, 0,  0, 0, 0, 0,  0, 0, 0, 0  /*f0*/
+};
+// clang-format on
+
+static int
+instruction_length_byte(unsigned *length)
+{
+    if (*length == 15) {
+        x86gpf(NULL, 0);
+        return -1;
+    }
+    int value = fastreadb(cs + cpu_state.oldpc + (*length)++);
+    return cpu_state.abrt ? -1 : value;
+}
+
+/* Check the complete instruction before an overlong encoding can change any
+   architectural state. Ordinary instructions never enter this slow path. */
+int
+cpu_check_instruction_length(void)
+{
+    unsigned length = 0, immediate = 0, displacement = 0;
+    unsigned operand = (use32 & 0x100) ? 4 : 2;
+    unsigned address = (use32 & 0x200) ? 4 : 2;
+    unsigned map = 0;
+    int opcode, modrm = 0, has_modrm;
+    for (;;) {
+        opcode = instruction_length_byte(&length);
+        if (opcode < 0)
+            return 1;
+        switch (opcode) {
+            case 0x66: operand = (use32 & 0x100) ? 2 : 4; continue;
+            case 0x67: address = (use32 & 0x200) ? 2 : 4; continue;
+            case 0x26: case 0x2e: case 0x36: case 0x3e:
+            case 0x64: case 0x65: case 0xf0: case 0xf2: case 0xf3:
+                continue;
+        }
+        break;
+    }
+    if (opcode == 0x0f) {
+        map = 1;
+        opcode = instruction_length_byte(&length);
+        if (opcode < 0)
+            return 1;
+        if (opcode == 0x38 || opcode == 0x3a) {
+            map = opcode == 0x38 ? 2 : 3;
+            opcode = instruction_length_byte(&length);
+            if (opcode < 0)
+                return 1;
+        }
+    }
+    has_modrm = map == 0 ? x86_opcode_modrm[opcode] : map == 1 ? x86_opcode_0f_modrm[opcode] :
+                map == 2 ? x86_opcode_0f_38_modrm[opcode] : x86_opcode_0f_3a_modrm[opcode];
+    if (has_modrm) {
+        modrm = instruction_length_byte(&length);
+        if (modrm < 0)
+            return 1;
+        unsigned mod = modrm >> 6, rm = modrm & 7;
+        /* MOV CR/DR/TR uses a register even when the Mod bits are not 11. */
+        if (map == 1 && opcode >= 0x20 && opcode <= 0x26)
+            mod = 3;
+        if (mod != 3) {
+            if (address == 4) {
+                if (rm == 4) {
+                    int sib = instruction_length_byte(&length);
+                    if (sib < 0)
+                        return 1;
+                    if (!mod && (sib & 7) == 5)
+                        displacement = 4;
+                } else if (!mod && rm == 5)
+                    displacement = 4;
+                if (mod == 1) displacement = 1;
+                if (mod == 2) displacement = 4;
+            } else {
+                if (!mod && rm == 6) displacement = 2;
+                if (mod == 1) displacement = 1;
+                if (mod == 2) displacement = 2;
+            }
+        }
+    }
+    if (map == 0) {
+        if (opcode < 0x40 && (opcode & 7) == 4) immediate = 1;
+        if (opcode < 0x40 && (opcode & 7) == 5) immediate = operand;
+        if (opcode >= 0x70 && opcode <= 0x7f) immediate = 1;
+        if (opcode >= 0xa0 && opcode <= 0xa3) immediate = address;
+        if (opcode >= 0xb0 && opcode <= 0xb7) immediate = 1;
+        if (opcode >= 0xb8 && opcode <= 0xbf) immediate = operand;
+        switch (opcode) {
+            case 0x68: case 0x69: case 0x81: case 0xa9: case 0xc7:
+            case 0xe8: case 0xe9: immediate = operand; break;
+            case 0x6a: case 0x6b: case 0x80: case 0x82: case 0x83:
+            case 0xa8: case 0xc0: case 0xc1: case 0xc6: case 0xcd:
+            case 0xd4: case 0xd5: case 0xe0: case 0xe1: case 0xe2: case 0xe3:
+            case 0xe4: case 0xe5: case 0xe6: case 0xe7: case 0xeb: immediate = 1; break;
+            case 0x9a: case 0xea: immediate = operand + 2; break;
+            case 0xc2: case 0xca: immediate = 2; break;
+            case 0xc8: immediate = 3; break;
+            case 0xf6: if ((modrm & 0x38) <= 8) immediate = 1; break;
+            case 0xf7: if ((modrm & 0x38) <= 8) immediate = operand; break;
+        }
+    } else if (map == 1) {
+        if (opcode >= 0x80 && opcode <= 0x8f) immediate = operand;
+        switch (opcode) {
+            case 0x0f: case 0x70: case 0x71: case 0x72: case 0x73:
+            case 0xa4: case 0xac: case 0xba: case 0xc2: case 0xc4: case 0xc5:
+            case 0xc6: immediate = 1; break;
+        }
+    } else if (map == 3 && has_modrm)
+        immediate = 1;
+    for (unsigned n = 0; n < displacement + immediate; n++)
+        if (instruction_length_byte(&length) < 0)
+            return 1;
+    return 0;
+}

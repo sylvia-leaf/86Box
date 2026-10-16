@@ -511,26 +511,34 @@ op3DNOW_a16(uint32_t fetchdat)
 {
     uint8_t opcode;
 
-    MMX_ENTER();
+    MMX_CHECK();
 
     fetch_ea_16(fetchdat);
     opcode = fastreadb(cs + cpu_state.pc);
     if (cpu_state.abrt)
         return 1;
     cpu_state.pc++;
-    return x86_opcodes_3DNOW[opcode](0);
+    int ret = x86_opcodes_3DNOW[opcode](0);
+    if (!ret && !cpu_state.abrt) {
+        MMX_COMMIT();
+    }
+    return ret;
 }
 static int
 op3DNOW_a32(uint32_t fetchdat)
 {
     uint8_t opcode;
 
-    MMX_ENTER();
+    MMX_CHECK();
 
     fetch_ea_32(fetchdat);
     opcode = fastreadb(cs + cpu_state.pc);
     if (cpu_state.abrt)
         return 1;
     cpu_state.pc++;
-    return x86_opcodes_3DNOW[opcode](0);
+    int ret = x86_opcodes_3DNOW[opcode](0);
+    if (!ret && !cpu_state.abrt) {
+        MMX_COMMIT();
+    }
+    return ret;
 }

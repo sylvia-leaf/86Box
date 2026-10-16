@@ -1610,6 +1610,31 @@ codegen_MMX_ENTER(codeblock_t *block, uop_t *uop)
     host_x86_JMP(block, codegen_exit_rout);
     *branch_offset = (uint32_t) ((uintptr_t) &block_write_data[block_pos] - (uintptr_t) branch_offset) - 4;
 
+    /* A pending x87 exception faults before any MMX state is changed. */
+    host_x86_MOVZX_REG_ABS_32_16(block, REG_ECX, &cpu_state.npxs);
+    host_x86_TEST32_REG_IMM(block, REG_ECX, 0x80);
+    uint32_t *no_pending = host_x86_JZ_long(block);
+    host_x86_MOV32_REG_ABS(block, REG_ECX, &cr0);
+    host_x86_TEST32_REG_IMM(block, REG_ECX, 0x20);
+    uint32_t *native_exception = host_x86_JNZ_long(block);
+    host_x86_MOV32_REG_ABS(block, REG_ECX, &fpu_ignne);
+    host_x86_TEST32_REG_IMM(block, REG_ECX, 1);
+    uint32_t *ignored = host_x86_JNZ_long(block);
+    *native_exception = (uint32_t) ((uintptr_t) &block_write_data[block_pos] - (uintptr_t) native_exception) - 4;
+    codegen_reg_flush_conditional(block, invalid_ir_reg);
+    host_x86_MOV32_ABS_IMM(block, &cpu_state.oldpc, uop->imm_data);
+    host_x86_CALL(block, codegen_mmx_check);
+    host_x86_JMP(block, codegen_exit_rout);
+    *no_pending = (uint32_t) ((uintptr_t) &block_write_data[block_pos] - (uintptr_t) no_pending) - 4;
+    host_x86_MOV32_ABS_IMM(block, &fpu_ignne, 0);
+    *ignored = (uint32_t) ((uintptr_t) &block_write_data[block_pos] - (uintptr_t) ignored) - 4;
+
+    return 0;
+}
+
+static int
+codegen_MMX_COMMIT(codeblock_t *block, UNUSED(uop_t *uop))
+{
     host_x86_MOV32_ABS_IMM(block, &cpu_state.tag[0], 0x01010101);
     host_x86_MOV32_ABS_IMM(block, &cpu_state.tag[4], 0x01010101);
     host_x86_MOV32_ABS_IMM(block, &cpu_state.TOP, 0);
@@ -5551,6 +5576,7 @@ const uOpFn uop_handlers[UOP_MAX] = {
     [UOP_MMX_ENTER &
         UOP_MASK]
     = codegen_MMX_ENTER,
+    [UOP_MMX_COMMIT & UOP_MASK] = codegen_MMX_COMMIT,
 
     [UOP_FADD &
         UOP_MASK]

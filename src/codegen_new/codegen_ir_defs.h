@@ -32,6 +32,10 @@
 /* Updates floating-point status even when the register result is discarded. */
 #define UOP_TYPE_FP_STATUS (1 << 20)
 
+/* A helper only materializes integer flags; it cannot change MMX/x87 state.
+   The call still needs the ordinary register-cache barrier and ABI handling. */
+#define UOP_TYPE_INT_FLAGS (1 << 19)
+
 /*uOP uses source and dest registers*/
 #define UOP_TYPE_PARAMS_REGS (1 << 28)
 /*uOP uses pointer*/
@@ -503,7 +507,8 @@
    inverts, bit 1 selects subtraction; bits 2-3 select width (0=32, 1=8, 2=16). */
 #define UOP_OVERFLOW (UOP_TYPE_PARAMS_REGS | UOP_TYPE_PARAMS_IMM | 0x113)
 
-#define UOP_MAX     0x114
+#define UOP_MMX_COMMIT (UOP_TYPE_ORDER_BARRIER | 0x114)
+#define UOP_MAX     0x115
 
 #define UOP_INVALID 0xffff
 
@@ -861,6 +866,8 @@ uop_gen_reg_src2_pointer(uint32_t uop_type, ir_data_t *ir, int src_reg_a, int sr
 }
 
 extern int codegen_mmx_enter(void);
+extern int codegen_mmx_check(void);
+extern void codegen_mmx_commit(void);
 extern int codegen_sse_enter(void);
 extern int codegen_sse_check_align(uint32_t eaddr);
 extern int codegen_femms(void);
@@ -908,6 +915,7 @@ extern int codegen_fp_enter(void);
 #define uop_ROR_IMM(ir, dst_reg, src_reg, imm)                   uop_gen_reg_dst_src_imm(UOP_ROR_IMM, ir, dst_reg, src_reg, imm)
 
 #define uop_CALL_FUNC(ir, p)                                     uop_gen_pointer(UOP_CALL_FUNC, ir, p)
+#define uop_CALL_INT_FLAGS(ir, p)                                uop_gen_pointer(UOP_CALL_FUNC | UOP_TYPE_INT_FLAGS, ir, p)
 #define uop_CALL_FUNC_RESULT(ir, dst_reg, p)                     uop_gen_reg_dst_pointer(UOP_CALL_FUNC_RESULT, ir, dst_reg, p)
 #define uop_CALL_INSTRUCTION_FUNC(ir, p, imm)                    uop_gen_pointer_imm(UOP_CALL_INSTRUCTION_FUNC, ir, p, imm)
 
@@ -959,10 +967,11 @@ extern int codegen_fp_enter(void);
     do {                                                     \
         if (!codegen_mmx_entered) {                         \
             uop_MOV_IMM(ir, IREG_oldpc, cpu_state.oldpc);            \
-            uop_CALL_FUNC_RESULT(ir, IREG_temp0, codegen_mmx_enter); \
+            uop_CALL_FUNC_RESULT(ir, IREG_temp0, codegen_mmx_check); \
             uop_CMP_IMM_JZ(ir, IREG_temp0, 1, codegen_exit_rout); \
         }                                                   \
-        codegen_mmx_entered = 1;                             \
+        if (!codegen_mmx_entered)                           \
+            codegen_mmx_entered = 2;                        \
         codegen_fpu_entered = 0;                             \
     } while (0)
 #define uop_SSE_ENTER(ir)                                    \
@@ -983,13 +992,20 @@ extern int codegen_fp_enter(void);
     do {                                                     \
         if (!codegen_mmx_entered)                            \
             uop_gen_imm(UOP_MMX_ENTER, ir, cpu_state.oldpc); \
-        codegen_mmx_entered = 1;                             \
+        if (!codegen_mmx_entered)                           \
+            codegen_mmx_entered = 2;                        \
         codegen_fpu_entered = 0;                             \
     } while (0)
 #define uop_SSE_ENTER(ir)                                    \
     do {                                                     \
         uop_gen_imm(UOP_SSE_ENTER, ir, cpu_state.oldpc);     \
     } while (0)
+#endif
+
+#if defined __amd64__ || defined _M_X64
+#define uop_MMX_COMMIT(ir) uop_gen_imm(UOP_MMX_COMMIT, ir, 0)
+#else
+#define uop_MMX_COMMIT(ir) uop_CALL_FUNC(ir, codegen_mmx_commit)
 #endif
 
 #if defined __amd64__ || defined _M_X64

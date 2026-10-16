@@ -1081,12 +1081,14 @@ codegen_generate_call(uint8_t opcode, OpFn op, uint32_t fetchdat, uint32_t new_p
             default:
                 goto generate_call;
         }
+        if (op_pc - old_pc == 4 && cpu_check_instruction_length())
+            return;
         fetchdat = fastreadl(cs + op_pc);
         codegen_timing_prefix(opcode, fetchdat);
         if (cpu_state.abrt)
             return;
         if (opcode == 0xf0) /*LOCK*/
-            lock_illegal = !is_lock_legal(fetchdat);
+            lock_illegal = !is_lock_legal_at(fetchdat, op_pc);
         opcode = fetchdat & 0xff;
         if (!pc_off)
             fetchdat >>= 8;

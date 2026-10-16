@@ -970,6 +970,19 @@ seteaq(uint64_t v)
     ((uint16_t) (fetchdat >> 8)); \
     cpu_state.pc += 2
 
+/* Shared by the decoder and the rare long-prefix length check. */
+extern const uint8_t x86_opcode_modrm[256], x86_opcode_0f_modrm[256];
+extern const uint8_t x86_opcode_0f_38_modrm[256], x86_opcode_0f_3a_modrm[256];
+int cpu_check_instruction_length(void);
+
+static __inline int
+cpu_check_prefix_length(void)
+{
+    /* The longest supported encoding without prefixes is eleven bytes.
+       Four prefixes are therefore the first point requiring a full check. */
+    return is386 && cpu_state.pc - cpu_state.oldpc == 4 && cpu_check_instruction_length();
+}
+
 #endif
 
 /* Resume Flag handling. */
