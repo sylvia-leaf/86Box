@@ -1481,6 +1481,9 @@ check_interrupts(void)
         }
         if (nmi && nmi_enable && nmi_mask) {
             nmi_enable = 0;
+#ifndef OLD_NMI_BEHAVIOR
+            nmi = 0;
+#endif
             if (use_custom_nmi_vector) {
                 do_cycles(2);
                 custom_nmi();
@@ -1584,8 +1587,16 @@ rep_interrupt(void)
     do_cycles_i(4);
     biu_queue_flush();
 
+    int pc_sub = 2;
+    if (is_nec) {
+        if (ovr_seg != NULL)
+            pc_sub++;
+        if (in_lock)
+            pc_sub++;
+    }
+
     if (is_nec && (ovr_seg != NULL))
-        set_ip((cpu_state.pc - 3) & 0xffff);
+        set_ip((cpu_state.pc - pc_sub) & 0xffff);
     else
         set_ip((cpu_state.pc - 2) & 0xffff);
 
@@ -3104,8 +3115,7 @@ execute_instruction(void)
                     load_cs(tempw);
                 else
                     load_seg(tempw, _opseg[(rmdat & 0x18) >> 3]);
-                if (((rmdat & 0x18) >> 3) == 2)
-                    noint = 1;
+                noint = 1;
             }
             break;
 
@@ -3172,15 +3182,22 @@ execute_instruction(void)
             push(&tempw);
             break;
 
-        case 0x9d: /* POPF */
+        case 0x9d: { /* POPF */
             /* pop_flags() */
+
+            int old_i = cpu_state.flags & I_FLAG;
+
             if (is_nec && cpu_md_write_disable)
                 cpu_state.flags = pop() | 0x8002;
             else
                 cpu_state.flags = pop() | 0x0002;
+
+            if (!old_i && (cpu_state.flags & I_FLAG))
+                noint = 1;
+            
             sync_to_i8080();
             break;
-
+        }
         case 0x9e: /* SAHF */
             /* store_flags() */
             cpu_state.flags = (cpu_state.flags & 0xff02) | AH;

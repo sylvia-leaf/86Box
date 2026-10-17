@@ -18,7 +18,7 @@
 #    define BLOCK_SS_OFFSET (BLOCK_GPF_OFFSET - 6)
 #endif
 
-#define BLOCK_MAX 1620
+#define BLOCK_MAX 0x3c0
 
 enum {
     OP_RET = 0xc3
