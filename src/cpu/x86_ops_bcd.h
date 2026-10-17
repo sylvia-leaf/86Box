@@ -37,8 +37,9 @@ opAAM(uint32_t fetchdat)
 
     if (!cpu_isintel)
         base = 10;
-    if (!base) {
-        x86_int(0); /*#DE, as a divide by zero*/
+    else if (!base) {
+        /* A division by zero, like DIV: #DE. */
+        x86_int(0);
         return 1;
     }
     AH = AL / base;
@@ -72,9 +73,11 @@ opDAA(UNUSED(uint32_t fetchdat))
     uint16_t tempw;
     uint16_t old_AL;
     uint16_t old_CF;
+    uint16_t old_OF;
 
     flags_rebuild();
     old_AL = AL;
+    old_OF = cpu_state.flags & V_FLAG;
     old_CF = cpu_state.flags & C_FLAG;
     cpu_state.flags &= ~C_FLAG;
 
@@ -97,6 +100,9 @@ opDAA(UNUSED(uint32_t fetchdat))
     setznp8(AL);
     flags_rebuild();
     cpu_state.flags = (cpu_state.flags & ~(C_FLAG | A_FLAG)) | tempw;
+    /* Cyrix books: OF is unchanged (Intel: undefined) */
+    if (cpu_iscyrix)
+        cpu_state.flags = (cpu_state.flags & ~V_FLAG) | old_OF;
     CLOCK_CYCLES(4);
     PREFETCH_RUN(4, 1, -1, 0, 0, 0, 0, 0);
 
@@ -109,9 +115,11 @@ opDAS(UNUSED(uint32_t fetchdat))
     uint16_t tempw;
     uint16_t old_AL;
     uint16_t old_CF;
+    uint16_t old_OF;
 
     flags_rebuild();
     old_AL = AL;
+    old_OF = cpu_state.flags & V_FLAG;
     old_CF = cpu_state.flags & C_FLAG;
     cpu_state.flags &= ~C_FLAG;
 
@@ -133,6 +141,9 @@ opDAS(UNUSED(uint32_t fetchdat))
     setznp8(AL);
     flags_rebuild();
     cpu_state.flags = (cpu_state.flags & ~(C_FLAG | A_FLAG)) | tempw;
+    /* Cyrix books: OF is unchanged (Intel: undefined) */
+    if (cpu_iscyrix)
+        cpu_state.flags = (cpu_state.flags & ~V_FLAG) | old_OF;
     CLOCK_CYCLES(4);
     PREFETCH_RUN(4, 1, -1, 0, 0, 0, 0, 0);
 

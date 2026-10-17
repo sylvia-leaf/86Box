@@ -1,14 +1,20 @@
-#define MMX_GETSHIFT()                             \
-    if (cpu_mod == 3) {                            \
-        shift = (MMX_GETREG(cpu_rm)).q;         \
-        CLOCK_CYCLES(1);                           \
-    } else {                                       \
-        SEG_CHECK_READ(cpu_state.ea_seg);          \
-        CHECK_READ(cpu_state.ea_seg, cpu_state.eaaddr, cpu_state.eaaddr + 7UL); \
-        shift = readmemq(easeg, cpu_state.eaaddr); \
-        if (cpu_state.abrt)                        \
-            return 1;                              \
-        CLOCK_CYCLES(2);                           \
+/* The count is the whole 64-bit operand: anything above 255 shifts as
+   far as 255 does (all zeroes, or all sign bits for PSRA) */
+#define MMX_GETSHIFT()                                           \
+    {                                                            \
+        uint64_t count_q;                                        \
+        if (cpu_mod == 3) {                                      \
+            count_q = (MMX_GETREG(cpu_rm)).q;                    \
+            CLOCK_CYCLES(1);                                     \
+        } else {                                                 \
+            SEG_CHECK_READ(cpu_state.ea_seg);                    \
+            CHECK_READ_EA(8);                                    \
+            count_q = readmemq(easeg, cpu_state.eaaddr);         \
+            if (cpu_state.abrt)                                  \
+                return 1;                                        \
+            CLOCK_CYCLES(2);                                     \
+        }                                                        \
+        shift = (count_q > 255) ? 255 : (int) count_q;           \
     }
 
 static int
@@ -21,6 +27,13 @@ opPSxxW_imm(uint32_t fetchdat)
     int      op    = fetchdat & 0x38;
     int      shift = (fetchdat >> 8) & 0xff;
     MMX_REG *dst;
+
+    /* Validate before MMX_ENTER changes TOP/tags or checks pending #MF. */
+    if ((fetchdat & 0xc0) != 0xc0 || (op != 0x10 && op != 0x20 && op != 0x30)) {
+        cpu_state.pc = cpu_state.oldpc;
+        x86illegal();
+        return 0;
+    }
 
     cpu_state.pc += 2;
     MMX_CHECK();
@@ -266,6 +279,13 @@ opPSxxD_imm(uint32_t fetchdat)
     int      shift = (fetchdat >> 8) & 0xff;
     MMX_REG *dst;
 
+    /* Validate before MMX_ENTER changes TOP/tags or checks pending #MF. */
+    if ((fetchdat & 0xc0) != 0xc0 || (op != 0x10 && op != 0x20 && op != 0x30)) {
+        cpu_state.pc = cpu_state.oldpc;
+        x86illegal();
+        return 0;
+    }
+
     cpu_state.pc += 2;
     MMX_CHECK();
 
@@ -493,21 +513,28 @@ opPSxxQ_imm(uint32_t fetchdat)
     int      shift = (fetchdat >> 8) & 0xff;
     MMX_REG *dst;
 
+    /* Only PSRLQ and PSLLQ exist; reject PSRAQ before entering MMX. */
+    if ((fetchdat & 0xc0) != 0xc0 || (op != 0x10 && op != 0x30)) {
+        cpu_state.pc = cpu_state.oldpc;
+        x86illegal();
+        return 0;
+    }
+
     cpu_state.pc += 2;
 
     MMX_CHECK();
 
     dst = MMX_GETREGP(reg);
 
+    /* 0F 73 /4 would be PSRAQ, which doesn't exist: #UD with the rest. */
     switch (op) {
-        case 0x10: /*PSRLW*/
+        case 0x10: /*PSRLQ*/
             if (shift > 63)
                 dst->q = 0;
             else
                 dst->q >>= shift;
             break;
-        /*There is no PSRAQ: 0F 73 /4 is undefined*/
-        case 0x30: /*PSLLW*/
+        case 0x30: /*PSLLQ*/
             if (shift > 63)
                 dst->q = 0;
             else

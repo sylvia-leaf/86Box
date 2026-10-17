@@ -68,4 +68,6 @@ add_library(mch OBJECT
     m_at_socket478.c
     m_at_slota.c
     m_at_misc.c
+    tandy_vis/m_at_tandy_vis.c
+    tandy_vis/m_tandy_vis_memcard.c
 )

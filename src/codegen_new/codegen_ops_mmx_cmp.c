@@ -33,6 +33,7 @@
             } else {                                                                                   \
                 x86seg *target_seg;                                                                    \
                                                                                                    \
+<<<<<<< HEAD
                 uop_MOV_IMM(ir, IREG_oldpc, cpu_state.oldpc);                                          \
                 target_seg = codegen_generate_ea(ir, op_ea_seg, fetchdat, op_ssegs, &op_pc, op_32, 0); \
                 codegen_check_seg_read(block, ir, target_seg);                                         \
@@ -60,6 +61,15 @@
                 uop_##func(ir, IREG_XMM(dest_reg), IREG_XMM(dest_reg), IREG_temp0_DQ);                    \
             } \
         } \
+=======
+            uop_MOV_IMM(ir, IREG_oldpc, cpu_state.oldpc);                                          \
+            target_seg = codegen_generate_ea(ir, op_ea_seg, fetchdat, op_ssegs, &op_pc, op_32, 0); \
+            codegen_check_seg_read(block, ir, target_seg);                                         \
+            CHECK_SEG_LIMITS(block, ir, target_seg, IREG_eaaddr, 7);                               \
+            uop_MEM_LOAD_REG(ir, IREG_temp0_Q, ireg_seg_base(target_seg), IREG_eaaddr);            \
+            uop_##func(ir, IREG_MM(dest_reg), IREG_MM(dest_reg), IREG_temp0_Q);                    \
+        }                                                                                          \
+>>>>>>> 25e5b8173c022dfcb976aebcd4eb3563febdc5ae
                                                                                                    \
         return op_pc + 1;                                                                          \
     }

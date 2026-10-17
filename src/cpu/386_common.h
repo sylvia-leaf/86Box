@@ -220,6 +220,24 @@
         }                                                            \
     }
 
+/* An operand outside its segment's limit: #SS(0) through SS, #GP(0)
+   through the others, in every mode ("Protected Mode Exceptions" and
+   "Real-Address Mode Exceptions" of each instruction, 243191). */
+#define SEG_LIMIT_FAULT(chseg)              \
+    do {                                    \
+        if ((chseg) == &cpu_state.seg_ss)   \
+            x86ss(NULL, 0);                 \
+        else                                \
+            x86gpf("Limit check", 0);       \
+    } while (0)
+
+/* Data that may not be written: read-only data, or code in protected mode
+   (#GP(0)). CHECK_WRITE_COMMON's type test, made before an instruction
+   reads what it will write, so one that ends up writing nothing (a shift
+   or rotate by 0) faults all the same, as the compiled code does. */
+#define SEG_NOT_WRITABLE(seg) \
+    (!((seg)->access & 2) || ((msw & 1) && !(cpu_state.eflags & VM_FLAG) && ((seg)->access & 8)))
+
 #define SEG_CHECK_READ(seg)                  \
     do {                                     \
         if ((seg)->base == 0xffffffff) {     \
@@ -234,28 +252,29 @@
         break;                               \
     }
 
-#define SEG_CHECK_WRITE(seg)                  \
-    do {                                      \
-        if ((seg)->base == 0xffffffff) {      \
-            x86gpf("Segment can't write", 0); \
-            return 1;                         \
-        }                                     \
+#define SEG_CHECK_WRITE(seg)                                          \
+    do {                                                              \
+        if (((seg)->base == 0xffffffff) || SEG_NOT_WRITABLE(seg)) {   \
+            x86gpf("Segment can't write", 0);                         \
+            return 1;                                                 \
+        }                                                             \
     } while (0)
 
-#define SEG_CHECK_WRITE_REP(seg)             \
-    if ((seg)->base == 0xffffffff) {         \
-        x86gpf("Segment can't write", 0);    \
-        break;                               \
+#define SEG_CHECK_WRITE_REP(seg)                                  \
+    if (((seg)->base == 0xffffffff) || SEG_NOT_WRITABLE(seg)) {   \
+        x86gpf("Segment can't write", 0);                         \
+        break;                                                    \
     }
 
-#define CHECK_READ(chseg, low, high)                                                                                                                   \
-    if ((low < (chseg)->limit_low) || (high > (chseg)->limit_high) || ((msw & 1) && !(cpu_state.eflags & VM_FLAG) && (((chseg)->access & 10) == 8))) { \
-        if ((chseg) == &cpu_state.seg_ss)                                                                                                              \
-            x86ss(NULL, 0);                                                                                                                            \
-        else                                                                                                                                           \
-            x86gpf("Limit check (READ)", 0);                                                                                                           \
-        return 1;                                                                                                                                      \
-    }                                                                                                                                                  \
+#define CHECK_READ(chseg, low, high)                                                  \
+    if ((msw & 1) && !(cpu_state.eflags & VM_FLAG) && (((chseg)->access & 10) == 8)) { \
+        x86gpf("Execute-only (READ)", 0);                                             \
+        return 1;                                                                     \
+    }                                                                                 \
+    if ((low < (chseg)->limit_low) || (high > (chseg)->limit_high)) {                 \
+        SEG_LIMIT_FAULT(chseg);                                                       \
+        return 1;                                                                     \
+    }                                                                                 \
     if (msw & 1 && !(cpu_state.eflags & VM_FLAG) && !((chseg)->access & 0x80)) {                                                                       \
         if ((chseg) == &cpu_state.seg_ss)                                                                                                              \
             x86ss(NULL, (chseg)->seg & 0xfffc);                                                                                                        \
@@ -264,12 +283,33 @@
         return 1;                                                                                                                                      \
     }
 
+/* A memory operand of n bytes, read by its handler directly rather than
+   through geteab/w/l/q: the whole of it is checked before any of it is
+   read, as CHECK_READ checks a range. */
+#define CHECK_READ_EA(n) CHECK_READ(cpu_state.ea_seg, cpu_state.eaaddr, cpu_state.eaaddr + (n) - 1)
+
+/* Both ends of the n bytes from eaaddr present and readable (n is at most
+   512, so two pages at most), before an instruction loading state from them
+   (FLDENV, FRSTOR, FXRSTOR) changes any of it: a page fault part way through
+   leaves the FPU as it was. "A program-state change does not normally
+   accompany a page-fault exception" (SDM 1999 vol. 3, 5.12). */
+#define PROBE_READ_EA(n)                                               \
+    do {                                                               \
+        if (cr0 & 0x80000000) {                                        \
+            const uint32_t probe_lo_ = easeg + cpu_state.eaaddr;       \
+            const uint32_t probe_hi_ = probe_lo_ + (n) - 1;            \
+                                                                       \
+            mmutranslatereal(probe_lo_, 0);                            \
+            if (!cpu_state.abrt && ((probe_lo_ ^ probe_hi_) & ~0xfff)) \
+                mmutranslatereal(probe_hi_, 0);                        \
+            if (cpu_state.abrt)                                        \
+                return 1;                                              \
+        }                                                              \
+    } while (0)
+
 #define CHECK_READ_REP(chseg, low, high)                                         \
     if ((low < (chseg)->limit_low) || (high > (chseg)->limit_high)) {            \
-        if ((chseg) == &cpu_state.seg_ss)                                        \
-            x86ss(NULL, 0);                                                      \
-        else                                                                     \
-            x86gpf("Limit check (READ)", 0);                                     \
+        SEG_LIMIT_FAULT(chseg);                                                  \
         break;                                                                   \
     }                                                                            \
     if (msw & 1 && !(cpu_state.eflags & VM_FLAG) && !((chseg)->access & 0x80)) { \
@@ -280,14 +320,15 @@
         break;                                                                   \
     }
 
-#define CHECK_WRITE_COMMON(chseg, low, high)                                                                                                                             \
-    if ((low < (chseg)->limit_low) || (high > (chseg)->limit_high) || !((chseg)->access & 2) || ((msw & 1) && !(cpu_state.eflags & VM_FLAG) && ((chseg)->access & 8))) { \
-        if ((chseg) == &cpu_state.seg_ss)                                                                                                                                \
-            x86ss(NULL, 0);                                                                                                                                              \
-        else                                                                                                                                                             \
-            x86gpf("Limit check (WRITE)", 0);                                                                                                                            \
-        return 1;                                                                                                                                                        \
-    }                                                                                                                                                                    \
+#define CHECK_WRITE_COMMON(chseg, low, high)                          \
+    if (SEG_NOT_WRITABLE(chseg)) {                                    \
+        x86gpf("Segment can't write", 0);                             \
+        return 1;                                                     \
+    }                                                                 \
+    if ((low < (chseg)->limit_low) || (high > (chseg)->limit_high)) { \
+        SEG_LIMIT_FAULT(chseg);                                       \
+        return 1;                                                     \
+    }                                                                 \
     if (msw & 1 && !(cpu_state.eflags & VM_FLAG) && !((chseg)->access & 0x80)) {                                                                                         \
         if ((chseg) == &cpu_state.seg_ss)                                                                                                                                \
             x86ss(NULL, (chseg)->seg & 0xfffc);                                                                                                                          \
@@ -299,14 +340,20 @@
 #define CHECK_WRITE(chseg, low, high) \
     CHECK_WRITE_COMMON(chseg, low, high)
 
-#define CHECK_WRITE_2OP(chseg, low, high, low2, high2)                                                                                                                             \
-    if ((low < (chseg)->limit_low) || (high > (chseg)->limit_high) || (low2 < (chseg)->limit_low) || (high2 > (chseg)->limit_high) || !((chseg)->access & 2) || ((msw & 1) && !(cpu_state.eflags & VM_FLAG) && ((chseg)->access & 8))) { \
-        if ((chseg) == &cpu_state.seg_ss)                                                                                                                                \
-            x86ss(NULL, 0);                                                                                                                                              \
-        else                                                                                                                                                             \
-            x86gpf("Limit check (WRITE)", 0);                                                                                                                            \
-        return 1;                                                                                                                                                        \
-    }                                                                                                                                                                    \
+/* A memory operand of n bytes written by its handler directly rather than
+   through seteab/w/l/q: the whole of it is checked before any of it is
+   written. */
+#define CHECK_WRITE_EA(n) CHECK_WRITE_COMMON(cpu_state.ea_seg, cpu_state.eaaddr, cpu_state.eaaddr + (n) - 1)
+
+#define CHECK_WRITE_2OP(chseg, low, high, low2, high2)                                                                                \
+    if (SEG_NOT_WRITABLE(chseg)) {                                                                                                    \
+        x86gpf("Segment can't write", 0);                                                                                             \
+        return 1;                                                                                                                     \
+    }                                                                                                                                 \
+    if ((low < (chseg)->limit_low) || (high > (chseg)->limit_high) || (low2 < (chseg)->limit_low) || (high2 > (chseg)->limit_high)) { \
+        SEG_LIMIT_FAULT(chseg);                                                                                                       \
+        return 1;                                                                                                                     \
+    }                                                                                                                                 \
     if (msw & 1 && !(cpu_state.eflags & VM_FLAG) && !((chseg)->access & 0x80)) {                                                                                         \
         if ((chseg) == &cpu_state.seg_ss)                                                                                                                                \
             x86ss(NULL, (chseg)->seg & 0xfffc);                                                                                                                          \
@@ -315,16 +362,15 @@
         return 1;                                                                                                                                                        \
     }
 
-/*As CHECK_WRITE_COMMON: a read-only data segment or a code segment refuses
-  the write as well as an out-of-limit address.*/
-#define CHECK_WRITE_REP(chseg, low, high)                                                                                                                                \
-    if ((low < (chseg)->limit_low) || (high > (chseg)->limit_high) || !((chseg)->access & 2) || ((msw & 1) && !(cpu_state.eflags & VM_FLAG) && ((chseg)->access & 8))) { \
-        if ((chseg) == &cpu_state.seg_ss)                                                                                                                                \
-            x86ss(NULL, 0);                                                                                                                                              \
-        else                                                                                                                                                             \
-            x86gpf("Limit check (WRITE REP)", 0);                                                                                                                        \
-        break;                                                                                                                                                           \
-    }                                                                                                                                                                    \
+#define CHECK_WRITE_REP(chseg, low, high)                             \
+    if (SEG_NOT_WRITABLE(chseg)) {                                    \
+        x86gpf("Segment can't write (REP)", 0);                       \
+        break;                                                        \
+    }                                                                 \
+    if ((low < (chseg)->limit_low) || (high > (chseg)->limit_high)) { \
+        SEG_LIMIT_FAULT(chseg);                                       \
+        break;                                                        \
+    }                                                                 \
     if (msw & 1 && !(cpu_state.eflags & VM_FLAG) && !((chseg)->access & 0x80)) {                                                                                         \
         if ((chseg) == &cpu_state.seg_ss)                                                                                                                                \
             x86ss(NULL, (chseg)->seg & 0xfffc);                                                                                                                          \
@@ -431,7 +477,6 @@ fastreadb(uint32_t a)
     mem_debug_check_addr(a, read_type);
     read_type = 4;
 #    endif
-
     if ((a >> 12) == pccache)
         return *((uint8_t *) (((uintptr_t) &pccache2[a] & 0x00000000ffffffffULL) | ((uintptr_t) &pccache2[0] & 0xffffffff00000000ULL)));
 
@@ -528,6 +573,8 @@ get_ram_ptr(uint32_t a)
 
 extern int opcode_has_modrm[256];
 extern int opcode_length[256];
+extern int opcode_min_length[256];
+extern int x86_int_sw_iopl_exempt;
 
 #ifdef OPS_286_386
 static __inline uint16_t
@@ -638,6 +685,21 @@ fastreadl_fetch(uint32_t a)
 }
 #endif
 
+/* A memory operand of n bytes must lie inside its segment, whatever the
+   instruction then does with it: a shift or rotate by 0 and a BT reading
+   past the limit fault as a MOV does (243191, the exceptions of each
+   instruction). Raises the fault and answers 1 when it doesn't. */
+static __inline int
+ea_outside_limit(uint32_t n)
+{
+    const x86seg *s = cpu_state.ea_seg;
+
+    if ((cpu_state.eaaddr >= s->limit_low) && ((cpu_state.eaaddr + n - 1) <= s->limit_high))
+        return 0;
+    SEG_LIMIT_FAULT(s);
+    return 1;
+}
+
 #ifdef OPS_286_386
 static __inline uint8_t
 getbyte(void)
@@ -689,7 +751,7 @@ geteab(void)
 {
     if (cpu_mod == 3)
         return (cpu_rm & 4) ? cpu_state.regs[cpu_rm & 3].b.h : cpu_state.regs[cpu_rm & 3].b.l;
-    if (geteax_cr(1))
+    if (ea_outside_limit(1))
         return 0;
     return readmemb(easeg, cpu_state.eaaddr);
 }
@@ -699,7 +761,7 @@ geteaw(void)
 {
     if (cpu_mod == 3)
         return cpu_state.regs[cpu_rm].w;
-    if (geteax_cr(2))
+    if (ea_outside_limit(2))
         return 0;
     return readmemw(easeg, cpu_state.eaaddr);
 }
@@ -709,7 +771,7 @@ geteal(void)
 {
     if (cpu_mod == 3)
         return cpu_state.regs[cpu_rm].l;
-    if (geteax_cr(4))
+    if (ea_outside_limit(4))
         return 0;
     return readmeml(easeg, cpu_state.eaaddr);
 }
@@ -717,7 +779,7 @@ geteal(void)
 static __inline uint64_t
 geteaq(void)
 {
-    if (geteax_cr(8))
+    if (ea_outside_limit(8))
         return 0;
     return readmemq(easeg, cpu_state.eaaddr);
 }
@@ -725,21 +787,21 @@ geteaq(void)
 static __inline uint8_t
 geteab_mem(void)
 {
-    if (geteax_cr(1))
+    if (ea_outside_limit(1))
         return 0;
     return readmemb(easeg, cpu_state.eaaddr);
 }
 static __inline uint16_t
 geteaw_mem(void)
 {
-    if (geteax_cr(2))
+    if (ea_outside_limit(2))
         return 0;
     return readmemw(easeg, cpu_state.eaaddr);
 }
 static __inline uint32_t
 geteal_mem(void)
 {
-    if (geteax_cr(4))
+    if (ea_outside_limit(4))
         return 0;
     return readmeml(easeg, cpu_state.eaaddr);
 }
@@ -747,7 +809,8 @@ geteal_mem(void)
 static __inline int
 seteaq_cwc(void)
 {
-    CHECK_WRITE_COMMON(cpu_state.ea_seg, cpu_state.eaaddr, cpu_state.eaaddr + 7UL);
+    /* All eight bytes, as compiled MOVQ checks them */
+    CHECK_WRITE_COMMON(cpu_state.ea_seg, cpu_state.eaaddr, (uint64_t) cpu_state.eaaddr + 7);
     return 0;
 }
 
@@ -828,7 +891,7 @@ geteab(void)
 {
     if (cpu_mod == 3)
         return (cpu_rm & 4) ? cpu_state.regs[cpu_rm & 3].b.h : cpu_state.regs[cpu_rm & 3].b.l;
-    if (geteax_cr(1))
+    if (ea_outside_limit(1))
         return 0;
     if (eal_r)
         return *(uint8_t *) eal_r;
@@ -840,7 +903,7 @@ geteaw(void)
 {
     if (cpu_mod == 3)
         return cpu_state.regs[cpu_rm].w;
-    if (geteax_cr(2))
+    if (ea_outside_limit(2))
         return 0;
     if (eal_r)
         return *(uint16_t *) eal_r;
@@ -852,7 +915,7 @@ geteal(void)
 {
     if (cpu_mod == 3)
         return cpu_state.regs[cpu_rm].l;
-    if (geteax_cr(4))
+    if (ea_outside_limit(4))
         return 0;
     if (eal_r)
         return *eal_r;
@@ -862,7 +925,7 @@ geteal(void)
 static __inline uint64_t
 geteaq(void)
 {
-    if (geteax_cr(8))
+    if (ea_outside_limit(8))
         return 0;
     return readmemq(easeg, cpu_state.eaaddr);
 }
@@ -870,7 +933,7 @@ geteaq(void)
 static __inline uint8_t
 geteab_mem(void)
 {
-    if (geteax_cr(1))
+    if (ea_outside_limit(1))
         return 0;
     if (eal_r)
         return *(uint8_t *) eal_r;
@@ -879,7 +942,7 @@ geteab_mem(void)
 static __inline uint16_t
 geteaw_mem(void)
 {
-    if (geteax_cr(2))
+    if (ea_outside_limit(2))
         return 0;
     if (eal_r)
         return *(uint16_t *) eal_r;
@@ -888,7 +951,7 @@ geteaw_mem(void)
 static __inline uint32_t
 geteal_mem(void)
 {
-    if (geteax_cr(4))
+    if (ea_outside_limit(4))
         return 0;
     if (eal_r)
         return *eal_r;
@@ -898,7 +961,8 @@ geteal_mem(void)
 static __inline int
 seteaq_cwc(void)
 {
-    CHECK_WRITE_COMMON(cpu_state.ea_seg, cpu_state.eaaddr, cpu_state.eaaddr + 7UL);
+    /* All eight bytes, as compiled MOVQ checks them */
+    CHECK_WRITE_COMMON(cpu_state.ea_seg, cpu_state.eaaddr, (uint64_t) cpu_state.eaaddr + 7);
     return 0;
 }
 
@@ -981,6 +1045,87 @@ cpu_check_prefix_length(void)
     /* The longest supported encoding without prefixes is eleven bytes.
        Four prefixes are therefore the first point requiring a full check. */
     return is386 && cpu_state.pc - cpu_state.oldpc == 4 && cpu_check_instruction_length();
+}
+
+/* The upper EFLAGS bits, as cpu_state.eflags holds them, that this CPU
+   has: RF and VM on every 386, AC from the 486, VIF and VIP with VME, ID
+   with CPUID. */
+static __inline uint16_t
+cpu_eflags_implemented(void)
+{
+    uint16_t mask = RF_FLAG | VM_FLAG;
+
+    if (is486 || isibm486)
+        mask |= AC_FLAG;
+    if (cpu_CR4_mask & CR4_VME)
+        mask |= VIF_FLAG | VIP_FLAG;
+    if (CPUID)
+        mask |= VID_FLAG;
+
+    return mask;
+}
+
+static __inline int
+cpu_cr0_invalid(uint32_t value)
+{
+    if ((value & 0x80000001) == 0x80000000)
+        return 1; /* PG requires PE. */
+
+    /* On the 6x86 family, NW means Not Write-Back: NW=1 selects
+       write-through caching even with CD=0 (94175 and 94329, table 2-4).
+       The 5x86 instead uses NW=1 for write-back (94246, table 5-1).
+       Intel's invalid CD/NW combination must not reject either mode. */
+    if ((cpu_s->cpu_type == CPU_Cx5x86) ||
+        (cpu_s->cpu_type == CPU_Cx6x86) ||
+        (cpu_s->cpu_type == CPU_Cx6x86L) ||
+        (cpu_s->cpu_type == CPU_Cx6x86MX))
+        return 0;
+
+    return (cpu_s->cpu_type >= CPU_i486SX) &&
+           ((value & 0x60000000) == 0x20000000);
+}
+
+/* LOCK on the 486 and later: only the forms below that write memory may
+   be locked, anything else is #UD (Intel486 Programmer's Reference and
+   Pentium Developer's Manual vol. 3, "LOCK prefix"). BT, CMP and TEST
+   don't write, so they aren't on the list. */
+static __inline int
+x86_lock_opcode(int is_0f, uint8_t opcode)
+{
+    if (is_0f)
+        return (opcode == 0xab) || (opcode == 0xb3) || (opcode == 0xbb) || (opcode == 0xba) || /* BTS BTR BTC, BT group */
+               ((opcode & 0xfe) == 0xb0) || ((opcode & 0xfe) == 0xc0) || (opcode == 0xc7);    /* CMPXCHG XADD CMPXCHG8B */
+
+    return ((opcode < 0x38) && ((opcode & 0x06) == 0x00)) || /* ADD OR ADC SBB AND SUB XOR r/m,r */
+           ((opcode & 0xfc) == 0x80) || ((opcode & 0xfe) == 0x86) || ((opcode & 0xfe) == 0xf6) || ((opcode & 0xfe) == 0xfe);
+}
+
+static __inline int
+x86_lock_legal(int is_0f, uint8_t opcode, uint8_t modrm)
+{
+    int reg = (modrm >> 3) & 7;
+
+    if (!x86_lock_opcode(is_0f, opcode) || ((modrm & 0xc0) == 0xc0))
+        return 0;
+
+    if (is_0f) {
+        if (opcode == 0xba)
+            return reg >= 5; /* BTS BTR BTC imm */
+        if (opcode == 0xc7)
+            return reg == 1; /* CMPXCHG8B */
+        return 1;
+    }
+
+    switch (opcode) {
+        case 0x80 ... 0x83:
+            return reg != 7; /* not CMP */
+        case 0xf6 ... 0xf7:
+            return (reg == 2) || (reg == 3); /* NOT NEG */
+        case 0xfe ... 0xff:
+            return reg <= 1; /* INC DEC */
+        default:
+            return 1;
+    }
 }
 
 #endif

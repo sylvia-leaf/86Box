@@ -20,6 +20,11 @@
 
 /* Let generic uop emitters use backend-specific immediate store helpers. */
 #define CODEGEN_BACKEND_HAS_MOV_IMM
+/* The integer uops of the SETcc, BSWAP, BSF/BSR, CMPXCHG and multiply
+   handlers: CMP_SET, TEST_SET, BSF, BSR, BSWAP, IMUL, IMUL_HI, IMUL_OV and
+   MUL_HI. A backend without them leaves those instructions to the
+   interpreter. */
+#define CODEGEN_BACKEND_HAS_INT_UOPS
 
 /*The AArch64 procedure call standard only preserves the low 64 bits of
   V8-V15 across calls, so 128-bit values cached in host vector registers do

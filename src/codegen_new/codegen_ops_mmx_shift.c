@@ -19,9 +19,17 @@
 uint32_t
 ropPSxxW_imm(codeblock_t *block, ir_data_t *ir, UNUSED(uint8_t opcode), uint32_t fetchdat, UNUSED(uint32_t op_32), uint32_t op_pc)
 {
-    int reg = fetchdat & 7;
-    int op  = fetchdat & 0x38;
-    int shift;
+    int reg   = fetchdat & 7;
+    int op    = fetchdat & 0x38;
+    if ((fetchdat & 0xc0) != 0xc0 || (op != 0x10 && op != 0x20 && op != 0x30))
+        return 0;
+
+    int shift = fastreadb(cs + op_pc + 1);
+    if (cpu_state.abrt)
+        return 0;
+
+    if ((fetchdat & 0xc0) != 0xc0) /*a memory form is #UD*/
+        return 0;
 
     if(op_sse_xmm || (block->flags & CODEBLOCK_NO_IMMEDIATES) || ((fetchdat & 0xc0) != 0xc0))
         return 0;
@@ -50,9 +58,17 @@ ropPSxxW_imm(codeblock_t *block, ir_data_t *ir, UNUSED(uint8_t opcode), uint32_t
 uint32_t
 ropPSxxD_imm(codeblock_t *block, ir_data_t *ir, UNUSED(uint8_t opcode), uint32_t fetchdat, UNUSED(uint32_t op_32), uint32_t op_pc)
 {
-    int reg = fetchdat & 7;
-    int op  = fetchdat & 0x38;
-    int shift;
+    int reg   = fetchdat & 7;
+    int op    = fetchdat & 0x38;
+    if ((fetchdat & 0xc0) != 0xc0 || (op != 0x10 && op != 0x20 && op != 0x30))
+        return 0;
+
+    int shift = fastreadb(cs + op_pc + 1);
+    if (cpu_state.abrt)
+        return 0;
+
+    if ((fetchdat & 0xc0) != 0xc0) /*a memory form is #UD*/
+        return 0;
 
     if(op_sse_xmm || (block->flags & CODEBLOCK_NO_IMMEDIATES) || ((fetchdat & 0xc0) != 0xc0))
         return 0;
@@ -81,9 +97,17 @@ ropPSxxD_imm(codeblock_t *block, ir_data_t *ir, UNUSED(uint8_t opcode), uint32_t
 uint32_t
 ropPSxxQ_imm(codeblock_t *block, ir_data_t *ir, UNUSED(uint8_t opcode), uint32_t fetchdat, UNUSED(uint32_t op_32), uint32_t op_pc)
 {
-    int reg = fetchdat & 7;
-    int op  = fetchdat & 0x38;
-    int shift;
+    int reg   = fetchdat & 7;
+    int op    = fetchdat & 0x38;
+    if ((fetchdat & 0xc0) != 0xc0 || (op != 0x10 && op != 0x30))
+        return 0;
+
+    int shift = fastreadb(cs + op_pc + 1);
+    if (cpu_state.abrt)
+        return 0;
+
+    if ((fetchdat & 0xc0) != 0xc0) /*a memory form is #UD*/
+        return 0;
 
     if(op_sse_xmm || (block->flags & CODEBLOCK_NO_IMMEDIATES) || ((fetchdat & 0xc0) != 0xc0))
         return 0;
@@ -96,8 +120,6 @@ ropPSxxQ_imm(codeblock_t *block, ir_data_t *ir, UNUSED(uint8_t opcode), uint32_t
         case 0x10: /*PSRLQ*/
             uop_PSRLQ_IMM(ir, IREG_MM(reg), IREG_MM(reg), shift);
             break;
-        /*There is no PSRAQ: 0F 73 /4 is undefined, so leave it to the
-          interpreter to raise #UD*/
         case 0x30: /*PSLLQ*/
             uop_PSLLQ_IMM(ir, IREG_MM(reg), IREG_MM(reg), shift);
             break;

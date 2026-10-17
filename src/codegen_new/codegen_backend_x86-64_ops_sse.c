@@ -11,6 +11,7 @@
 #    include "codegen_backend.h"
 #    include "codegen_backend_x86-64_defs.h"
 #    include "codegen_backend_x86-64_ops_sse.h"
+#    include "codegen_backend_x86-64_ops.h"
 #    include "codegen_backend_x86-64_ops_helpers.h"
 
 static inline uint8_t
@@ -753,11 +754,6 @@ void
 host_x86_PSRAD_XREG_IMM(codeblock_t *block, int dst_reg, int shift)
 {
     sse_op_reg_reg_imm(block, 0x66, 0x72, 4, dst_reg, shift); /*PSRAD dst_reg, imm*/
-}
-void
-host_x86_PSRAQ_XREG_IMM(codeblock_t *block, int dst_reg, int shift)
-{
-    sse_op_reg_reg_imm(block, 0x66, 0x73, 4, dst_reg, shift); /*PSRAQ dst_reg, imm*/
 }
 void
 host_x86_PSRLW_XREG_IMM(codeblock_t *block, int dst_reg, int shift)

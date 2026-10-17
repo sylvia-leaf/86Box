@@ -98,6 +98,9 @@ static bool cpu_md_write_disable = 1;
 #define SEG_CHECK_READ(seg)
 #define SEG_CHECK_WRITE(seg)
 #define CHECK_READ(a, b, c)
+#define CHECK_READ_EA(n)
+#define PROBE_READ_EA(n)
+#define CHECK_WRITE_EA(n)
 #define CHECK_WRITE(a, b, c)
 #define UN_USED(x) (void) (x)
 #define fetch_ea_16(val)
@@ -1249,9 +1252,6 @@ check_interrupts(int nec_hlt)
                 custom_nmi();
             else
                 interrupt(2);
-#ifndef OLD_NMI_BEHAVIOR
-            nmi = 0;
-#endif
             return;
         }
         if (i_flag && pic.int_pending && (is80c88 ? !(noint & 1) : !noint)) {

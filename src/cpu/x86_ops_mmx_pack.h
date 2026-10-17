@@ -132,7 +132,7 @@ opPUNPCKLBW_a16(uint32_t fetchdat)
 
     dst = MMX_GETREGP(cpu_reg);
 
-    MMX_GETSRC();
+    MMX_GETSRC_LOW32();
 
     dst->b[7] = src.b[3];
     dst->b[6] = dst->b[3];
@@ -162,7 +162,7 @@ opPUNPCKLBW_a32(uint32_t fetchdat)
 
     dst = MMX_GETREGP(cpu_reg);
 
-    MMX_GETSRC();
+    MMX_GETSRC_LOW32();
 
     dst->b[7] = src.b[3];
     dst->b[6] = dst->b[3];
@@ -254,7 +254,7 @@ opPUNPCKLWD_a16(uint32_t fetchdat)
 
     dst = MMX_GETREGP(cpu_reg);
 
-    MMX_GETSRC();
+    MMX_GETSRC_LOW32();
 
     dst->w[3] = src.w[1];
     dst->w[2] = dst->w[1];
@@ -280,7 +280,7 @@ opPUNPCKLWD_a32(uint32_t fetchdat)
 
     dst = MMX_GETREGP(cpu_reg);
 
-    MMX_GETSRC();
+    MMX_GETSRC_LOW32();
 
     dst->w[3] = src.w[1];
     dst->w[2] = dst->w[1];

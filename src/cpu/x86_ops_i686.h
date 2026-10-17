@@ -102,7 +102,9 @@ sf_fx_save_stor_common(uint32_t fetchdat, int bits)
             return cpu_state.abrt;
         }
         SEG_CHECK_READ(cpu_state.ea_seg);
-        CHECK_READ(cpu_state.ea_seg, cpu_state.eaaddr, cpu_state.eaaddr + 511UL);
+        CHECK_READ_EA(512);
+        PROBE_READ_EA(512);
+        const int sf_was_es = fpu_state.swd & FPU_SW_Summary;
         uint32_t restored_mxcsr = cpu_state.mxcsr;
         if ((cpu_features & CPU_FEATURE_SSE) && (cr4 & CR4_OSFXSR)) {
             uint32_t mxcsr_mask = (cpu_features & CPU_FEATURE_SSE2) ? 0xffff : 0xffbf;
@@ -151,13 +153,16 @@ sf_fx_save_stor_common(uint32_t fetchdat, int bits)
 
         fpu_state.tag = unpack_FPU_TW(tag_byte);
 
-        /* check for unmasked exceptions */
-        if (fpu_state.swd & ~fpu_state.cwd & FPU_CW_Exceptions_Mask) {
-            /* set the B and ES bits in the status-word */
-            fpu_state.swd |= (FPU_SW_Summary | FPU_SW_Backward);
-        } else {
-            /* clear the B and ES bits in the status-word */
-            fpu_state.swd &= ~(FPU_SW_Summary | FPU_SW_Backward);
+        /* ES and B from the unmasked flags, as FRSTOR makes them; FERR#
+           waits for the next waiting instruction (x87_ferr_loaded) */
+        {
+            const uint16_t unmasked = fpu_state.swd & ~fpu_state.cwd & FPU_CW_Exceptions_Mask;
+
+            if (unmasked)
+                fpu_state.swd |= (FPU_SW_Summary | FPU_SW_Backward);
+            else
+                fpu_state.swd &= ~(FPU_SW_Summary | FPU_SW_Backward);
+            x87_ferr_loaded(sf_was_es, !!unmasked);
         }
 
         if ((cpu_features & CPU_FEATURE_SSE) && (cr4 & CR4_OSFXSR)) {
@@ -180,7 +185,7 @@ sf_fx_save_stor_common(uint32_t fetchdat, int bits)
             return cpu_state.abrt;
         }
         SEG_CHECK_WRITE(cpu_state.ea_seg);
-        CHECK_WRITE(cpu_state.ea_seg, cpu_state.eaaddr, cpu_state.eaaddr + 511UL);
+        CHECK_WRITE_EA(512);
         writememw(easeg, cpu_state.eaaddr, i387_get_control_word());
         writememw(easeg, cpu_state.eaaddr + 2, i387_get_status_word());
         writememw(easeg, cpu_state.eaaddr + 4, pack_FPU_TW(fpu_state.tag));
@@ -275,6 +280,33 @@ sf_fx_save_stor_common(uint32_t fetchdat, int bits)
     return cpu_state.abrt;
 }
 
+/* What FXSAVE's image can't carry without touching its reserved bytes (464
+   to 511 are the software's, and Linux keeps its signal frame's own there):
+   which registers hold MMX values, and their exact tags, which the image
+   can't give back through the 64-bit register model. Kept here instead, by
+   the image's linear address, for an FXRSTOR of that same image -- the same
+   header and register bytes -- to take back; any other image is rebuilt
+   from what it holds. */
+#define FX_EXACT_SLOTS 16
+static struct {
+    uint32_t addr;
+    uint32_t sum;
+    uint8_t  tag[8];
+    uint8_t  ismmx;
+    uint8_t  valid;
+} fx_exact[FX_EXACT_SLOTS];
+
+/* The image's header and registers (bytes 0 to 159), hashed */
+static uint32_t
+fx_image_sum(uint32_t base)
+{
+    uint32_t sum = 0x811c9dc5;
+
+    for (int i = 0; i < 40; i++)
+        sum = (sum ^ readmeml(easeg, base + (i << 2))) * 0x01000193;
+    return sum;
+}
+
 static int
 fx_save_stor_common(uint32_t fetchdat, int bits)
 {
@@ -292,6 +324,10 @@ fx_save_stor_common(uint32_t fetchdat, int bits)
     uint8_t  jm;
     uint8_t  valid;
     uint8_t  phys_reg;
+    /* The exact ismmx and tags, when FXSAVE kept them for this image (fx_exact) */
+    int      have_exact  = 0;
+    uint8_t  exact_tag[8];
+    uint8_t  exact_ismmx = 0;
     /* Exp_all_1 Exp_all_0 Frac_all_0 J M FTW_Valid  |  Ent
        ----------------------------------------------+------ */
     uint8_t ftw_table_idx;
@@ -387,7 +423,8 @@ fx_save_stor_common(uint32_t fetchdat, int bits)
             return cpu_state.abrt;
         }
         SEG_CHECK_READ(cpu_state.ea_seg);
-        CHECK_READ(cpu_state.ea_seg, cpu_state.eaaddr, cpu_state.eaaddr + 511UL);
+        CHECK_READ_EA(512);
+        PROBE_READ_EA(512);
         uint32_t restored_mxcsr = cpu_state.mxcsr;
         if ((cpu_features & CPU_FEATURE_SSE) && (cr4 & CR4_OSFXSR)) {
             uint32_t mxcsr_mask = (cpu_features & CPU_FEATURE_SSE2) ? 0xffff : 0xffbf;
@@ -406,13 +443,23 @@ fx_save_stor_common(uint32_t fetchdat, int bits)
         CPU_BLOCK_END();
         /* Restore the full status word, like FRSTOR does (the previous AND-in
            dropped status bits the guest had set). */
-        cpu_state.npxs = fpus;
+        {
+            const int was_es = cpu_state.npxs & FPU_SW_Summary;
+
+            const uint16_t unmasked = fpus & ~cpu_state.npxc & 0x3f;
+
+            /* ES and B as FRSTOR makes them; FERR# waits for the next
+               waiting instruction (x87_ferr_loaded) */
+            cpu_state.npxs = unmasked ? (fpus | 0x8080) : (fpus & ~0x8080);
+            x87_ferr_loaded(was_es, !!unmasked);
+        }
 
         x87_pc_off = readmeml(easeg, cpu_state.eaaddr + 8);
         x87_pc_seg = readmemw(easeg, cpu_state.eaaddr + 12);
 
         ftwb = readmemb(easeg, cpu_state.eaaddr + 4);
-        x87_op = readmemw(easeg, cpu_state.eaaddr + 6) & 0x07ff;
+        /* FOP, as FXSAVE stores it (cpu_state.fpu_op) */
+        cpu_state.fpu_op = readmemw(easeg, cpu_state.eaaddr + 6) & 0x07ff;
 
         x87_op_off = readmeml(easeg, cpu_state.eaaddr + 16);
         x87_op_seg = readmemw(easeg, cpu_state.eaaddr + 20);
@@ -463,6 +510,20 @@ fx_save_stor_common(uint32_t fetchdat, int bits)
                 mmx_tags++;
         }
 
+        /* The image FXSAVE kept the exact ismmx and tags for (fx_exact): those,
+           rather than the mmx_tags guess below */
+        {
+            const uint32_t lin  = easeg + old_eaaddr;
+            const int      slot = (lin >> 9) & (FX_EXACT_SLOTS - 1);
+
+            if (fx_exact[slot].valid && (fx_exact[slot].addr == lin) && (fx_exact[slot].sum == fx_image_sum(old_eaaddr))) {
+                have_exact = 1;
+                for (i = 0; i <= 7; i++)
+                    exact_tag[i] = fx_exact[slot].tag[i];
+                exact_ismmx = fx_exact[slot].ismmx;
+            }
+        }
+
         cpu_state.ismmx = 0;
         /* Determine, whether or not the saved state is x87 or MMX based on a heuristic,
            because we do not keep the internal state in 64-bit precision.
@@ -485,6 +546,12 @@ fx_save_stor_common(uint32_t fetchdat, int bits)
             }
         }
 
+        /* The exact tags, after the loaders */
+        if (have_exact) {
+            for (i = 0; i <= 7; i++)
+                cpu_state.tag[i] = exact_tag[i];
+        }
+
         CLOCK_CYCLES(1);
     } else if (fxinst == 0) {
         /* FXSAVE */
@@ -499,7 +566,7 @@ fx_save_stor_common(uint32_t fetchdat, int bits)
             return cpu_state.abrt;
         }
         SEG_CHECK_WRITE(cpu_state.ea_seg);
-        CHECK_WRITE(cpu_state.ea_seg, cpu_state.eaaddr, cpu_state.eaaddr + 511UL);
+        CHECK_WRITE_EA(512);
         if ((twd & 0x0003) != 0x0003)
             ftwb |= 0x01;
         if ((twd & 0x000c) != 0x000c)
@@ -561,6 +628,19 @@ fx_save_stor_common(uint32_t fetchdat, int bits)
                 cpu_state.eaaddr = old_eaaddr + 32 + (i << 4);
                 x87_st_fsave(i);
             }
+        }
+
+        /* The exact tags and MMX state, beside the image (fx_exact) */
+        if (!cpu_state.abrt) {
+            const uint32_t lin  = easeg + old_eaaddr;
+            const int      slot = (lin >> 9) & (FX_EXACT_SLOTS - 1);
+
+            fx_exact[slot].addr = lin;
+            fx_exact[slot].sum  = fx_image_sum(old_eaaddr);
+            for (i = 0; i <= 7; i++)
+                fx_exact[slot].tag[i] = cpu_state.tag[i];
+            fx_exact[slot].ismmx = cpu_state.ismmx;
+            fx_exact[slot].valid = !cpu_state.abrt;
         }
 
         cpu_state.eaaddr = old_eaaddr;

@@ -19,20 +19,43 @@
 #include "codegen_ops_helpers.h"
 
 /* Precision control 24-bit: the chip rounds every ADD/SUB/MUL/DIV/SQRT
-   result to single. npxc is fixed for the block (CPU_STATUS_FPU_PC24 is
-   part of the block key), so this resolves at compile time. */
+   result to single. This resolves at compile time: the block key
+   (CPU_STATUS_FPU_PC24) or codegen_fpu_rc_nearest's check holds npxc's
+   precision to what it is now. */
 #define uop_FROUND_PC(ir, reg)                \
     do {                                      \
         if (!(cpu_state.npxc & 0x300))        \
             uop_FROUND_S(ir, reg, reg);       \
     } while (0)
 
+extern int x87_dyn_fdiv(uint32_t imm);
+extern int x87_dyn_ftst_nan(uint32_t imm);
+
+/* The FDIV family of the legacy FPU: the quotient comes from the
+   interpreter's divide (x87_dyn_fdiv, 386_dynarec.c), so a compiled
+   division raises the x87 exceptions and rounds exactly as an interpreted
+   one; an unmasked exception ends the block past the instruction, with the
+   destination and the stack left alone. A memory operand goes in the
+   permanent IREG_x87_operand. */
+#define FDIV_REGS(d, n, q) ((d) | ((n) << 3) | ((q) << 6))
+#define FDIV_MEM_NUM       0x200
+#define FDIV_MEM_DEN       0x400
+#define FDIV_KIND(k)       ((k) << 11)
+
+static void
+fdiv_call(ir_data_t *ir, uint32_t next_pc, uint32_t imm)
+{
+    codegen_accumulate_flush(ir);
+    uop_MOV_IMM(ir, IREG_pc, next_pc);
+    uop_CALL_INSTRUCTION_FUNC(ir, x87_dyn_fdiv, imm);
+}
+
 uint32_t
 ropFADD(UNUSED(codeblock_t *block), ir_data_t *ir, UNUSED(uint8_t opcode), uint32_t fetchdat, UNUSED(uint32_t op_32), uint32_t op_pc)
 {
     int src_reg = fetchdat & 7;
 
-    if ((cpu_state.npxc >> 10) & 3)
+    if (!codegen_fpu_rc_nearest(ir))
         return 0;
     uop_FP_ENTER(ir);
     uop_FADD(ir, IREG_ST(0), IREG_ST(0), IREG_ST(src_reg));
@@ -46,7 +69,7 @@ ropFADDr(UNUSED(codeblock_t *block), ir_data_t *ir, UNUSED(uint8_t opcode), uint
 {
     int dest_reg = fetchdat & 7;
 
-    if ((cpu_state.npxc >> 10) & 3)
+    if (!codegen_fpu_rc_nearest(ir))
         return 0;
     uop_FP_ENTER(ir);
     uop_FADD(ir, IREG_ST(dest_reg), IREG_ST(dest_reg), IREG_ST(0));
@@ -60,7 +83,7 @@ ropFADDP(codeblock_t *block, ir_data_t *ir, UNUSED(uint8_t opcode), uint32_t fet
 {
     int dest_reg = fetchdat & 7;
 
-    if ((cpu_state.npxc >> 10) & 3)
+    if (!codegen_fpu_rc_nearest(ir))
         return 0;
     uop_FP_ENTER(ir);
     uop_FADD(ir, IREG_ST(dest_reg), IREG_ST(dest_reg), IREG_ST(0));
@@ -113,12 +136,10 @@ ropFDIV(UNUSED(codeblock_t *block), ir_data_t *ir, UNUSED(uint8_t opcode), uint3
 {
     int src_reg = fetchdat & 7;
 
-    if ((cpu_state.npxc >> 10) & 3)
+    if (!codegen_fpu_rc_nearest(ir))
         return 0;
     uop_FP_ENTER(ir);
-    uop_FDIV(ir, IREG_ST(0), IREG_ST(0), IREG_ST(src_reg));
-    uop_FROUND_PC(ir, IREG_ST(0));
-    uop_MOV_IMM(ir, IREG_tag(0), TAG_VALID);
+    fdiv_call(ir, op_pc, FDIV_REGS(0, 0, src_reg));
 
     return op_pc;
 }
@@ -127,12 +148,10 @@ ropFDIVR(UNUSED(codeblock_t *block), ir_data_t *ir, UNUSED(uint8_t opcode), uint
 {
     int src_reg = fetchdat & 7;
 
-    if ((cpu_state.npxc >> 10) & 3)
+    if (!codegen_fpu_rc_nearest(ir))
         return 0;
     uop_FP_ENTER(ir);
-    uop_FDIV(ir, IREG_ST(0), IREG_ST(src_reg), IREG_ST(0));
-    uop_FROUND_PC(ir, IREG_ST(0));
-    uop_MOV_IMM(ir, IREG_tag(0), TAG_VALID);
+    fdiv_call(ir, op_pc, FDIV_REGS(0, src_reg, 0));
 
     return op_pc;
 }
@@ -141,12 +160,10 @@ ropFDIVr(UNUSED(codeblock_t *block), ir_data_t *ir, UNUSED(uint8_t opcode), uint
 {
     int dest_reg = fetchdat & 7;
 
-    if ((cpu_state.npxc >> 10) & 3)
+    if (!codegen_fpu_rc_nearest(ir))
         return 0;
     uop_FP_ENTER(ir);
-    uop_FDIV(ir, IREG_ST(dest_reg), IREG_ST(dest_reg), IREG_ST(0));
-    uop_FROUND_PC(ir, IREG_ST(dest_reg));
-    uop_MOV_IMM(ir, IREG_tag(dest_reg), TAG_VALID);
+    fdiv_call(ir, op_pc, FDIV_REGS(dest_reg, dest_reg, 0));
 
     return op_pc;
 }
@@ -155,12 +172,10 @@ ropFDIVRr(UNUSED(codeblock_t *block), ir_data_t *ir, UNUSED(uint8_t opcode), uin
 {
     int dest_reg = fetchdat & 7;
 
-    if ((cpu_state.npxc >> 10) & 3)
+    if (!codegen_fpu_rc_nearest(ir))
         return 0;
     uop_FP_ENTER(ir);
-    uop_FDIV(ir, IREG_ST(dest_reg), IREG_ST(0), IREG_ST(dest_reg));
-    uop_FROUND_PC(ir, IREG_ST(dest_reg));
-    uop_MOV_IMM(ir, IREG_tag(dest_reg), TAG_VALID);
+    fdiv_call(ir, op_pc, FDIV_REGS(dest_reg, 0, dest_reg));
 
     return op_pc;
 }
@@ -169,12 +184,10 @@ ropFDIVP(codeblock_t *block, ir_data_t *ir, UNUSED(uint8_t opcode), uint32_t fet
 {
     int dest_reg = fetchdat & 7;
 
-    if ((cpu_state.npxc >> 10) & 3)
+    if (!codegen_fpu_rc_nearest(ir))
         return 0;
     uop_FP_ENTER(ir);
-    uop_FDIV(ir, IREG_ST(dest_reg), IREG_ST(dest_reg), IREG_ST(0));
-    uop_FROUND_PC(ir, IREG_ST(dest_reg));
-    uop_MOV_IMM(ir, IREG_tag(dest_reg), TAG_VALID);
+    fdiv_call(ir, op_pc, FDIV_REGS(dest_reg, dest_reg, 0));
     fpu_POP(block, ir);
 
     return op_pc;
@@ -184,12 +197,10 @@ ropFDIVRP(codeblock_t *block, ir_data_t *ir, UNUSED(uint8_t opcode), uint32_t fe
 {
     int dest_reg = fetchdat & 7;
 
-    if ((cpu_state.npxc >> 10) & 3)
+    if (!codegen_fpu_rc_nearest(ir))
         return 0;
     uop_FP_ENTER(ir);
-    uop_FDIV(ir, IREG_ST(dest_reg), IREG_ST(0), IREG_ST(dest_reg));
-    uop_FROUND_PC(ir, IREG_ST(dest_reg));
-    uop_MOV_IMM(ir, IREG_tag(dest_reg), TAG_VALID);
+    fdiv_call(ir, op_pc, FDIV_REGS(dest_reg, 0, dest_reg));
     fpu_POP(block, ir);
 
     return op_pc;
@@ -200,7 +211,7 @@ ropFMUL(UNUSED(codeblock_t *block), ir_data_t *ir, UNUSED(uint8_t opcode), uint3
 {
     int src_reg = fetchdat & 7;
 
-    if ((cpu_state.npxc >> 10) & 3)
+    if (!codegen_fpu_rc_nearest(ir))
         return 0;
     uop_FP_ENTER(ir);
     uop_FMUL(ir, IREG_ST(0), IREG_ST(0), IREG_ST(src_reg));
@@ -214,7 +225,7 @@ ropFMULr(UNUSED(codeblock_t *block), ir_data_t *ir, UNUSED(uint8_t opcode), uint
 {
     int dest_reg = fetchdat & 7;
 
-    if ((cpu_state.npxc >> 10) & 3)
+    if (!codegen_fpu_rc_nearest(ir))
         return 0;
     uop_FP_ENTER(ir);
     uop_FMUL(ir, IREG_ST(dest_reg), IREG_ST(dest_reg), IREG_ST(0));
@@ -222,13 +233,13 @@ ropFMULr(UNUSED(codeblock_t *block), ir_data_t *ir, UNUSED(uint8_t opcode), uint
     uop_MOV_IMM(ir, IREG_tag(dest_reg), TAG_VALID);
 
     return op_pc;
-}
+}fastreadl(cs + op_pc + 1);
 uint32_t
 ropFMULP(codeblock_t *block, ir_data_t *ir, UNUSED(uint8_t opcode), uint32_t fetchdat, UNUSED(uint32_t op_32), uint32_t op_pc)
 {
     int dest_reg = fetchdat & 7;
 
-    if ((cpu_state.npxc >> 10) & 3)
+    if (!codegen_fpu_rc_nearest(ir))
         return 0;
     uop_FP_ENTER(ir);
     uop_FMUL(ir, IREG_ST(dest_reg), IREG_ST(dest_reg), IREG_ST(0));
@@ -244,7 +255,7 @@ ropFSUB(UNUSED(codeblock_t *block), ir_data_t *ir, UNUSED(uint8_t opcode), uint3
 {
     int src_reg = fetchdat & 7;
 
-    if ((cpu_state.npxc >> 10) & 3)
+    if (!codegen_fpu_rc_nearest(ir))
         return 0;
     uop_FP_ENTER(ir);
     uop_FSUB(ir, IREG_ST(0), IREG_ST(0), IREG_ST(src_reg));
@@ -258,7 +269,7 @@ ropFSUBR(UNUSED(codeblock_t *block), ir_data_t *ir, UNUSED(uint8_t opcode), uint
 {
     int src_reg = fetchdat & 7;
 
-    if ((cpu_state.npxc >> 10) & 3)
+    if (!codegen_fpu_rc_nearest(ir))
         return 0;
     uop_FP_ENTER(ir);
     uop_FSUB(ir, IREG_ST(0), IREG_ST(src_reg), IREG_ST(0));
@@ -272,7 +283,7 @@ ropFSUBr(UNUSED(codeblock_t *block), ir_data_t *ir, UNUSED(uint8_t opcode), uint
 {
     int dest_reg = fetchdat & 7;
 
-    if ((cpu_state.npxc >> 10) & 3)
+    if (!codegen_fpu_rc_nearest(ir))
         return 0;
     uop_FP_ENTER(ir);
     uop_FSUB(ir, IREG_ST(dest_reg), IREG_ST(dest_reg), IREG_ST(0));
@@ -286,7 +297,7 @@ ropFSUBRr(UNUSED(codeblock_t *block), ir_data_t *ir, UNUSED(uint8_t opcode), uin
 {
     int dest_reg = fetchdat & 7;
 
-    if ((cpu_state.npxc >> 10) & 3)
+    if (!codegen_fpu_rc_nearest(ir))
         return 0;
     uop_FP_ENTER(ir);
     uop_FSUB(ir, IREG_ST(dest_reg), IREG_ST(0), IREG_ST(dest_reg));
@@ -300,7 +311,7 @@ ropFSUBP(codeblock_t *block, ir_data_t *ir, UNUSED(uint8_t opcode), uint32_t fet
 {
     int dest_reg = fetchdat & 7;
 
-    if ((cpu_state.npxc >> 10) & 3)
+    if (!codegen_fpu_rc_nearest(ir))
         return 0;
     uop_FP_ENTER(ir);
     uop_FSUB(ir, IREG_ST(dest_reg), IREG_ST(dest_reg), IREG_ST(0));
@@ -315,7 +326,7 @@ ropFSUBRP(codeblock_t *block, ir_data_t *ir, UNUSED(uint8_t opcode), uint32_t fe
 {
     int dest_reg = fetchdat & 7;
 
-    if ((cpu_state.npxc >> 10) & 3)
+    if (!codegen_fpu_rc_nearest(ir))
         return 0;
     uop_FP_ENTER(ir);
     uop_FSUB(ir, IREG_ST(dest_reg), IREG_ST(0), IREG_ST(dest_reg));
@@ -369,7 +380,7 @@ ropFUCOMPP(codeblock_t *block, ir_data_t *ir, UNUSED(uint8_t opcode), UNUSED(uin
     {                                                                                          \
         x86seg *target_seg;                                                                    \
                                                                                                \
-        if ((cpu_state.npxc >> 10) & 3)                                                        \
+        if (!codegen_fpu_rc_nearest(ir))                                                        \
             return 0;                                                                          \
         uop_FP_ENTER(ir);                                                                      \
         uop_MOV_IMM(ir, IREG_oldpc, cpu_state.oldpc);                                          \
@@ -426,7 +437,7 @@ ropFUCOMPP(codeblock_t *block, ir_data_t *ir, UNUSED(uint8_t opcode), UNUSED(uin
     {                                                                                          \
         x86seg *target_seg;                                                                    \
                                                                                                \
-        if ((cpu_state.npxc >> 10) & 3)                                                        \
+        if (!codegen_fpu_rc_nearest(ir))                                                        \
             return 0;                                                                          \
         uop_FP_ENTER(ir);                                                                      \
         uop_MOV_IMM(ir, IREG_oldpc, cpu_state.oldpc);                                          \
@@ -435,9 +446,8 @@ ropFUCOMPP(codeblock_t *block, ir_data_t *ir, UNUSED(uint8_t opcode), UNUSED(uin
         codegen_check_seg_read(block, ir, target_seg);                                         \
         CHECK_SEG_LIMITS(block, ir, target_seg, IREG_eaaddr, end_offset);                      \
         load_uop(ir, IREG_temp0_D, ireg_seg_base(target_seg), IREG_eaaddr);                    \
-        uop_FDIV(ir, IREG_ST(0), IREG_ST(0), IREG_temp0_D);                                    \
-        uop_FROUND_PC(ir, IREG_ST(0));                                                         \
-        uop_MOV_IMM(ir, IREG_tag(0), TAG_VALID);                                               \
+        uop_MOV(ir, IREG_x87_operand, IREG_temp0_D);                                           \
+        fdiv_call(ir, op_pc + 1, FDIV_MEM_DEN | FDIV_KIND((#name[0] == 's') ? 1 : 2));         \
                                                                                                \
         return op_pc + 1;                                                                      \
     }                                                                                          \
@@ -446,7 +456,7 @@ ropFUCOMPP(codeblock_t *block, ir_data_t *ir, UNUSED(uint8_t opcode), UNUSED(uin
     {                                                                                          \
         x86seg *target_seg;                                                                    \
                                                                                                \
-        if ((cpu_state.npxc >> 10) & 3)                                                        \
+        if (!codegen_fpu_rc_nearest(ir))                                                        \
             return 0;                                                                          \
         uop_FP_ENTER(ir);                                                                      \
         uop_MOV_IMM(ir, IREG_oldpc, cpu_state.oldpc);                                          \
@@ -455,9 +465,8 @@ ropFUCOMPP(codeblock_t *block, ir_data_t *ir, UNUSED(uint8_t opcode), UNUSED(uin
         codegen_check_seg_read(block, ir, target_seg);                                         \
         CHECK_SEG_LIMITS(block, ir, target_seg, IREG_eaaddr, end_offset);                      \
         load_uop(ir, IREG_temp0_D, ireg_seg_base(target_seg), IREG_eaaddr);                    \
-        uop_FDIV(ir, IREG_ST(0), IREG_temp0_D, IREG_ST(0));                                    \
-        uop_FROUND_PC(ir, IREG_ST(0));                                                         \
-        uop_MOV_IMM(ir, IREG_tag(0), TAG_VALID);                                               \
+        uop_MOV(ir, IREG_x87_operand, IREG_temp0_D);                                           \
+        fdiv_call(ir, op_pc + 1, FDIV_MEM_NUM | FDIV_KIND((#name[0] == 's') ? 1 : 2));         \
                                                                                                \
         return op_pc + 1;                                                                      \
     }                                                                                          \
@@ -466,7 +475,7 @@ ropFUCOMPP(codeblock_t *block, ir_data_t *ir, UNUSED(uint8_t opcode), UNUSED(uin
     {                                                                                          \
         x86seg *target_seg;                                                                    \
                                                                                                \
-        if ((cpu_state.npxc >> 10) & 3)                                                        \
+        if (!codegen_fpu_rc_nearest(ir))                                                        \
             return 0;                                                                          \
         uop_FP_ENTER(ir);                                                                      \
         uop_MOV_IMM(ir, IREG_oldpc, cpu_state.oldpc);                                          \
@@ -486,7 +495,7 @@ ropFUCOMPP(codeblock_t *block, ir_data_t *ir, UNUSED(uint8_t opcode), UNUSED(uin
     {                                                                                          \
         x86seg *target_seg;                                                                    \
                                                                                                \
-        if ((cpu_state.npxc >> 10) & 3)                                                        \
+        if (!codegen_fpu_rc_nearest(ir))                                                        \
             return 0;                                                                          \
         uop_FP_ENTER(ir);                                                                      \
         uop_MOV_IMM(ir, IREG_oldpc, cpu_state.oldpc);                                          \
@@ -506,7 +515,7 @@ ropFUCOMPP(codeblock_t *block, ir_data_t *ir, UNUSED(uint8_t opcode), UNUSED(uin
     {                                                                                          \
         x86seg *target_seg;                                                                    \
                                                                                                \
-        if ((cpu_state.npxc >> 10) & 3)                                                        \
+        if (!codegen_fpu_rc_nearest(ir))                                                        \
             return 0;                                                                          \
         uop_FP_ENTER(ir);                                                                      \
         uop_MOV_IMM(ir, IREG_oldpc, cpu_state.oldpc);                                          \
@@ -533,7 +542,7 @@ ropF_arith_mem(d, uop_MEM_LOAD_DOUBLE, 7)
     {                                                                                          \
         x86seg *target_seg;                                                                    \
                                                                                                \
-        if ((cpu_state.npxc >> 10) & 3)                                                        \
+        if (!codegen_fpu_rc_nearest(ir))                                                        \
             return 0;                                                                          \
         uop_FP_ENTER(ir);                                                                      \
         uop_MOV_IMM(ir, IREG_oldpc, cpu_state.oldpc);                                          \
@@ -593,7 +602,7 @@ ropF_arith_mem(d, uop_MEM_LOAD_DOUBLE, 7)
     {                                                                                          \
         x86seg *target_seg;                                                                    \
                                                                                                \
-        if ((cpu_state.npxc >> 10) & 3)                                                        \
+        if (!codegen_fpu_rc_nearest(ir))                                                        \
             return 0;                                                                          \
         uop_FP_ENTER(ir);                                                                      \
         uop_MOV_IMM(ir, IREG_oldpc, cpu_state.oldpc);                                          \
@@ -603,9 +612,8 @@ ropF_arith_mem(d, uop_MEM_LOAD_DOUBLE, 7)
         CHECK_SEG_LIMITS(block, ir, target_seg, IREG_eaaddr, end_offset);                      \
         uop_MEM_LOAD_REG(ir, temp_reg, ireg_seg_base(target_seg), IREG_eaaddr);                \
         uop_MOV_DOUBLE_INT(ir, IREG_temp0_D, temp_reg);                                        \
-        uop_FDIV(ir, IREG_ST(0), IREG_ST(0), IREG_temp0_D);                                    \
-        uop_FROUND_PC(ir, IREG_ST(0));                                                         \
-        uop_MOV_IMM(ir, IREG_tag(0), TAG_VALID);                                               \
+        uop_MOV(ir, IREG_x87_operand, IREG_temp0_D);                                           \
+        fdiv_call(ir, op_pc + 1, FDIV_MEM_DEN);                                                \
                                                                                                \
         return op_pc + 1;                                                                      \
     }                                                                                          \
@@ -614,7 +622,7 @@ ropF_arith_mem(d, uop_MEM_LOAD_DOUBLE, 7)
     {                                                                                          \
         x86seg *target_seg;                                                                    \
                                                                                                \
-        if ((cpu_state.npxc >> 10) & 3)                                                        \
+        if (!codegen_fpu_rc_nearest(ir))                                                        \
             return 0;                                                                          \
         uop_FP_ENTER(ir);                                                                      \
         uop_MOV_IMM(ir, IREG_oldpc, cpu_state.oldpc);                                          \
@@ -624,9 +632,8 @@ ropF_arith_mem(d, uop_MEM_LOAD_DOUBLE, 7)
         CHECK_SEG_LIMITS(block, ir, target_seg, IREG_eaaddr, end_offset);                      \
         uop_MEM_LOAD_REG(ir, temp_reg, ireg_seg_base(target_seg), IREG_eaaddr);                \
         uop_MOV_DOUBLE_INT(ir, IREG_temp0_D, temp_reg);                                        \
-        uop_FDIV(ir, IREG_ST(0), IREG_temp0_D, IREG_ST(0));                                    \
-        uop_FROUND_PC(ir, IREG_ST(0));                                                         \
-        uop_MOV_IMM(ir, IREG_tag(0), TAG_VALID);                                               \
+        uop_MOV(ir, IREG_x87_operand, IREG_temp0_D);                                           \
+        fdiv_call(ir, op_pc + 1, FDIV_MEM_NUM);                                                \
                                                                                                \
         return op_pc + 1;                                                                      \
     }                                                                                          \
@@ -635,7 +642,7 @@ ropF_arith_mem(d, uop_MEM_LOAD_DOUBLE, 7)
     {                                                                                          \
         x86seg *target_seg;                                                                    \
                                                                                                \
-        if ((cpu_state.npxc >> 10) & 3)                                                        \
+        if (!codegen_fpu_rc_nearest(ir))                                                        \
             return 0;                                                                          \
         uop_FP_ENTER(ir);                                                                      \
         uop_MOV_IMM(ir, IREG_oldpc, cpu_state.oldpc);                                          \
@@ -656,7 +663,7 @@ ropF_arith_mem(d, uop_MEM_LOAD_DOUBLE, 7)
     {                                                                                          \
         x86seg *target_seg;                                                                    \
                                                                                                \
-        if ((cpu_state.npxc >> 10) & 3)                                                        \
+        if (!codegen_fpu_rc_nearest(ir))                                                        \
             return 0;                                                                          \
         uop_FP_ENTER(ir);                                                                      \
         uop_MOV_IMM(ir, IREG_oldpc, cpu_state.oldpc);                                          \
@@ -677,7 +684,7 @@ ropF_arith_mem(d, uop_MEM_LOAD_DOUBLE, 7)
     {                                                                                          \
         x86seg *target_seg;                                                                    \
                                                                                                \
-        if ((cpu_state.npxc >> 10) & 3)                                                        \
+        if (!codegen_fpu_rc_nearest(ir))                                                        \
             return 0;                                                                          \
         uop_FP_ENTER(ir);                                                                      \
         uop_MOV_IMM(ir, IREG_oldpc, cpu_state.oldpc);                                          \
@@ -721,7 +728,7 @@ ropFCHS(UNUSED(codeblock_t *block), ir_data_t *ir, UNUSED(uint8_t opcode), UNUSE
 uint32_t
 ropFSQRT(UNUSED(codeblock_t *block), ir_data_t *ir, UNUSED(uint8_t opcode), UNUSED(uint32_t fetchdat), UNUSED(uint32_t op_32), uint32_t op_pc)
 {
-    if ((cpu_state.npxc >> 10) & 3)
+    if (!codegen_fpu_rc_nearest(ir))
         return 0;
     uop_FP_ENTER(ir);
     uop_FSQRT(ir, IREG_ST(0), IREG_ST(0));
@@ -733,9 +740,20 @@ ropFSQRT(UNUSED(codeblock_t *block), ir_data_t *ir, UNUSED(uint8_t opcode), UNUS
 uint32_t
 ropFTST(UNUSED(codeblock_t *block), ir_data_t *ir, UNUSED(uint8_t opcode), UNUSED(uint32_t fetchdat), UNUSED(uint32_t op_32), uint32_t op_pc)
 {
+    int jump_uop;
+
     uop_FP_ENTER(ir);
     uop_FTST(ir, IREG_temp0_W, IREG_ST(0));
-    uop_AND_IMM(ir, IREG_NPXS, IREG_NPXS, ~(FPU_SW_C0 | FPU_SW_C1 | FPU_SW_C2 | FPU_SW_C3));
+    /* Unordered, a NaN: the invalid operation the interpreter raises with it
+       (x87_dyn_ftst_nan) */
+    uop_MOVZX(ir, IREG_temp1, IREG_temp0_W);
+    jump_uop = uop_CMP_IMM_JNZ_DEST(ir, IREG_temp1, FPU_SW_C0 | FPU_SW_C2 | FPU_SW_C3);
+    uop_CALL_INSTRUCTION_FUNC(ir, x87_dyn_ftst_nan, 0);
+    uop_set_jump_dest(ir, jump_uop);
+    /* ES may be set now: the block's next waiting FPU instruction checks for
+       it, as at an entry */
+    codegen_fpu_entered = 0;
+    uop_AND_IMM(ir, IREG_NPXS, IREG_NPXS, ~(FPU_SW_C0 | FPU_SW_C2 | FPU_SW_C3));
     uop_OR(ir, IREG_NPXS, IREG_NPXS, IREG_temp0_W);
 
     return op_pc;

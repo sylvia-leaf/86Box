@@ -12,7 +12,9 @@ opCMPXCHG_b_a16(uint32_t fetchdat)
     temp = geteab();
     if (cpu_state.abrt)
         return 1;
-    if (AL == temp)
+    /* The destination is written either way: the old value goes back on a
+       mismatch (SDM 1999, CMPXCHG), so a write fault comes first */
+    if (AL == temp) {
         seteab(getr8(cpu_reg));
     else {
         /* CMPXCHG performs a write cycle even when the comparison fails. */
@@ -43,7 +45,9 @@ opCMPXCHG_b_a32(uint32_t fetchdat)
     temp = geteab();
     if (cpu_state.abrt)
         return 1;
-    if (AL == temp)
+    /* The destination is written either way: the old value goes back on a
+       mismatch (SDM 1999, CMPXCHG), so a write fault comes first */
+    if (AL == temp) {
         seteab(getr8(cpu_reg));
     else {
         /* CMPXCHG performs a write cycle even when the comparison fails. */
@@ -75,7 +79,9 @@ opCMPXCHG_w_a16(uint32_t fetchdat)
     temp = geteaw();
     if (cpu_state.abrt)
         return 1;
-    if (AX == temp)
+    /* The destination is written either way: the old value goes back on a
+       mismatch (SDM 1999, CMPXCHG), so a write fault comes first */
+    if (AX == temp) {
         seteaw(cpu_state.regs[cpu_reg].w);
     else {
         /* CMPXCHG performs a write cycle even when the comparison fails. */
@@ -106,7 +112,9 @@ opCMPXCHG_w_a32(uint32_t fetchdat)
     temp = geteaw();
     if (cpu_state.abrt)
         return 1;
-    if (AX == temp)
+    /* The destination is written either way: the old value goes back on a
+       mismatch (SDM 1999, CMPXCHG), so a write fault comes first */
+    if (AX == temp) {
         seteaw(cpu_state.regs[cpu_reg].w);
     else {
         /* CMPXCHG performs a write cycle even when the comparison fails. */
@@ -138,7 +146,9 @@ opCMPXCHG_l_a16(uint32_t fetchdat)
     temp = geteal();
     if (cpu_state.abrt)
         return 1;
-    if (EAX == temp)
+    /* The destination is written either way: the old value goes back on a
+       mismatch (SDM 1999, CMPXCHG), so a write fault comes first */
+    if (EAX == temp) {
         seteal(cpu_state.regs[cpu_reg].l);
     else {
         /* CMPXCHG performs a write cycle even when the comparison fails. */
@@ -169,7 +179,9 @@ opCMPXCHG_l_a32(uint32_t fetchdat)
     temp = geteal();
     if (cpu_state.abrt)
         return 1;
-    if (EAX == temp)
+    /* The destination is written either way: the old value goes back on a
+       mismatch (SDM 1999, CMPXCHG), so a write fault comes first */
+    if (EAX == temp) {
         seteal(cpu_state.regs[cpu_reg].l);
     else {
         /* CMPXCHG performs a write cycle even when the comparison fails. */
@@ -209,21 +221,41 @@ opCMPXCHG8B_a16(uint32_t fetchdat)
         }
         return ILLEGAL(fetchdat);
     }
+    if ((fetchdat & 0x38) != 0x08)
+        return ILLEGAL(fetchdat); /* Only 0F C7 /1 is CMPXCHG8B. */
     SEG_CHECK_WRITE(cpu_state.ea_seg);
-    CHECK_WRITE(cpu_state.ea_seg, cpu_state.eaaddr, cpu_state.eaaddr + 7UL);
+    CHECK_WRITE(cpu_state.ea_seg, cpu_state.eaaddr, (uint64_t) cpu_state.eaaddr + 7);
     temp    = geteal();
+    if (cpu_state.abrt)
+        return 0;
     temp_hi = readmeml(easeg, cpu_state.eaaddr + 4);
     if (cpu_state.abrt)
-        return 1;
-    int equal = EAX == temp && EDX == temp_hi;
-    /* The quadword helper checks both pages before changing either half. */
-    uint64_t value = equal ? ((uint64_t) ECX << 32) | EBX : ((uint64_t) temp_hi << 32) | temp;
-    writememq(easeg, cpu_state.eaaddr, value);
-    if (cpu_state.abrt)
-        return 1;
-    if (!equal) {
-        EAX = temp;
-        EDX = temp_hi;
+        return 0;
+    /* Validate both pages before either write. Probing with a write of
+       the old value would cause an extra write to a memory-mapped device. */
+    if (cr0 & 0x80000000) {
+        mmutranslatereal(easeg + cpu_state.eaaddr, 1);
+        if (cpu_state.abrt)
+            return 0;
+        mmutranslatereal(easeg + cpu_state.eaaddr + 7, 1);
+        if (cpu_state.abrt)
+            return 0;
+    }
+    if (EAX == temp && EDX == temp_hi) {
+        seteal(EBX);
+        if (!cpu_state.abrt) {
+            writememl(easeg, cpu_state.eaaddr + 4, ECX);
+        }
+    } else {
+        /* CMPXCHG8B writes back the complete old value on a mismatch. */
+        seteal(temp);
+        if (!cpu_state.abrt) {
+            writememl(easeg, cpu_state.eaaddr + 4, temp_hi);
+        }
+        if (!cpu_state.abrt) {
+            EAX = temp;
+            EDX = temp_hi;
+        }
     }
     flags_rebuild();
     if (temp == temp2 && temp_hi == temp2_hi)
@@ -251,21 +283,41 @@ opCMPXCHG8B_a32(uint32_t fetchdat)
         }
         return ILLEGAL(fetchdat);
     }
+    if ((fetchdat & 0x38) != 0x08)
+        return ILLEGAL(fetchdat); /* Only 0F C7 /1 is CMPXCHG8B. */
     SEG_CHECK_WRITE(cpu_state.ea_seg);
     CHECK_WRITE(cpu_state.ea_seg, cpu_state.eaaddr, cpu_state.eaaddr + 7UL);
     temp    = geteal();
+    if (cpu_state.abrt)
+        return 0;
     temp_hi = readmeml(easeg, cpu_state.eaaddr + 4);
     if (cpu_state.abrt)
-        return 1;
-    int equal = EAX == temp && EDX == temp_hi;
-    /* The quadword helper checks both pages before changing either half. */
-    uint64_t value = equal ? ((uint64_t) ECX << 32) | EBX : ((uint64_t) temp_hi << 32) | temp;
-    writememq(easeg, cpu_state.eaaddr, value);
-    if (cpu_state.abrt)
-        return 1;
-    if (!equal) {
-        EAX = temp;
-        EDX = temp_hi;
+        return 0;
+    /* Validate both pages before either write. Probing with a write of
+       the old value would cause an extra write to a memory-mapped device. */
+    if (cr0 & 0x80000000) {
+        mmutranslatereal(easeg + cpu_state.eaaddr, 1);
+        if (cpu_state.abrt)
+            return 0;
+        mmutranslatereal(easeg + cpu_state.eaaddr + 7, 1);
+        if (cpu_state.abrt)
+            return 0;
+    }
+    if (EAX == temp && EDX == temp_hi) {
+        seteal(EBX);
+        if (!cpu_state.abrt) {
+            writememl(easeg, cpu_state.eaaddr + 4, ECX);
+        }
+    } else {
+        /* CMPXCHG8B writes back the complete old value on a mismatch. */
+        seteal(temp);
+        if (!cpu_state.abrt) {
+            writememl(easeg, cpu_state.eaaddr + 4, temp_hi);
+        }
+        if (!cpu_state.abrt) {
+            EAX = temp;
+            EDX = temp_hi;
+        }
     }
     flags_rebuild();
     if (temp == temp2 && temp_hi == temp2_hi)
@@ -277,12 +329,13 @@ opCMPXCHG8B_a32(uint32_t fetchdat)
 }
 #endif
 
-/* dest = eab, src = r8. SRC gets DEST, then DEST gets the sum, so with the
-   same register for both the sum is what's left. */
+/* Write the source after a successful destination write. With two distinct
+   registers it receives the old destination; with the same register the sum
+   must remain. A faulting memory destination must leave the source unchanged. */
+/* dest = eab, src = r8 */
 static int
 opXADD_b_a16(uint32_t fetchdat)
 {
-    uint8_t temp;
     uint8_t src;
     uint8_t dest;
 
@@ -293,20 +346,20 @@ opXADD_b_a16(uint32_t fetchdat)
     dest = geteab();
     if (cpu_state.abrt)
         return 1;
-    temp = src + dest;
-    seteab(temp);
+    seteab(src + dest);
     if (cpu_state.abrt)
         return 1;
     setadd8(src, dest);
-    if ((cpu_mod != 3) || (cpu_rm != cpu_reg))
+    /* With one register as both operands, leave the sum in place. */
+    if ((cpu_mod != 3) || (cpu_reg != cpu_rm)) {
         setr8(cpu_reg, dest);
+    }
     CLOCK_CYCLES((cpu_mod == 3) ? 3 : 4);
     return 0;
 }
 static int
 opXADD_b_a32(uint32_t fetchdat)
 {
-    uint8_t temp;
     uint8_t src;
     uint8_t dest;
 
@@ -317,13 +370,14 @@ opXADD_b_a32(uint32_t fetchdat)
     dest = geteab();
     if (cpu_state.abrt)
         return 1;
-    temp = src + dest;
-    seteab(temp);
+    seteab(src + dest);
     if (cpu_state.abrt)
         return 1;
     setadd8(src, dest);
-    if ((cpu_mod != 3) || (cpu_rm != cpu_reg))
+    /* With one register as both operands, leave the sum in place. */
+    if ((cpu_mod != 3) || (cpu_reg != cpu_rm)) {
         setr8(cpu_reg, dest);
+    }
     CLOCK_CYCLES((cpu_mod == 3) ? 3 : 4);
     return 0;
 }
@@ -331,7 +385,6 @@ opXADD_b_a32(uint32_t fetchdat)
 static int
 opXADD_w_a16(uint32_t fetchdat)
 {
-    uint16_t temp;
     uint16_t src;
     uint16_t dest;
 
@@ -342,12 +395,12 @@ opXADD_w_a16(uint32_t fetchdat)
     dest = geteaw();
     if (cpu_state.abrt)
         return 1;
-    temp = src + dest;
-    seteaw(temp);
+    seteaw(src + dest);
     if (cpu_state.abrt)
         return 1;
     setadd16(src, dest);
-    if ((cpu_mod != 3) || (cpu_rm != cpu_reg))
+    /* With one register as both operands, leave the sum in place. */
+    if ((cpu_mod != 3) || (cpu_reg != cpu_rm))
         cpu_state.regs[cpu_reg].w = dest;
     CLOCK_CYCLES((cpu_mod == 3) ? 3 : 4);
     return 0;
@@ -355,7 +408,6 @@ opXADD_w_a16(uint32_t fetchdat)
 static int
 opXADD_w_a32(uint32_t fetchdat)
 {
-    uint16_t temp;
     uint16_t src;
     uint16_t dest;
 
@@ -366,12 +418,12 @@ opXADD_w_a32(uint32_t fetchdat)
     dest = geteaw();
     if (cpu_state.abrt)
         return 1;
-    temp = src + dest;
-    seteaw(temp);
+    seteaw(src + dest);
     if (cpu_state.abrt)
         return 1;
     setadd16(src, dest);
-    if ((cpu_mod != 3) || (cpu_rm != cpu_reg))
+    /* With one register as both operands, leave the sum in place. */
+    if ((cpu_mod != 3) || (cpu_reg != cpu_rm))
         cpu_state.regs[cpu_reg].w = dest;
     CLOCK_CYCLES((cpu_mod == 3) ? 3 : 4);
     return 0;
@@ -380,7 +432,6 @@ opXADD_w_a32(uint32_t fetchdat)
 static int
 opXADD_l_a16(uint32_t fetchdat)
 {
-    uint32_t temp;
     uint32_t src;
     uint32_t dest;
 
@@ -391,12 +442,12 @@ opXADD_l_a16(uint32_t fetchdat)
     dest = geteal();
     if (cpu_state.abrt)
         return 1;
-    temp = src + dest;
-    seteal(temp);
+    seteal(src + dest);
     if (cpu_state.abrt)
         return 1;
     setadd32(src, dest);
-    if ((cpu_mod != 3) || (cpu_rm != cpu_reg))
+    /* With one register as both operands, leave the sum in place. */
+    if ((cpu_mod != 3) || (cpu_reg != cpu_rm))
         cpu_state.regs[cpu_reg].l = dest;
     CLOCK_CYCLES((cpu_mod == 3) ? 3 : 4);
     return 0;
@@ -404,7 +455,6 @@ opXADD_l_a16(uint32_t fetchdat)
 static int
 opXADD_l_a32(uint32_t fetchdat)
 {
-    uint32_t temp;
     uint32_t src;
     uint32_t dest;
 
@@ -415,12 +465,12 @@ opXADD_l_a32(uint32_t fetchdat)
     dest = geteal();
     if (cpu_state.abrt)
         return 1;
-    temp = src + dest;
-    seteal(temp);
+    seteal(src + dest);
     if (cpu_state.abrt)
         return 1;
     setadd32(src, dest);
-    if ((cpu_mod != 3) || (cpu_rm != cpu_reg))
+    /* With one register as both operands, leave the sum in place. */
+    if ((cpu_mod != 3) || (cpu_reg != cpu_rm))
         cpu_state.regs[cpu_reg].l = dest;
     CLOCK_CYCLES((cpu_mod == 3) ? 3 : 4);
     return 0;

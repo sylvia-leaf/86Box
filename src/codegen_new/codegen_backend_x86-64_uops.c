@@ -33,7 +33,19 @@
 #    define STACK_TEMP_DQ     (64)
 #    define STACK_TEMP_MXCSR  (96)
 
-#    define HOST_REG_GET(reg) ((IREG_GET_SIZE(reg) == IREG_SIZE_BH) ? (IREG_GET_REG((reg) &3) | 4) : (IREG_GET_REG(reg) & 15))
+/*AH-BH exist only for the first four registers; the allocator keeps
+  registers accessed by byte out of R8-R15 (HOST_REG_FLAG_NO_BYTE).*/
+static inline int
+host_reg_get(int reg)
+{
+    if (IREG_GET_SIZE(reg) == IREG_SIZE_BH) {
+        if (IREG_GET_REG(reg) & ~3)
+            fatal("x86-64 codegen: high byte of host register %i\n", IREG_GET_REG(reg));
+        return IREG_GET_REG(reg) | 4;
+    }
+    return IREG_GET_REG(reg) & 15;
+}
+#    define HOST_REG_GET(reg) host_reg_get(reg)
 
 #    define REG_IS_L(size)    (size == IREG_SIZE_L)
 #    define REG_IS_W(size)    (size == IREG_SIZE_W)
@@ -407,6 +419,14 @@ codegen_ADD(codeblock_t *block, uop_t *uop)
     int src_size_a = IREG_GET_SIZE(uop->src_reg_a_real);
     int src_size_b = IREG_GET_SIZE(uop->src_reg_b_real);
 
+    /*dest == src_b: moving src_a into dest first would clobber src_b; the
+      operation commutes, so take the sources the other way round*/
+    if ((dest_reg == src_reg_b) && (dest_reg != src_reg_a)) {
+        int t     = src_reg_a;
+        src_reg_a = src_reg_b;
+        src_reg_b = t;
+    }
+
     if (REG_IS_L(dest_size) && REG_IS_L(src_size_a) && REG_IS_L(src_size_b)) {
         if (dest_reg != src_reg_a)
             host_x86_LEA_REG_REG(block, dest_reg, src_reg_a, src_reg_b);
@@ -650,6 +670,14 @@ codegen_AND(codeblock_t *block, uop_t *uop)
     int dest_size  = IREG_GET_SIZE(uop->dest_reg_a_real);
     int src_size_a = IREG_GET_SIZE(uop->src_reg_a_real);
     int src_size_b = IREG_GET_SIZE(uop->src_reg_b_real);
+
+    /*dest == src_b: moving src_a into dest first would clobber src_b; the
+      operation commutes, so take the sources the other way round*/
+    if ((dest_reg == src_reg_b) && (dest_reg != src_reg_a)) {
+        int t     = src_reg_a;
+        src_reg_a = src_reg_b;
+        src_reg_b = t;
+    }
 
     if (((REG_IS_Q(dest_size) && REG_IS_Q(src_size_a) && REG_IS_Q(src_size_b)) ||
         (REG_IS_DQ(dest_size) && REG_IS_DQ(src_size_a) && REG_IS_DQ(src_size_b))) && uop->dest_reg_a_real == uop->src_reg_a_real) {
@@ -1601,12 +1629,7 @@ codegen_MMX_ENTER(codeblock_t *block, uop_t *uop)
     host_x86_TEST32_REG_IMM(block, REG_ECX, 0x8);
     branch_offset = host_x86_JZ_long(block);
     host_x86_MOV32_ABS_IMM(block, &cpu_state.oldpc, uop->imm_data);
-#    if _WIN64
-    host_x86_MOV32_REG_IMM(block, REG_ECX, 7);
-#    else
-    host_x86_MOV32_REG_IMM(block, REG_EDI, 7);
-#    endif
-    host_x86_CALL(block, x86_int);
+    host_x86_CALL(block, codegen_mmx_unavailable);
     host_x86_JMP(block, codegen_exit_rout);
     *branch_offset = (uint32_t) ((uintptr_t) &block_write_data[block_pos] - (uintptr_t) branch_offset) - 4;
 
@@ -3410,8 +3433,10 @@ codegen_MOV_REG_PTR(codeblock_t *block, uop_t *uop)
 
     if (REG_IS_L(dest_size)) {
         host_x86_MOV32_REG_ABS(block, dest_reg, uop->p);
-    } else if (REG_IS_D(dest_size) || REG_IS_Q(dest_size)) {
-        host_x86_MOVQ_XREG_ABS(block, dest_reg, uop->p);
+    } else if (REG_IS_Q(dest_size) || REG_IS_D(dest_size)) {
+        /*The pointer may be anywhere in the address space*/
+        host_x86_MOV64_REG_IMM(block, REG_ECX, (uint64_t) (uintptr_t) uop->p);
+        host_x86_MOVQ_XREG_BASE_OFFSET(block, dest_reg, REG_ECX, 0);
     } else
         fatal("MOV_REG_PTR %02x\n", uop->dest_reg_a_real);
 
@@ -3459,6 +3484,13 @@ codegen_MOVSX(codeblock_t *block, uop_t *uop)
 
     if (REG_IS_L(dest_size) && REG_IS_W(src_size)) {
         host_x86_MOVSX_REG_32_16(block, dest_reg, src_reg);
+    } else if (REG_IS_BH(src_size) && (dest_reg & 8)) {
+        /*AH-BH and R8-R15 can't share an instruction: extend into ECX*/
+        host_x86_MOVSX_REG_32_8(block, REG_ECX, src_reg);
+        if (REG_IS_L(dest_size))
+            host_x86_MOV32_REG_REG(block, dest_reg, REG_ECX);
+        else
+            host_x86_MOV16_REG_REG(block, dest_reg, REG_ECX);
     } else if (REG_IS_L(dest_size) && REG_IS_B(src_size)) {
         host_x86_MOVSX_REG_32_8(block, dest_reg, src_reg);
     } else if (REG_IS_W(dest_size) && REG_IS_B(src_size)) {
@@ -3484,6 +3516,13 @@ codegen_MOVZX(codeblock_t *block, uop_t *uop)
         host_x86_MOVD_REG_XREG(block, dest_reg, src_reg);
     } else if (REG_IS_L(dest_size) && REG_IS_W(src_size)) {
         host_x86_MOVZX_REG_32_16(block, dest_reg, src_reg);
+    } else if (REG_IS_BH(src_size) && (dest_reg & 8)) {
+        /*AH-BH and R8-R15 can't share an instruction: extend into ECX*/
+        host_x86_MOVZX_REG_32_8(block, REG_ECX, src_reg);
+        if (REG_IS_L(dest_size))
+            host_x86_MOV32_REG_REG(block, dest_reg, REG_ECX);
+        else
+            host_x86_MOV16_REG_REG(block, dest_reg, REG_ECX);
     } else if (REG_IS_L(dest_size) && REG_IS_B(src_size)) {
         host_x86_MOVZX_REG_32_8(block, dest_reg, src_reg);
     } else if (REG_IS_W(dest_size) && REG_IS_B(src_size)) {
@@ -3534,6 +3573,13 @@ codegen_MOV_INT_DOUBLE(codeblock_t *block, uop_t *uop)
     } else if (REG_IS_W(dest_size) && REG_IS_D(src_size)) {
         host_x86_LDMXCSR(block, &cpu_state.new_fp_control);
         host_x86_CVTSD2SI_REG_XREG(block, REG_ECX, src_reg);
+        /* A word overflow stores the integer indefinite, not the low
+           word of the dword conversion. This also catches NaN/infinity. */
+        host_x86_MOVSX_REG_32_16(block, REG_ESI, REG_ECX);
+        host_x86_CMP32_REG_REG(block, REG_ESI, REG_ECX);
+        uint32_t *in_range = host_x86_JZ_long(block);
+        host_x86_MOV32_REG_IMM(block, REG_ECX, 0x8000);
+        *in_range = (uint32_t) ((uintptr_t) &block_write_data[block_pos] - (uintptr_t) in_range) - 4;
         host_x86_MOV16_REG_REG(block, dest_reg, REG_ECX);
         host_x86_LDMXCSR(block, &cpu_state.old_fp_control);
     }
@@ -3592,6 +3638,14 @@ codegen_OR(codeblock_t *block, uop_t *uop)
     int src_size_a = IREG_GET_SIZE(uop->src_reg_a_real);
     int src_size_b = IREG_GET_SIZE(uop->src_reg_b_real);
 
+    /*dest == src_b: moving src_a into dest first would clobber src_b; the
+      operation commutes, so take the sources the other way round*/
+    if ((dest_reg == src_reg_b) && (dest_reg != src_reg_a)) {
+        int t     = src_reg_a;
+        src_reg_a = src_reg_b;
+        src_reg_b = t;
+    }
+    
     if (((REG_IS_Q(dest_size) && REG_IS_Q(src_size_a) && REG_IS_Q(src_size_b)) ||
         (REG_IS_DQ(dest_size) && REG_IS_DQ(src_size_a) && REG_IS_DQ(src_size_b))) && uop->dest_reg_a_real == uop->src_reg_a_real) {
         host_x86_POR_XREG_XREG(block, dest_reg, src_reg_b);
@@ -4032,7 +4086,12 @@ codegen_PFMAX(codeblock_t *block, uop_t *uop)
     int src_size_b = IREG_GET_SIZE(uop->src_reg_b_real);
 
     if (REG_IS_Q(dest_size) && REG_IS_Q(src_size_b) && uop->dest_reg_a_real == uop->src_reg_a_real) {
-        host_x86_MAXPS_XREG_XREG(block, dest_reg, src_reg_b);
+        /*MAXPS returns its second operand on a tie or a NaN; the interpreter
+          keeps the destination unless the source is greater, which is MAXPS
+          with the operands the other way round*/
+        host_x86_MOVQ_XREG_XREG(block, REG_XMM_TEMP, src_reg_b);
+        host_x86_MAXPS_XREG_XREG(block, REG_XMM_TEMP, dest_reg);
+        host_x86_MOVQ_XREG_XREG(block, dest_reg, REG_XMM_TEMP);
     }
 #    ifdef RECOMPILER_DEBUG
     else
@@ -4049,7 +4108,10 @@ codegen_PFMIN(codeblock_t *block, uop_t *uop)
     int src_size_b = IREG_GET_SIZE(uop->src_reg_b_real);
 
     if (REG_IS_Q(dest_size) && REG_IS_Q(src_size_b) && uop->dest_reg_a_real == uop->src_reg_a_real) {
-        host_x86_MINPS_XREG_XREG(block, dest_reg, src_reg_b);
+        /*As PFMAX: the destination unless the source is smaller*/
+        host_x86_MOVQ_XREG_XREG(block, REG_XMM_TEMP, src_reg_b);
+        host_x86_MINPS_XREG_XREG(block, REG_XMM_TEMP, dest_reg);
+        host_x86_MOVQ_XREG_XREG(block, dest_reg, REG_XMM_TEMP);
     }
 #    ifdef RECOMPILER_DEBUG
     else
@@ -4105,11 +4167,14 @@ codegen_PFRSQRT(codeblock_t *block, uop_t *uop)
     int src_size_a = IREG_GET_SIZE(uop->src_reg_a_real);
 
     if (REG_IS_Q(dest_size) && REG_IS_Q(src_size_a)) {
-        /*TODO: This could be improved (use RSQRTSS + iteration)*/
-        host_x86_SQRTSS_XREG_XREG(block, REG_XMM_TEMP, src_reg_a);
+        /*1.0 / sqrt(x) in double precision, rounded to single once, as the
+          interpreter does it; in single precision it rounds twice*/
+        host_x86_CVTSS2SD_XREG_XREG(block, REG_XMM_TEMP, src_reg_a);
+        host_x86_SQRTSD_XREG_XREG(block, REG_XMM_TEMP, REG_XMM_TEMP);
         host_x86_MOV32_REG_IMM(block, REG_ECX, 1);
-        host_x86_CVTSI2SS_XREG_REG(block, dest_reg, REG_ECX);
-        host_x86_DIVSS_XREG_XREG(block, dest_reg, REG_XMM_TEMP);
+        host_x86_CVTSI2SD_XREG_REG(block, dest_reg, REG_ECX);
+        host_x86_DIVSD_XREG_XREG(block, dest_reg, REG_XMM_TEMP);
+        host_x86_CVTSD2SS_XREG_XREG(block, dest_reg, dest_reg);
         host_x86_UNPCKLPS_XREG_XREG(block, dest_reg, dest_reg);
     }
 #    ifdef RECOMPILER_DEBUG
@@ -4433,21 +4498,6 @@ codegen_PSRAD_IMM(codeblock_t *block, uop_t *uop)
 #    ifdef RECOMPILER_DEBUG
     else
         fatal("PSRAD_IMM %02x %02x\n", uop->dest_reg_a_real, uop->src_reg_a_real);
-#    endif
-    return 0;
-}
-static int
-codegen_PSRAQ_IMM(codeblock_t *block, uop_t *uop)
-{
-    int dest_reg  = HOST_REG_GET(uop->dest_reg_a_real);
-    int dest_size = IREG_GET_SIZE(uop->dest_reg_a_real);
-
-    if ((REG_IS_Q(dest_size)) || (REG_IS_DQ(dest_size))) {
-        host_x86_PSRAQ_XREG_IMM(block, dest_reg, uop->imm_data);
-    }
-#    ifdef RECOMPILER_DEBUG
-    else
-        fatal("PSRAQ_IMM %02x %02x\n", uop->dest_reg_a_real, uop->src_reg_a_real);
 #    endif
     return 0;
 }
@@ -5134,6 +5184,18 @@ codegen_SUB(codeblock_t *block, uop_t *uop)
     int src_size_a = IREG_GET_SIZE(uop->src_reg_a_real);
     int src_size_b = IREG_GET_SIZE(uop->src_reg_b_real);
 
+    /*dest == src_b: moving src_a into dest first would clobber src_b, so
+      src_b goes to the scratch register first*/
+    if ((dest_reg == src_reg_b) && (dest_reg != src_reg_a)) {
+        if (REG_IS_L(src_size_b))
+            host_x86_MOV32_REG_REG(block, REG_ECX, src_reg_b);
+        else if (REG_IS_W(src_size_b))
+            host_x86_MOV16_REG_REG(block, REG_ECX, src_reg_b);
+        else
+            host_x86_MOV8_REG_REG(block, REG_ECX, src_reg_b);
+        src_reg_b = REG_ECX;
+    }
+
     if (REG_IS_L(dest_size) && REG_IS_L(src_size_a) && REG_IS_L(src_size_b)) {
         if (dest_reg != src_reg_a)
             host_x86_MOV32_REG_REG(block, dest_reg, src_reg_a);
@@ -5222,6 +5284,194 @@ codegen_TEST_JS_DEST(codeblock_t *block, uop_t *uop)
     uop->p = host_x86_JS_long(block);
 
     return 0;
+}
+
+/*The condition goes through CL, which the allocator never hands out, so the
+  destination can be any host register*/
+static int
+codegen_CMP_SET(codeblock_t *block, uop_t *uop)
+{
+    int dest_reg   = HOST_REG_GET(uop->dest_reg_a_real);
+    int src_reg_a  = HOST_REG_GET(uop->src_reg_a_real);
+    int src_reg_b  = HOST_REG_GET(uop->src_reg_b_real);
+    int dest_size  = IREG_GET_SIZE(uop->dest_reg_a_real);
+    int src_size_a = IREG_GET_SIZE(uop->src_reg_a_real);
+    int src_size_b = IREG_GET_SIZE(uop->src_reg_b_real);
+
+    if (REG_IS_L(src_size_a) && REG_IS_L(src_size_b)) {
+        host_x86_CMP32_REG_REG(block, src_reg_a, src_reg_b);
+    } else if (REG_IS_W(src_size_a) && REG_IS_W(src_size_b)) {
+        host_x86_CMP16_REG_REG(block, src_reg_a, src_reg_b);
+    } else if (REG_IS_B(src_size_a) && REG_IS_B(src_size_b)) {
+        host_x86_CMP8_REG_REG(block, src_reg_a, src_reg_b);
+    } else
+        fatal("CMP_SET %02x %02x\n", uop->src_reg_a_real, uop->src_reg_b_real);
+    if (!REG_IS_L(dest_size))
+        fatal("CMP_SET dest %02x\n", uop->dest_reg_a_real);
+
+    host_x86_SETcc_REG(block, uop->imm_data, REG_ECX);
+    host_x86_MOVZX_REG_32_8(block, dest_reg, REG_ECX);
+
+    return 0;
+}
+static int
+codegen_TEST_SET(codeblock_t *block, uop_t *uop)
+{
+    int dest_reg  = HOST_REG_GET(uop->dest_reg_a_real);
+    int src_reg   = HOST_REG_GET(uop->src_reg_a_real);
+    int dest_size = IREG_GET_SIZE(uop->dest_reg_a_real);
+    int src_size  = IREG_GET_SIZE(uop->src_reg_a_real);
+
+    if (REG_IS_L(src_size)) {
+        host_x86_TEST32_REG(block, src_reg, src_reg);
+    } else if (REG_IS_W(src_size)) {
+        host_x86_TEST16_REG(block, src_reg, src_reg);
+    } else if (REG_IS_B(src_size)) {
+        host_x86_TEST8_REG(block, src_reg, src_reg);
+    } else
+        fatal("TEST_SET %02x\n", uop->src_reg_a_real);
+    if (!REG_IS_L(dest_size))
+        fatal("TEST_SET dest %02x\n", uop->dest_reg_a_real);
+
+    host_x86_SETcc_REG(block, uop->imm_data, REG_ECX);
+    host_x86_MOVZX_REG_32_8(block, dest_reg, REG_ECX);
+
+    return 0;
+}
+static int
+codegen_BSWAP(codeblock_t *block, uop_t *uop)
+{
+    int dest_reg  = HOST_REG_GET(uop->dest_reg_a_real);
+    int src_reg   = HOST_REG_GET(uop->src_reg_a_real);
+    int dest_size = IREG_GET_SIZE(uop->dest_reg_a_real);
+    int src_size  = IREG_GET_SIZE(uop->src_reg_a_real);
+
+    if (!REG_IS_L(dest_size) || !REG_IS_L(src_size))
+        fatal("BSWAP %02x %02x\n", uop->dest_reg_a_real, uop->src_reg_a_real);
+
+    if (dest_reg != src_reg)
+        host_x86_MOV32_REG_REG(block, dest_reg, src_reg);
+    host_x86_BSWAP32_REG(block, dest_reg);
+
+    return 0;
+}
+static int
+codegen_IMUL(codeblock_t *block, uop_t *uop)
+{
+    int dest_reg   = HOST_REG_GET(uop->dest_reg_a_real);
+    int src_reg_a  = HOST_REG_GET(uop->src_reg_a_real);
+    int src_reg_b  = HOST_REG_GET(uop->src_reg_b_real);
+    int dest_size  = IREG_GET_SIZE(uop->dest_reg_a_real);
+    int src_size_a = IREG_GET_SIZE(uop->src_reg_a_real);
+    int src_size_b = IREG_GET_SIZE(uop->src_reg_b_real);
+
+    if (!REG_IS_L(dest_size) || !REG_IS_L(src_size_a) || !REG_IS_L(src_size_b))
+        fatal("IMUL %02x %02x %02x\n", uop->dest_reg_a_real, uop->src_reg_a_real, uop->src_reg_b_real);
+
+    if (dest_reg == src_reg_a)
+        host_x86_IMUL32_REG_REG(block, dest_reg, src_reg_b);
+    else if (dest_reg == src_reg_b)
+        host_x86_IMUL32_REG_REG(block, dest_reg, src_reg_a);
+    else {
+        host_x86_MOV32_REG_REG(block, dest_reg, src_reg_a);
+        host_x86_IMUL32_REG_REG(block, dest_reg, src_reg_b);
+    }
+
+    return 0;
+}
+static int
+codegen_IMUL_OV(codeblock_t *block, uop_t *uop)
+{
+    int dest_reg   = HOST_REG_GET(uop->dest_reg_a_real);
+    int src_reg_a  = HOST_REG_GET(uop->src_reg_a_real);
+    int src_reg_b  = HOST_REG_GET(uop->src_reg_b_real);
+    int dest_size  = IREG_GET_SIZE(uop->dest_reg_a_real);
+    int src_size_a = IREG_GET_SIZE(uop->src_reg_a_real);
+    int src_size_b = IREG_GET_SIZE(uop->src_reg_b_real);
+
+    if (!REG_IS_L(dest_size) || !REG_IS_L(src_size_a) || !REG_IS_L(src_size_b))
+        fatal("IMUL_OV %02x %02x %02x\n", uop->dest_reg_a_real, uop->src_reg_a_real, uop->src_reg_b_real);
+
+    /*The product is thrown away; OF says whether it fit*/
+    host_x86_MOV32_REG_REG(block, REG_ECX, src_reg_a);
+    host_x86_IMUL32_REG_REG(block, REG_ECX, src_reg_b);
+    host_x86_SETcc_REG(block, UOP_CC_O, REG_ECX);
+    host_x86_MOVZX_REG_32_8(block, dest_reg, REG_ECX);
+
+    return 0;
+}
+static int
+codegen_MUL_HI_common(codeblock_t *block, uop_t *uop, int is_signed)
+{
+    int dest_reg   = HOST_REG_GET(uop->dest_reg_a_real);
+    int src_reg_a  = HOST_REG_GET(uop->src_reg_a_real);
+    int src_reg_b  = HOST_REG_GET(uop->src_reg_b_real);
+    int dest_size  = IREG_GET_SIZE(uop->dest_reg_a_real);
+    int src_size_a = IREG_GET_SIZE(uop->src_reg_a_real);
+    int src_size_b = IREG_GET_SIZE(uop->src_reg_b_real);
+
+    if (!REG_IS_L(dest_size) || !REG_IS_L(src_size_a) || !REG_IS_L(src_size_b))
+        fatal("MUL_HI %02x %02x %02x\n", uop->dest_reg_a_real, uop->src_reg_a_real, uop->src_reg_b_real);
+
+    /*Both operands widened to 64 bits in RCX and RSI, which the allocator
+      never hands out; the low 64 bits of that product are the whole product*/
+    if (is_signed) {
+        host_x86_MOVSXD_REG_REG(block, REG_RCX, src_reg_a);
+        host_x86_MOVSXD_REG_REG(block, REG_RSI, src_reg_b);
+    } else {
+        host_x86_MOV32_REG_REG(block, REG_ECX, src_reg_a);
+        host_x86_MOV32_REG_REG(block, REG_ESI, src_reg_b);
+    }
+    host_x86_IMUL64_REG_REG(block, REG_RCX, REG_RSI);
+    host_x86_SHR64_IMM(block, REG_RCX, 32);
+    host_x86_MOV32_REG_REG(block, dest_reg, REG_ECX);
+
+    return 0;
+}
+static int
+codegen_MUL_HI(codeblock_t *block, uop_t *uop)
+{
+    return codegen_MUL_HI_common(block, uop, 0);
+}
+static int
+codegen_IMUL_HI(codeblock_t *block, uop_t *uop)
+{
+    return codegen_MUL_HI_common(block, uop, 1);
+}
+static int
+codegen_BS_common(codeblock_t *block, uop_t *uop, int reverse)
+{
+    int dest_reg   = HOST_REG_GET(uop->dest_reg_a_real);
+    int src_reg_a  = HOST_REG_GET(uop->src_reg_a_real);
+    int src_reg_b  = HOST_REG_GET(uop->src_reg_b_real);
+    int dest_size  = IREG_GET_SIZE(uop->dest_reg_a_real);
+    int src_size_a = IREG_GET_SIZE(uop->src_reg_a_real);
+    int src_size_b = IREG_GET_SIZE(uop->src_reg_b_real);
+
+    if (!REG_IS_L(dest_size) || !REG_IS_L(src_size_a) || !REG_IS_L(src_size_b))
+        fatal("BSF/BSR %02x %02x %02x\n", uop->dest_reg_a_real, uop->src_reg_a_real, uop->src_reg_b_real);
+
+    /*The scan's result when the source is zero is not relied on: the old
+      value is kept unless ZF says a bit was found*/
+    if (reverse)
+        host_x86_BSR32_REG_REG(block, REG_ESI, src_reg_a);
+    else
+        host_x86_BSF32_REG_REG(block, REG_ESI, src_reg_a);
+    host_x86_MOV32_REG_REG(block, REG_ECX, src_reg_b);
+    host_x86_CMOVNZ32_REG_REG(block, REG_ECX, REG_ESI);
+    host_x86_MOV32_REG_REG(block, dest_reg, REG_ECX);
+
+    return 0;
+}
+static int
+codegen_BSF(codeblock_t *block, uop_t *uop)
+{
+    return codegen_BS_common(block, uop, 0);
+}
+static int
+codegen_BSR(codeblock_t *block, uop_t *uop)
+{
+    return codegen_BS_common(block, uop, 1);
 }
 
 static int
@@ -5569,6 +5819,33 @@ const uOpFn uop_handlers[UOP_MAX] = {
     [UOP_TEST_JS_DEST &
         UOP_MASK]
     = codegen_TEST_JS_DEST,
+    [UOP_CMP_SET &
+        UOP_MASK]
+    = codegen_CMP_SET,
+    [UOP_TEST_SET &
+        UOP_MASK]
+    = codegen_TEST_SET,
+    [UOP_BSWAP &
+        UOP_MASK]
+    = codegen_BSWAP,
+    [UOP_IMUL &
+        UOP_MASK]
+    = codegen_IMUL,
+    [UOP_IMUL_OV &
+        UOP_MASK]
+    = codegen_IMUL_OV,
+    [UOP_MUL_HI &
+        UOP_MASK]
+    = codegen_MUL_HI,
+    [UOP_IMUL_HI &
+        UOP_MASK]
+    = codegen_IMUL_HI,
+    [UOP_BSF &
+        UOP_MASK]
+    = codegen_BSF,
+    [UOP_BSR &
+        UOP_MASK]
+    = codegen_BSR,
 
     [UOP_FP_ENTER &
         UOP_MASK]
@@ -5762,9 +6039,6 @@ const uOpFn uop_handlers[UOP_MAX] = {
     [UOP_PSRAD_IMM &
         UOP_MASK]
     = codegen_PSRAD_IMM,
-    [UOP_PSRAQ_IMM &
-        UOP_MASK]
-    = codegen_PSRAQ_IMM,
     [UOP_PSRLW_IMM &
         UOP_MASK]
     = codegen_PSRLW_IMM,
