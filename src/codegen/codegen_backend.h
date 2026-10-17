@@ -1,6 +1,8 @@
 #ifndef _CODEGEN_BACKEND_H_
 #define _CODEGEN_BACKEND_H_
 
+#include "codegen.h"
+
 #if defined __amd64__ || defined _M_X64
 #    include "codegen_backend_x86-64.h"
 #elif defined __aarch64__ || defined _M_ARM64

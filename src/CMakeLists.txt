@@ -207,20 +207,14 @@ configure_file(include/86box/version.h.in include/86box/version.h @ONLY)
 include_directories(${CMAKE_CURRENT_BINARY_DIR}/include)
 
 include_directories(include)
-if(DYNAREC)
-    include_directories(cpu codegen)
-else()
-    include_directories(cpu)
-endif()
+include_directories(cpu codegen)
 
 add_subdirectory(cdrom)
 add_subdirectory(char)
 add_subdirectory(chipset)
 
 add_subdirectory(cpu)
-if(DYNAREC)
-    add_subdirectory(codegen)
-endif()
+add_subdirectory(codegen)
 
 if(MINITRACE)
     add_compile_definitions(MTR_ENABLED)

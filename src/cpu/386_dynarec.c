@@ -711,6 +711,7 @@ exec386_dynarec_dyn(void)
         cpu_cur_status |= CPU_STATUS_NOTFLATES;
 
     if (!cpu_state.abrt)
+    {
         page_t *page = &pages[phys_addr >> 12];
 
         /* Block must match current CS, PC, code segment size,

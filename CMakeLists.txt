@@ -150,11 +150,6 @@ if(BUILD_TESTING OR BUILD_BENCHMARKS)
     add_subdirectory(tests)
 endif()
 
-# The "new" (PCem v15 style) dynamic recompiler is the only recompiler that
-# supports the Pentium 4 (Socket 423/478) CPUs; without it those machines fall
-# back to the interpreter and run unusably slowly, so enable it by default on
-# all platforms.
-option(NEW_DYNAREC "Use the PCem v15 (\"new\") dynamic recompiler" ON)
 # Fast dynarec sacrifices timing accuracy for speed, as an optional runtime
 # selectable mode. It is built whenever DYNAREC is enabled.
 option(FAST_DYNAREC "Enable fast dynamic recompiler (sacrifice timing for speed)" ON)

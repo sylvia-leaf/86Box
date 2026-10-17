@@ -47,10 +47,6 @@ if(AMD_K5)
 
 endif()
 
-if(GENERIC_INTEL)
-    target_compile_definitions(cpu PRIVATE USE_GENERICINTEL)
-endif()
-
 if(DYNAREC)
     target_sources(cpu PRIVATE
         386_dynarec_ops.c
