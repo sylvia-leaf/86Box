@@ -15,18 +15,13 @@
         CLOCK_CYCLES(1);                           \
     } else {                                       \
         SEG_CHECK_READ(cpu_state.ea_seg);          \
-<<<<<<< HEAD
-        CHECK_READ(cpu_state.ea_seg, cpu_state.eaaddr, cpu_state.eaaddr + 7UL); \
-=======
         CHECK_READ_EA(8);                          \
->>>>>>> 25e5b8173c022dfcb976aebcd4eb3563febdc5ae
         src.q = readmemq(easeg, cpu_state.eaaddr); \
         if (cpu_state.abrt)                        \
             return 1;                              \
         CLOCK_CYCLES(2);                           \
     }
 
-<<<<<<< HEAD
 #define SSE_GETSRC32()                                    \
     if (cpu_mod == 3) {                                   \
         src = cpu_state.XMM[cpu_rm];                      \
@@ -77,9 +72,6 @@
         CLOCK_CYCLES(2);                                  \
     }
 
-#define MMX_CHECK()                          \
-    if (!(cpu_features & CPU_FEATURE_MMX) || (cr0 & 0x4)) { \
-=======
 /* PUNPCKL*: only the low doubleword of a memory source is read */
 #define MMX_GETSRC_LOW32()                                 \
     if (cpu_mod == 3) {                                    \
@@ -95,9 +87,8 @@
         CLOCK_CYCLES(2);                                   \
     }
 
-#define MMX_ENTER()                          \
-    if (!cpu_has_feature(CPU_FEATURE_MMX) || (cr0 & 0x4)) { \
->>>>>>> 25e5b8173c022dfcb976aebcd4eb3563febdc5ae
+#define MMX_CHECK()                          \
+    if (!(cpu_features & CPU_FEATURE_MMX) || (cr0 & 0x4)) { \
         cpu_state.pc = cpu_state.oldpc;      \
         x86illegal();                        \
         return 1;                            \
@@ -106,16 +97,11 @@
         x86_int(7);                          \
         return 1;                            \
     }                                        \
-<<<<<<< HEAD
-    FPU_check_pending_exceptions()
+    FPU_check_pending_exceptions(); \
+    if (x87_legacy_pending())         \
+        return 1; 
 
 #define MMX_COMMIT() \
-=======
-    if (fpu_softfloat) {                     \
-        FPU_check_pending_exceptions();      \
-    } else if (x87_legacy_pending())         \
-        return 1;                            \
->>>>>>> 25e5b8173c022dfcb976aebcd4eb3563febdc5ae
     /* Resetting a non-zero TOP, or entering MMX mode, changes the stack \
        mapping a recompiled block was compiled against: end the block, \
        see FSTOR in x87_ops_misc.h. Not on every MMX instruction, or   \
@@ -142,9 +128,6 @@
 static int
 opEMMS(UNUSED(uint32_t fetchdat))
 {
-<<<<<<< HEAD
-    MMX_CHECK();
-=======
     if (!cpu_has_feature(CPU_FEATURE_MMX)) {
         cpu_state.pc = cpu_state.oldpc;
         x86illegal();
@@ -165,7 +148,6 @@ opEMMS(UNUSED(uint32_t fetchdat))
         FPU_check_pending_exceptions();
     } else if (x87_legacy_pending())
         return 1;
->>>>>>> 25e5b8173c022dfcb976aebcd4eb3563febdc5ae
     x87_emms();
     CLOCK_CYCLES(100); /*Guess*/
     return 0;

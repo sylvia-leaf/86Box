@@ -246,16 +246,12 @@
 #define UOP_TEST_SET (UOP_TYPE_PARAMS_REGS | UOP_TYPE_PARAMS_IMM | 0x73)
 /*UOP_BSWAP - dest_reg = src_reg_a with its four bytes reversed; both L*/
 #define UOP_BSWAP (UOP_TYPE_PARAMS_REGS | 0x74)
-/*UOP_IMUL - dest_reg = low 32 bits of (signed)src_reg_a * (signed)src_reg_b; all L*/
-#define UOP_IMUL (UOP_TYPE_PARAMS_REGS | 0x75)
 /*UOP_IMUL_OV - dest_reg = 1 if (signed)src_reg_a * (signed)src_reg_b doesn't fit
   in 32 bits, else 0; all L*/
 #define UOP_IMUL_OV (UOP_TYPE_PARAMS_REGS | 0x76)
 /*UOP_MUL_HI - dest_reg = high 32 bits of (unsigned)src_reg_a * (unsigned)src_reg_b; all L*/
 #define UOP_MUL_HI (UOP_TYPE_PARAMS_REGS | 0x77)
 /*UOP_IMUL_HI - dest_reg = high 32 bits of (signed)src_reg_a * (signed)src_reg_b; all L*/
-#define UOP_IMUL_HI (UOP_TYPE_PARAMS_REGS | 0x78)
-/*UOP_BSF - dest_reg = src_reg_a ? index of its lowest set bit : src_reg_b; all L*/
 #define UOP_BSF (UOP_TYPE_PARAMS_REGS | 0x79)
 /*UOP_BSR - dest_reg = src_reg_a ? index of its highest set bit : src_reg_b; all L*/
 #define UOP_BSR (UOP_TYPE_PARAMS_REGS | 0x7a)
@@ -1059,7 +1055,6 @@ extern void codegen_fpu_guard_int_indefinite(ir_data_t *ir, uint32_t fetchdat, u
         codegen_fpu_entered = 1;                            \
         codegen_mmx_entered = 0;                            \
     } while (0)
-<<<<<<< HEAD
 #define uop_MMX_ENTER(ir)                                    \
     do {                                                     \
         if (!codegen_mmx_entered)                            \
@@ -1067,21 +1062,6 @@ extern void codegen_fpu_guard_int_indefinite(ir_data_t *ir, uint32_t fetchdat, u
         if (!codegen_mmx_entered)                           \
             codegen_mmx_entered = 2;                        \
         codegen_fpu_entered = 0;                             \
-=======
-#define uop_MMX_ENTER(ir)                                                    \
-    do {                                                                     \
-        if (!codegen_mmx_entered) {                                          \
-            if (fpu_softfloat) {                                             \
-                uop_MOV_IMM(ir, IREG_oldpc, cpu_state.oldpc);                \
-                uop_CALL_FUNC_RESULT(ir, IREG_temp0, codegen_mmx_fpu_pending); \
-                uop_CMP_IMM_JZ(ir, IREG_temp0, 1, codegen_exit_rout);        \
-            } else                                                           \
-                codegen_fp_pending_check(ir);                                \
-            uop_gen_imm(UOP_MMX_ENTER, ir, cpu_state.oldpc);                 \
-        }                                                                    \
-        codegen_mmx_entered = 1;                                             \
-        codegen_fpu_entered = 0;                                             \
->>>>>>> 25e5b8173c022dfcb976aebcd4eb3563febdc5ae
     } while (0)
 #define uop_SSE_ENTER(ir)                                    \
     do {                                                     \

@@ -367,12 +367,8 @@ opFSTOR_a16(UNUSED(uint32_t fetchdat))
     FP_ENTER();
     fetch_ea_16(fetchdat);
     SEG_CHECK_READ(cpu_state.ea_seg);
-<<<<<<< HEAD
-    CHECK_READ(cpu_state.ea_seg, cpu_state.eaaddr, cpu_state.eaaddr + ((cpu_state.op32 & 0x100) ? 107UL : 93UL));
-=======
     CHECK_READ_EA((cpu_state.op32 & 0x100) ? 108 : 94);
     PROBE_READ_EA((cpu_state.op32 & 0x100) ? 108 : 94);
->>>>>>> 25e5b8173c022dfcb976aebcd4eb3563febdc5ae
     FSTOR();
     return cpu_state.abrt;
 }
@@ -383,12 +379,8 @@ opFSTOR_a32(uint32_t fetchdat)
     FP_ENTER();
     fetch_ea_32(fetchdat);
     SEG_CHECK_READ(cpu_state.ea_seg);
-<<<<<<< HEAD
-    CHECK_READ(cpu_state.ea_seg, cpu_state.eaaddr, cpu_state.eaaddr + ((cpu_state.op32 & 0x100) ? 107UL : 93UL));
-=======
     CHECK_READ_EA((cpu_state.op32 & 0x100) ? 108 : 94);
     PROBE_READ_EA((cpu_state.op32 & 0x100) ? 108 : 94);
->>>>>>> 25e5b8173c022dfcb976aebcd4eb3563febdc5ae
     FSTOR();
     return cpu_state.abrt;
 }
@@ -615,11 +607,7 @@ opFSAVE_a16(UNUSED(uint32_t fetchdat))
     FP_ENTER();
     fetch_ea_16(fetchdat);
     SEG_CHECK_WRITE(cpu_state.ea_seg);
-<<<<<<< HEAD
-    CHECK_WRITE(cpu_state.ea_seg, cpu_state.eaaddr, cpu_state.eaaddr + ((cpu_state.op32 & 0x100) ? 107UL : 93UL));
-=======
     CHECK_WRITE_EA((cpu_state.op32 & 0x100) ? 108 : 94);
->>>>>>> 25e5b8173c022dfcb976aebcd4eb3563febdc5ae
     FSAVE();
     return cpu_state.abrt;
 }
@@ -630,11 +618,7 @@ opFSAVE_a32(uint32_t fetchdat)
     FP_ENTER();
     fetch_ea_32(fetchdat);
     SEG_CHECK_WRITE(cpu_state.ea_seg);
-<<<<<<< HEAD
-    CHECK_WRITE(cpu_state.ea_seg, cpu_state.eaaddr, cpu_state.eaaddr + ((cpu_state.op32 & 0x100) ? 107UL : 93UL));
-=======
     CHECK_WRITE_EA((cpu_state.op32 & 0x100) ? 108 : 94);
->>>>>>> 25e5b8173c022dfcb976aebcd4eb3563febdc5ae
     FSAVE();
     return cpu_state.abrt;
 }
@@ -735,10 +719,6 @@ opFTST(UNUSED(uint32_t fetchdat))
 {
     FP_ENTER();
     cpu_state.pc++;
-<<<<<<< HEAD
-    cpu_state.npxs &= ~(FPU_SW_C0 | FPU_SW_C1 | FPU_SW_C2 | FPU_SW_C3);
-    if (ST(0) == 0.0)
-=======
     cpu_state.npxs &= ~(FPU_SW_C0 | FPU_SW_C2 | FPU_SW_C3);
     if (isnan(ST(0))) {
         /* Unordered, an invalid operation: "#IA ... operand is a NaN"
@@ -748,7 +728,6 @@ opFTST(UNUSED(uint32_t fetchdat))
             x87_raise_es(FPU_SW_Invalid);
     }
     else if (ST(0) == 0.0)
->>>>>>> 25e5b8173c022dfcb976aebcd4eb3563febdc5ae
         cpu_state.npxs |= FPU_SW_C3;
     else if (ST(0) < 0.0)
         cpu_state.npxs |= FPU_SW_C0;
@@ -763,10 +742,6 @@ opFTSTP(UNUSED(uint32_t fetchdat))
 {
     FP_ENTER();
     cpu_state.pc++;
-<<<<<<< HEAD
-    cpu_state.npxs &= ~(FPU_SW_C0 | FPU_SW_C1 | FPU_SW_C2 | FPU_SW_C3);
-    if (ST(0) == 0.0)
-=======
     cpu_state.npxs &= ~(FPU_SW_C0 | FPU_SW_C2 | FPU_SW_C3);
     if (isnan(ST(0))) {
         /* Unordered, an invalid operation: "#IA ... operand is a NaN"
@@ -776,7 +751,6 @@ opFTSTP(UNUSED(uint32_t fetchdat))
             x87_raise_es(FPU_SW_Invalid);
     }
     else if (ST(0) == 0.0)
->>>>>>> 25e5b8173c022dfcb976aebcd4eb3563febdc5ae
         cpu_state.npxs |= FPU_SW_C3;
     else if (ST(0) < 0.0)
         cpu_state.npxs |= FPU_SW_C0;
@@ -813,12 +787,7 @@ opFXAM(UNUSED(uint32_t fetchdat))
             cpu_state.npxs |= FPU_SW_C3;
             break;
     }
-<<<<<<< HEAD
-    /*The sign bit itself: -0.0 and negative NaNs compare as not below zero.*/
-    if (signbit(ST(0)))
-=======
     if (signbit(ST(0))) /* the sign bit: -0 and negative NaNs too */
->>>>>>> 25e5b8173c022dfcb976aebcd4eb3563febdc5ae
         cpu_state.npxs |= FPU_SW_C1;
     CLOCK_CYCLES_FPU((fpu_type >= FPU_487SX) ? (x87_timings.fxam) : (x87_timings.fxam * cpu_multi));
     CONCURRENCY_CYCLES((fpu_type >= FPU_487SX) ? (x87_concurrency.fxam) : (x87_concurrency.fxam * cpu_multi));
@@ -1007,43 +976,6 @@ opFINCSTP(UNUSED(uint32_t fetchdat))
     return 0;
 }
 
-<<<<<<< HEAD
-/*FPREM truncates the quotient and FPREM1 rounds it to nearest; the remainder
-  is exact either way, as fmod() and remquo() give it. C0, C3 and C1 take the
-  low three bits of the quotient's magnitude. An exponent difference of 64 or
-  more is reduced only partly, by a multiple of 32 bits as the chip does, with
-  C2 set so the guest loops again (the quotient bits are then undefined).*/
-static __inline void
-x87_fprem(int nearest)
-{
-    double st0 = ST(0);
-    double st1 = ST(1);
-    double r;
-    int    quo = 0;
-    int    q;
-
-    cpu_state.npxs &= ~(FPU_SW_C0 | FPU_SW_C1 | FPU_SW_C2 | FPU_SW_C3);
-    if (isfinite(st0) && isfinite(st1) && (st0 != 0.0) && (st1 != 0.0) && ((ilogb(st0) - ilogb(st1)) >= 64)) {
-        ST(0) = fmod(st0, ldexp(st1, ((ilogb(st0) - ilogb(st1)) & ~31) - 32));
-        cpu_state.npxs |= FPU_SW_C2;
-        return;
-    }
-
-    r = remquo(st0, st1, &quo);
-    q = (quo < 0) ? -quo : quo;
-    if (!nearest) {
-        double rn = r;
-
-        r = fmod(st0, st1);
-        /*Rounding to nearest went one further from zero than truncating; only
-          the low bits are kept, so this wraps 0 to 7 as it should.*/
-        if (r != rn)
-            q--;
-    }
-    if (isnan(r))
-        q = 0;
-    ST(0) = r;
-=======
 /* FPREM (quotient chopped) and FPREM1 (rounded to nearest): with an
    exponent difference below 64 the remainder is complete and the
    quotient's low three bits go to C0, C3 and C1; from 64 on it is partial,
@@ -1085,7 +1017,6 @@ x87_fprem_common(int nearest)
         ST(0) = rt;
     }
     q = (q < 0) ? -q : q;
->>>>>>> 25e5b8173c022dfcb976aebcd4eb3563febdc5ae
     if (q & 4)
         cpu_state.npxs |= FPU_SW_C0;
     if (q & 2)
@@ -1099,11 +1030,7 @@ opFPREM(UNUSED(uint32_t fetchdat))
 {
     FP_ENTER();
     cpu_state.pc++;
-<<<<<<< HEAD
-    x87_fprem(0);
-=======
     x87_fprem_common(0);
->>>>>>> 25e5b8173c022dfcb976aebcd4eb3563febdc5ae
     FP_TAG_VALID;
     CLOCK_CYCLES_FPU((fpu_type >= FPU_487SX) ? (x87_timings.fprem) : (x87_timings.fprem * cpu_multi));
     CONCURRENCY_CYCLES((fpu_type >= FPU_487SX) ? (x87_concurrency.fprem) : (x87_concurrency.fprem * cpu_multi));
@@ -1115,11 +1042,7 @@ opFPREM1(UNUSED(uint32_t fetchdat))
 {
     FP_ENTER();
     cpu_state.pc++;
-<<<<<<< HEAD
-    x87_fprem(1);
-=======
     x87_fprem_common(1);
->>>>>>> 25e5b8173c022dfcb976aebcd4eb3563febdc5ae
     FP_TAG_VALID;
     CLOCK_CYCLES_FPU((fpu_type >= FPU_487SX) ? (x87_timings.fprem1) : (x87_timings.fprem1 * cpu_multi));
     CONCURRENCY_CYCLES((fpu_type >= FPU_487SX) ? (x87_concurrency.fprem1) : (x87_concurrency.fprem1 * cpu_multi));
@@ -1327,12 +1250,8 @@ opFLDENV_a16(UNUSED(uint32_t fetchdat))
     FP_ENTER();
     fetch_ea_16(fetchdat);
     SEG_CHECK_READ(cpu_state.ea_seg);
-<<<<<<< HEAD
-    CHECK_READ(cpu_state.ea_seg, cpu_state.eaaddr, cpu_state.eaaddr + ((cpu_state.op32 & 0x100) ? 27UL : 13UL));
-=======
     CHECK_READ_EA((cpu_state.op32 & 0x100) ? 28 : 14);
     PROBE_READ_EA((cpu_state.op32 & 0x100) ? 28 : 14);
->>>>>>> 25e5b8173c022dfcb976aebcd4eb3563febdc5ae
     FLDENV();
     return cpu_state.abrt;
 }
@@ -1343,12 +1262,8 @@ opFLDENV_a32(uint32_t fetchdat)
     FP_ENTER();
     fetch_ea_32(fetchdat);
     SEG_CHECK_READ(cpu_state.ea_seg);
-<<<<<<< HEAD
-    CHECK_READ(cpu_state.ea_seg, cpu_state.eaaddr, cpu_state.eaaddr + ((cpu_state.op32 & 0x100) ? 27UL : 13UL));
-=======
     CHECK_READ_EA((cpu_state.op32 & 0x100) ? 28 : 14);
     PROBE_READ_EA((cpu_state.op32 & 0x100) ? 28 : 14);
->>>>>>> 25e5b8173c022dfcb976aebcd4eb3563febdc5ae
     FLDENV();
     return cpu_state.abrt;
 }
@@ -1470,11 +1385,7 @@ opFSTENV_a16(UNUSED(uint32_t fetchdat))
     FP_ENTER();
     fetch_ea_16(fetchdat);
     SEG_CHECK_WRITE(cpu_state.ea_seg);
-<<<<<<< HEAD
-    CHECK_WRITE(cpu_state.ea_seg, cpu_state.eaaddr, cpu_state.eaaddr + ((cpu_state.op32 & 0x100) ? 27UL : 13UL));
-=======
     CHECK_WRITE_EA((cpu_state.op32 & 0x100) ? 28 : 14);
->>>>>>> 25e5b8173c022dfcb976aebcd4eb3563febdc5ae
     FSTENV();
     /* After the save, every exception is masked */
     if (!cpu_state.abrt)
@@ -1488,11 +1399,7 @@ opFSTENV_a32(uint32_t fetchdat)
     FP_ENTER();
     fetch_ea_32(fetchdat);
     SEG_CHECK_WRITE(cpu_state.ea_seg);
-<<<<<<< HEAD
-    CHECK_WRITE(cpu_state.ea_seg, cpu_state.eaaddr, cpu_state.eaaddr + ((cpu_state.op32 & 0x100) ? 27UL : 13UL));
-=======
     CHECK_WRITE_EA((cpu_state.op32 & 0x100) ? 28 : 14);
->>>>>>> 25e5b8173c022dfcb976aebcd4eb3563febdc5ae
     FSTENV();
     /* After the save, every exception is masked */
     if (!cpu_state.abrt)

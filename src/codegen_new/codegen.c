@@ -157,7 +157,6 @@ codegen_check_seg_writable(ir_data_t *ir, x86seg *seg)
     /*SS can only hold a writable data segment*/
     if (seg == &cpu_state.seg_ss)
         return;
-    }
     /*checked: 1 = null selector ruled out, 2 = writable too*/
     if (seg->checked == 2)
         return;
@@ -287,7 +286,7 @@ codegen_generate_ea_16_long(ir_data_t *ir, x86seg *op_ea_seg, uint32_t fetchdat,
         }
     }
 
-    if (!dyn)
+    if (!(block->flags & CODEBLOCK_NO_IMMEDIATES))
         codegen_mark_code_present(block, cs + old_pc, ((*op_pc) + 1) - old_pc);
     return op_ea_seg;
 }

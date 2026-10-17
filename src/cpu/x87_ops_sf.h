@@ -373,12 +373,8 @@ sf_FRSTOR_a16(UNUSED(uint32_t fetchdat))
     FPU_check_pending_exceptions();
     fetch_ea_16(fetchdat);
     SEG_CHECK_READ(cpu_state.ea_seg);
-<<<<<<< HEAD
-    CHECK_READ(cpu_state.ea_seg, cpu_state.eaaddr, cpu_state.eaaddr + ((cpu_state.op32 & 0x100) ? 107UL : 93UL));
-=======
     CHECK_READ_EA((cpu_state.op32 & 0x100) ? 108 : 94);
     PROBE_READ_EA((cpu_state.op32 & 0x100) ? 108 : 94);
->>>>>>> 25e5b8173c022dfcb976aebcd4eb3563febdc5ae
     offset = fpu_load_environment();
     for (int n = 0; n < 8; n++) {
         tmp.signif  = readmemq(easeg, offset + (n * 10));
@@ -400,12 +396,8 @@ sf_FRSTOR_a32(uint32_t fetchdat)
     FPU_check_pending_exceptions();
     fetch_ea_32(fetchdat);
     SEG_CHECK_READ(cpu_state.ea_seg);
-<<<<<<< HEAD
-    CHECK_READ(cpu_state.ea_seg, cpu_state.eaaddr, cpu_state.eaaddr + ((cpu_state.op32 & 0x100) ? 107UL : 93UL));
-=======
     CHECK_READ_EA((cpu_state.op32 & 0x100) ? 108 : 94);
     PROBE_READ_EA((cpu_state.op32 & 0x100) ? 108 : 94);
->>>>>>> 25e5b8173c022dfcb976aebcd4eb3563febdc5ae
     offset = fpu_load_environment();
     for (int n = 0; n < 8; n++) {
         tmp.signif   = readmemq(easeg, offset + (n * 10));
@@ -427,11 +419,7 @@ sf_FNSAVE_a16(UNUSED(uint32_t fetchdat))
     FP_ENTER();
     fetch_ea_16(fetchdat);
     SEG_CHECK_WRITE(cpu_state.ea_seg);
-<<<<<<< HEAD
-    CHECK_WRITE(cpu_state.ea_seg, cpu_state.eaaddr, cpu_state.eaaddr + ((cpu_state.op32 & 0x100) ? 107UL : 93UL));
-=======
     CHECK_WRITE_EA((cpu_state.op32 & 0x100) ? 108 : 94);
->>>>>>> 25e5b8173c022dfcb976aebcd4eb3563febdc5ae
     offset = fpu_save_environment();
     /* save all registers in stack order. */
     for (int m = 0; m < 8; m++) {
@@ -439,14 +427,8 @@ sf_FNSAVE_a16(UNUSED(uint32_t fetchdat))
         writememq(easeg, offset + (m * 10), stn.signif);
         writememw(easeg, offset + (m * 10) + 8, stn.signExp);
     }
-<<<<<<< HEAD
-    /* a faulting store restarts the instruction, which must save the same state */
-    if (cpu_state.abrt)
-        return 1;
-=======
     if (cpu_state.abrt)
         return 1; /* a faulting save leaves the FPU as it was */
->>>>>>> 25e5b8173c022dfcb976aebcd4eb3563febdc5ae
 
 #ifdef FPU_8087
     fpu_state.cwd = 0x3FF;
@@ -479,11 +461,7 @@ sf_FNSAVE_a32(uint32_t fetchdat)
     FP_ENTER();
     fetch_ea_32(fetchdat);
     SEG_CHECK_WRITE(cpu_state.ea_seg);
-<<<<<<< HEAD
-    CHECK_WRITE(cpu_state.ea_seg, cpu_state.eaaddr, cpu_state.eaaddr + ((cpu_state.op32 & 0x100) ? 107UL : 93UL));
-=======
     CHECK_WRITE_EA((cpu_state.op32 & 0x100) ? 108 : 94);
->>>>>>> 25e5b8173c022dfcb976aebcd4eb3563febdc5ae
     offset = fpu_save_environment();
     /* save all registers in stack order. */
     for (int m = 0; m < 8; m++) {
@@ -491,14 +469,8 @@ sf_FNSAVE_a32(uint32_t fetchdat)
         writememq(easeg, offset + (m * 10), stn.signif);
         writememw(easeg, offset + (m * 10) + 8, stn.signExp);
     }
-<<<<<<< HEAD
-    /* a faulting store restarts the instruction, which must save the same state */
-    if (cpu_state.abrt)
-        return 1;
-=======
     if (cpu_state.abrt)
         return 1; /* a faulting save leaves the FPU as it was */
->>>>>>> 25e5b8173c022dfcb976aebcd4eb3563febdc5ae
 
 #    ifdef FPU_8087
     fpu_state.cwd = 0x3FF;
@@ -576,12 +548,8 @@ sf_FLDENV_a16(UNUSED(uint32_t fetchdat))
     FPU_check_pending_exceptions();
     fetch_ea_16(fetchdat);
     SEG_CHECK_READ(cpu_state.ea_seg);
-<<<<<<< HEAD
-    CHECK_READ(cpu_state.ea_seg, cpu_state.eaaddr, cpu_state.eaaddr + ((cpu_state.op32 & 0x100) ? 27UL : 13UL));
-=======
     CHECK_READ_EA((cpu_state.op32 & 0x100) ? 28 : 14);
     PROBE_READ_EA((cpu_state.op32 & 0x100) ? 28 : 14);
->>>>>>> 25e5b8173c022dfcb976aebcd4eb3563febdc5ae
     fpu_load_environment();
     /* read all registers in stack order and update x87 tag word */
     for (int n = 0; n < 8; n++) {
@@ -605,12 +573,8 @@ sf_FLDENV_a32(uint32_t fetchdat)
     FPU_check_pending_exceptions();
     fetch_ea_32(fetchdat);
     SEG_CHECK_READ(cpu_state.ea_seg);
-<<<<<<< HEAD
-    CHECK_READ(cpu_state.ea_seg, cpu_state.eaaddr, cpu_state.eaaddr + ((cpu_state.op32 & 0x100) ? 27UL : 13UL));
-=======
     CHECK_READ_EA((cpu_state.op32 & 0x100) ? 28 : 14);
     PROBE_READ_EA((cpu_state.op32 & 0x100) ? 28 : 14);
->>>>>>> 25e5b8173c022dfcb976aebcd4eb3563febdc5ae
     fpu_load_environment();
     /* read all registers in stack order and update x87 tag word */
     for (int n = 0; n < 8; n++) {
@@ -632,18 +596,10 @@ sf_FNSTENV_a16(UNUSED(uint32_t fetchdat))
     FP_ENTER();
     fetch_ea_16(fetchdat);
     SEG_CHECK_WRITE(cpu_state.ea_seg);
-<<<<<<< HEAD
-    CHECK_WRITE(cpu_state.ea_seg, cpu_state.eaaddr, cpu_state.eaaddr + ((cpu_state.op32 & 0x100) ? 27UL : 13UL));
-    fpu_save_environment();
-    /* a faulting store restarts the instruction, which must save the same state */
-    if (cpu_state.abrt)
-        return 1;
-=======
     CHECK_WRITE_EA((cpu_state.op32 & 0x100) ? 28 : 14);
     fpu_save_environment();
     if (cpu_state.abrt)
         return 1; /* a faulting save leaves the FPU as it was */
->>>>>>> 25e5b8173c022dfcb976aebcd4eb3563febdc5ae
     /* mask all floating point exceptions */
     fpu_state.cwd |= FPU_CW_Exceptions_Mask;
     /* clear the B and ES bits in the status word */
@@ -659,18 +615,10 @@ sf_FNSTENV_a32(uint32_t fetchdat)
     FP_ENTER();
     fetch_ea_32(fetchdat);
     SEG_CHECK_WRITE(cpu_state.ea_seg);
-<<<<<<< HEAD
-    CHECK_WRITE(cpu_state.ea_seg, cpu_state.eaaddr, cpu_state.eaaddr + ((cpu_state.op32 & 0x100) ? 27UL : 13UL));
-    fpu_save_environment();
-    /* a faulting store restarts the instruction, which must save the same state */
-    if (cpu_state.abrt)
-        return 1;
-=======
     CHECK_WRITE_EA((cpu_state.op32 & 0x100) ? 28 : 14);
     fpu_save_environment();
     if (cpu_state.abrt)
         return 1; /* a faulting save leaves the FPU as it was */
->>>>>>> 25e5b8173c022dfcb976aebcd4eb3563febdc5ae
     /* mask all floating point exceptions */
     fpu_state.cwd |= FPU_CW_Exceptions_Mask;
     /* clear the B and ES bits in the status word */

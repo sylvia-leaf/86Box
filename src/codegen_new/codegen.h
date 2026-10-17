@@ -92,7 +92,7 @@ codeblock_hash_get(uint32_t hash, unsigned int way)
 static inline void
 codeblock_hash_promote(uint32_t hash, uint16_t block_nr)
 {
-    uint16_t *entries = &codeblock_hash[hash * CODEBLOCK_HASH_WAYS];
+    uint32_t *entries = &codeblock_hash[hash * CODEBLOCK_HASH_WAYS];
 
     if (entries[0] != block_nr) {
         entries[1] = entries[0];
@@ -103,7 +103,7 @@ codeblock_hash_promote(uint32_t hash, uint16_t block_nr)
 static inline void
 codeblock_hash_remove(uint32_t hash, uint16_t block_nr)
 {
-    uint16_t *entries = &codeblock_hash[hash * CODEBLOCK_HASH_WAYS];
+    uint32_t *entries = &codeblock_hash[hash * CODEBLOCK_HASH_WAYS];
 
     if (entries[0] == block_nr) {
         entries[0] = entries[1];

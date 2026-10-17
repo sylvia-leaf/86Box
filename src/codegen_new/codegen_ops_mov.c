@@ -636,7 +636,7 @@ ropMOVZX_32_16(codeblock_t *block, ir_data_t *ir, UNUSED(uint8_t opcode), uint32
         int src_reg = fetchdat & 7;
         uop_MOVZX(ir, IREG_32(dest_reg), IREG_16(src_reg));
     } else {
-        x86seg *target_seg;zz
+        x86seg *target_seg;
 
         uop_MOV_IMM(ir, IREG_oldpc, cpu_state.oldpc);
         target_seg = codegen_generate_ea(ir, op_ea_seg, fetchdat, op_ssegs, &op_pc, op_32, 0);
@@ -807,8 +807,7 @@ string_common(codeblock_t *block, ir_data_t *ir, uint8_t opcode, uint32_t op_32,
             uop_MOV(ir, IREG_temp1, IREG_EDI);
         else
             uop_MOVZX(ir, IREG_temp1, IREG_DI);
-        codegen_check_seg_write(block, ir, &cpu_state.seg_es);
-        CHECK_SEG_LIMITS(block, ir, &cpu_state.seg_es, IREG_temp1, size - 1);
+        codegen_check_seg_write(block, ir, &cpu_state.seg_es, IREG_temp1, size);
     }
 
     if (kind == STR_LODS)

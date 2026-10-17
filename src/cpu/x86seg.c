@@ -411,11 +411,7 @@ loadseg(uint16_t seg, x86seg *s)
     if ((msw & 1) && !(cpu_state.eflags & VM_FLAG)) {
         if (!(seg & 0xfffc)) {
             if (s == &cpu_state.seg_ss) {
-<<<<<<< HEAD
-                x86gpf(NULL, 0);
-=======
                 x86gpf("loadseg(): Null stack segment", 0);
->>>>>>> 25e5b8173c022dfcb976aebcd4eb3563febdc5ae
 #ifdef USE_NEW_DYNAREC
                 return 1;
 #else
@@ -1263,12 +1259,7 @@ loadcscall(uint16_t seg)
                                 addr = newss & 0xfff8;
                                 dt   = (newss & 0x0004) ? &ldt : &gdt;
                                 if ((addr + 7) > dt->limit) {
-<<<<<<< HEAD
-                                    //fatal("Bigger than DT limit %04X %08X %04X CSC SS\n", newss, addr, dt->limit);
-                                    x86ts(NULL, newss & ~3);
-=======
                                     x86ts("Call gate SS beyond DT limit", newss & 0xfffc);
->>>>>>> 25e5b8173c022dfcb976aebcd4eb3563febdc5ae
                                     return;
                                 }
                                 addr += dt->base;
@@ -1703,14 +1694,11 @@ pmoderetf(int is32, uint16_t off)
             x86gpf("pmoderetf(): New SS unknown type", newss & 0xfffc);
             return;
         }
-<<<<<<< HEAD
         if (!(segdat2[2] & 0x8000)) {
             ESP = oldsp;
             x86ss("RETF loading SS not present", newss & 0xfffc);
             return;
         }
-=======
->>>>>>> 25e5b8173c022dfcb976aebcd4eb3563febdc5ae
         if (DPL2 != (seg & 3)) {
             ESP = oldsp;
             x86gpf("pmoderetf(): New SS DPL != CS RPL", newss & 0xfffc);

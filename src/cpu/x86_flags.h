@@ -55,7 +55,6 @@ enum {
     FLAGS_SBC32,
 #endif
 
-<<<<<<< HEAD
     FLAGS_MUL8,
     FLAGS_MUL16,
     FLAGS_MUL32,
@@ -64,10 +63,8 @@ enum {
     FLAGS_IMUL16,
     FLAGS_IMUL32,
     
-=======
     /* SHRD: SHR's flags, but the bits shifted in come from the other
        operand, so OF (the sign changing) looks at the result. */
->>>>>>> 25e5b8173c022dfcb976aebcd4eb3563febdc5ae
     FLAGS_SHRD16,
     FLAGS_SHRD32
 };
@@ -363,7 +360,6 @@ VF_SET(void)
             return (cpu_state.flags_res ^ (cpu_state.flags_res >> 1)) & 0x4000;
         case FLAGS_ROR32:
             return (cpu_state.flags_res ^ (cpu_state.flags_res >> 1)) & 0x40000000;
-<<<<<<< HEAD
         case FLAGS_MUL8:
         case FLAGS_MUL16:
         case FLAGS_MUL32:
@@ -380,13 +376,6 @@ VF_SET(void)
             int64_t res = (int64_t)(int32_t)cpu_state.flags_op1 * (int64_t)(int32_t)cpu_state.flags_op2;
             return ((res >> 31) != 0 && (res >> 31) != -1);
         }
-
-        case FLAGS_SHRD16:
-            return ((cpu_state.flags_res ^ cpu_state.flags_op1) & 0x8000) ? 1 : 0;
-        case FLAGS_SHRD32:
-            return ((cpu_state.flags_res ^ cpu_state.flags_op1) & 0x80000000) ? 1 : 0;
-=======
->>>>>>> 25e5b8173c022dfcb976aebcd4eb3563febdc5ae
 #endif
 
         case FLAGS_UNKNOWN:
@@ -434,13 +423,9 @@ AF_SET(void)
         /*A carry out of bit 3 leaves the low nibble below op1's, except when
           op2's low nibble plus the carry in is exactly 16*/
         case FLAGS_ADC8:
-<<<<<<< HEAD
-        case FLAGS_ADC16:
-=======
             return ((cpu_state.flags_res & 0xf) < (cpu_state.flags_op1 & 0xf)) || ((cpu_state.flags_res & 0xf) == (cpu_state.flags_op1 & 0xf) && (cpu_state.flags_op2 & 0xf) == 0xf);
         case FLAGS_ADC16:
             return ((cpu_state.flags_res & 0xf) < (cpu_state.flags_op1 & 0xf)) || ((cpu_state.flags_res & 0xf) == (cpu_state.flags_op1 & 0xf) && (cpu_state.flags_op2 & 0xf) == 0xf);
->>>>>>> 25e5b8173c022dfcb976aebcd4eb3563febdc5ae
         case FLAGS_ADC32:
             return ((cpu_state.flags_res & 0xf) < (cpu_state.flags_op1 & 0xf)) || ((cpu_state.flags_res & 0xf) == (cpu_state.flags_op1 & 0xf) && (cpu_state.flags_op2 & 0xf) == 0xf);
 #endif

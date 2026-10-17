@@ -603,11 +603,7 @@ codegen_backend_init(void)
     if (large_block)
         pclog("Allocated %llu bytes of large pages for codeblock pointers\n", (unsigned long long) (BLOCK_SIZE * sizeof(codeblock_t)));
     if (large_hash)
-<<<<<<< HEAD
-        pclog("Allocated %llu bytes of large pages for codeblock hashes\n", HASH_SIZE * CODEBLOCK_HASH_WAYS * sizeof(uint16_t));
-=======
-        pclog("Allocated %llu bytes of large pages for codeblock hashes\n", (unsigned long long) (HASH_SIZE * sizeof(codeblock_t *)));
->>>>>>> 25e5b8173c022dfcb976aebcd4eb3563febdc5ae
+        pclog("Allocated %llu bytes of large pages for codeblock hashes\n", (unsigned long long) (HASH_SIZE * CODEBLOCK_HASH_WAYS * sizeof(codeblock_t *)));
 
     for (c = 0; c < BLOCK_SIZE; c++)
         codeblock[c].valid = 0;

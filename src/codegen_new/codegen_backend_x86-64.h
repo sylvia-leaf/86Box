@@ -11,20 +11,15 @@
 #define HASH_SIZE   0x20000
 #define HASH_MASK   0x1ffff
 
-<<<<<<< HEAD
-#define HASH(l)     (((l) ^ ((l)>>12)) &0x1ffff)
-=======
 /* The block hash takes the physical address's bits above 128K too: with the
    low 17 alone, code at the same offset in different 128K regions (the
    kernel's and a driver's, two processes' copies) fought for one slot and
    went to the tree walk each time. */
 #define HASH(l)     (((l) ^ ((l) >> 17)) & 0x1ffff)
->>>>>>> 25e5b8173c022dfcb976aebcd4eb3563febdc5ae
 
 #define BLOCK_MAX   0x3c0
 
 #define CODEGEN_BACKEND_HAS_MOV_IMM
-<<<<<<< HEAD
 #define CODEGEN_BACKEND_HAS_MEM_REGS
 #define CODEGEN_BACKEND_HAS_SSE_REGS
 #define CODEGEN_BACKEND_HAS_SSE_RECHECK
@@ -64,10 +59,8 @@ codegen_host_cpu_has_feature(uint64_t feature)
 {
     return (codegen_host_cpu_features & feature) == feature;
 }
-=======
 /* The integer uops of the SETcc, BSWAP, BSF/BSR, CMPXCHG and multiply
    handlers: CMP_SET, TEST_SET, BSF, BSR, BSWAP, IMUL, IMUL_HI, IMUL_OV and
    MUL_HI. A backend without them leaves those instructions to the
    interpreter. */
 #define CODEGEN_BACKEND_HAS_INT_UOPS
->>>>>>> 25e5b8173c022dfcb976aebcd4eb3563febdc5ae

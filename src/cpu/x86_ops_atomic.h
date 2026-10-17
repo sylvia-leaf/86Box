@@ -14,7 +14,7 @@ opCMPXCHG_b_a16(uint32_t fetchdat)
         return 1;
     /* The destination is written either way: the old value goes back on a
        mismatch (SDM 1999, CMPXCHG), so a write fault comes first */
-    if (AL == temp) {
+    if (AL == temp)
         seteab(getr8(cpu_reg));
     else {
         /* CMPXCHG performs a write cycle even when the comparison fails. */
@@ -47,7 +47,7 @@ opCMPXCHG_b_a32(uint32_t fetchdat)
         return 1;
     /* The destination is written either way: the old value goes back on a
        mismatch (SDM 1999, CMPXCHG), so a write fault comes first */
-    if (AL == temp) {
+    if (AL == temp)
         seteab(getr8(cpu_reg));
     else {
         /* CMPXCHG performs a write cycle even when the comparison fails. */
@@ -81,7 +81,7 @@ opCMPXCHG_w_a16(uint32_t fetchdat)
         return 1;
     /* The destination is written either way: the old value goes back on a
        mismatch (SDM 1999, CMPXCHG), so a write fault comes first */
-    if (AX == temp) {
+    if (AX == temp)
         seteaw(cpu_state.regs[cpu_reg].w);
     else {
         /* CMPXCHG performs a write cycle even when the comparison fails. */
@@ -114,7 +114,7 @@ opCMPXCHG_w_a32(uint32_t fetchdat)
         return 1;
     /* The destination is written either way: the old value goes back on a
        mismatch (SDM 1999, CMPXCHG), so a write fault comes first */
-    if (AX == temp) {
+    if (AX == temp)
         seteaw(cpu_state.regs[cpu_reg].w);
     else {
         /* CMPXCHG performs a write cycle even when the comparison fails. */
@@ -150,7 +150,7 @@ opCMPXCHG_l_a16(uint32_t fetchdat)
        mismatch (SDM 1999, CMPXCHG), so a write fault comes first */
     if (EAX == temp) {
         seteal(cpu_state.regs[cpu_reg].l);
-    else {
+    } else {
         /* CMPXCHG performs a write cycle even when the comparison fails. */
         if (cpu_mod != 3) {
             seteal(temp);
@@ -183,7 +183,7 @@ opCMPXCHG_l_a32(uint32_t fetchdat)
        mismatch (SDM 1999, CMPXCHG), so a write fault comes first */
     if (EAX == temp) {
         seteal(cpu_state.regs[cpu_reg].l);
-    else {
+    } else {
         /* CMPXCHG performs a write cycle even when the comparison fails. */
         if (cpu_mod != 3) {
             seteal(temp);

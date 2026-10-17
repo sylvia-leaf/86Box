@@ -3217,12 +3217,8 @@ cpu_CPUID(void)
             } else if (EAX == 1) {
                 EAX = CPUID;
                 EBX = ECX = 0;
-<<<<<<< HEAD
-                EDX       = CPUID_FPU | CPUID_VME | CPUID_DE | CPUID_PSE | CPUID_TSC | CPUID_MSR | CPUID_PAE | CPUID_MCE | CPUID_CMPXCHG8B | CPUID_MMX | CPUID_MTRR | CPUID_PGE | CPUID_MCA | CPUID_SEP | CPUID_FXSR | CPUID_CMOV | CPUID_PSE36 | CPUID_LAPIC;
+                EDX       = CPUID_FPU | CPUID_VME | CPUID_DE | CPUID_PSE | CPUID_TSC | CPUID_MSR | CPUID_PAE | CPUID_MCE | CPUID_CMPXCHG8B | CPUID_MMX | CPUID_MTRR | CPUID_PGE | CPUID_MCA | CPUID_SEP | CPUID_FXSR | CPUID_CMOV | CPUID_PAT | CPUID_PSE36 | CPUID_LAPIC;
                 if (!(msr.apic_base & (1 << 11))) EDX &= ~CPUID_LAPIC;
-=======
-                EDX       = CPUID_FPU | CPUID_VME | CPUID_DE | CPUID_PSE | CPUID_TSC | CPUID_MSR | CPUID_PAE | CPUID_MCE | CPUID_CMPXCHG8B | CPUID_MMX | CPUID_MTRR | CPUID_PGE | CPUID_MCA | CPUID_SEP | CPUID_FXSR | CPUID_CMOV | CPUID_PAT | CPUID_PSE36;
->>>>>>> 25e5b8173c022dfcb976aebcd4eb3563febdc5ae
                 /*
                    Return anything non-zero in bits 32-63 of the BIOS signature MSR
                    to indicate there has been an update.
@@ -3258,7 +3254,7 @@ cpu_CPUID(void)
             } else if (EAX == 1) {
                 EAX = CPUID;
                 EBX = ECX = 0;
-                EDX       = CPUID_FPU | CPUID_VME | CPUID_DE | CPUID_PSE | CPUID_TSC | CPUID_MSR | CPUID_PAE | CPUID_MCE | CPUID_CMPXCHG8B | CPUID_MMX | CPUID_MTRR | CPUID_PGE | CPUID_MCA | CPUID_SEP | CPUID_FXSR | CPUID_CMOV | CPUID_PSE36 | CPUID_SSE | CPUID_LAPIC;
+                EDX       = CPUID_FPU | CPUID_VME | CPUID_DE | CPUID_PSE | CPUID_TSC | CPUID_MSR | CPUID_PAE | CPUID_MCE | CPUID_CMPXCHG8B | CPUID_MMX | CPUID_MTRR | CPUID_PGE | CPUID_MCA | CPUID_SEP | CPUID_FXSR | CPUID_CMOV | CPUID_PAT | CPUID_PSE36 | CPUID_SSE | CPUID_LAPIC;
                 if (!(msr.apic_base & (1 << 11))) EDX &= ~CPUID_LAPIC;
             } else if (EAX == 2) {
                 EAX = 0x00000001;
@@ -3278,7 +3274,7 @@ cpu_CPUID(void)
                 EAX = CPUID;
                 EBX = (8 << 8) | (1 << 16);
                 ECX = 0;
-                EDX       = CPUID_FPU | CPUID_VME | CPUID_DE | CPUID_PSE | CPUID_TSC | CPUID_MSR | CPUID_PAE | CPUID_MCE | CPUID_CMPXCHG8B | CPUID_MMX | CPUID_MTRR | CPUID_PGE | CPUID_MCA | CPUID_SEP | CPUID_FXSR | CPUID_CMOV | CPUID_PSE36 | CPUID_SSE | CPUID_SSE2 | CPUID_CLFLUSH | CPUID_LAPIC;
+                EDX       = CPUID_FPU | CPUID_VME | CPUID_DE | CPUID_PSE | CPUID_TSC | CPUID_MSR | CPUID_PAE | CPUID_MCE | CPUID_CMPXCHG8B | CPUID_MMX | CPUID_MTRR | CPUID_PGE | CPUID_MCA | CPUID_SEP | CPUID_FXSR | CPUID_CMOV | CPUID_PAT | CPUID_PSE36 | CPUID_SSE | CPUID_SSE2 | CPUID_CLFLUSH | CPUID_LAPIC;
                 if (!(msr.apic_base & (1 << 11))) EDX &= ~CPUID_LAPIC;
             } else if (EAX == 2) {
                 EAX = 0x00000001;
@@ -3298,7 +3294,7 @@ cpu_CPUID(void)
                 EAX = CPUID;
                 EBX = (8 << 8) | (1 << 16);
                 ECX       = CPUID_SSE3;// | CPUID_MONITOR_MWAIT;// | CPUID_SSSE3;
-                EDX       = CPUID_FPU | CPUID_VME | CPUID_DE | CPUID_PSE | CPUID_TSC | CPUID_MSR | CPUID_PAE | CPUID_MCE | CPUID_CMPXCHG8B | CPUID_MMX | CPUID_MTRR | CPUID_PGE | CPUID_MCA | CPUID_SEP | CPUID_FXSR | CPUID_CMOV | CPUID_PSE36 | CPUID_SSE | CPUID_SSE2 | CPUID_CLFLUSH | CPUID_LAPIC;
+                EDX       = CPUID_FPU | CPUID_VME | CPUID_DE | CPUID_PSE | CPUID_TSC | CPUID_MSR | CPUID_PAE | CPUID_MCE | CPUID_CMPXCHG8B | CPUID_MMX | CPUID_MTRR | CPUID_PGE | CPUID_MCA | CPUID_SEP | CPUID_FXSR | CPUID_CMOV | CPUID_PAT | CPUID_PSE36 | CPUID_SSE | CPUID_SSE2 | CPUID_CLFLUSH | CPUID_LAPIC;
                 if (!(msr.apic_base & (1 << 11))) EDX &= ~CPUID_LAPIC;
             } else if (EAX == 2) {
                 EAX = 0x00000001;
@@ -3671,11 +3667,8 @@ cpu_ven_reset(void)
         case CPU_PENTIUM3:
         case CPU_GENERICINTEL:
             msr.mtrr_cap = 0x00000508ULL;
-<<<<<<< HEAD
             msr.apic_base = 0xFEE00000ULL | (1 << 11) | (1 << 8);
-=======
             msr.ebl_cr_poweron = 0x04000000; /* Low Power Mode Enable */
->>>>>>> 25e5b8173c022dfcb976aebcd4eb3563febdc5ae
 
             /* 4 GB cacheable space on Deschutes 651h and later (including the 1632h
                Overdrive) according to the Pentium II Processor Specification Update.
@@ -4539,12 +4532,8 @@ pentium_invalid_rdmsr:
             EAX = EDX = 0;
             /* Per RichardG's probing of a real Deschutes using my RDMSR tool,
                we have discovered that the top 18 bits are filtered out. */
-<<<<<<< HEAD
             uint32_t msr_index = (cpu_s->cpu_type < CPU_GENERICINTEL) ? ECX & 0x00003fff : ECX;
             switch (msr_index) {
-=======
-            switch (p6_msr) {
->>>>>>> 25e5b8173c022dfcb976aebcd4eb3563febdc5ae
                 /* Machine Check Exception Address */
                 case 0x00:
                 /* Machine Check Exception Type */
@@ -5200,13 +5189,10 @@ void
 cpu_WRMSR(void)
 {
     uint64_t temp;
-<<<<<<< HEAD
     uint64_t temp2;
-=======
     /* P6: the top 18 bits of the number are ignored (see below); every
        lookup on that path uses this, never the raw ECX */
     uint32_t p6_msr = ECX & 0x00003fff;
->>>>>>> 25e5b8173c022dfcb976aebcd4eb3563febdc5ae
 
     cpu_log("WRMSR %08X %08X%08X\n", ECX, EDX, EAX);
 
@@ -5977,12 +5963,8 @@ pentium_invalid_wrmsr:
         {
             /* Per RichardG's probing of a real Deschutes using my RDMSR tool,
                we have discovered that the top 18 bits are filtered out. */
-<<<<<<< HEAD
             uint32_t msr_index = (cpu_s->cpu_type < CPU_GENERICINTEL) ? ECX & 0x00003fff : ECX;
             switch (msr_index) {
-=======
-            switch (p6_msr) {
->>>>>>> 25e5b8173c022dfcb976aebcd4eb3563febdc5ae
                 /* Machine Check Exception Address */
                 case 0x00:
                 /* Machine Check Exception Type */
@@ -6440,10 +6422,11 @@ i686_invalid_wrmsr:
                 /* ECX & 0: MTRRphysBase0 ... MTRRphysBase7
                    ECX & 1: MTRRphysMask0 ... MTRRphysMask7 */
                 case 0x200 ... 0x20f:
-<<<<<<< HEAD
                     temp  = EAX | ((uint64_t) EDX << 32);
                     temp2 = (ECX - 0x200) >> 1;
                     if (ECX & 1) {
+                        if ((EAX & 0x000007ff) || (EDX & ~0x0000000f))
+                            goto i686_invalid_wrmsr;
                         cpu_log("MTRR physmask[%d] = %08llx\n", temp2, temp);
 
                         if ((msr.mtrr_physmask[temp2] >> 11) & 0x1)
@@ -6454,21 +6437,11 @@ i686_invalid_wrmsr:
 
                         msr.mtrr_physmask[temp2] = temp;
                     } else {
+                        if ((EAX & 0x00000f00) || (EDX & ~0x0000000f) || !mtrr_type_valid(EAX & 0xff))
+                            goto i686_invalid_wrmsr;
                         cpu_log("MTRR physbase[%d] = %08llx\n", temp2, temp);
 
                         msr.mtrr_physbase[temp2] = temp;
-=======
-                    /* Reserved bits and memory types are #GP: base bits
-                       8-11 and 36-63, mask bits 0-10 and 36-63 */
-                    if (p6_msr & 1) {
-                        if ((EAX & 0x000007ff) || (EDX & ~0x0000000f))
-                            goto i686_invalid_wrmsr;
-                        msr.mtrr_physmask[(p6_msr - 0x200) >> 1] = EAX | ((uint64_t) EDX << 32);
-                    } else {
-                        if ((EAX & 0x00000f00) || (EDX & ~0x0000000f) || !mtrr_type_valid(EAX & 0xff))
-                            goto i686_invalid_wrmsr;
-                        msr.mtrr_physbase[(p6_msr - 0x200) >> 1] = EAX | ((uint64_t) EDX << 32);
->>>>>>> 25e5b8173c022dfcb976aebcd4eb3563febdc5ae
                     }
                     break;
                 /* MTRRfix64K_00000 */
@@ -6573,15 +6546,10 @@ cpu_write(uint16_t addr, uint8_t val, UNUSED(void *priv))
         /* Writes to F0 clear FPU error and deassert the interrupt. */
         if (is286) {
             picintc(1 << 13);
-<<<<<<< HEAD
-            /* IGNNE#: x87 instructions proceed despite the pending error. */
-            fpu_ignne = 1;
-=======
             /* The board's IGNNE# latch: set only while FERR# is up, which
                clears it as it goes down (x87_ferr_clear) */
             if (fpu_ferr)
                 fpu_ignne = 1;
->>>>>>> 25e5b8173c022dfcb976aebcd4eb3563febdc5ae
         } else
             nmi = 0;
     } else if ((addr < 0xf1) && !(addr & 1))

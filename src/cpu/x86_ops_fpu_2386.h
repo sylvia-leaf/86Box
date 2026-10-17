@@ -6,7 +6,7 @@
    pending exception that stopped it) leaves the last-instruction pointers
    alone, and an unmasked exception it raised is signalled once it is done. */
 static int
-opESCAPE(OpFn op, uint32_t fetchdat)
+opESCAPE_d8_a16(uint32_t fetchdat)
 {
     x87_op = ((opcode & 0x07) << 8) | (fetchdat & 0xff);
     if (x87_op_is_nowait(x87_op))

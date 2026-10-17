@@ -386,7 +386,6 @@ exec386_2386(int32_t cycs)
                     nmi            = 0;
                 }
             } else if ((cpu_state.flags & I_FLAG) && (pic_pending_int()) && !cpu_end_block_after_ins) {
-=======
                 if (vector != -1) {
                     flags_rebuild();
                     if (msw & 1)

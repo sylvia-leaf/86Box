@@ -323,11 +323,7 @@ FBLD_a16(UNUSED(uint32_t fetchdat))
     FP_ENTER();
     fetch_ea_16(fetchdat);
     SEG_CHECK_READ(cpu_state.ea_seg);
-<<<<<<< HEAD
-    CHECK_READ(cpu_state.ea_seg, cpu_state.eaaddr, cpu_state.eaaddr + 9UL);
-=======
     CHECK_READ_EA(10);
->>>>>>> 25e5b8173c022dfcb976aebcd4eb3563febdc5ae
     load_reg_lo = readmemq(easeg, cpu_state.eaaddr);
     load_reg_hi = readmemw(easeg, cpu_state.eaaddr + 8);
     if (cpu_state.abrt)
@@ -375,11 +371,7 @@ FBLD_a32(uint32_t fetchdat)
     FP_ENTER();
     fetch_ea_32(fetchdat);
     SEG_CHECK_READ(cpu_state.ea_seg);
-<<<<<<< HEAD
-    CHECK_READ(cpu_state.ea_seg, cpu_state.eaaddr, cpu_state.eaaddr + 9UL);
-=======
     CHECK_READ_EA(10);
->>>>>>> 25e5b8173c022dfcb976aebcd4eb3563febdc5ae
     load_reg_lo = readmemq(easeg, cpu_state.eaaddr);
     load_reg_hi = readmemw(easeg, cpu_state.eaaddr + 8);
     if (cpu_state.abrt)
@@ -416,41 +408,6 @@ FBLD_a32(uint32_t fetchdat)
 }
 #endif
 
-<<<<<<< HEAD
-/*FBSTP's store: ST(0) rounded by RC to an 18-digit packed BCD integer, the
-  sign in the top bit of byte 9. Out of range, an infinity or a NaN stores the
-  BCD indefinite (FFFF C000 0000 0000 0000) and sets IE, as with IE masked.*/
-static __inline void
-x87_fbstp(void)
-{
-    double   st0     = ST(0);
-    int      invalid = 1;
-    uint64_t lo      = 0xc000000000000000ULL;
-    uint16_t hi      = 0xffff;
-
-    /*Checked on the double first: x87_fround() must stay in int64 range.*/
-    if (fabs(st0) < 1e18) {
-        int64_t  r   = x87_fround(st0);
-        uint64_t mag = (r < 0) ? -(uint64_t) r : (uint64_t) r;
-
-        if (mag <= 999999999999999999ULL) {
-            invalid = 0;
-            lo      = 0;
-            for (int i = 0; i < 16; i++) {
-                lo |= (mag % 10) << (i * 4);
-                mag /= 10;
-            }
-            hi = (uint16_t) ((mag % 10) | ((mag / 10) << 4));
-            if (signbit(st0))
-                hi |= 0x8000;
-        }
-    }
-    writememl(easeg, cpu_state.eaaddr, lo & 0xffffffff);
-    writememl(easeg, cpu_state.eaaddr + 4, lo >> 32);
-    writememw(easeg, cpu_state.eaaddr + 8, hi);
-    if (invalid && !cpu_state.abrt)
-        cpu_state.npxs |= FPU_SW_Invalid;
-=======
 /* FBSTP: ST(0) rounded per RC to 18 packed BCD digits and the sign; a
    NaN, an infinity or a value past 18 digits stores the BCD indefinite,
    FFFF C000000000000000h */
@@ -485,7 +442,6 @@ x87_fbstp_write(void)
     }
     for (int c = 0; c < 10; c++)
         writememb(easeg, cpu_state.eaaddr + c, bytes[c]);
->>>>>>> 25e5b8173c022dfcb976aebcd4eb3563febdc5ae
 }
 
 static int
@@ -494,15 +450,10 @@ FBSTP_a16(UNUSED(uint32_t fetchdat))
     FP_ENTER();
     fetch_ea_16(fetchdat);
     SEG_CHECK_WRITE(cpu_state.ea_seg);
-<<<<<<< HEAD
-    CHECK_WRITE(cpu_state.ea_seg, cpu_state.eaaddr, cpu_state.eaaddr + 9UL);
-    x87_fbstp();
-=======
     CHECK_WRITE_EA(10);
     if (x87_empty_store(10, 2, 1))
         return cpu_state.abrt;
     x87_fbstp_write();
->>>>>>> 25e5b8173c022dfcb976aebcd4eb3563febdc5ae
     if (cpu_state.abrt)
         return 1;
     x87_store_done(0);
@@ -518,15 +469,10 @@ FBSTP_a32(uint32_t fetchdat)
     FP_ENTER();
     fetch_ea_32(fetchdat);
     SEG_CHECK_WRITE(cpu_state.ea_seg);
-<<<<<<< HEAD
-    CHECK_WRITE(cpu_state.ea_seg, cpu_state.eaaddr, cpu_state.eaaddr + 9UL);
-    x87_fbstp();
-=======
     CHECK_WRITE_EA(10);
     if (x87_empty_store(10, 2, 1))
         return cpu_state.abrt;
     x87_fbstp_write();
->>>>>>> 25e5b8173c022dfcb976aebcd4eb3563febdc5ae
     if (cpu_state.abrt)
         return 1;
     x87_store_done(0);
@@ -720,11 +666,7 @@ opFLDe_a16(UNUSED(uint32_t fetchdat))
     FP_ENTER();
     fetch_ea_16(fetchdat);
     SEG_CHECK_READ(cpu_state.ea_seg);
-<<<<<<< HEAD
-    CHECK_READ(cpu_state.ea_seg, cpu_state.eaaddr, cpu_state.eaaddr + 9UL);
-=======
     CHECK_READ_EA(10);
->>>>>>> 25e5b8173c022dfcb976aebcd4eb3563febdc5ae
     t = x87_ld80();
     if (cpu_state.abrt)
         return 1;
@@ -741,11 +683,7 @@ opFLDe_a32(uint32_t fetchdat)
     FP_ENTER();
     fetch_ea_32(fetchdat);
     SEG_CHECK_READ(cpu_state.ea_seg);
-<<<<<<< HEAD
-    CHECK_READ(cpu_state.ea_seg, cpu_state.eaaddr, cpu_state.eaaddr + 9UL);
-=======
     CHECK_READ_EA(10);
->>>>>>> 25e5b8173c022dfcb976aebcd4eb3563febdc5ae
     t = x87_ld80();
     if (cpu_state.abrt)
         return 1;
@@ -762,13 +700,9 @@ opFSTPe_a16(UNUSED(uint32_t fetchdat))
     FP_ENTER();
     fetch_ea_16(fetchdat);
     SEG_CHECK_WRITE(cpu_state.ea_seg);
-<<<<<<< HEAD
-    CHECK_WRITE(cpu_state.ea_seg, cpu_state.eaaddr, cpu_state.eaaddr + 9UL);
-=======
     CHECK_WRITE_EA(10);
     if (x87_empty_store(10, 0, 1))
         return cpu_state.abrt;
->>>>>>> 25e5b8173c022dfcb976aebcd4eb3563febdc5ae
     x87_st80(ST(0));
     if (cpu_state.abrt)
         return 1;
@@ -785,13 +719,9 @@ opFSTPe_a32(uint32_t fetchdat)
     FP_ENTER();
     fetch_ea_32(fetchdat);
     SEG_CHECK_WRITE(cpu_state.ea_seg);
-<<<<<<< HEAD
-    CHECK_WRITE(cpu_state.ea_seg, cpu_state.eaaddr, cpu_state.eaaddr + 9UL);
-=======
     CHECK_WRITE_EA(10);
     if (x87_empty_store(10, 0, 1))
         return cpu_state.abrt;
->>>>>>> 25e5b8173c022dfcb976aebcd4eb3563febdc5ae
     x87_st80(ST(0));
     if (cpu_state.abrt)
         return 1;
@@ -954,13 +884,9 @@ opFSTs_a16(UNUSED(uint32_t fetchdat))
     FP_ENTER();
     fetch_ea_16(fetchdat);
     SEG_CHECK_WRITE(cpu_state.ea_seg);
-<<<<<<< HEAD
-    ts.s = x87_fround_single(ST(0));
-=======
     if (x87_empty_store(4, 0, 0))
         return cpu_state.abrt;
     ts.s = (float) ST(0);
->>>>>>> 25e5b8173c022dfcb976aebcd4eb3563febdc5ae
     seteal(ts.i);
     if (!cpu_state.abrt)
         x87_store_done(0);
@@ -976,13 +902,9 @@ opFSTs_a32(uint32_t fetchdat)
     FP_ENTER();
     fetch_ea_32(fetchdat);
     SEG_CHECK_WRITE(cpu_state.ea_seg);
-<<<<<<< HEAD
-    ts.s = x87_fround_single(ST(0));
-=======
     if (x87_empty_store(4, 0, 0))
         return cpu_state.abrt;
     ts.s = (float) ST(0);
->>>>>>> 25e5b8173c022dfcb976aebcd4eb3563febdc5ae
     seteal(ts.i);
     if (!cpu_state.abrt)
         x87_store_done(0);
@@ -999,13 +921,9 @@ opFSTPs_a16(UNUSED(uint32_t fetchdat))
     FP_ENTER();
     fetch_ea_16(fetchdat);
     SEG_CHECK_WRITE(cpu_state.ea_seg);
-<<<<<<< HEAD
-    ts.s = x87_fround_single(ST(0));
-=======
     if (x87_empty_store(4, 0, 1))
         return cpu_state.abrt;
     ts.s = (float) ST(0);
->>>>>>> 25e5b8173c022dfcb976aebcd4eb3563febdc5ae
     seteal(ts.i);
     if (cpu_state.abrt)
         return 1;
@@ -1023,13 +941,9 @@ opFSTPs_a32(uint32_t fetchdat)
     FP_ENTER();
     fetch_ea_32(fetchdat);
     SEG_CHECK_WRITE(cpu_state.ea_seg);
-<<<<<<< HEAD
-    ts.s = x87_fround_single(ST(0));
-=======
     if (x87_empty_store(4, 0, 1))
         return cpu_state.abrt;
     ts.s = (float) ST(0);
->>>>>>> 25e5b8173c022dfcb976aebcd4eb3563febdc5ae
     seteal(ts.i);
     if (cpu_state.abrt)
         return 1;

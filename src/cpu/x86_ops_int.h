@@ -7,16 +7,9 @@ opINT3(UNUSED(uint32_t fetchdat))
     if (gdbstub_int3())
         return 1;
 #endif
-<<<<<<< HEAD
-    if ((cr0 & 1) && (cpu_state.eflags & VM_FLAG)) {
-        x86gpf(NULL, 0);
-        return 1;
-    }
-=======
     /* Not IOPL-sensitive in V86 mode: only INT n is (the gate's DPL still
        applies) */
     x86_int_sw_iopl_exempt = 1;
->>>>>>> 25e5b8173c022dfcb976aebcd4eb3563febdc5ae
     x86_int_sw(3);
     x86_int_sw_iopl_exempt = 0;
     CLOCK_CYCLES((is486) ? 44 : 59);
@@ -87,14 +80,7 @@ opINTO(UNUSED(uint32_t fetchdat))
     int cycles_old = cycles;
     UN_USED(cycles_old);
 
-<<<<<<< HEAD
-    if ((cr0 & 1) && (cpu_state.eflags & VM_FLAG)) {
-        x86gpf(NULL, 0);
-        return 1;
-    }
-=======
     /* Not IOPL-sensitive in V86 mode, and nothing at all with OF clear */
->>>>>>> 25e5b8173c022dfcb976aebcd4eb3563febdc5ae
     if (VF_SET()) {
         x86_int_sw_iopl_exempt = 1;
         x86_int_sw(4);

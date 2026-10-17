@@ -1189,10 +1189,12 @@ bit_common(codeblock_t *block, ir_data_t *ir, uint32_t fetchdat, uint32_t op_32,
                 uop_AND_IMM(ir, IREG_eaaddr, IREG_eaaddr, 0xffff);
         }
         if (kind == BIT_TEST)
+        {
             codegen_check_seg_read(block, ir, target_seg);
+            CHECK_SEG_LIMITS(block, ir, target_seg, IREG_eaaddr, is32 ? 3 : 1);
+        }
         else
-            codegen_check_seg_write(block, ir, target_seg);
-        CHECK_SEG_LIMITS(block, ir, target_seg, IREG_eaaddr, is32 ? 3 : 1);
+            codegen_check_seg_write(block, ir, target_seg, IREG_eaaddr, is32 ? 4 : 2);
         if (is32)
             uop_MEM_LOAD_REG(ir, IREG_temp0, ireg_seg_base(target_seg), IREG_eaaddr);
         else {
@@ -1335,8 +1337,7 @@ xchg_dest_load(codeblock_t *block, ir_data_t *ir, uint32_t fetchdat, uint32_t op
     else {
         uop_MOV_IMM(ir, IREG_oldpc, cpu_state.oldpc);
         target_seg = codegen_generate_ea(ir, op_ea_seg, fetchdat, op_ssegs, op_pc, op_32, 0);
-        codegen_check_seg_write(block, ir, target_seg);
-        CHECK_SEG_LIMITS(block, ir, target_seg, IREG_eaaddr, (size / 8) - 1);
+        codegen_check_seg_write(block, ir, target_seg, IREG_eaaddr, (size / 8));
         if (size == 32)
             uop_MEM_LOAD_REG(ir, IREG_temp0, ireg_seg_base(target_seg), IREG_eaaddr);
         else {

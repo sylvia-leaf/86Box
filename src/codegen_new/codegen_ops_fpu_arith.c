@@ -233,7 +233,7 @@ ropFMULr(UNUSED(codeblock_t *block), ir_data_t *ir, UNUSED(uint8_t opcode), uint
     uop_MOV_IMM(ir, IREG_tag(dest_reg), TAG_VALID);
 
     return op_pc;
-}fastreadl(cs + op_pc + 1);
+}
 uint32_t
 ropFMULP(codeblock_t *block, ir_data_t *ir, UNUSED(uint8_t opcode), uint32_t fetchdat, UNUSED(uint32_t op_32), uint32_t op_pc)
 {

@@ -1324,8 +1324,7 @@ ropSETcc(codeblock_t *block, ir_data_t *ir, uint8_t opcode, uint32_t fetchdat, u
 
         uop_MOV_IMM(ir, IREG_oldpc, cpu_state.oldpc);
         target_seg = codegen_generate_ea(ir, op_ea_seg, fetchdat, op_ssegs, &op_pc, op_32, 0);
-        codegen_check_seg_write(block, ir, target_seg);
-        CHECK_SEG_LIMITS(block, ir, target_seg, IREG_eaaddr, 0);
+        codegen_check_seg_write(block, ir, target_seg, IREG_eaaddr, 1);
         setcc_value(ir, opcode & 0xf);
         uop_MEM_STORE_REG(ir, ireg_seg_base(target_seg), IREG_eaaddr, IREG_temp0_B);
     }

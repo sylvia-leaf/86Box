@@ -364,7 +364,7 @@ shift_common_32(ir_data_t *ir, uint32_t fetchdat, uint32_t op_pc, x86seg *target
 }
 
 static uint32_t
-shift_common_variable_32(ir_data_t *ir, uint32_t fetchdat, uint32_t op_pc, x86seg *target_seg, int count_reg)
+shift_common_variable_32(codeblock_t *block, ir_data_t *ir, uint32_t fetchdat, uint32_t op_32, uint32_t op_pc, x86seg *target_seg, int count_reg)
 {
     if ((fetchdat & 0xc0) == 0xc0) {
         int dest_reg = fetchdat & 7;
@@ -491,8 +491,7 @@ rcx1_common(codeblock_t *block, ir_data_t *ir, uint32_t fetchdat, uint32_t op_32
     } else {
         uop_MOV_IMM(ir, IREG_oldpc, cpu_state.oldpc);
         target_seg = codegen_generate_ea(ir, op_ea_seg, fetchdat, op_ssegs, &op_pc, op_32, 0);
-        codegen_check_seg_write(block, ir, target_seg);
-        CHECK_SEG_LIMITS(block, ir, target_seg, IREG_eaaddr, (size / 8) - 1);
+        codegen_check_seg_write(block, ir, target_seg, IREG_eaaddr, (size / 8));
         if (size == 32)
             uop_MEM_LOAD_REG(ir, IREG_temp0, ireg_seg_base(target_seg), IREG_eaaddr);
         else {
@@ -534,8 +533,8 @@ rcx1_common(codeblock_t *block, ir_data_t *ir, uint32_t fetchdat, uint32_t op_32
     return op_pc + 1;
 }
 
-static uint32_t shift_common_variable_8(ir_data_t *ir, uint32_t fetchdat, uint32_t op_pc, x86seg *target_seg, int count_reg);
-static uint32_t shift_common_variable_16(ir_data_t *ir, uint32_t fetchdat, uint32_t op_pc, x86seg *target_seg, int count_reg);
+static uint32_t shift_common_variable_8(codeblock_t *block, ir_data_t *ir, uint32_t fetchdat,  uint32_t op_32, uint32_t op_pc, x86seg *target_seg, int count_reg);
+static uint32_t shift_common_variable_16(codeblock_t *block, ir_data_t *ir, uint32_t fetchdat,  uint32_t op_32,uint32_t op_pc, x86seg *target_seg, int count_reg);
 static uint32_t shxd_imm_ram(codeblock_t *block, ir_data_t *ir, uint32_t fetchdat, uint32_t op_32, uint32_t op_pc, int is32, int is_shrd);
 
 /*A shift by an immediate read from RAM as the block runs
@@ -543,7 +542,7 @@ static uint32_t shxd_imm_ram(codeblock_t *block, ir_data_t *ir, uint32_t fetchda
   destination. A count of 0 at run time skips the shift and leaves the
   flags.*/
 static uint32_t
-shift_imm_ram(codeblock_t *block, ir_data_t *ir, uint32_t fetchdat, uint32_t op_pc, x86seg *target_seg, int size)
+shift_imm_ram(codeblock_t *block, ir_data_t *ir, uint32_t fetchdat, uint32_t op_32, uint32_t op_pc, x86seg *target_seg, int size)
 {
     uint32_t new_pc;
     int      jump_uop;
@@ -553,11 +552,11 @@ shift_imm_ram(codeblock_t *block, ir_data_t *ir, uint32_t fetchdat, uint32_t op_
     jump_uop = uop_CMP_IMM_JZ_DEST(ir, IREG_temp2, 0);
 
     if (size == 8)
-        new_pc = shift_common_variable_8(ir, fetchdat, op_pc, target_seg, IREG_temp2);
+        new_pc = shift_common_variable_8(block, ir, fetchdat, op_32, op_pc, target_seg, IREG_temp2);
     else if (size == 16)
-        new_pc = shift_common_variable_16(ir, fetchdat, op_pc, target_seg, IREG_temp2);
+        new_pc = shift_common_variable_16(block, ir, fetchdat, op_32, op_pc, target_seg, IREG_temp2);
     else
-        new_pc = shift_common_variable_32(ir, fetchdat, op_pc, target_seg, IREG_temp2);
+        new_pc = shift_common_variable_32(block, ir, fetchdat, op_32, op_pc, target_seg, IREG_temp2);
 #ifndef RELEASE_BUILD
     /*Only RCL and RCR have no variable form, and every caller turns them away*/
     if (!new_pc)
@@ -587,7 +586,7 @@ ropC0(codeblock_t *block, ir_data_t *ir, UNUSED(uint8_t opcode), uint32_t fetchd
         uop_MEM_LOAD_REG(ir, IREG_temp0_B, ireg_seg_base(target_seg), IREG_eaaddr);
     }
     if (block->flags & CODEBLOCK_NO_IMMEDIATES)
-        return shift_imm_ram(block, ir, fetchdat, op_pc, target_seg, 8);
+        return shift_imm_ram(block, ir, fetchdat, op_32, op_pc, target_seg, 8);
     imm = fastreadb(cs + op_pc + 1) & 0x1f;
     codegen_mark_code_present(block, cs + op_pc + 1, 1);
 
@@ -613,7 +612,7 @@ ropC1_w(codeblock_t *block, ir_data_t *ir, UNUSED(uint8_t opcode), uint32_t fetc
         uop_MEM_LOAD_REG(ir, IREG_temp0_W, ireg_seg_base(target_seg), IREG_eaaddr);
     }
     if (block->flags & CODEBLOCK_NO_IMMEDIATES)
-        return shift_imm_ram(block, ir, fetchdat, op_pc, target_seg, 16);
+        return shift_imm_ram(block, ir, fetchdat, op_32, op_pc, target_seg, 16);
     imm = fastreadb(cs + op_pc + 1) & 0x1f;
     codegen_mark_code_present(block, cs + op_pc + 1, 1);
 
@@ -639,7 +638,7 @@ ropC1_l(codeblock_t *block, ir_data_t *ir, UNUSED(uint8_t opcode), uint32_t fetc
         uop_MEM_LOAD_REG(ir, IREG_temp0, ireg_seg_base(target_seg), IREG_eaaddr);
     }
     if (block->flags & CODEBLOCK_NO_IMMEDIATES)
-        return shift_imm_ram(block, ir, fetchdat, op_pc, target_seg, 32);
+        return shift_imm_ram(block, ir, fetchdat, op_32, op_pc, target_seg, 32);
     imm = fastreadb(cs + op_pc + 1) & 0x1f;
     codegen_mark_code_present(block, cs + op_pc + 1, 1);
 
@@ -705,7 +704,7 @@ ropD1_l(codeblock_t *block, ir_data_t *ir, UNUSED(uint8_t opcode), uint32_t fetc
 }
 
 static uint32_t
-shift_common_variable_8(ir_data_t *ir, uint32_t fetchdat, uint32_t op_pc, x86seg *target_seg, int count_reg)
+shift_common_variable_8(codeblock_t *block, ir_data_t *ir, uint32_t fetchdat, uint32_t op_32, uint32_t op_pc, x86seg *target_seg, int count_reg)
 {
     if ((fetchdat & 0xc0) == 0xc0) {
         int dest_reg = fetchdat & 7;
@@ -825,15 +824,14 @@ ropD2(codeblock_t *block, ir_data_t *ir, UNUSED(uint8_t opcode), uint32_t fetchd
     if ((fetchdat & 0xc0) != 0xc0) {
         uop_MOV_IMM(ir, IREG_oldpc, cpu_state.oldpc);
         target_seg = codegen_generate_ea(ir, op_ea_seg, fetchdat, op_ssegs, &op_pc, op_32, 0);
-        codegen_check_seg_write(block, ir, target_seg);
-        CHECK_SEG_LIMITS(block, ir, target_seg, IREG_eaaddr, 0);
+        codegen_check_seg_write(block, ir, target_seg, IREG_eaaddr, 1); 
         uop_MEM_LOAD_REG(ir, IREG_temp0_B, ireg_seg_base(target_seg), IREG_eaaddr);
     }
 
-    return shift_common_variable_8(ir, fetchdat, op_pc, target_seg, IREG_temp2);
+    return shift_common_variable_8(block, ir, fetchdat, op_32, op_pc, target_seg, IREG_temp2);
 }
 static uint32_t
-shift_common_variable_16(ir_data_t *ir, uint32_t fetchdat, uint32_t op_pc, x86seg *target_seg, int count_reg)
+shift_common_variable_16(codeblock_t *block, ir_data_t *ir, uint32_t fetchdat,  uint32_t op_32, uint32_t op_pc, x86seg *target_seg, int count_reg)
 {
     if ((fetchdat & 0xc0) == 0xc0) {
         int dest_reg = fetchdat & 7;
@@ -964,7 +962,7 @@ ropD3_w(codeblock_t *block, ir_data_t *ir, UNUSED(uint8_t opcode), uint32_t fetc
         uop_MEM_LOAD_REG(ir, IREG_temp0_W, ireg_seg_base(target_seg), IREG_eaaddr);
     }
 
-    return shift_common_variable_16(ir, fetchdat, op_pc, target_seg, IREG_temp2);
+    return shift_common_variable_16(block, ir, fetchdat, op_32, op_pc, target_seg, IREG_temp2);
 }
 uint32_t
 ropD3_l(codeblock_t *block, ir_data_t *ir, UNUSED(uint8_t opcode), uint32_t fetchdat, uint32_t op_32, uint32_t op_pc)
@@ -1104,8 +1102,7 @@ ropSHLD_16_imm(codeblock_t *block, ir_data_t *ir, UNUSED(uint8_t opcode), uint32
         target_seg = codegen_generate_ea(ir, op_ea_seg, fetchdat, op_ssegs, &op_pc, op_32, 0);
         /*Checked and read whatever the count, as the interpreter does: a
           count of 0 still faults on the destination*/
-        codegen_check_seg_write(block, ir, target_seg);
-        CHECK_SEG_LIMITS(block, ir, target_seg, IREG_eaaddr, 1);
+        codegen_check_seg_write(block, ir, target_seg, IREG_eaaddr, 2);
         uop_MEM_LOAD_REG(ir, IREG_temp2_W, ireg_seg_base(target_seg), IREG_eaaddr);
     }
     imm = fastreadb(cs + op_pc + 1) & 0x1f;
@@ -1168,8 +1165,7 @@ ropSHLD_32_imm(codeblock_t *block, ir_data_t *ir, UNUSED(uint8_t opcode), uint32
         target_seg = codegen_generate_ea(ir, op_ea_seg, fetchdat, op_ssegs, &op_pc, op_32, 0);
         /*Checked and read whatever the count, as the interpreter does: a
           count of 0 still faults on the destination*/
-        codegen_check_seg_write(block, ir, target_seg);
-        CHECK_SEG_LIMITS(block, ir, target_seg, IREG_eaaddr, 3);
+        codegen_check_seg_write(block, ir, target_seg, IREG_eaaddr, 4);
         uop_MEM_LOAD_REG(ir, IREG_temp2, ireg_seg_base(target_seg), IREG_eaaddr);
     }
     imm = fastreadb(cs + op_pc + 1) & 0x1f;
@@ -1228,8 +1224,7 @@ ropSHRD_16_imm(codeblock_t *block, ir_data_t *ir, UNUSED(uint8_t opcode), uint32
         target_seg = codegen_generate_ea(ir, op_ea_seg, fetchdat, op_ssegs, &op_pc, op_32, 0);
         /*Checked and read whatever the count, as the interpreter does: a
           count of 0 still faults on the destination*/
-        codegen_check_seg_write(block, ir, target_seg);
-        CHECK_SEG_LIMITS(block, ir, target_seg, IREG_eaaddr, 1);
+        codegen_check_seg_write(block, ir, target_seg, IREG_eaaddr, 2);
         uop_MEM_LOAD_REG(ir, IREG_temp2_W, ireg_seg_base(target_seg), IREG_eaaddr);
     }
     imm = fastreadb(cs + op_pc + 1) & 0x1f;
@@ -1292,8 +1287,7 @@ ropSHRD_32_imm(codeblock_t *block, ir_data_t *ir, UNUSED(uint8_t opcode), uint32
         target_seg = codegen_generate_ea(ir, op_ea_seg, fetchdat, op_ssegs, &op_pc, op_32, 0);
         /*Checked and read whatever the count, as the interpreter does: a
           count of 0 still faults on the destination*/
-        codegen_check_seg_write(block, ir, target_seg);
-        CHECK_SEG_LIMITS(block, ir, target_seg, IREG_eaaddr, 3);
+        codegen_check_seg_write(block, ir, target_seg, IREG_eaaddr, 4);
         uop_MEM_LOAD_REG(ir, IREG_temp2, ireg_seg_base(target_seg), IREG_eaaddr);
     }
     imm = fastreadb(cs + op_pc + 1) & 0x1f;
@@ -1415,8 +1409,7 @@ shxd_cl_common(codeblock_t *block, ir_data_t *ir, uint32_t fetchdat, uint32_t op
     } else {
         uop_MOV_IMM(ir, IREG_oldpc, cpu_state.oldpc);
         target_seg = codegen_generate_ea(ir, op_ea_seg, fetchdat, op_ssegs, &op_pc, op_32, 0);
-        codegen_check_seg_write(block, ir, target_seg);
-        CHECK_SEG_LIMITS(block, ir, target_seg, IREG_eaaddr, is32 ? 3 : 1);
+        codegen_check_seg_write(block, ir, target_seg, IREG_eaaddr, is32 ? 4 : 2);
         if (is32)
             uop_MEM_LOAD_REG(ir, IREG_temp0, ireg_seg_base(target_seg), IREG_eaaddr);
         else {
@@ -1450,8 +1443,7 @@ shxd_imm_ram(codeblock_t *block, ir_data_t *ir, uint32_t fetchdat, uint32_t op_3
     } else {
         uop_MOV_IMM(ir, IREG_oldpc, cpu_state.oldpc);
         target_seg = codegen_generate_ea(ir, op_ea_seg, fetchdat, op_ssegs, &op_pc, op_32, 0);
-        codegen_check_seg_write(block, ir, target_seg);
-        CHECK_SEG_LIMITS(block, ir, target_seg, IREG_eaaddr, is32 ? 3 : 1);
+        codegen_check_seg_write(block, ir, target_seg, IREG_eaaddr, is32 ? 4 : 2);
         if (is32)
             uop_MEM_LOAD_REG(ir, IREG_temp0, ireg_seg_base(target_seg), IREG_eaaddr);
         else {

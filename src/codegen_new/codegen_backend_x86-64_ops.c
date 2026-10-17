@@ -1156,21 +1156,6 @@ host_x86_SETcc_REG(codeblock_t *block, int cc, int dst_reg)
     codegen_addbyte(block, 0xc0 | (dst_reg & 7)); /*SETcc dst_reg*/
 }
 void
-host_x86_IMUL32_REG_REG(codeblock_t *block, int dst_reg, int src_reg)
-{
-    emit_rr(block, 0, 0, 0, 2, 0x0faf, dst_reg, src_reg); /*IMUL dst_reg, src_reg*/
-}
-void
-host_x86_IMUL64_REG_REG(codeblock_t *block, int dst_reg, int src_reg)
-{
-    emit_rr(block, 0, 1, 0, 2, 0x0faf, dst_reg, src_reg); /*IMUL dst_reg, src_reg (64-bit)*/
-}
-void
-host_x86_MOVSXD_REG_REG(codeblock_t *block, int dst_reg, int src_reg)
-{
-    emit_rr(block, 0, 1, 0, 1, 0x63, dst_reg, src_reg); /*MOVSXD dst_reg, src_reg*/
-}
-void
 host_x86_SHR64_IMM(codeblock_t *block, int dst_reg, int shift)
 {
     emit_ext(block, 0, 1, 0, 1, 0xc1, RM_OP_SHR, dst_reg, 1, shift); /*SHR dst_reg, shift (64-bit)*/
@@ -1184,11 +1169,6 @@ void
 host_x86_BSR32_REG_REG(codeblock_t *block, int dst_reg, int src_reg)
 {
     emit_rr(block, 0, 0, 0, 2, 0x0fbd, dst_reg, src_reg); /*BSR dst_reg, src_reg*/
-}
-void
-host_x86_CMOVNZ32_REG_REG(codeblock_t *block, int dst_reg, int src_reg)
-{
-    emit_rr(block, 0, 0, 0, 2, 0x0f45, dst_reg, src_reg); /*CMOVNZ dst_reg, src_reg*/
 }
 void
 host_x86_BSWAP32_REG(codeblock_t *block, int reg)

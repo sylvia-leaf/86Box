@@ -290,14 +290,9 @@ opF7_w_a16(uint32_t fetchdat)
 {
     uint32_t templ;
     uint32_t templ2 = 0;
-<<<<<<< HEAD
     int      tempws;
     int64_t  tempws2 = 0;
     int16_t  temps16;
-=======
-    int32_t  tempws;
-    int64_t  tempws2 = 0;
->>>>>>> 25e5b8173c022dfcb976aebcd4eb3563febdc5ae
     uint16_t src;
     uint16_t dst;
 
@@ -382,19 +377,11 @@ opF7_w_a16(uint32_t fetchdat)
             break;
         case 0x38: /*IDIV AX,w*/
             tempws = (int32_t) (((uint32_t) DX << 16) | AX);
-<<<<<<< HEAD
-            /*Divide in 64 bits: INT32_MIN / -1 traps on x86 hosts*/
-            if (dst)
-                tempws2 = (int64_t) tempws / (int16_t) dst;
-            temps16 = tempws2 & 0xffff;
-            if ((dst != 0) && ((int) temps16 == tempws2)) {
-=======
             if (dst)
                 tempws2 = (int64_t) tempws / (int16_t) dst;
             /* Keep the quotient wide until the architectural range check:
                80000000h / -1 must #DE, without overflowing host arithmetic. */
             if ((dst != 0) && (tempws2 >= -32768) && (tempws2 <= 32767)) {
->>>>>>> 25e5b8173c022dfcb976aebcd4eb3563febdc5ae
                 DX = tempws % (int) ((int16_t) dst);
                 AX = tempws2 & 0xffff;
                 if (!cpu_iscyrix && !is6117)
@@ -417,14 +404,9 @@ opF7_w_a32(uint32_t fetchdat)
 {
     uint32_t templ;
     uint32_t templ2 = 0;
-<<<<<<< HEAD
     int      tempws;
     int64_t  tempws2 = 1;
     int16_t  temps16;
-=======
-    int32_t  tempws;
-    int64_t  tempws2 = 0;
->>>>>>> 25e5b8173c022dfcb976aebcd4eb3563febdc5ae
     uint16_t src;
     uint16_t dst;
 
@@ -510,19 +492,11 @@ opF7_w_a32(uint32_t fetchdat)
             break;
         case 0x38: /*IDIV AX,w*/
             tempws = (int32_t) (((uint32_t) DX << 16) | AX);
-<<<<<<< HEAD
-            /*Divide in 64 bits: INT32_MIN / -1 traps on x86 hosts*/
-            if (dst)
-                tempws2 = (int64_t) tempws / (int16_t) dst;
-            temps16 = tempws2 & 0xffff;
-            if ((dst != 0) && ((int) temps16 == tempws2)) {
-=======
             if (dst)
                 tempws2 = (int64_t) tempws / (int16_t) dst;
             /* Keep the quotient wide until the architectural range check:
                80000000h / -1 must #DE, without overflowing host arithmetic. */
             if ((dst != 0) && (tempws2 >= -32768) && (tempws2 <= 32767)) {
->>>>>>> 25e5b8173c022dfcb976aebcd4eb3563febdc5ae
                 DX = tempws % (int) ((int16_t) dst);
                 AX = tempws2 & 0xffff;
                 if (!cpu_iscyrix && !is6117)
@@ -739,11 +713,7 @@ opHLT(UNUSED(uint32_t fetchdat))
         enter_smm_check(1);
     else if (!((cpu_state.flags & I_FLAG) && pic_pending_int())) {
         CLOCK_CYCLES_ALWAYS(100);
-<<<<<<< HEAD
-        if (!((cpu_state.flags & I_FLAG) && pic_pending_int()))
-=======
-        if (!((cpu_state.flags & I_FLAG) && pic.int_pending)) {
->>>>>>> 25e5b8173c022dfcb976aebcd4eb3563febdc5ae
+        if (!((cpu_state.flags & I_FLAG) && pic_pending_int())) {
             cpu_state.pc--;
             cpu_halted = 1; /* an interrupt taken here returns past the HLT */
         }
@@ -793,17 +763,13 @@ opLOCK(uint32_t fetchdat)
 static int
 opLOCK(uint32_t fetchdat)
 {
-<<<<<<< HEAD
-    int legal;
     if (cpu_check_prefix_length())
         return 1;
-=======
     uint32_t pc = cpu_state.pc;
     uint8_t  opcode;
     int      is_0f = 0;
     int      legal = 0;
 
->>>>>>> 25e5b8173c022dfcb976aebcd4eb3563febdc5ae
     fetchdat = fastreadl(cs + cpu_state.pc);
     if (cpu_state.abrt)
         return 0;
@@ -848,11 +814,7 @@ opBOUND_w_a16(uint32_t fetchdat)
     fetch_ea_16(fetchdat);
     ILLEGAL_ON(cpu_mod == 3);
     SEG_CHECK_READ(cpu_state.ea_seg);
-<<<<<<< HEAD
     CHECK_READ(cpu_state.ea_seg, cpu_state.eaaddr, cpu_state.eaaddr + 3UL);
-=======
-    CHECK_READ_EA(4);
->>>>>>> 25e5b8173c022dfcb976aebcd4eb3563febdc5ae
     low  = geteaw();
     high = readmemw(easeg, cpu_state.eaaddr + 2);
     if (cpu_state.abrt)
@@ -876,11 +838,7 @@ opBOUND_w_a32(uint32_t fetchdat)
     fetch_ea_32(fetchdat);
     ILLEGAL_ON(cpu_mod == 3);
     SEG_CHECK_READ(cpu_state.ea_seg);
-<<<<<<< HEAD
     CHECK_READ(cpu_state.ea_seg, cpu_state.eaaddr, cpu_state.eaaddr + 3UL);
-=======
-    CHECK_READ_EA(4);
->>>>>>> 25e5b8173c022dfcb976aebcd4eb3563febdc5ae
     low  = geteaw();
     high = readmemw(easeg, cpu_state.eaaddr + 2);
     if (cpu_state.abrt)
@@ -905,11 +863,7 @@ opBOUND_l_a16(uint32_t fetchdat)
     fetch_ea_16(fetchdat);
     ILLEGAL_ON(cpu_mod == 3);
     SEG_CHECK_READ(cpu_state.ea_seg);
-<<<<<<< HEAD
     CHECK_READ(cpu_state.ea_seg, cpu_state.eaaddr, cpu_state.eaaddr + 7UL);
-=======
-    CHECK_READ_EA(8);
->>>>>>> 25e5b8173c022dfcb976aebcd4eb3563febdc5ae
     low  = geteal();
     high = readmeml(easeg, cpu_state.eaaddr + 4);
     if (cpu_state.abrt)
@@ -933,11 +887,7 @@ opBOUND_l_a32(uint32_t fetchdat)
     fetch_ea_32(fetchdat);
     ILLEGAL_ON(cpu_mod == 3);
     SEG_CHECK_READ(cpu_state.ea_seg);
-<<<<<<< HEAD
     CHECK_READ(cpu_state.ea_seg, cpu_state.eaaddr, cpu_state.eaaddr + 7UL);
-=======
-    CHECK_READ_EA(8);
->>>>>>> 25e5b8173c022dfcb976aebcd4eb3563febdc5ae
     low  = geteal();
     high = readmeml(easeg, cpu_state.eaaddr + 4);
     if (cpu_state.abrt)
@@ -973,10 +923,7 @@ opINVD(UNUSED(uint32_t fetchdat))
         x86gpf(NULL, 0);
         return 1;
     }
-<<<<<<< HEAD
     cpu_INVD(0);
-=======
->>>>>>> 25e5b8173c022dfcb976aebcd4eb3563febdc5ae
     CLOCK_CYCLES(1000);
     CPU_BLOCK_END();
     return 0;
