@@ -249,8 +249,8 @@ pipeline {
 									}
 								}
 							}
-							parallel combinations
 						}
+						parallel combinations
 					}
 				}
 			}
