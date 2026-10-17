@@ -834,21 +834,6 @@ host_arm64_CSET(codeblock_t *block, int dst_reg, int cond)
     codegen_addlong(block, OPCODE_CSEL | (1 << 10) | CSEL_COND(cond ^ 1) | Rd(dst_reg) | Rn(REG_WZR) | Rm(REG_WZR));
 }
 void
-host_arm64_MUL(codeblock_t *block, int dst_reg, int src_n_reg, int src_m_reg)
-{
-    codegen_addlong(block, 0x1b007c00 | Rd(dst_reg) | Rn(src_n_reg) | Rm(src_m_reg)); /*MUL Wd, Wn, Wm*/
-}
-void
-host_arm64_SMULL(codeblock_t *block, int dst_reg, int src_n_reg, int src_m_reg)
-{
-    codegen_addlong(block, 0x9b207c00 | Rd(dst_reg) | Rn(src_n_reg) | Rm(src_m_reg)); /*SMULL Xd, Wn, Wm*/
-}
-void
-host_arm64_UMULL(codeblock_t *block, int dst_reg, int src_n_reg, int src_m_reg)
-{
-    codegen_addlong(block, 0x9ba07c00 | Rd(dst_reg) | Rn(src_n_reg) | Rm(src_m_reg)); /*UMULL Xd, Wn, Wm*/
-}
-void
 host_arm64_LSR64_32(codeblock_t *block, int dst_reg, int src_n_reg)
 {
     codegen_addlong(block, 0xd360fc00 | Rd(dst_reg) | Rn(src_n_reg)); /*LSR Xd, Xn, #32*/
