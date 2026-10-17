@@ -70,9 +70,9 @@ endif()
 
 if(AUTOMATION)
     add_compile_definitions(USE_AUTOMATION)
-    target_sources(86Box PRIVATE automation.c)
+    target_sources(PCBox PRIVATE automation.c)
     if(WIN32)
-        target_link_libraries(86Box ws2_32)
+        target_link_libraries(PCBox ws2_32)
     endif()
 endif()
 
