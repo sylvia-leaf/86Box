@@ -1,8 +1,4 @@
-#ifdef USE_NEW_DYNAREC
 #    define CPU_SET_OXPC
-#else
-#    define CPU_SET_OXPC oxpc = cpu_state.pc;
-#endif
 
 #define RETF_a16(stack_offset)                        \
     if ((msw & 1) && !(cpu_state.eflags & VM_FLAG)) { \

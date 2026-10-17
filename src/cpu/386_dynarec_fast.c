@@ -29,10 +29,7 @@
 #include <86box/plat_fallthrough.h>
 #include <86box/plat_unused.h>
 #ifdef USE_DYNAREC
-#    include "codegen.h"
-#    ifdef USE_NEW_DYNAREC
-#        include "codegen_backend.h"
-#    endif
+#include "codegen_backend.h"
 #endif
 
 #include "386_common.h"
@@ -96,12 +93,6 @@ exec386_dynarec_fast(int32_t cycs)
         while (blocks_executed < BLOCKS_PER_BATCH && cycles_main > 0) {
             oldcs  = CS;
             oldcpl = CPL;
-#ifdef USE_NEW_DYNAREC
-            /* new dynarec manages oldpc/op32 internally */
-#else
-            cpu_state.oldpc = cpu_state.pc;
-            cpu_state.op32  = use32;
-#endif
 
             if (cpu_force_interpreter || cpu_override_dynarec || !CACHE_ON()) {
                 exec386_dynarec_int();
@@ -122,9 +113,6 @@ exec386_dynarec_fast(int32_t cycs)
                 if (cpu_state.abrt) {
                     cpu_state.abrt = 0;
                     cpu_state.pc   = cpu_state.oldpc;
-#ifndef USE_NEW_DYNAREC
-                    CS = oldcs;
-#endif
                     pmodeint(8, 0);
                     if (cpu_state.abrt) {
                         cpu_state.abrt = 0;

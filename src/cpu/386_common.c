@@ -64,11 +64,7 @@ int nmi_enable = 1;
 int alt_access;
 int cpl_override = 0;
 
-#ifdef USE_NEW_DYNAREC
 uint16_t cpu_cur_status = 0;
-#else
-uint32_t cpu_cur_status = 0;
-#endif
 
 extern uint8_t *pccache2;
 
@@ -1733,9 +1729,6 @@ x86_int(int num)
 
             cpu_state.flags &= ~I_FLAG;
             cpu_state.flags &= ~T_FLAG;
-#ifndef USE_NEW_DYNAREC
-            oxpc = cpu_state.pc;
-#endif
             cpu_state.pc = readmemw(0, addr);
             cpu_use_exec ? loadcs(readmemw(0, addr + 2)) : loadcs_2386(readmemw(0, addr + 2));
         }
@@ -1781,9 +1774,6 @@ x86_int_sw(int num)
 
             cpu_state.flags &= ~I_FLAG;
             cpu_state.flags &= ~T_FLAG;
-#ifndef USE_NEW_DYNAREC
-            oxpc = cpu_state.pc;
-#endif
             cpu_state.pc = readmemw(0, addr);
             cpu_use_exec ? loadcs(readmemw(0, addr + 2)) : loadcs_2386(readmemw(0, addr + 2));
             cycles -= timing_int_rm;
@@ -1837,9 +1827,6 @@ x86_int_sw_rm(int num)
     cpu_state.flags &= ~T_FLAG;
     cpu_state.pc = new_pc;
     cpu_use_exec ? loadcs(new_cs) : loadcs_2386(new_cs);
-#ifndef USE_NEW_DYNAREC
-    oxpc = cpu_state.pc;
-#endif
 
     cycles -= timing_int_rm;
 #ifdef USE_DEBUG_REGS_486
