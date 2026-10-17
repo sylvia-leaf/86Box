@@ -362,6 +362,7 @@ ropPUSHA_16(UNUSED(codeblock_t *block), ir_data_t *ir, UNUSED(uint8_t opcode), U
         uop_MEM_STORE_REG_OFFSET(ir, IREG_SS_base, sp_reg, 2, IREG_SI);
         uop_MEM_STORE_REG(ir, IREG_SS_base, sp_reg, IREG_DI);
     } else {
+        sp_reg = LOAD_SP_WITH_OFFSET(ir, -16);
         CHECK_STACK_LIMITS(block, ir, sp_reg, 16);
         /*A 16-bit stack wraps each slot's address, not just the first*/
         sp_reg = LOAD_SP_WITH_OFFSET(ir, -2);
@@ -402,8 +403,9 @@ ropPUSHA_32(UNUSED(codeblock_t *block), ir_data_t *ir, UNUSED(uint8_t opcode), U
         uop_MEM_STORE_REG_OFFSET(ir, IREG_SS_base, sp_reg, 4, IREG_ESI);
         uop_MEM_STORE_REG(ir, IREG_SS_base, sp_reg, IREG_EDI);
     } else {
-        /*A 16-bit stack wraps each slot's address, not just the first*/
+        sp_reg = LOAD_SP_WITH_OFFSET(ir, -32);
         CHECK_STACK_LIMITS(block, ir, sp_reg, 32);
+        /*A 16-bit stack wraps each slot's address, not just the first*/
         sp_reg = LOAD_SP_WITH_OFFSET(ir, -4);
         uop_MEM_STORE_REG(ir, IREG_SS_base, sp_reg, IREG_EAX);
         sp_reg = LOAD_SP_WITH_OFFSET(ir, -8);
@@ -442,6 +444,7 @@ ropPOPA_16(UNUSED(codeblock_t *block), ir_data_t *ir, UNUSED(uint8_t opcode), UN
         uop_MEM_LOAD_REG_OFFSET(ir, IREG_CX, IREG_SS_base, sp_reg, 12);
         uop_MEM_LOAD_REG_OFFSET(ir, IREG_AX, IREG_SS_base, sp_reg, 14);
     } else {
+        sp_reg = LOAD_SP(ir);
         CHECK_STACK_LIMITS(block, ir, sp_reg, 16);
         /*A 16-bit stack wraps each slot's address, not just the first*/
         sp_reg = LOAD_SP_WITH_OFFSET(ir, 0);
@@ -479,6 +482,7 @@ ropPOPA_32(UNUSED(codeblock_t *block), ir_data_t *ir, UNUSED(uint8_t opcode), UN
         uop_MEM_LOAD_REG_OFFSET(ir, IREG_ECX, IREG_SS_base, sp_reg, 24);
         uop_MEM_LOAD_REG_OFFSET(ir, IREG_EAX, IREG_SS_base, sp_reg, 28);
     } else {
+        sp_reg = LOAD_SP(ir);
         CHECK_STACK_LIMITS(block, ir, sp_reg, 32);
         /*A 16-bit stack wraps each slot's address, not just the first*/
         sp_reg = LOAD_SP_WITH_OFFSET(ir, 0);

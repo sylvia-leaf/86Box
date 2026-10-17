@@ -58,25 +58,19 @@ void *codegen_exit_rout;
 uint64_t codegen_host_cpu_features;
 
 host_reg_def_t codegen_host_reg_list[CODEGEN_HOST_REGS] = {
-  /*R13-R15 are callee-saved and already saved by the block prologue. They
-  come first so that registers never accessed by byte settle there, leaving
-  the three with byte forms to the rest*/
-    {REG_R13,  HOST_REG_FLAG_NO_BYTE},
-    { REG_R14, HOST_REG_FLAG_NO_BYTE},
-    { REG_R15, HOST_REG_FLAG_NO_BYTE},
   /*Note: while EAX and EDX are normally volatile registers under x86
   calling conventions, the recompiler will explicitly save and restore
   them across funcion calls*/
     { REG_EAX, 0},
     { REG_EBX, 0},
     { REG_EDX, 0},
-    { REG_R14, 0},
-    { REG_R15, 0},
+    { REG_R14, HOST_REG_FLAG_NO_BYTE},
+    { REG_R15, HOST_REG_FLAG_NO_BYTE},
     /* R13 is already saved by the block prologue. R8/R9 remain scratch;
        R10/R11 are usable between calls and are saved by internal helpers. */
-    { REG_R13, 0},
-    { REG_R10, HOST_REG_FLAG_VOLATILE },
-    { REG_R11, HOST_REG_FLAG_VOLATILE }
+    { REG_R13, HOST_REG_FLAG_NO_BYTE},
+    { REG_R10, HOST_REG_FLAG_VOLATILE | HOST_REG_FLAG_NO_BYTE },
+    { REG_R11, HOST_REG_FLAG_VOLATILE | HOST_REG_FLAG_NO_BYTE}
 };
 
 /* Keep the 128-bit IR spill at 0x50 separate from the memory scratch at 0x40,

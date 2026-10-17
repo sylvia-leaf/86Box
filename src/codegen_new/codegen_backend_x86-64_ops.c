@@ -1042,9 +1042,7 @@ host_x86_MOV16_REG_IMM(codeblock_t *block, int reg, uint16_t imm_data)
 void
 host_x86_MOV32_REG_IMM(codeblock_t *block, int reg, uint32_t imm_data)
 {
-    codegen_alloc_bytes(block, 6);
-    add_rex_if_needed(block, 0, 0, 0, reg);
-    codegen_addbyte(block, 0xb8 | (reg & 7)); /*MOV reg, imm_data*/
+    emit_head(block, 0, rex_prefix(0, 0, 0, reg), 1, 0xb8 | (reg & 7), 8); /*MOVQ reg, imm_data*/
     codegen_addlong(block, imm_data);
 }
 
