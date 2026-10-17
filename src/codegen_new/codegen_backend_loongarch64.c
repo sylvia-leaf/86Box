@@ -350,7 +350,7 @@ codegen_backend_init(void)
     uint64_t     fcsr0;
 
     codeblock      = plat_mmap(BLOCK_SIZE * sizeof(codeblock_t), 0, &large_block);
-    codeblock_hash = plat_mmap(HASH_SIZE * sizeof(codeblock_t *), 0, &large_hash);
+    codeblock_hash = plat_mmap(HASH_SIZE * CODEBLOCK_HASH_WAYS  * sizeof(codeblock_t *), 0, &large_hash);
 
     if (large_block)
         pclog("Allocated %" PRIu64 " bytes of large pages for codeblock pointers\n", (uint64_t) (BLOCK_SIZE * sizeof(codeblock_t)));

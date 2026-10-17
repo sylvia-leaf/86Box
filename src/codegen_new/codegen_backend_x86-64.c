@@ -598,7 +598,7 @@ codegen_backend_init(void)
     codegen_host_cpu_features = detect_host_cpu_features();
     
     codeblock      = plat_mmap(BLOCK_SIZE * sizeof(codeblock_t), 0, &large_block);
-    codeblock_hash = plat_mmap(HASH_SIZE * CODEBLOCK_HASH_WAYS * sizeof(uint16_t), 0, &large_hash);
+    codeblock_hash = plat_mmap(HASH_SIZE * CODEBLOCK_HASH_WAYS * sizeof(uint32_t), 0, &large_hash);
 
     if (large_block)
         pclog("Allocated %llu bytes of large pages for codeblock pointers\n", (unsigned long long) (BLOCK_SIZE * sizeof(codeblock_t)));

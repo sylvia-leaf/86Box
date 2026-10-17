@@ -1276,14 +1276,10 @@ exec386_dynarec(int32_t cycs)
                     nmi_auto_clear = 0;
                     nmi            = 0;
                 }
-<<<<<<< HEAD
-            } else if ((cpu_state.flags & I_FLAG) && (pic_pending_int())) {
-=======
 #    else
                 nmi = 0;
 #    endif
-            } else if ((cpu_state.flags & I_FLAG) && pic.int_pending) {
->>>>>>> 2f808a9c45d5c5f20e6a90fcf7387f182b5868ca
+            } else if ((cpu_state.flags & I_FLAG) && (pic_pending_int())) {
                 vector = picinterrupt();
                 if (vector != -1) {
                     /* An interrupt that came after the HLT looked: past the

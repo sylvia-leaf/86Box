@@ -247,7 +247,7 @@ codegen_reset(void)
     }
 
     memset(codeblock, 0, BLOCK_SIZE * sizeof(codeblock_t));
-    memset(codeblock_hash, 0, HASH_SIZE * CODEBLOCK_HASH_WAYS * sizeof(uint32_t));
+    memset(codeblock_hash, 0, (size_t)(HASH_SIZE * CODEBLOCK_HASH_WAYS * sizeof(uint32_t)));
     mem_reset_page_blocks();
 
     block_free_list = 0;
