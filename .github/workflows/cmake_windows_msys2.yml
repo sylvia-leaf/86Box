@@ -77,9 +77,6 @@ jobs:
           - msystem: CLANGARM64
             slug: -arm64
             runner: windows-11-arm
-        exclude:
-            - environment:
-                msystem: CLANGARM64
 
     steps:
       - name: Prepare MSYS2 environment

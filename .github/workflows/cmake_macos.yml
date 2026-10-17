@@ -61,9 +61,6 @@ jobs:
           - arch: arm64
             slug: -arm64
             runner: macos-15
-        exclude:
-          - environment:
-              arch: arm64
 
     steps:
       - name: Install dependencies

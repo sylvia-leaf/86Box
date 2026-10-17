@@ -85,9 +85,6 @@ jobs:
           - arch: arm64
             slug: -arm64
             runner: ubuntu-26.04-arm
-        exclude:
-          - environment:
-              arch: arm64
 
     steps:
       - name: Install dependencies
