@@ -62,9 +62,7 @@ jobs:
             slug: -arm64
             runner: macos-15
         exclude:
-          - dynarec:
-              new: off
-            environment:
+          - environment:
               arch: arm64
 
     steps:

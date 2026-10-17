@@ -86,9 +86,7 @@ jobs:
             slug: -arm64
             runner: ubuntu-26.04-arm
         exclude:
-          - dynarec:
-              new: off
-            environment:
+          - environment:
               arch: arm64
 
     steps:

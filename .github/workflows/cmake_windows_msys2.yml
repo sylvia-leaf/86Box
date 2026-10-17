@@ -78,10 +78,8 @@ jobs:
             slug: -arm64
             runner: windows-11-arm
         exclude:
-          - dynarec:
-              new: off
-            environment:
-              msystem: CLANGARM64
+            - environment:
+                msystem: CLANGARM64
 
     steps:
       - name: Prepare MSYS2 environment
