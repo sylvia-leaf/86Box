@@ -424,14 +424,17 @@ ropJBE_common(codeblock_t *block, ir_data_t *ir, uint32_t dest_addr, uint32_t ne
         case FLAGS_DEC8:
         case FLAGS_DEC16:
         case FLAGS_DEC32:
-            /*INC/DEC preserve CF in cpu_state.flags; test CF then ZF from res*/
+            /*INC/DEC preserve CF in cpu_state.flags: CF from flags, ZF from
+              res. res is tested first: a register first loaded between the
+              two jumps would be taken as loaded where they meet, on the path
+              that jumped before it was too*/
             uop_AND_IMM(ir, IREG_temp0_W, IREG_flags, C_FLAG);
             if (do_unroll) {
-                jump_uop2 = uop_CMP_IMM_JNZ_DEST(ir, IREG_temp0_W, 0);
-                jump_uop = uop_CMP_IMM_JZ_DEST(ir, IREG_flags_res, 0);
+                jump_uop2 = uop_CMP_IMM_JZ_DEST(ir, IREG_flags_res, 0);
+                jump_uop = uop_CMP_IMM_JNZ_DEST(ir, IREG_temp0_W, 0);
             } else {
-                jump_uop2 = uop_CMP_IMM_JNZ_DEST(ir, IREG_temp0_W, 0);
-                jump_uop = uop_CMP_IMM_JNZ_DEST(ir, IREG_flags_res, 0);
+                jump_uop2 = uop_CMP_IMM_JZ_DEST(ir, IREG_flags_res, 0);
+                jump_uop = uop_CMP_IMM_JZ_DEST(ir, IREG_temp0_W, 0);
             }
             break;
 
@@ -508,14 +511,15 @@ ropJNBE_common(codeblock_t *block, ir_data_t *ir, uint32_t dest_addr, uint32_t n
         case FLAGS_DEC8:
         case FLAGS_DEC16:
         case FLAGS_DEC32:
-            /*INC/DEC preserve CF in cpu_state.flags; test CF then ZF from res*/
+            /*INC/DEC preserve CF in cpu_state.flags: CF from flags, ZF from
+              res. res is tested first, as in ropJBE_common()*/
             uop_AND_IMM(ir, IREG_temp0_W, IREG_flags, C_FLAG);
             if (do_unroll) {
-                jump_uop2 = uop_CMP_IMM_JNZ_DEST(ir, IREG_temp0_W, 0);
-                jump_uop = uop_CMP_IMM_JNZ_DEST(ir, IREG_flags_res, 0);
-            } else {
-                jump_uop = uop_CMP_IMM_JNZ_DEST(ir, IREG_temp0_W, 0);
                 jump_uop2 = uop_CMP_IMM_JZ_DEST(ir, IREG_flags_res, 0);
+                jump_uop = uop_CMP_IMM_JZ_DEST(ir, IREG_temp0_W, 0);
+            } else {
+                jump_uop2 = uop_CMP_IMM_JZ_DEST(ir, IREG_flags_res, 0);
+                jump_uop = uop_CMP_IMM_JNZ_DEST(ir, IREG_temp0_W, 0);
             }
             break;
 
