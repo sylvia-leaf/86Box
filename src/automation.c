@@ -852,6 +852,9 @@ handle_request(char *line)
         sb_printf(&resp, "{\"ok\":true");
         for (int i = 0; i < 8; i++)
             sb_printf(&resp, ",\"%s\":%u", names[i], cpu_state.regs[i].l);
+        static const char *names_xmm[8] = { "xmm0", "xmm1", "xmm2", "xmm3", "xmm4", "xmm5", "xmm6", "xmm7" };
+        for (int i = 0; i < 8; i++)
+            sb_printf(&resp, ",\"%s\":%u %u %u %u", names_xmm[i], cpu_state.XMM[i].l[3], cpu_state.XMM[i].l[2], cpu_state.XMM[i].l[1], cpu_state.XMM[i].l[0]);
         sb_printf(&resp, ",\"eip\":%u,\"eflags\":%u,\"cs\":%u,\"ds\":%u,\"es\":%u,\"ss\":%u,\"fs\":%u,\"gs\":%u,\"cs_base\":%u,\"cr0\":%u}",
                   cpu_state.pc, ((uint32_t) cpu_state.eflags << 16) | cpu_state.flags,
                   cpu_state.seg_cs.seg, cpu_state.seg_ds.seg, cpu_state.seg_es.seg,
