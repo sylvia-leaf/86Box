@@ -10,10 +10,10 @@
 #include "x86.h"
 #include "x86seg_common.h"
 #include "x86seg.h"
-#include "../../src/codegen_new/codegen.h"
-#include "../../src/codegen_new/codegen_ir.h"
-#include "../../src/codegen_new/codegen_ops_misc.h"
-#include "../../src/codegen_new/codegen_ops_helpers.h"
+#include "../../src/codegen/codegen.h"
+#include "../../src/codegen/codegen_ir.h"
+#include "../../src/codegen/codegen_ops_misc.h"
+#include "../../src/codegen/codegen_ops_helpers.h"
 
 #define CHECK(condition) do { \
     if (!(condition)) { \

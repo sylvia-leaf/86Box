@@ -22,7 +22,7 @@ import subprocess
 import tarfile
 import time
 
-SOURCE_DIRS = ("src/cpu", "src/codegen_new", "src/mem", "src/include")
+SOURCE_DIRS = ("src/cpu", "src/codegen", "src/mem", "src/include")
 FIXTURES = ("workload_bench.c", "full_core.cmake", "full_core_platform.c")
 # Build wiring may add CPU source files between revisions. The executable guest
 # and platform must be identical; all build inputs are still hashed separately.

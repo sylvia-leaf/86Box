@@ -5,7 +5,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "../../src/codegen_new/codegen_ir.c"
+#include "../../src/codegen/codegen_ir.c"
 
 #define CHECK(condition) do { \
     if (!(condition)) { \

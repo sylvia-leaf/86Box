@@ -11,7 +11,7 @@ function(pcbox_full_cpu_target target)
     if(EXISTS "${core}/cpu/codegen_timing_p4.c")
         list(APPEND cpu_sources "${core}/cpu/codegen_timing_p4.c")
     endif()
-    file(GLOB jit_sources CONFIGURE_DEPENDS "${core}/codegen_new/*.c")
+    file(GLOB jit_sources CONFIGURE_DEPENDS "${core}/codegen/*.c")
     list(FILTER jit_sources EXCLUDE REGEX "codegen_backend_(arm64|loongarch64)")
     # The main project defines softfloat3e later in src/cpu. Only a standalone
     # fixture build owns this target; the generator expression below also
@@ -30,7 +30,7 @@ function(pcbox_full_cpu_target target)
     file(CONFIGURE OUTPUT "${CMAKE_CURRENT_BINARY_DIR}/include/86box/version.h" CONTENT
         "#define EMU_NAME \"PCBox CPU fixture\"\n#define EMU_VERSION \"test\"\n")
     target_include_directories(${target} PRIVATE "${CMAKE_CURRENT_BINARY_DIR}/include"
-        "${core}/include" "${core}/cpu" "${core}/codegen_new")
+        "${core}/include" "${core}/cpu" "${core}/codegen")
     target_compile_options(${target} PRIVATE -fno-strict-aliasing -ffunction-sections -fdata-sections
         $<$<PLATFORM_ID:Windows>:-fno-asynchronous-unwind-tables>)
     target_link_options(${target} PRIVATE

@@ -21,12 +21,12 @@ else()
 endif()
 foreach(target IN LISTS address_targets)
     add_executable(${target} absolute_address_test.c
-        "${CPU_SOURCE_ROOT}/src/codegen_new/codegen_backend_x86-64_ops.c"
-        "${CPU_SOURCE_ROOT}/src/codegen_new/codegen_backend_x86-64_ops_sse.c")
+        "${CPU_SOURCE_ROOT}/src/codegen/codegen_backend_x86-64_ops.c"
+        "${CPU_SOURCE_ROOT}/src/codegen/codegen_backend_x86-64_ops_sse.c")
     target_compile_definitions(${target} PRIVATE USE_DYNAREC USE_NEW_DYNAREC)
     target_include_directories(${target} PRIVATE
         "${CPU_SOURCE_ROOT}/src/include" "${CPU_SOURCE_ROOT}/src/cpu"
-        "${CPU_SOURCE_ROOT}/src/codegen_new")
+        "${CPU_SOURCE_ROOT}/src/codegen")
     target_compile_options(${target} PRIVATE -O3 -fno-strict-aliasing
         -ffunction-sections -fdata-sections
         $<$<PLATFORM_ID:Windows>:-fno-asynchronous-unwind-tables>)
@@ -60,17 +60,17 @@ set_tests_properties(simd_exceptions_p3_sf0 simd_exceptions_p3_sf1
 add_executable(address_dependencies_test address_dependencies_test.c)
 target_compile_definitions(address_dependencies_test PRIVATE USE_DYNAREC USE_NEW_DYNAREC)
 target_include_directories(address_dependencies_test PRIVATE
-    "${CPU_SOURCE_ROOT}/src/cpu" "${CPU_SOURCE_ROOT}/src/codegen_new" "${CPU_SOURCE_ROOT}/src/include")
+    "${CPU_SOURCE_ROOT}/src/cpu" "${CPU_SOURCE_ROOT}/src/codegen" "${CPU_SOURCE_ROOT}/src/include")
 add_test(NAME address_dependencies COMMAND address_dependencies_test)
 add_executable(p6_dependencies_test p6_dependencies_test.c "${CPU_SOURCE_ROOT}/src/cpu/codegen_timing_common.c")
 target_compile_definitions(p6_dependencies_test PRIVATE USE_DYNAREC USE_NEW_DYNAREC)
 target_include_directories(p6_dependencies_test PRIVATE
-    "${CPU_SOURCE_ROOT}/src/cpu" "${CPU_SOURCE_ROOT}/src/include" "${CPU_SOURCE_ROOT}/src/codegen_new")
+    "${CPU_SOURCE_ROOT}/src/cpu" "${CPU_SOURCE_ROOT}/src/include" "${CPU_SOURCE_ROOT}/src/codegen")
 add_test(NAME p6_dependencies COMMAND p6_dependencies_test)
 add_executable(simd_timing_test simd_timing_test.c "${CPU_SOURCE_ROOT}/src/cpu/codegen_timing_common.c")
 target_compile_definitions(simd_timing_test PRIVATE USE_DYNAREC USE_NEW_DYNAREC)
 target_include_directories(simd_timing_test PRIVATE
-    "${CPU_SOURCE_ROOT}/src/cpu" "${CPU_SOURCE_ROOT}/src/include" "${CPU_SOURCE_ROOT}/src/codegen_new")
+    "${CPU_SOURCE_ROOT}/src/cpu" "${CPU_SOURCE_ROOT}/src/include" "${CPU_SOURCE_ROOT}/src/codegen")
 add_test(NAME simd_timing COMMAND simd_timing_test)
 add_executable(sse_fastpath_test ../sse_entry_test.c)
 target_compile_definitions(sse_fastpath_test PRIVATE USE_NEW_DYNAREC)
