@@ -1707,12 +1707,11 @@ decode_instruction(const macro_op_t *ins, uint64_t deps, uint32_t fetchdat, int 
     int           d              = 0; /*Complex decoder uOPs*/
     int           earliest_start;
     decode_type_t decode_type    = ins->decode_type;
-    int           instr_length   = codegen_timing_instr_length(deps, fetchdat, op_32);
 
     /*Generate input register mask, and determine the earliest time this
       instruction can start. This is not accurate, as this is calculated per
       x86 instruction when it should be handled per uop*/
-    regmask_required = get_srcdep_mask(deps, fetchdat, bit8, op_32);
+    regmask_required = get_srcdep_mask(deps, fetchdat, bit8, op_32) | get_addr_regmask(deps, fetchdat, op_32);;
     regmask_modified = get_dstdep_mask(deps, fetchdat, bit8);
     /* A queued producer has no completion timestamp yet. Submit it before
      * reading its result, or replacing the same architectural destination. */
@@ -1741,7 +1740,7 @@ decode_instruction(const macro_op_t *ins, uint64_t deps, uint32_t fetchdat, int 
     }
 
     /*Simple decoders are limited to 7 bytes & 1 uOP*/
-    if ((decode_type == DECODE_SIMPLE && instr_length > 7) || (decode_type == DECODE_SIMPLE && ins->nr_uops > 1))
+    if (decode_type == DECODE_SIMPLE && (codegen_timing_instr_length(deps, fetchdat, op_32) > 7 || ins->nr_uops > 1))
         decode_type = DECODE_COMPLEX;
 
     switch (decode_type) {
@@ -1795,12 +1794,20 @@ decode_instruction(const macro_op_t *ins, uint64_t deps, uint32_t fetchdat, int 
     }
 
     /*Update write timestamps for any output registers*/
+<<<<<<< HEAD
     if (decode_buffer.nr_uops)
         decode_buffer.dst_mask[decode_buffer.nr_uops - 1] = regmask_modified & 0xff;
     for (c = 0; c < 8; c++) {
         if (regmask_modified & (1 << c))
             reg_available_timestamp[c] = decode_buffer.nr_uops ? -1 : last_uop_timestamp;
     }
+=======
+    for (uint32_t mask = regmask_modified & 0xff; mask; mask &= mask - 1)
+        reg_available_timestamp[__builtin_ctz(mask)] = last_complete_timestamp;
+
+    if (!(deps & (FPU_POP | FPU_POP2 | FPU_PUSH | FPU_WRITE_ST0 | FPU_WRITE_ST1 | FPU_WRITE_STREG)))
+        return;
+>>>>>>> 34c15c432cacaaead1f3c7e4be86a423b8ad55b4
     if (deps & FPU_POP) {
         for (c = 0; c < 7; c++)
             fpu_st_timestamp[c] = fpu_st_timestamp[c + 1];

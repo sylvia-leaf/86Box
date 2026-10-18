@@ -31,6 +31,13 @@
   V8-V15 across calls, so 128-bit values cached in host vector registers do
   not survive the memory slow paths and must be evicted at order barriers.*/
 #define CODEGEN_HOST_FP_REGS_PRESERVE_LOW_64_ONLY
+/* Blocks jump straight to their successor when nothing between them needs
+   the C loop (codegen_link.h). The options below add work to every loop
+   iteration that the link routine does not repeat. */
+#if !defined(USE_GDBSTUB) && !defined(USE_DEBUG_REGS_486)
+#    define CODEGEN_BACKEND_HAS_BLOCK_LINK
+void codegen_link_exit(codeblock_t *block);
+#endif
 
 void host_arm64_BLR(codeblock_t *block, int addr_reg);
 void host_arm64_CBNZ(codeblock_t *block, int reg, uintptr_t dest);
