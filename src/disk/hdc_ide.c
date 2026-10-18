@@ -3437,18 +3437,17 @@ ide_sec_init(const device_t *info)
 
 /* Reset a standalone IDE unit. */
 static void
-ide_sec_reset(void *priv)
+ide_sec_reset(UNUSED(void *priv))
 {
-    if ((priv != NULL) && (priv == ide_boards[1]))
+    if (ide_boards[1] != NULL)
         ide_board_reset(1);
 }
 
 /* Close a standalone IDE unit. */
 static void
-ide_sec_close(void *priv)
+ide_sec_close(UNUSED(void *priv))
 {
-    if ((priv != NULL) && (priv == ide_boards[1]))
-        ide_board_close(1);
+    ide_board_close(1);
 }
 
 static void *
@@ -3477,18 +3476,17 @@ ide_ter_init(const device_t *info)
 
 /* Reset a standalone IDE unit. */
 static void
-ide_ter_reset(void *priv)
+ide_ter_reset(UNUSED(void *priv))
 {
-    if ((priv != NULL) && (priv == ide_boards[2]))
+    if (ide_boards[2] != NULL)
         ide_board_reset(2);
 }
 
 /* Close a standalone IDE unit. */
 static void
-ide_ter_close(void *priv)
+ide_ter_close(UNUSED(void *priv))
 {
-    if ((priv != NULL) && (priv == ide_boards[2]))
-        ide_board_close(2);
+    ide_board_close(2);
 }
 
 static void *
@@ -3517,18 +3515,17 @@ ide_qua_init(const device_t *info)
 
 /* Reset a standalone IDE unit. */
 static void
-ide_qua_reset(void *priv)
+ide_qua_reset(UNUSED(void *priv))
 {
-    if ((priv != NULL) && (priv == ide_boards[3]))
+    if (ide_boards[3] != NULL)
         ide_board_reset(3);
 }
 
 /* Close a standalone IDE unit. */
 static void
-ide_qua_close(void *priv)
+ide_qua_close(UNUSED(void *priv))
 {
-    if ((priv != NULL) && (priv == ide_boards[3]))
-        ide_board_close(3);
+    ide_board_close(3);
 }
 
 void *
