@@ -1347,6 +1347,34 @@ lx_abs(codeblock_t *block, int p66, int w, uint16_t op, int reg, void *p)
     }
 }
 
+/*Call a C function from the link routine, which has RAX, RSI, RDI and R10
+  live at its call sites; those are saved around the call. Four pushes keep
+  RSP as 16-byte aligned as the block body had it. R9D = the argument going
+  in and the result coming out.*/
+static void
+lx_call(codeblock_t *block, void *func)
+{
+    host_x86_PUSH(block, REG_RAX);
+    host_x86_PUSH(block, REG_RSI);
+    host_x86_PUSH(block, REG_RDI);
+    host_x86_PUSH(block, REG_R10);
+#        ifdef _WIN64
+    host_x86_SUB64_REG_IMM(block, REG_RSP, 0x20); /*The callee's home space*/
+    host_x86_MOV32_REG_REG(block, REG_ECX, REG_R9);
+#        else
+    host_x86_MOV32_REG_REG(block, REG_EDI, REG_R9);
+#        endif
+    host_x86_CALL(block, func);
+#        ifdef _WIN64
+    host_x86_ADD64_REG_IMM(block, REG_RSP, 0x20);
+#        endif
+    host_x86_MOV32_REG_REG(block, REG_R9, REG_EAX);
+    host_x86_POP(block, REG_R10);
+    host_x86_POP(block, REG_RDI);
+    host_x86_POP(block, REG_RSI);
+    host_x86_POP(block, REG_RAX);
+}
+
 /*Entered by a jump from the end of a block, with RAX = the exit's slot and
   RBP = &cpu_state + 128. Repeats what exec386_dynarec() and
   exec386_dynarec_dyn() do between that block and the next one, assuming
@@ -1376,6 +1404,7 @@ build_link_routine(codeblock_t *block)
     int32_t *one_page;
     int32_t *byte_mask;
     int32_t *no_paging_2;
+    int32_t *no_lapic;
     void    *nmi_done;
     void    *xlat_done;
     void    *two_page_done;
@@ -1429,8 +1458,7 @@ build_link_routine(codeblock_t *block)
     miss[nr_miss++] = rx_jcc(block, RX_CC_NZ);
     rx_test_ri(block, REG_R9, I_FLAG);
     irq_ok = rx_jcc(block, RX_CC_Z);
-    host_x86_CALL(block, &pic_pending_int);
-    host_x86_MOV32_REG_REG(block, REG_R9, REG_EAX);
+    lx_call(block, (void *) pic_pending_int); /*The PIC, or the APIC when it is in use*/
     rx_rr(block, 0, 0, 0x85, REG_R9, REG_R9);
     miss[nr_miss++] = rx_jcc(block, RX_CC_NZ);
     rx_patch(irq_ok, rx_here());
@@ -1522,7 +1550,16 @@ build_link_routine(codeblock_t *block)
     two_page      = rx_jcc(block, RX_CC_NZ);
     two_page_done = rx_here();
 
-    /*Every check passed: the C loop's stores, then the next block*/
+    /*Every check passed: the C loop's stores, then the next block. The
+      local APIC timer first, which the C loop moves on with the TSC: by
+      R10 - tsc, the cycdiff it would have worked out*/
+    lx_abs(block, 0, 1, 0x8b, REG_RCX, &current_lapic);
+    rx_rr(block, 0, 1, 0x85, REG_RCX, REG_RCX);
+    no_lapic = rx_jcc(block, RX_CC_Z);
+    rx_rr(block, 0, 0, 0x89, REG_R10, REG_R9); /*MOV R9D, R10D*/
+    lx_abs(block, 0, 0, 0x2b, REG_R9, &tsc);   /*SUB R9D, tsc*/
+    lx_call(block, (void *) lapic_timer_advance_ticks);
+    rx_patch(no_lapic, rx_here());
     lx_abs(block, 0, 1, 0x89, REG_R10, &tsc);
     lx_abs(block, 0, 1, 0x89, REG_R10, &tsc_old);
     lx_abs(block, 0, 0, 0x89, REG_R14, &cycles_old);

@@ -882,13 +882,6 @@ shift_common_variable_16(codeblock_t *block, ir_data_t *ir, uint32_t fetchdat,  
                 return 0;
         }
     } else {
-        x86seg *target_seg;
-
-        uop_MOV_IMM(ir, IREG_oldpc, cpu_state.oldpc);
-        target_seg = codegen_generate_ea(ir, op_ea_seg, fetchdat, op_ssegs, &op_pc, op_32, 0);
-        codegen_check_seg_write(block, ir, target_seg, IREG_eaaddr, 1);
-        uop_MEM_LOAD_REG(ir, IREG_temp0_B, ireg_seg_base(target_seg), IREG_eaaddr);
-
         switch (fetchdat & 0x38) {
             case 0x00: /*ROL*/
                 emit_flags_rebuild_mem(ir);
