@@ -143,7 +143,9 @@ sio_write(int func, int addr, UNUSED(int len), uint8_t val, void *priv)
     if (func > 0)
         return;
 
-    if (((addr >= 0x0f) && (addr < 0x4c)) && (addr != 0x40))
+    /* 0Fh-3Fh are reserved; 40h-4Fh are all read/write (82378ZB data
+       sheet, Table 3), and the cases below handle each. */
+    if ((addr >= 0x0f) && (addr < 0x40))
         return;
 
     /* The IB (original) variant of the SIO has no PCI IRQ steering. */
