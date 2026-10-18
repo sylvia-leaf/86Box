@@ -194,7 +194,9 @@
 #    define OPCODE_LSR                (0x1ac02400)
 #    define OPCODE_MSR_FPCR           (0xd51b4400)
 #    define OPCODE_MUL_V4H            (0x0e609c00)
-#    define OPCODE_MUL_W              (0x1b007c00)
+#    define OPCODE_MUL                (0x1b007c00)
+#    define OPCODE_SMULL              (0x9b207c00)
+#    define OPCODE_UMULL              (0x9ba07c00)
 #    define OPCODE_NOP                (0xd503201f)
 #    define OPCODE_ORR_V              (0x0ea01c00)
 #    define OPCODE_ORR_V16B           (0x4ea01c00)
@@ -1521,11 +1523,6 @@ void
 host_arm64_MUL_V4H(codeblock_t *block, int dst_reg, int src_n_reg, int src_m_reg)
 {
     codegen_addlong(block, OPCODE_MUL_V4H | Rd(dst_reg) | Rn(src_n_reg) | Rm(src_m_reg));
-}
-void
-host_arm64_MUL_W(codeblock_t *block, int dst_reg, int src_n_reg, int src_m_reg)
-{
-    codegen_addlong(block, OPCODE_MUL_W | Rd(dst_reg) | Rn(src_n_reg) | Rm(src_m_reg));
 }
 
 void
