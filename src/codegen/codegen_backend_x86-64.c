@@ -24,9 +24,10 @@
 #    include "x86seg_common.h"
 #    include "x86seg.h"
 #    ifdef CODEGEN_BACKEND_HAS_BLOCK_LINK
+#        include <86box/timer.h>
+#        include <86box/apic.h>
 #        include <86box/nmi.h>
 #        include <86box/pic.h>
-#        include <86box/timer.h>
 #    endif
 
 #    if defined(__linux__) || defined(__APPLE__)
@@ -71,6 +72,7 @@ void *codegen_rep_rout[2][3][2];
 codegen_link_slot_t codegen_link_slots[BLOCK_SIZE][CODEGEN_LINK_SLOTS];
 
 static void *codegen_link_rout;
+static void *codegen_link_miss_rout;
 /*Exits emitted so far for the block being compiled; each gets its own slot*/
 static int link_site;
 #    endif
@@ -1378,7 +1380,6 @@ build_link_routine(codeblock_t *block)
     void    *xlat_done;
     void    *two_page_done;
     void    *xlat_2_done;
-    void    *miss_dest;
 
     /*Start in a fresh chunk, so the hit path has no chunk-linking jumps*/
     codegen_alloc(block, BLOCK_MAX - JMP_LEN_BYTES);
@@ -1428,7 +1429,8 @@ build_link_routine(codeblock_t *block)
     miss[nr_miss++] = rx_jcc(block, RX_CC_NZ);
     rx_test_ri(block, REG_R9, I_FLAG);
     irq_ok = rx_jcc(block, RX_CC_Z);
-    lx_abs(block, 0, 0, 0x0fb6, REG_R9, &pic.int_pending);
+    host_x86_CALL(block, &pic_pending_int);
+    host_x86_MOV32_REG_REG(block, REG_R9, REG_EAX);
     rx_rr(block, 0, 0, 0x85, REG_R9, REG_R9);
     miss[nr_miss++] = rx_jcc(block, RX_CC_NZ);
     rx_patch(irq_ok, rx_here());
@@ -1543,27 +1545,6 @@ build_link_routine(codeblock_t *block)
     rx_rm(block, 0, 0, 0x88, REG_RCX, REG_RDI, LINK_BLOCK(used)); /*MOV block->used, CL*/
     rx_bytes(block, jmp_r15, 3);
 
-    /*Miss: the block's own epilogue, RAX still the slots*/
-    miss_dest = rx_here();
-#        ifdef _WIN64
-    host_x86_MOVDQU_XREG_BASE_OFFSET(block, REG_XMM6, REG_RSP, CODEGEN_XMM6_SAVE);
-    host_x86_MOVDQU_XREG_BASE_OFFSET(block, REG_XMM7, REG_RSP, CODEGEN_XMM7_SAVE);
-    host_x86_ADD64_REG_IMM(block, REG_RSP, CODEGEN_WIN64_FRAME);
-#        else
-    host_x86_ADD64_REG_IMM(block, REG_RSP, 0x48);
-#        endif
-    host_x86_POP(block, REG_R15);
-    host_x86_POP(block, REG_R14);
-    host_x86_POP(block, REG_R13);
-    host_x86_POP(block, REG_R12);
-#        ifdef _WIN64
-    host_x86_POP(block, REG_RDI);
-    host_x86_POP(block, REG_RSI);
-#        endif
-    host_x86_POP(block, REG_RBP);
-    host_x86_POP(block, REG_RBX);
-    host_x86_RET(block);
-
     /*nmi set: miss only if nmi_enable and nmi_mask are too*/
     rx_patch(nmi_set, rx_here());
     lx_abs(block, 0, 0, 0x8b, REG_R9, &nmi_enable);
@@ -1635,10 +1616,12 @@ build_link_routine(codeblock_t *block)
     rx_rr(block, 0, 0, 0x21, REG_RCX, REG_RDX); /*AND EDX, ECX*/
     rx_patch(rx_jmp(block), xlat_2_done);
 
+    /*Miss: the block's own epilogue, RAX still the slots. codegen_exit_rout
+      past its EAX = 0 is that epilogue.*/
     if (nr_miss > LINK_MAX_MISS)
         fatal("build_link_routine - too many miss branches\n");
     for (int c = 0; c < nr_miss; c++)
-        rx_patch(miss[c], miss_dest);
+        rx_patch(miss[c], codegen_link_miss_rout);
 }
 #    endif
 
@@ -1684,6 +1667,7 @@ codegen_backend_init(void)
 #    ifdef CODEGEN_BACKEND_HAS_BLOCK_LINK
     /*No slots: a block leaving from here is never linked*/
     host_x86_XOR32_REG_REG(block, REG_EAX, REG_EAX);
+    codegen_link_miss_rout = &block_write_data[block_pos];
 #    endif
 #ifdef _WIN64
     /* XMM6 and XMM7 hold guest FPU/MMX values in blocks, and the Windows

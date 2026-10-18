@@ -417,8 +417,8 @@
 
 
 /*UOP_SSE_ENTER - must be called before any SSE registers accessed*/
-#define UOP_SSE_ENTER (0xce | UOP_TYPE_BARRIER)
-#define UOP_CHECK_ALIGN (UOP_TYPE_PARAMS_REGS | UOP_TYPE_PARAMS_IMM | 0xcf | UOP_TYPE_BARRIER)
+#define UOP_SSE_ENTER (0xfe | UOP_TYPE_BARRIER)
+#define UOP_CHECK_ALIGN (UOP_TYPE_PARAMS_REGS | UOP_TYPE_PARAMS_IMM | 0xff | UOP_TYPE_BARRIER)
 
 /*UOP_UNPCKLPS - dest_reg = interleave low packed singles from src_reg_a/src_reg_b*/
 #define UOP_UNPCKLPS (UOP_TYPE_PARAMS_REGS | 0xd0)

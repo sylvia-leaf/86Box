@@ -36,15 +36,11 @@
 #include <86box/plat_unused.h>
 #include <86box/gdbstub.h>
 #ifdef USE_DYNAREC
-<<<<<<< HEAD
-#include "codegen_backend.h"
-=======
 #    include "codegen.h"
 #    include "codegen_backend.h"
 #    ifdef CODEGEN_BACKEND_HAS_BLOCK_LINK
 #        include "codegen_link.h"
 #    endif
->>>>>>> 34c15c432cacaaead1f3c7e4be86a423b8ad55b4
 #endif
 
 #ifdef IS_DYNAREC
