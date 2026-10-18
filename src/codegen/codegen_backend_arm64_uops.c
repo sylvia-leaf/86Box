@@ -3534,10 +3534,12 @@ codegen_IMUL(codeblock_t *block, uop_t *uop)
     int src_size_a = IREG_GET_SIZE(uop->src_reg_a_real);
     int src_size_b = IREG_GET_SIZE(uop->src_reg_b_real);
 
-    if (!REG_IS_L(dest_size) || !REG_IS_L(src_size_a) || !REG_IS_L(src_size_b))
-        fatal("IMUL %02x %02x %02x\n", uop->dest_reg_a_real, uop->src_reg_a_real, uop->src_reg_b_real);
-
-    host_arm64_MUL(block, dest_reg, src_reg_a, src_reg_b);
+    if (REG_IS_L(dest_size) && REG_IS_L(src_size_a) && REG_IS_L(src_size_b)) {
+        host_arm64_MUL(block, dest_reg, src_reg_a, src_reg_b);
+    } else if (REG_IS_W(dest_size) && REG_IS_W(src_size_a) && REG_IS_W(src_size_b)) {
+        host_arm64_MUL(block, REG_TEMP, src_reg_a, src_reg_b);
+        host_arm64_BFI(block, dest_reg, REG_TEMP, 0, 16);
+    }
 
     return 0;
 }
