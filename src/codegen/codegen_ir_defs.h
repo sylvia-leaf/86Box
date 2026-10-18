@@ -543,8 +543,6 @@
 
 /*UOP_UMUL - dest_reg = src_reg_a * src_reg_b*/
 #define UOP_UMUL (UOP_TYPE_PARAMS_REGS | 0x117)
-=======
-
 
 #define UOP_MAX     0x118
 
