@@ -90,7 +90,6 @@ endif()
 
 if(DISCORD)
     add_compile_definitions(DISCORD)
-    target_sources(PCBox PRIVATE discord.c)
 endif()
 
 if(DEBUGREGS486)

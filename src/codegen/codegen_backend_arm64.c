@@ -1383,8 +1383,12 @@ void
 codegen_backend_epilogue(codeblock_t *block)
 {
 #    ifdef CODEGEN_BACKEND_HAS_BLOCK_LINK
-    codegen_link_exit(block);
-#    else
+    if (codegen_block_link) {
+        codegen_link_exit(block);
+        codegen_allocator_clean_blocks(block->head_mem_block);
+        return;
+    }
+#    endif
     host_arm64_LDP_POSTIDX_X(block, REG_X19, REG_X20, REG_XSP, 80);
     host_arm64_LDP_POSTIDX_X(block, REG_X21, REG_X22, REG_XSP, 16);
     host_arm64_LDP_POSTIDX_X(block, REG_X23, REG_X24, REG_XSP, 16);
@@ -1392,7 +1396,6 @@ codegen_backend_epilogue(codeblock_t *block)
     host_arm64_LDP_POSTIDX_X(block, REG_X27, REG_X28, REG_XSP, 16);
     host_arm64_LDP_POSTIDX_X(block, REG_X29, REG_X30, REG_XSP, 16);
     host_arm64_RET(block, REG_X30);
-#    endif
 
     codegen_allocator_clean_blocks(block->head_mem_block);
 }

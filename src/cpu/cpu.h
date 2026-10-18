@@ -1008,6 +1008,9 @@ extern int in_lock;
 extern int cpu_override_interpreter;
 
 extern int cpu_dyn_accurate_fpu_env;
+extern int cpu_dyn_block_link;
+/* 1 if this build's recompiler can link blocks (codegen_block.c). */
+extern const int codegen_has_block_link;
 
 extern int is_lock_legal(uint32_t fetchdat);
 extern int is_lock_legal_at(uint32_t fetchdat, uint32_t opcode_pc);

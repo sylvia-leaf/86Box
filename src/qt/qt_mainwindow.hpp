@@ -139,7 +139,6 @@ private slots:
     void on_actionMute_Unmute_triggered();
     void on_actionSound_gain_triggered();
     void on_actionPreferences_triggered();
-    void on_actionEnable_Discord_integration_triggered(bool checked);
     void on_actionRenderer_options_triggered();
     void on_actionFast_forward_triggered();
 

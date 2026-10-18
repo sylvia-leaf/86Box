@@ -1840,8 +1840,11 @@ void
 codegen_backend_epilogue(codeblock_t *block)
 {
 #    ifdef CODEGEN_BACKEND_HAS_BLOCK_LINK
-    codegen_link_exit(block);
-#    else
+    if (codegen_block_link) {
+        codegen_link_exit(block);
+        return;
+    }
+#    endif
 #ifdef _WIN64
     if (!win64_frame_active) {
         /* Shared exit: the block's frame already knows the exact restore
@@ -1876,6 +1879,5 @@ codegen_backend_epilogue(codeblock_t *block)
     host_x86_POP(block, REG_RBP);
     host_x86_POP(block, REG_RBX);
     host_x86_RET(block);
-#    endif
 }
 #endif
