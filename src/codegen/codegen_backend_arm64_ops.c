@@ -1575,6 +1575,8 @@ void
 host_arm64_ORR_REG_V16B(codeblock_t *block, int dst_reg, int src_n_reg, int src_m_reg)
 {
     codegen_addlong(block, OPCODE_ORR_V16B | Rd(dst_reg) | Rn(src_n_reg) | Rm(src_m_reg));
+}
+
 host_arm64_ORRX_REG(codeblock_t *block, int dst_reg, int src_n_reg, int src_m_reg, int shift)
 {
     codegen_addlong(block, OPCODE_ORRX_LSL | Rd(dst_reg) | Rn(src_n_reg) | Rm(src_m_reg) | DATPROC_SHIFT(shift));

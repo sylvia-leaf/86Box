@@ -277,6 +277,8 @@ static int op0F00_common(uint32_t fetchdat, UNUSED(int ea32))
                 ldt.limit <<= 12;
                 ldt.limit |= 0xfff;
             }
+            ldt.base = base;
+            ldt.seg  = sel;
             CLOCK_CYCLES(20);
             PREFETCH_RUN(20, 2, rmdat, (cpu_mod == 3) ? 0 : 1, 2, 0, 0, ea32);
             break;
