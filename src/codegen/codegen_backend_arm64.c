@@ -681,11 +681,11 @@ build_rep_routine(codeblock_t *block, int is_stos, int shift, int a32, int (*ele
 
     /*Nothing in the run can fault now, so step the registers past it*/
     host_arm64_SUB_REG(block, REP_CNT, REP_CNT, REG_W0, 0);
-    host_arm64_MUL_W(block, REG_W2, REP_STEP, REG_W0);
+    host_arm64_MUL(block, REG_W2, REP_STEP, REG_W0);
     rep_step_offset(block, REP_DST, REG_W2, a32);
     if (!is_stos)
         rep_step_offset(block, REP_SRC, REG_W2, a32);
-    host_arm64_MUL_W(block, REG_W2, REP_ELEMCYC, REG_W0);
+    host_arm64_MUL(block, REG_W2, REP_ELEMCYC, REG_W0);
     host_arm64_SUB_REG(block, REP_CYCLES, REP_CYCLES, REG_W2, 0);
 
     /*Copy. Forward runs move 16 bytes at a time unless the destination
