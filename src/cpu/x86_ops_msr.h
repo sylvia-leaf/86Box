@@ -39,7 +39,7 @@ opRDPMC(UNUSED(uint32_t fetchdat))
     }
     /* The 40-bit counter: PerfCtr0/1 (MSR C1h/C2h) on the P6 family and
        the VIA Cyrix III (whose counter 0 is the TSC), CTR0/1 (MSR
-       12h/13h) on the others */
+       12h/13h) on the others.  */
     if (cpu_s->cpu_type == CPU_CYRIX3S) {
         uint64_t v = ECX ? msr.perfctr[1] : tsc;
         EAX = v & 0xffffffff;

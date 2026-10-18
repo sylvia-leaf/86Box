@@ -699,7 +699,7 @@ opFTST(UNUSED(uint32_t fetchdat))
 {
     FP_ENTER();
     cpu_state.pc++;
-    cpu_state.npxs &= ~(FPU_SW_C0 | FPU_SW_C2 | FPU_SW_C3);
+    cpu_state.npxs &= ~(FPU_SW_C0 | FPU_SW_C1 | FPU_SW_C2 | FPU_SW_C3); /* C1 "set to 0" (SDM, FTST) */
     if (isnan(ST(0))) {
         /* Unordered, an invalid operation: "#IA ... operand is a NaN"
            (SDM 1999, FTST); ES with it when unmasked */
@@ -722,7 +722,7 @@ opFTSTP(UNUSED(uint32_t fetchdat))
 {
     FP_ENTER();
     cpu_state.pc++;
-    cpu_state.npxs &= ~(FPU_SW_C0 | FPU_SW_C2 | FPU_SW_C3);
+    cpu_state.npxs &= ~(FPU_SW_C0 | FPU_SW_C1 | FPU_SW_C2 | FPU_SW_C3); /* C1 "set to 0" (SDM, FTST) */
     if (isnan(ST(0))) {
         /* Unordered, an invalid operation: "#IA ... operand is a NaN"
            (SDM 1999, FTST); ES with it when unmasked */

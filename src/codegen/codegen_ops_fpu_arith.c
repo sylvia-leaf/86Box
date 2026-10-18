@@ -753,7 +753,7 @@ ropFTST(UNUSED(codeblock_t *block), ir_data_t *ir, UNUSED(uint8_t opcode), UNUSE
     /* ES may be set now: the block's next waiting FPU instruction checks for
        it, as at an entry */
     codegen_fpu_entered = 0;
-    uop_AND_IMM(ir, IREG_NPXS, IREG_NPXS, ~(FPU_SW_C0 | FPU_SW_C2 | FPU_SW_C3));
+    uop_AND_IMM(ir, IREG_NPXS, IREG_NPXS, ~(FPU_SW_C0 | FPU_SW_C1 | FPU_SW_C2 | FPU_SW_C3)); /* C1 "set to 0" (SDM, FTST) */
     uop_OR(ir, IREG_NPXS, IREG_NPXS, IREG_temp0_W);
 
     return op_pc;

@@ -444,19 +444,49 @@ x87_fbstp_write(void)
         writememb(easeg, cpu_state.eaaddr + c, bytes[c]);
 }
 
+/* FBSTP of what x87_fbstp_write() stores the BCD indefinite for: an invalid
+   operation ("#IA ... contains value that exceeds 18 BCD digits in length",
+   SDM 1999, FBSTP), answered as x87_fist_invalid() does for FIST */
+static int
+x87_fbstp_invalid(void)
+{
+    double r = x87_fround_rc(ST(0));
+
+    if (cpu_state.tag[cpu_state.TOP & 7] & TAG_UINT64) {
+        int64_t q = (int64_t) cpu_state.MM[cpu_state.TOP & 7].q;
+
+        if (((q < 0) ? (0 - (uint64_t) q) : (uint64_t) q) <= 999999999999999999ULL)
+            return 0;
+    } else if (!isnan(r) && (fabs(r) <= 999999999999999999.0) && ((uint64_t) fabs(r) <= 999999999999999999ULL))
+        return 0;
+    if (cpu_state.npxc & FPU_SW_Invalid)
+        return 1;
+    {
+        const int was_es = cpu_state.npxs & FPU_SW_Summary;
+
+        cpu_state.npxs = (cpu_state.npxs & ~FPU_SW_C1) | FPU_SW_Invalid | 0x8080;
+        x87_ferr_raised(was_es, FPU_SW_Invalid, x87_op);
+    }
+    return -1;
+}
+
 static int
 FBSTP_a16(UNUSED(uint32_t fetchdat))
 {
+    int invalid = 0;
     FP_ENTER();
     fetch_ea_16(fetchdat);
     SEG_CHECK_WRITE(cpu_state.ea_seg);
     CHECK_WRITE_EA(10);
     if (x87_empty_store(10, 2, 1))
         return cpu_state.abrt;
+    invalid = x87_fbstp_invalid();
+    if (invalid < 0)
+        return 0;
     x87_fbstp_write();
     if (cpu_state.abrt)
         return 1;
-    x87_store_done(0);
+    x87_store_done(invalid);
     x87_pop();
     CLOCK_CYCLES_FPU((fpu_type >= FPU_487SX) ? (x87_timings.fbstp) : (x87_timings.fbstp * cpu_multi));
     CONCURRENCY_CYCLES((fpu_type >= FPU_487SX) ? (x87_concurrency.fbstp) : (x87_concurrency.fbstp * cpu_multi));
@@ -466,16 +496,20 @@ FBSTP_a16(UNUSED(uint32_t fetchdat))
 static int
 FBSTP_a32(uint32_t fetchdat)
 {
+    int invalid = 0;
     FP_ENTER();
     fetch_ea_32(fetchdat);
     SEG_CHECK_WRITE(cpu_state.ea_seg);
     CHECK_WRITE_EA(10);
     if (x87_empty_store(10, 2, 1))
         return cpu_state.abrt;
+    invalid = x87_fbstp_invalid();
+    if (invalid < 0)
+        return 0;
     x87_fbstp_write();
     if (cpu_state.abrt)
         return 1;
-    x87_store_done(0);
+    x87_store_done(invalid);
     x87_pop();
     CLOCK_CYCLES_FPU((fpu_type >= FPU_487SX) ? (x87_timings.fbstp) : (x87_timings.fbstp * cpu_multi));
     CONCURRENCY_CYCLES((fpu_type >= FPU_487SX) ? (x87_concurrency.fbstp) : (x87_concurrency.fbstp * cpu_multi));
@@ -886,7 +920,7 @@ opFSTs_a16(UNUSED(uint32_t fetchdat))
     SEG_CHECK_WRITE(cpu_state.ea_seg);
     if (x87_empty_store(4, 0, 0))
         return cpu_state.abrt;
-    ts.s = (float) ST(0);
+    ts.s = x87_fround_single(ST(0));
     seteal(ts.i);
     if (!cpu_state.abrt)
         x87_store_done(0);
@@ -904,7 +938,7 @@ opFSTs_a32(uint32_t fetchdat)
     SEG_CHECK_WRITE(cpu_state.ea_seg);
     if (x87_empty_store(4, 0, 0))
         return cpu_state.abrt;
-    ts.s = (float) ST(0);
+    ts.s = x87_fround_single(ST(0));
     seteal(ts.i);
     if (!cpu_state.abrt)
         x87_store_done(0);
@@ -923,7 +957,7 @@ opFSTPs_a16(UNUSED(uint32_t fetchdat))
     SEG_CHECK_WRITE(cpu_state.ea_seg);
     if (x87_empty_store(4, 0, 1))
         return cpu_state.abrt;
-    ts.s = (float) ST(0);
+    ts.s = x87_fround_single(ST(0));
     seteal(ts.i);
     if (cpu_state.abrt)
         return 1;
@@ -943,7 +977,7 @@ opFSTPs_a32(uint32_t fetchdat)
     SEG_CHECK_WRITE(cpu_state.ea_seg);
     if (x87_empty_store(4, 0, 1))
         return cpu_state.abrt;
-    ts.s = (float) ST(0);
+    ts.s = x87_fround_single(ST(0));
     seteal(ts.i);
     if (cpu_state.abrt)
         return 1;

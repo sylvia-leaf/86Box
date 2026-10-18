@@ -325,7 +325,7 @@ typedef struct {
     uint64_t bios_updt; /* 0x00000079 */
 
     uint64_t bbl_cr_dx[4]; /* 0x00000088 - 0x0000008b */
-    uint64_t perfctr[2];  /* 0x000000c1, 0x000000c2 */
+    uint64_t perfctr[18];  /* 0x000000c1, 0x000000c2 */
     uint64_t mtrr_cap;     /* 0x000000fe */
 
     uint64_t bbl_cr_addr; /* 0x00000116 */

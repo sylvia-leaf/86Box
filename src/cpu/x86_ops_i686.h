@@ -469,7 +469,6 @@ fx_save_stor_common(uint32_t fetchdat, int bits)
         cpu_state.fpu_CS = x87_pc_seg;
         cpu_state.fpu_DS = x87_op_seg;
         cpu_state.fpu_cs = cpu_state.fpu_ds = 0;
-        cpu_state.fpu_op = x87_op;
 
         if ((cpu_features & CPU_FEATURE_SSE) && (cr4 & CR4_OSFXSR)) {
             sse_set_mxcsr(restored_mxcsr);

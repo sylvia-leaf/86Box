@@ -226,20 +226,22 @@ opCMPXCHG8B_a16(uint32_t fetchdat)
     SEG_CHECK_WRITE(cpu_state.ea_seg);
     CHECK_WRITE(cpu_state.ea_seg, cpu_state.eaaddr, (uint64_t) cpu_state.eaaddr + 7);
     temp    = geteal();
+    /* A fault returns 1: a compiled block running this handler leaves only
+       on a nonzero return */
     if (cpu_state.abrt)
-        return 0;
+        return 1;
     temp_hi = readmeml(easeg, cpu_state.eaaddr + 4);
     if (cpu_state.abrt)
-        return 0;
+        return 1;
     /* Validate both pages before either write. Probing with a write of
        the old value would cause an extra write to a memory-mapped device. */
     if (cr0 & 0x80000000) {
         mmutranslatereal(easeg + cpu_state.eaaddr, 1);
         if (cpu_state.abrt)
-            return 0;
+            return 1;
         mmutranslatereal(easeg + cpu_state.eaaddr + 7, 1);
         if (cpu_state.abrt)
-            return 0;
+            return 1;
     }
     if (EAX == temp && EDX == temp_hi) {
         seteal(EBX);
@@ -257,6 +259,8 @@ opCMPXCHG8B_a16(uint32_t fetchdat)
             EDX = temp_hi;
         }
     }
+    if (cpu_state.abrt)
+        return 1;
     flags_rebuild();
     if (temp == temp2 && temp_hi == temp2_hi)
         cpu_state.flags |= Z_FLAG;
@@ -288,20 +292,22 @@ opCMPXCHG8B_a32(uint32_t fetchdat)
     SEG_CHECK_WRITE(cpu_state.ea_seg);
     CHECK_WRITE(cpu_state.ea_seg, cpu_state.eaaddr, cpu_state.eaaddr + 7UL);
     temp    = geteal();
+    /* A fault returns 1: a compiled block running this handler leaves only
+       on a nonzero return */
     if (cpu_state.abrt)
-        return 0;
+        return 1;
     temp_hi = readmeml(easeg, cpu_state.eaaddr + 4);
     if (cpu_state.abrt)
-        return 0;
+        return 1;
     /* Validate both pages before either write. Probing with a write of
        the old value would cause an extra write to a memory-mapped device. */
     if (cr0 & 0x80000000) {
         mmutranslatereal(easeg + cpu_state.eaaddr, 1);
         if (cpu_state.abrt)
-            return 0;
+            return 1;
         mmutranslatereal(easeg + cpu_state.eaaddr + 7, 1);
         if (cpu_state.abrt)
-            return 0;
+            return 1;
     }
     if (EAX == temp && EDX == temp_hi) {
         seteal(EBX);
@@ -319,6 +325,8 @@ opCMPXCHG8B_a32(uint32_t fetchdat)
             EDX = temp_hi;
         }
     }
+    if (cpu_state.abrt)
+        return 1;
     flags_rebuild();
     if (temp == temp2 && temp_hi == temp2_hi)
         cpu_state.flags |= Z_FLAG;
