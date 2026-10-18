@@ -536,15 +536,19 @@
 
 #define UOP_MMX_COMMIT (UOP_TYPE_ORDER_BARRIER | 0x114)
 
+/*UOP_IMUL - dest_reg = ((int64_t)(int32_t)src_reg_a * (int64_t)(int32_t)src_reg_b)*/
+#define UOP_IMUL (UOP_TYPE_PARAMS_REGS | 0x115)
+/*UOP_IMUL - dest_reg = ((int64_t)(int32_t)src_reg_a * (int64_t)(int32_t)imm)*/
+#define UOP_IMUL_IMM (UOP_TYPE_PARAMS_REGS | UOP_TYPE_PARAMS_IMM | 0x116)
 /*UOP_IMUL_HI - dest_reg = ((int64_t)(int32_t)src_reg_a * (int64_t)(int32_t)src_reg_b) >> 32*/
-#define UOP_IMUL_HI (UOP_TYPE_PARAMS_REGS | 0x115)
+#define UOP_IMUL_HI (UOP_TYPE_PARAMS_REGS | 0x117)
 /*UOP_UMUL_HI - dest_reg = ((uint64_t)src_reg_a * (uint64_t)src_reg_b) >> 32*/
-#define UOP_UMUL_HI (UOP_TYPE_PARAMS_REGS | 0x116)
+#define UOP_UMUL_HI (UOP_TYPE_PARAMS_REGS | 0x118)
 
 /*UOP_UMUL - dest_reg = src_reg_a * src_reg_b*/
-#define UOP_UMUL (UOP_TYPE_PARAMS_REGS | 0x117)
+#define UOP_UMUL (UOP_TYPE_PARAMS_REGS | 0x119)
 
-#define UOP_MAX     0x118
+#define UOP_MAX     0x11a
 
 #define UOP_INVALID 0xffff
 

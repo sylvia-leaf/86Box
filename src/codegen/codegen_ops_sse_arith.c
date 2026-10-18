@@ -13,9 +13,9 @@
 #include "codegen_accumulate.h"
 #include "codegen_ir.h"
 #include "codegen_ops.h"
+#include "codegen_ops_helpers.h"
 #include "codegen_ops_jit_wrappers.h"
 #include "codegen_ops_sse_arith.h"
-#include "codegen_ops_helpers.h"
 
 typedef enum sse_arith_op_t {
     SSE_ARITH_ADD,
