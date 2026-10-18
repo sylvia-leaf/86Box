@@ -185,6 +185,25 @@ serial_receive_period(const serial_t *dev)
     return (double) /* (dev->bits ? dev->bits : 10) * */ dev->transmit_period;
 }
 
+/* The receive timer has work while a host character device is attached
+   (it is polled for the next byte and the modem lines) or a byte waits in
+   the receive shift register. With neither it stops, and a byte arriving
+   starts it again (write_fifo), one bit time ahead as before: a port with
+   nothing on it no longer takes a timer event every bit, 1200 to 115200 a
+   second, each one the machine thread's next deadline. */
+static int
+serial_receive_needed(const serial_t *dev)
+{
+    return dev->char_port.chardev.read || dev->char_port.chardev.status || (dev->out_new != 0xffff);
+}
+
+static void
+serial_receive_start(serial_t *dev)
+{
+    if (serial_receive_needed(dev) && !timer_is_on(&dev->receive_timer))
+        timer_on_auto(&dev->receive_timer, serial_receive_period(dev));
+}
+
 static void
 serial_receive_timer(void *priv)
 {
@@ -261,6 +280,9 @@ serial_receive_timer(void *priv)
             serial_update_ints(dev);
         }
     }
+
+    if (!serial_receive_needed(dev))
+        timer_disable(&dev->receive_timer);
 }
 
 static void
@@ -273,6 +295,7 @@ write_fifo(serial_t *dev, uint8_t dat)
 
     /* Do this here, because in non-FIFO mode, this is read directly. */
     dev->out_new = (uint16_t) dat;
+    serial_receive_start(dev);
 }
 
 static void
@@ -437,7 +460,10 @@ static void
 serial_update_speed(serial_t *dev)
 {
     serial_log("serial_update_speed(%lf)\n", dev->transmit_period);
-    timer_on_auto(&dev->receive_timer, serial_receive_period(dev));
+    if (serial_receive_needed(dev))
+        timer_on_auto(&dev->receive_timer, serial_receive_period(dev));
+    else
+        timer_disable(&dev->receive_timer);
 
     if (dev->transmit_enabled & 3)
         timer_on_auto(&dev->transmit_timer, dev->transmit_period);
@@ -1035,6 +1061,9 @@ serial_devices_init(void)
 
             if (serial->char_port.chardev.control)
                 serial->char_port.chardev.control((serial->mctrl & 0x03) | (serial->lcr & 0x40), serial->char_port.chardev.priv);
+
+            /* A host device to poll */
+            serial_receive_start(serial);
 
             /* This port is hotunpluggable if the device allows it, unless further serial_attach attempts are made. */
             com_ports[i].hotunplug = (device->flags & DEVICE_HOTPLUG_OUT) ? CHAR_PORT_HOTUNPLUG : CHAR_PORT_NOHOTUNPLUG;
