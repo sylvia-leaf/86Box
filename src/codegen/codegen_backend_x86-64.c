@@ -102,6 +102,7 @@ host_reg_def_t codegen_host_reg_list[CODEGEN_HOST_REGS] = {
 #define CODEGEN_XMM6_SAVE   0x70 /*XMM6-XMM15 are saved at 16 byte intervals from here*/
 /* 0x28/0x30 hold FP temporaries, 0x40 holds memory scratch. The intervening
    slot points at this block's epilogue, including on helper/fault exits. */
+#define CODEGEN_XMM7_SAVE   0x80
 #define CODEGEN_WIN64_EXIT  0x38
 
 host_reg_def_t codegen_host_fp_reg_list[CODEGEN_HOST_FP_REGS] = {
