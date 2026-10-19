@@ -6,13 +6,17 @@
  *
  *          This file is part of the 86Box distribution.
  *
- *          The host's side of the REP string instructions (x86_rep_host.h).
+ *          The host's side of the REP string instructions (x86_rep_host.h):
+ *          a generic version of each kernel and a Zen 5 one, picked by the
+ *          single CPUID check in rep_host_detect().
  *
- *          The kernels use only baseline instructions (SSE2 on x86-64, plain
- *          C elsewhere): this file is built for the baseline whatever the
- *          rest of the build targets (cpu/CMakeLists.txt), so a build tuned
- *          for one host still has a true baseline path to fall back on and
- *          to measure against.
+ *          The generic versions use only baseline instructions (SSE2 on
+ *          x86-64, plain C elsewhere): this file is built for the baseline
+ *          whatever the rest of the build targets (cpu/CMakeLists.txt), so a
+ *          build tuned for one host still has a true baseline path to fall
+ *          back on and to measure against. The Zen 5 versions ask for
+ *          AVX-512 themselves and use masked loads and stores, which need no
+ *          scalar tails.
  *
  *          Stores go out in the guest's order, chunk by chunk: a later
  *          element of a run is never written before an earlier one, as the
@@ -29,7 +33,9 @@
 
 #if (defined(__x86_64__) || defined(_M_X64)) && (defined(__GNUC__) || defined(__clang__))
 #    define REP_HOST_X86 1
+#    include <cpuid.h>
 #    include <immintrin.h>
+#    define REP_ZEN5     __attribute__((target("avx512f,avx512bw,avx512vl,bmi,bmi2,lzcnt")))
 #else
 #    define REP_HOST_X86 0
 #endif
@@ -189,17 +195,144 @@ cmp_generic(const uint8_t *alo, const uint8_t *blo, uint32_t n, uint32_t esz, in
         return done + cmp_c(alo + o, blo + o, n - done, esz, down, repe);
     }
 }
+
+/* ------------------------------------------------------------------ */
+/* Zen 5: AVX-512, sixty-four bytes at a time, masked at the ends     */
+/* ------------------------------------------------------------------ */
+
+static REP_ZEN5 inline uint64_t
+zen5_bytes(uint32_t n)
+{
+    return (n >= 64) ? ~0ULL : _bzhi_u64(~0ULL, n);
+}
+
+static REP_ZEN5 void
+copy_zen5(uint8_t *d, const uint8_t *s, uint32_t n, int down)
+{
+    if (!down) {
+        for (; n >= 64; n -= 64, d += 64, s += 64)
+            _mm512_storeu_si512(d, _mm512_loadu_si512(s));
+        if (n) {
+            const __mmask64 m = zen5_bytes(n);
+
+            _mm512_mask_storeu_epi8(d, m, _mm512_maskz_loadu_epi8(m, s));
+        }
+    } else {
+        for (; n >= 64; n -= 64)
+            _mm512_storeu_si512(d + n - 64, _mm512_loadu_si512(s + n - 64));
+        if (n) {
+            const __mmask64 m = zen5_bytes(n);
+
+            _mm512_mask_storeu_epi8(d, m, _mm512_maskz_loadu_epi8(m, s));
+        }
+    }
+}
+
+static REP_ZEN5 __m512i
+splat_zen5(uint32_t value, uint32_t esz)
+{
+    if (esz == 1)
+        return _mm512_set1_epi8((char) value);
+    if (esz == 2)
+        return _mm512_set1_epi16((short) value);
+    return _mm512_set1_epi32((int) value);
+}
+
+static REP_ZEN5 void
+fill_zen5(uint8_t *p, uint32_t value, uint32_t n, uint32_t esz, int down)
+{
+    const __m512i v     = splat_zen5(value, esz);
+    uint32_t      bytes = n * esz;
+
+    if (!down) {
+        for (; bytes >= 64; bytes -= 64, p += 64)
+            _mm512_storeu_si512(p, v);
+        if (bytes)
+            _mm512_mask_storeu_epi8(p, zen5_bytes(bytes), v);
+    } else {
+        for (; bytes >= 64; bytes -= 64)
+            _mm512_storeu_si512(p + bytes - 64, v);
+        if (bytes)
+            _mm512_mask_storeu_epi8(p, zen5_bytes(bytes), v);
+    }
+}
+
+/* One bit per element of the chunk: set where the element stops the run.
+   Lanes past cnt are clear. */
+static REP_ZEN5 uint64_t
+stops_zen5(__m512i a, __m512i b, uint32_t esz, uint32_t cnt, int repe)
+{
+    const uint64_t valid = zen5_bytes(cnt);
+    uint64_t       eq;
+
+    if (esz == 1)
+        eq = _mm512_cmpeq_epi8_mask(a, b);
+    else if (esz == 2)
+        eq = _mm512_cmpeq_epi16_mask(a, b);
+    else
+        eq = _mm512_cmpeq_epi32_mask(a, b);
+    return (repe ? ~eq : eq) & valid;
+}
+
+/* Of the chunk's cnt elements, taken in the guest's order, the first that
+   stops the run, from its stop mask. */
+static REP_ZEN5 inline uint32_t
+first_zen5(uint64_t s, uint32_t cnt, int down)
+{
+    return down ? (cnt - 1 - (63 - (uint32_t) _lzcnt_u64(s))) : (uint32_t) _tzcnt_u64(s);
+}
+
+static REP_ZEN5 uint32_t
+scan_zen5(const uint8_t *lo, uint32_t n, uint32_t esz, int down, uint32_t value, int repe)
+{
+    const __m512i  v   = splat_zen5(value, esz);
+    const uint32_t per = 64 / esz;
+
+    for (uint32_t done = 0; done < n;) {
+        const uint32_t cnt = ((n - done) < per) ? (n - done) : per;
+        const uint8_t *p   = down ? lo + (n - done - cnt) * esz : lo + done * esz;
+        const __m512i  x   = _mm512_maskz_loadu_epi8(zen5_bytes(cnt * esz), p);
+        const uint64_t s   = stops_zen5(x, v, esz, cnt, repe);
+
+        if (s)
+            return done + first_zen5(s, cnt, down);
+        done += cnt;
+    }
+    return n;
+}
+
+static REP_ZEN5 uint32_t
+cmp_zen5(const uint8_t *alo, const uint8_t *blo, uint32_t n, uint32_t esz, int down, int repe)
+{
+    const uint32_t per = 64 / esz;
+
+    for (uint32_t done = 0; done < n;) {
+        const uint32_t  cnt = ((n - done) < per) ? (n - done) : per;
+        const uint32_t  o   = down ? (n - done - cnt) * esz : done * esz;
+        const __mmask64 m   = zen5_bytes(cnt * esz);
+        const uint64_t  s   = stops_zen5(_mm512_maskz_loadu_epi8(m, alo + o),
+                                         _mm512_maskz_loadu_epi8(m, blo + o), esz, cnt, repe);
+
+        if (s)
+            return done + first_zen5(s, cnt, down);
+        done += cnt;
+    }
+    return n;
+}
 #endif
 
 /* ------------------------------------------------------------------ */
-/* The entry points                                                   */
+/* The entry points: one flag test each                               */
 /* ------------------------------------------------------------------ */
 
 void
 rep_host_copy(uint8_t *dlo, const uint8_t *slo, uint32_t bytes, int down)
 {
 #if REP_HOST_X86
-    copy_generic(dlo, slo, bytes, down);
+    if (rep_host_mode == REP_HOST_ZEN5)
+        copy_zen5(dlo, slo, bytes, down);
+    else
+        copy_generic(dlo, slo, bytes, down);
 #else
     (void) down;
     memmove(dlo, slo, bytes);
@@ -224,7 +357,10 @@ void
 rep_host_fill(uint8_t *dlo, uint32_t value, uint32_t n, uint32_t esz, int down)
 {
 #if REP_HOST_X86
-    fill_generic(dlo, value, n, esz, down);
+    if (rep_host_mode == REP_HOST_ZEN5)
+        fill_zen5(dlo, value, n, esz, down);
+    else
+        fill_generic(dlo, value, n, esz, down);
 #else
     fill_c(dlo, value, n, esz, down);
 #endif
@@ -234,6 +370,8 @@ uint32_t
 rep_host_scan(const uint8_t *lo, uint32_t n, uint32_t esz, int down, uint32_t value, int repe)
 {
 #if REP_HOST_X86
+    if (rep_host_mode == REP_HOST_ZEN5)
+        return scan_zen5(lo, n, esz, down, value, repe);
     return scan_generic(lo, n, esz, down, value, repe);
 #else
     return scan_c(lo, n, esz, down, value, repe);
@@ -244,14 +382,63 @@ uint32_t
 rep_host_cmp(const uint8_t *alo, const uint8_t *blo, uint32_t n, uint32_t esz, int down, int repe)
 {
 #if REP_HOST_X86
+    if (rep_host_mode == REP_HOST_ZEN5)
+        return cmp_zen5(alo, blo, n, esz, down, repe);
     return cmp_generic(alo, blo, n, esz, down, repe);
 #else
     return cmp_c(alo, blo, n, esz, down, repe);
 #endif
 }
 
+/* ------------------------------------------------------------------ */
+/* The one CPUID check                                                */
+/* ------------------------------------------------------------------ */
+
+#if REP_HOST_X86
+/* AMD family 1Ah (Zen 5) or later, with AVX-512 F/BW/VL, BMI1/2 and
+   LZCNT, and the operating system saving the AVX-512 state. */
+static int
+rep_host_is_zen5(void)
+{
+    unsigned int a, b, c, d;
+    unsigned int family;
+    unsigned int xcr0_lo, xcr0_hi;
+
+    if (!__get_cpuid(0, &a, &b, &c, &d) || (a < 7))
+        return 0;
+    if ((b != 0x68747541) || (d != 0x69746e65) || (c != 0x444d4163)) /* AuthenticAMD */
+        return 0;
+
+    __get_cpuid(1, &a, &b, &c, &d);
+    family = (a >> 8) & 0x0f;
+    if (family == 0x0f)
+        family += (a >> 20) & 0xff;
+    if ((family < 0x1a) || !(c & (1u << 27))) /* OSXSAVE */
+        return 0;
+
+    __asm__ volatile("xgetbv" : "=a"(xcr0_lo), "=d"(xcr0_hi) : "c"(0));
+    if ((xcr0_lo & 0xe6) != 0xe6) /* SSE, AVX, opmask, ZMM0-15 and 16-31 */
+        return 0;
+
+    __get_cpuid_count(7, 0, &a, &b, &c, &d);
+    if (!(b & (1u << 16)) || !(b & (1u << 30)) || !(b & (1u << 31)) || /* AVX-512 F, BW, VL */
+        !(b & (1u << 3)) || !(b & (1u << 8)))                          /* BMI1, BMI2 */
+        return 0;
+
+    if (!__get_cpuid(0x80000001, &a, &b, &c, &d) || !(c & (1u << 5))) /* LZCNT */
+        return 0;
+
+    return 1;
+}
+#endif
+
 void
 rep_host_detect(void)
 {
-    rep_host_mode = REP_HOST_GENERIC;
+    int zen5 = 0;
+
+#if REP_HOST_X86
+    zen5 = rep_host_is_zen5();
+#endif
+    rep_host_mode = zen5 ? REP_HOST_ZEN5 : REP_HOST_GENERIC;
 }

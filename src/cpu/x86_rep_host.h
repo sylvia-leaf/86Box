@@ -9,7 +9,9 @@
  *          The host's side of the REP string instructions: whole runs of
  *          MOVS, STOS, SCAS and CMPS elements done on host memory at once,
  *          once x86_rep_fast.h has shown the run is plain RAM on both sides.
- *          Nothing here touches processor state.
+ *          Each kernel has a generic version and one for Zen 5 hosts; which
+ *          one runs is decided by one CPUID check at startup. Nothing here
+ *          touches processor state.
  *
  * Authors: Michael Pratte, <mpratte@makefox.group>
  *
@@ -23,11 +25,12 @@
 /* How REP string runs are done, set once by rep_host_detect(). */
 enum {
     REP_HOST_OFF     = 0, /* every element through the per-element path */
-    REP_HOST_GENERIC = 1  /* whole runs, baseline host instructions */
+    REP_HOST_GENERIC = 1, /* whole runs, baseline host instructions */
+    REP_HOST_ZEN5    = 2  /* whole runs, AVX-512 (AMD family 1Ah and later) */
 };
 extern uint8_t rep_host_mode;
 
-/* At startup: the kernels this host runs. */
+/* At startup: the kernels this host runs, by one CPUID check. */
 extern void rep_host_detect(void);
 
 /* The bytes [dlo, dlo + bytes) take [slo, slo + bytes), copied in the

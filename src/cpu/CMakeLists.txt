@@ -38,7 +38,8 @@ add_library(cpu OBJECT
     i8080.c
 )
 
-# The REP string kernels are the host baseline whatever the build targets.
+# The REP string kernels' generic versions are the host baseline whatever
+# the build targets; the Zen 5 versions ask for AVX-512 themselves.
 if((ARCH STREQUAL "x86_64") AND (CMAKE_C_COMPILER_ID MATCHES "GNU|Clang"))
     set_source_files_properties(x86_rep_host.c PROPERTIES COMPILE_OPTIONS "-march=x86-64;-mtune=generic")
 endif()

@@ -1683,7 +1683,7 @@ pc_init_modules(void)
 
     random_init();
 
-    /* How REP string runs are done on this host. */
+    /* How REP string runs are done on this host: its one CPUID check. */
     rep_host_detect();
 
     mem_init();
