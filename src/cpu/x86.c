@@ -438,6 +438,9 @@ reset_common(int hard)
     if (hard) {
         if (is486)
             smbase = is_am486dxl ? 0x00060000 : 0x00030000;
+        /* The time stamp counter reads the machine's clock again, as at
+           power-on, until a WRMSR moves it (cpu_tsc_write). */
+        cpu_tsc_offset = 0;
         ppi_reset();
     }
     in_sys = 0;

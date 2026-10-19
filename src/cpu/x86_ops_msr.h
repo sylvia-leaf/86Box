@@ -10,8 +10,8 @@ opRDTSC(UNUSED(uint32_t fetchdat))
         x86gpf("RDTSC when TSD set and CPL != 0", 0);
         return 1;
     }
-    EAX = tsc & 0xffffffff;
-    EDX = tsc >> 32;
+    EAX = cpu_tsc_read() & 0xffffffff;
+    EDX = cpu_tsc_read() >> 32;
     CLOCK_CYCLES(1);
 #ifdef USE_DYNAREC
     /*
@@ -37,7 +37,7 @@ opRDPMC(UNUSED(uint32_t fetchdat))
        the VIA Cyrix III (whose counter 0 is the TSC), CTR0/1 (MSR
        12h/13h) on the others */
     if (cpu_s->cpu_type == CPU_CYRIX3S) {
-        uint64_t v = ECX ? msr.perfctr[1] : tsc;
+        uint64_t v = ECX ? msr.perfctr[1] : cpu_tsc_read();
         EAX = v & 0xffffffff;
         EDX = (v >> 32) & 0xff;
     } else if (is_p6) {

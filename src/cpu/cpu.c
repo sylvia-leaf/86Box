@@ -307,6 +307,22 @@ int fpu_ferr_timing;
 int fpu_ferr;
 uint64_t tsc = 0;
 
+/* What the time stamp counter reads beyond the machine's clock. A write to
+   the TSC (WRMSR 10h; the NT HAL zeroes it before it times one second of
+   the RTC) sets this and leaves the machine's clock alone. That clock
+   never goes back, so what the timers and the recompiler's loop hold of it
+   (the clock at a block's start) stays good. Moving it back made the
+   loop's next update_tsc() take the jump for time passed, and add the low
+   32 bits of it: the HAL timed the RTC's second at many times its length,
+   and every stall after was as many times too long. */
+int64_t cpu_tsc_offset = 0;
+
+void
+cpu_tsc_write(uint64_t val)
+{
+    cpu_tsc_offset = (int64_t) (val - tsc);
+}
+
 double cpu_dmulti;
 double cpu_busspeed;
 
@@ -2910,8 +2926,8 @@ cpu_RDMSR(void)
                     break;
                 /* Time Stamp Counter */
                 case 0x10:
-                    EAX = tsc & 0xffffffff;
-                    EDX = tsc >> 32;
+                    EAX = cpu_tsc_read() & 0xffffffff;
+                    EDX = cpu_tsc_read() >> 32;
                     break;
                 /* Performance Monitor - Control and Event Select */
                 case 0x11:
@@ -2964,8 +2980,8 @@ cpu_RDMSR(void)
                     break;
                 /* Time Stamp Counter */
                 case 0x10:
-                    EAX = tsc & 0xffffffff;
-                    EDX = tsc >> 32;
+                    EAX = cpu_tsc_read() & 0xffffffff;
+                    EDX = cpu_tsc_read() >> 32;
                     break;
                 /* EBL_CR_POWERON - Processor Hard Power-On Configuration */
                 case 0x2a:
@@ -2996,8 +3012,8 @@ cpu_RDMSR(void)
                     break;
                 /* PERFCTR0 - Performance Counter Register 0 - aliased to TSC */
                 case 0xc1:
-                    EAX = tsc & 0xffffffff;
-                    EDX = (tsc >> 32) & 0xff;
+                    EAX = cpu_tsc_read() & 0xffffffff;
+                    EDX = (cpu_tsc_read() >> 32) & 0xff;
                     break;
                 /* PERFCTR1 - Performance Counter Register 1 */
                 case 0xc2:
@@ -3098,8 +3114,8 @@ cpu_RDMSR(void)
                     break;
                 /* Time Stamp Counter */
                 case 0x00000010:
-                    EAX = tsc & 0xffffffff;
-                    EDX = tsc >> 32;
+                    EAX = cpu_tsc_read() & 0xffffffff;
+                    EDX = cpu_tsc_read() >> 32;
                     break;
                 /* Array Access Register */
                 case 0x00000082:
@@ -3283,8 +3299,8 @@ amd_k_invalid_rdmsr:
                 /* Time Stamp Counter */
                 case 0x00000010:
                 case 0x80000010:
-                    EAX = tsc & 0xffffffff;
-                    EDX = tsc >> 32;
+                    EAX = cpu_tsc_read() & 0xffffffff;
+                    EDX = cpu_tsc_read() >> 32;
                     break;
                 /* Performance Monitor - Control and Event Select */
                 case 0x00000011:
@@ -3380,8 +3396,8 @@ pentium_invalid_rdmsr:
                     break;
                 /* Time Stamp Counter */
                 case 0x10:
-                    EAX = tsc & 0xffffffff;
-                    EDX = tsc >> 32;
+                    EAX = cpu_tsc_read() & 0xffffffff;
+                    EDX = cpu_tsc_read() >> 32;
                     break;
                 /* Performance Monitor - Control and Event Select */
                 case 0x11:
@@ -3415,8 +3431,8 @@ pentium_invalid_rdmsr:
                     break;
                 /* Time Stamp Counter */
                 case 0x10:
-                    EAX = tsc & 0xffffffff;
-                    EDX = tsc >> 32;
+                    EAX = cpu_tsc_read() & 0xffffffff;
+                    EDX = cpu_tsc_read() >> 32;
                     break;
                 /* IA32_PLATFORM_ID - Platform ID */
                 case 0x17:
@@ -3797,7 +3813,7 @@ cpu_WRMSR(void)
                     break;
                 /* Time Stamp Counter */
                 case 0x10:
-                    timer_set_new_tsc(EAX | ((uint64_t) EDX << 32));
+                    cpu_tsc_write(EAX | ((uint64_t) EDX << 32));
                     break;
                 /* Performance Monitor - Control and Event Select */
                 case 0x11:
@@ -3874,7 +3890,7 @@ cpu_WRMSR(void)
                 /* Time Stamp Counter */
                 case 0x10:
                     /* A write clears the upper 32 bits (datasheet 5.9) */
-                    timer_set_new_tsc(EAX);
+                    cpu_tsc_write(EAX);
                     break;
                 /* PERFCTR0 - Performance Counter Register 0 - aliased to TSC */
                 case 0xc1:
@@ -3980,7 +3996,7 @@ cpu_WRMSR(void)
                     break;
                 /* Time Stamp Counter */
                 case 0x00000010:
-                    timer_set_new_tsc(EAX | ((uint64_t) EDX << 32));
+                    cpu_tsc_write(EAX | ((uint64_t) EDX << 32));
                     break;
                 /* Array Access Register */
                 case 0x00000082:
@@ -4160,7 +4176,7 @@ amd_k_invalid_wrmsr:
                 /* Time Stamp Counter */
                 case 0x00000010:
                 case 0x80000010:
-                    timer_set_new_tsc(EAX | ((uint64_t) EDX << 32));
+                    cpu_tsc_write(EAX | ((uint64_t) EDX << 32));
                     break;
                 /* Performance Monitor - Control and Event Select */
                 case 0x00000011:
@@ -4247,7 +4263,7 @@ pentium_invalid_wrmsr:
                     break;
                 /* Time Stamp Counter */
                 case 0x10:
-                    timer_set_new_tsc(EAX | ((uint64_t) EDX << 32));
+                    cpu_tsc_write(EAX | ((uint64_t) EDX << 32));
                     break;
                 /* Performance Monitor - Control and Event Select */
                 case 0x11:
@@ -4279,7 +4295,7 @@ pentium_invalid_wrmsr:
                     break;
                 /* Time Stamp Counter */
                 case 0x10: /* Only the low 32 bits are written; the high 32 clear (Pentium Pro vol. 3) */
-                    timer_set_new_tsc(EAX);
+                    cpu_tsc_write(EAX);
                     break;
                 /* Unknown */
                 case 0x18:

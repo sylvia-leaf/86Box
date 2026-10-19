@@ -596,6 +596,17 @@ extern uint16_t cpu_cur_status;
 extern uint64_t cpu_CR4_mask;
 extern uint64_t cpu_CR4_ignore;
 extern uint64_t tsc;
+extern int64_t  cpu_tsc_offset;
+extern void     cpu_tsc_write(uint64_t val);
+
+/* The time stamp counter: the machine's clock plus the offset a write to
+   it set (cpu.c). */
+static inline uint64_t
+cpu_tsc_read(void)
+{
+    return tsc + (uint64_t) cpu_tsc_offset;
+}
+
 extern msr_t    msr;
 extern uint8_t  opcode;
 extern int      cpl_override;
