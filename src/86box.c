@@ -398,6 +398,24 @@ void pclog_ensure_stdlog_open(void);
 #endif
 
 /*
+    A log file named by the machine's configuration, for when no -L was
+    given. Anything already logged went to stdout; from here on it goes
+    to the file.
+*/
+void
+pclog_set_config_path(const char *path)
+{
+    if ((path == NULL) || (path[0] == '\0') || (log_path[0] != '\0'))
+        return;
+
+    snprintf(log_path, sizeof(log_path), "%s", path);
+#ifndef RELEASE_BUILD
+    if (stdlog == stdout)
+        stdlog = NULL;
+#endif
+}
+
+/*
     Ensures STDLOG is open for pclog_ex and pclog_ex_cyclic
 */
 void pclog_ensure_stdlog_open(void)

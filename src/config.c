@@ -304,6 +304,9 @@ load_general(void)
     char          temp[512];
     char         *p;
 
+    /* The log file, when the command line gave none (-L wins). */
+    pclog_set_config_path(ini_section_get_string(cat, "log_path", NULL));
+
     vid_resize = ini_section_get_int(cat, "vid_resize", 0);
     if (vid_resize & ~3)
         vid_resize &= 3;
