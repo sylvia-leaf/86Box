@@ -22,6 +22,14 @@ public:
     void restore();
     void save(int soft);
 
+    /* For the new layout: a CD-ROM drive put on a channel, selected there,
+       or taken off it; a floppy drive selected. */
+    bool addCdrom(int bus, int channel);
+    bool selectCdrom(int bus, int channel);
+    void removeCdrom(int bus, int channel);
+    void selectFloppy(int drive);
+    void setFloppyDriveType(int drive, int type);
+
 public slots:
     void onCurrentMachineChanged(int machineId);
 

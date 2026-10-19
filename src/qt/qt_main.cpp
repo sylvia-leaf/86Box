@@ -786,10 +786,17 @@ main(int argc, char *argv[])
             manager_socket.IPCConnect(qgetenv("VMM_86BOX_SOCKET"));
             manager_socket.clientRunningStateChanged(VMManagerProtocol::RunningState::PausedWaiting);
         }
-        Settings settings;
-        if (settings.exec() == QDialog::Accepted) {
-            settings.save(0);
-            config_save();
+        /* The new layout's "Use Classic Mode" opens the dialog again. */
+        for (;;) {
+            Settings settings;
+            const int result = settings.exec();
+            if (result == Settings::ReopenClassic)
+                continue;
+            if (result == QDialog::Accepted) {
+                settings.save(0);
+                config_save();
+            }
+            break;
         }
         return 0;
     }

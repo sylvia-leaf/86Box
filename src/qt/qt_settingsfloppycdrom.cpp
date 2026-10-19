@@ -713,6 +713,83 @@ SettingsFloppyCDROM::enableCurrentlySelectedChannel()
         item->setEnabled(true);
 }
 
+/* A drive of the list set to a bus and channel, as choosing them does. */
+static void
+chooseIn(QComboBox *cbox, int value)
+{
+    const int row = cbox->findData(value);
+    if (row >= 0)
+        cbox->setCurrentIndex(row);
+}
+
+bool
+SettingsFloppyCDROM::addCdrom(int bus, int channel)
+{
+    auto *model = ui->treeViewCDROM->model();
+
+    for (int row = 0; row < model->rowCount(); row++) {
+        const auto idx = model->index(row, 0);
+        if (model->data(idx, Qt::UserRole).toInt() != CDROM_BUS_DISABLED)
+            continue;
+
+        ui->treeViewCDROM->setCurrentIndex(idx);
+        chooseIn(ui->comboBoxBus, bus);
+        on_comboBoxBus_activated(ui->comboBoxBus->currentIndex());
+        chooseIn(ui->comboBoxChannel, channel);
+        on_comboBoxChannel_activated(ui->comboBoxChannel->currentIndex());
+        return true;
+    }
+
+    return false;
+}
+
+bool
+SettingsFloppyCDROM::selectCdrom(int bus, int channel)
+{
+    auto *model = ui->treeViewCDROM->model();
+
+    for (int row = 0; row < model->rowCount(); row++) {
+        const auto idx = model->index(row, 0);
+        if ((model->data(idx, Qt::UserRole).toInt() == bus) && (model->data(idx, Qt::UserRole + 1).toInt() == channel)) {
+            ui->treeViewCDROM->setCurrentIndex(idx);
+            return true;
+        }
+    }
+
+    return false;
+}
+
+void
+SettingsFloppyCDROM::removeCdrom(int bus, int channel)
+{
+    if (!selectCdrom(bus, channel))
+        return;
+
+    chooseIn(ui->comboBoxBus, CDROM_BUS_DISABLED);
+    on_comboBoxBus_activated(ui->comboBoxBus->currentIndex());
+}
+
+void
+SettingsFloppyCDROM::selectFloppy(int drive)
+{
+    auto *model = ui->treeViewFloppy->model();
+
+    if ((drive >= 0) && (drive < model->rowCount())) {
+        ui->treeViewFloppy->setCurrentIndex(model->index(drive, 0));
+    }
+}
+
+void
+SettingsFloppyCDROM::setFloppyDriveType(int drive, int type)
+{
+    selectFloppy(drive);
+    if ((type < 0) || (type >= ui->comboBoxFloppyType->count()))
+        return;
+
+    ui->comboBoxFloppyType->setCurrentIndex(type);
+    on_comboBoxFloppyType_activated(type);
+}
+
 void
 SettingsFloppyCDROM::on_comboBoxChannel_activated(int)
 {

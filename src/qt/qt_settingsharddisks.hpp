@@ -3,6 +3,8 @@
 
 #include <QWidget>
 
+#include <functional>
+
 namespace Ui {
 class SettingsHarddisks;
 }
@@ -20,6 +22,12 @@ public:
 
     void restore();
     void save(int soft);
+
+    /* For the new layout: a disk added on a channel, through the usual
+       window; the one on a channel selected, or taken out. */
+    bool addDrive(bool existing, int bus, int channel, const std::function<void()> &makeRoom = nullptr);
+    bool selectDrive(int bus, int channel);
+    void removeDrive(int bus, int channel);
 
 protected:
     void showEvent(QShowEvent *event) override;

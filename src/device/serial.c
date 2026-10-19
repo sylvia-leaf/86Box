@@ -1252,6 +1252,37 @@ serial_standalone_init(void)
         device_add_inst(&ns8250_device, next_inst + 1);
 }
 
+/* A serial port on a card of its own: what the standalone ports past the
+   board's own are (serial_standalone_init()), named for the settings. */
+const device_t serial_card_device = {
+    .name          = "Serial Port Card",
+    .internal_name = "serial_card",
+    .flags         = DEVICE_ISA,
+    .local         = 0,
+    .init          = NULL,
+    .close         = NULL,
+    .reset         = NULL,
+    .available     = NULL,
+    .speed_changed = NULL,
+    .force_redraw  = NULL,
+    .config        = NULL
+};
+
+/* The same on a Micro Channel board, where the card would be an MCA one. */
+const device_t serial_card_mca_device = {
+    .name          = "Serial Port Card",
+    .internal_name = "serial_card_mca",
+    .flags         = DEVICE_MCA,
+    .local         = 0,
+    .init          = NULL,
+    .close         = NULL,
+    .reset         = NULL,
+    .available     = NULL,
+    .speed_changed = NULL,
+    .force_redraw  = NULL,
+    .config        = NULL
+};
+
 const device_t ns8250_device = {
     .name          = "National Semiconductor 8250(-compatible) UART",
     .internal_name = "ns8250",

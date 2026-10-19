@@ -228,6 +228,8 @@ extern int      hdd_format_type;            /* (C) hard disk file format */
 extern int      confirm_reset;              /* (G) enable reset confirmation */
 extern int      confirm_exit;               /* (G) enable exit confirmation */
 extern int      confirm_save;               /* (G) enable save confirmation */
+extern int      settings_layout;            /* (G) Settings dialog: 0 classic, 1 slot-based preview */
+extern int      settings_advanced;          /* (G) slot-based Settings: the Cards page's Advanced view */
 extern int      chd_precache_level;         /* (G) CHD precache level */
 extern int      enable_discord;             /* (C) enable Discord integration */
 extern int      force_10ms;                 /* (C) force 10ms CPU frame interval */

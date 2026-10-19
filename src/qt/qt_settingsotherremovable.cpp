@@ -771,3 +771,78 @@ SettingsOtherRemovable::on_comboBoxTapeType_activated(int)
                 ui->comboBoxTapeType->currentData().toUInt());
     ui->treeViewTape->resizeColumnToContents(1);
 }
+
+SettingsOtherRemovable::KindControls
+SettingsOtherRemovable::controlsOf(int kind) const
+{
+    switch (kind) {
+        case KIND_MO:
+            return { ui->treeViewMO, ui->comboBoxMOBus, ui->comboBoxMOChannel, &SettingsOtherRemovable::on_comboBoxMOBus_activated,
+                     &SettingsOtherRemovable::on_comboBoxMOChannel_activated };
+        case KIND_RDISK:
+            return { ui->treeViewRDisk, ui->comboBoxRDiskBus, ui->comboBoxRDiskChannel, &SettingsOtherRemovable::on_comboBoxRDiskBus_activated,
+                     &SettingsOtherRemovable::on_comboBoxRDiskChannel_activated };
+        default:
+            return { ui->treeViewTape, ui->comboBoxTapeBus, ui->comboBoxTapeChannel, &SettingsOtherRemovable::on_comboBoxTapeBus_activated,
+                     &SettingsOtherRemovable::on_comboBoxTapeChannel_activated };
+    }
+}
+
+/* A drive of the list set to a bus and channel, as choosing them does. */
+static void
+chooseIn(QComboBox *cbox, int value)
+{
+    const int row = cbox->findData(value);
+    if (row >= 0)
+        cbox->setCurrentIndex(row);
+}
+
+bool
+SettingsOtherRemovable::addDrive(int kind, int bus, int channel)
+{
+    const auto c     = controlsOf(kind);
+    auto      *model = c.view->model();
+
+    for (int row = 0; row < model->rowCount(); row++) {
+        const auto idx = model->index(row, 0);
+        if (model->data(idx, Qt::UserRole).toInt() != 0)
+            continue;
+
+        c.view->setCurrentIndex(idx);
+        chooseIn(c.bus, bus);
+        (this->*c.busActivated)(c.bus->currentIndex());
+        chooseIn(c.channel, channel);
+        (this->*c.channelActivated)(c.channel->currentIndex());
+        return true;
+    }
+
+    return false;
+}
+
+bool
+SettingsOtherRemovable::selectDrive(int kind, int bus, int channel)
+{
+    const auto c     = controlsOf(kind);
+    auto      *model = c.view->model();
+
+    for (int row = 0; row < model->rowCount(); row++) {
+        const auto idx = model->index(row, 0);
+        if ((model->data(idx, Qt::UserRole).toInt() == bus) && (model->data(idx, Qt::UserRole + 1).toInt() == channel)) {
+            c.view->setCurrentIndex(idx);
+            return true;
+        }
+    }
+
+    return false;
+}
+
+void
+SettingsOtherRemovable::removeDrive(int kind, int bus, int channel)
+{
+    if (!selectDrive(kind, bus, channel))
+        return;
+
+    const auto c = controlsOf(kind);
+    chooseIn(c.bus, 0);
+    (this->*c.busActivated)(c.bus->currentIndex());
+}

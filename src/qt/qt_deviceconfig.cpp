@@ -17,6 +17,7 @@
 #include "qt_settings_completer.hpp"
 
 #include "qt_deviceconfig.hpp"
+#include "qt_settingscards.hpp"
 #include "ui_qt_deviceconfig.h"
 #include "qt_settings.hpp"
 
@@ -140,6 +141,14 @@ EisaSlotOf(const _device_ *dev, int instance)
 {
     device_context_t ctx;
     int              def = 1;
+
+    /* In the new layout, the board slot the card is placed in. */
+    if ((Settings::settings != nullptr) && Settings::settings->usesSlotLayout()) {
+        const int slot = Cards::placement(dev, instance);
+
+        if ((slot >> 16) == SLOT_EISA)
+            return slot & 0xffff;
+    }
 
     for (const auto *panel : livePanels) {
         if ((panel->device() == dev) && (panel->instance() == instance) && (panel->slotChoice() >= 0))
@@ -470,6 +479,16 @@ DeviceConfigPanel::processConfig(void *dc, const void *c, const bool is_dep)
                         cbox->setEnabled(false);
                     if (!strcmp(config->name, "slot") && (dev != nullptr) && (dev->flags & DEVICE_EISA)) {
                         cboxSlot = cbox;
+                        /* In the new layout the slot is chosen on the Cards page. */
+                        if ((Settings::settings != nullptr) && Settings::settings->usesSlotLayout()) {
+                            const int slot = Cards::placement(dev, inst);
+
+                            if ((slot >> 16) == SLOT_EISA) {
+                                cbox->setCurrentIndex(cbox->findData(slot & 0xffff));
+                                cbox->setEnabled(false);
+                                cbox->setToolTip(tr("Choose the board slot on the Cards page."));
+                            }
+                        }
                         greyTakenSlots();
                         connect(cbox, QOverload<int>::of(&QComboBox::currentIndexChanged), this, [] { greyAllTakenSlots(); });
                     }

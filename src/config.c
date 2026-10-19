@@ -155,6 +155,9 @@ load_global_emulator(void)
     confirm_save  = ini_section_get_int(cat, "confirm_save", 1);
     color_scheme  = ini_section_get_int(cat, "color_scheme", 0);
 
+    settings_layout   = ini_section_get_int(cat, "settings_layout", 0);
+    settings_advanced = ini_section_get_int(cat, "settings_advanced", 0);
+
     vmm_disabled = ini_section_get_int(cat, "vmm_disabled", 0);
 
     chd_precache_level = ini_section_get_int(cat, "chd_precache_level", 0);
@@ -238,6 +241,9 @@ load_global_legacy(void)
     confirm_exit  = ini_section_get_int(cat, "confirm_exit", 1);
     confirm_save  = ini_section_get_int(cat, "confirm_save", 1);
     color_scheme  = ini_section_get_int(cat, "color_scheme", 0);
+
+    settings_layout   = ini_section_get_int(cat, "settings_layout", 0);
+    settings_advanced = ini_section_get_int(cat, "settings_advanced", 0);
 
     inhibit_multimedia_keys = ini_section_get_int(cat, "inhibit_multimedia_keys", 0);
 
@@ -3182,6 +3188,16 @@ save_global_emulator(void)
         ini_section_set_int(cat, "confirm_save", confirm_save);
     else
         ini_section_delete_var(cat, "confirm_save");
+
+    if (settings_layout != 0)
+        ini_section_set_int(cat, "settings_layout", settings_layout);
+    else
+        ini_section_delete_var(cat, "settings_layout");
+
+    if (settings_advanced != 0)
+        ini_section_set_int(cat, "settings_advanced", settings_advanced);
+    else
+        ini_section_delete_var(cat, "settings_advanced");
 
 
     if (chd_precache_level)

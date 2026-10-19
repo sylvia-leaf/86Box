@@ -1413,33 +1413,38 @@ MainWindow::on_actionSettings_triggered()
 {
     const int currentPause = dopause;
     plat_pause(1);
-    Settings settings(this);
-    settings.setModal(true);
-    settings.setWindowModality(Qt::WindowModal);
-    settings.setWindowFlag(Qt::CustomizeWindowHint, true);
-    settings.setWindowFlag(Qt::WindowTitleHint, true);
-    settings.setWindowFlag(Qt::WindowSystemMenuHint, false);
-    settings.exec();
+    /* The new layout's "Use Classic Mode" opens the dialog again. */
+    for (;;) {
+        Settings settings(this);
+        settings.setModal(true);
+        settings.setWindowModality(Qt::WindowModal);
+        settings.setWindowFlag(Qt::CustomizeWindowHint, true);
+        settings.setWindowFlag(Qt::WindowTitleHint, true);
+        settings.setWindowFlag(Qt::WindowSystemMenuHint, false);
+        if (settings.exec() == Settings::ReopenClassic)
+            continue;
 
-    switch (settings.result()) {
-        default:
-            break;
-        case QDialog::Accepted:
-            settings.save(0);
-            config_changed = 2;
-            emit vmmConfigurationChanged();
-            pc_reset_hard();
-            video_copy = (video_grayscale || invert_display) ? video_transform_copy : memcpy;
-            config_save();
-            reset_screen_size();
-            device_force_redraw();
-            for (int i = 0; i < MONITORS_NUM; i++) {
-                if (monitors[i].target_buffer)
-                    video_force_resize_set_monitor(1, i);
-            }
-            break;
-        case QDialog::Rejected:
-            break;
+        switch (settings.result()) {
+            default:
+                break;
+            case QDialog::Accepted:
+                settings.save(0);
+                config_changed = 2;
+                emit vmmConfigurationChanged();
+                pc_reset_hard();
+                video_copy = (video_grayscale || invert_display) ? video_transform_copy : memcpy;
+                config_save();
+                reset_screen_size();
+                device_force_redraw();
+                for (int i = 0; i < MONITORS_NUM; i++) {
+                    if (monitors[i].target_buffer)
+                        video_force_resize_set_monitor(1, i);
+                }
+                break;
+            case QDialog::Rejected:
+                break;
+        }
+        break;
     }
     plat_pause(currentPause);
 }

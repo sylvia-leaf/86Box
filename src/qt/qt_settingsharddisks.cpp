@@ -595,6 +595,51 @@ SettingsHarddisks::on_pushButtonExisting_clicked()
     }
 }
 
+bool
+SettingsHarddisks::addDrive(bool existing, int bus, int channel, const std::function<void()> &makeRoom)
+{
+    HarddiskDialog dialog(existing, this);
+
+    if (auto *cbox = dialog.findChild<QComboBox *>("comboBoxBus"); (cbox != nullptr) && (cbox->findData(bus) >= 0))
+        cbox->setCurrentIndex(cbox->findData(bus));
+    if (auto *cbox = dialog.findChild<QComboBox *>("comboBoxChannel"); (cbox != nullptr) && (cbox->findData(channel) >= 0))
+        cbox->setCurrentIndex(cbox->findData(channel));
+
+    if (dialog.exec() != QDialog::Accepted)
+        return false;
+
+    /* What was on the channel goes only now, once the new disk is chosen. */
+    if (makeRoom)
+        makeRoom();
+    addDriveFromDialog(ui, dialog);
+    reloadBusChannels();
+
+    return true;
+}
+
+bool
+SettingsHarddisks::selectDrive(int bus, int channel)
+{
+    auto *model = ui->treeView->model();
+
+    for (int row = 0; row < model->rowCount(); row++) {
+        const auto idx = model->index(row, ColumnBus);
+        if ((model->data(idx, DataBus).toInt() == bus) && (model->data(idx, DataBusChannel).toInt() == channel)) {
+            ui->treeView->setCurrentIndex(idx);
+            return true;
+        }
+    }
+
+    return false;
+}
+
+void
+SettingsHarddisks::removeDrive(int bus, int channel)
+{
+    if (selectDrive(bus, channel))
+        on_pushButtonRemove_clicked();
+}
+
 void
 SettingsHarddisks::on_pushButtonRemove_clicked()
 {

@@ -1434,6 +1434,37 @@ lpt_ports_reset(void)
         lpt_ports[i].lpt = NULL;
 }
 
+/* A parallel port on a card of its own: what the standalone ports past
+   the board's own are (lpt_standalone_init()), named for the settings. */
+const device_t lpt_card_device = {
+    .name          = "Parallel Port Card",
+    .internal_name = "lpt_card",
+    .flags         = DEVICE_ISA,
+    .local         = 0,
+    .init          = NULL,
+    .close         = NULL,
+    .reset         = NULL,
+    .available     = NULL,
+    .speed_changed = NULL,
+    .force_redraw  = NULL,
+    .config        = NULL
+};
+
+/* The same on a Micro Channel board, where the card would be an MCA one. */
+const device_t lpt_card_mca_device = {
+    .name          = "Parallel Port Card",
+    .internal_name = "lpt_card_mca",
+    .flags         = DEVICE_MCA,
+    .local         = 0,
+    .init          = NULL,
+    .close         = NULL,
+    .reset         = NULL,
+    .available     = NULL,
+    .speed_changed = NULL,
+    .force_redraw  = NULL,
+    .config        = NULL
+};
+
 const device_t lpt_port_device = {
     .name          = "Parallel Port",
     .internal_name = "lpt",
