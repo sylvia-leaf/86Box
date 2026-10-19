@@ -230,6 +230,16 @@ codegen_can_unroll_full(codeblock_t *block, ir_data_t *ir, UNUSED(uint32_t next_
     if (TOP != cpu_state.TOP)
         return 0;
 
+    /* Flag consumers may have specialized the loop's incoming lazy state.
+     * For example, XOR before an SBB/DEC loop folds the first carry to zero;
+     * copying that IR would discard the borrow on subsequent iterations.
+     * Keep such a block's first iteration, then dispatch to the loop head.
+     * A block compiled from that head starts with unknown flags and can still
+     * be unrolled, as can loops whose incoming flag representation is stable. */
+    if (flags_op != FLAGS_UNKNOWN
+        && (!codegen_flags_changed || flags_op != cpu_state.flags_op))
+        return 0;
+
     /*Not across a flags rebuild worked out from a flags op set before the
       loop: the copies would repeat it after the loop's own flag changes*/
     for (int c = 0; c < flags_known_nr; c++) {

@@ -45,8 +45,10 @@ opRDPMC(UNUSED(uint32_t fetchdat))
         EAX = v & 0xffffffff;
         EDX = (v >> 32) & 0xff;
     } else if (is_p6) {
-        EAX = msr.perfctr[ECX] & 0xffffffff;
-        EDX = (msr.perfctr[ECX] >> 32) & 0xff;
+        /* By counter, not ECX: the P4's fast-read bit 31 would index far past
+           the array. A fast read returns the low dword only. */
+        EAX = msr.perfctr[counter] & 0xffffffff;
+        EDX = (p4 && (ECX & 0x80000000)) ? 0 : ((msr.perfctr[counter] >> 32) & 0xff);
     } else {
         EAX = msr.pmc[ECX] & 0xffffffff;
         EDX = (msr.pmc[ECX] >> 32) & 0xff;

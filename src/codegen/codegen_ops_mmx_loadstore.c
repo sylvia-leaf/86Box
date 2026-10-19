@@ -52,7 +52,9 @@ ropMOVD_d_r(codeblock_t *block, ir_data_t *ir, UNUSED(uint8_t opcode), uint32_t 
         return 0;
 
     REQUIRE_GUEST_FEATURE(CPU_FEATURE_MMX);
-    if (cpu_iscyrix && in_smm)
+    /*0F 7E is SMINT on a Cyrix in SMM, and blocks aren't kept apart by SMM
+      (nothing sets CPU_STATUS_SMM): a block compiled outside SMM can run in it*/
+    if (cpu_iscyrix)
         return 0;
 
     uop_MMX_ENTER(ir);

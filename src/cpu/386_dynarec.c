@@ -716,7 +716,7 @@ exec386_dynarec_dyn(void)
            also catch any page faults at this stage */
         valid_block = (block->pc == cs + cpu_state.pc) && (block->_cs == cs) && (block->phys == phys_addr) && !((block->status ^ cpu_cur_status) & CPU_STATUS_FLAGS) && ((block->status & cpu_cur_status & CPU_STATUS_MASK) == (cpu_cur_status & CPU_STATUS_MASK));
         if (!valid_block) {
-            const uint16_t alternate_nr = codeblock_hash_get(hash, 1);
+            const uint32_t alternate_nr = codeblock_hash_get(hash, 1);
 
             if (alternate_nr) {
                 codeblock_t *alternate = &codeblock[alternate_nr];

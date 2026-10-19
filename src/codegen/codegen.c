@@ -395,9 +395,11 @@ codegen_generate_ea_32_long(ir_data_t *ir, x86seg *op_ea_seg, uint32_t fetchdat,
                     op_ea_seg = &cpu_state.seg_ss;
                 if (cpu_mod == 1) {
                     if (block->flags & CODEBLOCK_NO_IMMEDIATES) {
+                        /*temp0 only, as every other displacement here: callers
+                          may hold a value in temp1 across the EA*/
                         LOAD_IMMEDIATE_FROM_RAM_8(block, ir, IREG_temp0_B, cs + (*op_pc) + 1);
-                        uop_MOVSX(ir, IREG_temp1, IREG_temp0_B);
-                        uop_ADD(ir, IREG_eaaddr, IREG_eaaddr, IREG_temp1);
+                        uop_MOVSX(ir, IREG_temp0, IREG_temp0_B);
+                        uop_ADD(ir, IREG_eaaddr, IREG_eaaddr, IREG_temp0);
                     } else {
                         uop_ADD_IMM(ir, IREG_eaaddr, IREG_eaaddr, (uint32_t) (int8_t) (fetchdat >> 8));
                         extra_bytes = 1;
@@ -1194,7 +1196,16 @@ codegen_skip:
        anything further from memory as it runs. Marking more than fetchdat
        covers would claim the data that often follows an instruction such as
        RET or IRET, and every write to it would throw the block away. */
-    codegen_mark_code_present(block, cs + fetchdat_pc, pc_off ? 4 : 3);
+    {
+        int fetch_len = pc_off ? 4 : 3;
+
+        /* A one-byte opcode that reads nothing after it (POPF, CLI, the
+           string ops) or only an imm8/rel8 uses no more of fetchdat. */
+        if (!pc_off && ((op_table == x86_dynarec_opcodes) || (op_table == x86_dynarec_opcodes_REPE) || (op_table == x86_dynarec_opcodes_REPNE)) &&
+            (opcode_length[opcode] < 3))
+            fetch_len = opcode_length[opcode] - 1;
+        codegen_mark_code_present(block, cs + fetchdat_pc, fetch_len);
+    }
 
     last_op_32     = op_32;
     last_op_ea_seg = op_ea_seg;

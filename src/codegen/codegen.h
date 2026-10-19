@@ -73,18 +73,19 @@ extern codeblock_t *codeblock;
 
 extern uint32_t *codeblock_hash;
 
-/* Keep a second candidate for each hash.  Block zero is reserved as the
-   invalid entry, so compact 16-bit indices cover the complete block pool. */
+/* Keep a second candidate for each hash. Block zero is reserved as the
+   invalid entry. Block numbers are full width: BLOCK_SIZE is 0x20000 on
+   x86-64, so a 16-bit number would name the wrong block. */
 #define CODEBLOCK_HASH_WAYS 2
 
-static inline uint16_t
+static inline uint32_t
 codeblock_hash_get(uint32_t hash, unsigned int way)
 {
     return codeblock_hash[(hash * CODEBLOCK_HASH_WAYS) + way];
 }
 
 static inline void
-codeblock_hash_promote(uint32_t hash, uint16_t block_nr)
+codeblock_hash_promote(uint32_t hash, uint32_t block_nr)
 {
     uint32_t *entries = &codeblock_hash[hash * CODEBLOCK_HASH_WAYS];
 
@@ -95,7 +96,7 @@ codeblock_hash_promote(uint32_t hash, uint16_t block_nr)
 }
 
 static inline void
-codeblock_hash_remove(uint32_t hash, uint16_t block_nr)
+codeblock_hash_remove(uint32_t hash, uint32_t block_nr)
 {
     uint32_t *entries = &codeblock_hash[hash * CODEBLOCK_HASH_WAYS];
 

@@ -27,6 +27,7 @@
 #        include <86box/nmi.h>
 #        include <86box/pic.h>
 #        include <86box/timer.h>
+#        include <86box/apic.h>
 #    endif
 
 #    if defined(__linux__) || defined(__APPLE__)
@@ -866,6 +867,7 @@ enum {
     LINK_LIT_RAMMASK,
     LINK_LIT_READLOOKUP2,
     LINK_LIT_RAM,
+    LINK_LIT_CURRENT_LAPIC,
 
     LINK_LIT_COUNT
 };
@@ -972,6 +974,7 @@ build_link_routine(codeblock_t *block)
     lit[LINK_LIT_RAMMASK]           = (uint64_t) (uintptr_t) &rammask;
     lit[LINK_LIT_READLOOKUP2]       = (uint64_t) (uintptr_t) readlookup2;
     lit[LINK_LIT_RAM]               = (uint64_t) (uintptr_t) &ram;
+    lit[LINK_LIT_CURRENT_LAPIC]     = (uint64_t) (uintptr_t) &current_lapic;
 
     codegen_link_rout = &block_write_data[block_pos];
 
@@ -1033,6 +1036,12 @@ build_link_routine(codeblock_t *block)
     host_arm64_LDRB_IMM_W(block, REG_W5, REG_X3, offsetof(pic_t, int_pending));
     miss[nr_miss++] = host_arm64_CBNZ_SHORT_(block, REG_W5);
     host_arm64_short_branch_set_offset(irq_ok, &block_write_data[block_pos]);
+    /*With a local APIC the C loop asks it for interrupts through
+      pic_pending_int() and moves its timer on with the TSC. This routine does
+      neither, so it leaves those machines to the C loop*/
+    host_arm64_LDR_IMM_X(block, REG_X5, REG_X17, LINK_LIT(LINK_LIT_CURRENT_LAPIC));
+    host_arm64_LDR_IMM_X(block, REG_X5, REG_X5, 0);
+    miss[nr_miss++] = host_arm64_CBNZ_SHORT_(block, REG_X5);
 
     /*Status and FPU rounding as when the slot was filled, compared as one
       word against W6. Only the C loop refreshes the PC24 and RC_NZ status
