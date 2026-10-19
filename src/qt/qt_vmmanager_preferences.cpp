@@ -83,14 +83,6 @@ VMManagerPreferences::
 #else
     ui->deleteToTrashCheckBox->setVisible(false);
 #endif
-#ifdef DISCORD
-    ui->discordCheckBox->setChecked(discord_presence != 0);
-    ui->comboBoxDiscordPrivacy->setCurrentIndex(qMax(discord_presence - 1, 0));
-    ui->comboBoxDiscordPrivacy->setEnabled(ui->discordCheckBox->isChecked());
-    ui->labelDiscordPrivacy->setEnabled(ui->discordCheckBox->isChecked());
-    connect(ui->discordCheckBox, &QCheckBox::toggled, ui->comboBoxDiscordPrivacy, &QWidget::setEnabled);
-    connect(ui->discordCheckBox, &QCheckBox::toggled, ui->labelDiscordPrivacy, &QWidget::setEnabled);
-#endif
 
     ui->settingsLayoutCheckBox->setChecked(settings_layout == 1);
 
