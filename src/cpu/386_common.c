@@ -1406,7 +1406,10 @@ enter_smm(int in_hlt)
     }
     cpl_override = 0;
 
-    nmi_mask = 0;
+    /* The processor holds NMI off inside the handler, until an IRET or the
+       RSM (SDM 1999 vol. 3, 12.7); the chipset's NMI mask (port 70h) is
+       not the processor's to change. */
+    nmi_enable = 0;
 
     /* Entering consumes the latch; this stay can latch one SMI of its own,
        even when it was entered from the latch. */
@@ -1550,7 +1553,11 @@ leave_smm(void)
             cpu_cur_status |= CPU_STATUS_V86;
     }
 
-    nmi_mask = 1;
+    /* RSM lifts the blocking: an NMI latched in SMM is taken before the
+       next instruction. The processor does not save the blocking of an NMI
+       handler that the SMI interrupted, so one may nest inside that
+       handler (SDM 1999 vol. 3, 12.7). */
+    nmi_enable = 1;
 
     oldcpl = CPL;
 
