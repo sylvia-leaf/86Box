@@ -1924,8 +1924,10 @@ svga_close(svga_t *svga)
     svga_pri = NULL;
 }
 
-uint32_t
-svga_decode_addr(svga_t *svga, uint32_t addr, int write)
+/* The window's address to the plane address: inline for svga's own reads
+   and writes, every one of which takes it; svga_decode_addr for the cards'. */
+static __inline uint32_t
+svga_decode_addr_here(svga_t *svga, uint32_t addr, int write)
 {
     int memory_map_mode = (svga->gdcreg[6] >> 2) & 3;
 
@@ -1961,6 +1963,12 @@ svga_decode_addr(svga_t *svga, uint32_t addr, int write)
     return addr;
 }
 
+uint32_t
+svga_decode_addr(svga_t *svga, uint32_t addr, int write)
+{
+    return svga_decode_addr_here(svga, addr, write);
+}
+
 static __inline void
 svga_write_common(uint32_t addr, uint8_t val, uint8_t linear, void *priv)
 {
@@ -1980,7 +1988,7 @@ svga_write_common(uint32_t addr, uint8_t val, uint8_t linear, void *priv)
     if (!linear) {
         if (xga_active) /* the XGA's memory test, only with one */
             xga_write_test(addr, val, svga);
-        addr = svga_decode_addr(svga, addr, 1);
+        addr = svga_decode_addr_here(svga, addr, 1);
         if (addr == 0xffffffff) {
             svga_log("WriteCommon Over.\n");
             return;
@@ -2183,7 +2191,7 @@ svga_read_common(uint32_t addr, uint8_t linear, void *priv)
 
     if (!linear) {
         (void) xga_read_test(addr, svga);
-        addr = svga_decode_addr(svga, addr, 0);
+        addr = svga_decode_addr_here(svga, addr, 0);
         if (addr == 0xffffffff)
             return 0xff;
     }
@@ -2421,7 +2429,7 @@ svga_writew_common(uint32_t addr, uint16_t val, uint8_t linear, void *priv)
             xga_write_test(addr, val & 0xff, svga);
             xga_write_test(addr + 1, val >> 8, svga);
         }
-        addr = svga_decode_addr(svga, addr, 1);
+        addr = svga_decode_addr_here(svga, addr, 1);
 
         if (addr == 0xffffffff)
             return;
@@ -2489,7 +2497,7 @@ svga_writel_common(uint32_t addr, uint32_t val, uint8_t linear, void *priv)
             xga_write_test(addr + 2, (val >> 16) & 0xff, svga);
             xga_write_test(addr + 3, (val >> 24) & 0xff, svga);
         }
-        addr = svga_decode_addr(svga, addr, 1);
+        addr = svga_decode_addr_here(svga, addr, 1);
 
         if (addr == 0xffffffff)
             return;
@@ -2576,7 +2584,7 @@ svga_readw_common(uint32_t addr, uint8_t linear, void *priv)
     if (!linear) {
         (void) xga_read_test(addr, svga);
         (void) xga_read_test(addr + 1, svga);
-        addr = svga_decode_addr(svga, addr, 0);
+        addr = svga_decode_addr_here(svga, addr, 0);
         if (addr == 0xffffffff)
             return 0xffff;
     }
@@ -2634,7 +2642,7 @@ svga_readl_common(uint32_t addr, uint8_t linear, void *priv)
         (void) xga_read_test(addr + 1, svga);
         (void) xga_read_test(addr + 2, svga);
         (void) xga_read_test(addr + 3, svga);
-        addr = svga_decode_addr(svga, addr, 0);
+        addr = svga_decode_addr_here(svga, addr, 0);
         if (addr == 0xffffffff)
             return 0xffffffff;
     }
