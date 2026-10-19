@@ -46,6 +46,33 @@ int        block_pos;
 uint32_t codegen_endpc;
 
 int        codegen_block_cycles;
+
+#ifdef CODEGEN_CHAIN
+const int codegen_has_block_link = 1;
+
+/* cpu_dyn_block_link as of the last codegen_init() or codegen_reset(), both
+   of which free every block. 0: the dispatcher links no exit, so every
+   block leaves for it. */
+int codegen_block_link = 1;
+
+/* Chains of linked blocks: the generation every link is made under (the
+   stub compares it), moved whenever a link could become wrong. */
+uint64_t codegen_chain_gen = 1; /* 64 bits: never wraps back onto a stale stub */
+
+uint8_t *codegen_chain_last_exit;
+
+/* Compiled code was written, freed or compiled again, or the translations
+   changed: every link misses from now on. A link the dispatcher has pending
+   is not made either, as its stub may be in code freed since. */
+void
+codegen_links_drop_all(void)
+{
+    __atomic_fetch_add(&codegen_chain_gen, 1, __ATOMIC_SEQ_CST);
+}
+#else
+const int codegen_has_block_link = 0;
+#endif
+
 static int codegen_block_ins;
 static int codegen_block_full_ins;
 
@@ -242,9 +269,6 @@ block_version_chunk_matches(uint32_t phys, const uint8_t *exec, uint64_t mask, c
     return 1;
 }
 
-/*No block linking: the setting (cpu_dyn_block_link) is kept but hidden.*/
-const int codegen_has_block_link = 0;
-
 static void
 block_free_list_add(codeblock_t *block)
 {
@@ -393,6 +417,9 @@ codegen_init(void)
 {
     codegen_check_regs();
     codegen_allocator_init();
+#ifdef CODEGEN_CHAIN
+    codegen_block_link = cpu_dyn_block_link;
+#endif
 
     codegen_backend_init();
     block_versions_init();
@@ -411,6 +438,9 @@ codegen_reset(void)
 {
     int c;
 
+#ifdef CODEGEN_CHAIN
+    codegen_links_drop_all();
+#endif
     for (c = 1; c < BLOCK_SIZE; c++) {
         codeblock_t *block = &codeblock[c];
 
@@ -424,6 +454,9 @@ codegen_reset(void)
     memset(codeblock, 0, BLOCK_SIZE * sizeof(codeblock_t));
     memset(codeblock_hash, 0, HASH_SIZE * sizeof(uint32_t));
     mem_reset_page_blocks();
+#ifdef CODEGEN_CHAIN
+    codegen_block_link = cpu_dyn_block_link;
+#endif
 
     block_free_list = 0;
     for (c = 0; c < BLOCK_SIZE; c++) {
@@ -585,6 +618,9 @@ invalidate_block(codeblock_t *block)
         block_version_owner_sync(block_nr);
     }
     block->head_mem_block = NULL;
+#ifdef CODEGEN_CHAIN
+    codegen_links_drop_all();
+#endif
 }
 
 static void
@@ -609,6 +645,9 @@ delete_block(codeblock_t *block)
     if (block->head_mem_block)
         codegen_allocator_free(block->head_mem_block);
     block->head_mem_block = NULL;
+#ifdef CODEGEN_CHAIN
+    codegen_links_drop_all();
+#endif
     block_free_list_add(block);
 }
 
@@ -794,6 +833,10 @@ codegen_block_start_recompile(codeblock_t *block)
         block_version_start_ok     = (block_version_start_exec != NULL);
     }
     if (block->head_mem_block) {
+#ifdef CODEGEN_CHAIN
+        /* Its old code goes: no link may reach it again. */
+        codegen_links_drop_all();
+#endif
         codegen_allocator_free(block->head_mem_block);
         block->head_mem_block = NULL;
     }
@@ -1027,6 +1070,12 @@ codegen_block_end_recompile(codeblock_t *block)
         block->flags &= ~CODEBLOCK_STATIC_TOP;
 
     codegen_accumulate_flush(ir_data);
+#ifdef CODEGEN_CHAIN
+    /* What the recording loop found the block's end to be (386_dynarec.c):
+       a link at its end, appended after loop unrolling (codegen_ir.c). */
+    codegen_end_link_pending = codegen_end_link_ok;
+    codegen_end_link_ok      = 0;
+#endif
     codegen_ir_compile(ir_data, block);
 
     /*Record what this version was compiled from, so it can be kept when the
@@ -1117,6 +1166,11 @@ codegen_block_restore_version(codeblock_t *block)
         codegen_block_generate_end_mask_recompile();
         add_to_block_list(block);
         block_version_owner_sync(block_nr);
+#ifdef CODEGEN_CHAIN
+        /* Other code is the block's now: no link made to the code it had
+           may reach it. */
+        codegen_links_drop_all();
+#endif
         return 1;
     }
     return 0;

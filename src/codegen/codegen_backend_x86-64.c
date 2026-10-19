@@ -1146,14 +1146,159 @@ codegen_backend_prologue(codeblock_t *block)
     host_x86_SUB64_REG_IMM(block, REG_RSP, 0x48);
 #endif
     host_x86_MOV64_REG_IMM(block, REG_RBP, ((uintptr_t) &cpu_state) + 128);
+#ifdef CODEGEN_CHAIN
+    /* A chain enters here: the frame and RBP are every block's; what
+       follows is this block's own. */
+    block->chain_entry = block_pos;
+#endif
     if (block->flags & CODEBLOCK_HAS_FPU) {
         host_x86_MOV32_REG_ABS(block, REG_EAX, &cpu_state.TOP);
         host_x86_SUB32_REG_IMM(block, REG_EAX, block->TOP);
         host_x86_MOV32_BASE_OFFSET_REG(block, REG_RSP, IREG_TOP_diff_stack_offset, REG_EAX);
+#ifdef CODEGEN_CHAIN
+        /* Compiled for one top of stack, which the dispatcher checked; a
+           chain arriving with another leaves for the dispatcher, which
+           compiles the block again for a moving top. */
+        if (block->flags & CODEBLOCK_STATIC_TOP) {
+            codegen_alloc_bytes(block, 2);
+            codegen_addbyte2(block, 0xa8, 0x07); /*TEST AL, 7*/
+            host_x86_JNZ(block, codegen_exit_rout);
+        }
+#endif
     }
     if (block->flags & CODEBLOCK_NO_IMMEDIATES)
         host_x86_MOV64_REG_IMM(block, REG_R12, ((uintptr_t) ram) + 2147483648ULL);
 }
+
+#ifdef CODEGEN_CHAIN
+/* A link stub, at a block exit whose PC is already stored: it goes
+   straight to the next block while nothing needs the dispatcher. The
+   offsets of the fields codegen_chain_patch() writes: */
+#    define LINK_GEN    59 /* codegen_chain_gen when linked */
+#    define LINK_STATUS 90
+#    define LINK_JMP    100
+#    define LINK_MISS   105
+#    define LINK_BACK   16 /* past the signal test: where a serviced chain goes on */
+/* The miss path (23 bytes), the exit's JMP and the service's CALL at their
+   longest (13 each), TEST, JNZ and the JMP back. */
+#    define LINK_SIZE (LINK_MISS + 23 + 13 + 13 + 2 + 6 + 5)
+
+static void
+link_rel32(uint8_t *at, const uint8_t *dest)
+{
+    *(int32_t *) at = (int32_t) (dest - (at + 4));
+}
+
+void
+codegen_backend_link_stub(codeblock_t *block)
+{
+    const int32_t sig    = (int32_t) ((uintptr_t) &cpu_state.chain_signal - ((uintptr_t) &cpu_state + 128));
+    const int32_t cyc    = (int32_t) ((uintptr_t) &cpu_state._cycles - ((uintptr_t) &cpu_state + 128));
+    const int32_t flr    = (int32_t) ((uintptr_t) &cpu_state.chain_floor - ((uintptr_t) &cpu_state + 128));
+    const int32_t flg_hi = (int32_t) ((uintptr_t) &cpu_state.flags + 1 - ((uintptr_t) &cpu_state + 128));
+    uint8_t      *stub;
+    uint8_t      *exit_at;
+    uint8_t      *service_at;
+
+    /* One piece, so the fields keep their offsets. */
+    codegen_alloc_bytes(block, LINK_SIZE);
+    stub = &block_write_data[block_pos];
+#    define LINK_AT(off) \
+        if (&block_write_data[block_pos] != stub + (off)) \
+            fatal("codegen_backend_link_stub: field at %i, not %i\n", (int) (&block_write_data[block_pos] - stub), off)
+
+    codegen_addbyte3(block, 0x48, 0x8b, 0x85); /*MOV RAX, [RBP+sig]*/
+    codegen_addlong(block, (uint32_t) sig);
+    codegen_addbyte3(block, 0x83, 0x38, 0x00); /*CMP DWORD [RAX], 0*/
+    codegen_addbyte2(block, 0x0f, 0x85);       /*JNE service*/
+    codegen_addlong(block, 0);
+    LINK_AT(LINK_BACK);
+    codegen_addbyte2(block, 0x8b, 0x85); /*MOV EAX, [RBP+cycles]*/
+    codegen_addlong(block, (uint32_t) cyc);
+    codegen_addbyte2(block, 0x3b, 0x85); /*CMP EAX, [RBP+chain_floor]*/
+    codegen_addlong(block, (uint32_t) flr);
+    codegen_addbyte2(block, 0x0f, 0x8e); /*JLE exit*/
+    codegen_addlong(block, 0);
+    codegen_addbyte2(block, 0xf6, 0x85); /*TEST BYTE [RBP+flags+1], 1 (TF)*/
+    codegen_addlong(block, (uint32_t) flg_hi);
+    codegen_addbyte(block, 0x01);
+    codegen_addbyte2(block, 0x0f, 0x85); /*JNE exit*/
+    codegen_addlong(block, 0);
+    /* The generation it was linked under: anything that could make a link
+       wrong moves it (codegen_block.c). Never 0, so it misses until linked. */
+    codegen_addbyte2(block, 0x48, 0xb8); /*MOV RAX, &codegen_chain_gen*/
+    codegen_addquad(block, (uint64_t) (uintptr_t) &codegen_chain_gen);
+    codegen_addbyte2(block, 0x48, 0xb9); /*MOV RCX, GEN*/
+    LINK_AT(LINK_GEN);
+    codegen_addquad(block, 0);
+    codegen_addbyte3(block, 0x48, 0x39, 0x08); /*CMP [RAX], RCX*/
+    codegen_addbyte2(block, 0x0f, 0x85);       /*JNE miss*/
+    codegen_addlong(block, 0);
+    /* The key: the status word (CODEGEN_CHAIN_KEY). */
+    codegen_addbyte2(block, 0x48, 0xb8); /*MOV RAX, &cpu_cur_status*/
+    codegen_addquad(block, (uint64_t) (uintptr_t) &cpu_cur_status);
+    codegen_addbyte3(block, 0x0f, 0xb7, 0x00); /*MOVZX EAX, WORD [RAX]*/
+    codegen_addbyte(block, 0x3d);              /*CMP EAX, KEY*/
+    LINK_AT(LINK_STATUS);
+    codegen_addlong(block, 0xffffffff);  /*never matches until linked*/
+    codegen_addbyte2(block, 0x0f, 0x85); /*JNE miss*/
+    codegen_addlong(block, 0);
+    LINK_AT(LINK_JMP);
+    codegen_addbyte(block, 0xe9); /*JMP TARGET (miss until linked)*/
+    codegen_addlong(block, 0);
+    /*miss:*/
+    LINK_AT(LINK_MISS);
+    codegen_addbyte2(block, 0x48, 0xb8); /*MOV RAX, stub*/
+    codegen_addquad(block, (uint64_t) (uintptr_t) stub);
+    codegen_addbyte2(block, 0x48, 0xb9); /*MOV RCX, &codegen_chain_last_exit*/
+    codegen_addquad(block, (uint64_t) (uintptr_t) &codegen_chain_last_exit);
+    codegen_addbyte3(block, 0x48, 0x89, 0x01); /*MOV [RCX], RAX*/
+    /*exit:*/
+    exit_at = &block_write_data[block_pos];
+    host_x86_JMP(block, codegen_exit_rout);
+    /*service: something was signalled -- the service routine looks at it
+      (386_dynarec.c codegen_chain_service) and the chain goes on unless
+      the dispatcher must look*/
+    service_at = &block_write_data[block_pos];
+    host_x86_CALL(block, (void *) codegen_chain_service);
+    codegen_addbyte2(block, 0x85, 0xc0); /*TEST EAX, EAX*/
+    codegen_addbyte2(block, 0x0f, 0x85); /*JNZ exit*/
+    codegen_addlong(block, 0);
+    link_rel32(&block_write_data[block_pos - 4], exit_at);
+    codegen_addbyte(block, 0xe9); /*JMP back*/
+    codegen_addlong(block, 0);
+    link_rel32(&block_write_data[block_pos - 4], stub + LINK_BACK);
+#    undef LINK_AT
+
+    if ((&block_write_data[block_pos] - stub) > LINK_SIZE)
+        fatal("codegen_backend_link_stub: %i bytes\n", (int) (&block_write_data[block_pos] - stub));
+
+    link_rel32(stub + 12, service_at);                    /*JNE service (signal)*/
+    link_rel32(stub + 30, exit_at);                       /*JLE exit (cycles)*/
+    link_rel32(stub + 43, exit_at);                       /*JNE exit (TF)*/
+    link_rel32(stub + 72, stub + LINK_MISS);              /*JNE miss (generation)*/
+    link_rel32(stub + LINK_STATUS + 6, stub + LINK_MISS); /*JNE miss (key)*/
+    link_rel32(stub + LINK_JMP + 1, stub + LINK_MISS);
+}
+
+/* The dispatcher found `target` valid where a chain left through `stub`
+   for want of a link: the stub goes straight there from now on, for as
+   long as the generation and the key it saw hold. */
+int
+codegen_chain_patch(uint8_t *stub, codeblock_t *target, uint64_t gen)
+{
+    uint8_t *dest = &target->data[target->chain_entry];
+    intptr_t diff = (intptr_t) dest - (intptr_t) (stub + LINK_JMP + 5);
+
+    if ((diff < INT32_MIN) || (diff > INT32_MAX))
+        return 0;
+
+    *(uint64_t *) (stub + LINK_GEN)    = gen;
+    *(uint32_t *) (stub + LINK_STATUS) = CODEGEN_CHAIN_KEY();
+    link_rel32(stub + LINK_JMP + 1, dest);
+    return 1;
+}
+#endif
 
 void
 codegen_backend_epilogue(codeblock_t *block)

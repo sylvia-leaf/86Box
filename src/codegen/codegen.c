@@ -23,6 +23,20 @@
 #include "codegen_ops_helpers.h"
 
 #define MAX_INSTRUCTION_COUNT 50
+
+#ifdef CODEGEN_CHAIN
+/* How the block's last instruction lets it end: 1, a near branch to a
+   constant target, in a link; 3, any other with a constant PC after it, in
+   a link if the block ends evenly (the recording loop decides,
+   386_dynarec.c); 0, as it always did. */
+int        codegen_end_link_ok;
+int        codegen_end_link_pending; /* for codegen_ir_compile, after unrolling */
+static int codegen_is_near_branch;
+/* The block reached its instruction limit: the recording loop ends it once
+   this instruction has run, as an even end (386_dynarec.c), so the
+   instruction's own ending of it is told apart. */
+int codegen_block_full;
+#endif
 static struct {
     uint32_t pc;
     int      op_ssegs;
@@ -870,6 +884,12 @@ generate_call:
 
     codegen_timing_opcode(opcode, fetchdat, op_32, op_pc);
 
+#ifdef CODEGEN_CHAIN
+    codegen_end_link_ok    = 0;
+    codegen_is_near_branch = (op_table == x86_dynarec_opcodes && ((opcode & 0xf0) == 0x70 || (opcode & 0xfc) == 0xe0 || opcode == 0xe8 || opcode == 0xe9 || opcode == 0xeb)) ||
+                             (op_table == x86_dynarec_opcodes_0f && ((opcode & 0xf0) == 0x80));
+#endif
+
     codegen_accumulate(ir, ACCREG_cycles, -codegen_block_cycles);
     codegen_block_cycles = 0;
 
@@ -1038,13 +1058,30 @@ generate_call:
         if (new_pc) {
             if (new_pc != -1)
                 uop_MOV_IMM(ir, IREG_pc, new_pc);
+#ifdef CODEGEN_CHAIN
+            /* A near branch with a constant target: if the block ends on
+               it, its end can be a link (codegen_block_end_recompile); any
+               other with a constant PC after it falls through there, and
+               can be a link if the block ends for its size or at the end
+               of STI's shadow (the recording loop decides, 386_dynarec.c). */
+            if ((new_pc != -1) && codegen_is_near_branch)
+                codegen_end_link_ok = 1;
+            else if (new_pc != -1)
+                codegen_end_link_ok = 3;
+            else
+                codegen_end_link_ok = 0;
+#endif
 
             codegen_endpc = (cs + cpu_state.pc) + 8;
 
             block->ins++;
 
             if (block->ins >= MAX_INSTRUCTION_COUNT)
+#ifdef CODEGEN_CHAIN
+                codegen_block_full = 1;
+#else
                 CPU_BLOCK_END();
+#endif
 
             return;
         }
@@ -1145,7 +1182,11 @@ codegen_skip:
     block->ins++;
 
     if (block->ins >= MAX_INSTRUCTION_COUNT)
+#ifdef CODEGEN_CHAIN
+        codegen_block_full = 1;
+#else
         CPU_BLOCK_END();
+#endif
 
     codegen_endpc = (cs + cpu_state.pc) + 8;
 

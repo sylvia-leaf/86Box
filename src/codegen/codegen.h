@@ -2,6 +2,7 @@
 #define _CODEGEN_H_
 
 #include <86box/mem.h>
+#include "codegen_public.h"
 #include <stddef.h>
 #include "x86_ops.h"
 
@@ -62,7 +63,39 @@ typedef struct codeblock_t {
     /*Run since eviction's sweep last passed it: the sweep passes it over
       once (codegen_delete_random_block).*/
     uint8_t used;
+
+#ifdef CODEGEN_CHAIN
+    /*Where a linked block enters it (data[chain_entry]): past the part of
+      the prologue every block shares, so a chain keeps one frame.*/
+    uint16_t chain_entry;
+#endif
 } codeblock_t;
+
+#ifdef CODEGEN_CHAIN
+/*The block-linking setting as the recompiler took it (codegen_block.c).*/
+extern int codegen_block_link;
+/*The generation every link is made under: anything that could make a link
+  wrong -- compiled code written, freed or compiled again, the translations
+  changed -- moves it, and every link misses (codegen_block.c).*/
+extern uint64_t codegen_chain_gen;
+/*Set by a link stub that left for want of a link: the dispatcher links it.*/
+extern uint8_t *codegen_chain_last_exit;
+extern int      codegen_end_link_ok;
+extern int      codegen_end_link_pending;
+extern int      codegen_block_full;
+/*A link stub found the signal word set: answers 0 for the chain to go on,
+  non-zero to leave it (386_dynarec.c).*/
+extern int codegen_chain_service(void);
+/*STI in a block: an interrupt already pending breaks the chain, at the end
+  of the block STI's shadow ends (386_dynarec.c).*/
+extern void codegen_chain_sti(void);
+/*What a link was made under and holds only while it matches: the status
+  word.*/
+#    define CODEGEN_CHAIN_KEY() (cpu_cur_status & 0xffff)
+/*Point a link stub at a block, under the generation `gen` (read before
+  the block's code was found clean); answers whether it could.*/
+extern int codegen_chain_patch(uint8_t *stub, codeblock_t *target, uint64_t gen);
+#endif
 
 extern codeblock_t *codeblock;
 

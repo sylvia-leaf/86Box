@@ -107,6 +107,10 @@ int cachesize = 256;
 uint64_t get_phys_virt = ~0ULL;
 uint32_t get_phys_phys;
 
+/* Chains of linked blocks: what a link stub tests (mem.h). Set by the
+   hooks in every build; only the new recompiler reads it. */
+mem_chain_signal_t mem_chain_signal;
+
 int mem_a20_key     = 0;
 int mem_a20_alt     = 0;
 int mem_a20_chipset = 0;
@@ -221,9 +225,18 @@ resetreadlookup(void)
     mem_get_phys_forget();
 }
 
+#if defined(USE_DYNAREC) && defined(CODEGEN_CHAIN)
+#    define LINKS_DROP() codegen_links_drop_all()
+#else
+#    define LINKS_DROP()
+#endif
+
+/* Memory changed under the processor, or its translations did: every link
+   goes. */
 void
 flushmmucache(void)
 {
+    LINKS_DROP();
     mem_get_phys_forget();
     for (uint16_t c = 0; c < 512; c++) {
         if (readlookup[c] != (int) 0xffffffff) {
@@ -276,6 +289,7 @@ flushmmucache_pc(void)
 void
 flushmmucache_nopc(void)
 {
+    LINKS_DROP();
     mem_get_phys_forget();
     for (uint16_t c = 0; c < 512; c++) {
         if (readlookup[c] != (int) 0xffffffff) {
@@ -1954,6 +1968,22 @@ page_remove_from_evict_list(page_t *page)
     purgeable_page_count--;
 }
 
+#    ifdef CODEGEN_CHAIN
+/* A write changed compiled code on the page. A link skips the dirty test a
+   dispatch makes, so every link goes at the loop's next look, and a running
+   chain leaves at its next link. */
+static __inline void
+mem_page_code_written(const page_t *p, uint64_t mask, int byte_offset, uint64_t bm0, uint64_t bm1)
+{
+    if (!p->block && !p->block_2)
+        return;
+    if (!((p->code_present_mask & mask) || (p->byte_code_present_mask[byte_offset] & bm0) ||
+          (bm1 && (p->byte_code_present_mask[byte_offset + 1] & bm1))))
+        return;
+    mem_chain_code(MEM_CHAIN_CODE_WRITTEN);
+}
+#    endif
+
 void
 mem_write_ramb_page(uint32_t addr, uint8_t val, page_t *page)
 {
@@ -1976,6 +2006,9 @@ mem_write_ramb_page(uint32_t addr, uint8_t val, page_t *page)
         page->byte_dirty_mask[byte_offset] |= byte_mask;
         if ((page->byte_code_present_mask[byte_offset] & byte_mask) && !page_in_evict_list(page))
             page_add_to_evict_list(page);
+#    ifdef CODEGEN_CHAIN
+        mem_page_code_written(page, mask, byte_offset, byte_mask, 0);
+#    endif
     }
 }
 
@@ -2011,6 +2044,9 @@ mem_write_ramw_page(uint32_t addr, uint16_t val, page_t *page)
 
         if ((page->byte_code_present_mask[byte_offset] & byte_mask) && !page_in_evict_list(page))
             page_add_to_evict_list(page);
+#    ifdef CODEGEN_CHAIN
+        mem_page_code_written(page, mask, byte_offset, byte_mask, ((addr & PAGE_BYTE_MASK_MASK) == PAGE_BYTE_MASK_MASK) ? 1 : 0);
+#    endif
     }
 }
 
@@ -2036,13 +2072,17 @@ mem_write_raml_page(uint32_t addr, uint32_t val, page_t *page)
         page->byte_dirty_mask[byte_offset] |= byte_mask;
         if (!page_in_evict_list(page) && ((page->code_present_mask & mask) || (page->byte_code_present_mask[byte_offset] & byte_mask)))
             page_add_to_evict_list(page);
+        uint64_t byte_mask_2 = 0;
         if ((addr & PAGE_BYTE_MASK_MASK) > (PAGE_BYTE_MASK_MASK - 3)) {
-            uint32_t byte_mask_2 = 0xf >> (4 - (addr & 3));
+            byte_mask_2 = 0xf >> (4 - (addr & 3));
 
             page->byte_dirty_mask[byte_offset + 1] |= byte_mask_2;
             if ((page->byte_code_present_mask[byte_offset + 1] & byte_mask_2) && !page_in_evict_list(page))
                 page_add_to_evict_list(page);
         }
+#    ifdef CODEGEN_CHAIN
+        mem_page_code_written(page, mask, byte_offset, byte_mask, byte_mask_2);
+#    endif
     }
 }
 
@@ -2238,6 +2278,10 @@ mem_invalidate_range(uint32_t start_addr, uint32_t end_addr)
 
             if (!page_in_evict_list(page))
                 page_add_to_evict_list(page);
+#    ifdef CODEGEN_CHAIN
+            if (page->block || page->block_2)
+                mem_chain_code(MEM_CHAIN_CODE_WRITTEN);
+#    endif
         }
     }
 }

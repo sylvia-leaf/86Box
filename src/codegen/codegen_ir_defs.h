@@ -49,6 +49,10 @@
 #define UOP_LOAD_SEG (UOP_TYPE_PARAMS_REGS | UOP_TYPE_PARAMS_POINTER | 0x14 | UOP_TYPE_BARRIER)
 /*UOP_JMP - jump to ptr*/
 #define UOP_JMP (UOP_TYPE_PARAMS_POINTER | 0x15 | UOP_TYPE_ORDER_BARRIER)
+/*UOP_JMP_LINK - leave the block through a link stub: to the block at the
+  PC just stored when one is linked and nothing needs the dispatcher, else
+  to p (codegen_exit_rout)*/
+#define UOP_JMP_LINK (UOP_TYPE_PARAMS_POINTER | 0x1c | UOP_TYPE_ORDER_BARRIER)
 /*UOP_CALL_FUNC - call instruction handler at p, dest_reg = return value*/
 #define UOP_CALL_FUNC_RESULT (UOP_TYPE_PARAMS_REGS | UOP_TYPE_PARAMS_POINTER | 0x16 | UOP_TYPE_BARRIER)
 /*UOP_JMP_DEST - jump to ptr*/
@@ -938,6 +942,7 @@ extern void codegen_fpu_guard_int_indefinite(ir_data_t *ir, uint32_t fetchdat, u
 #endif
 
 #define uop_JMP(ir, p)                                                   uop_gen_pointer(UOP_JMP, ir, p)
+#define uop_JMP_LINK(ir)                                                 uop_gen_pointer(UOP_JMP_LINK, ir, codegen_exit_rout)
 #define uop_JMP_DEST(ir)                                                 uop_gen(UOP_JMP_DEST, ir)
 
 #define uop_LOAD_SEG(ir, p, src_reg)                                     uop_gen_reg_src_pointer(UOP_LOAD_SEG, ir, src_reg, p)

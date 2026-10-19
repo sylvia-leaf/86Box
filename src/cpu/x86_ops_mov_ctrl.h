@@ -225,6 +225,9 @@ opMOV_CRx_r_a16(uint32_t fetchdat)
                 cpu_cache_int_enabled = 0;
             if (hascache && ((cr0 ^ old_cr0) & (1 << 30)))
                 cpu_update_waitstates();
+            /* The cache off or on: blocks run interpreted or compiled */
+            if ((cr0 ^ old_cr0) & (1 << 30))
+                mem_chain_break();
             if (cr0 & 1)
                 cpu_cur_status |= CPU_STATUS_PMODE;
             else
@@ -318,6 +321,9 @@ opMOV_CRx_r_a32(uint32_t fetchdat)
                 cpu_cache_int_enabled = 0;
             if (hascache && ((cr0 ^ old_cr0) & (1 << 30)))
                 cpu_update_waitstates();
+            /* The cache off or on: blocks run interpreted or compiled */
+            if ((cr0 ^ old_cr0) & (1 << 30))
+                mem_chain_break();
             if (cr0 & 1)
                 cpu_cur_status |= CPU_STATUS_PMODE;
             else
@@ -382,6 +388,8 @@ opMOV_DRx_r_a16(uint32_t fetchdat)
     switch (cpu_reg) {
         case 0 ... 3:
             dr[cpu_reg] = cpu_state.regs[cpu_rm].l;
+            /* Breakpoints are checked where chains start: links go */
+            mem_chain_code(MEM_CHAIN_CODE_RELINK);
             break;
         case 4:
             if (cr4 & 0x8) {
@@ -400,6 +408,7 @@ opMOV_DRx_r_a16(uint32_t fetchdat)
             fallthrough;
         case 7:
             dr[7] = (cpu_state.regs[cpu_rm].l | 0x00000400) & (is586 ? ~0x0000d800 : ~0);
+            mem_chain_code(MEM_CHAIN_CODE_RELINK);
             break;
         default:
             x86illegal();
@@ -431,6 +440,8 @@ opMOV_DRx_r_a32(uint32_t fetchdat)
     switch (cpu_reg) {
         case 0 ... 3:
             dr[cpu_reg] = cpu_state.regs[cpu_rm].l;
+            /* Breakpoints are checked where chains start: links go */
+            mem_chain_code(MEM_CHAIN_CODE_RELINK);
             break;
         case 4:
             if (cr4 & 0x8) {
@@ -449,6 +460,7 @@ opMOV_DRx_r_a32(uint32_t fetchdat)
             fallthrough;
         case 7:
             dr[7] = (cpu_state.regs[cpu_rm].l | 0x00000400) & (is586 ? ~0x0000d800 : ~0);
+            mem_chain_code(MEM_CHAIN_CODE_RELINK);
             break;
         default:
             x86illegal();

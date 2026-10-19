@@ -429,6 +429,35 @@ extern void flushmmucache_write(void);
 extern void flushmmucache_pc(void);
 extern void flushmmucache_nopc(void);
 
+/* Chains of linked blocks (the new recompiler): a link stub leaves for the
+   dispatcher while this word is not 0. brk: something the loop must look
+   at (port I/O, an interrupt pending, NMI, SMI, a sooner timer, a reset);
+   code: compiled code was written (WRITTEN), or every link must go
+   (RELINK). Set from anywhere; harmless when nothing is chained. */
+typedef union mem_chain_signal_t {
+    struct {
+        uint8_t brk;
+        uint8_t code;
+        uint8_t pad[2];
+    };
+    uint32_t pending;
+} mem_chain_signal_t;
+extern mem_chain_signal_t mem_chain_signal;
+#define MEM_CHAIN_CODE_WRITTEN 1
+#define MEM_CHAIN_CODE_RELINK  2
+
+static __inline void
+mem_chain_break(void)
+{
+    __atomic_store_n(&mem_chain_signal.brk, 1, __ATOMIC_RELAXED);
+}
+
+static __inline void
+mem_chain_code(uint8_t why)
+{
+    __atomic_fetch_or(&mem_chain_signal.code, why, __ATOMIC_SEQ_CST);
+}
+
 extern void mem_debug_check_addr(uint32_t addr, int write);
 
 extern void mem_a20_init(void);
