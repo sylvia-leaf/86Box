@@ -45,6 +45,7 @@ add_library(sio OBJECT
     sio_um8669f.c
     sio_vl82c113.c
     sio_vt82c686.c
+    sio_name.c
 )
 
 if(SIO_DETECT)

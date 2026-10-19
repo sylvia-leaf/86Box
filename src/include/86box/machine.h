@@ -93,6 +93,7 @@
 #define MACHINE_LPT_PRI           0x0000000000000100ULL /* sys has int pri LPT */
 #define MACHINE_LPT_SEC           0x0000000000000200ULL /* sys has int sec LPT */
 #define MACHINE_LPT_TER           0x0000000000000400ULL /* sys has int ter LPT */
+#define MACHINE_LPT_QUA           0x0000004000000000ULL /* sys has int qua LPT */
 #define MACHINE_PS2_KBC           0x0000000000000800ULL /* sys has a PS/2 keyboard controller */
                                                         /* this is separate from having PS/2 ports */
 #define MACHINE_UART_PRI          0x0000000000001000ULL /* sys has int pri UART */
@@ -477,6 +478,12 @@ extern const device_t *machine_get_nvr_device(int m);
 extern const device_t *machine_get_sio_device(int m);
 extern const device_t *machine_get_device(int m);
 extern const device_t *machine_get_fdc_device(int m);
+/* The chip the machine's own floppy controller is: its Super I/O, or the
+   controller on its own; empty where the machine has neither. */
+extern void            machine_get_fdc_chip_name(int m, char *name, size_t len);
+extern int             machine_get_fdc_drives(int m);
+extern int             machine_get_serial_ports(int m);
+extern int             machine_get_parallel_ports(int m);
 extern const device_t *machine_get_vid_device(int m);
 extern const device_t *machine_get_tablet_device(int m);
 extern const device_t *machine_get_snd_device(int m);

@@ -142,6 +142,26 @@ fdc_card_getdevice(int card)
     return (fdc_cards[card].device);
 }
 
+/* The drives a controller has connectors for. A 34-pin cable takes two,
+   so most controllers have two; four where there is a second connector:
+   the external DC-37 of IBM's PC/XT adapter and the CompatiCard I and IV,
+   a second 34-pin header on the DTK PII-158B and on each controller of the
+   Monster FDC. No 765-family controller selects more than four. */
+int
+fdc_device_drives(const device_t *dev)
+{
+    static const device_t *four[] = {
+        &fdc_xt_device, &fdc_compaticard_i_device, &fdc_compaticard_iv_device, &fdc_pii158b_device, &fdc_monster_device
+    };
+
+    for (size_t i = 0; i < (sizeof(four) / sizeof(four[0])); i++) {
+        if (dev == four[i])
+            return 4;
+    }
+
+    return 2;
+}
+
 int
 fdc_card_has_config(int card)
 {

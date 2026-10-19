@@ -45,5 +45,6 @@ extern int             fdc_card_get_from_internal_name(char *s);
 extern const device_t *fdc_card_getdevice(int card);
 extern int             fdc_card_has_config(int card);
 extern int             fdc_card_available(int card);
+extern int             fdc_device_drives(const device_t *dev);
 
 #endif /*EMU_FDC_EXT_H*/
