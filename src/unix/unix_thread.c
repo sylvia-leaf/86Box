@@ -40,7 +40,11 @@ thread_create_named(void (*thread_rout)(void *param), void *param, const char *n
     thrparam->thread_rout  = thread_rout;
     thrparam->param        = param;
 
-    pthread_create(thread, NULL, (void *(*) (void *) ) thread_run_wrapper, thrparam);
+    if (pthread_create(thread, NULL, (void *(*) (void *) ) thread_run_wrapper, thrparam)) {
+        free(thrparam);
+        free(thread);
+        return NULL;
+    }
     plat_set_thread_name(thread, name);
 
     return thread;
