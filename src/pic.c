@@ -420,6 +420,13 @@ pic_acknowledge(pic_t *dev)
     int pic_int     = dev->interrupt & 7;
     int pic_int_num = 1 << pic_int;
 
+    /* "A normal IRQ7 interrupt will set the corresponding ISR bit, a default
+       IRQ7 won't" (82374EB 9.6.7). */
+    if (dev->default_irq7) {
+        dev->default_irq7 = 0;
+        return;
+    }
+
     dev->isr |= pic_int_num;
     if (!pic_level_triggered(dev, pic_int) || (dev->lines[pic_int] == 0))
         dev->irr &= ~pic_int_num;
@@ -1137,17 +1144,20 @@ picinterrupt(void)
                 /* If we are on AT, IRQ 2 is pending, and we cannot find a pending IRQ on PIC 2, fatal out. */
                 // fatal("IRQ %i pending on AT without a pending IRQ on PIC %i (normal)\n", pic.interrupt, pic.interrupt);
                 // exit(-1);
-                /* Error correction mechanism: Do a supurious IRQ 15 (spurious IRQ 7 on PIC 2). */
-                pic.slaves[pic.interrupt]->int_pending = 1;
-                pic.slaves[pic.interrupt]->interrupt = 0x07;
-            } else
-                pic.interrupt |= 0x40; /* Mark slave pending. */
+                /* Error correction mechanism: Do a supurious IRQ 15 (spurious IRQ 7 on PIC 2),
+                   through the cascade, the slave's ISR left alone. */
+                pic.slaves[pic.interrupt]->int_pending  = 1;
+                pic.slaves[pic.interrupt]->interrupt    = 0x07;
+                pic.slaves[pic.interrupt]->default_irq7 = 1;
+            }
+            pic.interrupt |= 0x40; /* Mark slave pending. */
         }
     } else {
         /* pic.int_pending was somehow cleared despite the fact we made it here,
-           do a spurious IRQ 7. */
-        pic.int_pending = 1;
-        pic.interrupt = 0x07;
+           do a spurious IRQ 7: the default IRQ7, which sets no ISR bit. */
+        pic.int_pending  = 1;
+        pic.interrupt    = 0x07;
+        pic.default_irq7 = 1;
     }
 
     /* The PS/2 watchdog's gate falls when IRQ 0 is acknowledged. Only the
