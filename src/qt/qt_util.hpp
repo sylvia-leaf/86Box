@@ -29,6 +29,8 @@ void setWin11RoundedCorners(WId hwnd, bool enable);
 void applyColorScheme(void);
 #    endif
 #endif
+QString machineDirectory();
+QString newImagePath(const QString &name);
 QString currentUuid();
 QString generateUuid(const QString &path);
 void    storeCurrentUuid();
