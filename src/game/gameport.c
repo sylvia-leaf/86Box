@@ -758,13 +758,19 @@ static const device_config_t tmacm_config[] = {
   // clang-format on
 };
 
+static void
+tmacm_close(void *priv)
+{
+    free(priv);
+}
+
 const device_t gameport_tm_acm_device = {
     .name          = "Game port (ThrustMaster ACM)",
     .internal_name = "gameport_tmacm",
     .flags         = DEVICE_ISA,
     .local         = 0,
     .init          = tmacm_init,
-    .close         = NULL,
+    .close         = tmacm_close,
     .reset         = NULL,
     .available     = NULL,
     .speed_changed = NULL,
