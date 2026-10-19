@@ -3578,17 +3578,21 @@ typedef struct ide_unit_t {
     uint32_t boards; /* mask */
 } ide_unit_t;
 
-/* A generic unit whose boards are given in bits 16-27 of local. */
-#define IDE_UNIT_BOARD_MASK 0x100
+/* A generic unit whose board is given in bits 16-20 of local. */
+#define IDE_UNIT_BOARD_INDEX 0x100
 
 /* The boards of a generic unit: local 0-5 the primary (and secondary),
    8-0x0d the tertiary (and quaternary), bit 0 being the second board; or
-   the mask in bits 16-27, for a PCI card's boards (ide_pci_boards_init()). */
+   the board in bits 16-20, for one of a PCI card's boards
+   (ide_pci_boards_init() adds a unit for each). A mask of all IDE_BUS_MAX
+   boards would not fit above bit 16 of a 32-bit host's local. */
 static uint32_t
 ide_unit_boards(const device_t *info)
 {
-    if (info->local & IDE_UNIT_BOARD_MASK)
-        return (info->local >> 16) & 0xfff;
+    if (info->local & IDE_UNIT_BOARD_INDEX) {
+        const unsigned board = (unsigned) (info->local >> 16);
+        return (board < IDE_BUS_MAX) ? (1u << board) : 0;
+    }
 
     const int first = (int) (((info->local & 0xff) >> 3) << 1);
 
@@ -3627,7 +3631,7 @@ static const device_t ide_pci_boards_device = {
     .name          = "PCI IDE Controller (Card Channels)",
     .internal_name = "ide_pci_boards",
     .flags         = DEVICE_PCI,
-    .local         = IDE_UNIT_BOARD_MASK | 0x05,
+    .local         = IDE_UNIT_BOARD_INDEX | 0x05,
     .init          = ide_init,
     .close         = ide_close,
     .reset         = ide_reset,
@@ -3642,8 +3646,10 @@ static const device_t ide_pci_boards_device = {
 void
 ide_pci_boards_init(uint32_t boards)
 {
-    if (boards != 0)
-        device_add_params(&ide_pci_boards_device, (void *) (uintptr_t) ((boards & 0xffc) << 16));
+    for (unsigned board = 2; board < IDE_BUS_MAX; ++board) {
+        if (boards & (1u << board))
+            device_add_params(&ide_pci_boards_device, (void *) ((uintptr_t) board << 16));
+    }
 }
 
 static void

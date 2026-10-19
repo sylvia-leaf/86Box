@@ -480,7 +480,8 @@ Harddrives::conflictText(int index, const bus_owner_t *owners, int count, const 
             boards.append(QString::number(board));
     }
 
-    return QObject::tr("%1: channels %2 in use").arg(label, boards.join(", "));
+    return (boards.size() == 1) ? QObject::tr("%1: channel %2 in use").arg(label, boards.first()) :
+                                  QObject::tr("%1: channels %2 in use").arg(label, boards.join(", "));
 }
 
 /* Name each drive's bus and channel again, from the bus and channel kept

@@ -47,6 +47,7 @@ extern "C" {
 }
 
 #include <QStandardItemModel>
+#include <QScrollArea>
 
 #include "qt_settings_completer.hpp"
 
@@ -200,7 +201,16 @@ Settings::placePage(int index, QWidget *page)
 {
     QWidget *placeholder = ui->stackedWidget->widget(index);
 
-    ui->stackedWidget->insertWidget(index, page);
+    /* The Storage page's twelve controller rows scroll. */
+    QWidget *shown = page;
+    if (index == PAGE_STORAGE) {
+        auto *scroll = new QScrollArea(this);
+        scroll->setFrameShape(QFrame::NoFrame);
+        scroll->setWidgetResizable(true);
+        scroll->setWidget(page);
+        shown = scroll;
+    }
+    ui->stackedWidget->insertWidget(index, shown);
     ui->stackedWidget->removeWidget(placeholder);
     delete placeholder;
 }

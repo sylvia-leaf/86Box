@@ -67,7 +67,7 @@ private:
     /* 1 channel, 2 devices per channel, 8 bits per device = 16 bits. */
     uint64_t xta_tracking { 0 };
     /* 16 channels (prepatation for that weird IDE card), 2 devices per channel, 8 bits per device = 256 bits. */
-    uint64_t ide_tracking[4] { 0, 0, 0, 0 };
+    uint64_t ide_tracking[8] {}; /* Up to 64 IDE devices, eight tracking bits each. */
     /* 9 buses (rounded upwards to 16for future-proofing), 16 devices per bus,
        8 bits per device (future-proofing) = 2048 bits. */
     uint64_t scsi_tracking[32] { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
