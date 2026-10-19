@@ -967,6 +967,11 @@ dma_ext_mode_write(uint16_t addr, uint8_t val, UNUSED(void *priv))
     if (addr == 0x4d6)
         channel |= 4;
 
+    /* "Because Channel 4 is not used, the DMA controller does not support
+       extended registers for Channel 4" (82374EB 3.2.3). */
+    if (channel == 4)
+        return;
+
     dma[channel].ext_mode   = val & 0x7c;
     dma_chain_mode[channel] = 0; /* so does one to the extended mode register (3.2.17) */
 
