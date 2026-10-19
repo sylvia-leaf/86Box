@@ -80,6 +80,18 @@ host_reg_def_t codegen_host_fp_reg_list[CODEGEN_HOST_FP_REGS] = {
     { REG_V15, 0}
 };
 
+/*The lookup table, fetched each time with one load off X29 (&cpu_state, in
+  every block): cpu_state keeps its address (lookup2_r, lookup2_w).*/
+static void
+load_lookup_table(codeblock_t *block, int reg, uintptr_t **field)
+{
+    intptr_t off = (intptr_t) field - (intptr_t) &cpu_state;
+
+    if (!in_range12_q(off))
+        fatal("load_lookup_table - cpu_state field out of range\n");
+    host_arm64_LDR_IMM_X(block, reg, REG_CPUSTATE, off);
+}
+
 /*ea_rule: take the direct load whenever the address is at most 0xffc into
   its page, aligned or not, as the interpreter's eal_r path does; readmemwl
   and readmemll charge timing_misaligned only on the slow path.*/
@@ -92,7 +104,7 @@ build_load_routine(codeblock_t *block, int size, int is_float, int ea_rule)
     /*In - W0 = address
       Out - W0 = data, W1 = abrt*/
     /*MOV W1, W0, LSR #12
-      MOV X2, #readlookup2
+      LDR X2, cpu_state.lookup2_r
       LDR X1, [X2, X1, LSL #3]
       CMP X1, #-1
       BEQ +
@@ -107,7 +119,7 @@ build_load_routine(codeblock_t *block, int size, int is_float, int ea_rule)
     */
     codegen_alloc(block, 80);
     host_arm64_MOV_REG_LSR(block, REG_W1, REG_W0, 12);
-    host_arm64_MOVX_IMM(block, REG_X2, (uint64_t) readlookup2);
+    load_lookup_table(block, REG_X2, &cpu_state.lookup2_r);
     host_arm64_LDRX_REG_LSL3(block, REG_X1, REG_X2, REG_X1);
     if (ea_rule) {
         host_arm64_AND_IMM(block, REG_W2, REG_W0, 0xfff);
@@ -164,7 +176,7 @@ build_store_routine(codeblock_t *block, int size, int is_float)
     /*In - R0 = address, R1 = data
       Out - R1 = abrt*/
     /*MOV W2, W0, LSR #12
-      MOV X3, #writelookup2
+      LDR X3, cpu_state.lookup2_w
       LDR X2, [X3, X2, LSL #3]
       CMP X2, #-1
       BEQ +
@@ -179,7 +191,7 @@ build_store_routine(codeblock_t *block, int size, int is_float)
     */
     codegen_alloc(block, 80);
     host_arm64_MOV_REG_LSR(block, REG_W2, REG_W0, 12);
-    host_arm64_MOVX_IMM(block, REG_X3, (uint64_t) writelookup2);
+    load_lookup_table(block, REG_X3, &cpu_state.lookup2_w);
     host_arm64_LDRX_REG_LSL3(block, REG_X2, REG_X3, REG_X2);
     if (size != 1) {
         host_arm64_TST_IMM(block, REG_W0, size - 1);
@@ -847,6 +859,8 @@ codegen_backend_init(void)
     block->head_mem_block = codegen_allocator_allocate(NULL, block_current);
     block->data           = codeblock_allocator_get_ptr(block->head_mem_block);
     block_write_data      = block->data;
+    cpu_state.lookup2_r   = readlookup2;
+    cpu_state.lookup2_w   = writelookup2;
     build_loadstore_routines(block);
 
     codegen_fp_round = &block_write_data[block_pos];

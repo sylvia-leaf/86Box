@@ -445,6 +445,12 @@ typedef struct {
        permanent register of the recompiler, for the division helper
        (x87_dyn_fdiv, 386_dynarec.c) */
     double x87_operand;
+
+    /* The lookup tables (readlookup2, writelookup2), where the ARM64
+       memory routines reach them with one load off cpu_state; set by the
+       backend's init */
+    uintptr_t *lookup2_r;
+    uintptr_t *lookup2_w;
 #endif
 
     /* Chains of linked blocks (the new recompiler): the signal word a link
