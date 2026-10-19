@@ -1063,11 +1063,26 @@ exec386_dynarec(int32_t cycs)
             }
 
             if (smi_line) {
+                /* Out of a HLT that left pc on itself: entered with pc past
+                   it and the Auto HALT Restart state, as from within the HLT
+                   (opHLT; Pentium Vol. 3, 20.1.5.2). Not taken, it stays as
+                   it was. */
+                const int halted = cpu_halted;
                 const int before = in_smm;
 
-                enter_smm_check(0);
+                if (halted)
+                    cpu_state.pc++;
+                enter_smm_check(halted);
                 if (in_smm != before)
                     cpu_halted = 0;
+                else if (halted && before) {
+                    /* An SMI latched in SMM still ends a HLT there: "INTR,
+                       NMI, and SMI# are the only events that take the CPU
+                       out of HALT" in SMM (Pentium Vol. 3, 20.1.6.3), as
+                       opHLT has it. */
+                    cpu_halted = 0;
+                } else if (halted)
+                    cpu_state.pc--;
             } else if (nmi && nmi_enable && nmi_mask) {
                 /* Out of a HLT that left pc on itself: "the saved CS:IP (or
                    CS:EIP) value points to the instruction following the HLT
