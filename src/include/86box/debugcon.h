@@ -32,6 +32,15 @@ extern const char *debugcon_help_text(void);
 /* The emulation thread's end, from its loop while paused. */
 extern void debugcon_poll(void);
 
+/* A device's own view: info NAME [N] [ARG...] calls info with the rest of
+   the line, on the emulation thread with the machine paused, and it
+   answers with debugcon_out; with "brief" it answers one line of which
+   one it is. help is its line for the list of views. Several may share a
+   name; N picks among them. */
+extern void debugcon_register(const char *name, const char *help, void (*info)(const char *arg, void *priv), void *priv);
+extern void debugcon_unregister(void *priv);
+extern void debugcon_out(const char *fmt, ...);
+
 #ifdef __cplusplus
 }
 #endif

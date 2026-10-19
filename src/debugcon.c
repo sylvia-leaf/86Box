@@ -63,22 +63,40 @@ static char debugcon_x_fmt  = 'x';
 static int  debugcon_x_size = 4;
 
 static void
-out(const char *fmt, ...)
+out_v(const char *fmt, va_list ap)
 {
-    va_list ap;
-    int     n;
+    int n;
 
     if (debugcon_len >= (DEBUGCON_OUT_MAX - 1))
         return;
 
-    va_start(ap, fmt);
     n = vsnprintf(debugcon_buf + debugcon_len, DEBUGCON_OUT_MAX - debugcon_len, fmt, ap);
-    va_end(ap);
 
     if (n > 0)
         debugcon_len += n;
     if (debugcon_len >= DEBUGCON_OUT_MAX)
         debugcon_len = DEBUGCON_OUT_MAX - 1;
+}
+
+static void
+out(const char *fmt, ...)
+{
+    va_list ap;
+
+    va_start(ap, fmt);
+    out_v(fmt, ap);
+    va_end(ap);
+}
+
+/* The same, for a device's own view (debugcon_register). */
+void
+debugcon_out(const char *fmt, ...)
+{
+    va_list ap;
+
+    va_start(ap, fmt);
+    out_v(fmt, ap);
+    va_end(ap);
 }
 
 /* ---- registers ----------------------------------------------------------- */
@@ -1268,6 +1286,108 @@ cmd_info_desc(const char *name, const x86seg *t, int is_idt)
     }
 }
 
+/* ---- devices' own views ------------------------------------------------- */
+
+/* A device's own view for info NAME: what it registered with, while it
+   is there. */
+#define DEBUGCON_DEVICES_MAX 16
+static struct {
+    char        name[16];
+    const char *help;
+    void (*info)(const char *arg, void *priv);
+    void *priv;
+} debugcon_devices[DEBUGCON_DEVICES_MAX];
+
+void
+debugcon_register(const char *name, const char *help, void (*info)(const char *arg, void *priv), void *priv)
+{
+    for (int i = 0; i < DEBUGCON_DEVICES_MAX; i++) {
+        if (debugcon_devices[i].info == NULL) {
+            snprintf(debugcon_devices[i].name, sizeof(debugcon_devices[i].name), "%s", name);
+            debugcon_devices[i].help = help;
+            debugcon_devices[i].info = info;
+            debugcon_devices[i].priv = priv;
+            return;
+        }
+    }
+}
+
+void
+debugcon_unregister(void *priv)
+{
+    for (int i = 0; i < DEBUGCON_DEVICES_MAX; i++) {
+        if (debugcon_devices[i].priv == priv)
+            memset(&debugcon_devices[i], 0, sizeof(debugcon_devices[i]));
+    }
+}
+
+/* info NAME [N] ...: the device registered as NAME, its Nth if there are
+   several (from 0; the first if no number). Answers whether one had the
+   name. */
+static int
+debugcon_device_info(const char *word, const char *arg)
+{
+    int want   = -1;
+    int seen   = 0;
+    int number = 0;
+
+    for (int i = 0; i < DEBUGCON_DEVICES_MAX; i++) {
+        if ((debugcon_devices[i].info != NULL) && !strcmp(debugcon_devices[i].name, word))
+            number++;
+    }
+    if (!number)
+        return 0;
+
+    arg = skip_ws(arg);
+    if (isdigit((unsigned char) *arg)) {
+        want = atoi(arg);
+        while (isdigit((unsigned char) *arg))
+            arg++;
+        arg = skip_ws(arg);
+    } else if (number == 1)
+        want = 0;
+
+    /* Several and no number: each one's line of who it is, and how to
+       pick. */
+    if (want < 0) {
+        for (int i = 0; i < DEBUGCON_DEVICES_MAX; i++) {
+            if ((debugcon_devices[i].info != NULL) && !strcmp(debugcon_devices[i].name, word)) {
+                out("%s %i: ", word, seen++);
+                debugcon_devices[i].info("brief", debugcon_devices[i].priv);
+            }
+        }
+        out("info %s N ... for one of them.\n", word);
+        return 1;
+    }
+    for (int i = 0; i < DEBUGCON_DEVICES_MAX; i++) {
+        if ((debugcon_devices[i].info != NULL) && !strcmp(debugcon_devices[i].name, word)) {
+            if (seen++ == want) {
+                debugcon_devices[i].info(arg, debugcon_devices[i].priv);
+                return 1;
+            }
+        }
+    }
+    out("There are %i %s, numbered from 0.\n", number, word);
+    return 1;
+}
+
+/* The views there are, each name's help line once. */
+static void
+debugcon_device_help(void)
+{
+    for (int i = 0; i < DEBUGCON_DEVICES_MAX; i++) {
+        int dup = 0;
+
+        if (debugcon_devices[i].info == NULL)
+            continue;
+        for (int j = 0; j < i; j++)
+            if ((debugcon_devices[j].info != NULL) && !strcmp(debugcon_devices[j].name, debugcon_devices[i].name))
+                dup = 1;
+        if (!dup)
+            out("%s\n", debugcon_devices[i].help);
+    }
+}
+
 static void
 cmd_info(const char *arg)
 {
@@ -1302,8 +1422,10 @@ cmd_info(const char *arg)
         cmd_info_desc("GDT", &gdt, 0);
     else if (IS("idt", 1))
         cmd_info_desc("IDT", &idt, 1);
-    else
+    else if (!debugcon_device_info(word, arg)) {
         out("info what? registers, float, gdt, idt, mem, pic, pit, dma, pci, board, devices.\n");
+        debugcon_device_help();
+    }
 #undef IS
 }
 
@@ -1343,6 +1465,8 @@ static const char debugcon_help[] =
     "info pci                   every PCI function's configuration space\n"
     "info board                 chipset and super I/O registers\n"
     "info devices               every device on the machine\n"
+    "info NAME [N] [WHAT]       a device's own view, the Nth of several; info alone\n"
+    "                           lists the views this machine has\n"
     "p[/x|d|u|o|t|c] VALUE      print a value (numbers, $registers, + and -)\n"
     "x/NFU ADDRESS              examine memory: N units, F = x d u o c,\n"
     "                           U = b (byte) h (2) w (4) g (8)\n"
