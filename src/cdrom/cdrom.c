@@ -3517,7 +3517,7 @@ cdrom_hard_reset(void)
     for (uint8_t i = 0; i < CDROM_NUM; i++) {
         cdrom_t *dev = &cdrom[i];
 
-        if (dev->bus_type) {
+        if (dev->bus_type && dev->bus_type != CDROM_BUS_DISCONNECTED) {
             dev->id       = i;
 
             const char *vendor = cdrom_drive_types[dev->type].vendor;

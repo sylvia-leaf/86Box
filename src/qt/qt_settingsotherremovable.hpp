@@ -17,6 +17,7 @@ public:
     void reloadBusChannels_MO();
     void reloadBusChannels_RDisk();
     void reloadBusChannels_Tape();
+    void refreshChannelNames();
 
     int  changed();
 

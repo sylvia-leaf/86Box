@@ -413,6 +413,9 @@ SettingsBusTracking::device_track(int set, uint8_t dev_type, int bus, int channe
     int      element;
     uint64_t mask;
 
+    if (channel == CHANNEL_NONE)
+        return;
+
     switch (bus) {
         case CDROM_BUS_HITACHI:
             mask = ((uint64_t) dev_type) << ((uint64_t) ((channel << 3) & 0x3f));

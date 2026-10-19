@@ -1694,6 +1694,13 @@ load_hard_disks(void)
                &hdd[c].spt, &hdd[c].hpc, &hdd[c].tracks, (int *) &hdd[c].wp, s);
 
         hdd[c].bus_type = hdd_string_to_bus(s, 0);
+        sprintf(temp, "hdd_%02i_disconnected_bus", c + 1);
+        hdd[c].disconnected_bus = 0;
+        if (hdd[c].bus_type == HDD_BUS_DISCONNECTED) {
+            hdd[c].disconnected_bus = hdd_string_to_bus(ini_section_get_string(cat, temp, "ide"), 0);
+            if (!hdd[c].disconnected_bus || hdd[c].disconnected_bus == HDD_BUS_DISCONNECTED)
+                hdd[c].disconnected_bus = hdd_string_to_bus("ide", 0);
+        }
         memset(hdd[c].custom_vendor, 0, sizeof(hdd[c].custom_vendor));
         memset(hdd[c].custom_model, 0, sizeof(hdd[c].custom_model));
         memset(hdd[c].custom_version, 0, sizeof(hdd[c].custom_version));
@@ -1739,6 +1746,7 @@ load_hard_disks(void)
                 max_tracks = 266305;
                 break;
 
+            case HDD_BUS_DISCONNECTED:
             case HDD_BUS_SCSI:
             case HDD_BUS_ATAPI:
                 max_spt    = 255;
@@ -2022,6 +2030,13 @@ load_floppy_and_cdrom_drives(void)
             sscanf("0, none", "%01u, %s", &d, s);
         cdrom[c].sound_on = d;
         cdrom[c].bus_type = hdd_string_to_bus(s, 1);
+        sprintf(temp, "cdrom_%02i_disconnected_bus", c + 1);
+        cdrom[c].disconnected_bus = 0;
+        if (cdrom[c].bus_type == CDROM_BUS_DISCONNECTED) {
+            cdrom[c].disconnected_bus = hdd_string_to_bus(ini_section_get_string(cat, temp, "atapi"), 1);
+            if (!cdrom[c].disconnected_bus || cdrom[c].disconnected_bus == CDROM_BUS_DISCONNECTED)
+                cdrom[c].disconnected_bus = hdd_string_to_bus("atapi", 1);
+        }
 
         sprintf(temp, "cdrom_%02i_speed", c + 1);
         cdrom[c].speed = ini_section_get_int(cat, temp, 8);
@@ -2047,6 +2062,11 @@ load_floppy_and_cdrom_drives(void)
             cdrom_set_type(c, cdrom_type);
         if (cdrom_get_type(c) >= count)
             cdrom_set_type(c, count - 1);
+        if (cdrom[c].bus_type == CDROM_BUS_DISCONNECTED &&
+            cdrom_drive_types[cdrom_get_type(c)].bus_type != BUS_TYPE_BOTH &&
+            cdrom[c].disconnected_bus != CDROM_BUS_LPT)
+            cdrom[c].disconnected_bus = cdrom_drive_types[cdrom_get_type(c)].bus_type;
+
         if (!strcmp(p, "86cd"))
             ini_section_delete_var(cat, temp);
 
@@ -2221,6 +2241,13 @@ load_other_removable_devices(void)
             sscanf("0, none", "%01u, %s", &rdisk_drives[c].type, s);
         rdisk_drives[c].type++;
         rdisk_drives[c].bus_type = hdd_string_to_bus(s, 1);
+        sprintf(temp, "rdisk_%02i_disconnected_bus", c + 1);
+        rdisk_drives[c].disconnected_bus = 0;
+        if (rdisk_drives[c].bus_type == HDD_BUS_DISCONNECTED) {
+            rdisk_drives[c].disconnected_bus = hdd_string_to_bus(ini_section_get_string(cat, temp, "atapi"), 1);
+            if (!rdisk_drives[c].disconnected_bus || rdisk_drives[c].disconnected_bus == HDD_BUS_DISCONNECTED)
+                rdisk_drives[c].disconnected_bus = hdd_string_to_bus("atapi", 1);
+        }
 
         /* Default values, needed for proper operation of the Settings dialog. */
         rdisk_drives[c].ide_channel = rdisk_drives[c].scsi_device_id = c + 2;
@@ -2326,6 +2353,13 @@ load_other_removable_devices(void)
         } else
             sscanf("0, none", "%01u, %s", &rdisk_drives[c].type, s);
         rdisk_drives[c].bus_type = hdd_string_to_bus(s, 1);
+        sprintf(temp, "rdisk_%02i_disconnected_bus", c + 1);
+        rdisk_drives[c].disconnected_bus = 0;
+        if (rdisk_drives[c].bus_type == HDD_BUS_DISCONNECTED) {
+            rdisk_drives[c].disconnected_bus = hdd_string_to_bus(ini_section_get_string(cat, temp, "atapi"), 1);
+            if (!rdisk_drives[c].disconnected_bus || rdisk_drives[c].disconnected_bus == HDD_BUS_DISCONNECTED)
+                rdisk_drives[c].disconnected_bus = hdd_string_to_bus("atapi", 1);
+        }
 
         /* Default values, needed for proper operation of the Settings dialog. */
         rdisk_drives[c].ide_channel = rdisk_drives[c].scsi_device_id = c + 2;
@@ -2442,6 +2476,13 @@ go_to_mo:
         else
             sscanf("00, none", "%u, %s", &mo_drives[c].type, s);
         mo_drives[c].bus_type = hdd_string_to_bus(s, 1);
+        sprintf(temp, "mo_%02i_disconnected_bus", c + 1);
+        mo_drives[c].disconnected_bus = 0;
+        if (mo_drives[c].bus_type == HDD_BUS_DISCONNECTED) {
+            mo_drives[c].disconnected_bus = hdd_string_to_bus(ini_section_get_string(cat, temp, "atapi"), 1);
+            if (!mo_drives[c].disconnected_bus || mo_drives[c].disconnected_bus == HDD_BUS_DISCONNECTED)
+                mo_drives[c].disconnected_bus = hdd_string_to_bus("atapi", 1);
+        }
 
         /* Default values, needed for proper operation of the Settings dialog. */
         mo_drives[c].ide_channel = mo_drives[c].scsi_device_id = c + 2;
@@ -2547,6 +2588,22 @@ go_to_mo:
         else
             sscanf("00, none", "%u, %s", &tape_drives[c].type, s);
         tape_drives[c].bus_type = hdd_string_to_bus(s, 1);
+        sprintf(temp, "tape_%02i_disconnected_bus", c + 1);
+        tape_drives[c].disconnected_bus = 0;
+        if (tape_drives[c].bus_type == HDD_BUS_DISCONNECTED) {
+            tape_drives[c].disconnected_bus = hdd_string_to_bus(ini_section_get_string(cat, temp, "scsi"), 1);
+            if (!tape_drives[c].disconnected_bus || tape_drives[c].disconnected_bus == HDD_BUS_DISCONNECTED)
+                tape_drives[c].disconnected_bus = hdd_string_to_bus("scsi", 1);
+        }
+
+        if (tape_drives[c].bus_type == HDD_BUS_DISCONNECTED &&
+            tape_drives[c].type < KNOWN_TAPE_DRIVE_TYPES) {
+            const int type = tape_drive_types[tape_drives[c].type].drive_type;
+            if (type == TAPE_DRIVE_TYPE_FDC)
+                tape_drives[c].disconnected_bus = TAPE_BUS_FDC;
+            else if (type == TAPE_DRIVE_TYPE_LPT)
+                tape_drives[c].disconnected_bus = TAPE_BUS_LPT;
+        }
 
         sprintf(temp, "tape_%02i_medium_type", c + 1);
         tape_drives[c].medium_type = ini_section_get_int(cat, temp,
@@ -4359,6 +4416,12 @@ save_hard_disks(void)
 
     memset(temp, 0x00, sizeof(temp));
     for (uint8_t c = 0; c < HDD_NUM; c++) {
+        sprintf(temp, "hdd_%02i_disconnected_bus", c + 1);
+        if (hdd[c].bus_type == HDD_BUS_DISCONNECTED)
+            ini_section_set_string(cat, temp, hdd_bus_to_string(hdd[c].disconnected_bus, 0));
+        else
+            ini_section_delete_var(cat, temp);
+
         sprintf(temp, "hdd_%02i_parameters", c + 1);
         if (hdd_is_valid(c)) {
             p = hdd_bus_to_string(hdd[c].bus_type, 0);
@@ -4436,25 +4499,25 @@ save_hard_disks(void)
         if (!hdd_is_valid(c) ||
             ((hdd[c].bus_type != HDD_BUS_MFM) && (hdd[c].bus_type != HDD_BUS_ESDI) &&
             (hdd[c].bus_type != HDD_BUS_IDE) && (hdd[c].bus_type != HDD_BUS_SCSI) &&
-            (hdd[c].bus_type != HDD_BUS_ATAPI)))
+            (hdd[c].bus_type != HDD_BUS_ATAPI) && (hdd[c].bus_type != HDD_BUS_DISCONNECTED)))
             ini_section_delete_var(cat, temp);
         else
             ini_section_set_string(cat, temp, hdd_preset_get_internal_name(hdd[c].speed_preset));
 
         sprintf(temp, "hdd_%02i_vendor", c + 1);
-        if ((hdd[c].bus_type == HDD_BUS_IDE || hdd[c].bus_type == HDD_BUS_ATAPI || hdd[c].bus_type == HDD_BUS_SCSI) &&
+        if ((hdd[c].bus_type == HDD_BUS_IDE || hdd[c].bus_type == HDD_BUS_ATAPI || hdd[c].bus_type == HDD_BUS_SCSI || hdd[c].bus_type == HDD_BUS_DISCONNECTED) &&
             hdd_preset_is_generic(hdd[c].speed_preset) && hdd[c].custom_vendor[0])
             ini_section_set_string(cat, temp, hdd[c].custom_vendor);
         else
             ini_section_delete_var(cat, temp);
         sprintf(temp, "hdd_%02i_model", c + 1);
-        if ((hdd[c].bus_type == HDD_BUS_IDE || hdd[c].bus_type == HDD_BUS_ATAPI || hdd[c].bus_type == HDD_BUS_SCSI) &&
+        if ((hdd[c].bus_type == HDD_BUS_IDE || hdd[c].bus_type == HDD_BUS_ATAPI || hdd[c].bus_type == HDD_BUS_SCSI || hdd[c].bus_type == HDD_BUS_DISCONNECTED) &&
             hdd_preset_is_generic(hdd[c].speed_preset) && hdd[c].custom_model[0])
             ini_section_set_string(cat, temp, hdd[c].custom_model);
         else
             ini_section_delete_var(cat, temp);
         sprintf(temp, "hdd_%02i_revision", c + 1);
-        if ((hdd[c].bus_type == HDD_BUS_IDE || hdd[c].bus_type == HDD_BUS_ATAPI || hdd[c].bus_type == HDD_BUS_SCSI) &&
+        if ((hdd[c].bus_type == HDD_BUS_IDE || hdd[c].bus_type == HDD_BUS_ATAPI || hdd[c].bus_type == HDD_BUS_SCSI || hdd[c].bus_type == HDD_BUS_DISCONNECTED) &&
             hdd_preset_is_generic(hdd[c].speed_preset) && hdd[c].custom_version[0])
             ini_section_set_string(cat, temp, hdd[c].custom_version);
         else
@@ -4577,12 +4640,19 @@ save_floppy_and_cdrom_drives(void)
         else
             ini_section_set_string(cat, temp, tn);
 
+        sprintf(temp, "cdrom_%02i_disconnected_bus", c + 1);
+        if (cdrom[c].bus_type == CDROM_BUS_DISCONNECTED)
+            ini_section_set_string(cat, temp, hdd_bus_to_string(cdrom[c].disconnected_bus, 1));
+        else
+            ini_section_delete_var(cat, temp);
+
         sprintf(temp, "cdrom_%02i_parameters", c + 1);
         if (cdrom[c].bus_type == 0)
             ini_section_delete_var(cat, temp);
         else {
             /* In case one wants an ATAPI drive on SCSI and vice-versa. */
-            if ((cdrom[c].bus_type != CDROM_BUS_LPT) &&
+            if ((cdrom[c].bus_type != CDROM_BUS_DISCONNECTED) &&
+                (cdrom[c].bus_type != CDROM_BUS_LPT) &&
                 (cdrom_drive_types[cdrom_get_type(c)].bus_type != BUS_TYPE_BOTH) &&
                 (cdrom_drive_types[cdrom_get_type(c)].bus_type != cdrom[c].bus_type))
                 cdrom[c].bus_type = cdrom_drive_types[cdrom_get_type(c)].bus_type;
@@ -4660,6 +4730,12 @@ save_other_removable_devices(void)
     int           c;
 
     for (c = 0; c < RDISK_NUM; c++) {
+        sprintf(temp, "rdisk_%02i_disconnected_bus", c + 1);
+        if (rdisk_drives[c].bus_type == HDD_BUS_DISCONNECTED)
+            ini_section_set_string(cat, temp, hdd_bus_to_string(rdisk_drives[c].disconnected_bus, 1));
+        else
+            ini_section_delete_var(cat, temp);
+
         sprintf(temp, "rdisk_%02i_parameters", c + 1);
         if (rdisk_drives[c].bus_type == 0) {
             ini_section_delete_var(cat, temp);
@@ -4715,6 +4791,12 @@ save_other_removable_devices(void)
     }
 
     for (c = 0; c < MO_NUM; c++) {
+        sprintf(temp, "mo_%02i_disconnected_bus", c + 1);
+        if (mo_drives[c].bus_type == HDD_BUS_DISCONNECTED)
+            ini_section_set_string(cat, temp, hdd_bus_to_string(mo_drives[c].disconnected_bus, 1));
+        else
+            ini_section_delete_var(cat, temp);
+
         sprintf(temp, "mo_%02i_parameters", c + 1);
         if (mo_drives[c].bus_type == 0) {
             ini_section_delete_var(cat, temp);
@@ -4764,6 +4846,12 @@ save_other_removable_devices(void)
     }
 
     for (c = 0; c < TAPE_NUM; c++) {
+        sprintf(temp, "tape_%02i_disconnected_bus", c + 1);
+        if (tape_drives[c].bus_type == HDD_BUS_DISCONNECTED)
+            ini_section_set_string(cat, temp, hdd_bus_to_string(tape_drives[c].disconnected_bus, 1));
+        else
+            ini_section_delete_var(cat, temp);
+
         sprintf(temp, "tape_%02i_parameters", c + 1);
         if (tape_drives[c].bus_type == 0) {
             ini_section_delete_var(cat, temp);

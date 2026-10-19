@@ -126,6 +126,7 @@ typedef struct tape_drive_t {
     };
 
     uint8_t            bus_type;
+    uint8_t            disconnected_bus; /* The interface it keeps while disconnected. */
     uint8_t            bus_mode;
     uint8_t            read_only;
     uint8_t            pad;

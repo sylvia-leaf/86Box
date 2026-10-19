@@ -14,6 +14,7 @@ public:
     explicit SettingsHarddisks(QWidget *parent = nullptr);
     ~SettingsHarddisks();
     void reloadBusChannels();
+    void refreshChannelNames();
 
     int  changed();
 

@@ -818,6 +818,7 @@ HarddiskDialog::on_comboBoxBus_currentIndexChanged(int index)
             max_heads     = 16;
             max_cylinders = 266305;
             break;
+        case HDD_BUS_DISCONNECTED:
         case HDD_BUS_IDE:
             max_sectors   = 255;
             max_heads     = 255;
@@ -871,9 +872,7 @@ HarddiskDialog::on_comboBoxBus_currentIndexChanged(int index)
             break;
     }
 
-    if (chanIdx == 0xFF)
-        chanIdx = 0;
-    ui->comboBoxChannel->setCurrentIndex(chanIdx);
+    ui->comboBoxChannel->setCurrentIndex(ui->comboBoxChannel->findData(chanIdx));
 }
 
 void

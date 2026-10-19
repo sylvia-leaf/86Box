@@ -15,6 +15,7 @@ public:
     explicit SettingsFloppyCDROM(QWidget *parent = nullptr);
     ~SettingsFloppyCDROM();
     void reloadBusChannels();
+    void refreshChannelNames();
 
     int  changed();
 

@@ -3,6 +3,11 @@
 #include <cstdint>
 #include "qt_settings_bus_tracking.hpp"
 
+extern "C" {
+#include <86box/86box.h>
+#include <86box/hdd.h>
+}
+
 class QString;
 class QAbstractItemModel;
 class QComboBox;
@@ -12,6 +17,35 @@ struct bus_owner_t;
 struct ide_conflict_t;
 
 namespace Harddrives {
+/* A drive set to "(Disconnected)" has bus_type HDD_BUS_DISCONNECTED (the
+   same value as CDROM_BUS_DISCONNECTED) and keeps its interface in
+   disconnected_bus. The pages show it as that interface with the
+   "(Disconnected)" channel, CHANNEL_NONE. */
+template <typename Drive>
+uint8_t
+configuredBus(const Drive &drive, uint8_t fallback)
+{
+    if (drive.bus_type != HDD_BUS_DISCONNECTED)
+        return drive.bus_type;
+
+    return drive.disconnected_bus ? drive.disconnected_bus : fallback;
+}
+
+template <typename Drive>
+uint8_t
+configuredChannel(const Drive &drive, uint8_t channel)
+{
+    return (drive.bus_type == HDD_BUS_DISCONNECTED) ? CHANNEL_NONE : channel;
+}
+
+template <typename Drive>
+void
+storeConnection(Drive &drive, uint8_t bus, uint8_t channel)
+{
+    drive.disconnected_bus = (bus && (channel == CHANNEL_NONE)) ? bus : 0;
+    drive.bus_type         = drive.disconnected_bus ? HDD_BUS_DISCONNECTED : bus;
+}
+
 void                        populateBuses(QAbstractItemModel *model);
 void                        populateCDROMBuses(QAbstractItemModel *model);
 void                        populateRemovableBuses(QAbstractItemModel *model);

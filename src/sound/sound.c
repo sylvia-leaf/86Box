@@ -398,7 +398,7 @@ sound_cd_thread(UNUSED(void *param))
             if (!cdaudioon)
                 break;
 
-            if ((cdrom[i].bus_type == CDROM_BUS_DISABLED) ||
+            if ((cdrom[i].bus_type == CDROM_BUS_DISABLED) || (cdrom[i].bus_type == CDROM_BUS_DISCONNECTED) ||
                 (cdrom[i].cd_status != CD_STATUS_PLAYING))
                 continue;
             const int ret = cdrom_audio_callback(&(cdrom[i]), cd_buffer[i],
@@ -629,7 +629,7 @@ sound_init(void)
     }
 
     for (uint8_t i = 0; i < CDROM_NUM; i++) {
-        if (cdrom[i].bus_type != CDROM_BUS_DISABLED)
+        if (cdrom[i].bus_type != CDROM_BUS_DISABLED && cdrom[i].bus_type != CDROM_BUS_DISCONNECTED)
             available_cdrom_drives++;
     }
 
@@ -1177,7 +1177,7 @@ sound_cd_thread_reset(void)
     for (uint8_t i = 0; i < CDROM_NUM; i++) {
         cdrom_stop(&(cdrom[i]));
 
-        if (cdrom[i].bus_type != CDROM_BUS_DISABLED)
+        if (cdrom[i].bus_type != CDROM_BUS_DISABLED && cdrom[i].bus_type != CDROM_BUS_DISCONNECTED)
             available_cdrom_drives++;
     }
 

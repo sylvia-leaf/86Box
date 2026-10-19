@@ -124,6 +124,7 @@ Harddrives::populateSpeeds(QAbstractItemModel *model, SettingsCompleter *sc, int
         case HDD_BUS_IDE:
         case HDD_BUS_ATAPI:
         case HDD_BUS_SCSI:
+        case HDD_BUS_DISCONNECTED:
             num_preset = hdd_preset_get_num();
             break;
 
@@ -192,6 +193,14 @@ Harddrives::populateBusChannels(QAbstractItemModel *model, int bus, SettingsBusT
             busRows         = ((owned > 0) ? owned : 1) * SCSI_ID_MAX;
             subChannelWidth = 2;
             busesToCheck.append(HDD_BUS_SCSI);
+            break;
+        case CDROM_BUS_MITSUMI:
+        case CDROM_BUS_PHILIPS:
+        case CDROM_BUS_CM100:
+        case CDROM_BUS_SONY:
+            /* One drive on the interface. */
+            busRows = 1;
+            busesToCheck.append(bus);
             break;
         case CDROM_BUS_HITACHI:
             shifter = 2;
@@ -266,6 +275,13 @@ Harddrives::populateBusChannels(QAbstractItemModel *model, int bus, SettingsBusT
         }
     }
 
+    if (bus != HDD_BUS_DISABLED) {
+        const int row = model->rowCount();
+        model->insertRow(row);
+        model->setData(model->index(row, 0), QObject::tr("(Disconnected)"));
+        model->setData(model->index(row, 0), CHANNEL_NONE, Qt::UserRole);
+    }
+
     /* Then, not to be picked, each controller left without its channels. */
     if (is_ide) {
         auto *standard = qobject_cast<QStandardItemModel *>(model);
@@ -283,8 +299,14 @@ Harddrives::populateBusChannels(QAbstractItemModel *model, int bus, SettingsBusT
 QString
 Harddrives::BusChannelName(uint8_t bus, uint8_t channel)
 {
+    if (bus != HDD_BUS_DISABLED && channel == CHANNEL_NONE)
+        return QObject::tr("(Disconnected)");
+
     QString busName;
     switch (bus) {
+        case HDD_BUS_DISCONNECTED:
+            busName = QObject::tr("(Disconnected)");
+            break;
         case HDD_BUS_DISABLED:
             busName = QString(QObject::tr("Disabled"));
             break;
