@@ -276,6 +276,7 @@ checkio(uint32_t port, int mask)
 #    include "x86_ops_prefix.h"
 #endif
 #ifdef IS_DYNAREC
+#    include "x86_rep_fast.h"
 #    include "x86_ops_rep_dyn.h"
 #else
 #    ifdef OPS_286_386
@@ -283,6 +284,7 @@ checkio(uint32_t port, int mask)
 #        include "x86_ops_rep_2386.h"
 #    else
 #        include "x86_ops_rep_286.h"
+#        include "x86_rep_fast.h"
 #        include "x86_ops_rep.h"
 #    endif
 #endif

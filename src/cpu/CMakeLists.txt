@@ -28,6 +28,7 @@ add_library(cpu OBJECT
     386_common.c
     386_dynarec.c
     x86_ops_mmx.c
+    x86_rep_host.c
     x86seg_common.c
     x86seg.c
     x86seg_2386.c
@@ -36,6 +37,11 @@ add_library(cpu OBJECT
     x87_timings.c
     i8080.c
 )
+
+# The REP string kernels are the host baseline whatever the build targets.
+if((ARCH STREQUAL "x86_64") AND (CMAKE_C_COMPILER_ID MATCHES "GNU|Clang"))
+    set_source_files_properties(x86_rep_host.c PROPERTIES COMPILE_OPTIONS "-march=x86-64;-mtune=generic")
+endif()
 
 if(AMD_K5)
     target_compile_definitions(cpu PRIVATE USE_AMD_K5)

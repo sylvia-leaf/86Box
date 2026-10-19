@@ -108,6 +108,7 @@
 #include <86box/acpi.h>
 #include <86box/nv/vid_nv_rivatimer.h>
 #include <86box/vfio.h>
+#include "x86_rep_host.h"
 
 /* Stuff that used to be globally declared in plat.h but is now extern there
    and declared here instead. */
@@ -1681,6 +1682,9 @@ pc_init_modules(void)
     atfullspeed = 0;
 
     random_init();
+
+    /* How REP string runs are done on this host. */
+    rep_host_detect();
 
     mem_init();
 
