@@ -21,6 +21,7 @@
 #include <QDebug>
 
 #include "qt_mainwindow.hpp"
+#include "qt_debugconsole.hpp"
 #include "ui_qt_mainwindow.h"
 
 #include "qt_specifydimensions.h"
@@ -590,6 +591,23 @@ MainWindow::MainWindow(QWidget *parent)
         if (vid_api == RENDERER_VULKAN)
             vid_api = RENDERER_SOFTWARE;
         ui->actionVulkan->setVisible(false);
+    }
+
+    /* Action > Debug console: registers and memory of the paused machine. */
+    {
+        auto *dbg = new QAction(tr("&Debug console..."), this);
+        ui->menuAction->insertAction(ui->actionFullscreen, dbg);
+        ui->menuAction->insertSeparator(ui->actionFullscreen);
+        connect(dbg, &QAction::triggered, this, [this]() {
+            emit setMouseCapture(false);
+            releaseKeyboard();
+            keyboard_all_up();
+            if (!debugConsole)
+                debugConsole = new DebugConsole(this);
+            debugConsole->show();
+            debugConsole->raise();
+            debugConsole->activateWindow();
+        });
     }
 
     auto actGroup = new QActionGroup(this);
@@ -1687,6 +1705,18 @@ MainWindow::keyMatchesAccelerator(const QKeyEvent *ke, const char *name)
 bool
 MainWindow::eventFilter(QObject *receiver, QEvent *event)
 {
+    /* The application-wide guest keyboard filter must leave the modeless
+       console's text input alone, including while the machine is running. */
+    if (debugConsole) {
+        if (debugConsole->isActiveWindow()
+            && (event->type() == QEvent::KeyPress || event->type() == QEvent::KeyRelease
+                || event->type() == QEvent::ShortcutOverride))
+            return false;
+        auto *widget = qobject_cast<QWidget *>(receiver);
+        if (widget && (widget == debugConsole || debugConsole->isAncestorOf(widget)))
+            return QMainWindow::eventFilter(receiver, event);
+    }
+
     if (event->type() == QEvent::KeyPress || event->type() == QEvent::KeyRelease) {
         auto      *ke   = static_cast<QKeyEvent *>(event);
         const bool down = event->type() == QEvent::KeyPress;

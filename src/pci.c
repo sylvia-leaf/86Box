@@ -1097,3 +1097,19 @@ pci_init(int flags)
 
     pic_set_pci_flag(1);
 }
+
+/* The debug console's view of the PCI slots: slot i's bus, device number,
+   state and configuration read; 0 for an empty slot or past the end. */
+int
+pci_debug_card(int i, uint8_t *bus, uint8_t *id, void **priv,
+               uint8_t (**read)(int func, int addr, int len, void *priv))
+{
+    if ((i < 0) || (i >= PCI_CARDS_NUM) || (pci_cards[i].read == NULL))
+        return 0;
+
+    *bus  = pci_cards[i].bus;
+    *id   = pci_cards[i].id;
+    *priv = pci_cards[i].priv;
+    *read = pci_cards[i].read;
+    return 1;
+}

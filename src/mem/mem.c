@@ -3172,3 +3172,27 @@ mem_a20_recalc(void)
 
     mem_a20_state = state;
 }
+
+/* ---- the debug console's view of the map --------------------------------- */
+
+mem_mapping_t *
+mem_debug_first_mapping(void)
+{
+    return base_mapping;
+}
+
+/* What a bus master meets at addr. */
+void
+mem_debug_bus(uint32_t addr, mem_mapping_t **rd, mem_mapping_t **wr)
+{
+    *rd = read_mapping_bus[addr >> MEM_GRANULARITY_BITS];
+    *wr = write_mapping_bus[addr >> MEM_GRANULARITY_BITS];
+}
+
+/* The chipset's access state for addr: n = 0 processor, 1 processor in SMM,
+   2 bus, 3 bus with SMIACT#. */
+uint16_t
+mem_debug_state(uint32_t addr, int n)
+{
+    return _mem_state[addr >> MEM_GRANULARITY_BITS].vals[n & 3];
+}

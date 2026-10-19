@@ -301,6 +301,8 @@ extern uint16_t    pci_readw(uint16_t port, void *priv);
 extern uint32_t    pci_readl(uint16_t port, void *priv);
 
 extern uint8_t     pci_register_bus(void);
+extern int         pci_debug_card(int i, uint8_t *bus, uint8_t *id, void **priv,
+                                  uint8_t (**read)(int func, int addr, int len, void *priv));
 extern void        pci_remap_bus(uint8_t bus_index, uint8_t bus_number);
 extern void        pci_register_bus_slot(int bus, int card, int type, int inta, int intb, int intc, int intd);
 /* One more slot on the bus a slot of this type sits on, next device

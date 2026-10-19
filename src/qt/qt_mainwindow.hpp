@@ -25,6 +25,7 @@ class MainWindow;
 }
 
 class MachineStatus;
+class DebugConsole;
 
 class MainWindow : public QMainWindow {
     Q_OBJECT
@@ -180,6 +181,7 @@ private slots:
 
 private:
     Ui::MainWindow                *ui;
+    DebugConsole                  *debugConsole = nullptr;
     std::unique_ptr<MachineStatus> status;
     std::shared_ptr<MediaMenu>     mm;
     QMenu                         *dynarecMenu = nullptr;

@@ -449,6 +449,11 @@ extern void pcjr_waitstates(void *);
 extern mem_mapping_t *read_mapping[MEM_MAPPINGS_NO];
 extern mem_mapping_t *write_mapping[MEM_MAPPINGS_NO];
 
+/* For the debug console. */
+extern mem_mapping_t *mem_debug_first_mapping(void);
+extern void           mem_debug_bus(uint32_t addr, mem_mapping_t **rd, mem_mapping_t **wr);
+extern uint16_t       mem_debug_state(uint32_t addr, int n);
+
 #ifdef EMU_CPU_H
 static __inline uint32_t
 get_phys(uint32_t addr)

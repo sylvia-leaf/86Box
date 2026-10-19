@@ -105,6 +105,7 @@ extern "C" {
 #include <86box/timer.h>
 #include <86box/nvr.h>
 #include <86box/automation.h>
+#include <86box/debugcon.h>
 extern int  qt_nvr_save(void);
 #ifndef Q_OS_MACOS
 extern void exit_pause(void);
@@ -531,8 +532,12 @@ main_thread_fn()
                 pc_reset_hard_init();
             }
 
-            if (dopause)
+            if (dopause) {
                 ack_pause();
+                /* A debug console command runs here, with the machine
+                   stopped between two blocks. */
+                debugcon_poll();
+            }
 
             /* Keep answering a GDB client while the machine isn't running. */
             gdbstub_poll();
