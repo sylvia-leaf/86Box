@@ -25,6 +25,7 @@
 #include "cpu.h"
 #include <86box/device.h>
 #include <86box/machine.h>
+#include <86box/mem.h>
 #include <86box/nmi.h>
 #include <86box/chipset.h>
 #include <86box/timer.h>
@@ -1115,8 +1116,11 @@ cpu_lapic_irr_live_sync(uint8_t lapic_index)
 void
 cpu_lapic_extint_live_set(uint8_t lapic_index, int pending)
 {
-    if (lapic_index < IOAPIC_STATE_MAX_LAPICS)
+    if (lapic_index < IOAPIC_STATE_MAX_LAPICS) {
         cpu_lapic_extint_live[lapic_index] = !!pending;
+        if (pending)
+            mem_chain_break(); /* the loop has an interrupt to look at */
+    }
 }
 
 uint32_t *
@@ -1510,6 +1514,7 @@ cpu_lapic_accept_interrupt_index(uint8_t lapic_index, uint8_t vector, int level)
         cpu_lapic_set_vector(cpu_lapic_tmrs[lapic_index], vector);
     else
         cpu_lapic_clear_vector(cpu_lapic_tmrs[lapic_index], vector);
+    mem_chain_break(); /* the loop has an interrupt to look at */
 
     return 1;
 }
@@ -2408,6 +2413,8 @@ cpu_apic_base_msr_write_current(uint64_t val)
     cpu_apic_base_msrs[lapic_index] = cpu_apic_base_msr_sanitize(lapic_index, val, cur);
     cpu_apic_int_fast_ok = 0;
     lapic_apic_base_msr_sync_index(lapic_index, cpu_apic_base_msrs[lapic_index]);
+    /* Enabled or disabled: what the processor may take changes. */
+    mem_chain_break();
 }
 
 void

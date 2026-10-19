@@ -1,3 +1,5 @@
+#include "x86_interrupt.h"
+
 static int
 opCMC(UNUSED(uint32_t fetchdat))
 {
@@ -78,7 +80,7 @@ opSTI(UNUSED(uint32_t fetchdat))
         cpu_state.flags |= I_FLAG;
         /* An interrupt waiting: a chain leaves, as for POPF. A compiled STI
            does this itself; one with a REP prefix is not compiled. */
-        if (pic.int_pending)
+        if (x86_external_interrupt_pending())
             mem_chain_break();
     }
 
@@ -187,7 +189,7 @@ opPOPF_186(UNUSED(uint32_t fetchdat))
 #endif
 
     /* TF turned on, or IF with an interrupt waiting: a chain leaves */
-    if (((cpu_state.flags & ~popf_old) & T_FLAG) || (((cpu_state.flags & ~popf_old) & I_FLAG) && pic.int_pending))
+    if (((cpu_state.flags & ~popf_old) & T_FLAG) || (((cpu_state.flags & ~popf_old) & I_FLAG) && x86_external_interrupt_pending()))
         mem_chain_break();
     /* TF turned on: the trap comes after the instruction that follows
        (Pentium Vol. 3, 17.3.1.4). A compiled block ends here (a nonzero
@@ -234,7 +236,7 @@ opPOPF_286(UNUSED(uint32_t fetchdat))
 #endif
 
     /* TF turned on, or IF with an interrupt waiting: a chain leaves */
-    if (((cpu_state.flags & ~popf_old) & T_FLAG) || (((cpu_state.flags & ~popf_old) & I_FLAG) && pic.int_pending))
+    if (((cpu_state.flags & ~popf_old) & T_FLAG) || (((cpu_state.flags & ~popf_old) & I_FLAG) && x86_external_interrupt_pending()))
         mem_chain_break();
     /* TF turned on: the trap comes after the instruction that follows
        (Pentium Vol. 3, 17.3.1.4). A compiled block ends here (a nonzero
@@ -301,7 +303,7 @@ opPOPF(UNUSED(uint32_t fetchdat))
 #endif
 
     /* TF turned on, or IF with an interrupt waiting: a chain leaves */
-    if (((cpu_state.flags & ~popf_old) & T_FLAG) || (((cpu_state.flags & ~popf_old) & I_FLAG) && pic.int_pending))
+    if (((cpu_state.flags & ~popf_old) & T_FLAG) || (((cpu_state.flags & ~popf_old) & I_FLAG) && x86_external_interrupt_pending()))
         mem_chain_break();
     /* TF turned on: the trap comes after the instruction that follows
        (Pentium Vol. 3, 17.3.1.4). A compiled block ends here (a nonzero
@@ -352,7 +354,7 @@ opPOPFD(UNUSED(uint32_t fetchdat))
 #endif
 
     /* TF turned on, or IF with an interrupt waiting: a chain leaves */
-    if (((cpu_state.flags & ~popf_old) & T_FLAG) || (((cpu_state.flags & ~popf_old) & I_FLAG) && pic.int_pending))
+    if (((cpu_state.flags & ~popf_old) & T_FLAG) || (((cpu_state.flags & ~popf_old) & I_FLAG) && x86_external_interrupt_pending()))
         mem_chain_break();
     /* TF turned on: the trap comes after the instruction that follows
        (Pentium Vol. 3, 17.3.1.4). A compiled block ends here (a nonzero

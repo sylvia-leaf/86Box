@@ -581,7 +581,9 @@ codegen_chain_service(void)
     if (cpu_init || new_ne || smi_line || NMI_TAKEABLE() || cpu_state.abrt || !CACHE_ON() ||
         x86_was_reset || cpu_force_interpreter || cpu_override_dynarec || cpu_flush_pending)
         return 1;
-    if ((cpu_state.flags & I_FLAG) && pic.int_pending)
+    /* The 8259, or a local APIC (x86_interrupt.h): an interrupt either
+       has to give breaks the chain. */
+    if ((cpu_state.flags & I_FLAG) && x86_external_interrupt_pending())
         return 1;
     {
         /* A timer armed sooner: the chain now runs down only to it. */
@@ -602,7 +604,7 @@ codegen_chain_service(void)
 void
 codegen_chain_sti(void)
 {
-    if (pic.int_pending)
+    if (x86_external_interrupt_pending())
         mem_chain_break();
 }
 
