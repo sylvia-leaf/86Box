@@ -17,6 +17,12 @@
 #include <86box/pic.h>
 #include "x87_sf.h"
 #include "x87.h"
+#ifdef USE_DYNAREC
+#    include "codegen.h"
+#    define CPU_BLOCK_END() cpu_block_end = 1
+#else
+#    define CPU_BLOCK_END()
+#endif
 
 /* FERR#: with CR0.NE clear, an unmasked exception asserts it, and the board
    turns its rising edge into IRQ 13. It stays up until ES clears, so an
@@ -103,6 +109,7 @@ x87_ferr_assert(void)
         return;
     fpu_ferr = 1;
     picint(1 << 13);
+    CPU_BLOCK_END();
 }
 
 /* ES cleared (FNCLEX, FNINIT, FNSAVE, or an environment or control word

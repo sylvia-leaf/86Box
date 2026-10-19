@@ -97,8 +97,10 @@
         x86_int(7);                          \
         return 1;                            \
     }                                        \
-    FPU_check_pending_exceptions(); \
-    if (x87_legacy_pending())         \
+    if(fpu_softfloat) { \
+        FPU_check_pending_exceptions(); \
+    } \
+    else if (x87_legacy_pending())         \
         return 1; 
 
 #define MMX_COMMIT() \

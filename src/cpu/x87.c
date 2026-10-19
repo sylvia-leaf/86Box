@@ -22,6 +22,12 @@
 #include "softfloat3e/fpu_trans.h"
 #include "softfloat3e/specialize.h"
 #include <86box/plat_unused.h>
+#ifdef USE_DYNAREC
+#    include "codegen.h"
+#    define CPU_BLOCK_END() cpu_block_end = 1
+#else
+#    define CPU_BLOCK_END()
+#endif
 
 uint32_t x87_pc_off;
 uint32_t x87_op_off;
@@ -735,6 +741,7 @@ x87_legacy_pending(void)
     if (cr0 & 0x20) {
         cpu_state.pc = cpu_state.oldpc;
         new_ne = 1;
+        CPU_BLOCK_END();
         return 1;
     }
     if (!fpu_ignne) {
