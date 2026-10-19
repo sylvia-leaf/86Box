@@ -37,6 +37,7 @@ extern void  ini_dump(ini_t ini);
 extern void  ini_close(ini_t ini);
 
 extern void     ini_section_delete_var(ini_section_t section, const char *name);
+extern int      ini_section_contains_int(ini_section_t section, int value);
 extern int      ini_section_get_int(ini_section_t section, const char *name, int def);
 extern uint32_t ini_section_get_uint(ini_section_t section, const char *name, uint32_t def);
 #if 0

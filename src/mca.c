@@ -14,6 +14,8 @@
 #include <86box/86box.h>
 #include <86box/io.h>
 #include <86box/mca.h>
+#include <86box/device.h>
+#include <86box/machine.h>
 
 #define MCA_MAX_CARDS 8
 
@@ -154,16 +156,31 @@ mca_add(uint8_t (*read)(uint16_t port, void *priv),
         void (*reset)(void *priv),
         void *priv)
 {
-    for (uint8_t slot = 0; slot < mca_nr_cards; slot++) {
-        if (!mca_slots[slot].read && !mca_slots[slot].write) {
-            mca_slots[slot] = (mca_slot_t) {
-                .read  = read,
-                .write = write,
-                .feedb = feedb,
-                .reset = reset,
-                .priv  = priv
-            };
-            return slot;
+    /* The slot the card is placed in ([Board slots]), if it is free;
+       otherwise the first free slot, one kept for a card placed in it only
+       when there is no other. */
+    const int placement = device_current_board_slot();
+    int       requested = ((placement >> 16) == SLOT_MCA) ? (placement & 0xffff) - 1 : -1;
+
+    if ((requested >= mca_nr_cards) || ((requested >= 0) && (mca_slots[requested].read || mca_slots[requested].write)))
+        requested = -1;
+
+    for (int pass = 0; pass < 2; pass++) {
+        for (uint8_t slot = 0; slot < mca_nr_cards; slot++) {
+            if ((requested >= 0) && (slot != requested))
+                continue;
+            if ((requested < 0) && (pass == 0) && device_board_slot_reserved((SLOT_MCA << 16) | (slot + 1)))
+                continue;
+            if (!mca_slots[slot].read && !mca_slots[slot].write) {
+                mca_slots[slot] = (mca_slot_t) {
+                    .read  = read,
+                    .write = write,
+                    .feedb = feedb,
+                    .reset = reset,
+                    .priv  = priv
+                };
+                return slot;
+            }
         }
     }
 

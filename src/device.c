@@ -1109,9 +1109,67 @@ device_migrate_config_bios(const void *priv, const char *name)
     }
 }
 
+/* The board slot [Board slots] gives an instance of a device:
+   <internal name>.<instance> = SLOT_* << 16, and below that the bus and
+   device number (PCI) or the slot number (EISA, MCA). -1 for none, and
+   for all when the section was written for another machine (its
+   "machine" entry). */
+int
+device_board_slot(const device_t *dev, int instance, int machine_id)
+{
+    char        key[256];
+    const char *board = config_get_string("Board slots", "machine", "");
+
+    if ((dev == NULL) || (dev->internal_name == NULL) || strcmp(board, machines[machine_id].internal_name))
+        return -1;
+
+    snprintf(key, sizeof(key), "%s.%i", dev->internal_name, instance);
+    return config_get_int("Board slots", key, -1);
+}
+
+/* Whether a board slot is given to some device in [Board slots], so that
+   a device placed automatically leaves it free. */
+int
+device_board_slot_reserved(int slot)
+{
+    const char *board = config_get_string("Board slots", "machine", "");
+
+    return !strcmp(board, machines[machine].internal_name) &&
+           ini_section_contains_int(config_find_section("Board slots"), slot);
+}
+
+/* The board slot of the nth PCI-PCI bridge put in by hand (from 1), or -1
+   where there are fewer. */
+int
+device_board_pci_bridge(int n)
+{
+    char        key[32];
+    const char *board = config_get_string("Board slots", "machine", "");
+
+    if (strcmp(board, machines[machine].internal_name))
+        return -1;
+    snprintf(key, sizeof(key), "pci_bridge.%i", n);
+    return config_get_int("Board slots", key, -1);
+}
+
+/* The board slot of the device being set up, as device_board_slot(). */
+int
+device_current_board_slot(void)
+{
+    return device_board_slot(device_current.dev, device_current.instance, machine);
+}
+
 int
 device_get_config_int(const char *str)
 {
+    /* An EISA card's slot is the board slot it is placed in, if any. */
+    if ((device_current.dev != NULL) && (device_current.dev->flags & DEVICE_EISA) && !strcmp(str, "slot")) {
+        const int placement = device_current_board_slot();
+
+        if ((placement >> 16) == SLOT_EISA)
+            return placement & 0xffff;
+    }
+
     if (device_current.dev != NULL) {
         const device_config_t *cfg = device_current.dev->config;
 

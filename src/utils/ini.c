@@ -728,6 +728,27 @@ ini_dump(ini_t ini)
     }
 }
 
+/* Whether any entry of the section holds the number value. */
+int
+ini_section_contains_int(ini_section_t self, int value)
+{
+    const section_t *section = (section_t *) self;
+
+    if (section == NULL)
+        return 0;
+
+    for (const list_t *item = section->entry_head.next; item != NULL; item = item->next) {
+        const entry_t *entry = (const entry_t *) item;
+        char          *end;
+        const long     parsed = strtol(entry->data, &end, 10);
+
+        if ((end != entry->data) && (*end == '\0') && (parsed == value))
+            return 1;
+    }
+
+    return 0;
+}
+
 void
 ini_section_delete_var(ini_section_t self, const char *name)
 {

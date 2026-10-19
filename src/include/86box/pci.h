@@ -260,6 +260,7 @@ extern int         pci_nonburst_time;
 extern int         agp_nonburst_time;
 
 extern int         pci_flags;
+extern int         pci_expansion_bridges(int slots, int cards, int minimum, int registered);
 
 extern uint32_t    pci_base;
 extern uint32_t    pci_size;

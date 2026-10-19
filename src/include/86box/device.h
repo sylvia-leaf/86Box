@@ -267,6 +267,13 @@ extern const char *device_get_bios_file(const device_t *dev, const char *interna
 
 extern int device_is_valid(const device_t *, int mch);
 
+/* Board slots from the configuration's [Board slots]: SLOT_* in the high
+   word, the bus and device number or the slot number in the low word; -1
+   for a device placed automatically. */
+extern int device_board_slot(const device_t *dev, int instance, int machine_id);
+extern int device_current_board_slot(void);
+extern int device_board_slot_reserved(int slot);
+extern int device_board_pci_bridge(int n);
 extern const device_t* device_context_get_device(void);
 
 extern int         device_get_config_int(const char *name);

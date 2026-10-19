@@ -45,6 +45,7 @@ typedef struct pci_card_t {
 } pci_card_t;
 
 typedef struct pci_card_desc_t {
+    int         board_slot;
     uint8_t     type;
     void *      priv;
     void        (*write)(int func, int addr, int len, uint8_t val, void *priv);
@@ -75,6 +76,7 @@ static uint8_t     pci_pmc = 0;
 static uint8_t     last_pci_card = 0;
 static uint8_t     last_normal_pci_card = 0;
 static uint8_t     last_normal_pci_card_id = 0;
+static uint8_t     next_bridge_slot = PCI_CARD_INVALID; /* the slot of a bridge put in by hand */
 static uint8_t     last_pci_bus = 1;
 static uint8_t     next_pci_card = 0;
 static uint8_t     normal_pci_cards = 0;
@@ -892,6 +894,9 @@ pci_add_card(uint8_t add_type, uint8_t (*read)(int func, int addr, int len, void
     if (next_pci_card < PCI_CARDS_NUM) {
         dev = &pci_card_descs[next_pci_card];
 
+        dev->board_slot = device_current_board_slot();
+        if ((dev->board_slot >> 16) != SLOT_PCI)
+            dev->board_slot = -1;
         dev->type  = add_type | PCI_ADD_STRICT;
         dev->read  = read;
         dev->write = write;
@@ -930,8 +935,25 @@ pci_register_card(int pci_card)
         dev = &pci_card_descs[pci_card];
 
         if (last_pci_card) {
-            /* First, find the next available slot. */
-            i = pci_find_slot(dev->type, 0xff);
+            /* First, the board slot chosen for the card, if it is free;
+               otherwise the next available slot. */
+            i = PCI_CARD_INVALID;
+            if (dev->board_slot >= 0) {
+                const unsigned bus    = (dev->board_slot >> 8) & 0xff;
+                const unsigned number = dev->board_slot & 0xff;
+
+                for (unsigned s = 0; s < last_pci_card; s++) {
+                    if ((pci_cards[s].bus == bus) && (pci_cards[s].id == number) &&
+                        (pci_cards[s].type == PCI_CARD_NORMAL) && !pci_cards[s].read && !pci_cards[s].write) {
+                        i = s;
+                        break;
+                    }
+                }
+                if (i == PCI_CARD_INVALID)
+                    pclog("PCI: board slot %02X:%02X chosen for a card is not free; it goes to the next free one\n", bus, number);
+            }
+            if (i == PCI_CARD_INVALID)
+                i = pci_find_slot(dev->type, 0xff);
 
             if (i != PCI_CARD_INVALID) {
                 card = &pci_cards[i];
@@ -961,6 +983,11 @@ pci_add_bridge(uint8_t add_type, uint8_t (*read)(int func, int addr, int len, vo
     uint8_t bridge_slot = (add_type == PCI_ADD_NORMAL) ? last_normal_pci_card_id :
                                                          pci_find_slot(add_type | PCI_ADD_STRICT, 0xff);
 
+    if ((add_type == PCI_ADD_NORMAL) && (next_bridge_slot != PCI_CARD_INVALID)) {
+        bridge_slot      = next_bridge_slot;
+        next_bridge_slot = PCI_CARD_INVALID;
+    }
+
     if (bridge_slot != PCI_CARD_INVALID) {
         card = &pci_cards[bridge_slot];
         card->read  = read;
@@ -969,6 +996,27 @@ pci_add_bridge(uint8_t add_type, uint8_t (*read)(int func, int addr, int len, vo
     }
 
     *slot = bridge_slot;
+}
+
+/* How many DEC 21150 bridges a board with this many free normal slots
+   needs for this many cards, with at least minimum of them (for a card
+   placed behind one), when registered slots are already in use: each
+   bridge takes a slot and gives nine. -1 when they do not fit. */
+int
+pci_expansion_bridges(int slots, int cards, int minimum, int registered)
+{
+    int bridges = 0;
+
+    if (slots == 0)
+        return cards ? -1 : 0;
+    while (cards > slots || bridges < minimum) {
+        if (registered + 9 > PCI_CARDS_NUM)
+            return -1;
+        slots += 8;
+        registered += 9;
+        bridges++;
+    }
+    return bridges;
 }
 
 /* Register the cards that have been added into slots. */
@@ -983,8 +1031,75 @@ pci_register_cards(void)
 
     next_normal_pci_card = 0;
 
+    /* The bridges put in by hand, each in the board slot chosen for it,
+       before any card: the buses behind them come first, in their order. */
+    int manual = 0;
+    for (int n = 1; !(pci_flags & FLAG_NO_BRIDGES); n++) {
+        const int slot = device_board_pci_bridge(n);
+        if (slot < 0)
+            break;
+        uint8_t found = PCI_CARD_INVALID;
+        for (uint8_t s = 0; s < last_pci_card; s++) {
+            if ((pci_cards[s].bus == ((slot >> 8) & 0xff)) && (pci_cards[s].id == (slot & 0xff)) &&
+                (pci_cards[s].type == PCI_CARD_NORMAL) && !pci_cards[s].read && !pci_cards[s].write) {
+                found = s;
+                break;
+            }
+        }
+        if (((slot >> 16) != SLOT_PCI) || (found == PCI_CARD_INVALID)) {
+            pclog("PCI: the board slot %02X:%02X chosen for PCI-PCI bridge %i is unavailable\n", (slot >> 8) & 0xff, slot & 0xff, n);
+            continue;
+        }
+        next_bridge_slot = found;
+        device_add_inst(&dec21150_device, last_pci_bus);
+        next_bridge_slot = PCI_CARD_INVALID;
+        manual++;
+    }
+
     if (next_pci_card > 0) {
+        int minimum = 0;
         for (uint8_t i = 0; i < next_pci_card; i++) {
+            if (pci_card_descs[i].board_slot >= 0) {
+                const int bus = (pci_card_descs[i].board_slot >> 8) & 0xff;
+                if (bus >= last_pci_bus && bus - last_pci_bus + 1 > minimum)
+                    minimum = bus - last_pci_bus + 1;
+            }
+        }
+        /* A slot holding a bridge put in by hand takes no card. */
+        const int bridges = (pci_flags & FLAG_NO_BRIDGES) ? 0 :
+            pci_expansion_bridges(last_normal_pci_card - manual, normal_pci_cards, minimum, last_pci_card);
+        for (int b = 0; b < bridges; b++) {
+            const pci_card_t *parent      = &pci_cards[last_normal_pci_card_id];
+            const int         parent_slot = (SLOT_PCI << 16) | (parent->bus << 8) | parent->id;
+            /* The bridge takes the last slot: a card placed there moves to
+               the first free slot behind the bridge, and every other card
+               keeps the slot chosen for it. */
+            int destination = -1;
+            for (int d = 0; d < 9 && destination < 0; d++) {
+                const int candidate = (SLOT_PCI << 16) | (last_pci_bus << 8) | d;
+                int       occupied  = 0;
+                for (uint8_t i = 0; i < next_pci_card; i++)
+                    occupied |= pci_card_descs[i].board_slot == candidate;
+                if (!occupied)
+                    destination = candidate;
+            }
+            for (uint8_t i = 0; i < next_pci_card; i++)
+                if (pci_card_descs[i].board_slot == parent_slot)
+                    pci_card_descs[i].board_slot = destination;
+            device_add_inst(&dec21150_device, last_pci_bus);
+        }
+        uint8_t assigned[PCI_CARDS_NUM] = { 0 };
+        for (uint8_t i = 0; i < next_pci_card; i++) {
+            if (pci_card_descs[i].board_slot >= 0) {
+                assigned[i] = 1;
+                pci_register_card(i);
+            }
+        }
+        for (uint8_t i = 0; i < next_pci_card; i++) {
+            if (assigned[i]) {
+                next_normal_pci_card++;
+                continue;
+            }
 #ifdef ENABLE_PCI_LOG
             type = pci_card_descs[i].type;
             slot = pci_card_descs[i].slot;
@@ -994,12 +1109,6 @@ pci_register_cards(void)
             /* If this is a normal card, increase the next normal card index. */
             if (normal)
                 next_normal_pci_card++;
-
-            /* If this is a normal card and the next one is going to be beyond the last slot,
-               add the bridge. */
-            if (normal && (next_normal_pci_card >= last_normal_pci_card) &&
-                (normal_pci_cards > last_normal_pci_card) && !(pci_flags & FLAG_NO_BRIDGES))
-                device_add_inst(&dec21150_device, last_pci_bus);
 
             pci_register_card(i);
             pci_log("pci_register_cards(): PCI card #%02i: type = %02X, pci device = %02X:%02X\n",
