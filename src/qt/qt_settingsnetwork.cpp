@@ -43,35 +43,35 @@ SettingsNetwork::enableElements(Ui::SettingsNetwork *ui)
     for (int i = 0; i < NET_CARD_MAX; ++i) {
         net_card_cfg_changed[i] = 0;
 
-        auto *nic_cbox      = findChild<QComboBox *>(QString("comboBoxNIC%1").arg(i + 1));
-        auto *net_type_cbox = findChild<QComboBox *>(QString("comboBoxNet%1").arg(i + 1));
+        auto *nic_cbox      = networkControl<QComboBox *>(QString("comboBoxNIC%1").arg(i + 1));
+        auto *net_type_cbox = networkControl<QComboBox *>(QString("comboBoxNet%1").arg(i + 1));
 
-        auto *intf_label = findChild<QLabel *>(QString("labelIntf%1").arg(i + 1));
-        auto *intf_cbox  = findChild<QComboBox *>(QString("comboBoxIntf%1").arg(i + 1));
+        auto *intf_label = networkControl<QLabel *>(QString("labelIntf%1").arg(i + 1));
+        auto *intf_cbox  = networkControl<QComboBox *>(QString("comboBoxIntf%1").arg(i + 1));
 
-        auto *conf_btn = findChild<QPushButton *>(QString("pushButtonConf%1").arg(i + 1));
-        // auto *net_type_conf_btn      = findChild<QPushButton *>(QString("pushButtonNetTypeConf%1").arg(i + 1));
+        auto *conf_btn = networkControl<QPushButton *>(QString("pushButtonConf%1").arg(i + 1));
+        // auto *net_type_conf_btn      = networkControl<QPushButton *>(QString("pushButtonNetTypeConf%1").arg(i + 1));
 
-        auto *vde_socket_label = findChild<QLabel *>(QString("labelSocketVDENIC%1").arg(i + 1));
-        auto *socket_line      = findChild<QLineEdit *>(QString("socketVDENIC%1").arg(i + 1));
+        auto *vde_socket_label = networkControl<QLabel *>(QString("labelSocketVDENIC%1").arg(i + 1));
+        auto *socket_line      = networkControl<QLineEdit *>(QString("socketVDENIC%1").arg(i + 1));
 
-        auto *bridge_label = findChild<QLabel *>(QString("labelBridgeTAPNIC%1").arg(i + 1));
-        auto *bridge_line  = findChild<QLineEdit *>(QString("bridgeTAPNIC%1").arg(i + 1));
+        auto *bridge_label = networkControl<QLabel *>(QString("labelBridgeTAPNIC%1").arg(i + 1));
+        auto *bridge_line  = networkControl<QLineEdit *>(QString("bridgeTAPNIC%1").arg(i + 1));
 
-        auto *option_list_label = findChild<QLabel *>(QString("labelOptionList%1").arg(i + 1));
-        auto *option_list_line  = findChild<QWidget *>(QString("lineOptionList%1").arg(i + 1));
+        auto *option_list_label = networkControl<QLabel *>(QString("labelOptionList%1").arg(i + 1));
+        auto *option_list_line  = networkControl<QWidget *>(QString("lineOptionList%1").arg(i + 1));
 
         // Shared secret
-        auto *secret_label = findChild<QLabel *>(QString("labelSecret%1").arg(i + 1));
-        auto *secret_value = findChild<QLineEdit *>(QString("secretSwitch%1").arg(i + 1));
+        auto *secret_label = networkControl<QLabel *>(QString("labelSecret%1").arg(i + 1));
+        auto *secret_value = networkControl<QLineEdit *>(QString("secretSwitch%1").arg(i + 1));
 
         // Promiscuous option
-        auto *promisc_label = findChild<QLabel *>(QString("labelPromisc%1").arg(i + 1));
-        auto *promisc_value = findChild<QCheckBox *>(QString("boxPromisc%1").arg(i + 1));
+        auto *promisc_label = networkControl<QLabel *>(QString("labelPromisc%1").arg(i + 1));
+        auto *promisc_value = networkControl<QCheckBox *>(QString("boxPromisc%1").arg(i + 1));
 
         // Remote switch hostname
-        auto *hostname_label = findChild<QLabel *>(QString("labelHostname%1").arg(i + 1));
-        auto *hostname_value = findChild<QLineEdit *>(QString("hostnameSwitch%1").arg(i + 1));
+        auto *hostname_label = networkControl<QLabel *>(QString("labelHostname%1").arg(i + 1));
+        auto *hostname_value = networkControl<QLineEdit *>(QString("hostnameSwitch%1").arg(i + 1));
 
         bridge_line->setEnabled(net_type_cbox->currentData().toInt() == NET_TYPE_TAP);
         intf_cbox->setEnabled(net_type_cbox->currentData().toInt() == NET_TYPE_PCAP);
@@ -188,18 +188,21 @@ SettingsNetwork::SettingsNetwork(QWidget *parent)
     , ui(new Ui::SettingsNetwork)
 {
     ui->setupUi(this);
+    for (auto *widget : findChildren<QWidget *>())
+        if (!widget->objectName().isEmpty())
+            controls.insert(widget->objectName(), widget);
 
     for (int i = 0; i < NET_CARD_MAX; i++) {
-        sc[i]                           = new SettingsCompleter(findChild<QComboBox *>(QString("comboBoxNIC%1").arg(i + 1)), nullptr);
-        scDevice[i]                     = new SettingsCompleter(findChild<QComboBox *>(QString("comboBoxIntf%1").arg(i + 1)), nullptr);
+        sc[i]                           = new SettingsCompleter(networkControl<QComboBox *>(QString("comboBoxNIC%1").arg(i + 1)), nullptr);
+        scDevice[i]                     = new SettingsCompleter(networkControl<QComboBox *>(QString("comboBoxIntf%1").arg(i + 1)), nullptr);
     }
 
     onCurrentMachineChanged(machine);
     enableElements(ui);
     for (int i = 0; i < NET_CARD_MAX; i++) {
-        auto *nic_cbox      = findChild<QComboBox *>(QString("comboBoxNIC%1").arg(i + 1));
-        auto *net_type_cbox = findChild<QComboBox *>(QString("comboBoxNet%1").arg(i + 1));
-        auto *intf_cbox     = findChild<QComboBox *>(QString("comboBoxIntf%1").arg(i + 1));
+        auto *nic_cbox      = networkControl<QComboBox *>(QString("comboBoxNIC%1").arg(i + 1));
+        auto *net_type_cbox = networkControl<QComboBox *>(QString("comboBoxNet%1").arg(i + 1));
+        auto *intf_cbox     = networkControl<QComboBox *>(QString("comboBoxIntf%1").arg(i + 1));
         connect(nic_cbox, QOverload<int>::of(&QComboBox::currentIndexChanged), this, &SettingsNetwork::on_comboIndexChanged);
         connect(net_type_cbox, QOverload<int>::of(&QComboBox::currentIndexChanged), this, &SettingsNetwork::on_comboIndexChanged);
         connect(intf_cbox, QOverload<int>::of(&QComboBox::currentIndexChanged), this, &SettingsNetwork::on_comboIndexChanged);
@@ -219,7 +222,7 @@ SettingsNetwork::~SettingsNetwork()
 int
 SettingsNetwork::netCard(int i) const
 {
-    const QComboBox *cbox = findChild<QComboBox *>(QString("comboBoxNIC%1").arg(i + 1));
+    const QComboBox *cbox = networkControl<QComboBox *>(QString("comboBoxNIC%1").arg(i + 1));
 
     return cbox ? cbox->currentData().toInt() : 0;
 }
@@ -230,21 +233,21 @@ SettingsNetwork::changed()
     int has_changed = 0;
 
     for (int i = 0; i < NET_CARD_MAX; ++i) {
-        auto *cbox = findChild<QComboBox *>(QString("comboBoxNIC%1").arg(i + 1));
+        auto *cbox = networkControl<QComboBox *>(QString("comboBoxNIC%1").arg(i + 1));
 #ifdef HAS_VDE
-        auto *socket_line = findChild<QLineEdit *>(QString("socketVDENIC%1").arg(i + 1));
+        auto *socket_line = networkControl<QLineEdit *>(QString("socketVDENIC%1").arg(i + 1));
 #endif
 #if defined(__unix__) || defined(__APPLE__)
-        auto *bridge_line = findChild<QLineEdit *>(QString("bridgeTAPNIC%1").arg(i + 1));
+        auto *bridge_line = networkControl<QLineEdit *>(QString("bridgeTAPNIC%1").arg(i + 1));
 #endif
         has_changed                 |= (net_cards_conf[i].device_num != cbox->currentData().toInt());
         has_changed                 |= net_card_cfg_changed[i];
-        cbox                         = findChild<QComboBox *>(QString("comboBoxNet%1").arg(i + 1));
+        cbox                         = networkControl<QComboBox *>(QString("comboBoxNet%1").arg(i + 1));
         has_changed                 |= (net_cards_conf[i].net_type != cbox->currentData().toInt());
-        cbox                         = findChild<QComboBox *>(QString("comboBoxIntf%1").arg(i + 1));
-        auto *hostname_value         = findChild<QLineEdit *>(QString("hostnameSwitch%1").arg(i + 1));
-        auto *promisc_value          = findChild<QCheckBox *>(QString("boxPromisc%1").arg(i + 1));
-        auto *secret_value           = findChild<QLineEdit *>(QString("secretSwitch%1").arg(i + 1));
+        cbox                         = networkControl<QComboBox *>(QString("comboBoxIntf%1").arg(i + 1));
+        auto *hostname_value         = networkControl<QLineEdit *>(QString("hostnameSwitch%1").arg(i + 1));
+        auto *promisc_value          = networkControl<QCheckBox *>(QString("boxPromisc%1").arg(i + 1));
+        auto *secret_value           = networkControl<QLineEdit *>(QString("secretSwitch%1").arg(i + 1));
         char  temp_host_dev_name[128];
         char  temp_secret[256];
         char  temp_nrs_hostname[128];
@@ -294,20 +297,20 @@ SettingsNetwork::save(int soft)
         return;
 
     for (int i = 0; i < NET_CARD_MAX; ++i) {
-        auto *cbox = findChild<QComboBox *>(QString("comboBoxNIC%1").arg(i + 1));
+        auto *cbox = networkControl<QComboBox *>(QString("comboBoxNIC%1").arg(i + 1));
 #ifdef HAS_VDE
-        auto *socket_line = findChild<QLineEdit *>(QString("socketVDENIC%1").arg(i + 1));
+        auto *socket_line = networkControl<QLineEdit *>(QString("socketVDENIC%1").arg(i + 1));
 #endif
 #if defined(__unix__) || defined(__APPLE__)
-        auto *bridge_line = findChild<QLineEdit *>(QString("bridgeTAPNIC%1").arg(i + 1));
+        auto *bridge_line = networkControl<QLineEdit *>(QString("bridgeTAPNIC%1").arg(i + 1));
 #endif
         net_cards_conf[i].device_num = cbox->currentData().toInt();
-        cbox                         = findChild<QComboBox *>(QString("comboBoxNet%1").arg(i + 1));
+        cbox                         = networkControl<QComboBox *>(QString("comboBoxNet%1").arg(i + 1));
         net_cards_conf[i].net_type   = cbox->currentData().toInt();
-        cbox                         = findChild<QComboBox *>(QString("comboBoxIntf%1").arg(i + 1));
-        auto *hostname_value         = findChild<QLineEdit *>(QString("hostnameSwitch%1").arg(i + 1));
-        auto *promisc_value          = findChild<QCheckBox *>(QString("boxPromisc%1").arg(i + 1));
-        auto *secret_value           = findChild<QLineEdit *>(QString("secretSwitch%1").arg(i + 1));
+        cbox                         = networkControl<QComboBox *>(QString("comboBoxIntf%1").arg(i + 1));
+        auto *hostname_value         = networkControl<QLineEdit *>(QString("hostnameSwitch%1").arg(i + 1));
+        auto *promisc_value          = networkControl<QCheckBox *>(QString("boxPromisc%1").arg(i + 1));
+        auto *secret_value           = networkControl<QLineEdit *>(QString("secretSwitch%1").arg(i + 1));
         memset(net_cards_conf[i].host_dev_name, '\0', sizeof(net_cards_conf[i].host_dev_name));
         if (net_cards_conf[i].net_type == NET_TYPE_PCAP)
             strncpy(net_cards_conf[i].host_dev_name, network_devs[cbox->currentData().toInt()].device, sizeof(net_cards_conf[i].host_dev_name) - 1);
@@ -355,7 +358,7 @@ SettingsNetwork::onCurrentMachineChanged(int machineId)
     for (uint8_t i = 0; i < NET_CARD_MAX; ++i) {
         sc[i]->removeRows();
         scDevice[i]->removeRows();
-        cbox_[i]       = findChild<QComboBox *>(QString("comboBoxNIC%1").arg(i + 1));
+        cbox_[i]       = networkControl<QComboBox *>(QString("comboBoxNIC%1").arg(i + 1));
         models[i]      = cbox_[i]->model();
         removeRows_[i] = models[i]->rowCount();
     }
@@ -388,7 +391,7 @@ SettingsNetwork::onCurrentMachineChanged(int machineId)
         cbox_[i]->setCurrentIndex(-1);
         cbox_[i]->setCurrentIndex(selectedRows[i]);
 
-        auto cbox       = findChild<QComboBox *>(QString("comboBoxNet%1").arg(i + 1));
+        auto cbox       = networkControl<QComboBox *>(QString("comboBoxNet%1").arg(i + 1));
         auto model      = cbox->model();
         auto removeRows = model->rowCount();
         Models::Batch typeRows(model);
@@ -421,7 +424,7 @@ SettingsNetwork::onCurrentMachineChanged(int machineId)
 
         if (network_ndev > 0) {
             QString currentPcapDevice = net_cards_conf[i].host_dev_name;
-            cbox                      = findChild<QComboBox *>(QString("comboBoxIntf%1").arg(i + 1));
+            cbox                      = networkControl<QComboBox *>(QString("comboBoxIntf%1").arg(i + 1));
             model                     = cbox->model();
             removeRows                = model->rowCount();
             Models::Batch intfRows(model);
@@ -440,7 +443,7 @@ SettingsNetwork::onCurrentMachineChanged(int machineId)
         if (net_cards_conf[i].net_type == NET_TYPE_VDE) {
 #ifdef HAS_VDE
             QString currentVdeSocket = net_cards_conf[i].host_dev_name;
-            auto    editline         = findChild<QLineEdit *>(QString("socketVDENIC%1").arg(i + 1));
+            auto    editline         = networkControl<QLineEdit *>(QString("socketVDENIC%1").arg(i + 1));
             editline->setText(currentVdeSocket);
 #else
             ;
@@ -448,18 +451,18 @@ SettingsNetwork::onCurrentMachineChanged(int machineId)
 #if defined(__unix__) || defined(__APPLE__)
         } else if (net_cards_conf[i].net_type == NET_TYPE_TAP) {
             QString currentTapDevice = net_cards_conf[i].host_dev_name;
-            auto    editline         = findChild<QLineEdit *>(QString("bridgeTAPNIC%1").arg(i + 1));
+            auto    editline         = networkControl<QLineEdit *>(QString("bridgeTAPNIC%1").arg(i + 1));
             editline->setText(currentTapDevice);
 #endif
         } else if (net_cards_conf[i].net_type == NET_TYPE_NLSWITCH) {
-            auto *promisc_value = findChild<QCheckBox *>(QString("boxPromisc%1").arg(i + 1));
+            auto *promisc_value = networkControl<QCheckBox *>(QString("boxPromisc%1").arg(i + 1));
             promisc_value->setCheckState(net_cards_conf[i].promisc_mode == 1 ? Qt::CheckState::Checked : Qt::CheckState::Unchecked);
-            auto *secret_value = findChild<QLineEdit *>(QString("secretSwitch%1").arg(i + 1));
+            auto *secret_value = networkControl<QLineEdit *>(QString("secretSwitch%1").arg(i + 1));
             secret_value->setText(net_cards_conf[i].secret);
         } else if (net_cards_conf[i].net_type == NET_TYPE_NRSWITCH) {
-            auto *hostname_value = findChild<QLineEdit *>(QString("hostnameSwitch%1").arg(i + 1));
+            auto *hostname_value = networkControl<QLineEdit *>(QString("hostnameSwitch%1").arg(i + 1));
             hostname_value->setText(net_cards_conf[i].nrs_hostname);
-            auto *secret_value = findChild<QLineEdit *>(QString("secretSwitch%1").arg(i + 1));
+            auto *secret_value = networkControl<QLineEdit *>(QString("secretSwitch%1").arg(i + 1));
             secret_value->setText(net_cards_conf[i].secret);
         }
     }

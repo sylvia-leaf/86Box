@@ -2,6 +2,8 @@
 #define QT_SETTINGSNETWORK_HPP
 
 #include <QWidget>
+#include <QHash>
+#include <QPointer>
 
 namespace Ui {
 class SettingsNetwork;
@@ -34,6 +36,14 @@ private slots:
     void enableElements(Ui::SettingsNetwork *ui);
 
 private:
+    /* The page's controls by name, kept from when it is built: a control
+       moved under another widget is still found, as findChild() would not. */
+    QHash<QString, QPointer<QWidget>> controls;
+    template <typename T>
+    T networkControl(const QString &name) const
+    {
+        return qobject_cast<T>(controls.value(name).data());
+    }
     Ui::SettingsNetwork *ui;
     int                  machineId = 0;
 
