@@ -1212,11 +1212,12 @@ build_link_routine(codeblock_t *block)
     miss[nr_miss++] = rx_jcc(block, RX_CC_NZ);
     rx_rm(block, 0, 0, 0x8b, REG_R12, REG_RBX, LINK_SLOT(phys_page));
 
-    /*get_phys(cs + pc) gives phys_page. R13D = nonzero if get_phys() would
-      miss its cache*/
-    lx_abs(block, 0, 0, 0x8b, REG_R13, &get_phys_virt);
-    rx_rr(block, 0, 0, 0x31, REG_RSI, REG_R13); /*XOR R13D, ESI*/
-    rx_alu_ri(block, 0, 4, REG_R13, 0xfffff000);
+    /*get_phys(cs + pc) gives phys_page. R13 = nonzero if get_phys() would
+      miss its cache: get_phys_virt is 64 bits, all ones while forgotten,
+      and RSI is zero-extended*/
+    lx_abs(block, 0, 1, 0x8b, REG_R13, &get_phys_virt);
+    rx_rr(block, 0, 1, 0x31, REG_RSI, REG_R13); /*XOR R13, RSI*/
+    rx_alu_ri(block, 1, 4, REG_R13, 0xfffff000); /*AND R13, ~0xfff*/
     uncached = rx_jcc(block, RX_CC_NZ);
     lx_abs(block, 0, 0, 0x3b, REG_R12, &get_phys_phys);
     miss[nr_miss++] = rx_jcc(block, RX_CC_NZ);
@@ -1257,9 +1258,9 @@ build_link_routine(codeblock_t *block)
     rx_alu_ri(block, 0, 4, REG_RCX, 3);
     lx_abs(block, 0, 0, 0x89, REG_RCX, &oldcpl);
     /*get_phys() only writes its cache when it misses*/
-    rx_rr(block, 0, 0, 0x85, REG_R13, REG_R13);
+    rx_rr(block, 0, 1, 0x85, REG_R13, REG_R13);
     cached = rx_jcc(block, RX_CC_Z);
-    lx_abs(block, 0, 0, 0x89, REG_RSI, &get_phys_virt);
+    lx_abs(block, 0, 1, 0x89, REG_RSI, &get_phys_virt);
     lx_abs(block, 0, 0, 0x89, REG_R12, &get_phys_phys);
     rx_patch(cached, rx_here());
     rx_rr(block, 0, 0, 0x31, REG_RCX, REG_RCX);

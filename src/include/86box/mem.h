@@ -268,7 +268,7 @@ extern page_t *page_lookup[1048576];
 extern uintptr_t readlookup2[2097152];
 extern uintptr_t writelookup2[1048576];
 
-extern uint32_t get_phys_virt;
+extern uint64_t get_phys_virt; /* 64 bits: ~0 matches no linear page (mem_get_phys_forget) */
 extern uint32_t get_phys_phys;
 
 extern int shadowbios;

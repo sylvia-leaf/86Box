@@ -1090,12 +1090,14 @@ build_link_routine(codeblock_t *block)
     miss[nr_miss++] = host_arm64_BNE_SHORT_(block);
 
     /*get_phys(cs + pc) gives phys_page. X6 = &get_phys_virt,
-      X7 = &get_phys_phys, W8 = nonzero if get_phys() would miss its cache*/
+      X7 = &get_phys_phys, W8 = nonzero if get_phys() would miss its cache.
+      get_phys_virt is 64 bits; its upper half is set only while forgotten*/
     host_arm64_LDP_IMM_X(block, REG_X6, REG_X7, REG_X17, LINK_LIT(LINK_LIT_GET_PHYS_VIRT));
-    host_arm64_LDR_IMM_W(block, REG_W8, REG_X6, 0);
+    host_arm64_LDP_IMM_W(block, REG_W8, REG_W10, REG_X6, 0);
     host_arm64_EOR_REG(block, REG_W8, REG_W8, REG_W2, 0);
-    host_arm64_ANDS_IMM(block, REG_W8, REG_W8, 0xfffff000);
-    uncached = host_arm64_BNE_SHORT_(block);
+    host_arm64_AND_IMM(block, REG_W8, REG_W8, 0xfffff000);
+    host_arm64_ORR_REG(block, REG_W8, REG_W8, REG_W10, 0);
+    uncached = host_arm64_CBNZ_SHORT_(block, REG_W8);
     host_arm64_LDR_IMM_W(block, REG_W10, REG_X7, 0);
     host_arm64_CMP_REG(block, REG_W10, REG_W12);
     miss[nr_miss++] = host_arm64_BNE_SHORT_(block);
@@ -1138,6 +1140,7 @@ build_link_routine(codeblock_t *block)
     /*get_phys() only writes its cache when it misses*/
     cached = host_arm64_CBZ_SHORT_(block, REG_W8);
     host_arm64_STR_IMM_W(block, REG_W2, REG_X6, 0);
+    host_arm64_STR_IMM_W(block, REG_WZR, REG_X6, 4);
     host_arm64_STR_IMM_W(block, REG_W12, REG_X7, 0);
     host_arm64_short_branch_set_offset(cached, &block_write_data[block_pos]);
     /*cpu_fetch_device and cpu_halted, cleared as the C loop does*/

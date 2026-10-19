@@ -104,7 +104,7 @@ int readlnum  = 0;
 int writelnum = 0;
 int cachesize = 256;
 
-uint32_t get_phys_virt;
+uint64_t get_phys_virt = ~0ULL;
 uint32_t get_phys_phys;
 
 int mem_a20_key     = 0;
@@ -183,6 +183,17 @@ mem_addr_is_ram(uint32_t addr)
            (mapping == &ram_mid_mapping2) || (mapping == &ram_remapped_mapping);
 }
 
+/* get_phys() keeps the last translation it made (get_phys_virt/_phys), and
+   it is only good while the translations stand: every TLB flush and every
+   reset forget it, or a lookup of the same linear page straight after a CR3
+   load returns the old physical page. get_phys_virt is 64 bits wide so that
+   the forgotten value matches no linear page, the top one included. */
+static __inline void
+mem_get_phys_forget(void)
+{
+    get_phys_virt = ~0ULL;
+}
+
 void
 resetreadlookup(void)
 {
@@ -207,11 +218,13 @@ resetreadlookup(void)
     writelnext   = 0;
     pccache      = 0xffffffff;
     high_page    = 0;
+    mem_get_phys_forget();
 }
 
 void
 flushmmucache(void)
 {
+    mem_get_phys_forget();
     for (uint16_t c = 0; c < 512; c++) {
         if (readlookup[c] != (int) 0xffffffff) {
             readlookup2[readlookup[c]] = LOOKUP_INV;
@@ -263,6 +276,7 @@ flushmmucache_pc(void)
 void
 flushmmucache_nopc(void)
 {
+    mem_get_phys_forget();
     for (uint16_t c = 0; c < 512; c++) {
         if (readlookup[c] != (int) 0xffffffff) {
             readlookup2[readlookup[c]] = LOOKUP_INV;
