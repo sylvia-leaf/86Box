@@ -176,9 +176,12 @@ pdc_log(const char *fmt, ...)
  *
  * The option ROM takes no reading before it starts, which means it assumes
  * the counter is at its top when test mode is entered: it computes the
- * elapsed count as the one's complement of what it reads. So the counter
- * must begin at 0x3FFFFFFF each time the bit goes up, and that is what
- * latching the timestamp there gives.
+ * elapsed count as the one's complement of what it reads. The counter is at
+ * its top only after a reset, though, which is where pdc_reset() puts it;
+ * entering test mode does not reload it (Linux reads the counter before
+ * setting the bit and subtracts, which a reload would break). After a warm
+ * boot the ROM's measurement therefore includes the previous run, on the
+ * real part as here.
  */
 static uint32_t
 pdc_counter(const pdc_t *dev)
