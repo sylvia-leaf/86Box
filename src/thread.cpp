@@ -87,6 +87,12 @@ thread_create_event()
     return ev;
 }
 
+void
+thread_yield(void)
+{
+    std::this_thread::yield();
+}
+
 int
 thread_wait_event(event_t *handle, int timeout)
 {

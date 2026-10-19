@@ -2,6 +2,7 @@
 #include <stdio.h>
 #include <time.h>
 #include <pthread.h>
+#include <sched.h>
 #include <inttypes.h>
 #include <86box/86box.h>
 #include <86box/plat.h>
@@ -85,6 +86,12 @@ thread_reset_event(event_t *handle)
     pthread_mutex_lock(&event->mutex);
     event->state = 0;
     pthread_mutex_unlock(&event->mutex);
+}
+
+void
+thread_yield(void)
+{
+    sched_yield();
 }
 
 int
