@@ -1978,7 +1978,8 @@ svga_write_common(uint32_t addr, uint8_t val, uint8_t linear, void *priv)
     cycles -= svga->monitor->mon_video_timing_write_b;
 
     if (!linear) {
-        xga_write_test(addr, val, svga);
+        if (xga_active) /* the XGA's memory test, only with one */
+            xga_write_test(addr, val, svga);
         addr = svga_decode_addr(svga, addr, 1);
         if (addr == 0xffffffff) {
             svga_log("WriteCommon Over.\n");
@@ -2416,8 +2417,10 @@ svga_writew_common(uint32_t addr, uint16_t val, uint8_t linear, void *priv)
     cycles -= svga->monitor->mon_video_timing_write_w;
 
     if (!linear) {
-        xga_write_test(addr, val & 0xff, svga);
-        xga_write_test(addr + 1, val >> 8, svga);
+        if (xga_active) {
+            xga_write_test(addr, val & 0xff, svga);
+            xga_write_test(addr + 1, val >> 8, svga);
+        }
         addr = svga_decode_addr(svga, addr, 1);
 
         if (addr == 0xffffffff)
@@ -2480,10 +2483,12 @@ svga_writel_common(uint32_t addr, uint32_t val, uint8_t linear, void *priv)
     cycles -= svga->monitor->mon_video_timing_write_l;
 
     if (!linear) {
-        xga_write_test(addr, val & 0xff, svga);
-        xga_write_test(addr + 1, (val >> 8) & 0xff, svga);
-        xga_write_test(addr + 2, (val >> 16) & 0xff, svga);
-        xga_write_test(addr + 3, (val >> 24) & 0xff, svga);
+        if (xga_active) {
+            xga_write_test(addr, val & 0xff, svga);
+            xga_write_test(addr + 1, (val >> 8) & 0xff, svga);
+            xga_write_test(addr + 2, (val >> 16) & 0xff, svga);
+            xga_write_test(addr + 3, (val >> 24) & 0xff, svga);
+        }
         addr = svga_decode_addr(svga, addr, 1);
 
         if (addr == 0xffffffff)
