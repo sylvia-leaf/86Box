@@ -450,6 +450,16 @@ void codegen_reg_flush(struct ir_data_t *ir, codeblock_t *block);
 void codegen_reg_flush_invalidate(struct ir_data_t *ir, codeblock_t *block);
 /*Evict IREG_cycles if it is cached and clean*/
 void codegen_reg_drop_cycles(void);
+#ifdef CODEGEN_BACKEND_SLOW_STORES
+/*Before a memory access: what a flush writes back, kept for its slow path*/
+void codegen_reg_flush_slow(struct ir_data_t *ir, codeblock_t *block);
+/*The backend, in a memory access's slow path before its call: those stores*/
+void codegen_reg_emit_slow(codeblock_t *block);
+int  codegen_reg_slow_size(void);
+void codegen_reg_store_pending(codeblock_t *block);
+void codegen_reg_jump_dest(codeblock_t *block);
+extern int codegen_slow_open;
+#endif
 
 /*Register ir_reg usage for this uOP. This ensures that required registers aren't evicted*/
 void codegen_reg_alloc_register(ir_reg_t dest_reg_a, ir_reg_t src_reg_a, ir_reg_t src_reg_b, ir_reg_t src_reg_c);

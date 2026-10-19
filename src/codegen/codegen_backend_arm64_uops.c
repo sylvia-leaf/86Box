@@ -1075,7 +1075,7 @@ codegen_mem_inline(codeblock_t *block, int size, int store, int ea_rule, void *r
     uint32_t *slow[3] = { NULL, NULL, NULL };
     uint32_t *done;
 
-    codegen_alloc(block, 128);
+    codegen_alloc(block, 128 + codegen_reg_slow_size());
     host_arm64_MOV_REG_LSR(block, ent, REG_W0, 12);
     host_arm64_LDR_IMM_X(block, tbl, REG_CPUSTATE, (int) ((uintptr_t) (store ? &cpu_state.lookup2_w : &cpu_state.lookup2_r) - (uintptr_t) &cpu_state));
     host_arm64_LDRX_REG_LSL3(block, ent, tbl, ent);
@@ -1109,6 +1109,7 @@ codegen_mem_inline(codeblock_t *block, int size, int store, int ea_rule, void *r
         if (slow[i])
             mem_inline_here(slow[i]);
     }
+    codegen_reg_emit_slow(block); /* what the fast path never needs written back */
     host_arm64_call(block, rout);
     host_arm64_CBNZ(block, REG_X1, (uintptr_t) codegen_exit_rout);
     mem_inline_here(done);
@@ -1186,6 +1187,7 @@ codegen_MEM_LOAD_REG(codeblock_t *block, uop_t *uop)
     } else if (REG_IS_L(dest_size)) {
         codegen_mem_inline(block, 4, 0, 0, codegen_mem_load_long);
     } else if (REG_IS_Q(dest_size)) {
+        codegen_reg_emit_slow(block); /* always called: the stores before it */
         host_arm64_call(block, codegen_mem_load_quad);
         host_arm64_CBNZ(block, REG_X1, (uintptr_t) codegen_exit_rout);
     } else
@@ -1218,6 +1220,7 @@ codegen_MEM_LOAD_DOUBLE(codeblock_t *block, uop_t *uop)
     host_arm64_ADD_REG(block, REG_X0, seg_reg, addr_reg, 0);
     if (uop->imm_data)
         host_arm64_ADD_IMM(block, REG_X0, REG_X0, uop->imm_data);
+    codegen_reg_emit_slow(block); /* always called: the stores before it */
     host_arm64_call(block, codegen_mem_load_double);
     host_arm64_CBNZ(block, REG_X1, (uintptr_t) codegen_exit_rout);
     host_arm64_FMOV_D_D(block, dest_reg, REG_V_TEMP);
@@ -1238,6 +1241,7 @@ codegen_MEM_LOAD_SINGLE(codeblock_t *block, uop_t *uop)
     host_arm64_ADD_REG(block, REG_X0, seg_reg, addr_reg, 0);
     if (uop->imm_data)
         host_arm64_ADD_IMM(block, REG_X0, REG_X0, uop->imm_data);
+    codegen_reg_emit_slow(block); /* always called: the stores before it */
     host_arm64_call(block, codegen_mem_load_single);
     host_arm64_CBNZ(block, REG_X1, (uintptr_t) codegen_exit_rout);
     host_arm64_FCVT_D_S(block, dest_reg, REG_V_TEMP);
@@ -1295,6 +1299,7 @@ codegen_MEM_STORE_REG(codeblock_t *block, uop_t *uop)
         codegen_mem_inline(block, 4, 1, 0, codegen_mem_store_long);
     } else if (REG_IS_Q(src_size)) {
         host_arm64_FMOV_D_D(block, REG_V_TEMP, src_reg);
+        codegen_reg_emit_slow(block); /* always called: the stores before it */
         host_arm64_call(block, codegen_mem_store_quad);
         host_arm64_CBNZ(block, REG_X1, (uintptr_t) codegen_exit_rout);
     } else
@@ -1355,6 +1360,7 @@ codegen_MEM_STORE_SINGLE(codeblock_t *block, uop_t *uop)
     if (uop->imm_data)
         host_arm64_ADD_IMM(block, REG_X0, REG_X0, uop->imm_data);
     host_arm64_FCVT_S_D(block, REG_V_TEMP, src_reg);
+    codegen_reg_emit_slow(block); /* always called: the stores before it */
     host_arm64_call(block, codegen_mem_store_single);
     host_arm64_CBNZ(block, REG_X1, (uintptr_t) codegen_exit_rout);
 
@@ -1375,6 +1381,7 @@ codegen_MEM_STORE_DOUBLE(codeblock_t *block, uop_t *uop)
     if (uop->imm_data)
         host_arm64_ADD_IMM(block, REG_X0, REG_X0, uop->imm_data);
     host_arm64_FMOV_D_D(block, REG_V_TEMP, src_reg);
+    codegen_reg_emit_slow(block); /* always called: the stores before it */
     host_arm64_call(block, codegen_mem_store_double);
     host_arm64_CBNZ(block, REG_X1, (uintptr_t) codegen_exit_rout);
 
