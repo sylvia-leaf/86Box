@@ -20748,7 +20748,7 @@ const machine_t machines[] = {
        - Memory 2 MB to 768 MB: three banks of two 72-pin SIMMs, 256Kx36 to
          32Mx36 (page 32).
        Manual: https://theretroweb.com/motherboard/manual/tdpman-5f04d9492eea4539273477.pdf */
-    {
+    /*{
         .name              = "[i430HX] AIR 54TDP",
         .internal_name     = "54tdp",
         .type              = MACHINE_TYPE_SOCKET7,
@@ -20797,33 +20797,16 @@ const machine_t machines[] = {
         .pci_flags                = PCI_CONFIG_TYPE_1,
         .slot_layout              = (const machine_slot_t[]) {
             MSLOT_PCI(0x00, PCI_CARD_NORTHBRIDGE, 0, 0, 0, 0),
-            /* The bridge sits where a south bridge would, because on this board
-               it is one. */
             MSLOT_BRIDGE(0x07, PCI_CARD_SOUTHBRIDGE, 0, 0, 0, 0, ((const machine_slot_t[]) { MSLOT_BUS(SLOT_EISA, 4), MSLOT_END })),
-            /* The on-board SCSI, then the four slots. */
-            /* The BIOS only ever routes PIRQC and PIRQD, and it programs them
-               the other way round from what this table used to assume: PIRQC to
-               IRQ 11 and PIRQD to IRQ 10 (the ESC's route registers in a POST
-               trace read 60h..63h = 80 80 0B 0A). The on-board SCSI is on IRQ 10
-               on the real board -- lspci shows 00:08.0 at irq 10 -- and the BIOS
-               tells the operating system so, so its INTA is PIRQD. With it on
-               PIRQC the chip raised IRQ 11 while Windows 2000 had its handler on
-               IRQ 10: every command on the on-board bus completed unnoticed and
-               was reset after the driver's timeout, eight seconds at a time. */
-            /* The rest is what the BIOS itself reports through its PCI IRQ
-               routing table (INT 1Ah, B10Eh, as PCIREG prints it): the on-board
-               SCSI at 08h with INTA alone, and four slots at 09h to 0Ch -- slot 4
-               down to slot 1 -- each one a rotation of the last. There is no
-               device 0Dh on this board: a card put there had no routing at all. */
-            MSLOT_PCI(0x08, PCI_CARD_SCSI, 4, 0, 0, 0), /* Onboard */
-            MSLOT_PCI(0x09, PCI_CARD_NORMAL, 2, 3, 4, 1), /* Slot 4 */
-            MSLOT_PCI(0x0a, PCI_CARD_NORMAL, 3, 4, 1, 2), /* Slot 3 */
-            MSLOT_PCI(0x0b, PCI_CARD_NORMAL, 4, 1, 2, 3), /* Slot 2 */
-            MSLOT_PCI(0x0c, PCI_CARD_NORMAL, 1, 2, 3, 4), /* Slot 1 */
+            MSLOT_PCI(0x08, PCI_CARD_SCSI, 4, 0, 0, 0),
+            MSLOT_PCI(0x09, PCI_CARD_NORMAL, 2, 3, 4, 1),
+            MSLOT_PCI(0x0a, PCI_CARD_NORMAL, 3, 4, 1, 2),
+            MSLOT_PCI(0x0b, PCI_CARD_NORMAL, 4, 1, 2, 3),
+            MSLOT_PCI(0x0c, PCI_CARD_NORMAL, 1, 2, 3, 4),
             MSLOT_END
         },
         .aliases                  = { "Advanced Integration Research 54TDP", "" }
-    },
+    },*/
     /* Has AMIKey H KBC firmware (AMIKey-2). */
     {
         .name              = "[i430HX] ASUS P/I-P55T2P4",
@@ -20883,7 +20866,7 @@ const machine_t machines[] = {
         .aliases                  = { "" }
     },
     /* The base board has a Holtek HT6542B which emulates the AMIKey-2 ('H') KBC firmware. */
-    {
+    /*{
         .name              = "[i430HX] ASUS P/I-P65UP5 (C-P55T2D)",
         .internal_name     = "p65up5_cp55t2d",
         .type              = MACHINE_TYPE_SOCKET7,
@@ -20903,7 +20886,7 @@ const machine_t machines[] = {
             .min_multi   = 1.5,
             .max_multi   = 3.5
         },
-        .bus_flags = MACHINE_PS2_PCI | MACHINE_BUS_USB, /* Machine has AMB */
+        .bus_flags = MACHINE_PS2_PCI | MACHINE_BUS_USB,
         .flags     = MACHINE_IDE_DUAL | MACHINE_APM | MACHINE_USB | MACHINE_UART_PRI | MACHINE_UART_SEC | MACHINE_LPT_PRI,
         .ram       = {
             .min  = 4096,
@@ -20922,7 +20905,6 @@ const machine_t machines[] = {
         .kbc_p1                   = 0x00000cf0,
         .gpio                     = 0xffffffff,
         .gpio_acpi                = 0xffffffff,
-        /* Table hook selects validated-UP APIC; init still owns IOAPIC topology. */
         .device                   = &validated_up_apic_board_device,
         .kbd_device               = NULL,
         .fdc_device               = NULL,
@@ -20941,7 +20923,7 @@ const machine_t machines[] = {
             MSLOT_END
         },
         .aliases                  = { "" }
-    },
+    },*/
     /* According to tests from real hardware: This has AMI MegaKey KBC firmware on the
        PC87306 Super I/O chip, command 0xA1 returns '5'.
        Command 0xA0 copyright string: (C)1994 AMI . */
@@ -25353,7 +25335,7 @@ const machine_t machines[] = {
         .aliases                  = { "" }
     },
     /* The base board has a Holtek HT6542B with AMIKey-2 ('H') KBC firmware. */
-    {
+    /*{
         .name              = "[i440FX] ASUS P/I-P65UP5 (C-P6ND)",
         .internal_name     = "p65up5_cp6nd",
         .type              = MACHINE_TYPE_SOCKET8,
@@ -25373,7 +25355,7 @@ const machine_t machines[] = {
             .min_multi   = 1.5,
             .max_multi   = 8.0
         },
-        .bus_flags = MACHINE_PS2_PCI | MACHINE_BUS_USB, /* Machine has AMB */
+        .bus_flags = MACHINE_PS2_PCI | MACHINE_BUS_USB,
         .flags     = MACHINE_IDE_DUAL | MACHINE_APM | MACHINE_USB | MACHINE_UART_PRI | MACHINE_UART_SEC | MACHINE_LPT_PRI,
         .ram       = {
             .min  = 8192,
@@ -25392,7 +25374,6 @@ const machine_t machines[] = {
         .kbc_p1                   = 0x00000cf0,
         .gpio                     = 0xffffffff,
         .gpio_acpi                = 0xffffffff,
-        /* Table hook selects validated-UP APIC; init still owns IOAPIC topology. */
         .device                   = &validated_up_apic_board_device,
         .kbd_device               = NULL,
         .fdc_device               = NULL,
@@ -25411,7 +25392,7 @@ const machine_t machines[] = {
             MSLOT_END
         },
         .aliases                  = { "" }
-    },
+    },*/
     /* Has a VIA VT82C42N KBC. */
     {
         .name              = "[i440FX] Biostar MB-8600TTC",
@@ -26113,7 +26094,7 @@ const machine_t machines[] = {
         .kbc_p1                   = 0x00000cf0,
         .gpio                     = 0xffffffff,
         .gpio_acpi                = 0xffffffff,
-        .device                   = NULL,
+        .device                   = &validated_up_apic_board_device,
         .kbd_device               = NULL,
         .fdc_device               = NULL,
         .vid_device               = NULL,
