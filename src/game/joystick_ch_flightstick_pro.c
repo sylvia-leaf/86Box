@@ -47,9 +47,9 @@
 #include <86box/joystick.h>
 
 static uint8_t
-ch_flightstick_pro_read(UNUSED(void *priv))
+ch_flightstick_pro_read(void *priv)
 {
-    uint8_t gp  = 0;
+    uint8_t gp  = JOYSTICK_GP(priv);
     uint8_t ret = 0xf0;
 
     if (JOYSTICK_PRESENT(gp, 0)) {
@@ -83,9 +83,9 @@ ch_flightstick_pro_read(UNUSED(void *priv))
 }
 
 static uint8_t
-ch_virtual_pilot_pro_read(UNUSED(void *priv))
+ch_virtual_pilot_pro_read(void *priv)
 {
-    uint8_t gp  = 0;
+    uint8_t gp  = JOYSTICK_GP(priv);
     uint8_t ret = 0xf0;
 
     if (JOYSTICK_PRESENT(gp, 0)) {

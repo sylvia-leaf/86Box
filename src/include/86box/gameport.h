@@ -53,11 +53,16 @@
 #define GAMEPORT_SIO        0x1000000
 #define GAMEPORT_PNPROM     0x2000000
 
+/* A joystick on game port gp, for the drivers that keep no state of their
+   own: their private pointer is the port, encoded so it is never NULL. */
+#define JOYSTICK_PRIV(gp) ((void *) (uintptr_t) ((gp) + 1))
+#define JOYSTICK_GP(priv) ((uint8_t) ((uintptr_t) (priv) - 1))
+
 typedef struct joystick_t {
     const char *name;
     const char *internal_name;
 
-    void   *(*init)(void);
+    void   *(*init)(uint8_t gp); /* gp: the game port it is on (JOYSTICK_GP) */
     void    (*close)(void *priv);
     uint8_t (*read)(void *priv);
     void    (*write)(void *priv);

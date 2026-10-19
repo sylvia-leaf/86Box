@@ -1991,8 +1991,10 @@ pc_reset_hard_init(void)
 #endif
 
     /* installs first game port if no device provides one, must be late */
-    if (joystick_type[0])
-        gameport_update_joystick_type(0);
+    for (uint8_t gp = 0; gp < GAMEPORT_MAX; gp++) {
+        if (joystick_type[gp])
+            gameport_update_joystick_type(gp);
+    }
 
     ui_sb_update_panes();
 
@@ -2173,7 +2175,9 @@ pc_run(void)
 #ifdef USE_GDBSTUB /* avoid a KBC FIFO overflow when CPU emulation is stalled */
     }
 #endif
-    joystick_process(0); // Gameport 0
+    /* Each game port's joystick */
+    for (uint8_t gp = 0; gp < GAMEPORT_MAX; gp++)
+        joystick_process(gp);
     endblit();
 
     /* Done with this frame, update statistics. */

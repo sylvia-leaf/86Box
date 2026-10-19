@@ -898,34 +898,44 @@ load_input_devices(void)
     if ((p != NULL) && (strspn(p, "0123456789") != strlen(p)))
         config_known(joystick_type[joy_insn], STRING_UNSUPPORTED_JOYSTICK, p);
 
-    uint8_t gp = 0;
+    /* The second game port's joystick (208h-20Fh). */
+    p                = ini_section_get_string(cat, "joystick2_type", "none");
+    joystick_type[1] = joystick_get_from_internal_name(p);
+    if (strcmp(p, "none"))
+        config_known(joystick_type[1], STRING_UNSUPPORTED_JOYSTICK, p);
 
-    for (int js = 0; js < joystick_get_max_joysticks(joystick_type[joy_insn]); js++) {
-        sprintf(temp, "joystick_%i_nr", js);
-        joystick_state[gp][js].plat_joystick_nr = ini_section_get_int(cat, temp, 0);
+    /* The mappings of each game port's joysticks: joystick_..., then
+       joystick2_... */
+    for (uint8_t gp = 0; gp < GAMEPORT_MAX; gp++) {
+        const char *pre = gp ? "joystick2" : "joystick";
 
-        if (joystick_state[gp][js].plat_joystick_nr) {
-            // --- Load Axis Mappings ---
-            for (int axis_nr = 0; axis_nr < joystick_get_axis_count(joystick_type[joy_insn]); axis_nr++) {
-                sprintf(temp, "joystick_%i_axis_%i", js, axis_nr);
-                joystick_state[gp][js].axis_mapping[axis_nr] = ini_section_get_int(cat, temp, axis_nr);
-            }
+        for (int js = 0; js < joystick_get_max_joysticks(joystick_type[gp]); js++) {
+            sprintf(temp, "%s_%i_nr", pre, js);
+            joystick_state[gp][js].plat_joystick_nr = ini_section_get_int(cat, temp, 0);
 
-            // --- Load Button Mappings ---
-            for (int button_nr = 0; button_nr < joystick_get_button_count(joystick_type[joy_insn]); button_nr++) {
-                sprintf(temp, "joystick_%i_button_%i", js, button_nr);
-                joystick_state[gp][js].button_mapping[button_nr] = ini_section_get_int(cat, temp, button_nr);
-            }
+            if (joystick_state[gp][js].plat_joystick_nr) {
+                // --- Load Axis Mappings ---
+                for (int axis_nr = 0; axis_nr < joystick_get_axis_count(joystick_type[gp]); axis_nr++) {
+                    sprintf(temp, "%s_%i_axis_%i", pre, js, axis_nr);
+                    joystick_state[gp][js].axis_mapping[axis_nr] = ini_section_get_int(cat, temp, axis_nr);
+                }
 
-            // --- Load POV (Hat Switch) Mappings ---
-            for (int pov_nr = 0; pov_nr < joystick_get_pov_count(joystick_type[joy_insn]); pov_nr++) {
-                sprintf(temp, "joystick_%i_pov_%i", js, pov_nr);
-                sprintf(tmp2, "%i, %i", 0, 0);
-                p                                             = ini_section_get_string(cat, temp, tmp2);
-                joystick_state[gp][js].pov_mapping[pov_nr][0] = 0;
-				joystick_state[gp][js].pov_mapping[pov_nr][1] = 0;
-                sscanf(p, "%i, %i", &joystick_state[gp][js].pov_mapping[pov_nr][0],
-                       &joystick_state[gp][js].pov_mapping[pov_nr][1]);
+                // --- Load Button Mappings ---
+                for (int button_nr = 0; button_nr < joystick_get_button_count(joystick_type[gp]); button_nr++) {
+                    sprintf(temp, "%s_%i_button_%i", pre, js, button_nr);
+                    joystick_state[gp][js].button_mapping[button_nr] = ini_section_get_int(cat, temp, button_nr);
+                }
+
+                // --- Load POV (Hat Switch) Mappings ---
+                for (int pov_nr = 0; pov_nr < joystick_get_pov_count(joystick_type[gp]); pov_nr++) {
+                    sprintf(temp, "%s_%i_pov_%i", pre, js, pov_nr);
+                    sprintf(tmp2, "%i, %i", 0, 0);
+                    p                                             = ini_section_get_string(cat, temp, tmp2);
+                    joystick_state[gp][js].pov_mapping[pov_nr][0] = 0;
+                    joystick_state[gp][js].pov_mapping[pov_nr][1] = 0;
+                    sscanf(p, "%i, %i", &joystick_state[gp][js].pov_mapping[pov_nr][0],
+                           &joystick_state[gp][js].pov_mapping[pov_nr][1]);
+                }
             }
         }
     }
@@ -3579,60 +3589,63 @@ save_input_devices(void)
 
     ini_section_set_string(cat, "tablet_type", tablet_get_internal_name(tablet_type));
 
-    uint8_t joy_insn = 0;
-    if (!joystick_type[joy_insn]) {
-        ini_section_delete_var(cat, "joystick_type");
+    for (uint8_t gp = 0; gp < GAMEPORT_MAX; gp++) {
+        const char *pre = gp ? "joystick2" : "joystick";
 
-        for (int js = 0; js < MAX_PLAT_JOYSTICKS; js++) {
-            sprintf(temp, "joystick_%i_nr", js);
+        if (!joystick_type[gp]) {
+            sprintf(temp, "%s_type", pre);
             ini_section_delete_var(cat, temp);
 
-            // --- Save Axis Mappings ---
-            for (int axis_nr = 0; axis_nr < MAX_JOY_AXES; axis_nr++) {
-                sprintf(temp, "joystick_%i_axis_%i", js, axis_nr);
+            for (int js = 0; js < MAX_PLAT_JOYSTICKS; js++) {
+                sprintf(temp, "%s_%i_nr", pre, js);
                 ini_section_delete_var(cat, temp);
-            }
 
-            // --- Save Button Mappings ---
-            for (int button_nr = 0; button_nr < MAX_JOY_BUTTONS; button_nr++) {
-                sprintf(temp, "joystick_%i_button_%i", js, button_nr);
-                ini_section_delete_var(cat, temp);
-            }
-
-            // --- Save POV (Hat Switch) Mappings ---
-            for (int pov_nr = 0; pov_nr < MAX_JOY_POVS; pov_nr++) {
-                sprintf(temp, "joystick_%i_pov_%i", js, pov_nr);
-                ini_section_delete_var(cat, temp);
-            }
-        }
-    } else {
-        uint8_t gp = 0;
-
-        ini_section_set_string(cat, "joystick_type", joystick_get_internal_name(joystick_type[joy_insn]));
-
-        for (int js = 0; js < joystick_get_max_joysticks(joystick_type[joy_insn]); js++) {
-            sprintf(temp, "joystick_%i_nr", js);
-            ini_section_set_int(cat, temp, joystick_state[gp][js].plat_joystick_nr);
-
-            if (joystick_state[gp][js].plat_joystick_nr) {
                 // --- Save Axis Mappings ---
-                for (int axis_nr = 0; axis_nr < joystick_get_axis_count(joystick_type[joy_insn]); axis_nr++) {
-                    sprintf(temp, "joystick_%i_axis_%i", js, axis_nr);
-                    ini_section_set_int(cat, temp, joystick_state[gp][js].axis_mapping[axis_nr]);
+                for (int axis_nr = 0; axis_nr < MAX_JOY_AXES; axis_nr++) {
+                    sprintf(temp, "%s_%i_axis_%i", pre, js, axis_nr);
+                    ini_section_delete_var(cat, temp);
                 }
 
                 // --- Save Button Mappings ---
-                for (int button_nr = 0; button_nr < joystick_get_button_count(joystick_type[joy_insn]); button_nr++) {
-                    sprintf(temp, "joystick_%i_button_%i", js, button_nr);
-                    ini_section_set_int(cat, temp, joystick_state[gp][js].button_mapping[button_nr]);
+                for (int button_nr = 0; button_nr < MAX_JOY_BUTTONS; button_nr++) {
+                    sprintf(temp, "%s_%i_button_%i", pre, js, button_nr);
+                    ini_section_delete_var(cat, temp);
                 }
 
                 // --- Save POV (Hat Switch) Mappings ---
-                for (int pov_nr = 0; pov_nr < joystick_get_pov_count(joystick_type[joy_insn]); pov_nr++) {
-                    sprintf(temp, "joystick_%i_pov_%i", js, pov_nr);
-                    sprintf(tmp2, "%i, %i", joystick_state[gp][js].pov_mapping[pov_nr][0],
-                                            joystick_state[gp][js].pov_mapping[pov_nr][1]);
-                    ini_section_set_string(cat, temp, tmp2);
+                for (int pov_nr = 0; pov_nr < MAX_JOY_POVS; pov_nr++) {
+                    sprintf(temp, "%s_%i_pov_%i", pre, js, pov_nr);
+                    ini_section_delete_var(cat, temp);
+                }
+            }
+        } else {
+            sprintf(temp, "%s_type", pre);
+            ini_section_set_string(cat, temp, joystick_get_internal_name(joystick_type[gp]));
+
+            for (int js = 0; js < joystick_get_max_joysticks(joystick_type[gp]); js++) {
+                sprintf(temp, "%s_%i_nr", pre, js);
+                ini_section_set_int(cat, temp, joystick_state[gp][js].plat_joystick_nr);
+
+                if (joystick_state[gp][js].plat_joystick_nr) {
+                    // --- Save Axis Mappings ---
+                    for (int axis_nr = 0; axis_nr < joystick_get_axis_count(joystick_type[gp]); axis_nr++) {
+                        sprintf(temp, "%s_%i_axis_%i", pre, js, axis_nr);
+                        ini_section_set_int(cat, temp, joystick_state[gp][js].axis_mapping[axis_nr]);
+                    }
+
+                    // --- Save Button Mappings ---
+                    for (int button_nr = 0; button_nr < joystick_get_button_count(joystick_type[gp]); button_nr++) {
+                        sprintf(temp, "%s_%i_button_%i", pre, js, button_nr);
+                        ini_section_set_int(cat, temp, joystick_state[gp][js].button_mapping[button_nr]);
+                    }
+
+                    // --- Save POV (Hat Switch) Mappings ---
+                    for (int pov_nr = 0; pov_nr < joystick_get_pov_count(joystick_type[gp]); pov_nr++) {
+                        sprintf(temp, "%s_%i_pov_%i", pre, js, pov_nr);
+                        sprintf(tmp2, "%i, %i", joystick_state[gp][js].pov_mapping[pov_nr][0],
+                                                joystick_state[gp][js].pov_mapping[pov_nr][1]);
+                        ini_section_set_string(cat, temp, tmp2);
+                    }
                 }
             }
         }

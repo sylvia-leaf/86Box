@@ -28,6 +28,11 @@ extern "C" {
 }
 
 #include "qt_settings_completer.hpp"
+#include <QGridLayout>
+#include <QHBoxLayout>
+#include <QLabel>
+#include <QPushButton>
+#include <QComboBox>
 #include "qt_settingsinput.hpp"
 #include "ui_qt_settingsinput.h"
 #include "qt_mainwindow.hpp"
@@ -43,6 +48,8 @@ extern "C" {
 extern MainWindow *main_window;
 
 joystick_state_t      org_joystick_state[GAMEPORT_MAX][MAX_JOYSTICKS];
+
+static void updateJoystickConfig(int type, uint8_t gameport_nr, int joystick_nr, QWidget *parent);
 
 SettingsInput::SettingsInput(QWidget *parent)
     : QWidget(parent)
@@ -65,10 +72,44 @@ SettingsInput::SettingsInput(QWidget *parent)
              memcpy(&(org_joystick_state[i][j]), &(joystick_state[i][j]), sizeof(joystick_state_t));
     }
 
-    keyboardType = keyboard_type;
-    mouseType    = mouse_type;
-    tabletType   = tablet_type;
-    joystickType = joystick_type[0];
+    keyboardType  = keyboard_type;
+    mouseType     = mouse_type;
+    tabletType    = tablet_type;
+    joystickType  = joystick_type[0];
+    joystick2Type = joystick_type[1];
+
+    /* The second game port (208h-20Fh), in the rows under the first game
+       port's joystick. */
+    QGridLayout *grid = nullptr;
+    for (auto *layout : findChildren<QGridLayout *>()) {
+        if (layout->indexOf(ui->comboBoxJoystick0) >= 0)
+            grid = layout;
+    }
+    ui->labelJoystick0->setText(tr("Joystick (game port 1, 200h):"));
+    comboBoxJoystick1 = new QComboBox(this);
+    comboBoxJoystick1->setObjectName("comboBoxJoystick1");
+    comboBoxJoystick1->setMaxVisibleItems(30);
+    comboBoxJoystick1->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Fixed);
+    auto *buttons = new QHBoxLayout();
+    for (int i = 0; i < 4; i++) {
+        joystick1Buttons[i] = new QPushButton(tr("Joystick %1…").arg(i + 1), this);
+        joystick1Buttons[i]->setObjectName(QString("pushButtonJoystick1%1").arg(i + 1));
+        buttons->addWidget(joystick1Buttons[i]);
+        connect(joystick1Buttons[i], &QPushButton::clicked, this, [this, i]() {
+            updateJoystickConfig(comboBoxJoystick1->currentData().toInt(), 1, i, this);
+        });
+    }
+    if (grid != nullptr) {
+        auto *label = new QLabel(tr("Joystick (game port 2, 208h):"), this);
+        label->setObjectName("labelJoystick1");
+        grid->addWidget(label, 5, 0);
+        grid->addWidget(comboBoxJoystick1, 5, 1);
+        grid->addLayout(buttons, 6, 0, 1, 3);
+    }
+    connect(comboBoxJoystick1, QOverload<int>::of(&QComboBox::currentIndexChanged), this, [this](int index) {
+        if (index >= 0)
+            joystickChosen(1);
+    });
 
     onCurrentMachineChanged(machine);
 }
@@ -125,9 +166,12 @@ SettingsInput::changed()
     has_changed |= tablet_config_changed;
 
     has_changed |= (joystick_type[0] != ui->comboBoxJoystick0->currentData().toInt());
+    has_changed |= (joystick_type[1] != comboBoxJoystick1->currentData().toInt());
 
-    for (int i = 0; i < 4; i++)
-        has_changed |= has_joystick_state_changed(0, i);
+    for (int gp = 0; gp < GAMEPORT_MAX; gp++) {
+        for (int i = 0; i < 4; i++)
+            has_changed |= has_joystick_state_changed(gp, i);
+    }
 
     return has_changed ? (SETTINGS_CHANGED | SETTINGS_REQUIRE_HARD_RESET) : 0;
 }
@@ -148,6 +192,7 @@ SettingsInput::save(int soft)
     tablet_type   = ui->comboBoxTablet->currentData().toInt();
 
     joystick_type[0] = ui->comboBoxJoystick0->currentData().toInt();
+    joystick_type[1] = comboBoxJoystick1->currentData().toInt();
 }
 
 void
@@ -159,6 +204,7 @@ SettingsInput::onCurrentMachineChanged(int machineId)
     auto curMouseType = mouseType;
     auto curTabletType = tabletType;
     auto curJoystickType = joystickType;
+    auto curJoystick2Type = joystick2Type;
 
     scKeyboard->removeRows();
     scMouse->removeRows();
@@ -263,24 +309,46 @@ SettingsInput::onCurrentMachineChanged(int machineId)
     ui->comboBoxTablet->setCurrentIndex(selectedRow);
 
     // Joysticks
-    int         i             = 0;
-    const char *joyName       = joystick_get_name(i);
-    auto       *joystickModel = ui->comboBoxJoystick0->model();
-    removeRows                = joystickModel->rowCount();
-    selectedRow               = 0;
-    Models::Batch joystickRows(joystickModel);
-    while (joyName) {
-        int row = joystickRows.add(tr(joyName).toUtf8().data(), i);
-        scJoystick0->addDevice(nullptr, tr(joyName));
-        if (i == curJoystickType)
-            selectedRow = row - removeRows;
+    for (int i = 0; joystick_get_name(i) != nullptr; i++)
+        scJoystick0->addDevice(nullptr, tr(joystick_get_name(i)));
+    fillJoysticks(ui->comboBoxJoystick0, curJoystickType);
+    fillJoysticks(comboBoxJoystick1, curJoystick2Type);
+}
 
-        ++i;
-        joyName = joystick_get_name(i);
+/* A game port's list of joysticks, with the one it has chosen. */
+void
+SettingsInput::fillJoysticks(QComboBox *cbox, int current)
+{
+    auto *model       = cbox->model();
+    int   removeRows  = model->rowCount();
+    int   selectedRow = 0;
+
+    Models::Batch rows(model);
+    for (int i = 0; joystick_get_name(i) != nullptr; i++) {
+        int row = rows.add(tr(joystick_get_name(i)), i);
+        if (i == current)
+            selectedRow = row - removeRows;
     }
-    joystickRows.commit();
-    joystickModel->removeRows(0, removeRows);
-    ui->comboBoxJoystick0->setCurrentIndex(selectedRow);
+    rows.commit();
+    model->removeRows(0, removeRows);
+    cbox->setCurrentIndex(selectedRow);
+    joystickChosen((cbox == ui->comboBoxJoystick0) ? 0 : 1);
+}
+
+/* A joystick chosen for a game port: its sticks' buttons. */
+void
+SettingsInput::joystickChosen(int gameport)
+{
+    const int joystickId = ((gameport == 0) ? ui->comboBoxJoystick0 : comboBoxJoystick1)->currentData().toInt();
+    for (int i = 0; i < MAX_JOYSTICKS; ++i) {
+        auto *btn = findChild<QPushButton *>(QString("pushButtonJoystick%1%2").arg(gameport).arg(i + 1));
+        if (btn != nullptr)
+            btn->setEnabled(joystick_get_max_joysticks(joystickId) > i);
+    }
+    if (gameport == 0)
+        joystickType = joystickId;
+    else
+        joystick2Type = joystickId;
 }
 
 void
@@ -316,15 +384,8 @@ SettingsInput::on_comboBoxTablet_currentIndexChanged(int index)
 void
 SettingsInput::on_comboBoxJoystick0_currentIndexChanged(int index)
 {
-    int joystickId = ui->comboBoxJoystick0->currentData().toInt();
-    for (int i = 0; i < MAX_JOYSTICKS; ++i) {
-        auto *btn = findChild<QPushButton *>(QString("pushButtonJoystick0%1").arg(i + 1));
-        if (btn == nullptr)
-            continue;
-
-        btn->setEnabled(joystick_get_max_joysticks(joystickId) > i);
-    }
-    joystickType = joystickId;
+    if (index >= 0)
+        joystickChosen(0);
 }
 
 void
