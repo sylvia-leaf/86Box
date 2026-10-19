@@ -484,6 +484,28 @@ pci_write(uint16_t port, uint8_t val, UNUSED(void *priv))
             if (pci_flags & FLAG_TRC_CONTROLS_CPURST)
                 cpu_cpurst_on_sr = !(val & 0x10);
 
+            if (pci_flags & FLAG_TRC_450KX) {
+                /* The PB's TRC (82454KX/GX 2.2.2): bits 3:0 read back as
+                   written, the reset starting as Reset CPU goes from 0 to
+                   1, of the type Hard Reset Enable says. The hard reset
+                   (RESET#) returns every PB register to its default, this
+                   one's 00h (2.3); the soft reset (INIT#) keeps them. */
+                const int start = !(pci_trc_reg & 4) && (val & 4);
+
+                pci_trc_reg = val & 0x0f;
+                if (start && (val & 2)) {
+                    pci_trc_reg = 0x00;
+                    pci_trc_reset(val);
+                } else if (start) {
+                    /* INIT# to the processor, as the keyboard controller's
+                       reset pulse gives it. */
+                    softresetx86();
+                    cpu_set_edx();
+                    flushmmucache();
+                }
+                break;
+            }
+
             if (!(pci_trc_reg & 4) && (val & 4))
                 pci_trc_reset(val);
 
@@ -635,7 +657,8 @@ pci_read(uint16_t port, UNUSED(void *priv))
                 ret = pci_key | (pci_func << 1);
             break;
         case 0xcf9:
-            ret = pci_trc_reg & 0xfb;
+            /* The 82454's Reset CPU reads back as written too. */
+            ret = (pci_flags & FLAG_TRC_450KX) ? pci_trc_reg : (pci_trc_reg & 0xfb);
             break;
         case 0xcfa:
             if (pci_flags & FLAG_MECHANISM_2)
@@ -1015,6 +1038,14 @@ pci_slots_clear(void)
     } while (i++ < 0xff);
 
     pci_bus_number_to_index_mapping[0] = 0; /* always map bus 0 to index 0 */
+}
+
+/* What a chipset device adds to the machine's flags: a register it owns
+   that the ports here serve (FLAG_TRC_450KX). After pci_init. */
+void
+pci_add_flags(int flags)
+{
+    pci_flags |= flags;
 }
 
 void

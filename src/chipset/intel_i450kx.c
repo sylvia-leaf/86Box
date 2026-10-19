@@ -865,6 +865,8 @@ i450kx_init(const device_t *info)
     dev->gx = info->local;
 
     pci_add_card(PCI_ADD_NORTHBRIDGE, pb_read, pb_write, dev, &dev->pb_slot);        /* Device 19h: Intel 450KX PCI Bridge PB */
+    /* CF9h is its TRC (2.2.2). */
+    pci_add_flags(FLAG_TRC_450KX);
     pci_add_card(PCI_ADD_NORTHBRIDGE_SEC, mc_read, mc_write, dev, &dev->mc_slot);    /* Device 14h: Intel 450KX Memory Controller MC */
 
     dev->smram[0] = smram_add();

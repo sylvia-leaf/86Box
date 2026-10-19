@@ -107,6 +107,7 @@
 #define FLAG_NO_IRQ_STEERING      0x00000040
 #define FLAG_NO_BRIDGES           0x00000080
 #define FLAG_TRC_CONTROLS_CPURST  0x00000100
+#define FLAG_TRC_450KX            0x00000200 /* CF9h is the 82454KX/GX PB's TRC (pci_add_flags) */
 
 #define FLAG_MECHANISM_MASK       FLAG_MECHANISM_1 | FLAG_MECHANISM_2
 #define FLAG_MASK                 0x0000007f
@@ -319,6 +320,7 @@ extern void        pci_add_bridge(uint8_t agp, uint8_t (*read)(int func, int add
 extern void        pci_register_cards(void);
 
 extern void        pci_init(int flags);
+extern void        pci_add_flags(int flags);
 
 /* PCI bridge stuff. */
 extern void        pci_bridge_set_ctl(void *priv, uint8_t ctl);
