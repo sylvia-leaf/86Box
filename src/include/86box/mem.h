@@ -225,6 +225,8 @@ typedef struct page_t {
     uint64_t *byte_code_present_mask;
 } page_t;
 
+extern void mem_page_set_byte_masks(page_t *p, uint32_t page_nr);
+
 extern uint32_t purgable_page_list_head;
 __attribute__((always_inline)) static inline int
 page_in_evict_list(page_t *page)

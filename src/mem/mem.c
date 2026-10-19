@@ -117,6 +117,23 @@ int is_compare      = 0;
 
 uint64_t *byte_dirty_mask;
 uint64_t *byte_code_present_mask;
+/* The masks cover RAM only; every page beyond it shares these. Nothing
+   writes there through the RAM handlers, so they only ever collect the
+   code-present bits of blocks run from ROM above RAM. */
+static uint64_t byte_dirty_mask_none[64];
+static uint64_t byte_code_present_mask_none[64];
+
+void
+mem_page_set_byte_masks(page_t *p, uint32_t page_nr)
+{
+    if (byte_dirty_mask && (page_nr < (mem_size >> 2))) {
+        p->byte_dirty_mask        = &byte_dirty_mask[page_nr * 64];
+        p->byte_code_present_mask = &byte_code_present_mask[page_nr * 64];
+    } else {
+        p->byte_dirty_mask        = byte_dirty_mask_none;
+        p->byte_code_present_mask = byte_code_present_mask_none;
+    }
+}
 
 uint32_t purgable_page_list_head = 0;
 int      purgeable_page_count    = 0;
@@ -2906,8 +2923,7 @@ mem_reset(void)
             pages[c].write_l = mem_write_raml_page;
         }
         pages[c].evict_prev             = EVICT_NOT_IN_LIST;
-        pages[c].byte_dirty_mask        = &byte_dirty_mask[c * 64];
-        pages[c].byte_code_present_mask = &byte_code_present_mask[c * 64];
+        mem_page_set_byte_masks(&pages[c], c);
     }
 
     memset(_mem_exec, 0x00, sizeof(_mem_exec));
@@ -3024,8 +3040,7 @@ mem_remap_top_ex_common(int kb, uint32_t start, int mid)
         pages[c].write_b = set ? mem_write_ramb_page : NULL;
         pages[c].write_w = set ? mem_write_ramw_page : NULL;
         pages[c].write_l = set ? mem_write_raml_page : NULL;
-        pages[c].byte_dirty_mask        = &byte_dirty_mask[(addr >> 12) * 64];
-        pages[c].byte_code_present_mask = &byte_code_present_mask[(addr >> 12) * 64];
+        mem_page_set_byte_masks(&pages[c], addr >> 12);
     }
 
     mem_set_mem_state_both(start * 1024, size * 1024, set ? (MEM_READ_INTERNAL | MEM_WRITE_INTERNAL) : (MEM_READ_EXTERNAL | MEM_WRITE_EXTERNAL));
@@ -3048,8 +3063,7 @@ mem_remap_top_ex_common(int kb, uint32_t start, int mid)
             pages[c].write_w = NULL;
             pages[c].write_l = NULL;
         }
-        pages[c].byte_dirty_mask        = &byte_dirty_mask[c * 64];
-        pages[c].byte_code_present_mask = &byte_code_present_mask[c * 64];
+        mem_page_set_byte_masks(&pages[c], c);
     }
 
     if (set) {

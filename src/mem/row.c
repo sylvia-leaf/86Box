@@ -264,8 +264,7 @@ row_init(const device_t *info)
         pages[c].write_w = NULL;
         pages[c].write_l = NULL;
         pages[c].evict_prev = EVICT_NOT_IN_LIST;
-        pages[c].byte_dirty_mask = &byte_dirty_mask[c * 64];
-        pages[c].byte_code_present_mask = &byte_code_present_mask[c * 64];
+        mem_page_set_byte_masks(&pages[c], c);
     }
 
     /* Set all memory space above the default allocated area to external. */
