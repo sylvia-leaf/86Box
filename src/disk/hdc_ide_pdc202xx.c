@@ -6,11 +6,15 @@
  *
  *          This file is part of the 86Box distribution.
  *
- *          Promise PDC20269: the Ultra133 TX2.
+ *          Promise PDC20269 and PDC20271: the Ultra133 TX2 and the
+ *          FastTrak TX2000.
  *
- *          The card's identity is a parameter, so that the rest of the
- *          PDC202xx family, which differ mainly in what they say they
- *          are and in the option ROM they carry, can be added beside it.
+ *          THE SAME SILICON TWICE. The two cards differ in what they say
+ *          they are and in the option ROM they carry, and in nothing else
+ *          this model can see: the FastTrak's array handling is software
+ *          on the same registers, and where it lives is on the disks, not
+ *          in the chip. So one model serves both, and the identity is a
+ *          parameter.
  *
  *          WHAT IS PROMISE'S RATHER THAN SFF'S. Underneath, this is an
  *          ordinary bus-master IDE controller and 86Box's own SFF-8038i
@@ -64,9 +68,11 @@
 #define PDC20269_B14_ROM    "roms/hdd/ide/u133b14.bin"
 #define PDC20269_B12_ROM    "roms/hdd/ide/u133b12.bin"
 #define PDC20269_MAXTOR_ROM "roms/hdd/ide/u133_maxtor_b10.bin"
+#define PDC20271_B33_ROM    "roms/hdd/ide/fttx2000_20033.bin"
 
-/* Which card this instance is. */
+/* Which of the two cards this instance is. */
 #define PDC_ULTRA133  0
+#define PDC_FASTTRAK  1
 
 /* The index and data registers sit in the bytes SFF-8038i calls reserved,
    at one and three of each channel's eight. The secondary channel's pair is
@@ -631,6 +637,9 @@ pdc_mem_writel(uint32_t addr, uint32_t val, void *priv)
 static void
 pdc_mem_handler(pdc_t *dev)
 {
+    if (dev->card == PDC_FASTTRAK)
+        return;
+
     mem_mapping_disable(&dev->mem_mapping);
 
     dev->mem_base = (dev->pci_regs[0x27] << 24) | (dev->pci_regs[0x26] << 16) |
@@ -684,12 +693,12 @@ pdc_rom_handler(pdc_t *dev)
     dev->rom_enabled = 0;
     dev->rom_addr    = ((dev->pci_regs[0x33] << 24) | (dev->pci_regs[0x32] << 16) |
                         (dev->pci_regs[0x31] << 8));
-    dev->rom_addr &= 0xffffc000;
+    dev->rom_addr &= (dev->card == PDC_FASTTRAK) ? 0xffff0000 : 0xffffc000;
 
     if ((dev->pci_regs[0x30] & 0x01) && (dev->pci_regs[0x04] & PCI_COMMAND_MEM) &&
         (dev->rom_addr != 0x00000000)) {
         mem_mapping_set_addr(&dev->bios_rom.mapping, dev->rom_addr,
-                             0x4000);
+                             (dev->card == PDC_FASTTRAK) ? 0x10000 : 0x4000);
         mem_mapping_enable(&dev->bios_rom.mapping);
         dev->rom_enabled = 1;
     }
@@ -780,14 +789,15 @@ pdc_pci_write(int func, int addr, UNUSED(int len), uint8_t val, void *priv)
            the window's size must be unwritable here, or firmware reads its
            own ones back, concludes the card wants four gigabytes of the
            address space, and declines to place the ROM at all -- which
-           looks exactly like a card with no ROM on it. Sixteen kilobytes
-           here. */
+           looks exactly like a card with no ROM on it.
+
+           Sixteen kilobytes on the Ultra, sixty-four on the FastTrak. */
         case 0x30:
             dev->pci_regs[0x30] = val & 0x01;
             pdc_rom_handler(dev);
             break;
         case 0x31:
-            dev->pci_regs[0x31] = val & 0xc0;
+            dev->pci_regs[0x31] = (dev->card == PDC_FASTTRAK) ? 0x00 : (val & 0xc0);
             pdc_rom_handler(dev);
             break;
         case 0x32: case 0x33:
@@ -830,7 +840,7 @@ static void
 pdc_reset(void *priv)
 {
     pdc_t   *dev = (pdc_t *) priv;
-    uint16_t id  = 0x4d69;
+    uint16_t id  = (dev->card == PDC_FASTTRAK) ? 0x6269 : 0x4d69;
     uint8_t  pll_f;
     uint8_t  pll_r;
 
@@ -859,10 +869,11 @@ pdc_reset(void *priv)
        "please use compatible mode". */
     dev->pci_regs[0x09] = 0x8f;
 
-    /* WHAT THE CARD SAYS IT IS. Promise's driver tests the class against
-       the device identifier and refuses a part whose pair does not match,
-       so this is not cosmetic. */
-    dev->pci_regs[0x0a] = 0x80;
+    /* WHAT THE CARD SAYS IT IS, and the only thing that distinguishes the
+       two. Promise's driver tests the class against the device identifier
+       and refuses a part that answers with the other one's, so this is not
+       cosmetic. */
+    dev->pci_regs[0x0a] = (dev->card == PDC_FASTTRAK) ? 0x04 : 0x80;
     dev->pci_regs[0x0b] = 0x01;
 
     dev->pci_regs[0x10] = 0x01;
@@ -874,11 +885,12 @@ pdc_reset(void *priv)
     /* The retail Ultra133 TX2 carries subsystem 105A:4D68, not its own
        device ID, and BIOS 2.20.0.12 and the Maxtor 2.20.0050.10 build
        require it: they read config word 2Eh, pass over any PDC20269 that
-       says otherwise, then report that they cannot find the card. */
+       says otherwise, then report that they cannot find the card. The
+       FastTrak answers with its own ID there. */
     dev->pci_regs[0x2c] = 0x5a;
     dev->pci_regs[0x2d] = 0x10;
-    dev->pci_regs[0x2e] = 0x68;
-    dev->pci_regs[0x2f] = 0x4d;
+    dev->pci_regs[0x2e] = (dev->card == PDC_ULTRA133) ? 0x68 : (id & 0xff);
+    dev->pci_regs[0x2f] = id >> 8;
 
     dev->pci_regs[0x3d] = PCI_INTA;
     dev->pci_regs[0x3e] = 0x04;
@@ -961,10 +973,10 @@ pdc_init(const device_t *info)
     dev->card    = info->local & 0xff;
     dev->cable80 = !!device_get_config_int("cable80");
 
-    rom_size = 0x4000;
+    rom_size = (dev->card == PDC_FASTTRAK) ? 0x10000 : 0x4000;
     rom_file = device_get_bios_file(info, device_get_config_bios("bios_rev"), 0);
     if ((rom_file == NULL) || (rom_file[0] == '\0'))
-        rom_file = PDC20269_B15_ROM;
+        rom_file = (dev->card == PDC_FASTTRAK) ? PDC20271_B33_ROM : PDC20269_B15_ROM;
 
     rom_init(&dev->bios_rom, (char *) rom_file, 0x000c8000, rom_size,
              rom_size - 1, 0, MEM_MAPPING_EXTERNAL);
@@ -994,13 +1006,20 @@ pdc_init(const device_t *info)
     ide_set_bus_master(dev->ch[0], pdc_bm_dma_0, pdc_set_irq_0, dev);
     ide_set_bus_master(dev->ch[1], pdc_bm_dma_1, pdc_set_irq_1, dev);
 
-    /* The sixteen kilobyte memory window, through which Promise's driver
-       does its register work on this generation. */
-    mem_mapping_add(&dev->mem_mapping, 0, 0,
-                    pdc_mem_readb, pdc_mem_readw, pdc_mem_readl,
-                    pdc_mem_writeb, pdc_mem_writew, pdc_mem_writel,
-                    NULL, MEM_MAPPING_EXTERNAL, dev);
-    mem_mapping_disable(&dev->mem_mapping);
+    /* THE MEMORY WINDOW IS THE ULTRA'S AND NOT THE FASTTRAK'S. Promise's
+       plain driver maps it on this generation and does its register work
+       through it; their RAID driver for the same silicon never touches it,
+       and says so plainly -- it imports no memory accessor at all, never
+       reads the sixth base address register, declares five ranges rather
+       than six, and asks for sixteen bytes of the fifth. So the window is
+       offered where a driver looks for it and withheld where none does. */
+    if (dev->card != PDC_FASTTRAK) {
+        mem_mapping_add(&dev->mem_mapping, 0, 0,
+                        pdc_mem_readb, pdc_mem_readw, pdc_mem_readl,
+                        pdc_mem_writeb, pdc_mem_writew, pdc_mem_writel,
+                        NULL, MEM_MAPPING_EXTERNAL, dev);
+        mem_mapping_disable(&dev->mem_mapping);
+    }
 
     /* The two channels come with the bus master: the SFF core adds them
        itself for the first instance of it, so a card that added them again
@@ -1017,6 +1036,12 @@ static int
 pdc20269_available(void)
 {
     return rom_present(PDC20269_B15_ROM);
+}
+
+static int
+pdc20271_available(void)
+{
+    return rom_present(PDC20271_B33_ROM);
 }
 
 /* EIGHTY CONDUCTORS OR FORTY, which the chip senses on a pin and which
@@ -1093,6 +1118,34 @@ static const device_config_t pdc20269_config[] = {
     // clang-format on
 };
 
+static const device_config_t pdc20271_config[] = {
+    // clang-format off
+    PDC_CABLE_OPTION,
+    {
+        .name           = "bios_rev",
+        .description    = "BIOS Revision",
+        .type           = CONFIG_BIOS,
+        .default_string = "b33",
+        .default_int    = 0,
+        .file_filter    = NULL,
+        .spinner        = { 0 },
+        .bios           = {
+            {
+                .name          = "Version 2.00.33",
+                .internal_name = "b33",
+                .bios_type     = BIOS_NORMAL,
+                .files_no      = 1,
+                .local         = 0,
+                .size          = 65536,
+                .files         = { PDC20271_B33_ROM, "" }
+            },
+            { .files_no = 0 }
+        },
+    },
+    { .name = "", .description = "", .type = CONFIG_END }
+    // clang-format on
+};
+
 const device_t pdc20269_device = {
     .name          = "Promise Ultra133 TX2 (PDC20269)",
     .internal_name = "pdc20269",
@@ -1109,3 +1162,18 @@ const device_t pdc20269_device = {
     .ide_boards    = ide_boards_pci_card
 };
 
+const device_t pdc20271_device = {
+    .name          = "Promise FastTrak TX2000 (PDC20271)",
+    .internal_name = "pdc20271",
+    .flags         = DEVICE_PCI,
+    .local         = PDC_FASTTRAK,
+    .init          = pdc_init,
+    .close         = pdc_close,
+    .reset         = pdc_reset,
+    .available     = pdc20271_available,
+    .speed_changed = NULL,
+    .force_redraw  = NULL,
+    .config        = pdc20271_config,
+    .short_name    = "Promise FastTrak",
+    .ide_boards    = ide_boards_pci_card
+};
