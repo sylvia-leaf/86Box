@@ -119,9 +119,9 @@
 #define UOP_XOR_IMM (UOP_TYPE_PARAMS_REGS | UOP_TYPE_PARAMS_IMM | 0x3a)
 /*UOP_ANDN - dest_reg = ~src_reg_a & src_reg_b*/
 #define UOP_ANDN (UOP_TYPE_PARAMS_REGS | UOP_TYPE_PARAMS_IMM | 0x3b)
-/*UOP_CALL_REP_STRING - call REP string routine at p with immediate, exit block if it returns non-zero.
-  The routine reads and writes the guest registers in cpu_state, so the caller reloads them*/
-#define UOP_CALL_REP_STRING (UOP_TYPE_PARAMS_POINTER | UOP_TYPE_PARAMS_IMM | 0x3e | UOP_TYPE_ORDER_BARRIER)
+/*UOP_CALL_INSTRUCTION_FUNC_ORDERED - UOP_CALL_INSTRUCTION_FUNC with registers written back but
+  left loaded. The caller reloads what the handler writes*/
+#define UOP_CALL_INSTRUCTION_FUNC_ORDERED (UOP_TYPE_PARAMS_POINTER | UOP_TYPE_PARAMS_IMM | 0x3e | UOP_TYPE_ORDER_BARRIER)
 /*UOP_CALL_FUNC_ORDERED - call C function at p with registers written back but left loaded.
   The function must not change anything the IR caches unless the caller reloads it*/
 #define UOP_CALL_FUNC_ORDERED (UOP_TYPE_PARAMS_POINTER | 0x3f | UOP_TYPE_ORDER_BARRIER)
@@ -821,12 +821,13 @@ extern void codegen_fpu_guard_int_indefinite(ir_data_t *ir, uint32_t fetchdat, u
 #define uop_CALL_FUNC_ORDERED(ir, p)                             uop_gen_pointer(UOP_CALL_FUNC_ORDERED, ir, p)
 #if defined __aarch64__ || defined _M_ARM64 || defined __amd64__ || defined _M_X64
 #define uop_CALL_FUNC_RESULT_ORDERED(ir, dst_reg, p)             uop_gen_reg_dst_pointer(UOP_CALL_FUNC_RESULT_ORDERED, ir, dst_reg, p)
+#define uop_CALL_INSTRUCTION_FUNC_ORDERED(ir, p, imm)            uop_gen_pointer_imm(UOP_CALL_INSTRUCTION_FUNC_ORDERED, ir, p, imm)
 #else
 /*Only the arm64 and x86-64 backends keep the cached registers across a C call*/
 #define uop_CALL_FUNC_RESULT_ORDERED(ir, dst_reg, p)             uop_CALL_FUNC_RESULT(ir, dst_reg, p)
+#define uop_CALL_INSTRUCTION_FUNC_ORDERED(ir, p, imm)            uop_CALL_INSTRUCTION_FUNC(ir, p, imm)
 #endif
 #define uop_CALL_INSTRUCTION_FUNC(ir, p, imm)                    uop_gen_pointer_imm(UOP_CALL_INSTRUCTION_FUNC, ir, p, imm)
-#define uop_CALL_REP_STRING(ir, p, imm)                          uop_gen_pointer_imm(UOP_CALL_REP_STRING, ir, p, imm)
 
 #define uop_CMP_IMM_JZ(ir, src_reg, imm, p)                      uop_gen_reg_src_pointer_imm(UOP_CMP_IMM_JZ, ir, src_reg, p, imm)
 

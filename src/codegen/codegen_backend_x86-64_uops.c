@@ -307,11 +307,11 @@ codegen_CALL_INSTRUCTION_FUNC(codeblock_t *block, uop_t *uop)
     return 0;
 }
 
-/*The REP routine keeps RBX, RBP and R12-R15 but not the cached EAX and EDX,
-  which are saved around it as for an ordered call. Its result goes through
-  ESI, which is not allocated, so the saved registers can be put back first.*/
+/*As codegen_CALL_INSTRUCTION_FUNC, with EAX and EDX kept on the stack
+  around the call as codegen_CALL_FUNC_ORDERED keeps them; the result is
+  tested in ESI once they are back*/
 static int
-codegen_CALL_REP_STRING(codeblock_t *block, uop_t *uop)
+codegen_CALL_INSTRUCTION_FUNC_ORDERED(codeblock_t *block, uop_t *uop)
 {
     host_x86_PUSH(block, REG_RAX);
     host_x86_PUSH(block, REG_RDX);
@@ -3440,9 +3440,9 @@ const uOpFn uop_handlers[UOP_MAX] = {
     [UOP_CALL_FUNC_RESULT_ORDERED &
         UOP_MASK]
     = codegen_CALL_FUNC_RESULT_ORDERED,
-    [UOP_CALL_REP_STRING &
+    [UOP_CALL_INSTRUCTION_FUNC_ORDERED &
         UOP_MASK]
-    = codegen_CALL_REP_STRING,
+    = codegen_CALL_INSTRUCTION_FUNC_ORDERED,
     [UOP_CALL_FUNC_RESULT &
         UOP_MASK]
     = codegen_CALL_FUNC_RESULT,

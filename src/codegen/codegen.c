@@ -842,7 +842,7 @@ codegen_generate_call(uint8_t opcode, OpFn op, uint32_t fetchdat, uint32_t new_p
                 last_prefix = 0xf2;
 #endif
                 op_table        = x86_dynarec_opcodes_REPNE;
-                recomp_op_table = recomp_opcodes_REPNE;
+                recomp_op_table = NULL;
                 is_fpu          = 0;
                 break;
             case 0xf3: /*REPE*/
@@ -850,7 +850,7 @@ codegen_generate_call(uint8_t opcode, OpFn op, uint32_t fetchdat, uint32_t new_p
                 last_prefix = 0xf3;
 #endif
                 op_table        = x86_dynarec_opcodes_REPE;
-                recomp_op_table = recomp_opcodes_REPE;
+                recomp_op_table = NULL;
                 is_fpu          = 0;
                 break;
 
@@ -1144,7 +1144,18 @@ codegen_skip:
         uop_MOV_PTR(ir, IREG_ea_seg, (void *) op_ea_seg);
     if (op_ssegs != last_op_ssegs)
         uop_MOV_IMM(ir, IREG_ssegs, op_ssegs);
-    uop_CALL_INSTRUCTION_FUNC(ir, op, fetchdat);
+    /* REP MOVS and REP STOS (x86_ops_rep_dyn.h) write only the count, the
+       two index registers, the cycles, and the PC when they stop early,
+       which leaves the block: the cached registers stay loaded and those
+       three are reloaded. */
+    if (((op_table == x86_dynarec_opcodes_REPE) || (op_table == x86_dynarec_opcodes_REPNE)) &&
+        ((opcode == 0xa4) || (opcode == 0xa5) || (opcode == 0xaa) || (opcode == 0xab))) {
+        uop_CALL_INSTRUCTION_FUNC_ORDERED(ir, op, fetchdat);
+        uop_MOV_REG_PTR(ir, IREG_ECX, &ECX);
+        uop_MOV_REG_PTR(ir, IREG_ESI, &ESI);
+        uop_MOV_REG_PTR(ir, IREG_EDI, &EDI);
+    } else
+        uop_CALL_INSTRUCTION_FUNC(ir, op, fetchdat);
     /*An interpreted x87 or 0F instruction can undo what the block took as
       done (FNINIT, FRSTOR, FXRSTOR and FEMMS empty the tags and leave MMX
       mode, CLTS changes CR0): the next compiled FPU or MMX instruction
