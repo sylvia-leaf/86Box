@@ -11,12 +11,12 @@
  *          single CPUID check in rep_host_detect().
  *
  *          The generic versions use only baseline instructions (SSE2 on
- *          x86-64, plain C elsewhere): this file is built for the baseline
- *          whatever the rest of the build targets (cpu/CMakeLists.txt), so a
- *          build tuned for one host still has a true baseline path to fall
- *          back on and to measure against. The Zen 5 versions ask for
- *          AVX-512 themselves and use masked loads and stores, which need no
- *          scalar tails.
+ *          x86-64, NEON on ARM64, plain C elsewhere): this file is built for
+ *          the baseline whatever the rest of the build targets
+ *          (cpu/CMakeLists.txt), so a build tuned for one host still has a
+ *          true baseline path to fall back on and to measure against. The
+ *          Zen 5 versions ask for AVX-512 themselves and use masked loads
+ *          and stores, which need no scalar tails.
  *
  *          Stores go out in the guest's order, chunk by chunk: a later
  *          element of a run is never written before an earlier one, as the
@@ -39,11 +39,17 @@
 #else
 #    define REP_HOST_X86 0
 #endif
+#if defined(__aarch64__) && (defined(__GNUC__) || defined(__clang__))
+#    define REP_HOST_NEON 1
+#    include <arm_neon.h>
+#else
+#    define REP_HOST_NEON 0
+#endif
 
 uint8_t rep_host_mode = REP_HOST_OFF;
 
 /* ------------------------------------------------------------------ */
-/* Plain C, for hosts without SSE2 and for the ends of SSE2 runs      */
+/* Plain C, for hosts without either and for the ends of generic runs */
 /* ------------------------------------------------------------------ */
 
 static inline uint32_t
@@ -55,6 +61,7 @@ rep_elem_load(const uint8_t *p, uint32_t esz)
     return v;
 }
 
+#if REP_HOST_X86 || !REP_HOST_NEON
 static void
 fill_c(uint8_t *p, uint32_t value, uint32_t n, uint32_t esz, int down)
 {
@@ -90,6 +97,158 @@ cmp_c(const uint8_t *alo, const uint8_t *blo, uint32_t n, uint32_t esz, int down
     }
     return n;
 }
+#endif
+
+#if REP_HOST_NEON
+/* ------------------------------------------------------------------ */
+/* ARM64: NEON, sixteen bytes at a time                               */
+/* ------------------------------------------------------------------ */
+
+/* The lanes of a byte mask (0x00 or 0xff each) as four bits each. */
+static inline uint64_t
+rep_neon_bits(uint8x16_t m)
+{
+    return vget_lane_u64(vreinterpret_u64_u8(vshrn_n_u16(vreinterpretq_u16_u8(m), 4)), 0);
+}
+
+static inline uint8x16_t
+rep_neon_splat(uint32_t value, uint32_t esz)
+{
+    if (esz == 1)
+        return vdupq_n_u8((uint8_t) value);
+    if (esz == 2)
+        return vreinterpretq_u8_u16(vdupq_n_u16((uint16_t) value));
+    return vreinterpretq_u8_u32(vdupq_n_u32(value));
+}
+
+/* Element lanes equal, as a byte mask: each element's bytes all set or not. */
+static inline uint8x16_t
+rep_neon_eq(uint8x16_t a, uint8x16_t b, uint32_t esz)
+{
+    if (esz == 1)
+        return vceqq_u8(a, b);
+    if (esz == 2)
+        return vreinterpretq_u8_u16(vceqq_u16(vreinterpretq_u16_u8(a), vreinterpretq_u16_u8(b)));
+    return vreinterpretq_u8_u32(vceqq_u32(vreinterpretq_u32_u8(a), vreinterpretq_u32_u8(b)));
+}
+
+static void
+fill_neon(uint8_t *p, uint32_t value, uint32_t n, uint32_t esz, int down)
+{
+    const uint8x16_t v     = rep_neon_splat(value, esz);
+    uint32_t         bytes = n * esz;
+    uint8_t          tail[16];
+
+    /* Each sixteen bytes stored start on an element (bytes is a whole
+       number of them), so the splat lines up. Stored in the guest's order:
+       going down from the top, the last few bytes being the lowest. */
+    vst1q_u8(tail, v);
+    if (!down) {
+        for (; bytes >= 64; bytes -= 64, p += 64) {
+            vst1q_u8(p, v);
+            vst1q_u8(p + 16, v);
+            vst1q_u8(p + 32, v);
+            vst1q_u8(p + 48, v);
+        }
+        for (; bytes >= 16; bytes -= 16, p += 16)
+            vst1q_u8(p, v);
+    } else {
+        for (; bytes >= 64; bytes -= 64) {
+            vst1q_u8(p + bytes - 16, v);
+            vst1q_u8(p + bytes - 32, v);
+            vst1q_u8(p + bytes - 48, v);
+            vst1q_u8(p + bytes - 64, v);
+        }
+        for (; bytes >= 16; bytes -= 16)
+            vst1q_u8(p + bytes - 16, v);
+    }
+    if (bytes)
+        memcpy(p, tail, bytes);
+}
+
+/* The first element, in the run's order, where the test fails: for each
+   sixteen bytes, the elements whose (equal) differs from repe. */
+static uint32_t
+scan_neon(const uint8_t *lo, uint32_t n, uint32_t esz, int down, uint32_t value, int repe)
+{
+    const uint8x16_t v   = rep_neon_splat(value, esz);
+    const uint32_t   per = 16 / esz;
+    uint32_t         i   = 0;
+
+    if (!down) {
+        for (; (n - i) >= per; i += per) {
+            uint8x16_t m = rep_neon_eq(vld1q_u8(lo + i * esz), v, esz);
+            uint64_t   b;
+
+            if (repe)
+                m = vmvnq_u8(m);
+            b = rep_neon_bits(m);
+            if (b)
+                return i + (uint32_t) (__builtin_ctzll(b) >> 2) / esz;
+        }
+    } else {
+        for (; (n - i) >= per; i += per) {
+            const uint8_t *chunk = lo + (n - i - per) * esz; /* the highest elements not yet looked at */
+            uint8x16_t     m     = rep_neon_eq(vld1q_u8(chunk), v, esz);
+            uint64_t       b;
+
+            if (repe)
+                m = vmvnq_u8(m);
+            b = rep_neon_bits(m);
+            if (b)
+                return i + (uint32_t) (__builtin_clzll(b) >> 2) / esz;
+        }
+    }
+    for (; i < n; i++) {
+        const uint8_t *p = down ? lo + (n - 1 - i) * esz : lo + i * esz;
+        uint32_t       e = 0;
+
+        memcpy(&e, p, esz);
+        if ((e == value) != repe)
+            return i;
+    }
+    return n;
+}
+
+static uint32_t
+cmp_neon(const uint8_t *alo, const uint8_t *blo, uint32_t n, uint32_t esz, int down, int repe)
+{
+    const uint32_t per = 16 / esz;
+    uint32_t       i   = 0;
+
+    if (!down) {
+        for (; (n - i) >= per; i += per) {
+            uint8x16_t m = rep_neon_eq(vld1q_u8(alo + i * esz), vld1q_u8(blo + i * esz), esz);
+            uint64_t   b;
+
+            if (repe)
+                m = vmvnq_u8(m);
+            b = rep_neon_bits(m);
+            if (b)
+                return i + (uint32_t) (__builtin_ctzll(b) >> 2) / esz;
+        }
+    } else {
+        for (; (n - i) >= per; i += per) {
+            const uint32_t o = (n - i - per) * esz;
+            uint8x16_t     m = rep_neon_eq(vld1q_u8(alo + o), vld1q_u8(blo + o), esz);
+            uint64_t       b;
+
+            if (repe)
+                m = vmvnq_u8(m);
+            b = rep_neon_bits(m);
+            if (b)
+                return i + (uint32_t) (__builtin_clzll(b) >> 2) / esz;
+        }
+    }
+    for (; i < n; i++) {
+        const uint32_t o = down ? (n - 1 - i) * esz : i * esz;
+
+        if ((memcmp(alo + o, blo + o, esz) == 0) != repe)
+            return i;
+    }
+    return n;
+}
+#endif
 
 /* ------------------------------------------------------------------ */
 /* Generic x86-64: SSE2, sixteen bytes at a time                      */
@@ -361,6 +520,8 @@ rep_host_fill(uint8_t *dlo, uint32_t value, uint32_t n, uint32_t esz, int down)
         fill_zen5(dlo, value, n, esz, down);
     else
         fill_generic(dlo, value, n, esz, down);
+#elif REP_HOST_NEON
+    fill_neon(dlo, value, n, esz, down);
 #else
     fill_c(dlo, value, n, esz, down);
 #endif
@@ -373,6 +534,8 @@ rep_host_scan(const uint8_t *lo, uint32_t n, uint32_t esz, int down, uint32_t va
     if (rep_host_mode == REP_HOST_ZEN5)
         return scan_zen5(lo, n, esz, down, value, repe);
     return scan_generic(lo, n, esz, down, value, repe);
+#elif REP_HOST_NEON
+    return scan_neon(lo, n, esz, down, value, repe);
 #else
     return scan_c(lo, n, esz, down, value, repe);
 #endif
@@ -385,6 +548,8 @@ rep_host_cmp(const uint8_t *alo, const uint8_t *blo, uint32_t n, uint32_t esz, i
     if (rep_host_mode == REP_HOST_ZEN5)
         return cmp_zen5(alo, blo, n, esz, down, repe);
     return cmp_generic(alo, blo, n, esz, down, repe);
+#elif REP_HOST_NEON
+    return cmp_neon(alo, blo, n, esz, down, repe);
 #else
     return cmp_c(alo, blo, n, esz, down, repe);
 #endif
