@@ -891,8 +891,6 @@ extern int  inrecomp;
 extern void mmx_init(void);
 extern void prefetch_flush(void);
 
-extern void prefetch_run(int instr_cycles, int bytes, int modrm, int reads, int reads_l, int writes, int writes_l, int ea32);
-
 extern int lock_legal[256];
 extern int lock_legal_0f[256];
 extern int lock_legal_ba[8];
