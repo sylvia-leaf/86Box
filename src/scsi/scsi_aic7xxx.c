@@ -86,6 +86,7 @@
 #include <86box/eisa.h>
 #include <86box/fdc.h>
 #include <86box/scsi_aic7xxx.h>
+#include <86box/debugcon.h>
 #include <86box/plat_unused.h>
 
 /* Every command, phase change and interrupt is one line. The sequencer and
@@ -5508,6 +5509,146 @@ aic_reset(void *priv)
     }
 }
 
+/* ---- the debug console ----------------------------------------------------
+
+   info aic [N] [what]: this card's state as the model holds it. Read
+   straight from the model and never through aic_read, whose reads of
+   QOUTFIFO, DFDAT, SCSIDATL and the like move the card on: looking must
+   not change what is looked at. */
+
+static void
+aic_debug_bytes(uint8_t base, const uint8_t *p, int n)
+{
+    for (int i = 0; i < n; i += 16) {
+        debugcon_out("  %02x:", (base + i) & 0xff);
+        for (int j = 0; (j < 16) && ((i + j) < n); j++)
+            debugcon_out("%s%02x", (j == 8) ? "  " : " ", p[i + j]);
+        debugcon_out("\n");
+    }
+}
+
+static void
+aic_debug_info(const char *arg, void *priv)
+{
+    const aic7xxx_t *dev = (const aic7xxx_t *) priv;
+    char             tag[16];
+    char             what[16];
+    int              n = 0;
+    int              k;
+
+    snprintf(tag, sizeof(tag), "%s", dev->tag);
+    for (k = (int) strlen(tag); (k > 0) && ((tag[k - 1] == ' ') || (tag[k - 1] == ':')); k--)
+        tag[k - 1] = '\0';
+    while (*arg && ((*arg == ' ') || (*arg == '\t')))
+        arg++;
+    while (*arg && (*arg != ' ') && (*arg != '\t') && (n < 15))
+        what[n++] = *arg++;
+    what[n] = '\0';
+
+    if (!strcmp(what, "brief")) {
+        debugcon_out("%s, %s %04X, IRQ %u, sequencer %s at %03X, INTSTAT %02X ERROR %02X, bus %s\n", tag,
+                     dev->eisa ? "EISA I/O" : "I/O", dev->eisa ? (dev->eisa_slot << 12) | 0x0c00 : dev->io_base, dev->irq,
+                     aic_paused(dev) ? "paused" : "running", dev->pc, dev->intstat, dev->error,
+                     (dev->bus_state == BUS_BUSY) ? "busy" : "free");
+        return;
+    }
+
+    if (!strcmp(what, "scratch")) {
+        debugcon_out("%s scratch RAM, 20h-5Fh:\n", tag);
+        aic_debug_bytes(0x20, dev->sram, sizeof(dev->sram));
+        return;
+    }
+
+    if (!strcmp(what, "scb")) {
+        int page = -1;
+
+        while (*arg && ((*arg == ' ') || (*arg == '\t')))
+            arg++;
+        if ((*arg >= '0') && (*arg <= '9'))
+            page = atoi(arg);
+        for (int i = 0; i < dev->chip->scb_pages; i++) {
+            if ((page >= 0) && (i != page))
+                continue;
+            debugcon_out("%s SCB %i%s:\n", tag, i, (i == (dev->scbptr & (dev->chip->scb_pages - 1))) ? " (SCBPTR)" : "");
+            aic_debug_bytes(0xa0, dev->scb[i], SCB_SIZE);
+        }
+        return;
+    }
+
+    if (!strcmp(what, "queues")) {
+        debugcon_out("%s QINFIFO, %u queued:", tag, dev->qin_cnt);
+        for (int i = 0; i < dev->qin_cnt; i++)
+            debugcon_out(" %02X", dev->qin[(dev->qin_rd + i) % dev->chip->q_depth]);
+        debugcon_out("  (last taken %02X)\n", dev->qin_last);
+        debugcon_out("%s QOUTFIFO, %u queued:", tag, dev->qout_cnt);
+        for (int i = 0; i < dev->qout_cnt; i++)
+            debugcon_out(" %02X", dev->qout[(dev->qout_rd + i) % dev->chip->q_depth]);
+        debugcon_out("  (last taken %02X)\n", dev->qout_last);
+        return;
+    }
+
+    if (!strcmp(what, "seqram")) {
+        int start = dev->pc;
+        int count = 16;
+
+        while (*arg && ((*arg == ' ') || (*arg == '\t')))
+            arg++;
+        if (*arg) {
+            start = (int) strtol(arg, (char **) &arg, 16);
+            while (*arg && ((*arg == ' ') || (*arg == '\t')))
+                arg++;
+            if (*arg)
+                count = (int) strtol(arg, NULL, 0);
+        }
+        for (int i = start; (i < (start + count)) && (i < SEQ_INSNS); i++) {
+            uint32_t insn = (uint32_t) dev->seqram[i * 4] | ((uint32_t) dev->seqram[i * 4 + 1] << 8) |
+                            ((uint32_t) dev->seqram[i * 4 + 2] << 16) | ((uint32_t) dev->seqram[i * 4 + 3] << 24);
+
+            debugcon_out("  %03X: %08X%s\n", i, insn, (i == dev->pc) ? "  <- PC" : "");
+        }
+        return;
+    }
+
+    if (!strcmp(what, "seq")) {
+        debugcon_out("%s sequencer: %s, PC %03X, SEQCTL %02X, BRKADDR %04X\n", tag, aic_paused(dev) ? "paused" : "running",
+                     dev->pc, dev->seqctl, dev->brkaddr);
+        debugcon_out("  ACCUM %02X SINDEX %02X DINDEX %02X FLAGS %02X FUNCTION1 %02X SLEEPCTL %02X\n", dev->accum,
+                     dev->sindex, dev->dindex, dev->flags, dev->function1, dev->sleepctl);
+        debugcon_out("  stack %03X %03X %03X %03X, SP %u\n", dev->stack[0], dev->stack[1], dev->stack[2], dev->stack[3],
+                     dev->sp);
+        debugcon_out("  loop park: %s, head %03X, %u read, %u written; asleep %u, must_step %u\n",
+                     dev->loop_parked ? "parked" : "not parked", dev->loop_head, dev->loop_nrd, dev->loop_nwr, dev->asleep,
+                     dev->must_step);
+        return;
+    }
+
+    if (what[0] && strcmp(what, "regs")) {
+        debugcon_out("info aic [N] [regs | scratch | scb [PAGE] | queues | seq | seqram [START [COUNT]]]\n");
+        return;
+    }
+
+    debugcon_out("%s, %s %04X, IRQ %u (level %u), bus %s%s\n", tag, dev->eisa ? "EISA I/O" : "I/O",
+                 dev->eisa ? (dev->eisa_slot << 12) | 0x0c00 : dev->io_base, dev->irq, dev->irq_level,
+                 (dev->bus_state == BUS_BUSY) ? "busy" : "free", dev->selecting ? ", selecting" : "");
+    debugcon_out("SCSI:  SCSISEQ %02X SXFRCTL0 %02X SXFRCTL1 %02X SCSISIGO %02X SCSIRATE %02X SCSIID %02X\n", dev->scsiseq,
+                 dev->sxfrctl0, dev->sxfrctl1, dev->scsisigo, dev->scsirate, dev->scsiid);
+    debugcon_out("       SSTAT0 %02X SSTAT1 %02X SIMODE0 %02X SIMODE1 %02X SBLKCTL %02X SELID %02X STCNT %06X SHADDR %08X\n",
+                 dev->sstat0, dev->sstat1, dev->simode0, dev->simode1, dev->sblkctl, dev->selid, dev->stcnt, dev->shaddr);
+    debugcon_out("       channel live %u, selecting on %u, connected on %u; cell A SCSISEQ %02X SSTAT0 %02X SSTAT1 %02X, "
+                 "cell B SCSISEQ %02X SSTAT0 %02X SSTAT1 %02X\n",
+                 dev->cell_live, dev->sel_ch, dev->cur_ch, dev->cell_save[0].scsiseq, dev->cell_save[0].sstat0,
+                 dev->cell_save[0].sstat1, dev->cell_save[1].scsiseq, dev->cell_save[1].sstat0, dev->cell_save[1].sstat1);
+    debugcon_out("Host:  HCNTRL %02X (%s) BCTL %02X INTSTAT %02X ERROR %02X SCBPTR %02X SCBCNT %02X HADDR %08X HCNT %06X\n",
+                 dev->hcntrl, aic_paused(dev) ? "paused" : "running", dev->bctl, dev->intstat, dev->error, dev->scbptr,
+                 dev->scbcnt, dev->haddr, dev->hcnt);
+    debugcon_out("       DFCNTRL %02X, FIFO %u bytes, QIN %u QOUT %u\n", dev->dfcntrl, dev->fifo_cnt, dev->qin_cnt,
+                 dev->qout_cnt);
+    debugcon_out("Seq:   PC %03X SEQCTL %02X ACCUM %02X SINDEX %02X DINDEX %02X FLAGS %02X%s\n", dev->pc, dev->seqctl,
+                 dev->accum, dev->sindex, dev->dindex, dev->flags, dev->loop_parked ? ", parked on a loop" : "");
+    debugcon_out("Scratch 20h-5Fh:\n");
+    aic_debug_bytes(0x20, dev->sram, sizeof(dev->sram));
+}
+
 static void *
 aic_init(const device_t *info)
 {
@@ -5821,6 +5962,9 @@ aic_init(const device_t *info)
                 dev->bus, dev->sblkctl);
     }
 
+    debugcon_register("aic", "info aic [N] [regs | scratch | scb [PAGE] | queues | seq | seqram [START [COUNT]]]",
+                      aic_debug_info, dev);
+
     return dev;
 }
 
@@ -5831,6 +5975,8 @@ aic_close(void *priv)
 
     if (dev == NULL)
         return;
+
+    debugcon_unregister(dev);
 
     for (uint8_t i = 0; i < AIC_CMDS; i++) {
         if (dev->cmds[i].used && (dev->cmds[i].data != NULL))
