@@ -145,8 +145,9 @@ extern "C" {
 #endif
 
 /* Global variables. */
-extern int dump_on_exit;        /* (O) dump regs on exit*/
-extern int start_in_fullscreen; /* (O) start in fullscreen */
+extern int dump_on_exit;          /* (O) dump regs on exit*/
+extern int start_in_fullscreen;   /* (O) start in fullscreen */
+extern int start_in_fast_forward; /* (O) start in fast-forward mode */
 #ifdef _WIN32
 extern int force_debug; /* (O) force debug output */
 #endif
@@ -229,6 +230,7 @@ extern int      confirm_save;               /* (G) enable save confirmation */
 extern int      chd_precache_level;         /* (G) CHD precache level */
 extern int      enable_discord;             /* (C) enable Discord integration */
 extern int      force_10ms;                 /* (C) force 10ms CPU frame interval */
+extern int      start_fast_forward;         /* (C) start in fast-forward mode */
 extern int      jumpered_internal_ecp_dma;  /* (C) Jumpered internal EPC DMA */
 extern int      other_ide_present;          /* IDE controllers from non-IDE cards are present */
 extern int      other_scsi_present;         /* SCSI controllers from non-SCSI cards are present */

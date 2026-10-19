@@ -335,6 +335,8 @@ load_general(void)
 
     force_10ms = !!ini_section_get_int(cat, "force_10ms", 0);
 
+    start_fast_forward = !!ini_section_get_int(cat, "fast_forward", 0);
+
     rctrl_is_lalt = ini_section_get_int(cat, "rctrl_is_lalt", 0);
     update_icons  = ini_section_get_int(cat, "update_icons", 1);
 
@@ -3223,6 +3225,10 @@ save_general(void)
     ini_section_set_int(cat, "force_10ms", force_10ms);
     if (force_10ms == 0)
         ini_section_delete_var(cat, "force_10ms");
+
+    ini_section_set_int(cat, "fast_forward", start_fast_forward);
+    if (start_fast_forward == 0)
+        ini_section_delete_var(cat, "fast_forward");
 
     ini_section_set_int(cat, "sound_muted", sound_muted);
     if (sound_muted == 0)

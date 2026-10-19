@@ -878,6 +878,12 @@ MainWindow::MainWindow(QWidget *parent)
     if (force_constant_mouse > 0) {
         ui->actionUpdate_mouse_every_CPU_frame->setChecked(true);
     }
+    /* --fast-forward, or fast_forward = 1 in the machine's configuration:
+       start fast-forwarded. */
+    if (start_in_fast_forward || start_fast_forward) {
+        fast_forward = true;
+        updateUiFastForwardState();
+    }
 
     if (!vnc_enabled)
         video_setblit(qt_blit);

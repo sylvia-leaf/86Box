@@ -120,8 +120,9 @@ int tracing_on = 0;
 #endif
 
 /* Commandline options. */
-int dump_on_exit        = 0; /* (O) dump regs on exit */
-int start_in_fullscreen = 0; /* (O) start in fullscreen */
+int dump_on_exit          = 0; /* (O) dump regs on exit */
+int start_in_fullscreen   = 0; /* (O) start in fullscreen */
+int start_in_fast_forward = 0; /* (O) start in fast-forward mode */
 #ifdef _WIN32
 int force_debug = 0; /* (O) force debug output */
 #endif
@@ -220,6 +221,7 @@ int      sound_muted                            = 0;              /* (C) Is soun
 int      jumpered_internal_ecp_dma              = 0;              /* (C) Jumpered internal EPC DMA */
 int      inhibit_multimedia_keys;                                 /* (G) Inhibit multimedia keys on Windows. */
 int      force_10ms;                                              /* (C) Force 10ms CPU frame intervals. */
+int      start_fast_forward;                                      /* (C) Start in fast-forward mode. */
 int      vmm_disabled                           = 0;              /* (G) disable built-in manager */
 char     vmm_path_cfg[1024]                     = { '\0' };       /* (G) VMs path (unless -E is used)*/
 
@@ -810,6 +812,7 @@ pc_show_usage(void)
             "-E or --vmmpath\t\t- vm manager path\n"
 #endif
             "-F or --fullscreen\t\t- start in fullscreen mode\n"
+            "--fast-forward\t\t\t- start in fast-forward mode\n"
             "-G or --lang langid\t\t- start with specified language\n"
             "\t\t\t\t   (e.g. en-US, or system)\n"
 #ifdef SHOW_EXTRA_PARAMS
@@ -1006,6 +1009,8 @@ usage:
 #endif
         } else if (!strcasecmp(argv[c], "--fullscreen") || !strcasecmp(argv[c], "-F")) {
             start_in_fullscreen = 1;
+        } else if (!strcasecmp(argv[c], "--fast-forward")) {
+            start_in_fast_forward = 1;
         } else if (!strcasecmp(argv[c], "--logfile") || !strcasecmp(argv[c], "-L")) {
             if ((c + 1) == argc)
                 goto usage;
