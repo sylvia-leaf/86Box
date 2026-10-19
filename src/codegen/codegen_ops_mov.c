@@ -202,8 +202,13 @@ ropMOV_AL_abs(codeblock_t *block, ir_data_t *ir, UNUSED(uint8_t opcode), UNUSED(
 
     uop_MOV_IMM(ir, IREG_oldpc, cpu_state.oldpc);
     codegen_check_seg_read(block, ir, op_ea_seg);
-    CHECK_SEG_LIMITS_ABS(block, ir, op_ea_seg, addr, 0);
-    uop_MEM_LOAD_ABS(ir, IREG_AL, ireg_seg_base(op_ea_seg), addr);
+    if (dyn) {
+        CHECK_SEG_LIMITS(block, ir, op_ea_seg, IREG_eaaddr, 0);
+        uop_MEM_LOAD_REG(ir, IREG_AL, ireg_seg_base(op_ea_seg), IREG_eaaddr);
+    } else {
+        CHECK_SEG_LIMITS_ABS(block, ir, op_ea_seg, addr, 0);
+        uop_MEM_LOAD_ABS(ir, IREG_AL, ireg_seg_base(op_ea_seg), addr);
+    }
 
     return op_pc + ((op_32 & 0x200) ? 4 : 2);
 }
@@ -215,8 +220,13 @@ ropMOV_AX_abs(codeblock_t *block, ir_data_t *ir, UNUSED(uint8_t opcode), UNUSED(
 
     uop_MOV_IMM(ir, IREG_oldpc, cpu_state.oldpc);
     codegen_check_seg_read(block, ir, op_ea_seg);
-    CHECK_SEG_LIMITS_ABS(block, ir, op_ea_seg, addr, 1);
-    uop_MEM_LOAD_ABS(ir, IREG_AX, ireg_seg_base(op_ea_seg), addr);
+    if (dyn) {
+        CHECK_SEG_LIMITS(block, ir, op_ea_seg, IREG_eaaddr, 1);
+        uop_MEM_LOAD_REG(ir, IREG_AX, ireg_seg_base(op_ea_seg), IREG_eaaddr);
+    } else {
+        CHECK_SEG_LIMITS_ABS(block, ir, op_ea_seg, addr, 1);
+        uop_MEM_LOAD_ABS(ir, IREG_AX, ireg_seg_base(op_ea_seg), addr);
+    }
 
     return op_pc + ((op_32 & 0x200) ? 4 : 2);
 }
@@ -228,7 +238,7 @@ ropMOV_EAX_abs(codeblock_t *block, ir_data_t *ir, UNUSED(uint8_t opcode), UNUSED
 
     uop_MOV_IMM(ir, IREG_oldpc, cpu_state.oldpc);
     codegen_check_seg_read(block, ir, op_ea_seg);
-    if ((block->flags & CODEBLOCK_NO_IMMEDIATES) && (op_32 & 0x200)) {
+    if (dyn) {
         CHECK_SEG_LIMITS(block, ir, op_ea_seg, IREG_eaaddr, 3);
         uop_MEM_LOAD_REG(ir, IREG_EAX, ireg_seg_base(op_ea_seg), IREG_eaaddr);
     } else {
@@ -246,8 +256,13 @@ ropMOV_abs_AL(codeblock_t *block, ir_data_t *ir, UNUSED(uint8_t opcode), UNUSED(
     int      dyn  = mov_abs_addr(block, ir, op_32, op_pc, &addr);
 
     uop_MOV_IMM(ir, IREG_oldpc, cpu_state.oldpc);
-    codegen_check_seg_write_abs(block, ir, op_ea_seg, addr, 1);
-    uop_MEM_STORE_ABS(ir, ireg_seg_base(op_ea_seg), addr, IREG_AL);
+    if (dyn) {
+        codegen_check_seg_write(block, ir, op_ea_seg, IREG_eaaddr, 1);
+        uop_MEM_STORE_REG(ir, ireg_seg_base(op_ea_seg), IREG_eaaddr, IREG_AL);
+    } else {
+        codegen_check_seg_write_abs(block, ir, op_ea_seg, addr, 1);
+        uop_MEM_STORE_ABS(ir, ireg_seg_base(op_ea_seg), addr, IREG_AL);
+    }
 
     return op_pc + ((op_32 & 0x200) ? 4 : 2);
 }
@@ -258,8 +273,13 @@ ropMOV_abs_AX(codeblock_t *block, ir_data_t *ir, UNUSED(uint8_t opcode), UNUSED(
     int      dyn  = mov_abs_addr(block, ir, op_32, op_pc, &addr);
 
     uop_MOV_IMM(ir, IREG_oldpc, cpu_state.oldpc);
-    codegen_check_seg_write_abs(block, ir, op_ea_seg, addr, 2);
-    uop_MEM_STORE_ABS(ir, ireg_seg_base(op_ea_seg), addr, IREG_AX);
+    if (dyn) {
+        codegen_check_seg_write(block, ir, op_ea_seg, IREG_eaaddr, 2);
+        uop_MEM_STORE_REG(ir, ireg_seg_base(op_ea_seg), IREG_eaaddr, IREG_AX);
+    } else {
+        codegen_check_seg_write_abs(block, ir, op_ea_seg, addr, 2);
+        uop_MEM_STORE_ABS(ir, ireg_seg_base(op_ea_seg), addr, IREG_AX);
+    }
 
     return op_pc + ((op_32 & 0x200) ? 4 : 2);
 }
@@ -270,8 +290,13 @@ ropMOV_abs_EAX(codeblock_t *block, ir_data_t *ir, UNUSED(uint8_t opcode), UNUSED
     int      dyn  = mov_abs_addr(block, ir, op_32, op_pc, &addr);
 
     uop_MOV_IMM(ir, IREG_oldpc, cpu_state.oldpc);
-    codegen_check_seg_write_abs(block, ir, op_ea_seg, addr, 4);
-    uop_MEM_STORE_ABS(ir, ireg_seg_base(op_ea_seg), addr, IREG_EAX);
+    if (dyn) {
+        codegen_check_seg_write(block, ir, op_ea_seg, IREG_eaaddr, 4);
+        uop_MEM_STORE_REG(ir, ireg_seg_base(op_ea_seg), IREG_eaaddr, IREG_EAX);
+    } else {
+        codegen_check_seg_write_abs(block, ir, op_ea_seg, addr, 4);
+        uop_MEM_STORE_ABS(ir, ireg_seg_base(op_ea_seg), addr, IREG_EAX);
+    }
 
     return op_pc + ((op_32 & 0x200) ? 4 : 2);
 }
