@@ -44,6 +44,7 @@
 #include <86box/device.h>
 #include <86box/machine.h>
 #include <86box/pci.h>
+#include <86box/eisa.h>
 #include <86box/pic.h>
 #include <86box/pit.h>
 #include <86box/pit_fast.h>
@@ -1003,7 +1004,7 @@ cmd_info_board(void)
     }
     if (!any)
         out("No device on this machine shows its registers yet.\n");
-    out("\nPCI functions: info pci.\n");
+    out("\nPCI functions: info pci. EISA slots and configuration RAM: info eisa.\n");
 }
 
 /* Every PCI function's configuration space, read as the guest would. */
@@ -1045,6 +1046,64 @@ cmd_info_pci(void)
     }
     if (!any)
         out("No PCI functions.\n");
+}
+
+static void
+eisa_id_string(const uint8_t *id, char *buf)
+{
+    uint16_t packed = (id[0] << 8) | id[1];
+
+    buf[0] = '@' + ((packed >> 10) & 0x1f);
+    buf[1] = '@' + ((packed >> 5) & 0x1f);
+    buf[2] = '@' + (packed & 0x1f);
+    sprintf(buf + 3, "%02X%02X", id[2], id[3]);
+}
+
+/* The slots, who is in them, and the configuration RAM the ECU writes. */
+static void
+cmd_info_eisa(void)
+{
+    uint8_t        nr = eisa_slots_present();
+    const uint8_t *cram;
+    uint32_t       cram_size;
+
+    if (!nr) {
+        out("This machine has no EISA bus.\n");
+        return;
+    }
+
+    out("%u slots\n", nr);
+    for (uint8_t slot = 0; slot <= nr; slot++) {
+        const eisa_slot_t *e = eisa_debug_slot(slot);
+        char               id[8];
+
+        if (!e || !e->present) {
+            if (slot)
+                out("slot %2u  empty\n", slot);
+            continue;
+        }
+        eisa_id_string(e->id, id);
+        out("slot %2u  %s  (%02x %02x %02x %02x)  %s\n", slot, id, e->id[0], e->id[1], e->id[2], e->id[3],
+            slot ? (dev_name(e->priv) ? dev_name(e->priv) : "") : "system board");
+    }
+
+    cram = eisa_get_cram(&cram_size);
+    if (cram == NULL) {
+        out("\nThe chipset keeps no configuration RAM.\n");
+        return;
+    }
+    out("\nConfiguration RAM, %u bytes (page:offset as 0C00h:0800h shows it):\n", cram_size);
+    for (uint32_t page = 0; page < (cram_size >> 8); page++) {
+        int empty = 1;
+
+        for (int j = 0; j < 256; j++)
+            if ((cram[(page << 8) + j] != 0xff) && (cram[(page << 8) + j] != 0x00))
+                empty = 0;
+        if (empty)
+            continue;
+        out(" page %u:\n", page);
+        hexdump(cram + (page << 8), 0, 256, 1);
+    }
 }
 
 static void
@@ -1406,6 +1465,8 @@ cmd_info(const char *arg)
         cmd_info_pci();
     else if (IS("board", 1) || IS("chipset", 2))
         cmd_info_board();
+    else if (IS("eisa", 1))
+        cmd_info_eisa();
     else if (IS("devices", 2))
         cmd_info_devices();
     else if (IS("mem", 1))
@@ -1423,7 +1484,8 @@ cmd_info(const char *arg)
     else if (IS("idt", 1))
         cmd_info_desc("IDT", &idt, 1);
     else if (!debugcon_device_info(word, arg)) {
-        out("info what? registers, float, gdt, idt, mem, pic, pit, dma, pci, board, devices.\n");
+        out("info what? registers, float, gdt, idt, mem, pic, pit, dma,\n"
+            "pci, eisa, board, devices.\n");
         debugcon_device_help();
     }
 #undef IS
@@ -1463,6 +1525,7 @@ static const char debugcon_help[] =
     "info mem [ADDRESS]         the memory map, or what is at one address\n"
     "info pic | pit | dma       8259s, 8254 counters, 8237 channels\n"
     "info pci                   every PCI function's configuration space\n"
+    "info eisa                  EISA slots and the configuration RAM\n"
     "info board                 chipset and super I/O registers\n"
     "info devices               every device on the machine\n"
     "info NAME [N] [WHAT]       a device's own view, the Nth of several; info alone\n"

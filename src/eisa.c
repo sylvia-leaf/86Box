@@ -62,6 +62,9 @@ eisa_log(const char *fmt, ...)
 static eisa_slot_t eisa_slots[EISA_MAX_SLOTS + 1];
 static uint8_t     eisa_nr_slots = 0;
 
+static const uint8_t *eisa_cram;
+static uint32_t       eisa_cram_size;
+
 /* The identifier is not ASCII. Three letters, A to Z, are packed into two
    bytes at five bits each with the top bit clear, most significant letter
    first; then two bytes of product number and revision, which are read
@@ -286,6 +289,7 @@ eisa_close(void)
 
     memset(eisa_slots, 0, sizeof(eisa_slots));
     eisa_nr_slots = 0;
+    eisa_set_cram(NULL, 0);
 }
 
 uint8_t
@@ -378,4 +382,27 @@ eisa_slot_id(uint8_t slot, uint8_t byte)
     if ((slot > eisa_nr_slots) || !eisa_slots[slot].present)
         return 0xff;
     return eisa_slots[slot].id[byte & 3];
+}
+
+void
+eisa_set_cram(const uint8_t *cram, uint32_t size)
+{
+    eisa_cram      = cram;
+    eisa_cram_size = cram ? size : 0;
+}
+
+const uint8_t *
+eisa_get_cram(uint32_t *size)
+{
+    *size = eisa_cram_size;
+    return eisa_cram;
+}
+
+/* Slot 0 is the system board; NULL past the board's slots. */
+const eisa_slot_t *
+eisa_debug_slot(uint8_t slot)
+{
+    if (slot > eisa_nr_slots)
+        return NULL;
+    return &eisa_slots[slot];
 }

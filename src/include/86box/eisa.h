@@ -71,4 +71,10 @@ extern uint8_t eisa_slot_occupied(uint8_t slot);
    here; this is how the ESC hands it over. */
 extern void eisa_set_board_id(const uint8_t *id);
 
+/* The board's EISA configuration RAM, where the chipset keeps it, for the
+   debug console to show. */
+extern void               eisa_set_cram(const uint8_t *cram, uint32_t size);
+extern const uint8_t     *eisa_get_cram(uint32_t *size);
+extern const eisa_slot_t *eisa_debug_slot(uint8_t slot);
+
 #endif /*EMU_EISA_H*/

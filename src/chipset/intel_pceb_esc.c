@@ -1480,6 +1480,7 @@ esc_close(void *priv)
     esc_t *dev = (esc_t *) priv;
 
     esc_cram_save(dev);
+    eisa_set_cram(NULL, 0);
 
     if (flash_bios_write_gate_priv == dev) {
         flash_bios_write_gate      = NULL;
@@ -1589,6 +1590,7 @@ esc_init(UNUSED(const device_t *info))
     snprintf(dev->cram_file, sizeof(dev->cram_file), "%s_eisa.nvr",
              machine_get_internal_name());
     esc_cram_load(dev);
+    eisa_set_cram(dev->cram, sizeof(dev->cram));
 
     esc_reset_hard(dev);
 

@@ -547,6 +547,7 @@ sis_85c411_close(void *priv)
     sis_85c411_t *dev = (sis_85c411_t *) priv;
 
     sis_85c411_cram_save(dev);
+    eisa_set_cram(NULL, 0);
     sis_85c411_inst = NULL;
     free(dev);
 }
@@ -600,6 +601,7 @@ sis_85c411_init(UNUSED(const device_t *info))
     snprintf(dev->cram_file, sizeof(dev->cram_file), "%s_eisa.nvr",
              machine_get_internal_name());
     sis_85c411_cram_load(dev);
+    eisa_set_cram(dev->cram, sizeof(dev->cram));
 
     sis_85c411_reset(dev);
 
