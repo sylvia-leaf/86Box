@@ -533,7 +533,7 @@ exec386_dynarec_int(void)
             CPU_BLOCK_END();
         else if (trap)
             CPU_BLOCK_END();
-        else if (nmi && nmi_enable && nmi_mask)
+        else if (NMI_TAKEABLE())
             CPU_BLOCK_END();
         else if ((cpu_state.flags & I_FLAG) && x86_external_interrupt_pending() && !cpu_end_block_after_ins)
             CPU_BLOCK_END();
@@ -578,7 +578,7 @@ codegen_chain_service(void)
     __atomic_store_n(&mem_chain_signal.brk, 0, __ATOMIC_SEQ_CST); /* cleared before looking */
     if (p & 0xffffff00)
         return 1; /* code written, relink, revalidate: the loop's work */
-    if (cpu_init || new_ne || smi_line || (nmi && nmi_enable && nmi_mask) || cpu_state.abrt || !CACHE_ON() ||
+    if (cpu_init || new_ne || smi_line || NMI_TAKEABLE() || cpu_state.abrt || !CACHE_ON() ||
         x86_was_reset || cpu_force_interpreter || cpu_override_dynarec || cpu_flush_pending)
         return 1;
     if ((cpu_state.flags & I_FLAG) && pic.int_pending)
@@ -908,7 +908,7 @@ exec386_dynarec_dyn(void)
                 CPU_BLOCK_END();
                 CHAIN_EVEN_END();
             }
-            if (nmi && nmi_enable && nmi_mask) {
+            if (NMI_TAKEABLE()) {
                 CPU_BLOCK_END();
                 CHAIN_EVEN_END();
             }
@@ -1054,7 +1054,7 @@ exec386_dynarec_dyn(void)
                 CPU_BLOCK_END();
             if (smi_line)
                 CPU_BLOCK_END();
-            if (nmi && nmi_enable && nmi_mask)
+            if (NMI_TAKEABLE())
                 CPU_BLOCK_END();
             if ((cpu_state.flags & I_FLAG) && x86_external_interrupt_pending() && !cpu_end_block_after_ins)
                 CPU_BLOCK_END();
@@ -1217,7 +1217,7 @@ exec386_dynarec(int32_t cycs)
                     cpu_halted = 0;
                 } else if (halted)
                     cpu_state.pc--;
-            } else if (nmi && nmi_enable && nmi_mask) {
+            } else if (NMI_TAKEABLE()) {
                 /* Out of a HLT that left pc on itself: "the saved CS:IP (or
                    CS:EIP) value points to the instruction following the HLT
                    instruction" (Pentium Vol. 3, HLT), NMI included. */
@@ -1642,7 +1642,7 @@ block_ended:
 
             if (smi_line)
                 enter_smm_check(0);
-            else if (nmi && nmi_enable && nmi_mask) {
+            else if (NMI_TAKEABLE()) {
                 oldcs = CS;
                 cpu_state.oldpc = cpu_state.pc;
                 x86_int(2);
