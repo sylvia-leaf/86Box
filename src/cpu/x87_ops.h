@@ -377,6 +377,9 @@ typedef union {
 
 #include "softfloat3e/softfloat-specialize.h"
 #include "softfloat3e/fpu_trans.h"
+/* The softfloat handlers below do their arithmetic on the host's x87 when
+   fpu_host_x87 is set; softfloat's own transcendentals above do not. */
+#include "x87_host.h"
 
 #include "x87_ops_sf_arith.h"
 #include "x87_ops_sf_compare.h"

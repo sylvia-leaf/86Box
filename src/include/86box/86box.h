@@ -223,6 +223,14 @@ extern int      cpu;                        /* (C) cpu type */
 extern int      cpu_use_dynarec;            /* (C) cpu uses/needs Dyna */
 extern int      fpu_type;                   /* (C) fpu type */
 extern int      fpu_softfloat;              /* (C) fpu uses softfloat */
+extern int      fpu_host_x87;               /* (C) fpu uses the host's x87 (softfloat's state and handlers) */
+/* Builds with the host-x87 FPU: the x86-64 backend of the new recompiler
+   writes its kernels (cpu/x87_host.h). */
+#if (defined(__x86_64__) || defined(_M_X64)) && defined(USE_DYNAREC)
+#    define X87_HOST_BUILD 1
+#else
+#    define X87_HOST_BUILD 0
+#endif
 extern int      time_sync;                  /* (C) enable time sync */
 extern int      hdd_format_type;            /* (C) hard disk file format */
 extern int      confirm_reset;              /* (G) enable reset confirmation */

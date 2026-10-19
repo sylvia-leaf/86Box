@@ -446,6 +446,10 @@ typedef struct {
        (x87_dyn_fdiv, 386_dynarec.c) */
     double x87_operand;
 
+    /* The host-x87 FPU (cpu/x87_host.h): the exception flags the host x87
+       of this thread has accumulated that the guest has been given. */
+    uint16_t x87h_fl;
+
     /* The lookup tables (readlookup2, writelookup2), where the ARM64
        memory routines reach them with one load off cpu_state; set by the
        backend's init */

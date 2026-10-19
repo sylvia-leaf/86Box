@@ -20,6 +20,7 @@
 #    include "x86.h"
 #    include "x86seg_common.h"
 #    include "x86seg.h"
+#    include "x87_host.h"
 
 #    if defined(__linux__) || defined(__APPLE__)
 #        include <sys/mman.h>
@@ -332,6 +333,132 @@ build_loadstore_routines(codeblock_t *block)
     build_store_routine(block, 8, 1);
 }
 
+/* ------------------------------------------------------------------ */
+/* The host-x87 FPU's kernels (x87_host.h)                            */
+/* ------------------------------------------------------------------ */
+
+x87_host_kernel_t x87_host_kernel[X87_HOST_COUNT];
+
+/* The frame pointer: the kernels' one argument. */
+#    ifdef _WIN64
+#        define X87_HOST_ARG 1 /* RCX */
+#    else
+#        define X87_HOST_ARG 7 /* RDI */
+#    endif
+
+/* An x87 instruction on a field of the frame: opcode, /digit, [arg + disp8]. */
+static void
+x87_host_emit_m(uint8_t op, uint8_t digit, uint8_t disp)
+{
+    codegen_addbyte3(NULL, op, 0x40 | (digit << 3) | X87_HOST_ARG, disp);
+}
+
+/* FLDCW [from], unless [hcw] (the host's own) is [cw] already. EAX is
+   volatile in both ABIs. */
+static void
+x87_host_emit_cw(uint8_t from)
+{
+    codegen_addbyte4(NULL, 0x0f, 0xb7, 0x40 | X87_HOST_ARG, X87_HOST_CW);  /* MOVZX EAX, word [cw] */
+    codegen_addbyte4(NULL, 0x66, 0x3b, 0x40 | X87_HOST_ARG, X87_HOST_HCW); /* CMP AX, [hcw] */
+    codegen_addbyte2(NULL, 0x74, 0x03);                                    /* JE past the FLDCW */
+    x87_host_emit_m(0xd9, 5, from);                                        /* FLDCW [from] */
+}
+
+/* One kernel: the host's control word saved and the guest's loaded, the
+   status word as it stands, the operands loaded as they are in the guest's
+   registers, the operation, the status word taken at once (the store after
+   it changes C1), the result stored, and the host's control word put back
+   (it is preserved across calls in both ABIs). The flags are the caller's
+   (x87_host_run()). The host x87 is empty on entry and on return, as the ABI
+   has it at a call. */
+static x87_host_kernel_t
+x87_host_emit(int k)
+{
+    x87_host_kernel_t start = (x87_host_kernel_t) (void *) &block_write_data[block_pos];
+
+    if (k == X87_HOST_CLEAR) {
+        codegen_addbyte2(NULL, 0xdb, 0xe2); /* FNCLEX */
+        codegen_addbyte(NULL, 0xc3);        /* RET */
+        return start;
+    }
+
+    x87_host_emit_m(0xd9, 7, X87_HOST_HCW); /* FNSTCW [hcw] */
+    x87_host_emit_cw(X87_HOST_CW);
+    x87_host_emit_m(0xdd, 7, X87_HOST_PRE); /* FNSTSW [pre] */
+    x87_host_emit_m(0xdb, 5, X87_HOST_A);   /* FLD m80 [a] */
+
+    switch (k) {
+        case X87_HOST_ADD:
+        case X87_HOST_SUB:
+        case X87_HOST_MUL:
+        case X87_HOST_DIV:
+            /* ST(0) = b, ST(1) = a: FADDP, FSUBP, FMULP and FDIVP ST(1), ST(0)
+               leave a + b, a - b, a * b and a / b. */
+            x87_host_emit_m(0xdb, 5, X87_HOST_B); /* FLD m80 [b] */
+            codegen_addbyte2(NULL, 0xde, (k == X87_HOST_ADD) ? 0xc1 : (k == X87_HOST_SUB) ? 0xe9 : (k == X87_HOST_MUL) ? 0xc9 : 0xf9);
+            x87_host_emit_m(0xdd, 7, X87_HOST_SW); /* FNSTSW [sw] */
+            x87_host_emit_m(0xdb, 7, X87_HOST_R);  /* FSTP m80 [r] */
+            break;
+        case X87_HOST_SQRT:
+        case X87_HOST_RNDINT:
+            codegen_addbyte2(NULL, 0xd9, (k == X87_HOST_SQRT) ? 0xfa : 0xfc); /* FSQRT, FRNDINT */
+            x87_host_emit_m(0xdd, 7, X87_HOST_SW);
+            x87_host_emit_m(0xdb, 7, X87_HOST_R);
+            break;
+        case X87_HOST_TO_F32:
+            x87_host_emit_m(0xd9, 3, X87_HOST_I); /* FSTP m32 [i] */
+            x87_host_emit_m(0xdd, 7, X87_HOST_SW);
+            break;
+        case X87_HOST_TO_F64:
+            x87_host_emit_m(0xdd, 3, X87_HOST_I); /* FSTP m64 [i] */
+            x87_host_emit_m(0xdd, 7, X87_HOST_SW);
+            break;
+        case X87_HOST_TO_I32:
+            x87_host_emit_m(0xdb, 3, X87_HOST_I); /* FISTP m32 [i] */
+            x87_host_emit_m(0xdd, 7, X87_HOST_SW);
+            break;
+        case X87_HOST_TO_I64:
+            x87_host_emit_m(0xdf, 7, X87_HOST_I); /* FISTP m64 [i] */
+            x87_host_emit_m(0xdd, 7, X87_HOST_SW);
+            break;
+        default:
+            break;
+    }
+
+    x87_host_emit_cw(X87_HOST_HCW);
+    codegen_addbyte(NULL, 0xc3); /* RET */
+    return start;
+}
+
+/* Written once, into a page of their own: the kernels are called from C, so
+   they need not live among the blocks. The emitter writes at most BLOCK_MAX
+   bytes from its base, so the base moves up to where each kernel ended. */
+static void
+build_x87_host_routines(void)
+{
+    uint8_t *page = plat_mmap(0x2000, 1, NULL);
+    uint8_t *saved_data;
+    int      saved_pos;
+
+    if (page == NULL) {
+        pclog("x87: no executable memory for the host-x87 kernels; the host-x87 FPU is off\n");
+        return;
+    }
+    saved_data       = block_write_data;
+    saved_pos        = block_pos;
+    block_write_data = page;
+    block_pos        = 0;
+    for (int k = 0; k < X87_HOST_COUNT; k++) {
+        x87_host_kernel[k] = x87_host_emit(k);
+        block_write_data += block_pos;
+        block_pos = 0;
+        if ((block_write_data + BLOCK_MAX) > (page + 0x2000))
+            fatal("x87: the host-x87 kernels outgrew their pages\n");
+    }
+    block_write_data = saved_data;
+    block_pos        = saved_pos;
+}
+
 void
 codegen_backend_init(void)
 {
@@ -401,6 +528,8 @@ codegen_backend_init(void)
 #    endif
     host_x86_CALL(block, (void *) x86ss);
     host_x86_JMP(block, codegen_exit_rout);
+
+    build_x87_host_routines();
 
     block_write_data = NULL;
 

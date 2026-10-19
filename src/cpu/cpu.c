@@ -588,6 +588,11 @@ SF_FPU_reset(void)
         fpu_state.fdp = 0;
         memset(fpu_state.st_space, 0, sizeof(floatx80) * 8);
     }
+#if X87_HOST_BUILD
+    /* The host x87's flags as not known: any it holds are cleared before the
+       next host-x87 operation (x87_host.h). */
+    cpu_state.x87h_fl = 0x003f;
+#endif
 }
 
 void

@@ -668,6 +668,17 @@ load_machine(void)
 
     cpu_use_dynarec = !!ini_section_get_int(cat, "cpu_use_dynarec", 0);
     fpu_softfloat = !!ini_section_get_int(cat, "fpu_softfloat", 0);
+    /* The host-x87 FPU runs on softfloat's state and handlers, so it turns
+       softfloat on underneath; a build without it keeps the default FPU. */
+    fpu_host_x87 = !!ini_section_get_int(cat, "fpu_host_x87", 0);
+    if (fpu_softfloat) /* softfloat, where a configuration asks for it, wins */
+        fpu_host_x87 = 0;
+    if (fpu_host_x87 && !X87_HOST_BUILD) {
+        config_log("Config: this build has no host-x87 FPU, using the default FPU\n");
+        fpu_host_x87 = 0;
+    }
+    if (fpu_host_x87)
+        fpu_softfloat = 1;
     if ((fpu_type != FPU_NONE) && machine_has_flags(machine, MACHINE_SOFTFLOAT_ONLY))
         fpu_softfloat = 1;
 
@@ -3559,10 +3570,16 @@ save_machine(void)
 
     ini_section_set_int(cat, "cpu_use_dynarec", cpu_use_dynarec);
 
-    if (fpu_softfloat == 0)
+    /* fpu_softfloat names softfloat itself; the host-x87 FPU, which runs on
+       it, has its own key. */
+    if ((fpu_softfloat == 0) || fpu_host_x87)
         ini_section_delete_var(cat, "fpu_softfloat");
     else
         ini_section_set_int(cat, "fpu_softfloat", fpu_softfloat);
+    if (fpu_host_x87)
+        ini_section_set_int(cat, "fpu_host_x87", 1);
+    else
+        ini_section_delete_var(cat, "fpu_host_x87");
 
     if (time_sync & TIME_SYNC_ENABLED)
         if (time_sync & TIME_SYNC_UTC)

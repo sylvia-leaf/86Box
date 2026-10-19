@@ -201,6 +201,7 @@ int      cpu_use_dynarec                        = 0;              /* (C) cpu use
 int      cpu                                    = 0;              /* (C) cpu type */
 int      fpu_type                               = 0;              /* (C) fpu type */
 int      fpu_softfloat                          = 0;              /* (C) fpu uses softfloat */
+int      fpu_host_x87                           = 0;              /* (C) fpu uses the host's x87 */
 int      time_sync                              = 0;              /* (C) enable time sync */
 int      confirm_reset                          = 1;              /* (G) enable reset confirmation */
 int      confirm_exit                           = 1;              /* (G) enable exit confirmation */
