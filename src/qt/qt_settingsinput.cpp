@@ -78,8 +78,8 @@ SettingsInput::SettingsInput(QWidget *parent)
     joystickType  = joystick_type[0];
     joystick2Type = joystick_type[1];
 
-    /* The second game port (208h-20Fh), in the rows under the first game
-       port's joystick. */
+    /* The second game port (208h-20Fh) and the game port card, in the
+       rows under the first game port's joystick. */
     QGridLayout *grid = nullptr;
     for (auto *layout : findChildren<QGridLayout *>()) {
         if (layout->indexOf(ui->comboBoxJoystick0) >= 0)
@@ -99,16 +99,35 @@ SettingsInput::SettingsInput(QWidget *parent)
             updateJoystickConfig(comboBoxJoystick1->currentData().toInt(), 1, i, this);
         });
     }
+    comboBoxGameportCard = new QComboBox(this);
+    comboBoxGameportCard->setObjectName("comboBoxGameportCard");
+    comboBoxGameportCard->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Fixed);
+    pushButtonConfigureGameportCard = new QPushButton(tr("Configure"), this);
+    pushButtonConfigureGameportCard->setObjectName("pushButtonConfigureGameportCard");
     if (grid != nullptr) {
         auto *label = new QLabel(tr("Joystick (game port 2, 208h):"), this);
         label->setObjectName("labelJoystick1");
         grid->addWidget(label, 5, 0);
         grid->addWidget(comboBoxJoystick1, 5, 1);
         grid->addLayout(buttons, 6, 0, 1, 3);
+        auto *cardLabel = new QLabel(tr("Game port card:"), this);
+        cardLabel->setObjectName("labelGameportCard");
+        grid->addWidget(cardLabel, 7, 0);
+        grid->addWidget(comboBoxGameportCard, 7, 1);
+        grid->addWidget(pushButtonConfigureGameportCard, 7, 2);
     }
+    comboBoxGameportCard->setToolTip(tr("Automatic: a game port card is added for the joystick on game port 1 only when "
+                                        "nothing else, such as the board or a sound card, has a game port."));
     connect(comboBoxJoystick1, QOverload<int>::of(&QComboBox::currentIndexChanged), this, [this](int index) {
         if (index >= 0)
             joystickChosen(1);
+    });
+    connect(comboBoxGameportCard, QOverload<int>::of(&QComboBox::currentIndexChanged), this, [this](int) {
+        const int card = comboBoxGameportCard->currentData().toInt();
+        pushButtonConfigureGameportCard->setEnabled((card > GAMEPORT_CARD_AUTO) && gameport_card_has_config(card));
+    });
+    connect(pushButtonConfigureGameportCard, &QPushButton::clicked, this, [this]() {
+        gameport_card_config_changed |= DeviceConfig::ConfigureDevice(gameport_card_get_device(comboBoxGameportCard->currentData().toInt()));
     });
 
     onCurrentMachineChanged(machine);
@@ -167,6 +186,8 @@ SettingsInput::changed()
 
     has_changed |= (joystick_type[0] != ui->comboBoxJoystick0->currentData().toInt());
     has_changed |= (joystick_type[1] != comboBoxJoystick1->currentData().toInt());
+    has_changed |= (gameport_card_type != comboBoxGameportCard->currentData().toInt());
+    has_changed |= gameport_card_config_changed;
 
     for (int gp = 0; gp < GAMEPORT_MAX; gp++) {
         for (int i = 0; i < 4; i++)
@@ -191,8 +212,9 @@ SettingsInput::save(int soft)
     mouse_type    = ui->comboBoxMouse->currentData().toInt();
     tablet_type   = ui->comboBoxTablet->currentData().toInt();
 
-    joystick_type[0] = ui->comboBoxJoystick0->currentData().toInt();
-    joystick_type[1] = comboBoxJoystick1->currentData().toInt();
+    joystick_type[0]   = ui->comboBoxJoystick0->currentData().toInt();
+    joystick_type[1]   = comboBoxJoystick1->currentData().toInt();
+    gameport_card_type = comboBoxGameportCard->currentData().toInt();
 }
 
 void
@@ -313,6 +335,19 @@ SettingsInput::onCurrentMachineChanged(int machineId)
         scJoystick0->addDevice(nullptr, tr(joystick_get_name(i)));
     fillJoysticks(ui->comboBoxJoystick0, curJoystickType);
     fillJoysticks(comboBoxJoystick1, curJoystick2Type);
+
+    /* The game port cards the machine takes. A card it does not take
+       falls back to Automatic. */
+    const int card = comboBoxGameportCard->count() ? comboBoxGameportCard->currentData().toInt() : gameport_card_type;
+    comboBoxGameportCard->clear();
+    for (int c = 0; gameport_card_get_device(c) != nullptr; c++) {
+        const device_t *dev = gameport_card_get_device(c);
+        if ((c > GAMEPORT_CARD_AUTO) && !device_is_valid(dev, machineId))
+            continue;
+        comboBoxGameportCard->addItem((c > GAMEPORT_CARD_AUTO) ? DeviceConfig::DeviceName(dev, dev->internal_name, 1) : tr(dev->name), c);
+    }
+    const int row = comboBoxGameportCard->findData(card);
+    comboBoxGameportCard->setCurrentIndex((row >= 0) ? row : comboBoxGameportCard->findData(GAMEPORT_CARD_AUTO));
 }
 
 /* A game port's list of joysticks, with the one it has chosen. */

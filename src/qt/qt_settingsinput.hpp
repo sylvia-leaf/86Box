@@ -59,11 +59,14 @@ private:
     int                tabletType = 0;
     int                joystickType = 0;
     int                joystick2Type = 0;
+    int                gameport_card_config_changed = 0;
 
-    /* The second game port's joystick, made here beside the first
-       joystick's controls. */
+    /* The second game port's joystick and the game port card, made here
+       beside the first joystick's controls. */
     QComboBox         *comboBoxJoystick1;
     QPushButton       *joystick1Buttons[4];
+    QComboBox         *comboBoxGameportCard;
+    QPushButton       *pushButtonConfigureGameportCard;
 
     void fillJoysticks(QComboBox *cbox, int current);
     void joystickChosen(int gameport);

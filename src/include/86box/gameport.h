@@ -174,6 +174,19 @@ extern const char *joystick_get_button_name(int js, int id);
 extern const char *joystick_get_pov_name(int js, int id);
 
 extern void  gameport_update_joystick_type(uint8_t gp);
+
+/* The game port cards: none, automatic (a standalone game port when
+   nothing else provides one), or a card. */
+#define GAMEPORT_CARD_AUTO 1
+extern int             gameport_card_type;
+extern void            gameport_card_reset(void);
+extern const device_t *gameport_card_get_device(int card);
+extern const char     *gameport_card_get_internal_name(int card);
+extern int             gameport_card_get_from_internal_name(const char *s);
+extern int             gameport_card_has_config(int card);
+extern const device_t  gameport_card_device;
+extern const device_t  gameport_card_208_device;
+extern const device_t  gameport_card_pnp_device;
 extern void  gameport_remap(void *priv, uint16_t address);
 extern void  gameport_set_decode(void *priv, int read_enabled, int write_enabled);
 extern void *gameport_add(const device_t *gameport_type);

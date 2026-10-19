@@ -941,6 +941,9 @@ load_input_devices(void)
     }
 
     tablet_tool_type = !!ini_section_get_int(cat, "tablet_tool_type", 1);
+
+    p                  = ini_section_get_string(cat, "gameport_card", "auto");
+    gameport_card_type = gameport_card_get_from_internal_name(p);
 }
 
 /* Load "Sound" section. */
@@ -2982,6 +2985,7 @@ config_load(void)
         cdrom[0].sound_on = 1;
         mem_size          = 64;
         isartc_type       = 0;
+        gameport_card_type = GAMEPORT_CARD_AUTO;
         for (i = 0; i < ISAROM_MAX; i++)
             isarom_type[i] = 0;
         for (i = 0; i < ISAMEM_MAX; i++)
@@ -3650,6 +3654,11 @@ save_input_devices(void)
             }
         }
     }
+
+    if (gameport_card_type == GAMEPORT_CARD_AUTO)
+        ini_section_delete_var(cat, "gameport_card");
+    else
+        ini_section_set_string(cat, "gameport_card", gameport_card_get_internal_name(gameport_card_type));
 
     if (tablet_tool_type != 1)
         ini_section_set_int(cat, "tablet_tool_type", tablet_tool_type);

@@ -821,6 +821,132 @@ const device_t gameport_tm_acm_device = {
     .config        = tmacm_config
 };
 
+/* A card with one game port: the port is a device of its own. */
+static void *
+gameport_card_init(const device_t *info)
+{
+    gameport_add((const device_t *) info->local);
+
+    return calloc(1, 1);
+}
+
+static void
+gameport_card_close(void *priv)
+{
+    free(priv);
+}
+
+const device_t gameport_card_device = {
+    .name          = "Game Port Card (200h)",
+    .internal_name = "gameport_card",
+    .flags         = DEVICE_ISA,
+    .local         = (uintptr_t) &gameport_200_device,
+    .init          = gameport_card_init,
+    .close         = gameport_card_close,
+    .reset         = NULL,
+    .available     = NULL,
+    .speed_changed = NULL,
+    .force_redraw  = NULL,
+    .config        = NULL
+};
+
+const device_t gameport_card_208_device = {
+    .name          = "Game Port Card (208h, second game port)",
+    .internal_name = "gameport_card_208",
+    .flags         = DEVICE_ISA,
+    .local         = (uintptr_t) &gameport_208_device,
+    .init          = gameport_card_init,
+    .close         = gameport_card_close,
+    .reset         = NULL,
+    .available     = NULL,
+    .speed_changed = NULL,
+    .force_redraw  = NULL,
+    .config        = NULL
+};
+
+const device_t gameport_card_pnp_device = {
+    .name          = "86Box PnP Game Port Card",
+    .internal_name = "gameport_card_pnp",
+    .flags         = DEVICE_ISA16,
+    .local         = (uintptr_t) &gameport_device,
+    .init          = gameport_card_init,
+    .close         = gameport_card_close,
+    .reset         = NULL,
+    .available     = NULL,
+    .speed_changed = NULL,
+    .force_redraw  = NULL,
+    .config        = NULL
+};
+
+/* Not a card: the machine's own choice, a game port card when nothing
+   else provides one (the standalone game port), as 86Box has always
+   done. */
+const device_t gameport_auto_device = {
+    .name          = "Automatic",
+    .internal_name = "auto",
+    .flags         = 0,
+    .local         = 0,
+    .init          = NULL,
+    .close         = NULL,
+    .reset         = NULL,
+    .available     = NULL,
+    .speed_changed = NULL,
+    .force_redraw  = NULL,
+    .config        = NULL
+};
+
+int gameport_card_type = GAMEPORT_CARD_AUTO;
+
+static const device_t *gameport_cards[] = {
+    &device_none,
+    &gameport_auto_device,
+    &gameport_card_device,
+    &gameport_card_208_device,
+    &gameport_card_pnp_device,
+    &gameport_tm_acm_device,
+    NULL
+};
+
+/* The game port card chosen, added after the machine and its other cards:
+   with none, no standalone game port either. */
+void
+gameport_card_reset(void)
+{
+    if (gameport_card_type == 0)
+        standalone_gameport_type = NULL;
+    else if (gameport_card_type > GAMEPORT_CARD_AUTO)
+        device_add(gameport_cards[gameport_card_type]);
+}
+
+const device_t *
+gameport_card_get_device(int card)
+{
+    return gameport_cards[card];
+}
+
+const char *
+gameport_card_get_internal_name(int card)
+{
+    return device_get_internal_name(gameport_cards[card]);
+}
+
+int
+gameport_card_get_from_internal_name(const char *s)
+{
+    for (int c = 0; gameport_cards[c] != NULL; c++) {
+        if (!strcmp(gameport_cards[c]->internal_name, s))
+            return c;
+    }
+
+    return GAMEPORT_CARD_AUTO;
+}
+
+int
+gameport_card_has_config(int card)
+{
+    return (gameport_cards[card] != NULL) && (gameport_cards[card]->config != NULL);
+}
+
 const device_t gameport_pnp_device = {
     .name          = "Game port (Plug and Play only)",
     .internal_name = "gameport_pnp",

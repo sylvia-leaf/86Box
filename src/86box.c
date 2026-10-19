@@ -1981,6 +1981,9 @@ pc_reset_hard_init(void)
     /* Reset any ISA RTC cards. */
     isartc_reset();
 
+    /* Add the game port card, if one is chosen. */
+    gameport_card_reset();
+
     /* Initialize the Voodoo cards here inorder to minimize
        the chances of the SCSI controller ending up on the bridge. */
     video_voodoo_init();
