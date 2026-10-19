@@ -681,6 +681,8 @@ extern const device_t nv3_device_pci;
 extern const device_t nv3_device_agp;
 extern const device_t nv3t_device_pci;
 extern const device_t nv3t_device_agp;
+extern const device_t nv4_tnt_pci_device;
+extern const device_t nv4_tnt_agp_device;
 
 #endif
 
