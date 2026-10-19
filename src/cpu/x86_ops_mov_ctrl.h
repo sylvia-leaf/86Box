@@ -198,12 +198,12 @@ opMOV_CRx_r_a16(uint32_t fetchdat)
                 return 1;
             }
             if ((cpu_state.regs[cpu_rm].l ^ cr0) & 0x00000001)
-                flushmmucache();
+                flushmmucache_cpu();
             else if ((cpu_state.regs[cpu_rm].l ^ cr0) & 0x80000000) {
                 if (is_p6)
-                    flushmmucache();
+                    flushmmucache_cpu();
                 else {
-                    flushmmucache_nopc();
+                    flushmmucache_nopc_cpu();
                     cpu_flush_pending = 1;
                     /* The recompiler runs the next instruction through the
                        interpreter, which still fetches it with the old
@@ -243,7 +243,7 @@ opMOV_CRx_r_a16(uint32_t fetchdat)
                 return 1;
             }
             cr3 = cpu_state.regs[cpu_rm].l;
-            flushmmucache();
+            flushmmucache_cpu();
             break;
         case 4:
             if (cpu_has_feature(CPU_FEATURE_CR4)) {
@@ -258,7 +258,7 @@ opMOV_CRx_r_a16(uint32_t fetchdat)
                     return 1;
                 }
                 if (((cpu_state.regs[cpu_rm].l ^ cr4) & cpu_CR4_mask) & (CR4_PSE | CR4_PAE | CR4_PGE))
-                    flushmmucache();
+                    flushmmucache_cpu();
                 cr4 = cpu_state.regs[cpu_rm].l & cpu_CR4_mask;
                 break;
             }
@@ -294,12 +294,12 @@ opMOV_CRx_r_a32(uint32_t fetchdat)
                 return 1;
             }
             if ((cpu_state.regs[cpu_rm].l ^ cr0) & 0x00000001)
-                flushmmucache();
+                flushmmucache_cpu();
             else if ((cpu_state.regs[cpu_rm].l ^ cr0) & 0x80000000) {
                 if (is_p6)
-                    flushmmucache();
+                    flushmmucache_cpu();
                 else {
-                    flushmmucache_nopc();
+                    flushmmucache_nopc_cpu();
                     cpu_flush_pending = 1;
                     /* The recompiler runs the next instruction through the
                        interpreter, which still fetches it with the old
@@ -339,7 +339,7 @@ opMOV_CRx_r_a32(uint32_t fetchdat)
                 return 1;
             }
             cr3 = cpu_state.regs[cpu_rm].l;
-            flushmmucache();
+            flushmmucache_cpu();
             break;
         case 4:
             if (cpu_has_feature(CPU_FEATURE_CR4)) {
@@ -354,7 +354,7 @@ opMOV_CRx_r_a32(uint32_t fetchdat)
                     return 1;
                 }
                 if (((cpu_state.regs[cpu_rm].l ^ cr4) & cpu_CR4_mask) & (CR4_PSE | CR4_PAE | CR4_PGE))
-                    flushmmucache();
+                    flushmmucache_cpu();
                 cr4 = cpu_state.regs[cpu_rm].l & cpu_CR4_mask;
                 break;
             }

@@ -68,6 +68,249 @@ uint64_t codegen_link_unlinked = UINT64_MAX;
    with no link behind it only costs a look. */
 static uint64_t codegen_link_targets[BLOCK_SIZE / 64];
 
+/* The linked blocks, grouped by the linear page they start on, whether
+   they run onto the next, and what the page (or both) translated to when
+   they were linked (link_pte, link_pte2): a revalidation walks each
+   group's pages once and looks at its blocks only when a page moved, so
+   it costs the linked pages, not the linked blocks. A block whose pages
+   did not translate to its code, or one with no group to spare, is
+   checked alone (the solo list). Kept with the target bits.
+
+   A group whose pages stop translating as they did -- another process's
+   pages once CR3 moves on, most often simply not there -- is held, not
+   dropped: a link into it compares the group's word as well as its
+   block's generation (codegen_lg_word), and holding it sets bit 63 there,
+   one write for all its links. A held group leaves the passes, and comes
+   back when a link is next made to one of its blocks with its pages
+   translating as they did (codegen_lg_find): every link into it holds
+   again, none made over. Held groups are taken back, oldest first, when
+   no group is free. */
+#    define CODEGEN_LG_MAX          65536
+#    define CODEGEN_LG_HASH         16384
+#    define CODEGEN_LG_SOLO         (-2)
+#    define CODEGEN_LG_HELD         (1ULL << 63)
+#    define CODEGEN_LG_HASH_OF(lin) ((((lin) >> 12) ^ ((lin) >> 24)) & (CODEGEN_LG_HASH - 1))
+typedef struct codegen_lg_t {
+    uint32_t lin;
+    int32_t  spans; /* its blocks run onto lin + 4K */
+    uint64_t umask; /* ~0, or ~2 where no block was linked at CPL 3 */
+    uint64_t pte;
+    uint64_t pte2; /* lin + 4K's, when spans */
+    int32_t  head; /* first block, -1 for none */
+    uint32_t count;
+    int32_t  hnext;                /* next group in its hash chain, or on the free list */
+    int32_t  active;               /* its place in codegen_lg_active, -1 while held */
+    int32_t  held_prev, held_next; /* its neighbours among the held, oldest first */
+} codegen_lg_t;
+static codegen_lg_t codegen_lg[CODEGEN_LG_MAX];
+/* What a link into the group compares (the stub's second test): a number
+   never given out before while the group holds, with CODEGEN_LG_HELD while
+   it is held, 0 once it is released. A solo block's links compare
+   codegen_lg_solo_word, always 0: its own generation holds them. */
+static uint64_t codegen_lg_word[CODEGEN_LG_MAX];
+static uint64_t codegen_lg_seq = 1;
+uint64_t        codegen_lg_solo_word;
+static int32_t  codegen_lg_held_head = -1;
+static int32_t  codegen_lg_held_tail = -1;
+static int32_t  codegen_lg_hash[CODEGEN_LG_HASH];
+static int32_t  codegen_lg_active[CODEGEN_LG_MAX];
+static int      codegen_lg_active_n;
+static int32_t  codegen_lg_free;
+static int32_t  codegen_lg_solo;
+
+static void codegen_lp_init(void);
+
+static void
+codegen_lg_init(void)
+{
+    for (int h = 0; h < CODEGEN_LG_HASH; h++)
+        codegen_lg_hash[h] = -1;
+    for (int g = 0; g < CODEGEN_LG_MAX; g++)
+        codegen_lg[g].hnext = (g + 1 < CODEGEN_LG_MAX) ? (g + 1) : -1;
+    for (int g = 0; g < CODEGEN_LG_MAX; g++)
+        codegen_lg_word[g] = 0;
+    codegen_lp_init();
+    codegen_lg_free      = 0;
+    codegen_lg_active_n  = 0;
+    codegen_lg_solo      = -1;
+    codegen_lg_held_head = -1;
+    codegen_lg_held_tail = -1;
+}
+
+static void
+codegen_lg_active_add(int32_t g)
+{
+    codegen_lg[g].active                     = codegen_lg_active_n;
+    codegen_lg_active[codegen_lg_active_n++] = g;
+}
+
+/* Out of the active array: the last takes its place. */
+static void
+codegen_lg_active_remove(int32_t g)
+{
+    const int32_t last = codegen_lg_active[--codegen_lg_active_n];
+
+    codegen_lg_active[codegen_lg[g].active] = last;
+    codegen_lg[last].active                 = codegen_lg[g].active;
+    codegen_lg[g].active                    = -1;
+}
+
+static void
+codegen_lg_held_remove(int32_t g)
+{
+    const int32_t prev = codegen_lg[g].held_prev;
+    const int32_t next = codegen_lg[g].held_next;
+
+    if (prev >= 0)
+        codegen_lg[prev].held_next = next;
+    else
+        codegen_lg_held_head = next;
+    if (next >= 0)
+        codegen_lg[next].held_prev = prev;
+    else
+        codegen_lg_held_tail = prev;
+}
+
+/* Its pages no longer translate as its links were made under. */
+static void
+codegen_lg_hold(int32_t g)
+{
+    codegen_lg_active_remove(g);
+    __atomic_fetch_or(&codegen_lg_word[g], CODEGEN_LG_HELD, __ATOMIC_SEQ_CST);
+    codegen_lg[g].held_prev = codegen_lg_held_tail;
+    codegen_lg[g].held_next = -1;
+    if (codegen_lg_held_tail >= 0)
+        codegen_lg[codegen_lg_held_tail].held_next = g;
+    else
+        codegen_lg_held_head = g;
+    codegen_lg_held_tail = g;
+}
+
+/* They do again. */
+static void
+codegen_lg_resume(int32_t g)
+{
+    codegen_lg_held_remove(g);
+    __atomic_fetch_and(&codegen_lg_word[g], ~CODEGEN_LG_HELD, __ATOMIC_SEQ_CST);
+    codegen_lg_active_add(g);
+}
+
+static void codegen_link_bit_clear(int nr);
+
+/* No group free: the one held longest lets its blocks' links go, and is
+   released as the last of them leaves. No code is freed, so a link the
+   dispatcher has pending stands. */
+static void
+codegen_lg_reclaim(void)
+{
+    const int32_t g = codegen_lg_held_head;
+
+    for (int32_t nr = codegen_lg[g].head; nr >= 0;) {
+        const int32_t next = codeblock[nr].link_gnext;
+
+        __atomic_fetch_add(&codeblock[nr].link_gen, 1, __ATOMIC_SEQ_CST);
+        codegen_link_bit_clear(nr);
+        codeblock[nr].link_cpl3 = 0; /* no link left */
+        nr = next;
+    }
+}
+
+/* What a link to the block compares besides its generation, and where:
+   read after codegen_links_note has put it in its group. */
+uint64_t *
+codegen_link_group_word(const codeblock_t *block, uint64_t *value)
+{
+    const int32_t g = block->link_group;
+
+    if (g < 0) {
+        *value = 0;
+        return &codegen_lg_solo_word;
+    }
+    *value = codegen_lg_word[g];
+    return &codegen_lg_word[g];
+}
+
+static void
+codegen_lg_list_add(int32_t *head, int nr)
+{
+    codeblock[nr].link_gnext = *head;
+    codeblock[nr].link_gprev = -1;
+    if (*head >= 0)
+        codeblock[*head].link_gprev = nr;
+    *head = nr;
+}
+
+static void
+codegen_lg_list_remove(int32_t *head, int nr)
+{
+    const int32_t prev = codeblock[nr].link_gprev;
+    const int32_t next = codeblock[nr].link_gnext;
+
+    if (prev >= 0)
+        codeblock[prev].link_gnext = next;
+    else
+        *head = next;
+    if (next >= 0)
+        codeblock[next].link_gprev = prev;
+}
+
+static int32_t
+codegen_lg_find(uint32_t lin, int spans, uint64_t umask, uint64_t pte, uint64_t pte2)
+{
+    const int h = CODEGEN_LG_HASH_OF(lin);
+    int32_t   g;
+
+    for (g = codegen_lg_hash[h]; g >= 0; g = codegen_lg[g].hnext) {
+        if ((codegen_lg[g].lin == lin) && (codegen_lg[g].spans == spans) && (codegen_lg[g].umask == umask) && (codegen_lg[g].pte == pte) &&
+            (!spans || (codegen_lg[g].pte2 == pte2))) {
+            /* Its pages translate as they did (the caller has just walked
+               them): the links it held are good again. */
+            if (codegen_lg[g].active < 0)
+                codegen_lg_resume(g);
+            return g;
+        }
+    }
+    if ((codegen_lg_free < 0) && (codegen_lg_held_head >= 0))
+        codegen_lg_reclaim();
+    if (codegen_lg_free < 0)
+        return -1;
+    g               = codegen_lg_free;
+    codegen_lg_free = codegen_lg[g].hnext;
+
+    codegen_lg[g].lin   = lin;
+    codegen_lg[g].spans = spans;
+    codegen_lg[g].umask = umask;
+    codegen_lg[g].pte   = pte;
+    codegen_lg[g].pte2  = spans ? pte2 : 0;
+    codegen_lg[g].head  = -1;
+    codegen_lg[g].count = 0;
+    codegen_lg[g].hnext = codegen_lg_hash[h];
+    codegen_lg_hash[h]  = g;
+    __atomic_store_n(&codegen_lg_word[g], codegen_lg_seq++, __ATOMIC_SEQ_CST);
+    codegen_lg_active_add(g);
+    return g;
+}
+
+static void
+codegen_lg_release(int32_t g)
+{
+    const int h    = CODEGEN_LG_HASH_OF(codegen_lg[g].lin);
+    int32_t  *link = &codegen_lg_hash[h];
+
+    while (*link != g)
+        link = &codegen_lg[*link].hnext;
+    *link = codegen_lg[g].hnext;
+
+    if (codegen_lg[g].active < 0)
+        codegen_lg_held_remove(g);
+    else
+        codegen_lg_active_remove(g);
+    __atomic_store_n(&codegen_lg_word[g], 0, __ATOMIC_SEQ_CST); /* no link into it holds again */
+
+    codegen_lg[g].hnext = codegen_lg_free;
+    codegen_lg_free     = g;
+}
+
 /* How many linked blocks have code on each physical page (both pages of a
    block running onto a second): writes to a page with none need no signal,
    since only a link skips the dirty test a dispatch makes. Kept with the
@@ -142,32 +385,114 @@ codegen_link_phys_add(const codeblock_t *block, int d)
     }
 }
 
+/* Whether a block's code runs onto the next 4K page, which its links must
+   then translate too. For a byte-masked block page_mask2 is its next
+   64-byte chunk (codegen_mark_code_present), usually on its own page. */
+static inline int
+codegen_link_spans(const codeblock_t *block)
+{
+    if (!block->page_mask2)
+        return 0;
+    if (block->flags & CODEBLOCK_BYTE_MASK)
+        return ((block->phys_2 ^ block->phys) & ~0xfff) != 0;
+    return 1;
+}
+
 static void
 codegen_link_bit_set(codeblock_t *block, int nr)
 {
     const uint64_t bit = 1ULL << (nr & 63);
+    const uint32_t lin = block->pc & ~0xfff;
+    int32_t        g   = -1;
 
     if (__atomic_fetch_or(&codegen_link_targets[nr >> 6], bit, __ATOMIC_SEQ_CST) & bit)
         return;
     block->link_phys   = block->phys;
     block->link_phys_2 = block->page_mask2 ? block->phys_2 : 0xffffffff;
     codegen_link_phys_add(block, 1);
+    /* Grouped only where its pages translated to its code, as a check
+       compares the group's walk with what its blocks were linked under. */
+    if ((block->link_pte & 1) && ((block->link_pte & ~0xfffULL) == (block->phys & ~0xfff)) &&
+        (!codegen_link_spans(block) || ((block->link_pte2 & 1) && ((block->link_pte2 & ~0xfffULL) == (block->phys_2 & ~0xfff)))))
+        g = codegen_lg_find(lin, codegen_link_spans(block), block->link_cpl3 ? ~0ULL : ~2ULL, block->link_pte, block->link_pte2);
+    if (g < 0) {
+        block->link_group = CODEGEN_LG_SOLO;
+        codegen_lg_list_add(&codegen_lg_solo, nr);
+    } else {
+        block->link_group = g;
+        codegen_lg_list_add(&codegen_lg[g].head, nr);
+        codegen_lg[g].count++;
+    }
 }
 
 static void
 codegen_link_bit_clear(int nr)
 {
     const uint64_t bit = 1ULL << (nr & 63);
+    int32_t        g;
 
     if (!(__atomic_fetch_and(&codegen_link_targets[nr >> 6], ~bit, __ATOMIC_SEQ_CST) & bit))
         return;
     codegen_link_phys_add(&codeblock[nr], -1);
+    g = codeblock[nr].link_group;
+    if (g == CODEGEN_LG_SOLO)
+        codegen_lg_list_remove(&codegen_lg_solo, nr);
+    else {
+        codegen_lg_list_remove(&codegen_lg[g].head, nr);
+        if (--codegen_lg[g].count == 0)
+            codegen_lg_release(g);
+    }
 }
+
+/* Translations flushed since the loop last looked: all of them,
+   or these linear pages (INVLPG). */
+#    define CODEGEN_REVAL_PAGES 8
+static int      codegen_reval_all;
+static int      codegen_reval_count;
+static uint32_t codegen_reval_pages[CODEGEN_REVAL_PAGES];
 
 void
 codegen_links_note(codeblock_t *block)
 {
-    codegen_link_bit_set(block, get_block_nr(block));
+    const int      nr = get_block_nr(block);
+    const uint32_t pg = block->pc & ~0xfff;
+    const int32_t  g  = block->link_group;
+    uint64_t       pte;
+    uint64_t       pte2;
+
+    /* A page's user bit matters only to links made at CPL 3 (the key keeps
+       them apart); once one is, it matters until the block's links all go.
+       Paging turned on and off -- a boot loader's BIOS calls -- makes it
+       flip for supervisor code, which otherwise loses every link. */
+    if ((cpu_state.seg_cs.access & 0x60) == 0x60)
+        block->link_cpl3 = 1;
+    pte  = mmu_link_translate(pg);
+    pte2 = codegen_link_spans(block) ? mmu_link_translate(pg + 0x1000) : 0;
+    if (!block->link_cpl3) {
+        pte &= ~2ULL;
+        pte2 &= ~2ULL;
+    }
+
+    /* Already in the group its pages translate to now: it stays, and the
+       links into the group made before hold (a group left empty would be
+       released, and they with it). A held group is good again. */
+    if ((__atomic_load_n(&codegen_link_targets[nr >> 6], __ATOMIC_SEQ_CST) & (1ULL << (nr & 63))) && (g >= 0) &&
+        (codegen_lg[g].lin == pg) && (codegen_lg[g].spans == codegen_link_spans(block)) &&
+        (codegen_lg[g].umask == (block->link_cpl3 ? ~0ULL : ~2ULL)) && (codegen_lg[g].pte == pte) &&
+        (!codegen_link_spans(block) || (codegen_lg[g].pte2 == pte2))) {
+        block->link_pte  = pte;
+        block->link_pte2 = pte2;
+        if (codegen_lg[g].active < 0)
+            codegen_lg_resume(g);
+        return;
+    }
+
+    /* Otherwise out of its group first: it goes where its page translates
+       now. */
+    codegen_link_bit_clear(nr);
+    block->link_pte  = pte;
+    block->link_pte2 = pte2;
+    codegen_link_bit_set(block, nr);
 }
 
 /* From anywhere: the block's links miss from now on. A link the dispatcher
@@ -189,6 +514,7 @@ codegen_links_drop_owned(codeblock_t *block)
 
     codegen_links_drop(block);
     codegen_link_bit_clear(nr);
+    block->link_cpl3 = 0; /* no link left */
     __atomic_fetch_add(&codegen_chain_gen, 1, __ATOMIC_SEQ_CST);
 }
 
@@ -203,11 +529,169 @@ codegen_links_drop_all(int owner)
 
             bits &= bits - 1;
             __atomic_fetch_add(&codeblock[(w << 6) | b].link_gen, 1, __ATOMIC_SEQ_CST);
-            if (owner)
+            if (owner) {
                 codegen_link_bit_clear((w << 6) | b);
+                codeblock[(w << 6) | b].link_cpl3 = 0; /* no link left */
+            }
         }
     }
     __atomic_fetch_add(&codegen_chain_gen, 1, __ATOMIC_SEQ_CST);
+}
+
+void
+codegen_links_revalidate_request(int all, uint32_t lin)
+{
+    if (all || (codegen_reval_count >= CODEGEN_REVAL_PAGES))
+        codegen_reval_all = 1;
+    else
+        codegen_reval_pages[codegen_reval_count++] = lin & ~0xfff;
+    /* The chain leaves at its next link, and the loop looks before the
+       next dispatch, the flushing instruction done. */
+    mem_chain_code(MEM_CHAIN_CODE_REVALIDATE);
+}
+
+/* One revalidation's page walks, by linear page: many linked blocks share
+   a page, and each page is walked once a pass. An entry holds only for the
+   pass that filled it. */
+#    define CODEGEN_REVAL_CACHE 2048
+static struct {
+    uint64_t pass;
+    uint32_t page;
+    uint64_t pte;
+} codegen_reval_cache[CODEGEN_REVAL_CACHE];
+static uint64_t codegen_reval_pass; /* 64 bits: never wraps back onto a stale entry */
+
+static uint64_t
+codegen_reval_translate(uint32_t pg)
+{
+    const uint32_t h = ((pg >> 12) ^ (pg >> 23)) & (CODEGEN_REVAL_CACHE - 1);
+
+    if ((codegen_reval_cache[h].pass == codegen_reval_pass) && (codegen_reval_cache[h].page == pg))
+        return codegen_reval_cache[h].pte;
+    codegen_reval_cache[h].pass = codegen_reval_pass;
+    codegen_reval_cache[h].page = pg;
+    codegen_reval_cache[h].pte  = mmu_link_translate(pg);
+    return codegen_reval_cache[h].pte;
+}
+
+/* Whether a linked block's pages still translate where it was compiled
+   from, with the user/supervisor bit the links were made under. */
+static int
+codegen_links_translation_holds(const codeblock_t *block)
+{
+    const uint32_t pg = block->pc & ~0xfff;
+    const uint64_t u  = block->link_cpl3 ? 2 : 0; /* the user bit, where it matters */
+    uint64_t       t  = codegen_reval_translate(pg);
+
+    if (!(t & 1) || ((t & ~0xfffULL) != (block->phys & ~0xfff)) || ((t ^ block->link_pte) & u))
+        return 0;
+    if (codegen_link_spans(block)) {
+        t = codegen_reval_translate(pg + 0x1000);
+        if (!(t & 1) || ((t & ~0xfffULL) != (block->phys_2 & ~0xfff)) || ((t ^ block->link_pte2) & u))
+            return 0;
+    }
+    return 1;
+}
+
+/* A group's page (or either page) no longer translates as its links were
+   made under: the group is held, and every link into it misses until its
+   pages come back (codegen_lg_find). */
+static void
+codegen_lg_check(int32_t g)
+{
+    if (((codegen_reval_translate(codegen_lg[g].lin) & codegen_lg[g].umask) == codegen_lg[g].pte) &&
+        (!codegen_lg[g].spans || ((codegen_reval_translate(codegen_lg[g].lin + 0x1000) & codegen_lg[g].umask) == codegen_lg[g].pte2)))
+        return;
+    codegen_lg_hold(g);
+}
+
+static int
+codegen_reval_wants(int all, int count, uint32_t first, int two_pages)
+{
+    if (all)
+        return 1;
+    for (int c = 0; c < count; c++) {
+        if ((codegen_reval_pages[c] == first) || (two_pages && (codegen_reval_pages[c] == (first + 0x1000))))
+            return 1;
+    }
+    return 0;
+}
+
+/* The loop's look after a translation flush (CR3, CR0 and
+   CR4 loads, INVLPG, task switches): only the links whose target no longer
+   translates to its code go. An operating system's kernel keeps its
+   mappings in every address space, so a context switch leaves them. */
+void
+codegen_links_revalidate(void)
+{
+    const int all   = codegen_reval_all;
+    const int count = codegen_reval_count;
+
+    codegen_reval_all   = 0;
+    codegen_reval_count = 0;
+
+    /* Paging off at the last pass and still off, the same A20: no
+       translation can have changed (real mode, and a boot loader's switches
+       into protected mode and back without paging). */
+    {
+        static int      last_off;
+        static uint32_t last_rammask;
+        const int       off = !(cr0 & 0x80000000);
+
+        if (off && last_off && (rammask == last_rammask))
+            return;
+        last_off     = off;
+        last_rammask = rammask;
+    }
+
+    /* A new pass: no walk of an earlier one is trusted. Pass 0 is never
+       used, so an empty entry never matches. */
+    if (++codegen_reval_pass == 0)
+        codegen_reval_pass = 1;
+
+    if (all) {
+        /* A group held leaves the array, the last taking its place: going
+           down, that one has been looked at already. */
+        for (int i = codegen_lg_active_n - 1; i >= 0; i--) {
+            if (i < codegen_lg_active_n)
+                codegen_lg_check(codegen_lg_active[i]);
+        }
+    } else {
+        /* The groups starting on each page, and those running onto it
+           from the page before. */
+        for (int c = 0; c < count; c++) {
+            const uint32_t pg = codegen_reval_pages[c];
+            int32_t        g  = codegen_lg_hash[CODEGEN_LG_HASH_OF(pg)];
+
+            while (g >= 0) {
+                const int32_t next = codegen_lg[g].hnext;
+
+                if ((codegen_lg[g].lin == pg) && (codegen_lg[g].active >= 0))
+                    codegen_lg_check(g);
+                g = next;
+            }
+            g = codegen_lg_hash[CODEGEN_LG_HASH_OF(pg - 0x1000)];
+            while (g >= 0) {
+                const int32_t next = codegen_lg[g].hnext;
+
+                if (codegen_lg[g].spans && (codegen_lg[g].lin == (pg - 0x1000)) && (codegen_lg[g].active >= 0))
+                    codegen_lg_check(g);
+                g = next;
+            }
+        }
+    }
+
+    /* The blocks checked alone. */
+    for (int32_t nr = codegen_lg_solo; nr >= 0;) {
+        codeblock_t  *block = &codeblock[nr];
+        const int32_t next  = block->link_gnext;
+
+        if (codegen_reval_wants(all, count, block->pc & ~0xfff, codegen_link_spans(block))) {
+            if (!block->valid || !block->head_mem_block || !codegen_links_translation_holds(block))
+                codegen_links_drop_owned(block);
+        }
+        nr = next;
+    }
 }
 
 uint8_t *codegen_chain_last_exit;
@@ -694,7 +1178,7 @@ codegen_init(void)
     codegen_backend_init();
     block_versions_init();
 #ifdef CODEGEN_CHAIN
-    codegen_lp_init();
+    codegen_lg_init();
 #endif
     block_free_list = 0;
     for (uint32_t c = 0; c < BLOCK_SIZE; c++)
@@ -749,7 +1233,8 @@ codegen_reset(void)
     /* Every link went with its block's code. */
     memset(codegen_link_targets, 0, sizeof(codegen_link_targets));
     memset(codegen_link_phys_count, 0, sizeof(codegen_link_phys_count));
-    codegen_lp_init();
+    codegen_lg_init();
+    mem_link_large_forget();
     codegen_block_link = cpu_dyn_block_link;
 #endif
 

@@ -1176,9 +1176,11 @@ codegen_backend_prologue(codeblock_t *block)
    offsets of the fields codegen_chain_patch() writes: */
 #    define LINK_GENPTR 49 /* &target->link_gen */
 #    define LINK_GEN    59 /* its value when linked */
-#    define LINK_STATUS 90
-#    define LINK_JMP    100
-#    define LINK_MISS   105
+#    define LINK_GWORD  78 /* its link group's word (codegen_link_group_word) */
+#    define LINK_GVAL   88 /* its value when linked */
+#    define LINK_STATUS 134
+#    define LINK_JMP    144
+#    define LINK_MISS   149
 #    define LINK_BACK   16 /* past the signal test: where a serviced chain goes on */
 /* The miss path (23 bytes), the exit's JMP and the service's CALL at their
    longest (13 each), TEST, JNZ and the JMP back. */
@@ -1197,6 +1199,7 @@ codegen_backend_link_stub(codeblock_t *block)
     const int32_t cyc    = (int32_t) ((uintptr_t) &cpu_state._cycles - ((uintptr_t) &cpu_state + 128));
     const int32_t flr    = (int32_t) ((uintptr_t) &cpu_state.chain_floor - ((uintptr_t) &cpu_state + 128));
     const int32_t flg_hi = (int32_t) ((uintptr_t) &cpu_state.flags + 1 - ((uintptr_t) &cpu_state + 128));
+    const int32_t acc    = (int32_t) ((uintptr_t) &cpu_state.seg_cs.access - ((uintptr_t) &cpu_state + 128));
     uint8_t      *stub;
     uint8_t      *exit_at;
     uint8_t      *service_at;
@@ -1237,10 +1240,26 @@ codegen_backend_link_stub(codeblock_t *block)
     codegen_addbyte3(block, 0x48, 0x39, 0x08); /*CMP [RAX], RCX*/
     codegen_addbyte2(block, 0x0f, 0x85);       /*JNE miss*/
     codegen_addlong(block, 0);
-    /* The key: the status word (CODEGEN_CHAIN_KEY). */
+    /* The target's link group: held while its pages translate elsewhere
+       (another address space), and good again when they come back. */
+    codegen_addbyte2(block, 0x48, 0xb8); /*MOV RAX, &group word*/
+    LINK_AT(LINK_GWORD);
+    codegen_addquad(block, (uint64_t) (uintptr_t) &codegen_lg_solo_word);
+    codegen_addbyte2(block, 0x48, 0xb9); /*MOV RCX, VALUE*/
+    LINK_AT(LINK_GVAL);
+    codegen_addquad(block, 0);
+    codegen_addbyte3(block, 0x48, 0x39, 0x08); /*CMP [RAX], RCX*/
+    codegen_addbyte2(block, 0x0f, 0x85);       /*JNE miss*/
+    codegen_addlong(block, 0);
+    /* The key: the status word, and the CPL in bits 17:16 (CODEGEN_CHAIN_KEY). */
     codegen_addbyte2(block, 0x48, 0xb8); /*MOV RAX, &cpu_cur_status*/
     codegen_addquad(block, (uint64_t) (uintptr_t) &cpu_cur_status);
     codegen_addbyte3(block, 0x0f, 0xb7, 0x00); /*MOVZX EAX, WORD [RAX]*/
+    codegen_addbyte3(block, 0x0f, 0xb6, 0x8d); /*MOVZX ECX, BYTE [RBP+cs access]*/
+    codegen_addlong(block, (uint32_t) acc);
+    codegen_addbyte3(block, 0x83, 0xe1, 0x60); /*AND ECX, 60h (DPL = CPL)*/
+    codegen_addbyte3(block, 0xc1, 0xe1, 0x0b); /*SHL ECX, 11*/
+    codegen_addbyte2(block, 0x09, 0xc8);       /*OR EAX, ECX*/
     codegen_addbyte(block, 0x3d);              /*CMP EAX, KEY*/
     LINK_AT(LINK_STATUS);
     codegen_addlong(block, 0xffffffff);  /*never matches until linked*/
@@ -1280,6 +1299,7 @@ codegen_backend_link_stub(codeblock_t *block)
     link_rel32(stub + 30, exit_at);                       /*JLE exit (cycles)*/
     link_rel32(stub + 43, exit_at);                       /*JNE exit (TF)*/
     link_rel32(stub + 72, stub + LINK_MISS);              /*JNE miss (generation)*/
+    link_rel32(stub + LINK_GVAL + 13, stub + LINK_MISS);  /*JNE miss (group)*/
     link_rel32(stub + LINK_STATUS + 6, stub + LINK_MISS); /*JNE miss (key)*/
     link_rel32(stub + LINK_JMP + 1, stub + LINK_MISS);
 }
@@ -1296,8 +1316,13 @@ codegen_chain_patch(uint8_t *stub, codeblock_t *target, uint64_t gen)
     if ((diff < INT32_MIN) || (diff > INT32_MAX))
         return 0;
 
+    uint64_t  gval;
+    uint64_t *gword = codegen_link_group_word(target, &gval);
+
     *(uint64_t *) (stub + LINK_GENPTR) = (uint64_t) (uintptr_t) &target->link_gen;
     *(uint64_t *) (stub + LINK_GEN)    = gen;
+    *(uint64_t *) (stub + LINK_GWORD)  = (uint64_t) (uintptr_t) gword;
+    *(uint64_t *) (stub + LINK_GVAL)   = gval;
     *(uint32_t *) (stub + LINK_STATUS) = CODEGEN_CHAIN_KEY();
     link_rel32(stub + LINK_JMP + 1, dest);
     return 1;

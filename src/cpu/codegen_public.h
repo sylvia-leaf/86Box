@@ -56,8 +56,10 @@ struct page_t;
 extern void codegen_page_code_hit(const struct page_t *p, uint64_t mask, int byte_offset, uint64_t bm0, uint64_t bm1);
 /* The whole page was written behind the processor's back. */
 extern void codegen_page_code_drop(const struct page_t *p);
-/* Every link goes (`owner`: from the dispatcher's side). */
+/* Every link goes (`owner`: from the dispatcher's side), or translations
+   may have changed (all, or the linear page `lin`). */
 extern void codegen_links_drop_all(int owner);
+extern void codegen_links_revalidate_request(int all, uint32_t lin);
 #endif
 
 extern void codegen_init(void);

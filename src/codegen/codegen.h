@@ -75,6 +75,15 @@ typedef struct codeblock_t {
       while the block's number is in use again, so a stale link cannot
       match a new block.*/
     uint64_t link_gen;
+    /*The block's pages as translated when a link to it was last made
+      (mmu_link_translate): a translation flush compares them again.*/
+    uint64_t link_pte, link_pte2;
+    /*While it is a link target: its group (codegen_block.c), or the solo
+      list, and its neighbours there.*/
+    int32_t link_group;
+    int32_t link_gnext, link_gprev;
+    /*A link to it was made at CPL 3: its pages' user bit counts.*/
+    uint8_t link_cpl3;
     /*The physical pages counted for it while it is a link target.*/
     uint32_t link_phys, link_phys_2;
     /*Its places in the lists of linked blocks on those pages (codegen_lp),
@@ -101,10 +110,16 @@ extern int codegen_chain_service(void);
   of the block STI's shadow ends (386_dynarec.c).*/
 extern void codegen_chain_sti(void);
 /*What a link was made under and holds only while it matches: the status
-  word.*/
-#    define CODEGEN_CHAIN_KEY() (cpu_cur_status & 0xffff)
+  word, and the CPL (bits 17:16) -- a page's user or supervisor check was
+  made at the CPL a link was made at, so privilege changes need not drop
+  the links.*/
+#    define CODEGEN_CHAIN_KEY() ((cpu_cur_status & 0xffff) | ((uint32_t) (cpu_state.seg_cs.access & 0x60) << 11))
 /*A link generation no block has: where an unlinked stub points.*/
 extern uint64_t codegen_link_unlinked;
+/*A link's second test: the word of the target's link group and the value
+  it must hold (codegen_block.c).*/
+extern uint64_t  codegen_lg_solo_word;
+extern uint64_t *codegen_link_group_word(const codeblock_t *block, uint64_t *value);
 /*Point a link stub at a block, under the block's link generation `gen`
   (read before its code was found clean); answers whether it could.*/
 extern int codegen_chain_patch(uint8_t *stub, codeblock_t *target, uint64_t gen);
@@ -113,10 +128,15 @@ extern int codegen_chain_patch(uint8_t *stub, codeblock_t *target, uint64_t gen)
   - note: a link to `block` was just made;
   - drop: every link into `block` goes (from anywhere);
   - drop_all: every link goes (`owner`: from the dispatcher's side, which
-    also empties the link lists; else from anywhere, generations only).*/
+    also empties the link lists; else from anywhere, generations only);
+  - revalidate_request: translations may have changed (all of them, or the
+    linear page `lin` alone); the links are checked against the page
+    tables at the loop's next look (codegen_links_revalidate).*/
 extern void codegen_links_note(codeblock_t *block);
 extern void codegen_links_drop(codeblock_t *block);
 extern void codegen_links_drop_all(int owner);
+extern void codegen_links_revalidate_request(int all, uint32_t lin);
+extern void codegen_links_revalidate(void);
 /*Compiled code was written: the links into the written blocks go, at the
   loop's next look.*/
 extern void codegen_links_written(void);
