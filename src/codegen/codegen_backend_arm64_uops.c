@@ -1043,6 +1043,77 @@ codegen_LOAD_SEG(codeblock_t *block, uop_t *uop)
     return 0;
 }
 
+/*The common guest memory access inline, as x86-64 does it
+  (codegen_mem_load): the page's entry from the lookup table (its address in
+  cpu_state), and the access itself. A misaligned access (for the eal_r
+  rule, one past 0xffc into its page) or a lookup miss calls the routine,
+  which does it the long way and may leave the block. In: W0 = address, W1 =
+  the data of a store. Out: W0 = the data of a load. The branches are raw
+  ones patched in place: codegen_alloc() has reserved the whole sequence, so
+  it is one piece.*/
+#    define MEM_INLINE_BCOND(cond) (0x54000000u | (cond))
+#    define MEM_INLINE_B           (0x14000000u)
+#    define MEM_INLINE_EQ          0x0
+#    define MEM_INLINE_NE          0x1
+#    define MEM_INLINE_HI          0x8
+#    define mem_inline_branch(block, insn) host_arm64_insn_(block, insn)
+static void
+mem_inline_here(uint32_t *branch)
+{
+    intptr_t off = (intptr_t) &block_write_data[block_pos] - (intptr_t) branch;
+
+    if ((*branch & 0xff000000u) == 0x54000000u)
+        *branch |= ((uint32_t) (off >> 2) & 0x7ffff) << 5;
+    else
+        *branch |= (uint32_t) (off >> 2) & 0x3ffffff;
+}
+static void
+codegen_mem_inline(codeblock_t *block, int size, int store, int ea_rule, void *rout)
+{
+    const int ent     = store ? REG_X2 : REG_X1; /*the page's entry*/
+    const int tbl     = store ? REG_X3 : REG_X2;
+    uint32_t *slow[3] = { NULL, NULL, NULL };
+    uint32_t *done;
+
+    codegen_alloc(block, 128);
+    host_arm64_MOV_REG_LSR(block, ent, REG_W0, 12);
+    host_arm64_LDR_IMM_X(block, tbl, REG_CPUSTATE, (int) ((uintptr_t) (store ? &cpu_state.lookup2_w : &cpu_state.lookup2_r) - (uintptr_t) &cpu_state));
+    host_arm64_LDRX_REG_LSL3(block, ent, tbl, ent);
+    if (ea_rule) {
+        host_arm64_AND_IMM(block, REG_W3, REG_W0, 0xfff);
+        host_arm64_CMP_IMM(block, REG_W3, 0xffc);
+        slow[0] = mem_inline_branch(block, MEM_INLINE_BCOND(MEM_INLINE_HI));
+    } else if (size != 1) {
+        host_arm64_TST_IMM(block, REG_W0, size - 1);
+        slow[1] = mem_inline_branch(block, MEM_INLINE_BCOND(MEM_INLINE_NE));
+    }
+    host_arm64_CMNX_IMM(block, ent, 1);
+    slow[2] = mem_inline_branch(block, MEM_INLINE_BCOND(MEM_INLINE_EQ));
+    if (store) {
+        if (size == 1)
+            host_arm64_STRB_REG(block, REG_X1, ent, REG_X0);
+        else if (size == 2)
+            host_arm64_STRH_REG(block, REG_X1, ent, REG_X0);
+        else
+            host_arm64_STR_REG(block, REG_X1, ent, REG_X0);
+    } else {
+        if (size == 1)
+            host_arm64_LDRB_REG(block, REG_W0, ent, REG_W0);
+        else if (size == 2)
+            host_arm64_LDRH_REG(block, REG_W0, ent, REG_W0);
+        else
+            host_arm64_LDR_REG(block, REG_W0, ent, REG_W0);
+    }
+    done = mem_inline_branch(block, MEM_INLINE_B);
+    for (int i = 0; i < 3; i++) {
+        if (slow[i])
+            mem_inline_here(slow[i]);
+    }
+    host_arm64_call(block, rout);
+    host_arm64_CBNZ(block, REG_X1, (uintptr_t) codegen_exit_rout);
+    mem_inline_here(done);
+}
+
 static int
 codegen_MEM_LOAD_ABS(codeblock_t *block, uop_t *uop)
 {
@@ -1052,14 +1123,13 @@ codegen_MEM_LOAD_ABS(codeblock_t *block, uop_t *uop)
 
     host_arm64_ADD_IMM(block, REG_X0, seg_reg, uop->imm_data);
     if (REG_IS_B(dest_size) || REG_IS_BH(dest_size)) {
-        host_arm64_call(block, codegen_mem_load_byte);
+        codegen_mem_inline(block, 1, 0, 0, codegen_mem_load_byte);
     } else if (REG_IS_W(dest_size)) {
-        host_arm64_call(block, codegen_mem_load_word);
+        codegen_mem_inline(block, 2, 0, 0, codegen_mem_load_word);
     } else if (REG_IS_L(dest_size)) {
-        host_arm64_call(block, codegen_mem_load_long);
+        codegen_mem_inline(block, 4, 0, 0, codegen_mem_load_long);
     } else
         fatal("MEM_LOAD_ABS - %02x\n", uop->dest_reg_a_real);
-    host_arm64_CBNZ(block, REG_X1, (uintptr_t) codegen_exit_rout);
     if (REG_IS_B(dest_size)) {
         host_arm64_BFI(block, dest_reg, REG_X0, 0, 8);
     } else if (REG_IS_BH(dest_size)) {
@@ -1084,12 +1154,11 @@ codegen_MEM_LOAD_REG_EA(codeblock_t *block, uop_t *uop)
     if (uop->is_a16)
         host_arm64_AND_IMM(block, REG_X0, REG_X0, 0xffff);
     if (REG_IS_W(dest_size))
-        host_arm64_call(block, codegen_mem_load_word_ea);
+        codegen_mem_inline(block, 2, 0, 1, codegen_mem_load_word_ea);
     else if (REG_IS_L(dest_size))
-        host_arm64_call(block, codegen_mem_load_long_ea);
+        codegen_mem_inline(block, 4, 0, 1, codegen_mem_load_long_ea);
     else
         fatal("MEM_LOAD_REG_EA - %02x\n", uop->dest_reg_a_real);
-    host_arm64_CBNZ(block, REG_X1, (uintptr_t) codegen_exit_rout);
     if (REG_IS_W(dest_size))
         host_arm64_BFI(block, dest_reg, REG_X0, 0, 16);
     else
@@ -1111,16 +1180,16 @@ codegen_MEM_LOAD_REG(codeblock_t *block, uop_t *uop)
     if (uop->is_a16)
         host_arm64_AND_IMM(block, REG_X0, REG_X0, 0xffff);
     if (REG_IS_B(dest_size) || REG_IS_BH(dest_size)) {
-        host_arm64_call(block, codegen_mem_load_byte);
+        codegen_mem_inline(block, 1, 0, 0, codegen_mem_load_byte);
     } else if (REG_IS_W(dest_size)) {
-        host_arm64_call(block, codegen_mem_load_word);
+        codegen_mem_inline(block, 2, 0, 0, codegen_mem_load_word);
     } else if (REG_IS_L(dest_size)) {
-        host_arm64_call(block, codegen_mem_load_long);
+        codegen_mem_inline(block, 4, 0, 0, codegen_mem_load_long);
     } else if (REG_IS_Q(dest_size)) {
         host_arm64_call(block, codegen_mem_load_quad);
+        host_arm64_CBNZ(block, REG_X1, (uintptr_t) codegen_exit_rout);
     } else
         fatal("MEM_LOAD_REG - %02x\n", uop->dest_reg_a_real);
-    host_arm64_CBNZ(block, REG_X1, (uintptr_t) codegen_exit_rout);
     if (REG_IS_B(dest_size)) {
         host_arm64_BFI(block, dest_reg, REG_X0, 0, 8);
     } else if (REG_IS_BH(dest_size)) {
@@ -1186,19 +1255,18 @@ codegen_MEM_STORE_ABS(codeblock_t *block, uop_t *uop)
     host_arm64_ADD_IMM(block, REG_W0, seg_reg, uop->imm_data);
     if (REG_IS_B(src_size)) {
         host_arm64_AND_IMM(block, REG_W1, src_reg, 0xff);
-        host_arm64_call(block, codegen_mem_store_byte);
+        codegen_mem_inline(block, 1, 1, 0, codegen_mem_store_byte);
     } else if (REG_IS_BH(src_size)) {
         host_arm64_UBFX(block, REG_W1, src_reg, 8, 8);
-        host_arm64_call(block, codegen_mem_store_byte);
+        codegen_mem_inline(block, 1, 1, 0, codegen_mem_store_byte);
     } else if (REG_IS_W(src_size)) {
         host_arm64_AND_IMM(block, REG_W1, src_reg, 0xffff);
-        host_arm64_call(block, codegen_mem_store_word);
+        codegen_mem_inline(block, 2, 1, 0, codegen_mem_store_word);
     } else if (REG_IS_L(src_size)) {
         host_arm64_MOV_REG(block, REG_W1, src_reg, 0);
-        host_arm64_call(block, codegen_mem_store_long);
+        codegen_mem_inline(block, 4, 1, 0, codegen_mem_store_long);
     } else
         fatal("MEM_STORE_ABS - %02x\n", uop->dest_reg_a_real);
-    host_arm64_CBNZ(block, REG_X1, (uintptr_t) codegen_exit_rout);
 
     return 0;
 }
@@ -1215,22 +1283,22 @@ codegen_MEM_STORE_REG(codeblock_t *block, uop_t *uop)
         host_arm64_ADD_IMM(block, REG_X0, REG_X0, uop->imm_data);
     if (REG_IS_B(src_size)) {
         host_arm64_AND_IMM(block, REG_W1, src_reg, 0xff);
-        host_arm64_call(block, codegen_mem_store_byte);
+        codegen_mem_inline(block, 1, 1, 0, codegen_mem_store_byte);
     } else if (REG_IS_BH(src_size)) {
         host_arm64_UBFX(block, REG_W1, src_reg, 8, 8);
-        host_arm64_call(block, codegen_mem_store_byte);
+        codegen_mem_inline(block, 1, 1, 0, codegen_mem_store_byte);
     } else if (REG_IS_W(src_size)) {
         host_arm64_AND_IMM(block, REG_W1, src_reg, 0xffff);
-        host_arm64_call(block, codegen_mem_store_word);
+        codegen_mem_inline(block, 2, 1, 0, codegen_mem_store_word);
     } else if (REG_IS_L(src_size)) {
         host_arm64_MOV_REG(block, REG_W1, src_reg, 0);
-        host_arm64_call(block, codegen_mem_store_long);
+        codegen_mem_inline(block, 4, 1, 0, codegen_mem_store_long);
     } else if (REG_IS_Q(src_size)) {
         host_arm64_FMOV_D_D(block, REG_V_TEMP, src_reg);
         host_arm64_call(block, codegen_mem_store_quad);
+        host_arm64_CBNZ(block, REG_X1, (uintptr_t) codegen_exit_rout);
     } else
         fatal("MEM_STORE_REG - %02x\n", uop->src_reg_c_real);
-    host_arm64_CBNZ(block, REG_X1, (uintptr_t) codegen_exit_rout);
 
     return 0;
 }
@@ -1243,8 +1311,7 @@ codegen_MEM_STORE_IMM_8(codeblock_t *block, uop_t *uop)
 
     host_arm64_ADD_REG(block, REG_W0, seg_reg, addr_reg, 0);
     host_arm64_mov_imm(block, REG_W1, uop->imm_data);
-    host_arm64_call(block, codegen_mem_store_byte);
-    host_arm64_CBNZ(block, REG_X1, (uintptr_t) codegen_exit_rout);
+    codegen_mem_inline(block, 1, 1, 0, codegen_mem_store_byte);
 
     return 0;
 }
@@ -1256,8 +1323,7 @@ codegen_MEM_STORE_IMM_16(codeblock_t *block, uop_t *uop)
 
     host_arm64_ADD_REG(block, REG_W0, seg_reg, addr_reg, 0);
     host_arm64_mov_imm(block, REG_W1, uop->imm_data);
-    host_arm64_call(block, codegen_mem_store_word);
-    host_arm64_CBNZ(block, REG_X1, (uintptr_t) codegen_exit_rout);
+    codegen_mem_inline(block, 2, 1, 0, codegen_mem_store_word);
 
     return 0;
 }
@@ -1269,8 +1335,7 @@ codegen_MEM_STORE_IMM_32(codeblock_t *block, uop_t *uop)
 
     host_arm64_ADD_REG(block, REG_W0, seg_reg, addr_reg, 0);
     host_arm64_mov_imm(block, REG_W1, uop->imm_data);
-    host_arm64_call(block, codegen_mem_store_long);
-    host_arm64_CBNZ(block, REG_X1, (uintptr_t) codegen_exit_rout);
+    codegen_mem_inline(block, 4, 1, 0, codegen_mem_store_long);
 
     return 0;
 }

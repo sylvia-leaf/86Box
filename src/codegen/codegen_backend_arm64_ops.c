@@ -1321,6 +1321,15 @@ host_arm64_LDRB_REG(codeblock_t *block, int dest_reg, int base_reg, int offset_r
     codegen_addlong(block, OPCODE_LDRB_REG | Rn(base_reg) | Rm(offset_reg) | Rt(dest_reg));
 }
 
+/*One raw instruction, its address returned so it can be patched (a branch
+  whose target comes later)*/
+uint32_t *
+host_arm64_insn_(codeblock_t *block, uint32_t insn)
+{
+    codegen_addlong(block, insn);
+    return (uint32_t *) &block_write_data[block_pos - 4];
+}
+
 void
 host_arm64_LDRH_IMM(codeblock_t *block, int dest_reg, int base_reg, int offset)
 {
