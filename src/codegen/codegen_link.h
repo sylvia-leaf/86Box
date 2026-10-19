@@ -62,8 +62,10 @@ extern codegen_link_slot_t codegen_link_slots[BLOCK_SIZE][CODEGEN_LINK_SLOTS];
 #if defined(__aarch64__) || defined(_M_ARM64)
 #    define CODEGEN_LINK_ENTRY_OFFSET 24
 #elif defined(_WIN64)
-/*Eight pushes, the frame and the XMM6/XMM7 saves*/
-#    define CODEGEN_LINK_ENTRY_OFFSET 28
+/*Eight pushes, the frame and the saves of XMM6-XMM15, whose encodings the
+  backend measures at the first prologue (codegen_backend_prologue)*/
+extern int codegen_link_entry_offset;
+#    define CODEGEN_LINK_ENTRY_OFFSET codegen_link_entry_offset
 #else
 /*Six pushes and the frame*/
 #    define CODEGEN_LINK_ENTRY_OFFSET 14

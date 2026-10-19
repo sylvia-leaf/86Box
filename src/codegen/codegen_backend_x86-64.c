@@ -148,6 +148,14 @@ uint16_t codegen_win64_xmm_used;
 static int win64_frame_active, win64_selective_xmm;
 static uint8_t *win64_exit_immediate, *win64_save_area;
 static unsigned win64_save_offsets[11];
+/* The epilogue that puts back all of XMM6-XMM15, which every frame saves
+   before its selective saves are compacted. With block linking a frame is
+   shared by the blocks linked into it and none of them compacts, so its exit
+   slot (CODEGEN_WIN64_EXIT) points here instead of at a block's own. */
+static void *win64_full_exit;
+#    ifdef CODEGEN_BACKEND_HAS_BLOCK_LINK
+int codegen_link_entry_offset;
+#    endif
 
 /* Reserve the worst-case saves while allocating the block. Once allocation
    is complete, compact the used saves at the end and move the PUSH/SUB
@@ -1708,10 +1716,14 @@ codegen_backend_init(void)
     codegen_link_miss_rout = &block_write_data[block_pos];
 #    endif
 #ifdef _WIN64
-    /* XMM6 and XMM7 hold guest FPU/MMX values in blocks, and the Windows
-       x64 ABI makes them the caller's: put back what the caller had. */
-    host_x86_MOVDQU_XREG_BASE_OFFSET(block, REG_XMM6, REG_RSP, CODEGEN_XMM6_SAVE);
-    host_x86_MOVDQU_XREG_BASE_OFFSET(block, REG_XMM7, REG_RSP, CODEGEN_XMM7_SAVE);
+    /* The frame's exit slot: the block's own epilogue, which restores the
+       XMM6-XMM15 it saved (codegen_backend_epilogue), or win64_full_exit
+       below for a frame linked blocks share. RAX passes through unchanged. */
+    codegen_alloc_bytes(block, 4);
+    codegen_addbyte4(block, 0xff, 0x64, 0x24, CODEGEN_WIN64_EXIT); /*JMP qword [RSP+0x38]*/
+    win64_full_exit = &block_write_data[block_pos];
+    for (int reg = REG_XMM6; reg <= REG_XMM15; reg++)
+        host_x86_MOVDQU_XREG_BASE_OFFSET(block, reg, REG_RSP, CODEGEN_XMM6_SAVE + (reg - REG_XMM6) * 16);
     host_x86_ADD64_REG_IMM(block, REG_RSP, CODEGEN_WIN64_FRAME);
 #else
     host_x86_ADD64_REG_IMM(block, REG_RSP, 0x68);
@@ -1792,6 +1804,11 @@ codegen_backend_prologue(codeblock_t *block)
     host_x86_SUB64_REG_IMM(block, REG_RSP, 0x68);
 #endif
 #    ifdef CODEGEN_BACKEND_HAS_BLOCK_LINK
+#        ifdef _WIN64
+    /*The same pushes and saves in every block: measured once*/
+    if (!codegen_link_entry_offset)
+        codegen_link_entry_offset = block_pos - BLOCK_START;
+#        endif
     if (block_pos != BLOCK_START + CODEGEN_LINK_ENTRY_OFFSET)
         fatal("codegen_backend_prologue - link entry at %i\n", block_pos);
     link_site = 0;
@@ -1805,7 +1822,14 @@ codegen_backend_prologue(codeblock_t *block)
     if (block->flags & CODEBLOCK_NO_IMMEDIATES)
         host_x86_MOV64_REG_IMM(block, REG_R12, ((uintptr_t) ram) + 2147483648ULL);
 #ifdef _WIN64
+    /*The exit slot: patched to this block's epilogue when it is emitted;
+      a linked block never emits one and keeps every save (win64_full_exit).
+      After the link entry, so a block entered by a link stores it again.*/
+#    ifdef CODEGEN_BACKEND_HAS_BLOCK_LINK
+    host_x86_MOV64_REG_IMM(block, REG_RCX, codegen_block_link ? (uint64_t) (uintptr_t) win64_full_exit : 0);
+#    else
     host_x86_MOV64_REG_IMM(block, REG_RCX, 0);
+#    endif
     win64_exit_immediate = &block_write_data[block_pos - 8];
     host_x86_MOV64_BASE_OFFSET_REG(block, REG_RSP, CODEGEN_WIN64_EXIT, REG_RCX);
 #endif
