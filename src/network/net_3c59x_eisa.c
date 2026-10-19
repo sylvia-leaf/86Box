@@ -918,6 +918,18 @@ tc59x_rx_status(const tc59x_t *dev)
 
 /* ---- transmit -------------------------------------------------------------- */
 
+/* External loopback loops at the connector on the 10 Mbps ports. On
+   100BASE-TX and 100BASE-FX it "occurs on the MAC side of the transceiver
+   chip" (NetworkDiagnostic), inside the card; the book does not say where
+   it loops for MII, which stays inside as before. */
+static int
+tc59x_loopback_on_wire(const tc59x_t *dev)
+{
+    const uint8_t xcvr = (uint8_t) ((dev->internal_config & IC_XCVR_MASK) >> IC_XCVR_SHIFT);
+
+    return (xcvr == XCVR_10BASE_T) || (xcvr == XCVR_AUI) || (xcvr == XCVR_10BASE_2);
+}
+
 /* The book gives no depth for the TxStatus stack. Linux's 3c59x.c empties
    it with at most 31 reads ("int i = 32; while (--i > 0 && ...)", in
    vortex_error), so it holds 31. txStatusOverflow means "the TxStatus stack
@@ -1017,6 +1029,12 @@ tc59x_tx_emit(tc59x_t *dev, const uint8_t *data, uint16_t kept, uint16_t written
            86Box's network carries nothing longer than an Ethernet frame:
            it goes nowhere, and otherwise completes as sent. */
         tc59x_log("3C59x: %u byte frame is larger than the network carries\n", written);
+    } else if ((dev->network_diagnostic & 0x8000) && tc59x_loopback_on_wire(dev)) {
+        /* externalLoopback on a 10 Mbps port goes out and comes back in:
+           drivers use it to "check for an active port" on AUI and 10BASE2
+           (3-9), and Table 4-2 lists it for 10BASE-T too. */
+        network_tx(dev->card, frame, len);
+        tc59x_rx_frame(dev, frame, len, 1);
     } else if (dev->network_diagnostic & DIAG_LOOPBACK)
         tc59x_rx_frame(dev, frame, len, 1);
     else
