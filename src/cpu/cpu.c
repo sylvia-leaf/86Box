@@ -208,7 +208,6 @@ int cpu_agp_speed;
 int cpu_alt_reset;
 
 int cpu_dyn_accurate_fpu_env;
-int cpu_dyn_block_link = 1;
 int cpu_override;
 int cpu_effective;
 int cpu_multi;

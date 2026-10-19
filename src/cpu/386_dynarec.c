@@ -773,12 +773,12 @@ exec386_dynarec_dyn(void)
                the generation, and the link misses. */
             const uint64_t target_gen = __atomic_load_n(&block->link_gen, __ATOMIC_SEQ_CST);
 
-            if (codegen_block_link && link_stub && (block->pc == link_pc) && (block->_cs == link_cs) && (codegen_chain_gen == link_gen) &&
+            if (link_stub && (block->pc == link_pc) && (block->_cs == link_cs) && (codegen_chain_gen == link_gen) &&
                 block->head_mem_block && !(block->flags & CODEBLOCK_IN_DIRTY_LIST) && exec386_chain_still_clean(block)) {
                 codegen_links_note(block); /* into its group first */
                 (void) codegen_chain_patch(link_stub, block, target_gen);
             }
-            if (codegen_block_link && ind_fill && (block->pc == link_pc) && (block->_cs == link_cs) && (codegen_chain_gen == link_gen) &&
+            if (ind_fill && (block->pc == link_pc) && (block->_cs == link_cs) && (codegen_chain_gen == link_gen) &&
                 block->head_mem_block && !(block->flags & CODEBLOCK_IN_DIRTY_LIST) && exec386_chain_still_clean(block))
                 codegen_ind_fill(block, target_gen);
         }

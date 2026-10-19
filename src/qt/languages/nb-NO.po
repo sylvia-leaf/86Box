@@ -433,9 +433,6 @@ msgstr "Dynamisk recompilator"
 msgid "Accurate FPU environment on the dynamic recompiler"
 msgstr ""
 
-msgid "Block linking on the dynamic recompiler"
-msgstr "Blokklenking på dynamisk recompilator"
-
 msgid "CPU frame size"
 msgstr "CPU-rammestørrelse"
 

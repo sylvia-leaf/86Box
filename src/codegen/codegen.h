@@ -93,8 +93,6 @@ typedef struct codeblock_t {
 } codeblock_t;
 
 #ifdef CODEGEN_CHAIN
-/*The block-linking setting as the recompiler took it (codegen_block.c).*/
-extern int codegen_block_link;
 /*Moved whenever compiled code is freed or every link goes
   (codegen_block.c).*/
 extern uint64_t codegen_chain_gen;

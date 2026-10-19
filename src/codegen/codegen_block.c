@@ -49,13 +49,6 @@ uint32_t codegen_endpc;
 int        codegen_block_cycles;
 
 #ifdef CODEGEN_CHAIN
-const int codegen_has_block_link = 1;
-
-/* cpu_dyn_block_link as of the last codegen_init() or codegen_reset(), both
-   of which free every block. 0: the dispatcher links no exit and fills no
-   indirect entry, so every block leaves for it. */
-int codegen_block_link = 1;
-
 /* Chains of linked blocks: moved whenever compiled code is freed or every
    link goes, so that the dispatcher does not make a link it has pending
    from a stub freed meanwhile (exec386_dynarec_dyn). */
@@ -871,8 +864,6 @@ codegen_page_code_drop(const struct page_t *p)
     codegen_written_note(p);
     mem_chain_code(MEM_CHAIN_CODE_WRITTEN);
 }
-#else
-const int codegen_has_block_link = 0;
 #endif
 
 static int codegen_block_ins;
@@ -1219,9 +1210,6 @@ codegen_init(void)
 {
     codegen_check_regs();
     codegen_allocator_init();
-#ifdef CODEGEN_CHAIN
-    codegen_block_link = cpu_dyn_block_link;
-#endif
 
     codegen_backend_init();
     block_versions_init();
@@ -1285,7 +1273,6 @@ codegen_reset(void)
     memset(codegen_link_phys_count, 0, sizeof(codegen_link_phys_count));
     codegen_lg_init();
     mem_link_large_forget();
-    codegen_block_link = cpu_dyn_block_link;
 #endif
 
     block_free_list = 0;
