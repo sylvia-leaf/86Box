@@ -1296,7 +1296,8 @@ ropWAIT(UNUSED(codeblock_t *block), ir_data_t *ir, UNUSED(uint8_t opcode), UNUSE
     uop_MOV_REG_PTR(ir, IREG_temp1, &fpu_ignne);
     uop_OR(ir, IREG_temp0, IREG_temp0, IREG_temp1);
     jump_uop = uop_CMP_IMM_JZ_DEST(ir, IREG_temp0, 0);
-    uop_CALL_FUNC_RESULT(ir, IREG_temp3, x87_legacy_pending);
+    /* On the path that continues it changes only fpu_ignne */
+    uop_CALL_FUNC_RESULT_ORDERED(ir, IREG_temp3, x87_legacy_pending);
     uop_CMP_IMM_JZ(ir, IREG_temp3, 1, codegen_exit_rout);
     uop_set_jump_dest(ir, jump_uop);
 

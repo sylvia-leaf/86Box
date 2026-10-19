@@ -489,7 +489,9 @@ codegen_fp_pending_check(ir_data_t *ir)
     uop_AND_IMM(ir, IREG_temp0, IREG_temp0, 0x80);
     jump_uop = uop_CMP_IMM_JZ_DEST(ir, IREG_temp0, 0);
     uop_MOV_IMM(ir, IREG_oldpc, cpu_state.oldpc);
-    uop_CALL_FUNC_RESULT(ir, IREG_temp0, codegen_fp_pending);
+    /* Only the path that takes the exception, and leaves the block, changes
+       anything the IR caches. */
+    uop_CALL_FUNC_RESULT_ORDERED(ir, IREG_temp0, codegen_fp_pending);
     uop_CMP_IMM_JZ(ir, IREG_temp0, 1, codegen_exit_rout);
     uop_set_jump_dest(ir, jump_uop);
 }
@@ -1018,7 +1020,9 @@ generate_call:
         uop_CALL_FUNC(ir, x87_ferr_nowait);
     }
 
-    /* A pending exception is taken only with ES set: the call only then */
+    /* A pending exception is taken only with ES set: the call only then.
+       Only the path that takes it, and leaves the block, changes anything
+       the IR caches. */
     if (is_fpu && !fpu_softfloat && !x87_op_is_nowait(x87_op) && !codegen_fpu_entered) {
         int jump_uop;
 
@@ -1026,7 +1030,7 @@ generate_call:
         uop_AND_IMM(ir, IREG_temp3, IREG_temp3, FPU_SW_Summary);
         jump_uop = uop_CMP_IMM_JZ_DEST(ir, IREG_temp3, 0);
         uop_MOV_IMM(ir, IREG_oldpc, cpu_state.oldpc);
-        uop_CALL_FUNC_RESULT(ir, IREG_temp3, x87_legacy_pending_entry);
+        uop_CALL_FUNC_RESULT_ORDERED(ir, IREG_temp3, x87_legacy_pending_entry);
         uop_CMP_IMM_JZ(ir, IREG_temp3, 1, codegen_exit_rout);
         uop_set_jump_dest(ir, jump_uop);
     }

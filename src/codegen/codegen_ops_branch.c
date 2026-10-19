@@ -1221,7 +1221,7 @@ setcc_value(ir_data_t *ir, int cc)
                     uop_CMP_SET(ir, IREG_temp0, IREG_flags_op1, IREG_flags_op2, UOP_CC_O ^ neg);
                     return;
                 default:
-                    uop_CALL_FUNC_RESULT(ir, IREG_temp0, jit_VF_SET);
+                    uop_CALL_FUNC_RESULT_ORDERED(ir, IREG_temp0, jit_VF_SET);
                     uop_TEST_SET(ir, IREG_temp0, IREG_temp0, UOP_CC_NZ ^ neg);
                     return;
             }
@@ -1244,7 +1244,7 @@ setcc_value(ir_data_t *ir, int cc)
                     uop_CMP_SET(ir, IREG_temp0, IREG_flags_op1, IREG_flags_op2, UOP_CC_B ^ neg);
                     return;
                 default:
-                    uop_CALL_FUNC_RESULT(ir, IREG_temp0, jit_CF_SET);
+                    uop_CALL_FUNC_RESULT_ORDERED(ir, IREG_temp0, jit_CF_SET);
                     uop_TEST_SET(ir, IREG_temp0, IREG_temp0, UOP_CC_NZ ^ neg);
                     return;
             }
@@ -1253,7 +1253,7 @@ setcc_value(ir_data_t *ir, int cc)
             if (codegen_flags_changed && flags_res_valid())
                 uop_TEST_SET(ir, IREG_temp0, IREG_flags_res, UOP_CC_Z ^ neg);
             else {
-                uop_CALL_FUNC_RESULT(ir, IREG_temp0, jit_ZF_SET);
+                uop_CALL_FUNC_RESULT_ORDERED(ir, IREG_temp0, jit_ZF_SET);
                 uop_TEST_SET(ir, IREG_temp0, IREG_temp0, UOP_CC_NZ ^ neg);
             }
             return;
@@ -1276,8 +1276,8 @@ setcc_value(ir_data_t *ir, int cc)
                     uop_CMP_SET(ir, IREG_temp0, IREG_flags_op1, IREG_flags_op2, UOP_CC_BE ^ neg);
                     return;
                 default:
-                    uop_CALL_FUNC_RESULT(ir, IREG_temp1, jit_CF_SET);
-                    uop_CALL_FUNC_RESULT(ir, IREG_temp2, jit_ZF_SET);
+                    uop_CALL_FUNC_RESULT_ORDERED(ir, IREG_temp1, jit_CF_SET);
+                    uop_CALL_FUNC_RESULT_ORDERED(ir, IREG_temp2, jit_ZF_SET);
                     uop_OR(ir, IREG_temp1, IREG_temp1, IREG_temp2);
                     uop_TEST_SET(ir, IREG_temp0, IREG_temp1, UOP_CC_NZ ^ neg);
                     return;
@@ -1316,13 +1316,13 @@ setcc_value(ir_data_t *ir, int cc)
                     uop_TEST_SET(ir, IREG_temp0, IREG_flags_res, UOP_CC_S ^ neg);
                     return;
                 default:
-                    uop_CALL_FUNC_RESULT(ir, IREG_temp0, jit_NF_SET);
+                    uop_CALL_FUNC_RESULT_ORDERED(ir, IREG_temp0, jit_NF_SET);
                     uop_TEST_SET(ir, IREG_temp0, IREG_temp0, UOP_CC_NZ ^ neg);
                     return;
             }
 
         case 0xa: /*P*/
-            uop_CALL_FUNC_RESULT(ir, IREG_temp0, jit_PF_SET);
+            uop_CALL_FUNC_RESULT_ORDERED(ir, IREG_temp0, jit_PF_SET);
             uop_TEST_SET(ir, IREG_temp0, IREG_temp0, UOP_CC_NZ ^ neg);
             return;
 
@@ -1351,8 +1351,8 @@ setcc_value(ir_data_t *ir, int cc)
                     uop_CMP_SET(ir, IREG_temp0, IREG_flags_op1, IREG_flags_op2, UOP_CC_L ^ neg);
                     return;
                 default:
-                    uop_CALL_FUNC_RESULT(ir, IREG_temp1, NF_SET_01);
-                    uop_CALL_FUNC_RESULT(ir, IREG_temp2, VF_SET_01);
+                    uop_CALL_FUNC_RESULT_ORDERED(ir, IREG_temp1, NF_SET_01);
+                    uop_CALL_FUNC_RESULT_ORDERED(ir, IREG_temp2, VF_SET_01);
                     uop_CMP_SET(ir, IREG_temp0, IREG_temp1, IREG_temp2, UOP_CC_NZ ^ neg);
                     return;
             }
@@ -1374,9 +1374,9 @@ setcc_value(ir_data_t *ir, int cc)
                     return;
                 default:
                     /*Z, or N != V*/
-                    uop_CALL_FUNC_RESULT(ir, IREG_temp1, NF_SET_01);
-                    uop_CALL_FUNC_RESULT(ir, IREG_temp2, VF_SET_01);
-                    uop_CALL_FUNC_RESULT(ir, IREG_temp3, jit_ZF_SET);
+                    uop_CALL_FUNC_RESULT_ORDERED(ir, IREG_temp1, NF_SET_01);
+                    uop_CALL_FUNC_RESULT_ORDERED(ir, IREG_temp2, VF_SET_01);
+                    uop_CALL_FUNC_RESULT_ORDERED(ir, IREG_temp3, jit_ZF_SET);
                     uop_XOR(ir, IREG_temp1, IREG_temp1, IREG_temp2);
                     uop_OR(ir, IREG_temp1, IREG_temp1, IREG_temp3);
                     uop_TEST_SET(ir, IREG_temp0, IREG_temp1, UOP_CC_NZ ^ neg);
