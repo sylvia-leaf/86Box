@@ -42,6 +42,7 @@
 #endif
 
 #include "386_common.h"
+#include "x86_interrupt.h"
 
 #if defined(__APPLE__) && defined(__aarch64__)
 #    include <pthread.h>
@@ -534,7 +535,7 @@ exec386_dynarec_int(void)
             CPU_BLOCK_END();
         else if (nmi && nmi_enable && nmi_mask)
             CPU_BLOCK_END();
-        else if ((cpu_state.flags & I_FLAG) && pic.int_pending && !cpu_end_block_after_ins)
+        else if ((cpu_state.flags & I_FLAG) && x86_external_interrupt_pending() && !cpu_end_block_after_ins)
             CPU_BLOCK_END();
     }
 
@@ -911,7 +912,7 @@ exec386_dynarec_dyn(void)
                 CPU_BLOCK_END();
                 CHAIN_EVEN_END();
             }
-            if ((cpu_state.flags & I_FLAG) && pic.int_pending && !cpu_end_block_after_ins) {
+            if ((cpu_state.flags & I_FLAG) && x86_external_interrupt_pending() && !cpu_end_block_after_ins) {
                 CPU_BLOCK_END();
                 CHAIN_EVEN_END();
             }
@@ -1055,7 +1056,7 @@ exec386_dynarec_dyn(void)
                 CPU_BLOCK_END();
             if (nmi && nmi_enable && nmi_mask)
                 CPU_BLOCK_END();
-            if ((cpu_state.flags & I_FLAG) && pic.int_pending && !cpu_end_block_after_ins)
+            if ((cpu_state.flags & I_FLAG) && x86_external_interrupt_pending() && !cpu_end_block_after_ins)
                 CPU_BLOCK_END();
 
             if (cpu_end_block_after_ins) {
@@ -1235,8 +1236,8 @@ exec386_dynarec(int32_t cycs)
 #    else
                 nmi = 0;
 #    endif
-            } else if ((cpu_state.flags & I_FLAG) && pic.int_pending) {
-                vector = picinterrupt();
+            } else if ((cpu_state.flags & I_FLAG) && x86_external_interrupt_pending()) {
+                vector = x86_external_interrupt_vector();
                 if (vector != -1) {
                     /* An interrupt that came after the HLT looked: past the
                        HLT, as above. */
@@ -1654,8 +1655,8 @@ block_ended:
 #else
                 nmi = 0;
 #endif
-            } else if ((cpu_state.flags & I_FLAG) && pic.int_pending && !cpu_end_block_after_ins) {
-                vector = picinterrupt();
+            } else if ((cpu_state.flags & I_FLAG) && x86_external_interrupt_pending() && !cpu_end_block_after_ins) {
+                vector = x86_external_interrupt_vector();
                 if (vector != -1) {
                     flags_rebuild();
                     if (msw & 1)
