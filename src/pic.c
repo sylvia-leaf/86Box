@@ -280,6 +280,18 @@ find_best_interrupt(pic_t *dev)
     return ret;
 }
 
+/* The master 8259's INTR output, as INTIN0 of an I/O APIC sees it. */
+static int pic_intr_reported;
+
+static __inline void
+pic_intr_report(void)
+{
+    if (pic.int_pending != pic_intr_reported) {
+        pic_intr_reported = pic.int_pending;
+        ioapic_pic_intr(pic_intr_reported);
+    }
+}
+
 static __inline void
 pic_update_pending_xt(void)
 {
@@ -293,6 +305,7 @@ pic_update_pending_xt(void)
         ibm5140_wake();
     if (pic.int_pending)
         mem_chain_break(); /* a chain leaves for the loop to take it */
+    pic_intr_report();
 }
 
 /* Only check if PIC 1 frozen, because it should not happen
@@ -326,6 +339,7 @@ pic_update_pending_at(void)
         pic.int_pending = (find_best_interrupt(&pic) != -1);
         if (pic.int_pending)
             mem_chain_break(); /* a chain leaves for the loop to take it */
+        pic_intr_report();
     }
 }
 
@@ -344,6 +358,8 @@ pic_reset(void)
     const uint8_t board_flags = pic.flags & PIC_IBM5140;
 
     memset(&pic, 0, sizeof(pic_t));
+    pic_intr_reported = 0;
+    ioapic_pic_intr(0); /* INTR is inactive after reset, for INTIN0 too */
     memset(&pic2, 0, sizeof(pic_t));
     /* Controller reset preserves the integrated controller's hardware type. */
     pic.flags = board_flags;
@@ -966,18 +982,22 @@ picint_common(uint16_t num, int level, int set, uint8_t *irq_state)
     if (!slaves && (machines[machine].init == machine_at_tandy_vis_init))
         slaves = 1;
 
-    /* The line counts follow the wires, which a board with a slave has for
-       IRQ 8-15 whatever the master's ICW3 says; only what reaches the
-       8259s' IRRs waits on the cascade. A level release while ICW3 is
-       rewritten used to leave the slave's count up for good. IRQ2 is IRQ9
-       on an AT by its wiring, so that too holds while ICW3 is being
-       written. */
+    /* The line counts and the I/O APIC's inputs follow the wires, which a
+       board with a slave has for IRQ 8-15 whatever the master's ICW3 says;
+       only what reaches the 8259s' IRRs waits on the cascade. A level
+       release while ICW3 is rewritten used to leave the slave's count up
+       for good. IRQ2 is IRQ9 on an AT by its wiring, so that too holds
+       while ICW3 is being written. */
     const int wired16 = (pic.slaves[2] != NULL);
 
     if (pic.at && wired16 && (num & 0x0004))
         num = (num & ~0x0004) | 0x0200;
 
     uint16_t lines = level ? 0x0000 : num;
+    /* What the I/O APIC's inputs see: for a level source, the wired-OR of
+       every source on the line, so only its changes; an edge source's
+       every raise. */
+    uint16_t apic_lines = level ? 0x0000 : num;
 
     if (!wired16)
         max = 8;
@@ -1007,6 +1027,8 @@ picint_common(uint16_t num, int level, int set, uint8_t *irq_state)
                         dev->lines[b]--;
                 }
 
+                if (((!!*irq_state) != !!set) && (dev->lines[b] == (!!set)))
+                    apic_lines |= w;
                 if (!pic_level_triggered(dev, b) ||
                     (((!!*irq_state) != !!set) && (dev->lines[b] == (!!set))))
                     lines |= w;
@@ -1021,6 +1043,8 @@ picint_common(uint16_t num, int level, int set, uint8_t *irq_state)
 
    if (!slaves)
        num &= 0x00ff;
+   if (!wired16)
+       apic_lines &= 0x00ff;
 
    if (num & 0x0100)
        acpi_rtc_status = !!set;
@@ -1071,10 +1095,11 @@ picint_common(uint16_t num, int level, int set, uint8_t *irq_state)
         }
 
         update_pending();
-
-        /* APIC mirror runs after PIC state/latches settle for this request. */
-        ioapic_legacy_irq(num, level, set);
     }
+
+    /* APIC mirror runs after PIC state/latches settle for this request. */
+    if (apic_lines)
+        ioapic_legacy_irq(apic_lines, level, set);
 }
 
 static uint8_t
@@ -1204,6 +1229,10 @@ picinterrupt(void)
             if (pic.interrupt & 0x40)
                 pic2.interrupt = 0x17;
             pic.interrupt = 0x17;
+            /* INTR falls with the acknowledge; another request raises it
+               again, a new edge. */
+            pic.int_pending = 0;
+            pic_intr_report();
             update_pending();
         }
     }
