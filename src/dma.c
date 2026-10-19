@@ -3012,6 +3012,8 @@ dma_channel_write32(int channel, uint32_t val)
 
     if (!dma_channel_32_ready(channel, 0x04))
         return DMA_NODATA;
+    if (dma_stat_adv_pend & (1 << channel))
+        dma_channel_advance(channel);
     dma_sg_load(dma_c);
 
     n  = dma_xfer_bytes(dma_c);
@@ -3272,6 +3274,10 @@ dma_channel_write_legacy(int channel, uint16_t val)
     type = dma_c->mode & 0x0c;
     if ((type != 0x04) && (type != 0x00))
         return (DMA_NODATA);
+    /* A read that left its advance pending: taken first, with its count,
+       stop check and terminal count, as the read path does. */
+    if (dma_stat_adv_pend & (1 << channel))
+        dma_channel_advance(channel);
     dma_sg_load(dma_c);
 
     if (dma_eisa) {
