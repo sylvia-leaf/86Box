@@ -130,17 +130,8 @@ machine_at_m726mrt_init(const machine_t *model)
 
     machine_at_common_init(model);
 
-    pci_init(PCI_CONFIG_TYPE_1);
-    pci_register_slot(0x00, PCI_CARD_NORTHBRIDGE,     0, 0, 0, 0);
-    pci_register_slot(0x01, PCI_CARD_AGPBRIDGE,       1, 2, 0, 0);
-    pci_register_slot(0x07, PCI_CARD_SOUTHBRIDGE,     1, 2, 3, 4);
-    pci_register_slot(0x0F, PCI_CARD_SOUTHBRIDGE_IDE, 1, 2, 3, 4);
-    pci_register_slot(0x03, PCI_CARD_SOUTHBRIDGE_PMU, 1, 2, 3, 4);
-    pci_register_slot(0x02, PCI_CARD_SOUTHBRIDGE_USB, 1, 2, 3, 4);
-    pci_register_slot(0x0C, PCI_CARD_SOUND,           2, 3, 0, 0);
-    pci_register_slot(0x0E, PCI_CARD_NORMAL,          4, 1, 2, 3);
-    pci_register_slot(0x10, PCI_CARD_NORMAL,          3, 4, 1, 2);
-    pci_register_slot(0x12, PCI_CARD_NORMAL,          2, 3, 4, 1);
+    machine_pci_init();
+    machine_pci_register_slots();
 
     device_add(&ali1621_device);
     device_add(&ali1543c_device); /* +0 */
@@ -234,15 +225,8 @@ machine_at_prosignias31x_bx_init(const machine_t *model)
 
     machine_at_common_init(model);
 
-    pci_init(PCI_CONFIG_TYPE_1);
-    pci_register_slot(0x00, PCI_CARD_NORTHBRIDGE, 0, 0, 0, 0);
-    pci_register_slot(0x07, PCI_CARD_SOUTHBRIDGE, 1, 2, 3, 4);
-    pci_register_slot(0x09, PCI_CARD_NORMAL,      1, 2, 3, 4);
-    pci_register_slot(0x0a, PCI_CARD_NORMAL,      2, 3, 4, 1);
-    pci_register_slot(0x0b, PCI_CARD_NORMAL,      3, 4, 1, 2);
-    pci_register_slot(0x0c, PCI_CARD_NORMAL,      4, 1, 2, 3);
-    pci_register_slot(0x0d, PCI_CARD_SOUND,       4, 3, 2, 1); /* assumed */
-    pci_register_slot(0x01, PCI_CARD_AGPBRIDGE,   1, 2, 3, 4);
+    machine_pci_init();
+    machine_pci_register_slots();
 
     device_add(&i440bx_device);
     device_add(&piix4e_device);
@@ -274,16 +258,8 @@ machine_at_s1857_init(const machine_t *model)
 
     machine_at_common_init(model);
 
-    pci_init(PCI_CONFIG_TYPE_1);
-    pci_register_slot(0x00, PCI_CARD_NORTHBRIDGE, 0, 0, 0, 0);
-    pci_register_slot(0x07, PCI_CARD_SOUTHBRIDGE, 1, 2, 3, 4);
-    pci_register_slot(0x0F, PCI_CARD_SOUND,       1, 0, 0, 0);
-    pci_register_slot(0x10, PCI_CARD_NORMAL,      1, 2, 3, 4);
-    pci_register_slot(0x11, PCI_CARD_NORMAL,      2, 3, 4, 1);
-    pci_register_slot(0x12, PCI_CARD_NORMAL,      3, 4, 1, 2);
-    pci_register_slot(0x13, PCI_CARD_NORMAL,      4, 1, 2, 3);
-    pci_register_slot(0x14, PCI_CARD_NORMAL,      1, 2, 3, 4);
-    pci_register_slot(0x01, PCI_CARD_AGPBRIDGE,   1, 2, 3, 4);
+    machine_pci_init();
+    machine_pci_register_slots();
 
     device_add(&i440bx_device);
     device_add(&piix4e_device);
@@ -313,15 +289,8 @@ machine_at_p6bat_init(const machine_t *model)
 
     machine_at_common_init(model);
 
-    pci_init(PCI_CONFIG_TYPE_1);
-    pci_register_slot(0x00, PCI_CARD_NORTHBRIDGE, 0, 0, 0, 0);
-    pci_register_slot(0x07, PCI_CARD_SOUTHBRIDGE, 1, 2, 3, 4);
-    pci_register_slot(0x09, PCI_CARD_NORMAL,      1, 2, 3, 4);
-    pci_register_slot(0x0a, PCI_CARD_NORMAL,      2, 3, 4, 1);
-    pci_register_slot(0x0b, PCI_CARD_NORMAL,      3, 4, 1, 2);
-    pci_register_slot(0x0c, PCI_CARD_NORMAL,      4, 1, 2, 3);
-    pci_register_slot(0x0d, PCI_CARD_SOUND,       4, 3, 2, 1); /* assumed */
-    pci_register_slot(0x01, PCI_CARD_AGPBRIDGE,   1, 2, 3, 4);
+    machine_pci_init();
+    machine_pci_register_slots();
 
     device_add(&via_apro133_device);
     device_add_params(&via_vt82c596b_device, (void *) VIA_PIPC_NO_KBC);

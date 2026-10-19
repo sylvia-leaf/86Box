@@ -344,6 +344,43 @@ typedef struct _machine_memory_ {
     int      step;
 } machine_memory_t;
 
+/* A board's expansion slots and the devices at fixed places on its buses,
+   as a tree: a bridge carries the bus behind it in .bus. */
+enum {
+    SLOT_END = 0,
+    SLOT_PCI, /* a PCI device number: a card slot (PCI_CARD_NORMAL) or the board's own */
+    SLOT_AGP,
+    SLOT_ISA8,
+    SLOT_ISA16,
+    SLOT_VLB,
+    SLOT_EISA,
+    SLOT_MCA,
+    SLOT_ISA_VLB,     /* one physical connector accepts either ISA or VLB */
+    SLOT_MCA_INTERNAL /* MCA slots the board keeps for an internal device, numbered after
+                         its SLOT_MCA ones: the cable port of the integrated fixed disk
+                         adapter (PS/2 55SX, 70, P70; ardent-tool.com), the PS/55's
+                         Integrated Fixed Disk II */
+};
+
+typedef struct machine_slot_t {
+    uint8_t                      kind;     /* SLOT_* */
+    uint8_t                      count;    /* slots of the kind; 0 where not recorded yet */
+    uint8_t                      pci_dev;  /* SLOT_PCI: the device number... */
+    uint8_t                      pci_type; /* ...what is there (PCI_CARD_*)... */
+    uint8_t                      irq[4];   /* ...and where INTA-INTD go */
+    const char                  *if_bios;  /* only with this BIOS selected, or all but it with "!" */
+    const struct machine_slot_t *bus;      /* a bridge's: the bus behind it */
+} machine_slot_t;
+
+#define MSLOT_PCI(dev, type, a, b, c, d) \
+    { .kind = SLOT_PCI, .count = 1, .pci_dev = (dev), .pci_type = (type), .irq = { (a), (b), (c), (d) } }
+#define MSLOT_PCI_IF(bios, dev, type, a, b, c, d) \
+    { .kind = SLOT_PCI, .count = 1, .pci_dev = (dev), .pci_type = (type), .irq = { (a), (b), (c), (d) }, .if_bios = (bios) }
+#define MSLOT_BRIDGE(dev, type, a, b, c, d, behind) \
+    { .kind = SLOT_PCI, .count = 1, .pci_dev = (dev), .pci_type = (type), .irq = { (a), (b), (c), (d) }, .bus = (behind) }
+#define MSLOT_BUS(k, n) { .kind = (k), .count = (n) }
+#define MSLOT_END       { .kind = SLOT_END }
+
 typedef struct _machine_ {
     const char            *name;
     const char            *internal_name;
@@ -411,6 +448,10 @@ typedef struct _machine_ {
     void                  *ide_device;
     void                  *scsi_device;
 #endif
+    /* The PCI configuration mechanism(s) and PCI flags the board's init
+       gives pci_init() (machine_pci_init()); 0 on a board without PCI. */
+    uint32_t               pci_flags;
+    const machine_slot_t  *slot_layout; /* the board's buses and slots; NULL where not recorded */
     const char            *aliases[16];
 } machine_t;
 
@@ -443,6 +484,9 @@ extern const device_t *machine_get_net_device(int m);
 extern const device_t *machine_get_ide_device(int m);
 extern const device_t *machine_get_scsi_device(int m);
 #endif
+extern void            machine_pci_init(void);
+extern void            machine_pci_register_slots(void);
+extern void            machine_pci_register_bus_slots(uint8_t pci_type, uint8_t bus);
 extern const char *    machine_get_internal_name_ex(int m);
 extern const char *    machine_get_nvr_name_ex(int m);
 extern int             machine_get_nvrmask(int m);
@@ -1006,7 +1050,7 @@ extern int             machine_at_valuepointp60_init(const machine_t *);
 extern const device_t  batman_device;
 #endif
 extern int             machine_at_batman_init(const machine_t *);
-extern void            machine_at_premiere_common_init(const machine_t *, int);
+extern void            machine_at_premiere_common_init(const machine_t *);
 extern int             machine_at_revenge_init(const machine_t *);
 extern int             machine_at_m5pi_init(const machine_t *);
 extern int             machine_at_pb520r_init(const machine_t *);
