@@ -11854,7 +11854,7 @@ const machine_t machines[] = {
             .max_multi   = 0
         },
         .bus_flags = MACHINE_PS2,
-        .flags     = MACHINE_IDE_DUAL | MACHINE_SUPER_IO | MACHINE_APM | MACHINE_VIDEO,
+        .flags     = MACHINE_IDE_DUAL | MACHINE_SUPER_IO | MACHINE_APM | MACHINE_VIDEO | MACHINE_PS2_KBC,
         .ram       = {
             .min  = 4096,
             .max  = 69632,
@@ -11999,7 +11999,7 @@ const machine_t machines[] = {
             .max_multi   = 0
         },
         .bus_flags = MACHINE_PS2_VLB,
-        .flags     = MACHINE_IDE_DUAL | MACHINE_SUPER_IO | MACHINE_APM | MACHINE_SOUND | MACHINE_VIDEO,
+        .flags     = MACHINE_IDE_DUAL | MACHINE_SUPER_IO | MACHINE_APM | MACHINE_SOUND | MACHINE_VIDEO | MACHINE_PS2_KBC,
         .ram       = {
             .min  = 1024,
             .max  = 131072,
@@ -12391,7 +12391,7 @@ const machine_t machines[] = {
             .max_multi   = 0
         },
         .bus_flags = MACHINE_PS2,
-        .flags     = MACHINE_SUPER_IO | MACHINE_IDE, /* Machine has internal video: C&T F65545 (not yet implemented) */
+        .flags     = MACHINE_SUPER_IO | MACHINE_IDE | MACHINE_PS2_KBC, /* Machine has internal video: C&T F65545 (not yet implemented) */
         .ram       = {
             .min  = 8192,
             .max  = 73728,
@@ -12639,7 +12639,7 @@ const machine_t machines[] = {
             .max_multi   = 0
         },
         .bus_flags = MACHINE_PS2_PCI,
-        .flags     = MACHINE_SUPER_IO | MACHINE_IDE_DUAL | MACHINE_APM,
+        .flags     = MACHINE_SUPER_IO | MACHINE_IDE_DUAL | MACHINE_APM | MACHINE_PS2_KBC,
         .ram       = {
             .min  = 1024,
             .max  = 131072,
@@ -13180,7 +13180,7 @@ const machine_t machines[] = {
             .max_multi   = 0
         },
         .bus_flags = MACHINE_PS2_PCI,
-        .flags     = MACHINE_SUPER_IO | MACHINE_IDE_DUAL | MACHINE_VIDEO,
+        .flags     = MACHINE_SUPER_IO | MACHINE_IDE_DUAL | MACHINE_VIDEO | MACHINE_PS2_KBC,
         .ram       = {
             .min  = 1024,
             .max  = 65536,
@@ -16586,7 +16586,7 @@ const machine_t machines[] = {
             .max_multi   = 2.0
         },
         .bus_flags = MACHINE_PS2_PCI,
-        .flags     = MACHINE_IDE_DUAL | MACHINE_SUPER_IO | MACHINE_APM, /* Machine has internal SCSI: Adaptec AIC-7850 (not yet implemented) */
+        .flags     = MACHINE_IDE_DUAL | MACHINE_SUPER_IO | MACHINE_APM | MACHINE_PS2_KBC, /* Machine has internal SCSI: Adaptec AIC-7850 (not yet implemented) */
         .ram       = {
             .min  = 4096,
             .max  = 524288,
@@ -18379,7 +18379,7 @@ const machine_t machines[] = {
             .max_multi   = 3.0
         },
         .bus_flags = MACHINE_PS2_PCI,
-        .flags     = MACHINE_IDE_DUAL | MACHINE_SUPER_IO | MACHINE_APM,
+        .flags     = MACHINE_IDE_DUAL | MACHINE_SUPER_IO | MACHINE_APM | MACHINE_PS2_KBC,
         .ram       = {
             .min  = 4096,
             .max  = 131072,
@@ -22047,7 +22047,7 @@ const machine_t machines[] = {
             .max_multi   = 5.5
         },
         .bus_flags = MACHINE_PS2_AGP | MACHINE_BUS_USB,
-        .flags     = MACHINE_AGP_INTERNAL | MACHINE_SUPER_IO | MACHINE_IDE_DUAL | MACHINE_VIDEO | MACHINE_SOUND | MACHINE_APM | MACHINE_ACPI | MACHINE_USB,
+        .flags     = MACHINE_AGP_INTERNAL | MACHINE_SUPER_IO | MACHINE_IDE_DUAL | MACHINE_VIDEO | MACHINE_SOUND | MACHINE_APM | MACHINE_ACPI | MACHINE_USB | MACHINE_GAMEPORT,
         .ram       = {
             .min  = 8192,
             .max  = 1572864,
@@ -22095,7 +22095,7 @@ const machine_t machines[] = {
             .max_multi   = 6.0
         },
         .bus_flags = MACHINE_PS2_AGP | MACHINE_BUS_USB,
-        .flags     = MACHINE_AGP_INTERNAL | MACHINE_SUPER_IO | MACHINE_IDE_DUAL | MACHINE_VIDEO | MACHINE_SOUND | MACHINE_APM | MACHINE_ACPI | MACHINE_USB,
+        .flags     = MACHINE_AGP_INTERNAL | MACHINE_SUPER_IO | MACHINE_IDE_DUAL | MACHINE_VIDEO | MACHINE_SOUND | MACHINE_APM | MACHINE_ACPI | MACHINE_USB | MACHINE_GAMEPORT,
         .ram       = {
             .min  = 8192,
             .max  = 1048576,
