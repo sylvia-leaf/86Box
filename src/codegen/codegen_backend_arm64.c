@@ -351,16 +351,7 @@ codegen_backend_init(void)
     host_arm64_call(block, (void *) x86gpf);
 
     codegen_exit_rout = &block_write_data[block_pos];
-<<<<<<< HEAD
-#    ifdef CODEGEN_BACKEND_HAS_BLOCK_LINK
-    /*No slots: a block leaving from here is never linked*/
-    host_arm64_MOVZ_IMM(block, REG_W0, 0);
-    codegen_link_miss_rout = &block_write_data[block_pos];
-#    endif
     host_arm64_LDP_POSTIDX_X(block, REG_X19, REG_X20, REG_XSP, 80);
-=======
-    host_arm64_LDP_POSTIDX_X(block, REG_X19, REG_X20, REG_XSP, 64);
->>>>>>> 7f3227dd49c0e42b654400defd20dd4890d5e98c
     host_arm64_LDP_POSTIDX_X(block, REG_X21, REG_X22, REG_XSP, 16);
     host_arm64_LDP_POSTIDX_X(block, REG_X23, REG_X24, REG_XSP, 16);
     host_arm64_LDP_POSTIDX_X(block, REG_X25, REG_X26, REG_XSP, 16);
@@ -804,18 +795,7 @@ codegen_chain_patch(uint8_t *stub, codeblock_t *target, uint64_t gen)
 void
 codegen_backend_epilogue(codeblock_t *block)
 {
-<<<<<<< HEAD
-#    ifdef CODEGEN_BACKEND_HAS_BLOCK_LINK
-    if (codegen_block_link) {
-        codegen_link_exit(block);
-        codegen_allocator_clean_blocks(block->head_mem_block);
-        return;
-    }
-#    endif
     host_arm64_LDP_POSTIDX_X(block, REG_X19, REG_X20, REG_XSP, 80);
-=======
-    host_arm64_LDP_POSTIDX_X(block, REG_X19, REG_X20, REG_XSP, 64);
->>>>>>> 7f3227dd49c0e42b654400defd20dd4890d5e98c
     host_arm64_LDP_POSTIDX_X(block, REG_X21, REG_X22, REG_XSP, 16);
     host_arm64_LDP_POSTIDX_X(block, REG_X23, REG_X24, REG_XSP, 16);
     host_arm64_LDP_POSTIDX_X(block, REG_X25, REG_X26, REG_XSP, 16);
