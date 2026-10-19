@@ -394,7 +394,7 @@ typedef struct tc59x_t {
     uint32_t tx_pend_fifo;
     uint8_t  tx_out[TX_FRAME_MAX + 64]; /* a frame on its way out, padded */
     uint8_t  tx_pad_left; /* bytes still expected to reach the dword boundary */
-    uint8_t  tx_status[8];
+    uint8_t  tx_status[31]; /* depth: see tc59x_tx_status_push */
     uint8_t  tx_status_count;
 
     /* The receive side. */
@@ -918,19 +918,23 @@ tc59x_rx_status(const tc59x_t *dev)
 
 /* ---- transmit -------------------------------------------------------------- */
 
+/* The book gives no depth for the TxStatus stack. Linux's 3c59x.c empties
+   it with at most 31 reads ("int i = 32; while (--i > 0 && ...)", in
+   vortex_error), so it holds 31. txStatusOverflow means "the TxStatus stack
+   is full and as a result the transmitter has been disabled", and it must
+   be reenabled with TxEnable (TxStatus): the status that fills the stack
+   carries the flag and the transmitter stops, so no status is lost. */
 static void
 tc59x_tx_status_push(tc59x_t *dev, uint8_t status)
 {
-    if (dev->tx_status_count >= sizeof(dev->tx_status)) {
-        /* "the TxStatus stack is full and as a result the transmitter
-           has been disabled." */
+    if (dev->tx_status_count >= sizeof(dev->tx_status))
+        return;
+    dev->tx_status[dev->tx_status_count++] = status;
+    if (dev->tx_status_count == sizeof(dev->tx_status)) {
         dev->tx_status[sizeof(dev->tx_status) - 1] |= TXS_OVERFLOW;
         dev->tx_enabled = 0;
         dev->network_diagnostic &= (uint16_t) ~DIAG_TX_ENABLED;
-        tc59x_raise(dev, INT_TX_COMPLETE);
-        return;
     }
-    dev->tx_status[dev->tx_status_count++] = status;
     tc59x_raise(dev, INT_TX_COMPLETE);
 }
 
