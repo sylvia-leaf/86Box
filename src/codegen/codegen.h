@@ -68,15 +68,26 @@ typedef struct codeblock_t {
     /*Where a linked block enters it (data[chain_entry]): past the part of
       the prologue every block shares, so a chain keeps one frame.*/
     uint16_t chain_entry;
+
+    /*Links into this block hold while this is the value they were made
+      under: anything that changes what they reach (its code written, the
+      block deleted, its page's translation changed) adds one. Never reset
+      while the block's number is in use again, so a stale link cannot
+      match a new block.*/
+    uint64_t link_gen;
+    /*The physical pages counted for it while it is a link target.*/
+    uint32_t link_phys, link_phys_2;
+    /*Its places in the lists of linked blocks on those pages (codegen_lp),
+      one per page: 0 for the first, 1 for the second.*/
+    int32_t lp_next[2], lp_prev[2];
 #endif
 } codeblock_t;
 
 #ifdef CODEGEN_CHAIN
 /*The block-linking setting as the recompiler took it (codegen_block.c).*/
 extern int codegen_block_link;
-/*The generation every link is made under: anything that could make a link
-  wrong -- compiled code written, freed or compiled again, the translations
-  changed -- moves it, and every link misses (codegen_block.c).*/
+/*Moved whenever compiled code is freed or every link goes
+  (codegen_block.c).*/
 extern uint64_t codegen_chain_gen;
 /*Set by a link stub that left for want of a link: the dispatcher links it.*/
 extern uint8_t *codegen_chain_last_exit;
@@ -92,9 +103,23 @@ extern void codegen_chain_sti(void);
 /*What a link was made under and holds only while it matches: the status
   word.*/
 #    define CODEGEN_CHAIN_KEY() (cpu_cur_status & 0xffff)
-/*Point a link stub at a block, under the generation `gen` (read before
-  the block's code was found clean); answers whether it could.*/
+/*A link generation no block has: where an unlinked stub points.*/
+extern uint64_t codegen_link_unlinked;
+/*Point a link stub at a block, under the block's link generation `gen`
+  (read before its code was found clean); answers whether it could.*/
 extern int codegen_chain_patch(uint8_t *stub, codeblock_t *target, uint64_t gen);
+
+/*Links into a block, kept exact (codegen_block.c):
+  - note: a link to `block` was just made;
+  - drop: every link into `block` goes (from anywhere);
+  - drop_all: every link goes (`owner`: from the dispatcher's side, which
+    also empties the link lists; else from anywhere, generations only).*/
+extern void codegen_links_note(codeblock_t *block);
+extern void codegen_links_drop(codeblock_t *block);
+extern void codegen_links_drop_all(int owner);
+/*Compiled code was written: the links into the written blocks go, at the
+  loop's next look.*/
+extern void codegen_links_written(void);
 #endif
 
 extern codeblock_t *codeblock;

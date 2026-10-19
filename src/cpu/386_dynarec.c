@@ -766,14 +766,15 @@ exec386_dynarec_dyn(void)
         block->used = 1; /* run: the eviction sweep passes it over once */
 #    ifdef CODEGEN_CHAIN
         {
-            /* Read before the code is found clean: anything that makes the
-               link wrong from then on moves the generation, and the link
-               misses. */
-            const uint64_t gen = __atomic_load_n(&codegen_chain_gen, __ATOMIC_SEQ_CST);
+            /* Read before the code is found clean: a write after it moves
+               the generation, and the link misses. */
+            const uint64_t target_gen = __atomic_load_n(&block->link_gen, __ATOMIC_SEQ_CST);
 
-            if (codegen_block_link && link_stub && (block->pc == link_pc) && (block->_cs == link_cs) && (gen == link_gen) &&
-                block->head_mem_block && !(block->flags & CODEBLOCK_IN_DIRTY_LIST) && exec386_chain_still_clean(block))
-                (void) codegen_chain_patch(link_stub, block, gen);
+            if (codegen_block_link && link_stub && (block->pc == link_pc) && (block->_cs == link_cs) && (codegen_chain_gen == link_gen) &&
+                block->head_mem_block && !(block->flags & CODEBLOCK_IN_DIRTY_LIST) && exec386_chain_still_clean(block)) {
+                codegen_links_note(block); /* noted first: writes to its code count from now on */
+                (void) codegen_chain_patch(link_stub, block, target_gen);
+            }
         }
         cpu_state.chain_signal  = &mem_chain_signal.pending;
         cpu_state.chain_floor   = exec386_chain_floor();
@@ -1143,8 +1144,10 @@ exec386_dynarec(int32_t cycs)
             if (__atomic_load_n(&mem_chain_signal.code, __ATOMIC_RELAXED)) {
                 const uint8_t why = __atomic_exchange_n(&mem_chain_signal.code, 0, __ATOMIC_SEQ_CST);
 
-                if (why & (MEM_CHAIN_CODE_RELINK | MEM_CHAIN_CODE_WRITTEN))
-                    codegen_links_drop_all();
+                if (why & MEM_CHAIN_CODE_RELINK)
+                    codegen_links_drop_all(1);
+                if (why & MEM_CHAIN_CODE_WRITTEN)
+                    codegen_links_written();
             }
 #    endif
 

@@ -432,8 +432,9 @@ extern void flushmmucache_nopc(void);
 /* Chains of linked blocks (the new recompiler): a link stub leaves for the
    dispatcher while this word is not 0. brk: something the loop must look
    at (port I/O, an interrupt pending, NMI, SMI, a sooner timer, a reset);
-   code: compiled code was written (WRITTEN), or every link must go
-   (RELINK). Set from anywhere; harmless when nothing is chained. */
+   code: compiled code of a linked block was written (WRITTEN), or every
+   link must go (RELINK). Set from anywhere; harmless when nothing is
+   chained. */
 typedef union mem_chain_signal_t {
     struct {
         uint8_t brk;

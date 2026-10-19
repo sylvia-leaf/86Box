@@ -55,19 +55,289 @@ const int codegen_has_block_link = 1;
    block leaves for it. */
 int codegen_block_link = 1;
 
-/* Chains of linked blocks: the generation every link is made under (the
-   stub compares it), moved whenever a link could become wrong. */
+/* Chains of linked blocks: moved whenever compiled code is freed or every
+   link goes, so that the dispatcher does not make a link it has pending
+   from a stub freed meanwhile (exec386_dynarec_dyn). */
 uint64_t codegen_chain_gen = 1; /* 64 bits: never wraps back onto a stale stub */
+
+/* A link generation no block has (codegen.h). */
+uint64_t codegen_link_unlinked = UINT64_MAX;
+
+/* The blocks a link may reach: set as a link is made
+   (codegen_links_note), cleared by the dispatcher's side alone. A set bit
+   with no link behind it only costs a look. */
+static uint64_t codegen_link_targets[BLOCK_SIZE / 64];
+
+/* How many linked blocks have code on each physical page (both pages of a
+   block running onto a second): writes to a page with none need no signal,
+   since only a link skips the dirty test a dispatch makes. Kept with the
+   target bits. */
+#    define CODEGEN_LINK_PHYS_PAGES (1u << 20)
+static uint32_t codegen_link_phys_count[CODEGEN_LINK_PHYS_PAGES];
+
+/* And which they are: a list for each physical page, of nodes nr * 2 +
+   page (0 for a block's first page, 1 for its second). A write to a page
+   concerns only its linked blocks -- a dispatch tests any other's dirty
+   bits -- and a driver's page can hold hundreds of blocks of which a few
+   are linked, walked once for every write that reached the page. */
+static int32_t codegen_lp_head[CODEGEN_LINK_PHYS_PAGES];
+
+static void
+codegen_lp_init(void)
+{
+    memset(codegen_lp_head, 0xff, sizeof(codegen_lp_head));
+}
+
+static inline uint32_t
+codegen_lp_page(uint32_t phys)
+{
+    return (phys >> 12) & (CODEGEN_LINK_PHYS_PAGES - 1);
+}
+
+static void
+codegen_lp_insert(int32_t node, uint32_t pg)
+{
+    codeblock_t *b = &codeblock[node >> 1];
+    const int    k = node & 1;
+
+    b->lp_prev[k] = -1;
+    b->lp_next[k] = codegen_lp_head[pg];
+    if (codegen_lp_head[pg] >= 0)
+        codeblock[codegen_lp_head[pg] >> 1].lp_prev[codegen_lp_head[pg] & 1] = node;
+    codegen_lp_head[pg] = node;
+}
+
+static void
+codegen_lp_remove(int32_t node, uint32_t pg)
+{
+    const codeblock_t *b    = &codeblock[node >> 1];
+    const int          k    = node & 1;
+    const int32_t      prev = b->lp_prev[k];
+    const int32_t      next = b->lp_next[k];
+
+    if (prev >= 0)
+        codeblock[prev >> 1].lp_next[prev & 1] = next;
+    else
+        codegen_lp_head[pg] = next;
+    if (next >= 0)
+        codeblock[next >> 1].lp_prev[next & 1] = prev;
+}
+
+static inline void
+codegen_link_phys_add(const codeblock_t *block, int d)
+{
+    const int32_t nr = get_block_nr((codeblock_t *) block);
+
+    codegen_link_phys_count[codegen_lp_page(block->link_phys)] += d;
+    if (d > 0)
+        codegen_lp_insert(nr * 2, codegen_lp_page(block->link_phys));
+    else
+        codegen_lp_remove(nr * 2, codegen_lp_page(block->link_phys));
+    if (block->link_phys_2 != 0xffffffff) {
+        codegen_link_phys_count[codegen_lp_page(block->link_phys_2)] += d;
+        if (d > 0)
+            codegen_lp_insert(nr * 2 + 1, codegen_lp_page(block->link_phys_2));
+        else
+            codegen_lp_remove(nr * 2 + 1, codegen_lp_page(block->link_phys_2));
+    }
+}
+
+static void
+codegen_link_bit_set(codeblock_t *block, int nr)
+{
+    const uint64_t bit = 1ULL << (nr & 63);
+
+    if (__atomic_fetch_or(&codegen_link_targets[nr >> 6], bit, __ATOMIC_SEQ_CST) & bit)
+        return;
+    block->link_phys   = block->phys;
+    block->link_phys_2 = block->page_mask2 ? block->phys_2 : 0xffffffff;
+    codegen_link_phys_add(block, 1);
+}
+
+static void
+codegen_link_bit_clear(int nr)
+{
+    const uint64_t bit = 1ULL << (nr & 63);
+
+    if (!(__atomic_fetch_and(&codegen_link_targets[nr >> 6], ~bit, __ATOMIC_SEQ_CST) & bit))
+        return;
+    codegen_link_phys_add(&codeblock[nr], -1);
+}
+
+void
+codegen_links_note(codeblock_t *block)
+{
+    codegen_link_bit_set(block, get_block_nr(block));
+}
+
+/* From anywhere: the block's links miss from now on. A link the dispatcher
+   has pending to it is safe: it read the generation before it found the
+   code clean. */
+void
+codegen_links_drop(codeblock_t *block)
+{
+    __atomic_fetch_add(&block->link_gen, 1, __ATOMIC_SEQ_CST);
+}
+
+/* The dispatcher's side, as a block goes or is compiled again: the block has
+   no link left, so its bit goes too, and the stub the dispatcher has
+   pending may be in the code freed, so that link is not made. */
+static void
+codegen_links_drop_owned(codeblock_t *block)
+{
+    const int nr = get_block_nr(block);
+
+    codegen_links_drop(block);
+    codegen_link_bit_clear(nr);
+    __atomic_fetch_add(&codegen_chain_gen, 1, __ATOMIC_SEQ_CST);
+}
+
+void
+codegen_links_drop_all(int owner)
+{
+    for (int w = 0; w < (BLOCK_SIZE / 64); w++) {
+        uint64_t bits = __atomic_load_n(&codegen_link_targets[w], __ATOMIC_SEQ_CST);
+
+        while (bits) {
+            const int b = __builtin_ctzll(bits);
+
+            bits &= bits - 1;
+            __atomic_fetch_add(&codeblock[(w << 6) | b].link_gen, 1, __ATOMIC_SEQ_CST);
+            if (owner)
+                codegen_link_bit_clear((w << 6) | b);
+        }
+    }
+    __atomic_fetch_add(&codegen_chain_gen, 1, __ATOMIC_SEQ_CST);
+}
 
 uint8_t *codegen_chain_last_exit;
 
-/* Compiled code was written, freed or compiled again, or the translations
-   changed: every link misses from now on. A link the dispatcher has pending
-   is not made either, as its stub may be in code freed since. */
-void
-codegen_links_drop_all(void)
+/* The physical pages compiled code of linked blocks was written on, noted
+   by the writer (mem.c) and taken at the loop's next look
+   (codegen_links_written). */
+#    define CODEGEN_WRITTEN_PAGES (1u << 20) /* 4 GB of 4K pages */
+static uint64_t codegen_written[CODEGEN_WRITTEN_PAGES / 64];
+static uint64_t codegen_written_sum[CODEGEN_WRITTEN_PAGES / 64 / 64];
+
+/* Whether a block's code is as compiled, as the dispatcher tests it. */
+static inline int
+codegen_block_code_clean(const codeblock_t *b)
 {
-    __atomic_fetch_add(&codegen_chain_gen, 1, __ATOMIC_SEQ_CST);
+    if (b->page_mask & __atomic_load_n(b->dirty_mask, __ATOMIC_SEQ_CST))
+        return 0;
+    if (b->page_mask2 && b->dirty_mask2 && (b->page_mask2 & __atomic_load_n(b->dirty_mask2, __ATOMIC_SEQ_CST)))
+        return 0;
+    return 1;
+}
+
+static void
+codegen_written_note(const page_t *p)
+{
+    const uint32_t idx = (uint32_t) (p - pages);
+
+    if (idx >= CODEGEN_WRITTEN_PAGES) {
+        __atomic_store_n(&codegen_written_sum[0], ~0ULL, __ATOMIC_SEQ_CST); /* cannot happen: pages_sz is smaller */
+        return;
+    }
+    __atomic_fetch_or(&codegen_written[idx >> 6], 1ULL << (idx & 63), __ATOMIC_SEQ_CST);
+    __atomic_fetch_or(&codegen_written_sum[idx >> 12], 1ULL << ((idx >> 6) & 63), __ATOMIC_SEQ_CST);
+}
+
+/* The loop's look after compiled code was written: on each page written,
+   the blocks whose code is dirty lose their links. One walk a page however
+   many writes it took; the writer only noted the page. A block whose dirty
+   bits a dispatch has taken since was invalidated there, its links with it
+   (codegen_check_flush). */
+void
+codegen_links_written(void)
+{
+    for (uint32_t s = 0; s < (CODEGEN_WRITTEN_PAGES / 64 / 64); s++) {
+        uint64_t sum;
+
+        /* Read first: most summary words are empty, and an exchange is a
+           locked write each. */
+        if (!__atomic_load_n(&codegen_written_sum[s], __ATOMIC_RELAXED))
+            continue;
+        sum = __atomic_exchange_n(&codegen_written_sum[s], 0, __ATOMIC_SEQ_CST);
+
+        while (sum) {
+            const uint32_t w    = (s << 6) | __builtin_ctzll(sum);
+            uint64_t       bits = __atomic_exchange_n(&codegen_written[w], 0, __ATOMIC_SEQ_CST);
+
+            sum &= sum - 1;
+            while (bits) {
+                const uint32_t idx = (w << 6) | __builtin_ctzll(bits);
+
+                bits &= bits - 1;
+                if (idx >= pages_sz)
+                    continue;
+                /* The page's linked blocks: a dropped block leaves the list,
+                   so the next is taken first, past any node of the same
+                   block (both its pages in one list). */
+                for (int32_t node = codegen_lp_head[codegen_lp_page(idx << 12)]; node >= 0;) {
+                    codeblock_t *b    = &codeblock[node >> 1];
+                    int32_t      next = b->lp_next[node & 1];
+
+                    while ((next >= 0) && ((next >> 1) == (node >> 1)))
+                        next = codeblock[next >> 1].lp_next[next & 1];
+                    if (!codegen_block_code_clean(b))
+                        codegen_links_drop_owned(b);
+                    node = next;
+                }
+            }
+        }
+    }
+}
+
+/* Whether a write with these masks (mem.c) reaches a block's code. */
+static int
+codegen_page_block_hits(const codeblock_t *b, int second, uint64_t mask, int byte_offset, uint64_t bm0, uint64_t bm1)
+{
+    uint64_t pm = second ? b->page_mask2 : b->page_mask;
+
+    if (b->flags & CODEBLOCK_BYTE_MASK) {
+        uint32_t phys = second ? b->phys_2 : b->phys;
+        int      off  = (phys >> PAGE_BYTE_MASK_SHIFT) & PAGE_BYTE_MASK_OFFSET_MASK;
+
+        if (second && (phys == (uint32_t) -1))
+            return 1;
+        return ((off == byte_offset) && (pm & bm0)) || (bm1 && (off == (byte_offset + 1)) && (pm & bm1));
+    }
+    return !!(pm & mask);
+}
+
+/* A write with these masks (mem.c) to compiled code: if it reaches a
+   linked block the page is noted, and the links into its written blocks go
+   at the loop's next look; a running chain leaves at its next link. Only a
+   link skips the dirty test a dispatch makes, so a page with no linked
+   block needs nothing. */
+void
+codegen_page_code_hit(const struct page_t *p, uint64_t mask, int byte_offset, uint64_t bm0, uint64_t bm1)
+{
+    const uint32_t pg = (uint32_t) (p - pages) & (CODEGEN_LINK_PHYS_PAGES - 1);
+
+    if (!codegen_link_phys_count[pg])
+        return;
+    for (int32_t node = codegen_lp_head[pg]; node >= 0;) {
+        const codeblock_t *b = &codeblock[node >> 1];
+
+        if (codegen_page_block_hits(b, node & 1, mask, byte_offset, bm0, bm1)) {
+            codegen_written_note(p);
+            mem_chain_code(MEM_CHAIN_CODE_WRITTEN);
+            return;
+        }
+        node = b->lp_next[node & 1];
+    }
+}
+
+/* The whole page was written behind the processor's back (mem.c
+   mem_invalidate_range, which marked it all dirty first): noted, as any
+   write to code is. */
+void
+codegen_page_code_drop(const struct page_t *p)
+{
+    codegen_written_note(p);
+    mem_chain_code(MEM_CHAIN_CODE_WRITTEN);
 }
 #else
 const int codegen_has_block_link = 0;
@@ -423,6 +693,9 @@ codegen_init(void)
 
     codegen_backend_init();
     block_versions_init();
+#ifdef CODEGEN_CHAIN
+    codegen_lp_init();
+#endif
     block_free_list = 0;
     for (uint32_t c = 0; c < BLOCK_SIZE; c++)
         block_free_list_add(&codeblock[c]);
@@ -439,7 +712,7 @@ codegen_reset(void)
     int c;
 
 #ifdef CODEGEN_CHAIN
-    codegen_links_drop_all();
+    codegen_links_drop_all(1);
 #endif
     for (c = 1; c < BLOCK_SIZE; c++) {
         codeblock_t *block = &codeblock[c];
@@ -451,10 +724,32 @@ codegen_reset(void)
         }
     }
 
+#ifdef CODEGEN_CHAIN
+    {
+        /* The link generations outlive the blocks (codegen.h): a stub a
+           block still running from before the reset jumps through must not
+           match its target's number again. drop_all has moved every one. */
+        uint64_t *gens = malloc(BLOCK_SIZE * sizeof(uint64_t));
+
+        if (gens == NULL)
+            fatal("codegen_reset: out of memory\n");
+        for (c = 0; c < BLOCK_SIZE; c++)
+            gens[c] = codeblock[c].link_gen;
+        memset(codeblock, 0, BLOCK_SIZE * sizeof(codeblock_t));
+        for (c = 0; c < BLOCK_SIZE; c++)
+            codeblock[c].link_gen = gens[c];
+        free(gens);
+    }
+#else
     memset(codeblock, 0, BLOCK_SIZE * sizeof(codeblock_t));
+#endif
     memset(codeblock_hash, 0, HASH_SIZE * sizeof(uint32_t));
     mem_reset_page_blocks();
 #ifdef CODEGEN_CHAIN
+    /* Every link went with its block's code. */
+    memset(codegen_link_targets, 0, sizeof(codegen_link_targets));
+    memset(codegen_link_phys_count, 0, sizeof(codegen_link_phys_count));
+    codegen_lp_init();
     codegen_block_link = cpu_dyn_block_link;
 #endif
 
@@ -619,7 +914,7 @@ invalidate_block(codeblock_t *block)
     }
     block->head_mem_block = NULL;
 #ifdef CODEGEN_CHAIN
-    codegen_links_drop_all();
+    codegen_links_drop_owned(block);
 #endif
 }
 
@@ -646,7 +941,7 @@ delete_block(codeblock_t *block)
         codegen_allocator_free(block->head_mem_block);
     block->head_mem_block = NULL;
 #ifdef CODEGEN_CHAIN
-    codegen_links_drop_all();
+    codegen_links_drop_owned(block);
 #endif
     block_free_list_add(block);
 }
@@ -835,7 +1130,7 @@ codegen_block_start_recompile(codeblock_t *block)
     if (block->head_mem_block) {
 #ifdef CODEGEN_CHAIN
         /* Its old code goes: no link may reach it again. */
-        codegen_links_drop_all();
+        codegen_links_drop_owned(block);
 #endif
         codegen_allocator_free(block->head_mem_block);
         block->head_mem_block = NULL;
@@ -1169,7 +1464,7 @@ codegen_block_restore_version(codeblock_t *block)
 #ifdef CODEGEN_CHAIN
         /* Other code is the block's now: no link made to the code it had
            may reach it. */
-        codegen_links_drop_all();
+        codegen_links_drop(block);
 #endif
         return 1;
     }

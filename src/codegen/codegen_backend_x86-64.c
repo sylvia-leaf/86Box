@@ -1174,7 +1174,8 @@ codegen_backend_prologue(codeblock_t *block)
 /* A link stub, at a block exit whose PC is already stored: it goes
    straight to the next block while nothing needs the dispatcher. The
    offsets of the fields codegen_chain_patch() writes: */
-#    define LINK_GEN    59 /* codegen_chain_gen when linked */
+#    define LINK_GENPTR 49 /* &target->link_gen */
+#    define LINK_GEN    59 /* its value when linked */
 #    define LINK_STATUS 90
 #    define LINK_JMP    100
 #    define LINK_MISS   105
@@ -1224,10 +1225,12 @@ codegen_backend_link_stub(codeblock_t *block)
     codegen_addbyte(block, 0x01);
     codegen_addbyte2(block, 0x0f, 0x85); /*JNE exit*/
     codegen_addlong(block, 0);
-    /* The generation it was linked under: anything that could make a link
-       wrong moves it (codegen_block.c). Never 0, so it misses until linked. */
-    codegen_addbyte2(block, 0x48, 0xb8); /*MOV RAX, &codegen_chain_gen*/
-    codegen_addquad(block, (uint64_t) (uintptr_t) &codegen_chain_gen);
+    /* The target's link generation: anything that changes what the link
+       reaches (its code written, the block gone, its translation changed)
+       moves it (codegen_block.c). */
+    codegen_addbyte2(block, 0x48, 0xb8); /*MOV RAX, &target->link_gen*/
+    LINK_AT(LINK_GENPTR);
+    codegen_addquad(block, (uint64_t) (uintptr_t) &codegen_link_unlinked);
     codegen_addbyte2(block, 0x48, 0xb9); /*MOV RCX, GEN*/
     LINK_AT(LINK_GEN);
     codegen_addquad(block, 0);
@@ -1283,7 +1286,7 @@ codegen_backend_link_stub(codeblock_t *block)
 
 /* The dispatcher found `target` valid where a chain left through `stub`
    for want of a link: the stub goes straight there from now on, for as
-   long as the generation and the key it saw hold. */
+   long as the target's link generation and the key it saw hold. */
 int
 codegen_chain_patch(uint8_t *stub, codeblock_t *target, uint64_t gen)
 {
@@ -1293,6 +1296,7 @@ codegen_chain_patch(uint8_t *stub, codeblock_t *target, uint64_t gen)
     if ((diff < INT32_MIN) || (diff > INT32_MAX))
         return 0;
 
+    *(uint64_t *) (stub + LINK_GENPTR) = (uint64_t) (uintptr_t) &target->link_gen;
     *(uint64_t *) (stub + LINK_GEN)    = gen;
     *(uint32_t *) (stub + LINK_STATUS) = CODEGEN_CHAIN_KEY();
     link_rel32(stub + LINK_JMP + 1, dest);

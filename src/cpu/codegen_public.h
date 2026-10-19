@@ -50,8 +50,14 @@
 #endif
 
 #ifdef CODEGEN_CHAIN
-/* Every link goes, from anywhere (codegen_block.c). */
-extern void codegen_links_drop_all(void);
+struct page_t;
+/* A write with these masks (mem.c) reached compiled code on the page: the
+   links into the blocks it reached go (codegen_block.c). */
+extern void codegen_page_code_hit(const struct page_t *p, uint64_t mask, int byte_offset, uint64_t bm0, uint64_t bm1);
+/* The whole page was written behind the processor's back. */
+extern void codegen_page_code_drop(const struct page_t *p);
+/* Every link goes (`owner`: from the dispatcher's side). */
+extern void codegen_links_drop_all(int owner);
 #endif
 
 extern void codegen_init(void);

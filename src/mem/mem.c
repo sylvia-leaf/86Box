@@ -226,7 +226,7 @@ resetreadlookup(void)
 }
 
 #if defined(USE_DYNAREC) && defined(CODEGEN_CHAIN)
-#    define LINKS_DROP() codegen_links_drop_all()
+#    define LINKS_DROP() codegen_links_drop_all(0)
 #else
 #    define LINKS_DROP()
 #endif
@@ -1969,9 +1969,9 @@ page_remove_from_evict_list(page_t *page)
 }
 
 #    ifdef CODEGEN_CHAIN
-/* A write changed compiled code on the page. A link skips the dirty test a
-   dispatch makes, so every link goes at the loop's next look, and a running
-   chain leaves at its next link. */
+/* A write changed compiled code on the page: if it reached a linked block,
+   that block's links go (codegen_page_code_hit), as only a link skips the
+   dirty test a dispatch makes. */
 static __inline void
 mem_page_code_written(const page_t *p, uint64_t mask, int byte_offset, uint64_t bm0, uint64_t bm1)
 {
@@ -1980,7 +1980,7 @@ mem_page_code_written(const page_t *p, uint64_t mask, int byte_offset, uint64_t 
     if (!((p->code_present_mask & mask) || (p->byte_code_present_mask[byte_offset] & bm0) ||
           (bm1 && (p->byte_code_present_mask[byte_offset + 1] & bm1))))
         return;
-    mem_chain_code(MEM_CHAIN_CODE_WRITTEN);
+    codegen_page_code_hit(p, mask, byte_offset, bm0, bm1);
 }
 #    endif
 
@@ -2280,7 +2280,7 @@ mem_invalidate_range(uint32_t start_addr, uint32_t end_addr)
                 page_add_to_evict_list(page);
 #    ifdef CODEGEN_CHAIN
             if (page->block || page->block_2)
-                mem_chain_code(MEM_CHAIN_CODE_WRITTEN);
+                codegen_page_code_drop(page);
 #    endif
         }
     }
