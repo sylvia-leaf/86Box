@@ -133,9 +133,6 @@ VMManagerPreferences::accept()
     strncpy(vmm_path_cfg, QDir::cleanPath(ui->systemDirectory->text()).toUtf8().constData(), sizeof(vmm_path_cfg) - 1);
     lang_id      = ui->comboBoxLanguage->currentData().toInt();
     color_scheme = (ui->radioButtonSystem->isChecked()) ? 0 : (ui->radioButtonLight->isChecked() ? 1 : 2);
-#ifdef DISCORD
-    discord_presence = ui->discordCheckBox->isChecked() ? (ui->comboBoxDiscordPrivacy->currentIndex() + 1) : 0;
-#endif
     settings_layout = ui->settingsLayoutCheckBox->isChecked() ? 1 : 0;
     config_save_global();
 
