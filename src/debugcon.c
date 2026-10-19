@@ -41,6 +41,8 @@
 #include <86box/mem.h>
 #include <86box/plat.h>
 #include <86box/thread.h>
+#include <86box/device.h>
+#include <86box/machine.h>
 #include <86box/pci.h>
 #include <86box/pic.h>
 #include <86box/pit.h>
@@ -908,6 +910,14 @@ cmd_dump(const char *arg)
 
 /* ---- the machine --------------------------------------------------------- */
 
+static const char *
+dev_name(const void *priv)
+{
+    const device_t *d = device_debug_of_priv(priv);
+
+    return d ? d->name : NULL;
+}
+
 /* Sixteen bytes a line, skipping lines that are all FF or all 00 when asked
    (an empty configuration store is mostly that). */
 static void
@@ -943,6 +953,41 @@ hexdump(const uint8_t *p, uint32_t base, uint32_t n, int skip_empty)
         out("  (%i lines of all FF or all 00 not shown)\n", skipped);
 }
 
+static void
+cmd_info_devices(void)
+{
+    const device_t *d;
+    void           *priv;
+
+    for (int i = 0; device_debug_get(i, &d, &priv); i++) {
+        if (d == NULL)
+            continue;
+        out("%-40s %-20s%s\n", d->name, d->internal_name ? d->internal_name : "",
+            d->debug_dump ? "  [info board]" : "");
+    }
+}
+
+/* Every device that can show its registers. */
+static void
+cmd_info_board(void)
+{
+    const device_t *d;
+    void           *priv;
+    int             any = 0;
+
+    out("Machine: %s\n", machine_getname(machine));
+    for (int i = 0; device_debug_get(i, &d, &priv); i++) {
+        if ((d == NULL) || (d->debug_dump == NULL))
+            continue;
+        out("\n== %s ==\n", d->name);
+        d->debug_dump(priv, out);
+        any = 1;
+    }
+    if (!any)
+        out("No device on this machine shows its registers yet.\n");
+    out("\nPCI functions: info pci.\n");
+}
+
 /* Every PCI function's configuration space, read as the guest would. */
 static void
 cmd_info_pci(void)
@@ -969,8 +1014,9 @@ cmd_info_pci(void)
             for (int r = 0; r < 256; r++)
                 cfg[r] = read(func, r, 1, priv);
 
-            out("%s%02x:%02x.%i  %04x:%04x  class %02x%02x%02x rev %02x\n", any ? "\n" : "",
-                bus, id, func, vendor, cfg[2] | (cfg[3] << 8), cfg[0x0b], cfg[0x0a], cfg[0x09], cfg[0x08]);
+            out("%s%02x:%02x.%i  %04x:%04x  class %02x%02x%02x rev %02x  %s\n", any ? "\n" : "",
+                bus, id, func, vendor, cfg[2] | (cfg[3] << 8), cfg[0x0b], cfg[0x0a], cfg[0x09], cfg[0x08],
+                dev_name(priv) ? dev_name(priv) : "");
             hexdump(cfg, 0, 256, 0);
             any = 1;
 
@@ -1011,10 +1057,11 @@ describe_mapping(const char *what, const mem_mapping_t *m)
         out("nothing\n");
         return;
     }
-    out("%08x-%08x%s%s%s\n", m->base, m->base + m->size - 1,
+    out("%08x-%08x%s%s%s  %s\n", m->base, m->base + m->size - 1,
         m->exec ? "  memory" : "  handlers",
         (m->flags & MEM_MAPPING_SMRAM) ? " SMRAM" : "",
-        (m->flags & MEM_MAPPING_IS_ROM) ? " ROM" : "");
+        (m->flags & MEM_MAPPING_IS_ROM) ? " ROM" : "",
+        dev_name(m->priv) ? dev_name(m->priv) : "");
 }
 
 /* With an address: what the processor and the bus masters meet there.
@@ -1062,16 +1109,17 @@ cmd_info_mem(const char *arg)
         return;
     }
 
-    out("base     end      en  kind      flags\n");
+    out("base     end      en  kind      flags       device\n");
     for (const mem_mapping_t *m = mem_debug_first_mapping(); m; m = m->next) {
         if (!m->size)
             continue;
-        out("%08x %08x %s  %-9s %s%s%s%s\n", m->base, m->base + m->size - 1, m->enable ? "on " : "off",
+        out("%08x %08x %s  %-9s %s%s%s%s  %s\n", m->base, m->base + m->size - 1, m->enable ? "on " : "off",
             m->exec ? "memory" : "handlers",
             (m->flags & MEM_MAPPING_INTERNAL) ? "int " : "",
             (m->flags & MEM_MAPPING_EXTERNAL) ? "ext " : "",
             (m->flags & MEM_MAPPING_SMRAM) ? "smram " : "",
-            (m->flags & MEM_MAPPING_IS_ROM) ? "rom " : "");
+            (m->flags & MEM_MAPPING_IS_ROM) ? "rom " : "",
+            dev_name(m->priv) ? dev_name(m->priv) : "");
     }
 }
 
@@ -1236,6 +1284,10 @@ cmd_info(const char *arg)
         cmd_info_registers(arg);
     else if (IS("pci", 2))
         cmd_info_pci();
+    else if (IS("board", 1) || IS("chipset", 2))
+        cmd_info_board();
+    else if (IS("devices", 2))
+        cmd_info_devices();
     else if (IS("mem", 1))
         cmd_info_mem(arg);
     else if (IS("pic", 3))
@@ -1251,7 +1303,7 @@ cmd_info(const char *arg)
     else if (IS("idt", 1))
         cmd_info_desc("IDT", &idt, 1);
     else
-        out("info what? registers, float, gdt, idt, mem, pic, pit, dma, pci.\n");
+        out("info what? registers, float, gdt, idt, mem, pic, pit, dma, pci, board, devices.\n");
 #undef IS
 }
 
@@ -1289,6 +1341,8 @@ static const char debugcon_help[] =
     "info mem [ADDRESS]         the memory map, or what is at one address\n"
     "info pic | pit | dma       8259s, 8254 counters, 8237 channels\n"
     "info pci                   every PCI function's configuration space\n"
+    "info board                 chipset and super I/O registers\n"
+    "info devices               every device on the machine\n"
     "p[/x|d|u|o|t|c] VALUE      print a value (numbers, $registers, + and -)\n"
     "x/NFU ADDRESS              examine memory: N units, F = x d u o c,\n"
     "                           U = b (byte) h (2) w (4) g (8)\n"

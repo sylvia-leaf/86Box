@@ -667,6 +667,34 @@ device_get_priv(const device_t *dev)
     return (NULL);
 }
 
+/* The debug console's view of the device list: slot i's device and its
+   state, 0 past the end. */
+int
+device_debug_get(int i, const device_t **dev, void **priv)
+{
+    if ((i < 0) || (i >= DEVICE_MAX))
+        return 0;
+
+    *dev  = devices[i];
+    *priv = device_priv[i];
+    return 1;
+}
+
+/* Which device a state pointer belongs to, for naming what the machine's
+   tables point at; NULL for none. */
+const device_t *
+device_debug_of_priv(const void *priv)
+{
+    if (priv == NULL)
+        return NULL;
+
+    for (int c = 0; c < DEVICE_MAX; c++)
+        if (devices[c] && (device_priv[c] == priv))
+            return devices[c];
+
+    return NULL;
+}
+
 int
 device_available(const device_t *dev)
 {

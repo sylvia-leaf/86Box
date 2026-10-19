@@ -191,6 +191,10 @@ typedef struct _device_ {
 
     void (*power_button)(void *priv); /* Optional emulated power-button press. */
 
+    /* Optional: print the device's registers for the debug console, from
+       its own state and without touching the device. */
+    void (*debug_dump)(void *priv, void (*out)(const char *fmt, ...));
+
     const char *short_name;                           /* Short label, as on an IDE channel; name if NULL. */
     uint32_t  (*ide_boards)(const struct _device_ *); /* The IDE boards the device claims, with its
                                                          configuration as the current context. */
@@ -240,6 +244,8 @@ extern void  device_close_by_flags(uint32_t match_flags);
 extern void  device_reset_all(uint32_t match_flags);
 extern void *device_find_first_priv(uint32_t match_flags);
 extern void *device_get_priv(const device_t *dev);
+extern int   device_debug_get(int i, const device_t **dev, void **priv);
+extern const device_t *device_debug_of_priv(const void *priv);
 extern int   device_available(const device_t *dev);
 extern void  device_speed_changed(void);
 extern void  device_force_redraw(void);
