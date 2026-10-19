@@ -71,6 +71,7 @@
 #include <86box/isamem.h>
 #include <86box/isarom.h>
 #include <86box/isartc.h>
+#include <86box/ibm_5161.h>
 #include <86box/lpt.h>
 #include <86box/serial.h>
 #include <86box/keyboard.h>
@@ -180,6 +181,7 @@ int      mcamem_type[MCAMEM_MAX]                = { 0, 0, 0, 0 }; /* (C) enable 
 int      isamem_type[ISAMEM_MAX]                = { 0, 0, 0, 0 }; /* (C) enable ISA mem cards */
 int      isarom_type[ISAROM_MAX]                = { 0, 0, 0, 0 }; /* (C) enable ISA ROM cards */
 int      isartc_type                            = 0;              /* (C) enable ISA RTC card */
+int      isa_expansion_type                     = 0;              /* (C) ISA expansion unit */
 int      gfxcard[GFXCARD_MAX]                   = { 0, 0 };       /* (C) graphics/video card */
 int      show_second_monitors                   = 1;              /* (C) show non-primary monitors */
 int      sound_is_float                         = 1;              /* (C) sound uses FP values */
@@ -2004,6 +2006,9 @@ pc_reset_hard_init(void)
 
     /* Reset any ISA RTC cards. */
     isartc_reset();
+
+    /* An ISA expansion chassis, if there is one. */
+    isa_expansion_reset();
 
     /* Add the game port card, if one is chosen. */
     gameport_card_reset();

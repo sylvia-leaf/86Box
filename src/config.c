@@ -56,6 +56,7 @@
 #include <86box/isamem.h>
 #include <86box/isarom.h>
 #include <86box/isartc.h>
+#include <86box/ibm_5161.h>
 #include <86box/lpt.h>
 #include <86box/serial.h>
 #include <86box/hdd.h>
@@ -2810,6 +2811,9 @@ load_other_peripherals(void)
     if (!strcmp(p, "none"))
         ini_section_delete_var(cat, temp);
 
+    p                  = ini_section_get_string(cat, "isa_expansion", "none");
+    isa_expansion_type = isa_expansion_get_from_internal_name(p);
+
 #ifdef USE_VFIO
     /* VFIO passthrough devices: a space-separated device list, with
        an optional custom ROM file for each device. */
@@ -3051,6 +3055,7 @@ config_load(void)
         cdrom[0].sound_on = 1;
         mem_size          = 64;
         isartc_type       = 0;
+        isa_expansion_type = 0;
         gameport_card_type = GAMEPORT_CARD_AUTO;
         for (i = 0; i < ISAROM_MAX; i++)
             isarom_type[i] = 0;
@@ -4300,6 +4305,11 @@ save_other_peripherals(void)
     else
         ini_section_set_string(cat, "isartc_type",
                                isartc_get_internal_name(isartc_type));
+
+    if (isa_expansion_type == 0)
+        ini_section_delete_var(cat, "isa_expansion");
+    else
+        ini_section_set_string(cat, "isa_expansion", isa_expansion_get_internal_name(isa_expansion_type));
 
     ini_delete_section_if_empty(config, cat);
 

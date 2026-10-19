@@ -197,6 +197,37 @@
             </item>
            </layout>
           </item>
+          <item row="5">
+           <layout class="QHBoxLayout" name="horizontalLayoutIsaExpansion">
+            <item>
+             <widget class="QLabel" name="labelIsaExpansion">
+              <property name="text">
+               <string>ISA expansion unit:</string>
+              </property>
+             </widget>
+            </item>
+            <item>
+             <widget class="QComboBox" name="comboBoxIsaExpansion">
+              <property name="sizePolicy">
+               <sizepolicy hsizetype="MinimumExpanding" vsizetype="Fixed">
+                <horstretch>0</horstretch>
+                <verstretch>0</verstretch>
+               </sizepolicy>
+              </property>
+              <property name="maxVisibleItems">
+               <number>30</number>
+              </property>
+             </widget>
+            </item>
+            <item>
+             <widget class="QPushButton" name="pushButtonConfigureIsaExpansion">
+              <property name="text">
+               <string>Configure</string>
+              </property>
+             </widget>
+            </item>
+           </layout>
+          </item>
 
          </layout>
         </widget>
