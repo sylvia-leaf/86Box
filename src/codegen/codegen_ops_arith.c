@@ -20,7 +20,8 @@
 static inline void
 get_cf(ir_data_t *ir, int dest_reg)
 {
-    uop_CALL_FUNC_RESULT_ORDERED(ir, dest_reg, jit_CF_SET);
+    if (!codegen_cf_inline(ir, dest_reg))
+        uop_CALL_FUNC_RESULT_ORDERED(ir, dest_reg, jit_CF_SET);
 }
 
 uint32_t
@@ -2131,43 +2132,10 @@ rop83_l(codeblock_t *block, ir_data_t *ir, UNUSED(uint8_t opcode), uint32_t fetc
     return arith_imm_l(block, ir, fetchdat, op_32, op_pc, 1);
 }
 
-static void
-rebuild_c(ir_data_t *ir)
-{
-    int needs_rebuild = 1;
-
-    if (codegen_flags_changed) {
-        switch (cpu_state.flags_op) {
-            case FLAGS_INC8:
-            case FLAGS_INC16:
-            case FLAGS_INC32:
-            case FLAGS_DEC8:
-            case FLAGS_DEC16:
-            case FLAGS_DEC32:
-                needs_rebuild = 0;
-                break;
-
-            default:
-                break;
-        }
-    }
-
-    if (needs_rebuild && !codegen_flags_rebuild_known(ir, 1)) {
-#if defined __aarch64__ || defined _M_ARM64 || defined __amd64__ || defined _M_X64
-        /*flags_rebuild_c() writes only flags, so the cached registers are
-          written back but left loaded, and flags is reloaded after it.*/
-        uop_CALL_FUNC_ORDERED(ir, jit_flags_rebuild_c);
-        uop_MOVZX_REG_PTR_16(ir, IREG_flags, &cpu_state.flags);
-#else
-        uop_CALL_FUNC(ir, jit_flags_rebuild_c);
-#endif
-    }
-}
-
 uint32_t
 ropINC_r16(UNUSED(UNUSED(codeblock_t *block)), ir_data_t *ir, UNUSED(uint8_t opcode), UNUSED(uint32_t fetchdat), UNUSED(uint32_t op_32), uint32_t op_pc)
 {
-    rebuild_c(ir);
+    codegen_rebuild_c(ir);
 
     uop_MOVZX(ir, IREG_flags_op1, IREG_16(opcode & 7));
     uop_ADD_IMM(ir, IREG_16(opcode & 7), IREG_16(opcode & 7), 1);
@@ -2181,7 +2149,7 @@ ropINC_r16(UNUSED(UNUSED(codeblock_t *block)), ir_data_t *ir, UNUSED(uint8_t opc
 uint32_t
 ropINC_r32(UNUSED(UNUSED(codeblock_t *block)), ir_data_t *ir, UNUSED(uint8_t opcode), UNUSED(uint32_t fetchdat), UNUSED(uint32_t op_32), uint32_t op_pc)
 {
-    rebuild_c(ir);
+    codegen_rebuild_c(ir);
 
     uop_MOV(ir, IREG_flags_op1, IREG_32(opcode & 7));
     uop_ADD_IMM(ir, IREG_32(opcode & 7), IREG_32(opcode & 7), 1);
@@ -2196,7 +2164,7 @@ ropINC_r32(UNUSED(UNUSED(codeblock_t *block)), ir_data_t *ir, UNUSED(uint8_t opc
 uint32_t
 ropDEC_r16(UNUSED(codeblock_t *block), ir_data_t *ir, uint8_t opcode, UNUSED(uint32_t fetchdat), UNUSED(uint32_t op_32), uint32_t op_pc)
 {
-    rebuild_c(ir);
+    codegen_rebuild_c(ir);
 
     uop_MOVZX(ir, IREG_flags_op1, IREG_16(opcode & 7));
     uop_SUB_IMM(ir, IREG_16(opcode & 7), IREG_16(opcode & 7), 1);
@@ -2210,7 +2178,7 @@ ropDEC_r16(UNUSED(codeblock_t *block), ir_data_t *ir, uint8_t opcode, UNUSED(uin
 uint32_t
 ropDEC_r32(UNUSED(codeblock_t *block), ir_data_t *ir, UNUSED(uint8_t opcode), UNUSED(uint32_t fetchdat), UNUSED(uint32_t op_32), uint32_t op_pc)
 {
-    rebuild_c(ir);
+    codegen_rebuild_c(ir);
 
     uop_MOV(ir, IREG_flags_op1, IREG_32(opcode & 7));
     uop_SUB_IMM(ir, IREG_32(opcode & 7), IREG_32(opcode & 7), 1);
@@ -2229,7 +2197,7 @@ ropINCDEC(codeblock_t *block, ir_data_t *ir, UNUSED(uint8_t opcode), uint32_t fe
         return 0;
 
     codegen_mark_code_present(block, cs + op_pc, 1);
-    rebuild_c(ir);
+    codegen_rebuild_c(ir);
 
     if ((fetchdat & 0xc0) == 0xc0) {
         uop_MOVZX(ir, IREG_flags_op1, IREG_8(fetchdat & 7));

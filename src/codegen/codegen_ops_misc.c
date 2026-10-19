@@ -362,39 +362,6 @@ ropF7_32(codeblock_t *block, ir_data_t *ir, UNUSED(uint8_t opcode), uint32_t fet
     return 0;
 }
 
-static void
-rebuild_c(ir_data_t *ir)
-{
-    int needs_rebuild = 1;
-
-    if (codegen_flags_changed) {
-        switch (cpu_state.flags_op) {
-            case FLAGS_INC8:
-            case FLAGS_INC16:
-            case FLAGS_INC32:
-            case FLAGS_DEC8:
-            case FLAGS_DEC16:
-            case FLAGS_DEC32:
-                needs_rebuild = 0;
-                break;
-
-            default:
-                break;
-        }
-    }
-
-    if (needs_rebuild && !codegen_flags_rebuild_known(ir, 1)) {
-#if defined __aarch64__ || defined _M_ARM64 || defined __amd64__ || defined _M_X64
-        /*flags_rebuild_c() writes only flags, so the cached registers are
-          written back but left loaded, and flags is reloaded after it.*/
-        uop_CALL_FUNC_ORDERED(ir, jit_flags_rebuild_c);
-        uop_MOVZX_REG_PTR_16(ir, IREG_flags, &cpu_state.flags);
-#else
-        uop_CALL_FUNC(ir, jit_flags_rebuild_c);
-#endif
-    }
-}
-
 uint32_t
 ropFF_16(codeblock_t *block, ir_data_t *ir, UNUSED(uint8_t opcode), uint32_t fetchdat, uint32_t op_32, uint32_t op_pc)
 {
@@ -424,7 +391,7 @@ ropFF_16(codeblock_t *block, ir_data_t *ir, UNUSED(uint8_t opcode), uint32_t fet
 
     switch (fetchdat & 0x38) {
         case 0x00: /*INC*/
-            rebuild_c(ir);
+            codegen_rebuild_c(ir);
             codegen_flags_changed = 1;
 
             if ((fetchdat & 0xc0) == 0xc0) {
@@ -444,7 +411,7 @@ ropFF_16(codeblock_t *block, ir_data_t *ir, UNUSED(uint8_t opcode), uint32_t fet
             return op_pc + 1;
 
         case 0x08: /*DEC*/
-            rebuild_c(ir);
+            codegen_rebuild_c(ir);
             codegen_flags_changed = 1;
 
             if ((fetchdat & 0xc0) == 0xc0) {
@@ -531,7 +498,7 @@ ropFF_32(codeblock_t *block, ir_data_t *ir, UNUSED(uint8_t opcode), uint32_t fet
 
     switch (fetchdat & 0x38) {
         case 0x00: /*INC*/
-            rebuild_c(ir);
+            codegen_rebuild_c(ir);
             codegen_flags_changed = 1;
 
             if ((fetchdat & 0xc0) == 0xc0) {
@@ -551,7 +518,7 @@ ropFF_32(codeblock_t *block, ir_data_t *ir, UNUSED(uint8_t opcode), uint32_t fet
             return op_pc + 1;
 
         case 0x08: /*DEC*/
-            rebuild_c(ir);
+            codegen_rebuild_c(ir);
             codegen_flags_changed = 1;
 
             if ((fetchdat & 0xc0) == 0xc0) {
