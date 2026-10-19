@@ -71,6 +71,7 @@
 #include <86box/isamem.h>
 #include <86box/isarom.h>
 #include <86box/isartc.h>
+#include <86box/ibm_5161.h>
 #include <86box/lpt.h>
 #include <86box/serial.h>
 #include <86box/keyboard.h>
@@ -113,6 +114,7 @@
 #include <86box/apic.h>
 #include <86box/nv/vid_nv_rivatimer.h>
 #include <86box/vfio.h>
+#include "x86_rep_host.h"
 
 /* Stuff that used to be globally declared in plat.h but is now extern there
    and declared here instead. */
@@ -126,8 +128,9 @@ int tracing_on = 0;
 #endif
 
 /* Commandline options. */
-int dump_on_exit        = 0; /* (O) dump regs on exit */
-int start_in_fullscreen = 0; /* (O) start in fullscreen */
+int dump_on_exit          = 0; /* (O) dump regs on exit */
+int start_in_fullscreen   = 0; /* (O) start in fullscreen */
+int start_in_fast_forward = 0; /* (O) start in fast-forward mode */
 #ifdef _WIN32
 int force_debug = 0; /* (O) force debug output */
 #endif
@@ -185,6 +188,7 @@ int      mcamem_type[MCAMEM_MAX]                = { 0, 0, 0, 0 }; /* (C) enable 
 int      isamem_type[ISAMEM_MAX]                = { 0, 0, 0, 0 }; /* (C) enable ISA mem cards */
 int      isarom_type[ISAROM_MAX]                = { 0, 0, 0, 0 }; /* (C) enable ISA ROM cards */
 int      isartc_type                            = 0;              /* (C) enable ISA RTC card */
+int      isa_expansion_type                     = 0;              /* (C) ISA expansion unit */
 int      gfxcard[GFXCARD_MAX]                   = { 0, 0 };       /* (C) graphics/video card */
 int      show_second_monitors                   = 1;              /* (C) show non-primary monitors */
 int      sound_is_float                         = 1;              /* (C) sound uses FP values */
@@ -204,10 +208,13 @@ int      cpu_use_dynarec_fast                   = 0;              /* (C) use fas
 int      cpu                                    = 0;              /* (C) cpu type */
 int      fpu_type                               = 0;              /* (C) fpu type */
 int      fpu_softfloat                          = 0;              /* (C) fpu uses softfloat */
+int      fpu_host_x87                           = 0;              /* (C) fpu uses the host's x87 */
 int      time_sync                              = 0;              /* (C) enable time sync */
 int      confirm_reset                          = 1;              /* (G) enable reset confirmation */
 int      confirm_exit                           = 1;              /* (G) enable exit confirmation */
 int      confirm_save                           = 1;              /* (G) enable save confirmation */
+int      settings_layout                        = 0;              /* (G) Settings dialog: 0 classic, 1 slot-based preview */
+int      settings_advanced                      = 0;              /* (G) slot-based Settings: the Cards page's Advanced view */
 int      chd_precache_level                     = 0;              /* (G) CHD precache level */
 int      pit_mode                               = -1;             /* (C) force setting PIT mode */
 int      fm_driver                              = 0;              /* (C) select FM sound driver */
@@ -226,6 +233,7 @@ int      sound_muted                            = 0;              /* (C) Is soun
 int      jumpered_internal_ecp_dma              = 0;              /* (C) Jumpered internal EPC DMA */
 int      inhibit_multimedia_keys;                                 /* (G) Inhibit multimedia keys on Windows. */
 int      force_10ms;                                              /* (C) Force 10ms CPU frame intervals. */
+int      start_fast_forward;                                      /* (C) Start in fast-forward mode. */
 int      vmm_disabled                           = 0;              /* (G) disable built-in manager */
 int      discord_presence                       = 0;              /* (G) Discord status: off, name and hardware, hardware only, no details */
 char     vmm_path_cfg[1024]                     = { '\0' };       /* (G) VMs path (unless -E is used)*/
@@ -253,6 +261,7 @@ int      fdd_sounds_enabled = 1;                                  /* (C) Floppy 
 int      is_new_808x = 0;                                         /* (C) Use the new 808x code. */
 
 int      gdbstub_port = 12345;                                    /* (C) The GDB stub port. */
+int      debug_console_port = 0;                                  /* (C) The debug console listens here from start-up; 0 off. */
 
 // Accelerator key array
 struct accelKey acc_keys[NUM_ACCELS];
@@ -400,6 +409,24 @@ static int suppr_seen = 1;
 // Functions only used in this translation unit
 void pclog_ensure_stdlog_open(void);
 #endif
+
+/*
+    A log file named by the machine's configuration, for when no -L was
+    given. Anything already logged went to stdout; from here on it goes
+    to the file.
+*/
+void
+pclog_set_config_path(const char *path)
+{
+    if ((path == NULL) || (path[0] == '\0') || (log_path[0] != '\0'))
+        return;
+
+    snprintf(log_path, sizeof(log_path), "%s", path);
+#ifndef RELEASE_BUILD
+    if (stdlog == stdout)
+        stdlog = NULL;
+#endif
+}
 
 /*
     Ensures STDLOG is open for pclog_ex and pclog_ex_cyclic
@@ -804,6 +831,7 @@ pc_show_usage(void)
             "-E or --vmmpath\t\t- vm manager path\n"
 #endif
             "-F or --fullscreen\t\t- start in fullscreen mode\n"
+            "--fast-forward\t\t\t- start in fast-forward mode\n"
             "-G or --lang langid\t\t- start with specified language\n"
             "\t\t\t\t   (e.g. en-US, or system)\n"
 #ifdef SHOW_EXTRA_PARAMS
@@ -1000,6 +1028,8 @@ usage:
 #endif
         } else if (!strcasecmp(argv[c], "--fullscreen") || !strcasecmp(argv[c], "-F")) {
             start_in_fullscreen = 1;
+        } else if (!strcasecmp(argv[c], "--fast-forward")) {
+            start_in_fast_forward = 1;
         } else if (!strcasecmp(argv[c], "--logfile") || !strcasecmp(argv[c], "-L")) {
             if ((c + 1) == argc)
                 goto usage;
@@ -1667,6 +1697,9 @@ pc_init_modules(void)
 
     random_init();
 
+    /* How REP string runs are done on this host: its one CPUID check. */
+    rep_host_detect();
+
     mem_init();
 
 #ifdef USE_DYNAREC
@@ -1989,6 +2022,12 @@ pc_reset_hard_init(void)
     /* Reset any ISA RTC cards. */
     isartc_reset();
 
+    /* An ISA expansion chassis, if there is one. */
+    isa_expansion_reset();
+
+    /* Add the game port card, if one is chosen. */
+    gameport_card_reset();
+
     /* Initialize the Voodoo cards here inorder to minimize
        the chances of the SCSI controller ending up on the bridge. */
     video_voodoo_init();
@@ -1999,8 +2038,10 @@ pc_reset_hard_init(void)
 #endif
 
     /* installs first game port if no device provides one, must be late */
-    if (joystick_type[0])
-        gameport_update_joystick_type(0);
+    for (uint8_t gp = 0; gp < GAMEPORT_MAX; gp++) {
+        if (joystick_type[gp])
+            gameport_update_joystick_type(gp);
+    }
 
     ui_sb_update_panes();
 
@@ -2181,7 +2222,9 @@ pc_run(void)
 #ifdef USE_GDBSTUB /* avoid a KBC FIFO overflow when CPU emulation is stalled */
     }
 #endif
-    joystick_process(0); // Gameport 0
+    /* Each game port's joystick */
+    for (uint8_t gp = 0; gp < GAMEPORT_MAX; gp++)
+        joystick_process(gp);
     endblit();
 
     /* Done with this frame, update statistics. */

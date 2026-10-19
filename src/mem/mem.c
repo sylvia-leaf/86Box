@@ -105,8 +105,12 @@ int readlnum  = 0;
 int writelnum = 0;
 int cachesize = 256;
 
-uint32_t get_phys_virt;
+uint64_t get_phys_virt = ~0ULL;
 uint32_t get_phys_phys;
+
+/* Chains of linked blocks: what a link stub tests (mem.h). Set by the
+   hooks in every build; only the new recompiler reads it. */
+mem_chain_signal_t mem_chain_signal;
 
 int mem_a20_key     = 0;
 int mem_a20_alt     = 0;
@@ -118,6 +122,23 @@ int is_compare      = 0;
 
 uint64_t *byte_dirty_mask;
 uint64_t *byte_code_present_mask;
+/* The masks cover RAM only; every page beyond it shares these. Nothing
+   writes there through the RAM handlers, so they only ever collect the
+   code-present bits of blocks run from ROM above RAM. */
+static uint64_t byte_dirty_mask_none[64];
+static uint64_t byte_code_present_mask_none[64];
+
+void
+mem_page_set_byte_masks(page_t *p, uint32_t page_nr)
+{
+    if (byte_dirty_mask && (page_nr < (mem_size >> 2))) {
+        p->byte_dirty_mask        = &byte_dirty_mask[page_nr * 64];
+        p->byte_code_present_mask = &byte_code_present_mask[page_nr * 64];
+    } else {
+        p->byte_dirty_mask        = byte_dirty_mask_none;
+        p->byte_code_present_mask = byte_code_present_mask_none;
+    }
+}
 
 uint32_t purgable_page_list_head = 0;
 int      purgeable_page_count    = 0;
@@ -128,6 +149,10 @@ mem_mapping_t        *read_mapping[MEM_MAPPINGS_NO];
 mem_mapping_t        *write_mapping[MEM_MAPPINGS_NO];
 
 uint8_t              *_mem_exec[MEM_MAPPINGS_NO];
+
+/* Moves on whenever the map is rebuilt: a pointer mem_phys_ptr gave holds
+   while it is unchanged. */
+uint32_t mem_mapping_gen;
 
 static mem_mapping_t *base_mapping;
 static mem_mapping_t *last_mapping;
@@ -143,6 +168,13 @@ static uint8_t        mtrr_area_refcounts[MEM_MAPPINGS_NO];
 static uint32_t       remap_start_addr;
 static uint32_t       remap_start_addr2;
 static size_t         ram_size = 0;
+
+/* The bytes of guest RAM behind ram[]. */
+size_t
+mem_ram_size(void)
+{
+    return ram_size;
+}
 
 #ifdef ENABLE_MEM_LOG
 int mem_do_log = ENABLE_MEM_LOG;
@@ -171,6 +203,17 @@ mem_addr_is_ram(uint32_t addr)
            (mapping == &ram_mid_mapping2) || (mapping == &ram_remapped_mapping);
 }
 
+/* get_phys() keeps the last translation it made (get_phys_virt/_phys), and
+   it is only good while the translations stand: every TLB flush and every
+   reset forget it, or a lookup of the same linear page straight after a CR3
+   load returns the old physical page. get_phys_virt is 64 bits wide so that
+   the forgotten value matches no linear page, the top one included. */
+static __inline void
+mem_get_phys_forget(void)
+{
+    get_phys_virt = ~0ULL;
+}
+
 void
 resetreadlookup(void)
 {
@@ -195,11 +238,21 @@ resetreadlookup(void)
     writelnext   = 0;
     pccache      = 0xffffffff;
     high_page    = 0;
+    mem_get_phys_forget();
 }
 
-void
-flushmmucache(void)
+#if defined(USE_DYNAREC) && defined(CODEGEN_CHAIN)
+#    define LINKS_DROP()      codegen_links_drop_all(0)
+#    define LINKS_REVAL(a, l) codegen_links_revalidate_request(a, l)
+#else
+#    define LINKS_DROP()
+#    define LINKS_REVAL(a, l)
+#endif
+
+static void
+mem_tlb_empty(void)
 {
+    mem_get_phys_forget();
     for (uint16_t c = 0; c < 512; c++) {
         if (readlookup[c] != (int) 0xffffffff) {
             readlookup2[readlookup[c]] = LOOKUP_INV;
@@ -212,6 +265,12 @@ flushmmucache(void)
             writelookup[c]               = 0xffffffff;
         }
     }
+}
+
+static void
+flushmmucache_common(void)
+{
+    mem_tlb_empty();
     mmuflush++;
 
     pccache  = (uint32_t) 0xffffffff;
@@ -220,6 +279,26 @@ flushmmucache(void)
 #ifdef USE_DYNAREC
     codegen_flush();
 #endif
+}
+
+/* Memory changed under the processor (a mapping, shadow RAM, SMRAM, A20, a
+   reset): every link goes. */
+void
+flushmmucache(void)
+{
+    LINKS_DROP();
+    flushmmucache_common();
+}
+
+/* The processor's own: CR0, CR3 and CR4 loads and task switches. Linked
+   blocks are checked against the new translations at the loop's next
+   look, and keep their links where nothing moved (an operating system's
+   kernel keeps its mappings in every address space). */
+void
+flushmmucache_cpu(void)
+{
+    LINKS_REVAL(1, 0);
+    flushmmucache_common();
 }
 
 void
@@ -251,18 +330,69 @@ flushmmucache_pc(void)
 void
 flushmmucache_nopc(void)
 {
-    for (uint16_t c = 0; c < 512; c++) {
-        if (readlookup[c] != (int) 0xffffffff) {
-            readlookup2[readlookup[c]] = LOOKUP_INV;
-            readlookup2[readlookup[c] | 1048576] = LOOKUP_INV;
-            readlookup[c]              = 0xffffffff;
-        }
-        if ((c < 256) && (writelookup[c] != (int) 0xffffffff)) {
-            page_lookup[writelookup[c]]  = NULL;
-            writelookup2[writelookup[c]] = LOOKUP_INV;
-            writelookup[c]               = 0xffffffff;
-        }
+    LINKS_DROP();
+    mem_tlb_empty();
+}
+
+void
+flushmmucache_nopc_cpu(void)
+{
+    LINKS_REVAL(1, 0);
+    mem_tlb_empty();
+}
+
+/* A change of privilege: the lookups made at the old one go. The links
+   hold, as their key carries the CPL (codegen.h CODEGEN_CHAIN_KEY). */
+void
+flushmmucache_cpl(void)
+{
+    mem_tlb_empty();
+}
+
+#if defined(USE_DYNAREC) && defined(CODEGEN_CHAIN)
+/* The 4 MB linear regions a link's translation went through a large page
+   in (a 2 MB PAE page lies inside one): an INVLPG there drops the whole
+   page's entry, so every link into the region is looked at again
+   (flushmmucache_invlpg). */
+static uint64_t mem_link_large_regions[1024 / 64];
+
+static __inline void
+mem_link_large_note(uint32_t addr)
+{
+    mem_link_large_regions[addr >> 28] |= 1ULL << ((addr >> 22) & 63);
+}
+#endif
+
+/* No link is left (the code cache reset): no region has one. */
+void
+mem_link_large_forget(void)
+{
+#if defined(USE_DYNAREC) && defined(CODEGEN_CHAIN)
+    memset(mem_link_large_regions, 0, sizeof(mem_link_large_regions));
+#endif
+}
+
+/* INVLPG: only the links into blocks on that linear page (or one running
+   onto it) are checked against the page tables -- every link, when one
+   went through a large page in that region. */
+void
+flushmmucache_invlpg(uint32_t addr)
+{
+    mem_tlb_empty();
+#if defined(USE_DYNAREC) && defined(CODEGEN_CHAIN)
+    {
+        uint64_t      *word = &mem_link_large_regions[addr >> 28];
+        const uint64_t bit  = 1ULL << ((addr >> 22) & 63);
+
+        if (*word & bit) {
+            *word &= ~bit;
+            LINKS_REVAL(1, 0);
+        } else
+            LINKS_REVAL(0, addr);
     }
+#else
+    (void) addr;
+#endif
 }
 
 void
@@ -350,7 +480,7 @@ mmutranslatereal_normal(uint32_t addr, int rw)
     if (!(temp & 1)) {
         cr2 = addr;
         temp &= 1;
-        if (CPL == 3)
+        if ((CPL == 3) && !cpl_override)
             temp |= 4;
         if (rw == 1)
             temp |= 2;
@@ -361,10 +491,10 @@ mmutranslatereal_normal(uint32_t addr, int rw)
 
     if ((temp & 0x80) && (cr4 & CR4_PSE)) {
         /*4MB page*/
-        if (((CPL == 3) && !(temp & 4) && !cpl_override) || ((rw == 1) && !cpl_override && !(temp & 2) && (((CPL == 3) && !cpl_override) || ((is486 || isibm486) && (cr0 & WP_FLAG))))) {
+        if (((CPL == 3) && !(temp & 4) && !cpl_override) || ((rw == 1) && !(temp & 2) && (((CPL == 3) && !cpl_override) || ((is486 || isibm486) && (cr0 & WP_FLAG))))) {
             cr2 = addr;
             temp &= 1;
-            if (CPL == 3)
+            if ((CPL == 3) && !cpl_override)
                 temp |= 4;
             if (rw == 1)
                 temp |= 2;
@@ -384,10 +514,10 @@ mmutranslatereal_normal(uint32_t addr, int rw)
 
     temp  = rammap((temp & ~0xfff) + ((addr >> 10) & 0xffc));
     temp3 = temp & temp2;
-    if (!(temp & 1) || ((CPL == 3) && !(temp3 & 4) && !cpl_override) || ((rw == 1) && !cpl_override && !(temp3 & 2) && (((CPL == 3) && !cpl_override) || ((is486 || isibm486) && (cr0 & WP_FLAG))))) {
+    if (!(temp & 1) || ((CPL == 3) && !(temp3 & 4) && !cpl_override) || ((rw == 1) && !(temp3 & 2) && (((CPL == 3) && !cpl_override) || ((is486 || isibm486) && (cr0 & WP_FLAG))))) {
         cr2 = addr;
         temp &= 1;
-        if (CPL == 3)
+        if ((CPL == 3) && !cpl_override)
             temp |= 4;
         if (rw == 1)
             temp |= 2;
@@ -420,7 +550,7 @@ mmutranslatereal_pae(uint32_t addr, int rw)
     if (!(temp & 1)) {
         cr2 = addr;
         temp &= 1;
-        if (CPL == 3)
+        if ((CPL == 3) && !cpl_override)
             temp |= 4;
         if (rw == 1)
             temp |= 2;
@@ -436,7 +566,7 @@ mmutranslatereal_pae(uint32_t addr, int rw)
     if (!(temp & 1)) {
         cr2 = addr;
         temp &= 1;
-        if (CPL == 3)
+        if ((CPL == 3) && !cpl_override)
             temp |= 4;
         if (rw == 1)
             temp |= 2;
@@ -458,10 +588,10 @@ mmutranslatereal_pae(uint32_t addr, int rw)
 
     if (temp & 0x80) {
         /*2MB page*/
-        if (((CPL == 3) && !(temp & 4) && !cpl_override) || ((rw == 1) && !cpl_override && !(temp & 2) && (((CPL == 3) && !cpl_override) || (cr0 & WP_FLAG)))) {
+        if (((CPL == 3) && !(temp & 4) && !cpl_override) || ((rw == 1) && !(temp & 2) && (((CPL == 3) && !cpl_override) || ((is486 || isibm486) && (cr0 & WP_FLAG))))) {
             cr2 = addr;
             temp &= 1;
-            if (CPL == 3)
+            if ((CPL == 3) && !cpl_override)
                 temp |= 4;
             if (rw == 1)
                 temp |= 2;
@@ -479,10 +609,10 @@ mmutranslatereal_pae(uint32_t addr, int rw)
     temp  = rammap64(addr4) & 0x000000ffffffffffULL;
     nxbit = rammap64(addr4) & 0x8000000000000000ULL;
     temp3 = temp & temp4;
-    if (!(temp & 1) || ((CPL == 3) && !(temp3 & 4) && !cpl_override) || ((rw == 1) && !cpl_override && !(temp3 & 2) && (((CPL == 3) && !cpl_override) || (cr0 & WP_FLAG)))) {
+    if (!(temp & 1) || ((CPL == 3) && !(temp3 & 4) && !cpl_override) || ((rw == 1) && !(temp3 & 2) && (((CPL == 3) && !cpl_override) || ((is486 || isibm486) && (cr0 & WP_FLAG))))) {
         cr2 = addr;
         temp &= 1;
-        if (CPL == 3)
+        if ((CPL == 3) && !cpl_override)
             temp |= 4;
         if (rw == 1)
             temp |= 2;
@@ -550,7 +680,7 @@ mmutranslate_noabrt_normal(uint32_t addr, int rw)
 
     if ((temp & 0x80) && (cr4 & CR4_PSE)) {
         /*4MB page*/
-        if (((CPL == 3) && !(temp & 4) && !cpl_override) || ((rw == 1) && !cpl_override && !(temp & 2) && ((CPL == 3) || (cr0 & WP_FLAG))))
+        if (((CPL == 3) && !(temp & 4) && !cpl_override) || ((rw == 1) && !(temp & 2) && (((CPL == 3) && !cpl_override) || ((is486 || isibm486) && (cr0 & WP_FLAG)))))
             return 0xffffffffffffffffULL;
 
         uint64_t page = temp & ~0x3fffff;
@@ -562,7 +692,7 @@ mmutranslate_noabrt_normal(uint32_t addr, int rw)
     temp  = rammap((temp & ~0xfff) + ((addr >> 10) & 0xffc));
     temp3 = temp & temp2;
 
-    if (!(temp & 1) || ((CPL == 3) && !(temp3 & 4) && !cpl_override) || ((rw == 1) && !cpl_override && !(temp3 & 2) && ((CPL == 3) || (cr0 & WP_FLAG))))
+    if (!(temp & 1) || ((CPL == 3) && !(temp3 & 4) && !cpl_override) || ((rw == 1) && !(temp3 & 2) && (((CPL == 3) && !cpl_override) || ((is486 || isibm486) && (cr0 & WP_FLAG)))))
         return 0xffffffffffffffffULL;
 
     return (uint64_t) ((temp & ~0xfff) + (addr & 0xfff));
@@ -597,7 +727,7 @@ mmutranslate_noabrt_pae(uint32_t addr, int rw)
 
     if (temp & 0x80) {
         /*2MB page*/
-        if (((CPL == 3) && !(temp & 4) && !cpl_override) || ((rw == 1) && !cpl_override && !(temp & 2) && ((CPL == 3) || (cr0 & WP_FLAG))))
+        if (((CPL == 3) && !(temp & 4) && !cpl_override) || ((rw == 1) && !(temp & 2) && (((CPL == 3) && !cpl_override) || ((is486 || isibm486) && (cr0 & WP_FLAG)))))
             return 0xffffffffffffffffULL;
 
         return ((temp & ~0x1fffffULL) + (addr & 0x1fffff)) & 0x000000ffffffffffULL;
@@ -612,11 +742,11 @@ mmutranslate_noabrt_pae(uint32_t addr, int rw)
 
     temp3 = temp & temp4;
 
-    if (!(temp & 1) || ((CPL == 3) && !(temp3 & 4) && !cpl_override) || ((rw == 1) && !cpl_override && !(temp3 & 2) && ((CPL == 3) || (cr0 & WP_FLAG))))
+    if (!(temp & 1) || ((CPL == 3) && !(temp3 & 4) && !cpl_override) || ((rw == 1) && !(temp3 & 2) && (((CPL == 3) && !cpl_override) || ((is486 || isibm486) && (cr0 & WP_FLAG)))))
         return 0xffffffffffffffffULL;
-
     if(nxbit && (rw == 2) && (msr.amd_efer & EFER_NXE) && (cpu_features & CPU_FEATURE_NX))
         return 0xffffffffffffffffULL;
+
 
     return ((temp & ~0xfffULL) + ((uint64_t) (addr & 0xfff))) & 0x000000ffffffffffULL;
 }
@@ -633,6 +763,72 @@ mmutranslate_noabrt(uint32_t addr, int rw)
     else
         return mmutranslate_noabrt_normal(addr, rw);
 }
+
+#if defined(USE_DYNAREC) && defined(CODEGEN_CHAIN)
+/* Where a linear page translates for a link (codegen_block.c): the
+   physical page as get_phys() gives it, | 2 when user code may run there,
+   | 1 when present; 0 when not present or beyond the physical space. It
+   sets no accessed bit and raises no fault: an entry on the way whose
+   accessed bit is clear gives 0 as well, so the link misses and the
+   dispatcher's own walk sets the bit, as the processor's fetch would. */
+uint64_t
+mmu_link_translate(uint32_t addr)
+{
+    uint64_t page;
+    int      user;
+
+    addr &= ~0xfff;
+    if (!(cr0 >> 31))
+        return ((uint64_t) (addr & rammask) & ~0xfffULL) | 3;
+
+    if (cr4 & CR4_PAE) {
+        uint64_t pdpte = pae_pdpte[(addr >> 30) & 3] & 0x000000ffffffffffULL; /* as loaded with CR3 */
+        uint64_t pde;
+        uint64_t pte;
+
+        if (!(pdpte & 1))
+            return 0;
+        pde = rammap64((pdpte & ~0xfffULL) + ((addr >> 18) & 0xff8)) & 0x000000ffffffffffULL;
+        if ((pde & 0x21) != 0x21)
+            return 0;
+        if (pde & 0x80) {
+            page = (pde & ~0x1fffffULL) + (addr & 0x1fffff);
+            user = !!(pde & 4);
+            mem_link_large_note(addr);
+        } else {
+            pte = rammap64((pde & ~0xfffULL) + ((addr >> 9) & 0xff8)) & 0x000000ffffffffffULL;
+            if ((pte & 0x21) != 0x21)
+                return 0;
+            page = pte & ~0xfffULL;
+            user = !!(pte & pde & 4);
+        }
+    } else {
+        uint32_t pde = rammap((cr3 & ~0xfff) + ((addr >> 20) & 0xffc));
+        uint32_t pte;
+
+        if ((pde & 0x21) != 0x21)
+            return 0;
+        if ((pde & 0x80) && (cr4 & CR4_PSE)) {
+            page = (uint64_t) (pde & ~0x3fffff);
+            if (cpu_features & CPU_FEATURE_PSE36)
+                page |= (uint64_t) (pde & 0x1e000) << 19;
+            page += addr & 0x3fffff;
+            user = !!(pde & 4);
+            mem_link_large_note(addr);
+        } else {
+            pte = rammap((pde & ~0xfff) + ((addr >> 10) & 0xffc));
+            if ((pte & 0x21) != 0x21)
+                return 0;
+            page = pte & ~0xfff;
+            user = !!(pte & pde & 4);
+        }
+    }
+    /* Beyond 4 GB get_phys() gives FFFFFFFFh, as here. */
+    if (page > 0xffffffffULL)
+        page = 0xffffffffULL;
+    return ((uint64_t) ((uint32_t) page & rammask) & ~0xfffULL) | (user ? 2 : 0) | 1;
+}
+#endif
 
 uint8_t
 mem_addr_range_match(uint32_t addr, uint32_t start, uint32_t len)
@@ -1904,6 +2100,24 @@ do_mmutranslate(uint32_t addr, uint32_t *a64, int num, int write)
     }
 }
 
+/* Where the len bytes at addr are, as the processor would read them, when
+   they lie in one granule of plain memory (RAM or ROM behind no handler);
+   NULL otherwise, for the caller to read them one at a time. */
+const uint8_t *
+mem_phys_ptr(uint32_t addr, uint32_t len)
+{
+    const mem_mapping_t *map = read_mapping_bus[addr >> MEM_GRANULARITY_BITS];
+    uint32_t             off;
+
+    if (!len || (len > MEM_GRANULARITY_SIZE) || !cpu_use_exec || (map == NULL) || (map->exec == NULL) ||
+        (((addr & MEM_GRANULARITY_MASK) + len) > MEM_GRANULARITY_SIZE))
+        return NULL;
+    off = (addr - map->base) & map->mask;
+    if ((((addr + len - 1) - map->base) & map->mask) != (off + len - 1))
+        return NULL; /* a small mirrored mapping wraps inside the granule */
+    return &map->exec[off];
+}
+
 uint8_t
 mem_readb_phys(uint32_t addr)
 {
@@ -2133,6 +2347,22 @@ page_remove_from_evict_list(page_t *page)
     purgeable_page_count--;
 }
 
+#    ifdef CODEGEN_CHAIN
+/* A write changed compiled code on the page: if it reached a linked block,
+   that block's links go (codegen_page_code_hit), as only a link skips the
+   dirty test a dispatch makes. */
+static __inline void
+mem_page_code_written(const page_t *p, uint64_t mask, int byte_offset, uint64_t bm0, uint64_t bm1)
+{
+    if (!p->block && !p->block_2)
+        return;
+    if (!((p->code_present_mask & mask) || (p->byte_code_present_mask[byte_offset] & bm0) ||
+          (bm1 && (p->byte_code_present_mask[byte_offset + 1] & bm1))))
+        return;
+    codegen_page_code_hit(p, mask, byte_offset, bm0, bm1);
+}
+#    endif
+
 void
 mem_write_ramb_page(uint32_t addr, uint8_t val, page_t *page)
 {
@@ -2155,6 +2385,9 @@ mem_write_ramb_page(uint32_t addr, uint8_t val, page_t *page)
         page->byte_dirty_mask[byte_offset] |= byte_mask;
         if ((page->byte_code_present_mask[byte_offset] & byte_mask) && !page_in_evict_list(page))
             page_add_to_evict_list(page);
+#    ifdef CODEGEN_CHAIN
+        mem_page_code_written(page, mask, byte_offset, byte_mask, 0);
+#    endif
     }
 }
 
@@ -2190,6 +2423,9 @@ mem_write_ramw_page(uint32_t addr, uint16_t val, page_t *page)
 
         if ((page->byte_code_present_mask[byte_offset] & byte_mask) && !page_in_evict_list(page))
             page_add_to_evict_list(page);
+#    ifdef CODEGEN_CHAIN
+        mem_page_code_written(page, mask, byte_offset, byte_mask, ((addr & PAGE_BYTE_MASK_MASK) == PAGE_BYTE_MASK_MASK) ? 1 : 0);
+#    endif
     }
 }
 
@@ -2215,13 +2451,17 @@ mem_write_raml_page(uint32_t addr, uint32_t val, page_t *page)
         page->byte_dirty_mask[byte_offset] |= byte_mask;
         if (!page_in_evict_list(page) && ((page->code_present_mask & mask) || (page->byte_code_present_mask[byte_offset] & byte_mask)))
             page_add_to_evict_list(page);
+        uint64_t byte_mask_2 = 0;
         if ((addr & PAGE_BYTE_MASK_MASK) > (PAGE_BYTE_MASK_MASK - 3)) {
-            uint32_t byte_mask_2 = 0xf >> (4 - (addr & 3));
+            byte_mask_2 = 0xf >> (4 - (addr & 3));
 
             page->byte_dirty_mask[byte_offset + 1] |= byte_mask_2;
             if ((page->byte_code_present_mask[byte_offset + 1] & byte_mask_2) && !page_in_evict_list(page))
                 page_add_to_evict_list(page);
         }
+#    ifdef CODEGEN_CHAIN
+        mem_page_code_written(page, mask, byte_offset, byte_mask, byte_mask_2);
+#    endif
     }
 }
 void
@@ -2416,6 +2656,10 @@ mem_invalidate_range(uint32_t start_addr, uint32_t end_addr)
 
             if (!page_in_evict_list(page))
                 page_add_to_evict_list(page);
+#    ifdef CODEGEN_CHAIN
+            if (page->block || page->block_2)
+                codegen_page_code_drop(page);
+#    endif
         }
     }
 }
@@ -2517,6 +2761,8 @@ mem_mapping_recalc(uint64_t base, uint64_t size, uint32_t base_ignore)
        and overwrites whatever follows them. */
     if ((base + size + (base_ignore & mask)) > MEM_ADDR_SPACE_END)
         mem_mapping_past_4g(base, size, base_ignore & (uint32_t) mask);
+
+    mem_mapping_gen++;
 
     map = base_mapping;
 
@@ -3125,8 +3371,7 @@ mem_reset(void)
             pages[c].write_l = mem_write_raml_page;
         }
         pages[c].evict_prev             = EVICT_NOT_IN_LIST;
-        pages[c].byte_dirty_mask        = &byte_dirty_mask[c * 64];
-        pages[c].byte_code_present_mask = &byte_code_present_mask[c * 64];
+        mem_page_set_byte_masks(&pages[c], c);
     }
 
     memset(_mem_exec, 0x00, sizeof(_mem_exec));
@@ -3245,8 +3490,7 @@ mem_remap_top_ex_common(int kb, uint32_t start, int mid)
         pages[c].write_b = set ? mem_write_ramb_page : NULL;
         pages[c].write_w = set ? mem_write_ramw_page : NULL;
         pages[c].write_l = set ? mem_write_raml_page : NULL;
-        pages[c].byte_dirty_mask        = &byte_dirty_mask[(addr >> 12) * 64];
-        pages[c].byte_code_present_mask = &byte_code_present_mask[(addr >> 12) * 64];
+        mem_page_set_byte_masks(&pages[c], addr >> 12);
     }
 
     mem_set_mem_state_both(start * 1024, size * 1024, set ? (MEM_READ_INTERNAL | MEM_WRITE_INTERNAL) : (MEM_READ_EXTERNAL | MEM_WRITE_EXTERNAL));
@@ -3269,8 +3513,7 @@ mem_remap_top_ex_common(int kb, uint32_t start, int mid)
             pages[c].write_w = NULL;
             pages[c].write_l = NULL;
         }
-        pages[c].byte_dirty_mask        = &byte_dirty_mask[c * 64];
-        pages[c].byte_code_present_mask = &byte_code_present_mask[c * 64];
+        mem_page_set_byte_masks(&pages[c], c);
     }
 
     if (set) {
@@ -3499,4 +3742,27 @@ mem_invalidate_mtrr(uint8_t wb)
             mtrr_areas[page] = mtrr;
         }
     }
+}
+/* ---- the debug console's view of the map --------------------------------- */
+
+mem_mapping_t *
+mem_debug_first_mapping(void)
+{
+    return base_mapping;
+}
+
+/* What a bus master meets at addr. */
+void
+mem_debug_bus(uint32_t addr, mem_mapping_t **rd, mem_mapping_t **wr)
+{
+    *rd = read_mapping_bus[addr >> MEM_GRANULARITY_BITS];
+    *wr = write_mapping_bus[addr >> MEM_GRANULARITY_BITS];
+}
+
+/* The chipset's access state for addr: n = 0 processor, 1 processor in SMM,
+   2 bus, 3 bus with SMIACT#. */
+uint16_t
+mem_debug_state(uint32_t addr, int n)
+{
+    return _mem_state[addr >> MEM_GRANULARITY_BITS].vals[n & 3];
 }

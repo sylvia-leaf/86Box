@@ -90,9 +90,9 @@ VMManagerPreferences::
     ui->labelDiscordPrivacy->setEnabled(ui->discordCheckBox->isChecked());
     connect(ui->discordCheckBox, &QCheckBox::toggled, ui->comboBoxDiscordPrivacy, &QWidget::setEnabled);
     connect(ui->discordCheckBox, &QCheckBox::toggled, ui->labelDiscordPrivacy, &QWidget::setEnabled);
-#else
-    ui->groupBoxDiscord->setVisible(false);
 #endif
+
+    ui->settingsLayoutCheckBox->setChecked(settings_layout == 1);
 
     ui->radioButtonSystem->setChecked(color_scheme == 0);
     ui->radioButtonLight->setChecked(color_scheme == 1);
@@ -144,6 +144,7 @@ VMManagerPreferences::accept()
 #ifdef DISCORD
     discord_presence = ui->discordCheckBox->isChecked() ? (ui->comboBoxDiscordPrivacy->currentIndex() + 1) : 0;
 #endif
+    settings_layout = ui->settingsLayoutCheckBox->isChecked() ? 1 : 0;
     config_save_global();
 
 #if EMU_BUILD_NUM != 0

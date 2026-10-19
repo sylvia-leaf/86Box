@@ -21,6 +21,7 @@
 #include <QDebug>
 
 #include "qt_mainwindow.hpp"
+#include "qt_debugconsole.hpp"
 #include "ui_qt_mainwindow.h"
 
 #include "qt_specifydimensions.h"
@@ -582,6 +583,29 @@ MainWindow::MainWindow(QWidget *parent)
         ui->actionVulkan->setVisible(false);
     }
 
+    /* Action > Debug console: registers and memory of the paused machine. */
+    {
+        auto *dbg = new QAction(tr("&Debug console..."), this);
+        ui->menuAction->insertAction(ui->actionFullscreen, dbg);
+        ui->menuAction->insertSeparator(ui->actionFullscreen);
+        connect(dbg, &QAction::triggered, this, [this]() {
+            emit setMouseCapture(false);
+            releaseKeyboard();
+            keyboard_all_up();
+            if (!debugConsole)
+                debugConsole = new DebugConsole(this);
+            debugConsole->show();
+            debugConsole->raise();
+            debugConsole->activateWindow();
+        });
+        /* debug_console_port in the config: listening from start-up, with
+           no window, so a headless run can be looked at. */
+        if (debug_console_port) {
+            debugConsole = new DebugConsole(this);
+            debugConsole->listenOn(debug_console_port);
+        }
+    }
+
     auto actGroup = new QActionGroup(this);
     actGroup->addAction(ui->actionSoftware_Renderer);
     actGroup->addAction(ui->actionOpenGL);
@@ -843,6 +867,12 @@ MainWindow::MainWindow(QWidget *parent)
     refreshDisplayRatioActions();
     if (force_constant_mouse > 0) {
         ui->actionUpdate_mouse_every_CPU_frame->setChecked(true);
+    }
+    /* --fast-forward, or fast_forward = 1 in the machine's configuration:
+       start fast-forwarded. */
+    if (start_in_fast_forward || start_fast_forward) {
+        fast_forward = true;
+        updateUiFastForwardState();
     }
 
     if (!vnc_enabled)
@@ -1396,33 +1426,38 @@ MainWindow::on_actionSettings_triggered()
 {
     const int currentPause = dopause;
     plat_pause(1);
-    Settings settings(this);
-    settings.setModal(true);
-    settings.setWindowModality(Qt::WindowModal);
-    settings.setWindowFlag(Qt::CustomizeWindowHint, true);
-    settings.setWindowFlag(Qt::WindowTitleHint, true);
-    settings.setWindowFlag(Qt::WindowSystemMenuHint, false);
-    settings.exec();
+    /* The new layout's "Use Classic Mode" opens the dialog again. */
+    for (;;) {
+        Settings settings(this);
+        settings.setModal(true);
+        settings.setWindowModality(Qt::WindowModal);
+        settings.setWindowFlag(Qt::CustomizeWindowHint, true);
+        settings.setWindowFlag(Qt::WindowTitleHint, true);
+        settings.setWindowFlag(Qt::WindowSystemMenuHint, false);
+        if (settings.exec() == Settings::ReopenClassic)
+            continue;
 
-    switch (settings.result()) {
-        default:
-            break;
-        case QDialog::Accepted:
-            settings.save(0);
-            config_changed = 2;
-            emit vmmConfigurationChanged();
-            pc_reset_hard();
-            video_copy = (video_grayscale || invert_display) ? video_transform_copy : memcpy;
-            config_save();
-            reset_screen_size();
-            device_force_redraw();
-            for (int i = 0; i < MONITORS_NUM; i++) {
-                if (monitors[i].target_buffer)
-                    video_force_resize_set_monitor(1, i);
-            }
-            break;
-        case QDialog::Rejected:
-            break;
+        switch (settings.result()) {
+            default:
+                break;
+            case QDialog::Accepted:
+                settings.save(0);
+                config_changed = 2;
+                emit vmmConfigurationChanged();
+                pc_reset_hard();
+                video_copy = (video_grayscale || invert_display) ? video_transform_copy : memcpy;
+                config_save();
+                reset_screen_size();
+                device_force_redraw();
+                for (int i = 0; i < MONITORS_NUM; i++) {
+                    if (monitors[i].target_buffer)
+                        video_force_resize_set_monitor(1, i);
+                }
+                break;
+            case QDialog::Rejected:
+                break;
+        }
+        break;
     }
     plat_pause(currentPause);
 }
@@ -1700,6 +1735,18 @@ MainWindow::keyMatchesAccelerator(const QKeyEvent *ke, const char *name)
 bool
 MainWindow::eventFilter(QObject *receiver, QEvent *event)
 {
+    /* The application-wide guest keyboard filter must leave the modeless
+       console's text input alone, including while the machine is running. */
+    if (debugConsole) {
+        if (debugConsole->isActiveWindow()
+            && (event->type() == QEvent::KeyPress || event->type() == QEvent::KeyRelease
+                || event->type() == QEvent::ShortcutOverride))
+            return false;
+        auto *widget = qobject_cast<QWidget *>(receiver);
+        if (widget && (widget == debugConsole || debugConsole->isAncestorOf(widget)))
+            return QMainWindow::eventFilter(receiver, event);
+    }
+
     if (event->type() == QEvent::KeyPress || event->type() == QEvent::KeyRelease) {
         auto      *ke   = static_cast<QKeyEvent *>(event);
         const bool down = event->type() == QEvent::KeyPress;

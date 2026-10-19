@@ -13,6 +13,7 @@
 #include "x86seg.h"
 #include "x87_sf.h"
 #include "x87.h"
+#include "x87_host.h"
 
 #include "386_common.h"
 
@@ -23,8 +24,25 @@
 #include "codegen_ops.h"
 #include "codegen_ops_helpers.h"
 #include "codegen_backend.h"
+#include "codegen_ops_x87h.h"
 
 #define MAX_INSTRUCTION_COUNT 50
+
+#ifdef CODEGEN_CHAIN
+/* How the block's last instruction lets it end: 1, a near branch to a
+   constant target, in a link; 2, a near RET, CALL or indirect JMP, whose
+   target is known only when it runs, in an indirect link; 3, any other with
+   a constant PC after it, in a link if the block ends evenly (the recording
+   loop decides, 386_dynarec.c); 0, as it always did. */
+int        codegen_end_link_ok;
+static int codegen_is_near_indirect;
+int        codegen_end_link_pending; /* for codegen_ir_compile, after unrolling */
+static int codegen_is_near_branch;
+/* The block reached its instruction limit: the recording loop ends it once
+   this instruction has run, as an even end (386_dynarec.c), so the
+   instruction's own ending of it is told apart. */
+int codegen_block_full;
+#endif
 static struct {
     uint32_t pc;
     int      op_ssegs;
@@ -93,6 +111,16 @@ static x86seg  *last_op_ea_seg;
 static uint32_t last_op_32;
 static int      last_op_sse_xmm;
 int op_sse_xmm = 0;
+
+#if X87_HOST_AVAILABLE
+void
+codegen_x87h_forget(void)
+{
+    last_op_ssegs  = -1;
+    last_op_ea_seg = NULL;
+    last_op_32     = -1;
+}
+#endif
 
 void
 codegen_generate_reset(void)
@@ -469,7 +497,9 @@ codegen_fp_pending_check(ir_data_t *ir)
     uop_AND_IMM(ir, IREG_temp0, IREG_temp0, 0x80);
     jump_uop = uop_CMP_IMM_JZ_DEST(ir, IREG_temp0, 0);
     uop_MOV_IMM(ir, IREG_oldpc, cpu_state.oldpc);
-    uop_CALL_FUNC_RESULT(ir, IREG_temp0, codegen_fp_pending);
+    /* Only the path that takes the exception, and leaves the block, changes
+       anything the IR caches. */
+    uop_CALL_FUNC_RESULT_ORDERED(ir, IREG_temp0, codegen_fp_pending);
     uop_CMP_IMM_JZ(ir, IREG_temp0, 1, codegen_exit_rout);
     uop_set_jump_dest(ir, jump_uop);
 }
@@ -546,13 +576,21 @@ codegen_fpu_guard_int_range(ir_data_t *ir, uint32_t fetchdat, uint32_t op_32, ui
     uop_set_jump_dest(ir, jump_uop);
 }
 
-/*Escapes the interpreter runs every time: softfloat, no FPU fitted (#NM or
-  nothing), and an 8087 or 287, whose projective infinities (IC clear) the
-  compiled arithmetic and compares don't know*/
-static int
-codegen_x87_interpreted(void)
+/*An x87 escape's compiled forms: none for one the interpreter runs every
+  time (no FPU fitted, #NM or nothing, and an 8087 or 287, whose projective
+  infinities (IC clear) the compiled arithmetic and compares don't know);
+  the host-x87 FPU's in that mode; none in softfloat mode; else those of
+  the double-based FPU*/
+static RecompOpFn *
+codegen_x87_recomp(int esc, RecompOpFn *table)
 {
-    return fpu_softfloat || !hasfpu || (fpu_type < FPU_287XL);
+    if (!hasfpu || (fpu_type < FPU_287XL))
+        return NULL;
+#if X87_HOST_AVAILABLE
+    if (x87_host_on())
+        return recomp_opcodes_x87h[esc];
+#endif
+    return fpu_softfloat ? NULL : table;
 }
 
 /* FIST(P) of a word or doubleword on the x86-64 backend: its conversion
@@ -746,7 +784,7 @@ codegen_generate_call(uint8_t opcode, OpFn op, uint32_t fetchdat, uint32_t new_p
                 x87_op          = ((opcode & 0x07) << 8) | (fetchdat & 0xff);
                 op87            = (op87 & 0xf800) | ((opcode & 0x07) << 8) | (fetchdat & 0xff);
                 op_table        = (op_32 & 0x200) ? x86_dynarec_opcodes_d8_a32 : x86_dynarec_opcodes_d8_a16;
-                recomp_op_table = codegen_x87_interpreted() ? NULL : recomp_opcodes_d8;
+                recomp_op_table = codegen_x87_recomp(0, recomp_opcodes_d8);
                 opcode_shift    = 3;
                 opcode_mask     = 0x1f;
                 over            = 1;
@@ -762,7 +800,7 @@ codegen_generate_call(uint8_t opcode, OpFn op, uint32_t fetchdat, uint32_t new_p
                 x87_op          = ((opcode & 0x07) << 8) | (fetchdat & 0xff);
                 op87            = (op87 & 0xf800) | ((opcode & 0x07) << 8) | (fetchdat & 0xff);
                 op_table        = (op_32 & 0x200) ? x86_dynarec_opcodes_d9_a32 : x86_dynarec_opcodes_d9_a16;
-                recomp_op_table = codegen_x87_interpreted() ? NULL : recomp_opcodes_d9;
+                recomp_op_table = codegen_x87_recomp(1, recomp_opcodes_d9);
                 opcode_mask     = 0xff;
                 over            = 1;
                 pc_off          = -1;
@@ -777,7 +815,7 @@ codegen_generate_call(uint8_t opcode, OpFn op, uint32_t fetchdat, uint32_t new_p
                 x87_op          = ((opcode & 0x07) << 8) | (fetchdat & 0xff);
                 op87            = (op87 & 0xf800) | ((opcode & 0x07) << 8) | (fetchdat & 0xff);
                 op_table        = (op_32 & 0x200) ? x86_dynarec_opcodes_da_a32 : x86_dynarec_opcodes_da_a16;
-                recomp_op_table = codegen_x87_interpreted() ? NULL : recomp_opcodes_da;
+                recomp_op_table = codegen_x87_recomp(2, recomp_opcodes_da);
                 opcode_mask     = 0xff;
                 over            = 1;
                 pc_off          = -1;
@@ -792,7 +830,7 @@ codegen_generate_call(uint8_t opcode, OpFn op, uint32_t fetchdat, uint32_t new_p
                 x87_op          = ((opcode & 0x07) << 8) | (fetchdat & 0xff);
                 op87            = (op87 & 0xf800) | ((opcode & 0x07) << 8) | (fetchdat & 0xff);
                 op_table        = (op_32 & 0x200) ? x86_dynarec_opcodes_db_a32 : x86_dynarec_opcodes_db_a16;
-                recomp_op_table = codegen_x87_interpreted() ? NULL : recomp_opcodes_db;
+                recomp_op_table = codegen_x87_recomp(3, recomp_opcodes_db);
                 opcode_mask     = 0xff;
                 over            = 1;
                 pc_off          = -1;
@@ -807,7 +845,7 @@ codegen_generate_call(uint8_t opcode, OpFn op, uint32_t fetchdat, uint32_t new_p
                 x87_op          = ((opcode & 0x07) << 8) | (fetchdat & 0xff);
                 op87            = (op87 & 0xf800) | ((opcode & 0x07) << 8) | (fetchdat & 0xff);
                 op_table        = (op_32 & 0x200) ? x86_dynarec_opcodes_dc_a32 : x86_dynarec_opcodes_dc_a16;
-                recomp_op_table = codegen_x87_interpreted() ? NULL : recomp_opcodes_dc;
+                recomp_op_table = codegen_x87_recomp(4, recomp_opcodes_dc);
                 opcode_shift    = 3;
                 opcode_mask     = 0x1f;
                 over            = 1;
@@ -823,7 +861,7 @@ codegen_generate_call(uint8_t opcode, OpFn op, uint32_t fetchdat, uint32_t new_p
                 x87_op          = ((opcode & 0x07) << 8) | (fetchdat & 0xff);
                 op87            = (op87 & 0xf800) | ((opcode & 0x07) << 8) | (fetchdat & 0xff);
                 op_table        = (op_32 & 0x200) ? x86_dynarec_opcodes_dd_a32 : x86_dynarec_opcodes_dd_a16;
-                recomp_op_table = codegen_x87_interpreted() ? NULL : recomp_opcodes_dd;
+                recomp_op_table = codegen_x87_recomp(5, recomp_opcodes_dd);
                 opcode_mask     = 0xff;
                 over            = 1;
                 pc_off          = -1;
@@ -838,7 +876,7 @@ codegen_generate_call(uint8_t opcode, OpFn op, uint32_t fetchdat, uint32_t new_p
                 x87_op          = ((opcode & 0x07) << 8) | (fetchdat & 0xff);
                 op87            = (op87 & 0xf800) | ((opcode & 0x07) << 8) | (fetchdat & 0xff);
                 op_table        = (op_32 & 0x200) ? x86_dynarec_opcodes_de_a32 : x86_dynarec_opcodes_de_a16;
-                recomp_op_table = codegen_x87_interpreted() ? NULL : recomp_opcodes_de;
+                recomp_op_table = codegen_x87_recomp(6, recomp_opcodes_de);
                 opcode_mask     = 0xff;
                 over            = 1;
                 pc_off          = -1;
@@ -853,7 +891,7 @@ codegen_generate_call(uint8_t opcode, OpFn op, uint32_t fetchdat, uint32_t new_p
                 x87_op          = ((opcode & 0x07) << 8) | (fetchdat & 0xff);
                 op87            = (op87 & 0xf800) | ((opcode & 0x07) << 8) | (fetchdat & 0xff);
                 op_table        = (op_32 & 0x200) ? x86_dynarec_opcodes_df_a32 : x86_dynarec_opcodes_df_a16;
-                recomp_op_table = codegen_x87_interpreted() ? NULL : recomp_opcodes_df;
+                recomp_op_table = codegen_x87_recomp(7, recomp_opcodes_df);
                 opcode_mask     = 0xff;
                 over            = 1;
                 pc_off          = -1;
@@ -871,7 +909,7 @@ codegen_generate_call(uint8_t opcode, OpFn op, uint32_t fetchdat, uint32_t new_p
                 last_prefix = 0xf2;
 #endif
                 op_table        = x86_dynarec_opcodes_REPNE;
-                recomp_op_table = recomp_opcodes_REPNE;
+                recomp_op_table = NULL;
                 is_repne = 1;
                 is_fpu          = 0;
                 break;
@@ -880,7 +918,7 @@ codegen_generate_call(uint8_t opcode, OpFn op, uint32_t fetchdat, uint32_t new_p
                 last_prefix = 0xf3;
 #endif
                 op_table        = x86_dynarec_opcodes_REPE;
-                recomp_op_table = recomp_opcodes_REPE;
+                recomp_op_table = NULL;
                 is_repe = 1;
                 is_fpu          = 0;
                 break;
@@ -924,6 +962,15 @@ generate_call:
     codegen_instructions[block->ins].flags_op  = codegen_flags_changed ? cpu_state.flags_op : FLAGS_UNKNOWN;
 
     codegen_timing_opcode(opcode, fetchdat, op_32, op_pc);
+
+#ifdef CODEGEN_CHAIN
+    codegen_end_link_ok      = 0;
+    codegen_is_near_branch   = (op_table == x86_dynarec_opcodes && ((opcode & 0xf0) == 0x70 || (opcode & 0xfc) == 0xe0 || opcode == 0xe8 || opcode == 0xe9 || opcode == 0xeb)) ||
+                               (op_table == x86_dynarec_opcodes_0f && ((opcode & 0xf0) == 0x80));
+    codegen_is_near_indirect = (op_table == x86_dynarec_opcodes) &&
+                               ((opcode == 0xc2) || (opcode == 0xc3) || (opcode == 0xe8) ||
+                                ((opcode == 0xff) && (((fetchdat & 0x38) == 0x10) || ((fetchdat & 0x38) == 0x20))));
+#endif
 
     codegen_accumulate(ir, ACCREG_cycles, -codegen_block_cycles);
     codegen_block_cycles = 0;
@@ -1048,7 +1095,9 @@ generate_call:
         uop_CALL_FUNC(ir, x87_ferr_nowait);
     }
 
-    /* A pending exception is taken only with ES set: the call only then */
+    /* A pending exception is taken only with ES set: the call only then.
+       Only the path that takes it, and leaves the block, changes anything
+       the IR caches. */
     if (is_fpu && !fpu_softfloat && !x87_op_is_nowait(x87_op) && !codegen_fpu_entered) {
         int jump_uop;
 
@@ -1056,7 +1105,7 @@ generate_call:
         uop_AND_IMM(ir, IREG_temp3, IREG_temp3, FPU_SW_Summary);
         jump_uop = uop_CMP_IMM_JZ_DEST(ir, IREG_temp3, 0);
         uop_MOV_IMM(ir, IREG_oldpc, cpu_state.oldpc);
-        uop_CALL_FUNC_RESULT(ir, IREG_temp3, x87_legacy_pending_entry);
+        uop_CALL_FUNC_RESULT_ORDERED(ir, IREG_temp3, x87_legacy_pending_entry);
         uop_CMP_IMM_JZ(ir, IREG_temp3, 1, codegen_exit_rout);
         uop_set_jump_dest(ir, jump_uop);
     }
@@ -1097,13 +1146,34 @@ generate_call:
             }
             if (new_pc != -1)
                 uop_MOV_IMM(ir, IREG_pc, new_pc);
+#ifdef CODEGEN_CHAIN
+            /* A near branch with a constant target: if the block ends on
+               it, its end can be a link (codegen_block_end_recompile); a
+               near RET, CALL or indirect JMP, whose target is known only
+               when it runs, an indirect link (the target looked up); any
+               other with a constant PC after it falls through there, and
+               can be a link if the block ends for its size or at the end
+               of STI's shadow (the recording loop decides, 386_dynarec.c). */
+            if ((new_pc != -1) && codegen_is_near_branch)
+                codegen_end_link_ok = 1;
+            else if ((new_pc == -1) && codegen_is_near_indirect)
+                codegen_end_link_ok = 2;
+            else if (new_pc != -1)
+                codegen_end_link_ok = 3;
+            else
+                codegen_end_link_ok = 0;
+#endif
 
             codegen_endpc = (cs + cpu_state.pc) + 8;
 
             block->ins++;
 
             if (block->ins >= MAX_INSTRUCTION_COUNT)
+#ifdef CODEGEN_CHAIN
+                codegen_block_full = 1;
+#else
                 CPU_BLOCK_END();
+#endif
 
             return;
         }
@@ -1165,7 +1235,18 @@ codegen_skip:
     if (op_ssegs != last_op_ssegs)
         uop_MOV_IMM(ir, IREG_ssegs, op_ssegs);
     uop_MOV_IMM(ir, IREG_sse_xmm, op_sse_xmm);
-    uop_CALL_INSTRUCTION_FUNC(ir, op, fetchdat);
+    /* REP MOVS and REP STOS (x86_ops_rep_dyn.h) write only the count, the
+       two index registers, the cycles, and the PC when they stop early,
+       which leaves the block: the cached registers stay loaded and those
+       three are reloaded. */
+    if (((op_table == x86_dynarec_opcodes_REPE) || (op_table == x86_dynarec_opcodes_REPNE)) &&
+        ((opcode == 0xa4) || (opcode == 0xa5) || (opcode == 0xaa) || (opcode == 0xab))) {
+        uop_CALL_INSTRUCTION_FUNC_ORDERED(ir, op, fetchdat);
+        uop_MOV_REG_PTR(ir, IREG_ECX, &ECX);
+        uop_MOV_REG_PTR(ir, IREG_ESI, &ESI);
+        uop_MOV_REG_PTR(ir, IREG_EDI, &EDI);
+    } else
+        uop_CALL_INSTRUCTION_FUNC(ir, op, fetchdat);
     uop_MOV_IMM(ir, IREG_sse_xmm, 0);
     /*An interpreted x87 or 0F instruction can undo what the block took as
       done (FNINIT, FRSTOR, FXRSTOR and FEMMS empty the tags and leave MMX
@@ -1218,7 +1299,11 @@ codegen_skip:
     block->ins++;
 
     if (block->ins >= MAX_INSTRUCTION_COUNT)
+#ifdef CODEGEN_CHAIN
+        codegen_block_full = 1;
+#else
         CPU_BLOCK_END();
+#endif
 
     codegen_endpc = (cs + cpu_state.pc) + 8;
 

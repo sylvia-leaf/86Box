@@ -66,7 +66,7 @@ extern const device_t fdc37c669_device;
 
 #define FDC37M60X            0x00047
 #define FDC37M70X            0x00042
-#define FDC37B80X            0x00042
+#define FDC37B80X            (0x00042 | FDC37XXXX_B80X) /* answers the FDC37M70x's device ID */
 #define FDC37XXXX_CHIP_ID    0x000ff
 
 #define FDC37XXX1            0x00100    /* Compaq KBC firmware and configuration registers on GPIO ports. */
@@ -78,6 +78,7 @@ extern const device_t fdc37c669_device;
 
 #define FDC37C93X_NO_NVR     0x01000
 #define FDC37XXXX_370        0x02000
+#define FDC37XXXX_B80X       0x08000    /* the FDC37B80x: its name only, the chip working as the FDC37M70x */
 
 extern const device_t fdc37c93x_device;
 
@@ -241,5 +242,8 @@ extern void w83877_in530_master_reset(void);
 #define W83977_LPT_FORCE_SEC  0x02000000
 
 extern const device_t w83977_device;
+
+/* The chip a Super I/O device is, added with these parameters. */
+extern void sio_get_chip_name(const device_t *dev, uintptr_t params, char *name, size_t len);
 
 #endif /*EMU_SIO_H*/

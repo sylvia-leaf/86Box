@@ -1,4 +1,5 @@
 #include <mutex>
+#include <string>
 #include <thread>
 #include <condition_variable>
 
@@ -16,11 +17,20 @@ extern "C" {
 thread_t *
 thread_create_named(void (*thread_rout)(void *param), void *param, const char *name)
 {
-    auto thread = new std::thread([thread_rout, param, name] {
-        plat_set_thread_name(NULL, name);
-        thread_rout(param);
-    });
-    return thread;
+    /* NULL when the thread cannot be made, as the C callers expect; a
+       std::system_error must not leave C code. */
+    try {
+        /* The new thread names itself only once it runs, and by then the
+           caller's name may be gone (a buffer of its own): it takes a copy. */
+        const std::string own = name ? name : "";
+
+        return new std::thread([thread_rout, param, own] {
+            plat_set_thread_name(NULL, own.c_str());
+            thread_rout(param);
+        });
+    } catch (...) {
+        return nullptr;
+    }
 }
 
 int
@@ -85,6 +95,12 @@ thread_create_event()
 {
     auto ev = new event_cpp11_t;
     return ev;
+}
+
+void
+thread_yield(void)
+{
+    std::this_thread::yield();
 }
 
 int

@@ -42,6 +42,7 @@
 #include <86box/pic.h>
 #include <86box/apic.h>
 #include <86box/pci.h>
+#include <86box/chipset.h>
 #include <86box/smram.h>
 #include <86box/timer.h>
 #include <86box/gdbstub.h>
@@ -63,7 +64,7 @@ enum {
     CPUID_PAE       = (1 << 6),  /* Physical Address Extension */
     CPUID_MCE       = (1 << 7),  /* Machine Check Exception */
     CPUID_CMPXCHG8B = (1 << 8),  /* CMPXCHG8B instruction */
-    CPUID_LAPIC      = (1 << 9),  /* On-chip APIC */
+    CPUID_APIC      = (1 << 9),  /* On-chip APIC */
     CPUID_AMDPGE    = (1 << 9),  /* Global Page Enable (AMD K5 Model 0 only) */
     CPUID_AMDSEP    = (1 << 10), /* SYSCALL and SYSRET instructions (AMD K6 only) */
     CPUID_SEP       = (1 << 11), /* SYSENTER and SYSEXIT instructions (SYSCALL and SYSRET if EAX=80000001h) */
@@ -91,6 +92,16 @@ enum {
 #define CPUID_3DNOWE (1UL << 30UL) /* Extended 3DNow! instructions */
 #define CPUID_3DNOW  (1UL << 31UL) /* 3DNow! instructions */
 
+/* APIC CPUID visibility is gated by both the CPU model and board policy. */
+static uint32_t
+cpu_cpuid_apic_probe_flags(uint32_t edx)
+{
+    if (cpu_apic_feature_enabled())
+        edx |= CPUID_APIC;
+
+    return edx;
+}
+
 /* Remove the Debugging Extensions CPUID flag if not compiled
    with debug register support for 486 and later CPUs. */
 #ifndef USE_DEBUG_REGS_486
@@ -100,7 +111,6 @@ enum {
 /* Make sure this is as low as possible. */
 cpu_state_t cpu_state;
 fpu_state_t fpu_state;
-
 
 /* Place this immediately after. */
 uint32_t abrt_error;
@@ -228,7 +238,6 @@ int cpu_agp_speed;
 int cpu_alt_reset;
 
 int cpu_dyn_accurate_fpu_env;
-int cpu_dyn_block_link = 1;
 int cpu_override;
 int cpu_effective;
 int cpu_multi;
@@ -328,6 +337,22 @@ int fpu_ferr_timing;
 /* FERR# asserted for the error ES holds (x87_ferr_assert) */
 int fpu_ferr;
 uint64_t tsc = 0;
+
+/* What the time stamp counter reads beyond the machine's clock. A write to
+   the TSC (WRMSR 10h; the NT HAL zeroes it before it times one second of
+   the RTC) sets this and leaves the machine's clock alone. That clock
+   never goes back, so what the timers and the recompiler's loop hold of it
+   (the clock at a block's start) stays good. Moving it back made the
+   loop's next update_tsc() take the jump for time passed, and add the low
+   32 bits of it: the HAL timed the RTC's second at many times its length,
+   and every stall after was as many times too long. */
+int64_t cpu_tsc_offset = 0;
+
+void
+cpu_tsc_write(uint64_t val)
+{
+    cpu_tsc_offset = (int64_t) (val - tsc);
+}
 
 double cpu_dmulti;
 double cpu_busspeed;
@@ -602,6 +627,11 @@ SF_FPU_reset(void)
         fpu_state.fdp = 0;
         memset(fpu_state.st_space, 0, sizeof(floatx80) * 8);
     }
+#if X87_HOST_BUILD
+    /* The host x87's flags as not known: any it holds are cleared before the
+       next host-x87 operation (x87_host.h). */
+    cpu_state.x87h_fl = 0x003f;
+#endif
 }
 
 void
@@ -611,6 +641,11 @@ cpu_set(void)
         return;
 
     cpu_inited = 1;
+    cpu_lapic_reset_all();
+    /* Register callbacks after CPU-owned reset so LAPIC sees a coherent owner. */
+    lapic_set_index_source(cpu_lapic_index_source);
+    lapic_set_ap_startup_handler(cpu_ap_startup_request);
+
     cpu_effective = cpu;
     cpu_s         = (CPU *) &cpu_f->cpus[cpu_effective];
 
@@ -2465,10 +2500,6 @@ cpu_set(void)
         cpu_exec = execx86;
     mmx_init();
     gdbstub_cpu_init();
-
-    if (cpu_features & CPU_FEATURE_LAPIC) {
-        device_add(&lapic_device);
-    }
 }
 
 /* The P54C or P55C, the Pentiums with an INIT pin and an on-chip APIC. */
@@ -2482,6 +2513,10 @@ void
 cpu_close(void)
 {
     cpu_inited = 0;
+    cpu_lapic_reset_all();
+    /* Drop callbacks on teardown so LAPIC does not retain stale CPU hooks. */
+    lapic_set_index_source(NULL);
+    lapic_set_ap_startup_handler(NULL);
 }
 
 void
@@ -2742,6 +2777,8 @@ cpu_CPUID(void)
                 EDX       = CPUID_FPU | CPUID_VME | CPUID_DE | CPUID_PSE | CPUID_TSC | CPUID_MSR | CPUID_CMPXCHG8B;
                 if (cpu_s->cpu_type != CPU_P24T)
                     EDX |= CPUID_MCE;
+                if (cpu_s->cpu_type == CPU_PENTIUM)
+                    EDX = cpu_cpuid_apic_probe_flags(EDX);
             } else
                 EAX = EBX = ECX = EDX = 0;
             break;
@@ -3088,6 +3125,7 @@ cpu_CPUID(void)
                 EAX = CPUID;
                 EBX = ECX = 0;
                 EDX       = CPUID_FPU | CPUID_VME | CPUID_DE | CPUID_PSE | CPUID_TSC | CPUID_MSR | CPUID_MCE | CPUID_CMPXCHG8B | CPUID_MMX;
+                EDX       = cpu_cpuid_apic_probe_flags(EDX);
             } else
                 EAX = EBX = ECX = EDX = 0;
             break;
@@ -3157,8 +3195,10 @@ cpu_CPUID(void)
                 ECX = 0x6c65746e;
             } else if (EAX == 1) {
                 EAX = CPUID;
-                EBX = ECX = 0;
-                EDX       = CPUID_FPU | CPUID_VME | CPUID_DE | CPUID_PSE | CPUID_TSC | CPUID_MSR | CPUID_LAPIC | CPUID_PAE | CPUID_MCE | CPUID_CMPXCHG8B | CPUID_MTRR | CPUID_PGE | CPUID_MCA | CPUID_SEP | CPUID_CMOV;
+                EBX = cpu_cpuid_apic_id_ebx();
+                ECX = 0;
+                EDX       = CPUID_FPU | CPUID_VME | CPUID_DE | CPUID_PSE | CPUID_TSC | CPUID_MSR | CPUID_PAE | CPUID_MCE | CPUID_CMPXCHG8B | CPUID_MTRR | CPUID_PGE | CPUID_MCA | CPUID_SEP | CPUID_CMOV;
+                EDX       = cpu_cpuid_apic_probe_flags(EDX);
                 /*
                    Return anything non-zero in bits 32-63 of the BIOS signature MSR
                    to indicate there has been an update.
@@ -3185,8 +3225,10 @@ cpu_CPUID(void)
                 ECX = 0x6c65746e;
             } else if (EAX == 1) {
                 EAX = CPUID;
-                EBX = ECX = 0;
+                EBX = cpu_cpuid_apic_id_ebx();
+                ECX = 0;
                 EDX       = CPUID_FPU | CPUID_VME | CPUID_DE | CPUID_PSE | CPUID_TSC | CPUID_MSR | CPUID_PAE | CPUID_MCE | CPUID_CMPXCHG8B | CPUID_MMX | CPUID_MTRR | CPUID_PGE | CPUID_MCA | CPUID_SEP | CPUID_CMOV;
+                EDX       = cpu_cpuid_apic_probe_flags(EDX);
                 /*
                    Return anything non-zero in bits 32-63 of the BIOS signature MSR
                    to indicate there has been an update.
@@ -3213,9 +3255,10 @@ cpu_CPUID(void)
                 ECX = 0x6c65746e;
             } else if (EAX == 1) {
                 EAX = CPUID;
-                EBX = ECX = 0;
-                EDX       = CPUID_FPU | CPUID_VME | CPUID_DE | CPUID_PSE | CPUID_TSC | CPUID_MSR | CPUID_PAE | CPUID_MCE | CPUID_CMPXCHG8B | CPUID_MMX | CPUID_MTRR | CPUID_PGE | CPUID_MCA | CPUID_SEP | CPUID_FXSR | CPUID_CMOV | CPUID_PAT | CPUID_PSE36 | CPUID_LAPIC;
-                if (!(msr.apic_base & (1 << 11))) EDX &= ~CPUID_LAPIC;
+                EBX = cpu_cpuid_apic_id_ebx();
+                ECX = 0;
+                EDX       = CPUID_FPU | CPUID_VME | CPUID_DE | CPUID_PSE | CPUID_TSC | CPUID_MSR | CPUID_PAE | CPUID_MCE | CPUID_CMPXCHG8B | CPUID_MMX | CPUID_MTRR | CPUID_PGE | CPUID_MCA | CPUID_SEP | CPUID_FXSR | CPUID_CMOV | CPUID_PAT | CPUID_PSE36;
+                EDX       = cpu_cpuid_apic_probe_flags(EDX);
                 /*
                    Return anything non-zero in bits 32-63 of the BIOS signature MSR
                    to indicate there has been an update.
@@ -3251,8 +3294,8 @@ cpu_CPUID(void)
             } else if (EAX == 1) {
                 EAX = CPUID;
                 EBX = ECX = 0;
-                EDX       = CPUID_FPU | CPUID_VME | CPUID_DE | CPUID_PSE | CPUID_TSC | CPUID_MSR | CPUID_PAE | CPUID_MCE | CPUID_CMPXCHG8B | CPUID_MMX | CPUID_MTRR | CPUID_PGE | CPUID_MCA | CPUID_SEP | CPUID_FXSR | CPUID_CMOV | CPUID_PAT | CPUID_PSE36 | CPUID_SSE | CPUID_LAPIC;
-                if (!(msr.apic_base & (1 << 11))) EDX &= ~CPUID_LAPIC;
+                EDX       = CPUID_FPU | CPUID_VME | CPUID_DE | CPUID_PSE | CPUID_TSC | CPUID_MSR | CPUID_PAE | CPUID_MCE | CPUID_CMPXCHG8B | CPUID_MMX | CPUID_MTRR | CPUID_PGE | CPUID_MCA | CPUID_SEP | CPUID_FXSR | CPUID_CMOV | CPUID_PAT | CPUID_PSE36 | CPUID_SSE;
+                EDX       = cpu_cpuid_apic_probe_flags(EDX);
             } else if (EAX == 2) {
                 EAX = 0x00000001;
                 EBX = ECX = 0;
@@ -3271,8 +3314,8 @@ cpu_CPUID(void)
                 EAX = CPUID;
                 EBX = (8 << 8) | (1 << 16);
                 ECX = 0;
-                EDX       = CPUID_FPU | CPUID_VME | CPUID_DE | CPUID_PSE | CPUID_TSC | CPUID_MSR | CPUID_PAE | CPUID_MCE | CPUID_CMPXCHG8B | CPUID_MMX | CPUID_MTRR | CPUID_PGE | CPUID_MCA | CPUID_SEP | CPUID_FXSR | CPUID_CMOV | CPUID_PAT | CPUID_PSE36 | CPUID_SSE | CPUID_SSE2 | CPUID_CLFLUSH | CPUID_LAPIC;
-                if (!(msr.apic_base & (1 << 11))) EDX &= ~CPUID_LAPIC;
+                EDX       = CPUID_FPU | CPUID_VME | CPUID_DE | CPUID_PSE | CPUID_TSC | CPUID_MSR | CPUID_PAE | CPUID_MCE | CPUID_CMPXCHG8B | CPUID_MMX | CPUID_MTRR | CPUID_PGE | CPUID_MCA | CPUID_SEP | CPUID_FXSR | CPUID_CMOV | CPUID_PAT | CPUID_PSE36 | CPUID_SSE | CPUID_SSE2 | CPUID_CLFLUSH;
+                EDX       = cpu_cpuid_apic_probe_flags(EDX);
             } else if (EAX == 2) {
                 EAX = 0x00000001;
                 EBX = ECX = 0;
@@ -3291,8 +3334,8 @@ cpu_CPUID(void)
                 EAX = CPUID;
                 EBX = (8 << 8) | (1 << 16);
                 ECX       = CPUID_SSE3;// | CPUID_MONITOR_MWAIT;// | CPUID_SSSE3;
-                EDX       = CPUID_FPU | CPUID_VME | CPUID_DE | CPUID_PSE | CPUID_TSC | CPUID_MSR | CPUID_PAE | CPUID_MCE | CPUID_CMPXCHG8B | CPUID_MMX | CPUID_MTRR | CPUID_PGE | CPUID_MCA | CPUID_SEP | CPUID_FXSR | CPUID_CMOV | CPUID_PAT | CPUID_PSE36 | CPUID_SSE | CPUID_SSE2 | CPUID_CLFLUSH | CPUID_LAPIC;
-                if (!(msr.apic_base & (1 << 11))) EDX &= ~CPUID_LAPIC;
+                EDX       = CPUID_FPU | CPUID_VME | CPUID_DE | CPUID_PSE | CPUID_TSC | CPUID_MSR | CPUID_PAE | CPUID_MCE | CPUID_CMPXCHG8B | CPUID_MMX | CPUID_MTRR | CPUID_PGE | CPUID_MCA | CPUID_SEP | CPUID_FXSR | CPUID_CMOV | CPUID_PAT | CPUID_PSE36 | CPUID_SSE | CPUID_SSE2 | CPUID_CLFLUSH;
+                EDX       = cpu_cpuid_apic_probe_flags(EDX);
             } else if (EAX == 2) {
                 EAX = 0x00000001;
                 EBX = ECX = 0;
@@ -3608,6 +3651,8 @@ void
 cpu_ven_reset(void)
 {
     memset(&msr, 0, sizeof(msr));
+    /* Vendor reset resyncs CPU-owned LAPIC mirrors before model-specific MSRs. */
+    cpu_lapic_ven_reset();
 
     switch (cpu_s->cpu_type) {
         case CPU_WINCHIP:
@@ -3749,12 +3794,8 @@ cpu_RDMSR(void)
                     break;
                 /* Time Stamp Counter */
                 case 0x10:
-                    EAX = tsc & 0xffffffff;
-                    EDX = tsc >> 32;
-#ifdef USE_DYNAREC
-                    if (cpu_use_dynarec)
-                        update_tsc();
-#endif
+                    EAX = cpu_tsc_read() & 0xffffffff;
+                    EDX = cpu_tsc_read() >> 32;
                     break;
                 /* Performance Monitor - Control and Event Select */
                 case 0x11:
@@ -3808,12 +3849,8 @@ cpu_RDMSR(void)
                     break;
                 /* Time Stamp Counter */
                 case 0x10:
-                    EAX = tsc & 0xffffffff;
-                    EDX = tsc >> 32;
-#ifdef USE_DYNAREC
-                    if (cpu_use_dynarec)
-                        update_tsc();
-#endif
+                    EAX = cpu_tsc_read() & 0xffffffff;
+                    EDX = cpu_tsc_read() >> 32;
                     break;
                 /* EBL_CR_POWERON - Processor Hard Power-On Configuration */
                 case 0x2a:
@@ -3882,8 +3919,8 @@ cpu_RDMSR(void)
                     break;
                 /* PERFCTR0 - Performance Counter Register 0 - aliased to TSC */
                 case 0xc1:
-                    EAX = tsc & 0xffffffff;
-                    EDX = (tsc >> 32) & 0xff;
+                    EAX = cpu_tsc_read() & 0xffffffff;
+                    EDX = (cpu_tsc_read() >> 32) & 0xff;
                     break;
                 /* PERFCTR1 - Performance Counter Register 1 */
                 case 0xc2:
@@ -4012,12 +4049,8 @@ cpu_RDMSR(void)
                     break;
                 /* Time Stamp Counter */
                 case 0x00000010:
-                    EAX = tsc & 0xffffffff;
-                    EDX = tsc >> 32;
-#ifdef USE_DYNAREC
-                    if (cpu_use_dynarec)
-                        update_tsc();
-#endif
+                    EAX = cpu_tsc_read() & 0xffffffff;
+                    EDX = cpu_tsc_read() >> 32;
                     break;
                 case 0x1b:
                     EAX = msr.apic_base & 0xffffffff;
@@ -4394,12 +4427,8 @@ amd_k_invalid_rdmsr:
                 /* Time Stamp Counter */
                 case 0x00000010:
                 case 0x80000010:
-                    EAX = tsc & 0xffffffff;
-                    EDX = tsc >> 32;
-#ifdef USE_DYNAREC
-                    if (cpu_use_dynarec)
-                        update_tsc();
-#endif
+                    EAX = cpu_tsc_read() & 0xffffffff;
+                    EDX = cpu_tsc_read() >> 32;
                     break;
                 /* Performance Monitor - Control and Event Select */
                 case 0x00000011:
@@ -4495,12 +4524,8 @@ pentium_invalid_rdmsr:
                     break;
                 /* Time Stamp Counter */
                 case 0x10:
-                    EAX = tsc & 0xffffffff;
-                    EDX = tsc >> 32;
-#ifdef USE_DYNAREC
-                    if (cpu_use_dynarec)
-                        update_tsc();
-#endif
+                    EAX = cpu_tsc_read() & 0xffffffff;
+                    EDX = cpu_tsc_read() >> 32;
                     break;
                 /* Performance Monitor - Control and Event Select */
                 case 0x11:
@@ -4538,12 +4563,8 @@ pentium_invalid_rdmsr:
                     break;
                 /* Time Stamp Counter */
                 case 0x10:
-                    EAX = tsc & 0xffffffff;
-                    EDX = tsc >> 32;
-#ifdef USE_DYNAREC
-                    if (cpu_use_dynarec)
-                        update_tsc();
-#endif
+                    EAX = cpu_tsc_read() & 0xffffffff;
+                    EDX = cpu_tsc_read() >> 32;
                     break;
                 /* IA32_PLATFORM_ID - Platform ID */
                 case 0x17:
@@ -4560,9 +4581,17 @@ pentium_invalid_rdmsr:
                     break;
                 /* IA32_APIC_BASE - APIC Base Address */
                 case 0x1B:
-                    EAX = msr.apic_base & 0xffffffff;
-                    EDX = msr.apic_base >> 32;
-                    pclog("APIC_BASE read : %08X%08X\n", EDX, EAX);
+                    if (cpu_apic_feature_enabled()) {
+                        /* Active APIC model reads IA32_APIC_BASE from per-LAPIC CPU state. */
+                        uint64_t apic_base_msr = cpu_apic_base_msr_read_current();
+
+                        EAX = apic_base_msr & 0xffffffff;
+                        EDX = apic_base_msr >> 32;
+                    } else {
+                        EAX = msr.apic_base & 0xffffffff;
+                        EDX = msr.apic_base >> 32;
+                    }
+                    cpu_log("APIC_BASE read : %08X%08X\n", EDX, EAX);
                     break;
                 /* Unknown (undocumented?) MSR used by the Hyper-V BIOS */
                 case 0x20:
@@ -4922,12 +4951,8 @@ i686_invalid_rdmsr:
                     break;
                 /* Time Stamp Counter */
                 case 0x10:
-                    EAX = tsc & 0xffffffff;
-                    EDX = tsc >> 32;
-#ifdef USE_DYNAREC
-                    if (cpu_use_dynarec)
-                        update_tsc();
-#endif
+                    EAX = cpu_tsc_read() & 0xffffffff;
+                    EDX = cpu_tsc_read() >> 32;
                     break;
                 case 0x17:
                 /* Unknown */
@@ -4935,9 +4960,17 @@ i686_invalid_rdmsr:
                     break;
                 /* IA32_APIC_BASE - APIC Base Address */
                 case 0x1B:
-                    EAX = msr.apic_base & 0xffffffff;
-                    EDX = msr.apic_base >> 32;
-                    pclog("APIC_BASE read : %08X%08X\n", EDX, EAX);
+                    if (cpu_apic_feature_enabled()) {
+                        /* Active APIC model reads IA32_APIC_BASE from per-LAPIC CPU state. */
+                        uint64_t apic_base_msr = cpu_apic_base_msr_read_current();
+
+                        EAX = apic_base_msr & 0xffffffff;
+                        EDX = apic_base_msr >> 32;
+                    } else {
+                        EAX = msr.apic_base & 0xffffffff;
+                        EDX = msr.apic_base >> 32;
+                    }
+                    cpu_log("APIC_BASE read : %08X%08X\n", EDX, EAX);
                     break;
                 /* Unknown (undocumented?) MSR used by the Hyper-V BIOS */
                 case 0x20:
@@ -5235,7 +5268,7 @@ cpu_WRMSR(void)
                     break;
                 /* Time Stamp Counter */
                 case 0x10:
-                    timer_set_new_tsc(EAX | ((uint64_t) EDX << 32));
+                    cpu_tsc_write(EAX | ((uint64_t) EDX << 32));
                     break;
                 /* Performance Monitor - Control and Event Select */
                 case 0x11:
@@ -5313,7 +5346,7 @@ cpu_WRMSR(void)
                 /* Time Stamp Counter */
                 case 0x10:
                     /* A write clears the upper 32 bits (datasheet 5.9) */
-                    timer_set_new_tsc(EAX);
+                    cpu_tsc_write(EAX);
                     break;
                 /* PERFCTR0 - Performance Counter Register 0 - aliased to TSC */
                 case 0xc1:
@@ -5454,23 +5487,17 @@ cpu_WRMSR(void)
                     break;
                 /* Time Stamp Counter */
                 case 0x00000010:
-                    timer_set_new_tsc(EAX | ((uint64_t) EDX << 32));
+                    cpu_tsc_write(EAX | ((uint64_t) EDX << 32));
                     break;
                 case 0x1b:
                     cpu_log("APIC_BASE write: %08X%08X\n", EDX, EAX);
-                    
-                    if (current_lapic) {
-                        uint8_t disabled = (!(msr.apic_base & (1 << 11)));
-                        
+                    /* Active APIC model writes IA32_APIC_BASE through the CPU mirror. */
+                    if (cpu_apic_feature_enabled())
+                        cpu_apic_base_msr_write_current(EAX | ((uint64_t) EDX << 32));
+#if 0
+                    else
                         msr.apic_base = EAX | ((uint64_t) EDX << 32);
-                        if (disabled) msr.apic_base &= ~(1 << 11);
-                        if (EDX) {
-                            fatal("LAPIC-on-PAE not implemented!");
-                        }
-                        apic_lapic_set_base(msr.apic_base & 0xFFFFFFFF);
-                    }
-                    
-                    msr.apic_base = EAX | ((uint64_t) EDX << 32);
+#endif
                     break;
                 case 0x8b:
                     break;
@@ -5848,7 +5875,7 @@ amd_k_invalid_wrmsr:
                 /* Time Stamp Counter */
                 case 0x00000010:
                 case 0x80000010:
-                    timer_set_new_tsc(EAX | ((uint64_t) EDX << 32));
+                    cpu_tsc_write(EAX | ((uint64_t) EDX << 32));
                     break;
                 /* Performance Monitor - Control and Event Select */
                 case 0x00000011:
@@ -5935,7 +5962,7 @@ pentium_invalid_wrmsr:
                     break;
                 /* Time Stamp Counter */
                 case 0x10:
-                    timer_set_new_tsc(EAX | ((uint64_t) EDX << 32));
+                    cpu_tsc_write(EAX | ((uint64_t) EDX << 32));
                     break;
                 /* Performance Monitor - Control and Event Select */
                 case 0x11:
@@ -5971,24 +5998,21 @@ pentium_invalid_wrmsr:
                     break;
                 /* Time Stamp Counter */
                 case 0x10: /* Only the low 32 bits are written; the high 32 clear (Pentium Pro vol. 3) */
-                    timer_set_new_tsc(EAX);
+                    cpu_tsc_write(EAX);
                     break;
                 /* Unknown */
                 case 0x18:
                     break;
                 /* IA32_APIC_BASE - APIC Base Address */
                 case 0x1b:
-                    pclog("APIC_BASE write: %08X%08X\n", EDX, EAX);
-                    
-                    if (current_lapic) {
-                        uint8_t disabled = (!(msr.apic_base & (1 << 11)));
-                        
+                    cpu_log("APIC_BASE write: %08X%08X\n", EDX, EAX);
+                    /* Active APIC model writes IA32_APIC_BASE through the CPU mirror. */
+                    if (cpu_apic_feature_enabled())
+                        cpu_apic_base_msr_write_current(EAX | ((uint64_t) EDX << 32));
+#if 0
+                    else
                         msr.apic_base = EAX | ((uint64_t) EDX << 32);
-                        if (disabled) msr.apic_base &= ~(1 << 11);
-                        apic_lapic_set_base(msr.apic_base & 0xFFFFFFFFull);
-                    }
-                    
-                    // msr.apic_base = EAX | ((uint64_t) EDX << 32);
+#endif
                     break;
                 /* Unknown (undocumented?) MSR used by the Hyper-V BIOS */
                 case 0x20:
@@ -6275,17 +6299,14 @@ i686_invalid_wrmsr:
                     break;
                 /* IA32_APIC_BASE - APIC Base Address */
                 case 0x1b:
-                    pclog("APIC_BASE write: %08X%08X\n", EDX, EAX);
-                    
-                    if (current_lapic) {
-                        uint8_t disabled = (!(msr.apic_base & (1 << 11)));
-                        
+                    cpu_log("APIC_BASE write: %08X%08X\n", EDX, EAX);
+                    /* Active APIC model writes IA32_APIC_BASE through the CPU mirror. */
+                    if (cpu_apic_feature_enabled())
+                        cpu_apic_base_msr_write_current(EAX | ((uint64_t) EDX << 32));
+#if 0
+                    else
                         msr.apic_base = EAX | ((uint64_t) EDX << 32);
-                        if (disabled) msr.apic_base &= ~(1 << 11);
-                        apic_lapic_set_base(msr.apic_base & 0xFFFFFFFFull);
-                    }
-                    
-                    // msr.apic_base = EAX | ((uint64_t) EDX << 32);
+#endif
                     break;
                 /* Unknown (undocumented?) MSR used by the Hyper-V BIOS */
                 case 0x20:

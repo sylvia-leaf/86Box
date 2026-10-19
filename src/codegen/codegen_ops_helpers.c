@@ -36,8 +36,9 @@ LOAD_IMMEDIATE_FROM_RAM_32_unaligned(UNUSED(codeblock_t *block), ir_data_t *ir, 
     uop_OR(ir, dest_reg, dest_reg, IREG_temp3);
 }
 
-/*Rebuilds emitted by codegen_flags_rebuild_known() in this block, with the
-  uop that set the flags op each one was worked out from*/
+/*Where the block used a flags op known at compile time
+  (codegen_flags_rebuild_known, codegen_cf_inline, codegen_rebuild_c), each
+  with the uop that set that op*/
 #define FLAGS_KNOWN_MAX 64
 static int flags_known_nr;
 static int flags_known_site[FLAGS_KNOWN_MAX];
@@ -47,6 +48,25 @@ void
 codegen_flags_known_reset(void)
 {
     flags_known_nr = 0;
+}
+
+/*Notes a use of the flags op known here, for codegen_can_unroll_full(); 0 if
+  it cannot be noted, and the caller must then not depend on the op*/
+int
+codegen_flags_known_note(ir_data_t *ir)
+{
+    int producer;
+
+    for (producer = ir->wr_pos - 1; producer >= 0; producer--) {
+        if (IREG_GET_REG(ir->uops[producer].dest_reg_a.reg) == IREG_GET_REG(IREG_flags_op))
+            break;
+    }
+    if ((producer < 0) || (flags_known_nr == FLAGS_KNOWN_MAX))
+        return 0;
+    flags_known_site[flags_known_nr]     = ir->wr_pos;
+    flags_known_producer[flags_known_nr] = producer;
+    flags_known_nr++;
+    return 1;
 }
 
 /*flags_rebuild(), or flags_rebuild_c() if carry_only, as uops when the flags
@@ -63,7 +83,6 @@ codegen_flags_rebuild_known(ir_data_t *ir, int carry_only)
     int      is_add;
     int      is_sub;
     int      is_incdec;
-    int      producer;
     uint32_t msb;
 
     switch (op) {
@@ -97,7 +116,7 @@ codegen_flags_rebuild_known(ir_data_t *ir, int carry_only)
 
     /*flags_rebuild_c() leaves CF as it is after INC and DEC*/
     if (is_incdec && carry_only)
-        return 1;
+        return codegen_flags_known_note(ir);
 
     /*Room for this sequence's register versions (at most 20 of temp1, 4 of
       temp3, 8 of flags) without passing REG_VERSION_MAX, which only ends the
@@ -106,16 +125,8 @@ codegen_flags_rebuild_known(ir_data_t *ir, int carry_only)
         (reg_last_version[IREG_GET_REG(IREG_flags)] + 8 > REG_VERSION_MAX) || (reg_last_version[IREG_GET_REG(IREG_flags_op)] + 1 > REG_VERSION_MAX))
         return 0;
 
-    /*The uop that set the flags op, for codegen_can_unroll_full()*/
-    for (producer = ir->wr_pos - 1; producer >= 0; producer--) {
-        if (IREG_GET_REG(ir->uops[producer].dest_reg_a.reg) == IREG_GET_REG(IREG_flags_op))
-            break;
-    }
-    if ((producer < 0) || (flags_known_nr == FLAGS_KNOWN_MAX))
+    if (!codegen_flags_known_note(ir))
         return 0;
-    flags_known_site[flags_known_nr]     = ir->wr_pos;
-    flags_known_producer[flags_known_nr] = producer;
-    flags_known_nr++;
 
     /*CF into temp1; INC and DEC keep the one in flags*/
     if (op == FLAGS_ADD8 || op == FLAGS_ADD16) {
@@ -197,6 +208,67 @@ codegen_flags_rebuild_known(ir_data_t *ir, int carry_only)
     return 1;
 #else
     /*Other backends lack UOP_CMP_SET and UOP_TEST_SET*/
+    return 0;
+#endif
+}
+
+/*CF_SET() as 0 or 1 into dest_reg, for ADC and SBB, when the flags op is
+  known here and CF follows from flags_res, flags_op1 and flags_op2 alone:
+  none after a ZN operation, op1 below op2 after a SUB, the result below op1
+  after an ADD, as SETB works it out (setcc_value). Returns 0, emitting
+  nothing, otherwise. It writes dest_reg once, as the call it replaces does.*/
+int
+codegen_cf_inline(ir_data_t *ir, int dest_reg)
+{
+#if defined __aarch64__ || defined _M_ARM64 || defined __amd64__ || defined _M_X64
+    int op = codegen_flags_changed ? cpu_state.flags_op : FLAGS_UNKNOWN;
+
+    switch (op) {
+        case FLAGS_ZN8:
+        case FLAGS_ZN16:
+        case FLAGS_ZN32:
+        case FLAGS_SUB8:
+        case FLAGS_SUB16:
+        case FLAGS_SUB32:
+        case FLAGS_ADD8:
+        case FLAGS_ADD16:
+        case FLAGS_ADD32:
+            break;
+        default:
+            return 0;
+    }
+
+    if (!codegen_flags_known_note(ir))
+        return 0;
+
+    switch (op) {
+        case FLAGS_ZN8:
+        case FLAGS_ZN16:
+        case FLAGS_ZN32:
+            uop_MOV_IMM(ir, dest_reg, 0);
+            break;
+        case FLAGS_SUB8:
+            uop_CMP_SET(ir, dest_reg, IREG_flags_op1_B, IREG_flags_op2_B, UOP_CC_B);
+            break;
+        case FLAGS_SUB16:
+            uop_CMP_SET(ir, dest_reg, IREG_flags_op1_W, IREG_flags_op2_W, UOP_CC_B);
+            break;
+        case FLAGS_SUB32:
+            uop_CMP_SET(ir, dest_reg, IREG_flags_op1, IREG_flags_op2, UOP_CC_B);
+            break;
+        case FLAGS_ADD8:
+            uop_CMP_SET(ir, dest_reg, IREG_flags_res_B, IREG_flags_op1_B, UOP_CC_B);
+            break;
+        case FLAGS_ADD16:
+            uop_CMP_SET(ir, dest_reg, IREG_flags_res_W, IREG_flags_op1_W, UOP_CC_B);
+            break;
+        default: /*FLAGS_ADD32*/
+            uop_CMP_SET(ir, dest_reg, IREG_flags_res, IREG_flags_op1, UOP_CC_B);
+            break;
+    }
+    return 1;
+#else
+    /*Other backends lack UOP_CMP_SET*/
     return 0;
 #endif
 }

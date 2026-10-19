@@ -62,6 +62,32 @@ duplicate_uop(ir_data_t *ir, uop_t *uop, int offset)
     }
 }
 
+#ifdef CODEGEN_BACKEND_SLOW_STORES
+/* A guest memory access: C code only on its slow path, where the backend
+   makes the stores a flush would have made before it (codegen_reg_emit_slow). */
+static int
+uop_is_mem_access(const uop_t *uop)
+{
+    switch (uop->type & UOP_MASK) {
+        case UOP_MEM_LOAD_ABS & UOP_MASK:
+        case UOP_MEM_LOAD_REG & UOP_MASK:
+        case UOP_MEM_LOAD_REG_EA & UOP_MASK:
+        case UOP_MEM_LOAD_SINGLE & UOP_MASK:
+        case UOP_MEM_LOAD_DOUBLE & UOP_MASK:
+        case UOP_MEM_STORE_ABS & UOP_MASK:
+        case UOP_MEM_STORE_REG & UOP_MASK:
+        case UOP_MEM_STORE_IMM_8 & UOP_MASK:
+        case UOP_MEM_STORE_IMM_16 & UOP_MASK:
+        case UOP_MEM_STORE_IMM_32 & UOP_MASK:
+        case UOP_MEM_STORE_SINGLE & UOP_MASK:
+        case UOP_MEM_STORE_DOUBLE & UOP_MASK:
+            return 1;
+        default:
+            return 0;
+    }
+}
+#endif
+
 #ifdef CODEGEN_BACKEND_HAS_MEM_LOOKUP_REUSE
 /* Only these operations preserve the backend's lookup scratch registers.
    Keep this an allowlist: a new uop must not silently inherit that promise.
@@ -206,6 +232,15 @@ codegen_ir_compile(ir_data_t *ir, codeblock_t *block)
         if ((uop->type & UOP_TYPE_JUMP) && uop->jump_dest_uop >= 0 && uop->jump_dest_uop <= c)
             mmx_incoming[uop->jump_dest_uop] = MMX_UNCHECKED;
     }
+#ifdef CODEGEN_CHAIN
+    /* The block ends in a link: after any unrolling, so the copies end
+       where the original did. */
+    if (codegen_end_link_pending == 1)
+        uop_JMP_LINK(ir);
+    else if (codegen_end_link_pending == 2)
+        uop_JMP_INDIRECT(ir);
+    codegen_end_link_pending = 0;
+#endif
 
     codegen_reg_mark_as_required();
     codegen_reg_process_dead_list(ir);
@@ -337,6 +372,10 @@ codegen_ir_compile(ir_data_t *ir, codeblock_t *block)
         if (uop->type & UOP_TYPE_JUMP_DEST) {
             uop_t *uop_dest = uop;
 
+#ifdef CODEGEN_BACKEND_SLOW_STORES
+            codegen_reg_jump_dest(block); /* the way in only: the jumps made theirs */
+#endif
+
             while (uop_dest->jump_list_next != -1) {
                 uop_dest = &ir->uops[uop_dest->jump_list_next];
                 codegen_set_jump_dest(block, uop_dest->p);
@@ -387,14 +426,10 @@ codegen_ir_compile(ir_data_t *ir, codeblock_t *block)
                 }
             }
 
-            /* MMX_COMMIT only writes TOP/tags after the first successful MMX
-               instruction. MMX_ENTER already invalidated their cached values;
-               keep the new MMX result live while preserving the IR ordering. */
-            if ((uop->type & UOP_TYPE_ORDER_BARRIER)
-                && (uop->type & UOP_MASK) != (UOP_MMX_COMMIT & UOP_MASK)) {
-#ifdef CODEGEN_BACKEND_HAS_MEM_REGS
-                if (uop->type & UOP_TYPE_MEM)
-                    codegen_reg_flush_mem_dest(block, uop->dest_reg_a);
+            if (uop->type & UOP_TYPE_ORDER_BARRIER) {
+#ifdef CODEGEN_BACKEND_SLOW_STORES
+                if (uop_is_mem_access(uop))
+                    codegen_reg_flush_slow(ir, block);
                 else
 #endif
                     codegen_reg_flush(ir, block);
@@ -410,6 +445,10 @@ codegen_ir_compile(ir_data_t *ir, codeblock_t *block)
                 fatal("!uop_handlers[uop->type & UOP_MASK] %08x\n", uop->type);
 #endif
             uop_handlers[uop->type & UOP_MASK](block, uop);
+#ifdef CODEGEN_BACKEND_SLOW_STORES
+            if (codegen_slow_open)
+                fatal("codegen_ir_compile - memory access %08x made no slow-path stores\n", uop->type);
+#endif
             if (uop->type & UOP_TYPE_ORDER_BARRIER)
                 codegen_reg_drop_cycles();
         }

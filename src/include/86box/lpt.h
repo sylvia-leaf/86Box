@@ -118,6 +118,8 @@ typedef enum {
     LPT_STATE_WRITE_FIFO
 } lpt_state_t;
 
+extern const device_t      lpt_card_device;
+extern const device_t      lpt_card_mca_device;
 extern const device_t      lpt_dac_device;
 extern const device_t      lpt_dac_stereo_device;
 extern const device_t      lpt_dac_ftl_device;

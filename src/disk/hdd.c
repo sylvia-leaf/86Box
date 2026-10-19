@@ -47,6 +47,9 @@ hdd_init(void)
 int
 hdd_string_to_bus(char *str, int cdrom)
 {
+    if (!strcmp(str, "disconnected"))
+        return HDD_BUS_DISCONNECTED;
+
     if (!strcmp(str, "none"))
         return HDD_BUS_DISABLED;
 
@@ -108,6 +111,10 @@ hdd_bus_to_string(int bus, int cdrom)
     switch (bus) {
         default:
         case HDD_BUS_DISABLED:
+            break;
+
+        case HDD_BUS_DISCONNECTED:
+            s = "disconnected";
             break;
 
         case HDD_BUS_MFM:

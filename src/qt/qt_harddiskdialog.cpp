@@ -114,6 +114,8 @@ HarddiskDialog::HarddiskDialog(bool existing, QWidget *parent)
 
         setWindowTitle(tr("Add New Hard Disk"));
         ui->fileField->setCreateFile(true);
+        ui->fileField->setDefaultDirectory(util::machineDirectory());
+        ui->fileField->setToolTip(tr("New images are created beside the machine configuration unless you choose another folder."));
 
         // Enable the OK button as long as the filename length is non-zero
         connect(ui->fileField, &FileField::fileTextEntered, this, [this] {
@@ -332,7 +334,7 @@ create_drive_vhd_diff(const QString &fileName, const QString &parentFileName, in
 void
 HarddiskDialog::onCreateNewFile()
 {
-    auto fileName = ui->fileField->fileName();
+    auto fileName = util::newImagePath(ui->fileField->fileName());
     QByteArray fileNameUtf8 = fileName.toUtf8();
 
     /* Check if this is a block device - if so, handle it as "existing" disk */
@@ -376,7 +378,29 @@ HarddiskDialog::onCreateNewFile()
         return;
     }
 
-    FILE *fp = plat_fopen(fileNameUtf8.data(), "rb");
+    /* The file is checked and written with its extension. */
+    QString expectedSuffix;
+    switch (ui->comboBoxFormat->currentIndex()) {
+        case IMG_FMT_HDI:
+            expectedSuffix = "hdi";
+            break;
+        case IMG_FMT_HDX:
+            expectedSuffix = "hdx";
+            break;
+        case IMG_FMT_VHD_FIXED:
+        case IMG_FMT_VHD_DYNAMIC:
+        case IMG_FMT_VHD_DIFF:
+            expectedSuffix = "vhd";
+            break;
+    }
+    if (!expectedSuffix.isEmpty()) {
+        QFileInfo fileInfo(fileName);
+        if (fileInfo.suffix().compare(expectedSuffix, Qt::CaseInsensitive) != 0)
+            fileName = QString("%1.%2").arg(fileName, expectedSuffix);
+    }
+    ui->fileField->setFileName(fileName);
+
+    FILE *fp = plat_fopen(fileName.toUtf8().constData(), "rb");
     if (fp != NULL) {
         fclose(fp);
         QMessageBox::StandardButton btn = QMessageBox::warning(this, tr("Disk image file already exists"), tr("The selected file will be overwritten. Are you sure you want to use it?"), QMessageBox::Yes | QMessageBox::No);
@@ -401,31 +425,6 @@ HarddiskDialog::onCreateNewFile()
     int      img_format = ui->comboBoxFormat->currentIndex();
     uint32_t zero       = 0;
     uint32_t base       = 0x1000;
-
-    QString expectedSuffix;
-    switch (img_format) {
-        case IMG_FMT_HDI:
-            expectedSuffix = "hdi";
-            break;
-        case IMG_FMT_HDX:
-            expectedSuffix = "hdx";
-            break;
-        case IMG_FMT_VHD_FIXED:
-        case IMG_FMT_VHD_DYNAMIC:
-        case IMG_FMT_VHD_DIFF:
-            expectedSuffix = "vhd";
-            break;
-    }
-    if (!expectedSuffix.isEmpty()) {
-        QFileInfo fileInfo(fileName);
-        if (fileInfo.suffix().compare(expectedSuffix, Qt::CaseInsensitive) != 0) {
-            fileName = QString("%1.%2").arg(fileName, expectedSuffix);
-            ui->fileField->setFileName(fileName);
-        }
-    }
-    QFileInfo fi(fileName);
-    fileName = (fi.isRelative() && !fi.filePath().isEmpty()) ? usr_path + fi.filePath() : fi.filePath();
-    ui->fileField->setFileName(fileName);
 
     QFile file(fileName);
     if (!file.open(QIODevice::WriteOnly)) {
@@ -819,6 +818,7 @@ HarddiskDialog::on_comboBoxBus_currentIndexChanged(int index)
             max_heads     = 16;
             max_cylinders = 266305;
             break;
+        case HDD_BUS_DISCONNECTED:
         case HDD_BUS_IDE:
             max_sectors   = 255;
             max_heads     = 255;
@@ -872,9 +872,7 @@ HarddiskDialog::on_comboBoxBus_currentIndexChanged(int index)
             break;
     }
 
-    if (chanIdx == 0xFF)
-        chanIdx = 0;
-    ui->comboBoxChannel->setCurrentIndex(chanIdx);
+    ui->comboBoxChannel->setCurrentIndex(ui->comboBoxChannel->findData(chanIdx));
 }
 
 void

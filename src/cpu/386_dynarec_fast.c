@@ -33,6 +33,7 @@
 #endif
 
 #include "386_common.h"
+#include "x86_interrupt.h"
 
 #define CPU_BLOCK_END() cpu_block_end = 1
 
@@ -144,7 +145,7 @@ exec386_dynarec_fast(int32_t cycs)
 #else
                 nmi = 0;
 #endif
-            } else if ((cpu_state.flags & I_FLAG) && pic_pending_int()) {
+            } else if ((cpu_state.flags & I_FLAG) && x86_external_interrupt_pending()) {
                 vector = picinterrupt();
                 if (vector != -1) {
                     oldcs           = CS;
@@ -154,8 +155,6 @@ exec386_dynarec_fast(int32_t cycs)
             }
 
             tsc += FAST_BLOCK_CYCLES;
-            if (current_lapic)
-                lapic_timer_advance_ticks(FAST_BLOCK_CYCLES);
             cycles_main -= FAST_BLOCK_CYCLES;
             blocks_executed++;
 

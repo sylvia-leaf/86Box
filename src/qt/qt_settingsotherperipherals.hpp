@@ -34,6 +34,8 @@ public slots:
 private slots:
     void on_comboBoxRTC_currentIndexChanged(int index);
     void on_pushButtonConfigureRTC_clicked();
+    void on_comboBoxIsaExpansion_currentIndexChanged(int index);
+    void on_pushButtonConfigureIsaExpansion_clicked();
 
     void on_comboBoxMemExpCard1_currentIndexChanged(int index);
     void on_pushButtonConfigureMemExpCard1_clicked();
@@ -69,6 +71,7 @@ private:
     int                           memexp_cfg_changed[4]      = { 0, 0, 0, 0 };
     int                           isarom_cfg_changed[4]      = { 0, 0, 0, 0 };
     int                           isartc_cfg_changed         = 0;
+    int                           isa_expansion_cfg_changed  = 0;
     int                           unittester_cfg_changed     = 0;
     int                           novell_keycard_cfg_changed = 0;
     int                           softpower_cfg_changed      = 0;

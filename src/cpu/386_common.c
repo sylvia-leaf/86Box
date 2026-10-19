@@ -70,6 +70,7 @@ extern uint8_t *pccache2;
 
 extern int      optype;
 extern uint32_t pccache;
+extern int      ioapic_lint1_raise(void);
 
 int      new_ne            = 0;
 int      in_sys            = 0;
@@ -558,61 +559,7 @@ is_lock_legal(uint32_t fetchdat)
   Note that this is only used for 286 / 386 systems. It is disabled when the
   internal cache on 486+ CPUs is enabled.
 */
-static int prefetch_bytes = 0;
-
-void
-prefetch_run(int instr_cycles, int bytes, int modrm, int reads, int reads_l, int writes, int writes_l, int ea32)
-{
-    int mem_cycles = reads * cpu_cycles_read + reads_l * cpu_cycles_read_l + writes * cpu_cycles_write + writes_l * cpu_cycles_write_l;
-
-    if (instr_cycles < mem_cycles)
-        instr_cycles = mem_cycles;
-
-    prefetch_bytes -= prefetch_prefixes;
-    prefetch_bytes -= bytes;
-    if (modrm != -1) {
-        if (ea32) {
-            if ((modrm & 7) == 4) {
-                if ((modrm & 0x700) == 0x500)
-                    prefetch_bytes -= 5;
-                else if ((modrm & 0xc0) == 0x40)
-                    prefetch_bytes -= 2;
-                else if ((modrm & 0xc0) == 0x80)
-                    prefetch_bytes -= 5;
-            } else {
-                if ((modrm & 0xc7) == 0x05)
-                    prefetch_bytes -= 4;
-                else if ((modrm & 0xc0) == 0x40)
-                    prefetch_bytes--;
-                else if ((modrm & 0xc0) == 0x80)
-                    prefetch_bytes -= 4;
-            }
-        } else {
-            if ((modrm & 0xc7) == 0x06)
-                prefetch_bytes -= 2;
-            else if ((modrm & 0xc0) != 0xc0)
-                prefetch_bytes -= ((modrm & 0xc0) >> 6);
-        }
-    }
-
-    /* Fill up prefetch queue */
-    while (prefetch_bytes < 0) {
-        prefetch_bytes += cpu_prefetch_width;
-        cycles -= cpu_prefetch_cycles;
-    }
-
-    /* Subtract cycles used for memory access by instruction */
-    instr_cycles -= mem_cycles;
-
-    while (instr_cycles >= cpu_prefetch_cycles) {
-        prefetch_bytes += cpu_prefetch_width;
-        instr_cycles -= cpu_prefetch_cycles;
-    }
-
-    prefetch_prefixes = 0;
-    if (prefetch_bytes > 16)
-        prefetch_bytes = 16;
-}
+int prefetch_bytes = 0;
 
 void
 prefetch_flush(void)
@@ -1487,7 +1434,10 @@ enter_smm(int in_hlt)
     }
     cpl_override = 0;
 
-    nmi_mask = 0;
+    /* The processor holds NMI off inside the handler, until an IRET or the
+       RSM (SDM 1999 vol. 3, 12.7); the chipset's NMI mask (port 70h) is
+       not the processor's to change. */
+    nmi_enable = 0;
 
     /* Entering consumes the latch; this stay can latch one SMI of its own,
        even when it was entered from the latch. */
@@ -1507,6 +1457,10 @@ enter_smm(int in_hlt)
     oldcpl = 0;
 
     cpu_cur_status &= ~(CPU_STATUS_PMODE | CPU_STATUS_V86);
+    /* CR0, CR3 and CR4 were loaded for SMM, with SMRAM mapped or not, and
+       the debug registers cleared: the translations go, and every link with
+       them */
+    flushmmucache();
     CPU_BLOCK_END();
 }
 
@@ -1631,7 +1585,11 @@ leave_smm(void)
             cpu_cur_status |= CPU_STATUS_V86;
     }
 
-    nmi_mask = 1;
+    /* RSM lifts the blocking: an NMI latched in SMM is taken before the
+       next instruction. The processor does not save the blocking of an NMI
+       handler that the SMI interrupted, so one may nest inside that
+       handler (SDM 1999 vol. 3, 12.7). */
+    nmi_enable = 1;
 
     oldcpl = CPL;
 
@@ -1668,6 +1626,10 @@ leave_smm(void)
     x386_common_log("EAX = %08X, EBX = %08X, ECX = %08X, EDX = %08X, ESI = %08X, EDI = %08X, ESP = %08X, EBP = %08X\n",
                     EAX, EBX, ECX, EDX, ESI, EDI, ESP, EBP);
     x386_common_log("leave_smm()\n");
+
+    /* The state before SMM back, CR0, CR3, CR4 and the debug registers
+       with it: as on entry */
+    flushmmucache();
 }
 
 /* #NM delivered while a block was being recorded (an x87 or MMX
@@ -2118,7 +2080,7 @@ sysexit(UNUSED(uint32_t fetchdat))
 
     cpu_cur_status &= ~(CPU_STATUS_NOTFLATSS /* | CPU_STATUS_V86*/);
     cpu_cur_status |= (CPU_STATUS_USE32 | CPU_STATUS_STACK32 | CPU_STATUS_PMODE);
-    flushmmucache_nopc();
+    flushmmucache_cpl();
     set_use32(1);
     set_stack32(1);
 
@@ -2235,7 +2197,7 @@ sysret(UNUSED(uint32_t fetchdat))
 
     cpu_cur_status &= ~(CPU_STATUS_NOTFLATSS /* | CPU_STATUS_V86*/);
     cpu_cur_status |= (CPU_STATUS_USE32 | CPU_STATUS_STACK32 | CPU_STATUS_PMODE);
-    flushmmucache_nopc();
+    flushmmucache_cpl();
     set_use32(1);
     set_stack32(1);
 
@@ -2274,7 +2236,7 @@ cpu_fast_off_reset(void)
 }
 
 void
-smi_raise(void)
+cpu_smi_raise_direct(void)
 {
     uint8_t ccr1_check;
 
@@ -2292,10 +2254,11 @@ smi_raise(void)
         cpu_fast_off_advance();
 
     smi_line = 1;
+    mem_chain_break(); /* the loop takes it: a chain leaves at its next link */
 }
 
 void
-nmi_raise_cpu(void)
+cpu_nmi_raise_direct(void)
 {
     if (is486 && (cpu_fast_off_flags & 0x20000000)) {
         if (!is_cpu_thread)
@@ -2306,15 +2269,33 @@ nmi_raise_cpu(void)
     }
 
     nmi = 1;
+    mem_chain_break(); /* the loop takes it: a chain leaves at its next link */
+}
+
+/* An NMI raised in the processor; apic marks one from the local APIC,
+   which port 70h does not gate (NMI_TAKEABLE). */
+void
+cpu_nmi_raise_core(int apic)
+{
+    cpu_nmi_raise_direct();
+    if (apic)
+        nmi |= 2;
 }
 
 void
+smi_raise(void)
+{
+    cpu_smi_raise_direct();
+}
+
+/* Public NMI wrapper gives IOAPIC LINT1 first claim before legacy NMI line. */
+void
 nmi_raise(void)
 {
-    if (current_lapic && (current_lapic->lapic_spurious_interrupt & 0x100)) {
-        apic_lapic_service_nmi();
-    } else
-        nmi_raise_cpu();
+    if (ioapic_lint1_raise())
+        return;
+
+    cpu_nmi_raise_direct();
 }
 
 #ifndef USE_DYNAREC

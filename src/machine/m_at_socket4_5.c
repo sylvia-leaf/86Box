@@ -53,12 +53,8 @@ machine_at_pci56001_init(const machine_t *model)
 
     machine_at_common_init(model);
 
-    pci_init(PCI_CONFIG_TYPE_1);
-    pci_register_slot(0x10, PCI_CARD_NORTHBRIDGE, 0,  0,  0,  0);
-    pci_register_slot(0x11, PCI_CARD_NORMAL,      1,  2,  3,  4);
-    pci_register_slot(0x12, PCI_CARD_NORMAL,      5,  6,  7,  8);
-    pci_register_slot(0x13, PCI_CARD_NORMAL,      9,  10, 11, 12);
-    pci_register_slot(0x14, PCI_CARD_NORMAL,      13, 14, 15, 16);
+    machine_pci_init();
+    machine_pci_register_slots();
 
     device_add(&opti5x7_pci_device);
     device_add(&opti822_device);
@@ -85,13 +81,8 @@ machine_at_celebris5xx_init(const machine_t *model)
 
     machine_at_common_init(model);
 
-    pci_init(PCI_CONFIG_TYPE_1);
-    pci_register_slot(0x00, PCI_CARD_NORTHBRIDGE, 0, 0, 0, 0);
-    pci_register_slot(0x01, PCI_CARD_SOUTHBRIDGE, 0, 0, 0, 0);
-    pci_register_slot(0x08, PCI_CARD_IDE,         4, 1, 2, 3); /* Onboard */
-    pci_register_slot(0x09, PCI_CARD_VIDEO,       4, 1, 2, 3); /* Onboard */
-    pci_register_slot(0x0B, PCI_CARD_NORMAL,      1, 3, 2, 1); /* Slot 01 */
-    pci_register_slot(0x0C, PCI_CARD_NORMAL,      2, 1, 3, 2); /* Slot 02 */
+    machine_pci_init();
+    machine_pci_register_slots();
 
     device_add(&vl82c59x_device);
     device_add(&intel_flash_bxt_device);

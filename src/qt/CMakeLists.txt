@@ -138,6 +138,8 @@ add_library(ui STATIC
     qt_mainwindow.cpp
     qt_mainwindow.hpp
     qt_mainwindow.ui
+    qt_debugconsole.cpp
+    qt_debugconsole.hpp
     qt_machinestatus.cpp
     qt_machinestatus.hpp
     qt_mediamenu.cpp
@@ -205,6 +207,12 @@ add_library(ui STATIC
     qt_settingsotherremovable.ui
     qt_settingsotherperipherals.cpp
     qt_settingsotherperipherals.hpp
+    qt_settingscards.cpp
+    qt_settingscards.hpp
+    qt_settingsoverview.cpp
+    qt_settingsoverview.hpp
+    qt_settingsdrives.cpp
+    qt_settingsdrives.hpp
     qt_settingsotherperipherals.ui
     qt_settings_bus_tracking.cpp
     qt_settings_bus_tracking.hpp

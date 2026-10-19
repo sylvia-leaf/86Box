@@ -655,12 +655,29 @@ dma_xfer_bytes(const dma_t *dev)
 
     if (!dma_eisa || (w < 2) || (dma_ext_size(dev) < 0x02))
         return w;
-    if (!(dev->mode & 0x20) && (dev->ac & (w - 1)))
+    /* Counting down, the transfer takes the bytes from the address down to
+       the aligned boundary below it: partial unless the address is the top
+       byte of an aligned unit. */
+    if (dev->mode & 0x20)
+        n = (int) (dev->ac & (w - 1)) + 1;
+    else if (dev->ac & (w - 1))
         n = w - (dev->ac & (w - 1));
     rem = (uint32_t) dev->cc + 1;
     if ((dev->cc >= 0) && (rem < (uint32_t) n))
         n = (int) rem;
     return n;
+}
+
+/* The lowest byte address a transfer of n bytes covers. A count by bytes
+   holds the address of the next byte to move, so counting down the bytes
+   lie below it; the ISA-compatible modes address the unit's first byte
+   either way. */
+static uint32_t
+dma_xfer_lo(const dma_t *dev, int n)
+{
+    if (dma_eisa && (dma_ext_size(dev) >= 0x02) && (dev->mode & 0x20))
+        return dev->ac - (uint32_t) (n - 1);
+    return dev->ac;
 }
 
 /* What a transfer of n bytes takes from the count: the bytes in the EISA
@@ -949,6 +966,11 @@ dma_ext_mode_write(uint16_t addr, uint8_t val, UNUSED(void *priv))
 
     if (addr == 0x4d6)
         channel |= 4;
+
+    /* "Because Channel 4 is not used, the DMA controller does not support
+       extended registers for Channel 4" (82374EB 3.2.3). */
+    if (channel == 4)
+        return;
 
     dma[channel].ext_mode   = val & 0x7c;
     dma_chain_mode[channel] = 0; /* so does one to the extended mode register (3.2.17) */
@@ -2969,9 +2991,10 @@ dma_channel_32_finish(int channel, int n)
 int
 dma_channel_read32(int channel, uint32_t *val)
 {
-    dma_t *dma_c = &dma[channel];
-    int    ret;
-    int    n;
+    dma_t   *dma_c = &dma[channel];
+    int      ret;
+    int      n;
+    uint32_t lo;
 
     if (!dma_eisa || (dma_c->size != 2)) {
         ret = dma_channel_read(channel);
@@ -2989,35 +3012,40 @@ dma_channel_read32(int channel, uint32_t *val)
 
     /* A partial dword at an unaligned start or at the end of the count. */
     n    = dma_xfer_bytes(dma_c);
+    lo   = dma_xfer_lo(dma_c, n);
     *val = 0;
     if (n == 4)
-        *val = _dma_readl(dma_c->ac, dma_c);
+        *val = _dma_readl(lo, dma_c);
     else
         for (int i = 0; i < n; i++)
-            *val |= (uint32_t) (_dma_read(dma_c->ac + i, dma_c) & 0xff) << (i * 8);
+            *val |= (uint32_t) (_dma_read(lo + i, dma_c) & 0xff) << (i * 8);
     return dma_channel_32_finish(channel, n);
 }
 
 int
 dma_channel_write32(int channel, uint32_t val)
 {
-    dma_t *dma_c = &dma[channel];
-    int    n;
+    dma_t   *dma_c = &dma[channel];
+    int      n;
+    uint32_t lo;
 
     if (!dma_eisa || (dma_c->size != 2))
         return dma_channel_write(channel, val & 0xffff);
 
     if (!dma_channel_32_ready(channel, 0x04))
         return DMA_NODATA;
+    if (dma_stat_adv_pend & (1 << channel))
+        dma_channel_advance(channel);
     dma_sg_load(dma_c);
 
-    n = dma_xfer_bytes(dma_c);
+    n  = dma_xfer_bytes(dma_c);
+    lo = dma_xfer_lo(dma_c, n);
     if ((dma_c->mode & 0x0c) == 0x04) {
         if (n == 4)
-            _dma_writel(dma_c->ac, val, dma_c);
+            _dma_writel(lo, val, dma_c);
         else
             for (int i = 0; i < n; i++)
-                _dma_write(dma_c->ac + i, (val >> (i * 8)) & 0xff, dma_c);
+                _dma_write(lo + i, (val >> (i * 8)) & 0xff, dma_c);
     }
     return dma_channel_32_finish(channel, n);
 }
@@ -3087,7 +3115,10 @@ dma_channel_read_only_legacy(int channel)
            end of a count by bytes, and steps the address by what it moved. */
         int n = dma_xfer_bytes(dma_c);
 
-        temp          = (n == 1) ? _dma_read(dma_c->ac, dma_c) : _dma_readw(dma_c->ac, dma_c);
+        /* Through this interface a 32-bit channel moves a word at most. */
+        if (n > 2)
+            n = 2;
+        temp          = (n == 1) ? _dma_read(dma_xfer_lo(dma_c, n), dma_c) : _dma_readw(dma_xfer_lo(dma_c, n), dma_c);
         dma_c->xfer_n = n;
         if (dma_c->mode & 0x20)
             dma_retreat_n(dma_c, n);
@@ -3186,7 +3217,10 @@ dma_channel_read_legacy(int channel)
            end of a count by bytes, and steps the address by what it moved. */
         int n = dma_xfer_bytes(dma_c);
 
-        temp          = (n == 1) ? _dma_read(dma_c->ac, dma_c) : _dma_readw(dma_c->ac, dma_c);
+        /* Through this interface a 32-bit channel moves a word at most. */
+        if (n > 2)
+            n = 2;
+        temp          = (n == 1) ? _dma_read(dma_xfer_lo(dma_c, n), dma_c) : _dma_readw(dma_xfer_lo(dma_c, n), dma_c);
         dma_c->xfer_n = n;
         if (dma_c->mode & 0x20)
             dma_retreat_n(dma_c, n);
@@ -3262,17 +3296,23 @@ dma_channel_write_legacy(int channel, uint16_t val)
     type = dma_c->mode & 0x0c;
     if ((type != 0x04) && (type != 0x00))
         return (DMA_NODATA);
+    /* A read that left its advance pending: taken first, with its count,
+       stop check and terminal count, as the read path does. */
+    if (dma_stat_adv_pend & (1 << channel))
+        dma_channel_advance(channel);
     dma_sg_load(dma_c);
 
     if (dma_eisa) {
         /* See the read: the width, or less at the ends of a count by bytes. */
         int n = dma_xfer_bytes(dma_c);
 
+        if (n > 2)
+            n = 2;
         if (type == 0x04) {
             if (n == 1)
-                _dma_write(dma_c->ac, val & 0xff, dma_c);
+                _dma_write(dma_xfer_lo(dma_c, n), val & 0xff, dma_c);
             else
-                _dma_writew(dma_c->ac, val, dma_c);
+                _dma_writew(dma_xfer_lo(dma_c, n), val, dma_c);
         }
         dma_c->xfer_n = n;
         if (dma_c->mode & 0x20)

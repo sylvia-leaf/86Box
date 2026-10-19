@@ -505,15 +505,15 @@ intel_ich2_write(int func, int addr, UNUSED(int len), uint8_t val, void *priv)
 
             case 0xd0:
                 dev->pci_conf[func][addr] = val & 0xcf;
-                current_ioapic->extended = val & 0x80;
+                //current_ioapic->extended = val & 0x80;
                 break;
 
             case 0xd1:
                 dev->pci_conf[func][addr] = val & 0x39;
-                if (val & 0x01)
-                    apic_ioapic_set_base(0, 0);
-                else
-                    mem_mapping_disable(&current_ioapic->ioapic_mem_window);
+                //if (val & 0x01)
+                    //apic_ioapic_set_base(0, 0);
+                //else
+                    //mem_mapping_disable(&current_ioapic->ioapic_mem_window);
                 pic_mouse_latch(val & 0x08);
                 pic_kbd_latch(val & 0x10);
                 break;
@@ -1099,10 +1099,10 @@ intel_ich2_init(UNUSED(const device_t *info))
 
     intel_ich2_reset(dev);
 
-    if (!current_ioapic) {
+    /*if (!current_ioapic) {
         device_add(&i82093aa_ioapic_device);
         mem_mapping_disable(&current_ioapic->ioapic_mem_window);
-    }
+    }*/
 
     return dev;
 }

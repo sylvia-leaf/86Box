@@ -19,6 +19,8 @@
 #ifndef EMU_MEM_H
 #define EMU_MEM_H
 
+#include <stdint.h>
+
 #define MEM_MAP_TO_SHADOW_RAM_MASK 1
 #define MEM_MAP_TO_RAM_ADDR_MASK   2
 
@@ -225,6 +227,8 @@ typedef struct page_t {
     uint64_t *byte_code_present_mask;
 } page_t;
 
+extern void mem_page_set_byte_masks(page_t *p, uint32_t page_nr);
+
 extern uint32_t purgable_page_list_head;
 __attribute__((always_inline)) static inline int
 page_in_evict_list(page_t *page)
@@ -266,7 +270,7 @@ extern page_t *page_lookup[1048576];
 extern uintptr_t readlookup2[2097152];
 extern uintptr_t writelookup2[1048576];
 
-extern uint32_t get_phys_virt;
+extern uint64_t get_phys_virt; /* 64 bits: ~0 matches no linear page (mem_get_phys_forget) */
 extern uint32_t get_phys_phys;
 
 extern int shadowbios;
@@ -391,6 +395,10 @@ extern void mem_mapping_recalc(uint64_t base, uint64_t size, uint32_t base_ignor
 extern void mem_set_wp(uint64_t base, uint64_t size, uint8_t flags, uint8_t wp);
 extern void mem_set_access(uint8_t bitmap, int mode, uint32_t base, uint32_t size, uint16_t access);
 
+extern const uint8_t *mem_phys_ptr(uint32_t addr, uint32_t len);
+extern uint32_t       mem_mapping_gen;
+extern size_t         mem_ram_size(void);
+
 extern uint8_t  mem_readb_phys(uint32_t addr);
 extern uint16_t mem_readw_phys(uint32_t addr);
 extern uint32_t mem_readl_phys(uint32_t addr);
@@ -427,6 +435,50 @@ extern void     pae_load_pdptes(void);
 extern void flushmmucache_write(void);
 extern void flushmmucache_pc(void);
 extern void flushmmucache_nopc(void);
+/* The processor's own translation changes: CR0, CR3 and CR4 loads and task
+   switches (_cpu, _nopc_cpu), a privilege change (_cpl) and INVLPG. Linked
+   blocks are checked against the new translations, not dropped. */
+extern void flushmmucache_cpu(void);
+extern void flushmmucache_nopc_cpu(void);
+extern void flushmmucache_cpl(void);
+extern void flushmmucache_invlpg(uint32_t addr);
+
+/* Chains of linked blocks (the new recompiler): a link stub leaves for the
+   dispatcher while this word is not 0. brk: something the loop must look
+   at (port I/O, an interrupt pending, NMI, SMI, a sooner timer, a reset);
+   code: compiled code of a linked block was written (WRITTEN), every link
+   must go (RELINK), or translations may have changed (REVALIDATE). Set
+   from anywhere; harmless when nothing is chained. */
+typedef union mem_chain_signal_t {
+    struct {
+        uint8_t brk;
+        uint8_t code;
+        uint8_t pad[2];
+    };
+    uint32_t pending;
+} mem_chain_signal_t;
+extern mem_chain_signal_t mem_chain_signal;
+#define MEM_CHAIN_CODE_WRITTEN    1
+#define MEM_CHAIN_CODE_RELINK     2
+#define MEM_CHAIN_CODE_REVALIDATE 4
+
+static __inline void
+mem_chain_break(void)
+{
+    __atomic_store_n(&mem_chain_signal.brk, 1, __ATOMIC_RELAXED);
+}
+
+static __inline void
+mem_chain_code(uint8_t why)
+{
+    __atomic_fetch_or(&mem_chain_signal.code, why, __ATOMIC_SEQ_CST);
+}
+
+/* The page entry a linear page translates to now, for checking linked
+   blocks: bit 0 present, bit 1 user (with every level's), the frame
+   above; 0 when not present. */
+extern uint64_t mmu_link_translate(uint32_t addr);
+extern void     mem_link_large_forget(void);
 
 extern void mem_debug_check_addr(uint32_t addr, int write);
 
@@ -451,6 +503,10 @@ extern mem_mapping_t *write_mapping[MEM_MAPPINGS_NO];
 extern void mem_add_mtrr(uint64_t base, uint64_t mask, uint8_t type);
 extern void mem_del_mtrr(uint64_t base, uint64_t mask);
 extern void mem_invalidate_mtrr(uint8_t wb);
+/* For the debug console. */
+extern mem_mapping_t *mem_debug_first_mapping(void);
+extern void           mem_debug_bus(uint32_t addr, mem_mapping_t **rd, mem_mapping_t **wr);
+extern uint16_t       mem_debug_state(uint32_t addr, int n);
 
 #ifdef EMU_CPU_H
 static __inline uint32_t

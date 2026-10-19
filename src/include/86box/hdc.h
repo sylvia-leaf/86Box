@@ -25,7 +25,7 @@
 #define HDC_NONE     0
 #define HDC_INTERNAL 1
 
-#define HDC_MAX      4
+#define HDC_MAX      13 /* Controller slots; the first may hold the machine's own (Internal). */
 
 extern int hdc_current[HDC_MAX];
 extern int hdc_onboard_enabled;
@@ -82,6 +82,7 @@ extern const device_t ide_cmd646_legacy_only_device;            /* CMD PCI-646 (
 extern const device_t ide_cmd646_single_channel_device;         /* CMD PCI-646 (Only primary channel) */
 extern const device_t ide_cmd646_ter_qua_device;                /* CMD PCI-646 (Tertiary and quaternary channels) */
 extern const device_t pdc20269_device;                          /* Promise Ultra133 TX2 */
+extern const device_t pdc20271_device;                          /* Promise FastTrak TX2000 */
 extern const device_t ide_cmd648_ter_qua_device;                /* CMD PCI-648 (Tertiary and quaternary channels) */
 extern const device_t ide_cmd648_ter_qua_onboard_device;        /* CMD PCI-648 (Tertiary and quaternary channels, on-board) */
 extern const device_t ide_cmd649_ter_qua_device;                /* CMD PCI-649 (Tertiary and quaternary channels) */

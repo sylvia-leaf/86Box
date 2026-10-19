@@ -53,7 +53,27 @@ extern event_t  *thread_create_event(void);
 extern void      thread_set_event(event_t *arg);
 extern void      thread_reset_event(event_t *arg);
 extern int       thread_wait_event(event_t *arg, int timeout);
+/* Give the rest of this time slice to another thread: for a wait that
+   spins on another thread's progress. */
+extern void      thread_yield(void);
 extern void      thread_destroy_event(event_t *arg);
+
+/* One step of a spin wait on another thread: the host's pause hint. A
+   wait counts its steps before it sleeps, so a step takes about as long on
+   every host: PAUSE on x86 (tens of nanoseconds); on ARM64 an ISB (9 ns on
+   an Apple M6), as YIELD is next to free there (under half a nanosecond)
+   and a wait of as many steps sleeps twenty times sooner. */
+static inline void
+thread_spin_pause(void)
+{
+#if defined(__x86_64__) || defined(__i386__) || defined(_M_X64) || defined(_M_IX86)
+    __builtin_ia32_pause();
+#elif defined(__aarch64__)
+    __asm__ __volatile__("isb sy" ::: "memory");
+#elif defined(__arm__)
+    __asm__ __volatile__("yield");
+#endif
+}
 
 extern mutex_t *thread_create_mutex(void);
 extern void     thread_close_mutex(mutex_t *arg);

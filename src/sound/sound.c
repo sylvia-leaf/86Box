@@ -398,7 +398,7 @@ sound_cd_thread(UNUSED(void *param))
             if (!cdaudioon)
                 break;
 
-            if ((cdrom[i].bus_type == CDROM_BUS_DISABLED) ||
+            if ((cdrom[i].bus_type == CDROM_BUS_DISABLED) || (cdrom[i].bus_type == CDROM_BUS_DISCONNECTED) ||
                 (cdrom[i].cd_status != CD_STATUS_PLAYING))
                 continue;
             const int ret = cdrom_audio_callback(&(cdrom[i]), cd_buffer[i],
@@ -629,7 +629,7 @@ sound_init(void)
     }
 
     for (uint8_t i = 0; i < CDROM_NUM; i++) {
-        if (cdrom[i].bus_type != CDROM_BUS_DISABLED)
+        if (cdrom[i].bus_type != CDROM_BUS_DISABLED && cdrom[i].bus_type != CDROM_BUS_DISCONNECTED)
             available_cdrom_drives++;
     }
 
@@ -835,7 +835,8 @@ sound_poll(UNUSED(void *priv))
 
     timer_advance_u64(&sound_poll_timer, sound_poll_latch);
 
-    sound_pos_global++;
+    /* Read by the FM worker thread (snd_cqm_nuked.c): stored whole. */
+    __atomic_store_n(&sound_pos_global, sound_pos_global + 1, __ATOMIC_RELEASE);
     if (sound_pos_global == sound_buf_len) {
         memset(outbuffer, 0x00, sound_buf_len * 2 * sizeof(int32_t));
 
@@ -941,7 +942,7 @@ sound_poll(UNUSED(void *priv))
         if (hdd_thread_enable) {
             thread_set_event(sound_hdd_event);
         }
-        sound_pos_global = 0;
+        __atomic_store_n(&sound_pos_global, 0, __ATOMIC_RELEASE);
     }
 }
 
@@ -952,7 +953,7 @@ music_poll(UNUSED(void *priv))
 
     timer_advance_u64(&music_poll_timer, music_poll_latch);
 
-    music_pos_global++;
+    __atomic_store_n(&music_pos_global, music_pos_global + 1, __ATOMIC_RELEASE);
     if (music_pos_global == MUSICBUFLEN) {
         memset(outbuffer_m, 0x00, MUSICBUFLEN * 2 * sizeof(int32_t));
 
@@ -978,7 +979,7 @@ music_poll(UNUSED(void *priv))
         else
             givealbuffer_music(outbuffer_m_ex_int16);
 
-        music_pos_global = 0;
+        __atomic_store_n(&music_pos_global, 0, __ATOMIC_RELEASE);
     }
 }
 
@@ -1176,7 +1177,7 @@ sound_cd_thread_reset(void)
     for (uint8_t i = 0; i < CDROM_NUM; i++) {
         cdrom_stop(&(cdrom[i]));
 
-        if (cdrom[i].bus_type != CDROM_BUS_DISABLED)
+        if (cdrom[i].bus_type != CDROM_BUS_DISABLED && cdrom[i].bus_type != CDROM_BUS_DISCONNECTED)
             available_cdrom_drives++;
     }
 

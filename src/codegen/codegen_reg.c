@@ -38,6 +38,27 @@ static int            host_int_regs_low_only;
 static uint32_t       mem_dest_write_mask;
 #endif
 
+#ifdef CODEGEN_BACKEND_SLOW_STORES
+/* Stores waiting for a memory access's slow path, and immediates waiting
+   for a flush (codegen_reg_flush_slow, codegen_reg_write_imm). */
+#    define CODEGEN_PENDING_IMM 16
+static struct {
+    ir_reg_t reg;
+    uint32_t imm;
+} codegen_pending_imm[CODEGEN_PENDING_IMM];
+static int codegen_pending_imm_n;
+
+static struct {
+    ir_reg_t reg;
+    int      host_reg;
+    int      fp;  /* in host_fp_reg_set */
+    int      idx; /* its index there */
+} codegen_slow_regs[CODEGEN_HOST_REGS + CODEGEN_HOST_FP_REGS];
+static int codegen_slow_n;
+int        codegen_slow_open;        /* a memory access's stores not yet emitted */
+static int codegen_slow_dest = -1;   /* its destination's waiting immediate, dropped after them */
+#endif
+
 uint64_t dirty_ir_regs[2] = { 0, 0 };
 
 enum {
@@ -193,6 +214,10 @@ struct
     [IREG_fpu_pc] = { REG_DWORD,        &cpu_state.fpu_pc,                            REG_INTEGER, REG_PERMANENT},
     [IREG_sf_exc] = { REG_DWORD,        &cpu_state.sf_exc,                            REG_INTEGER, REG_PERMANENT},
 
+    [IREG_x87h_qx] = { REG_QWORD,       &cpu_state.x87h_q,                            REG_FP,      REG_PERMANENT},
+    [IREG_x87h_lx] = { REG_DWORD,       &cpu_state.x87h_l,                            REG_INTEGER, REG_PERMANENT},
+    [IREG_x87h_wx] = { REG_WORD,        &cpu_state.x87h_w,                            REG_INTEGER, REG_PERMANENT},
+
     [IREG_x87_operandx] = { REG_DOUBLE, &cpu_state.x87_operand,                       REG_FP,      REG_PERMANENT},
 
  /*Temporary registers are stored on the stack, and are not guaranteed to
@@ -240,8 +265,8 @@ static const uint8_t native_requested_sizes[10][8] =
 /*The IR registers that hold state outside the block (REG_PERMANENT): a
   version of one may be read by C code the IR does not see -- a helper, the
   interpreter after the block -- so it is kept once such code may have run,
-  wherever it sits in the enumeration (IREG_x87_operandx and IREG_fpu_op..
-  IREG_sf_exc come after the temporaries)*/
+  wherever it sits in the enumeration (IREG_fpu_op..IREG_x87_operandx come
+  after the temporaries)*/
 uint64_t ireg_permanent_mask[2];
 
 void
@@ -331,6 +356,12 @@ codegen_reg_reset(void)
             ireg_permanent_mask[c >> 6] |= 1ull << (c & 0x3f);
     }
 
+#ifdef CODEGEN_BACKEND_SLOW_STORES
+    codegen_pending_imm_n = 0;
+    codegen_slow_n        = 0;
+    codegen_slow_open     = 0;
+    codegen_slow_dest     = -1;
+#endif
     host_reg_set.regs        = _host_regs;
     host_reg_set.dirty       = _host_reg_dirty;
     host_reg_set.reg_list    = codegen_host_reg_list;
@@ -532,9 +563,9 @@ codegen_reg_load(host_reg_set_t *reg_set, codeblock_t *block, int c, ir_reg_t ir
 }
 
 static void
-codegen_reg_writeback_value(host_reg_set_t *reg_set, codeblock_t *block, int c)
+codegen_reg_store(codeblock_t *block, ir_reg_t reg, int host_reg)
 {
-    int   ir_reg = IREG_GET_REG(reg_set->regs[c].reg);
+    int   ir_reg = IREG_GET_REG(reg.reg);
     void *p      = ireg_data[ir_reg].p;
 
     switch (ireg_data[ir_reg].native_size) {
@@ -545,7 +576,7 @@ codegen_reg_writeback_value(host_reg_set_t *reg_set, codeblock_t *block, int c)
             if ((uintptr_t) p < 256)
                 fatal("codegen_reg_writeback - REG_BYTE %p\n", p);
 #endif
-            codegen_direct_write_8(block, p, reg_set->reg_list[c].reg);
+            codegen_direct_write_8(block, p, host_reg);
             break;
 
         case REG_WORD:
@@ -555,7 +586,7 @@ codegen_reg_writeback_value(host_reg_set_t *reg_set, codeblock_t *block, int c)
             if ((uintptr_t) p < 256)
                 fatal("codegen_reg_writeback - REG_WORD %p\n", p);
 #endif
-            codegen_direct_write_16(block, p, reg_set->reg_list[c].reg);
+            codegen_direct_write_16(block, p, host_reg);
             break;
 
         case REG_DWORD:
@@ -564,9 +595,9 @@ codegen_reg_writeback_value(host_reg_set_t *reg_set, codeblock_t *block, int c)
                 fatal("codegen_reg_writeback - REG_DWORD !REG_INTEGER\n");
 #endif
             if ((uintptr_t) p < 256)
-                codegen_direct_write_32_stack(block, (intptr_t) p, reg_set->reg_list[c].reg);
+                codegen_direct_write_32_stack(block, (intptr_t) p, host_reg);
             else
-                codegen_direct_write_32(block, p, reg_set->reg_list[c].reg);
+                codegen_direct_write_32(block, p, host_reg);
             break;
 
         case REG_QWORD:
@@ -575,9 +606,9 @@ codegen_reg_writeback_value(host_reg_set_t *reg_set, codeblock_t *block, int c)
                 fatal("codegen_reg_writeback - REG_QWORD !REG_FP\n");
 #endif
             if ((uintptr_t) p < 256)
-                codegen_direct_write_64_stack(block, (intptr_t) p, reg_set->reg_list[c].reg);
+                codegen_direct_write_64_stack(block, (intptr_t) p, host_reg);
             else
-                codegen_direct_write_64(block, p, reg_set->reg_list[c].reg);
+                codegen_direct_write_64(block, p, host_reg);
             break;
 
         case REG_DQWORD:
@@ -586,9 +617,9 @@ codegen_reg_writeback_value(host_reg_set_t *reg_set, codeblock_t *block, int c)
                 fatal("codegen_reg_writeback - REG_DQWORD !REG_FP\n");
 #endif
             if ((uintptr_t) p < 256)
-                codegen_direct_write_128_stack(block, (intptr_t) p, reg_set->reg_list[c].reg);
+                codegen_direct_write_128_stack(block, (intptr_t) p, host_reg);
             else
-                codegen_direct_write_128(block, p, reg_set->reg_list[c].reg);
+                codegen_direct_write_128(block, p, host_reg);
             break;
 
         case REG_POINTER:
@@ -598,7 +629,7 @@ codegen_reg_writeback_value(host_reg_set_t *reg_set, codeblock_t *block, int c)
             if ((uintptr_t) p < 256)
                 fatal("codegen_reg_writeback - REG_POINTER %p\n", p);
 #endif
-            codegen_direct_write_ptr(block, p, reg_set->reg_list[c].reg);
+            codegen_direct_write_ptr(block, p, host_reg);
             break;
 
         case REG_DOUBLE:
@@ -607,9 +638,9 @@ codegen_reg_writeback_value(host_reg_set_t *reg_set, codeblock_t *block, int c)
                 fatal("codegen_reg_writeback - REG_DOUBLE !REG_FP\n");
 #endif
             if ((uintptr_t) p < 256)
-                codegen_direct_write_double_stack(block, (intptr_t) p, reg_set->reg_list[c].reg);
+                codegen_direct_write_double_stack(block, (intptr_t) p, host_reg);
             else
-                codegen_direct_write_double(block, p, reg_set->reg_list[c].reg);
+                codegen_direct_write_double(block, p, host_reg);
             break;
 
         case REG_FPU_ST_BYTE:
@@ -618,9 +649,9 @@ codegen_reg_writeback_value(host_reg_set_t *reg_set, codeblock_t *block, int c)
                 fatal("codegen_reg_writeback - REG_FPU_ST_BYTE !REG_INTEGER\n");
 #endif
             if (block->flags & CODEBLOCK_STATIC_TOP)
-                codegen_direct_write_8(block, &cpu_state.tag[reg_set->regs[c].reg & 7], reg_set->reg_list[c].reg);
+                codegen_direct_write_8(block, &cpu_state.tag[reg.reg & 7], host_reg);
             else
-                codegen_direct_write_st_8(block, &cpu_state.tag[0], reg_set->regs[c].reg & 7, reg_set->reg_list[c].reg);
+                codegen_direct_write_st_8(block, &cpu_state.tag[0], reg.reg & 7, host_reg);
             break;
 
         case REG_FPU_ST_QWORD:
@@ -629,9 +660,9 @@ codegen_reg_writeback_value(host_reg_set_t *reg_set, codeblock_t *block, int c)
                 fatal("codegen_reg_writeback - REG_FPU_ST_QWORD !REG_FP\n");
 #endif
             if (block->flags & CODEBLOCK_STATIC_TOP)
-                codegen_direct_write_64(block, &cpu_state.MM[reg_set->regs[c].reg & 7], reg_set->reg_list[c].reg);
+                codegen_direct_write_64(block, &cpu_state.MM[reg.reg & 7], host_reg);
             else
-                codegen_direct_write_st_64(block, &cpu_state.MM[0], reg_set->regs[c].reg & 7, reg_set->reg_list[c].reg);
+                codegen_direct_write_st_64(block, &cpu_state.MM[0], reg.reg & 7, host_reg);
             break;
 
         case REG_FPU_ST_DOUBLE:
@@ -640,9 +671,9 @@ codegen_reg_writeback_value(host_reg_set_t *reg_set, codeblock_t *block, int c)
                 fatal("codegen_reg_writeback - REG_FPU_ST_DOUBLE !REG_FP\n");
 #endif
             if (block->flags & CODEBLOCK_STATIC_TOP)
-                codegen_direct_write_double(block, &cpu_state.ST[reg_set->regs[c].reg & 7], reg_set->reg_list[c].reg);
+                codegen_direct_write_double(block, &cpu_state.ST[reg.reg & 7], host_reg);
             else
-                codegen_direct_write_st_double(block, &cpu_state.ST[0], reg_set->regs[c].reg & 7, reg_set->reg_list[c].reg);
+                codegen_direct_write_st_double(block, &cpu_state.ST[0], reg.reg & 7, host_reg);
             break;
 
         default:
@@ -653,18 +684,20 @@ codegen_reg_writeback_value(host_reg_set_t *reg_set, codeblock_t *block, int c)
 static void
 codegen_reg_writeback(host_reg_set_t *reg_set, codeblock_t *block, int c, int invalidate)
 {
-    ir_reg_t reg = reg_set->regs[c];
-    if (!ir_get_refcount(reg) && ireg_data[IREG_GET_REG(reg.reg)].is_volatile)
+    int ir_reg = IREG_GET_REG(reg_set->regs[c].reg);
+
+    if (!reg_version[ir_reg][reg_set->regs[c].version].refcount && ireg_data[ir_reg].is_volatile)
         return;
-    codegen_reg_writeback_value(reg_set, block, c);
+
+    codegen_reg_store(block, reg_set->regs[c], reg_set->reg_list[c].reg);
     if (invalidate)
         reg_set->regs[c] = invalid_ir_reg;
     reg_set->dirty[c] = 0;
 }
 
 #ifdef CODEGEN_BACKEND_HAS_MOV_IMM
-void
-codegen_reg_write_imm(codeblock_t *block, ir_reg_t ir_reg, uint32_t imm_data)
+static void
+codegen_reg_store_imm(codeblock_t *block, ir_reg_t ir_reg, uint32_t imm_data)
 {
     int   reg_idx = IREG_GET_REG(ir_reg.reg);
     void *p       = ireg_data[reg_idx].p;
@@ -703,6 +736,111 @@ codegen_reg_write_imm(codeblock_t *block, ir_reg_t ir_reg, uint32_t imm_data)
         default:
             fatal("codegen_reg_write_imm - native_size=%i\n", ireg_data[reg_idx].native_size);
     }
+}
+#endif
+
+#ifdef CODEGEN_BACKEND_SLOW_STORES
+/* The stores a memory access's slow path makes for it (the backend has it
+   call codegen_reg_emit_slow): its fast path calls no C code, so what the
+   flush before it would write back is written back there only, and stays
+   dirty for the next flush. An immediate written straight to a register's
+   place in cpu_state (the PC, oldpc ...: nothing in the block reads it
+   again) waits too: stored at the next flush, first, and in each memory
+   access's slow path until then; a newer value of the register replaces
+   it. Before a jump's destination it is stored on the way in, so the
+   jumping path, which took its own at the jump, never stores it. */
+static void
+codegen_pending_imm_drop(int ir_reg)
+{
+    for (int i = 0; i < codegen_pending_imm_n; i++) {
+        if (IREG_GET_REG(codegen_pending_imm[i].reg.reg) == ir_reg) {
+            codegen_pending_imm[i] = codegen_pending_imm[--codegen_pending_imm_n];
+            return;
+        }
+    }
+}
+
+/* The pending immediates stored here, and forgotten. */
+void
+codegen_reg_store_pending(codeblock_t *block)
+{
+    for (int i = 0; i < codegen_pending_imm_n; i++)
+        codegen_reg_store_imm(block, codegen_pending_imm[i].reg, codegen_pending_imm[i].imm);
+    codegen_pending_imm_n = 0;
+}
+
+/* One pending immediate stored here, if the register has one: before the
+   register is loaded from its place. */
+static void
+codegen_pending_imm_store_one(codeblock_t *block, int ir_reg)
+{
+    for (int i = 0; i < codegen_pending_imm_n; i++) {
+        if (IREG_GET_REG(codegen_pending_imm[i].reg.reg) == ir_reg) {
+            codegen_reg_store_imm(block, codegen_pending_imm[i].reg, codegen_pending_imm[i].imm);
+            codegen_pending_imm[i] = codegen_pending_imm[--codegen_pending_imm_n];
+            return;
+        }
+    }
+}
+
+/* The bytes codegen_reg_emit_slow may emit, for the backend to keep room. */
+int
+codegen_reg_slow_size(void)
+{
+    return (codegen_pending_imm_n + codegen_slow_n) * 24;
+}
+
+/* In a memory access's slow path, before its call: what it waits for. A
+   register taken from its host register since (the access's destination,
+   or the rest of it read in, needed one) was written back then; one that
+   holds a newer version of the same register still holds the value before
+   the access, the access writing its result only after this. */
+void
+codegen_reg_emit_slow(codeblock_t *block)
+{
+    for (int i = 0; i < codegen_pending_imm_n; i++)
+        codegen_reg_store_imm(block, codegen_pending_imm[i].reg, codegen_pending_imm[i].imm);
+    for (int i = 0; i < codegen_slow_n; i++) {
+        const host_reg_set_t *reg_set = codegen_slow_regs[i].fp ? &host_fp_reg_set : &host_reg_set;
+        const ir_reg_t        now     = reg_set->regs[codegen_slow_regs[i].idx];
+
+        if (ir_reg_is_invalid(now) || (IREG_GET_REG(now.reg) != IREG_GET_REG(codegen_slow_regs[i].reg.reg)))
+            continue;
+        codegen_reg_store(block, codegen_slow_regs[i].reg, codegen_slow_regs[i].host_reg);
+    }
+    if (codegen_slow_dest >= 0) {
+        codegen_pending_imm_drop(codegen_slow_dest);
+        codegen_slow_dest = -1;
+    }
+    codegen_slow_open = 0;
+}
+#endif
+
+#ifdef CODEGEN_BACKEND_HAS_MOV_IMM
+/* An immediate for a register nothing reads again in the block, straight
+   to its place: pending until a flush or a memory access's slow path where
+   the backend keeps those stores there (CODEGEN_BACKEND_SLOW_STORES). */
+void
+codegen_reg_write_imm(codeblock_t *block, ir_reg_t ir_reg, uint32_t imm_data)
+{
+#    ifdef CODEGEN_BACKEND_SLOW_STORES
+    const int reg_idx = IREG_GET_REG(ir_reg.reg);
+
+    for (int i = 0; i < codegen_pending_imm_n; i++) {
+        if (IREG_GET_REG(codegen_pending_imm[i].reg.reg) == reg_idx) {
+            codegen_pending_imm[i].reg = ir_reg;
+            codegen_pending_imm[i].imm = imm_data;
+            return;
+        }
+    }
+    if (codegen_pending_imm_n == CODEGEN_PENDING_IMM)
+        codegen_reg_store_pending(block);
+    codegen_pending_imm[codegen_pending_imm_n].reg = ir_reg;
+    codegen_pending_imm[codegen_pending_imm_n].imm = imm_data;
+    codegen_pending_imm_n++;
+#    else
+    codegen_reg_store_imm(block, ir_reg, imm_data);
+#    endif
 }
 #endif
 
@@ -856,6 +994,9 @@ codegen_reg_alloc_read_reg(codeblock_t *block, ir_reg_t ir_reg, int *host_reg_id
         }
         if (reg_set->dirty[c])
             codegen_reg_writeback(reg_set, block, c, 1);
+#ifdef CODEGEN_BACKEND_SLOW_STORES
+        codegen_pending_imm_store_one(block, IREG_GET_REG(ir_reg.reg)); /* its place up to date first */
+#endif
         codegen_reg_load(reg_set, block, c, ir_reg);
         reg_set->locked |= (1 << c);
         reg_set->dirty[c] = 0;
@@ -900,6 +1041,17 @@ codegen_reg_alloc_write_reg(codeblock_t *block, ir_reg_t ir_reg)
         reg_set->dirty[c]        = 1;
         return allocated_host_reg(reg_set, c, ir_reg);
     }
+
+#ifdef CODEGEN_BACKEND_SLOW_STORES
+    /* The whole register written: a value waiting for its place is older,
+       dropped -- after a memory access's slow path, which stores it as the
+       value before the access. (Part of it, above: the rest is read in, and
+       a waiting value stored before it is, codegen_reg_alloc_read_reg.) */
+    if (codegen_slow_open)
+        codegen_slow_dest = IREG_GET_REG(ir_reg.reg);
+    else
+        codegen_pending_imm_drop(IREG_GET_REG(ir_reg.reg));
+#endif
 
     /*Search for previous version in host register*/
     for (c = 0; c < reg_set->nr_regs; c++) {
@@ -997,6 +1149,9 @@ codegen_reg_rename(codeblock_t *block, ir_reg_t src, ir_reg_t dst)
     target = c;
     if (reg_set->dirty[target])
         codegen_reg_writeback(reg_set, block, target, 0);
+#ifdef CODEGEN_BACKEND_SLOW_STORES
+    codegen_pending_imm_drop(IREG_GET_REG(dst.reg)); /* a newer value, in a host register */
+#endif
     reg_set->regs[target]  = dst;
     reg_set->dirty[target] = 1;
 #if 0
@@ -1095,7 +1250,7 @@ codegen_reg_sync_mem(codeblock_t *block, const codegen_mem_reg_state_t *state, i
         if (reload)
             codegen_reg_load(&regs, block, 0, reg);
         else
-            codegen_reg_writeback_value(&regs, block, 0);
+            codegen_reg_writeback(&regs, block, 0, 1);
     }
 }
 
@@ -1204,6 +1359,9 @@ codegen_reg_flush(UNUSED(ir_data_t *ir), codeblock_t *block)
     host_reg_set_t *reg_set;
     int             c;
 
+#ifdef CODEGEN_BACKEND_SLOW_STORES
+    codegen_reg_store_pending(block);
+#endif
     reg_set = &host_reg_set;
     for (c = 0; c < reg_set->nr_regs; c++) {
         if (!ir_reg_is_invalid(reg_set->regs[c]) && reg_set->dirty[c]) {
@@ -1235,12 +1393,63 @@ codegen_reg_flush(UNUSED(ir_data_t *ir), codeblock_t *block)
     }
 }
 
+#ifdef CODEGEN_BACKEND_SLOW_STORES
+/* For a memory access: the flush before it, but what it writes back only
+   noted, for its slow path (codegen_reg_emit_slow); the registers stay as
+   they are. A copy of the cycle count is written back and dropped as the
+   flush does it, and a volatile host register too, should a backend have
+   one. */
+void
+codegen_reg_flush_slow(UNUSED(ir_data_t *ir), codeblock_t *block)
+{
+    host_reg_set_t *sets[2] = { &host_reg_set, &host_fp_reg_set };
+
+    codegen_slow_n = 0;
+    for (int k = 0; k < 2; k++) {
+        host_reg_set_t *reg_set = sets[k];
+
+        for (int c = 0; c < reg_set->nr_regs; c++) {
+            const int valid = !ir_reg_is_invalid(reg_set->regs[c]);
+
+            if ((reg_set->reg_list[c].flags & HOST_REG_FLAG_VOLATILE) ||
+                (valid && !k && (IREG_GET_REG(reg_set->regs[c].reg) == IREG_cycles))) {
+                if (valid && reg_set->dirty[c])
+                    codegen_reg_writeback(reg_set, block, c, 0);
+                reg_set->regs[c]  = invalid_ir_reg;
+                reg_set->dirty[c] = 0;
+            } else if (valid && reg_set->dirty[c]) {
+                const int ir_reg = IREG_GET_REG(reg_set->regs[c].reg);
+
+                if (!reg_version[ir_reg][reg_set->regs[c].version].refcount && ireg_data[ir_reg].is_volatile)
+                    continue;
+                codegen_slow_regs[codegen_slow_n].reg      = reg_set->regs[c];
+                codegen_slow_regs[codegen_slow_n].host_reg = reg_set->reg_list[c].reg;
+                codegen_slow_regs[codegen_slow_n].fp       = k;
+                codegen_slow_regs[codegen_slow_n].idx      = c;
+                codegen_slow_n++;
+            }
+        }
+    }
+    codegen_slow_open = 1;
+}
+
+/* Before a jump's destination, on the way in: the pending immediates. */
+void
+codegen_reg_jump_dest(codeblock_t *block)
+{
+    codegen_reg_store_pending(block);
+}
+#endif
+
 void
 codegen_reg_flush_invalidate(UNUSED(ir_data_t *ir), codeblock_t *block)
 {
     host_reg_set_t *reg_set;
     int             c;
 
+#ifdef CODEGEN_BACKEND_SLOW_STORES
+    codegen_reg_store_pending(block);
+#endif
     reg_set = &host_reg_set;
     for (c = 0; c < reg_set->nr_regs; c++) {
         if (!ir_reg_is_invalid(reg_set->regs[c]) && reg_set->dirty[c]) {

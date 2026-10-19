@@ -512,7 +512,36 @@ typedef struct {
        permanent register of the recompiler, for the division helper
        (x87_dyn_fdiv, 386_dynarec.c) */
     double x87_operand;
+
+    /* The host-x87 FPU (cpu/x87_host.h): a memory operand loaded for a
+       compiled instruction, or the value it leaves for the block to store,
+       each a permanent register of the recompiler; the status word a store
+       leaves until the block has written its value; the control word an
+       instruction runs with, and the host's own, which it puts back after
+       (the x87 control word is preserved across calls in both host ABIs, and
+       C on this thread uses the x87); and the exception flags the host x87
+       of this thread has accumulated that the guest has been given. */
+    uint64_t x87h_q;
+    uint32_t x87h_l;
+    uint16_t x87h_w;
+    uint16_t x87h_sw;
+    uint16_t x87h_cw;
+    uint16_t x87h_hcw;
+    uint16_t x87h_fl;
+
+    /* The lookup tables (readlookup2, writelookup2), where the ARM64
+       memory routines reach them with one load off cpu_state; set by the
+       backend's init */
+    uintptr_t *lookup2_r;
+    uintptr_t *lookup2_w;
 #endif
+
+    /* Chains of linked blocks (the new recompiler): the signal word a link
+       stub tests (mem.h mem_chain_signal), the cycles value a chain runs
+       down to (the next timer), and the cycles it entered with. */
+    void *chain_signal;
+    int   chain_floor;
+    int   chain_cycles;
 } cpu_state_t;
 
 
@@ -675,6 +704,17 @@ extern uint16_t cpu_cur_status;
 extern uint64_t cpu_CR4_mask;
 extern uint64_t cpu_CR4_ignore;
 extern uint64_t tsc;
+extern int64_t  cpu_tsc_offset;
+extern void     cpu_tsc_write(uint64_t val);
+
+/* The time stamp counter: the machine's clock plus the offset a write to
+   it set (cpu.c). */
+static inline uint64_t
+cpu_tsc_read(void)
+{
+    return tsc + (uint64_t) cpu_tsc_offset;
+}
+
 extern msr_t    msr;
 extern uint8_t  opcode;
 extern int      cpl_override;
@@ -845,6 +885,18 @@ extern void execvx0(int32_t cycs);
 extern void enter_smm(int in_hlt);
 extern void enter_smm_check(int in_hlt);
 extern void leave_smm(void);
+
+/* The local APICs (cpu_lapic.c), as the processor core reaches them. */
+extern void     cpu_lapic_reset_all(void);
+extern void     cpu_lapic_ven_reset(void);
+extern int      cpu_apic_model_capable(void);
+extern int      cpu_apic_feature_enabled(void);
+extern uint8_t  cpu_lapic_index_source(void);
+extern uint8_t  cpu_ap_startup_request(uint8_t lapic_index, uint8_t vector);
+extern uint32_t cpu_cpuid_apic_id_ebx(void);
+extern uint64_t cpu_apic_base_msr_read_current(void);
+extern void     cpu_apic_base_msr_write_current(uint64_t val);
+
 extern void exec386_2386(int32_t cycs);
 /* Intel Inboard 386/PC POST fix-ups - shared by both interpreter loops, and gated
    on the card actually being present (inboard386.c). */
@@ -941,6 +993,160 @@ extern void interrupt_808x(uint16_t addr);
 
 extern void reset_vx0(int hard);
 
+/*
+ * CPU-owned LAPIC API: LAPIC/IOAPIC code routes through these helpers instead
+ * of touching CPU mirrors, timer host state, or APIC base MSR fields directly.
+ */
+extern uint8_t  cpu_lapic_id_read_index(uint8_t lapic_index);
+extern void     cpu_lapic_id_load_index(uint8_t lapic_index, uint8_t id);
+extern void     cpu_lapic_svr_load_index(uint8_t lapic_index, uint32_t val);
+extern uint32_t cpu_lapic_tpr_read_index(uint8_t lapic_index);
+extern void     cpu_lapic_tpr_load_index(uint8_t lapic_index, uint32_t val);
+extern uint32_t cpu_lapic_ldr_read_index(uint8_t lapic_index);
+extern void     cpu_lapic_ldr_load_index(uint8_t lapic_index, uint32_t val);
+extern uint32_t cpu_lapic_dfr_read_index(uint8_t lapic_index);
+extern void     cpu_lapic_dfr_load_index(uint8_t lapic_index, uint32_t val);
+extern void     cpu_lapic_version_load_index(uint8_t lapic_index, uint32_t val);
+extern void     cpu_lapic_arb_id_load_index(uint8_t lapic_index, uint32_t val);
+extern uint32_t cpu_lapic_apr_value_index(uint8_t lapic_index);
+extern uint32_t cpu_lapic_ppr_update_index(uint8_t lapic_index);
+extern void     cpu_lapic_ppr_write_index(uint8_t lapic_index, uint32_t val);
+extern void     cpu_lapic_ppr_load_index(uint8_t lapic_index, uint32_t val);
+extern void     cpu_lapic_esr_or_index(uint8_t lapic_index, uint32_t error);
+extern void     cpu_lapic_esr_load_index(uint8_t lapic_index, uint32_t val);
+extern void     cpu_lapic_esr_read_clear_index(uint8_t lapic_index);
+extern uint32_t cpu_lapic_icr_lo_read_index(uint8_t lapic_index);
+extern void     cpu_lapic_icr_lo_load_index(uint8_t lapic_index, uint32_t val);
+extern uint32_t cpu_lapic_icr_hi_read_index(uint8_t lapic_index);
+extern void     cpu_lapic_icr_hi_load_index(uint8_t lapic_index, uint32_t val);
+extern void     cpu_lapic_rrr_write_index(uint8_t lapic_index, uint32_t val);
+extern void     cpu_lapic_rrr_load_index(uint8_t lapic_index, uint32_t val);
+extern uint64_t cpu_apic_base_msr_read_index(uint8_t lapic_index);
+extern void     cpu_apic_base_msr_load_index(uint8_t lapic_index, uint64_t val);
+extern uint32_t cpu_lapic_mmio_base_read_index(uint8_t lapic_index);
+extern int      cpu_lapic_mmio_mapping_enabled_index(uint8_t lapic_index);
+extern int      cpu_lapic_bsp_index(uint8_t lapic_index);
+
+typedef struct cpu_lapic_icr_delivery_t {
+    uint8_t  vector;
+    uint8_t  dest;
+    uint32_t delivery;
+    uint32_t shorthand;
+    int      destmod;
+    int      level;
+    int      trigger;
+} cpu_lapic_icr_delivery_t;
+
+/* Delivery layer receives decoded ICR fields after CPU side latches status bits. */
+extern int  cpu_lapic_icr_delivery_write_index(uint8_t lapic_index, uint32_t val,
+                                               cpu_lapic_icr_delivery_t *delivery);
+extern void cpu_lapic_icr_delivery_complete_index(uint8_t lapic_index);
+extern void cpu_lapic_icr_remote_read_in_progress_index(uint8_t lapic_index);
+extern void cpu_lapic_icr_remote_read_valid_index(uint8_t lapic_index);
+extern void cpu_lapic_icr_remote_read_complete_index(uint8_t lapic_index, uint32_t val);
+extern void cpu_lapic_icr_remote_read_clear_index(uint8_t lapic_index);
+extern uint32_t cpu_lapic_lvt_timer_read_index(uint8_t lapic_index);
+extern void     cpu_lapic_lvt_timer_load_index(uint8_t lapic_index, uint32_t val);
+extern uint32_t cpu_lapic_lvt_lint0_read_index(uint8_t lapic_index);
+extern void     cpu_lapic_lvt_lint0_load_index(uint8_t lapic_index, uint32_t val);
+extern void     cpu_lapic_lvt_lint1_load_index(uint8_t lapic_index, uint32_t val);
+extern void     cpu_lapic_lvt_error_load_index(uint8_t lapic_index, uint32_t val);
+extern uint32_t *cpu_lapic_irr_words_index(uint8_t lapic_index);
+extern void     cpu_lapic_irr_reset_index(uint8_t lapic_index);
+extern void     cpu_lapic_extint_live_set(uint8_t lapic_index, int pending);
+extern uint8_t  cpu_apic_int_fast_ok;
+extern void     cpu_lapic_irr_load_index(uint8_t lapic_index,
+                                         const uint32_t words[8]);
+extern void     cpu_lapic_irr_save_index(uint8_t lapic_index,
+                                         uint32_t words[8]);
+extern uint32_t *cpu_lapic_isr_words_index(uint8_t lapic_index);
+extern void     cpu_lapic_isr_reset_index(uint8_t lapic_index);
+extern void     cpu_lapic_isr_load_index(uint8_t lapic_index,
+                                         const uint32_t words[8]);
+extern void     cpu_lapic_isr_save_index(uint8_t lapic_index,
+                                         uint32_t words[8]);
+extern uint32_t *cpu_lapic_tmr_words_index(uint8_t lapic_index);
+extern void     cpu_lapic_tmr_reset_index(uint8_t lapic_index);
+extern void     cpu_lapic_tmr_load_index(uint8_t lapic_index,
+                                         const uint32_t words[8]);
+extern void     cpu_lapic_tmr_save_index(uint8_t lapic_index,
+                                         uint32_t words[8]);
+extern int      cpu_lapic_eoi_index(uint8_t lapic_index, int *level);
+extern int      cpu_lapic_slot_free_index(uint8_t lapic_index, uint8_t vector);
+extern int      cpu_lapic_accept_interrupt_index(uint8_t lapic_index, uint8_t vector, int level);
+extern int      cpu_lapic_promote_irr_index(uint8_t lapic_index, uint8_t vector);
+extern int      cpu_lapic_highest_deliverable_irr_index(uint8_t lapic_index, int started);
+extern int      cpu_lapic_extint_deliverable_index(uint8_t lapic_index, int started, int pending);
+
+#define CPU_LAPIC_FIXED_REJECT 0
+#define CPU_LAPIC_FIXED_ACCEPT 1
+#define CPU_LAPIC_FIXED_ERROR 2
+extern int      cpu_lapic_fixed_delivery_action_index(uint8_t lapic_index, int started,
+                                                      uint8_t vector, uint32_t invalid_error,
+                                                      uint8_t *error_vector);
+extern int      cpu_lapic_error_delivery_action_index(uint8_t lapic_index, int started,
+                                                      uint32_t error, uint8_t *vector);
+extern int      cpu_lapic_base_enabled_index(uint8_t lapic_index);
+extern int      cpu_lapic_software_enabled_index(uint8_t lapic_index);
+extern int      cpu_lapic_enabled_index(uint8_t lapic_index, int started);
+
+#define CPU_LAPIC_LINT0 0
+#define CPU_LAPIC_LINT1 1
+#define CPU_LAPIC_LINT_ACTION_NONE 0
+#define CPU_LAPIC_LINT_ACTION_HANDLED 1
+#define CPU_LAPIC_LINT_ACTION_FIXED 2
+#define CPU_LAPIC_LINT_ACTION_SMI 3
+#define CPU_LAPIC_LINT_ACTION_NMI 4
+#define CPU_LAPIC_LINT_ACTION_INIT 5
+#define CPU_LAPIC_LINT_ACTION_EXTINT 6
+extern int      cpu_lapic_lint_delivery_index(uint8_t lapic_index, int started, uint8_t lint,
+                                              uint8_t *vector, int *level);
+#define CPU_LAPIC_LVT_SOURCE_THERMAL 0
+#define CPU_LAPIC_LVT_SOURCE_PERF 1
+extern int      cpu_lapic_lvt_source_delivery_index(uint8_t lapic_index, int started,
+                                                    uint8_t source, uint8_t *vector);
+extern void     cpu_lapic_lvt_delivery_complete_index(uint8_t lapic_index, uint32_t reg);
+extern void     cpu_lapic_lint_remote_irr_set_index(uint8_t lapic_index, uint32_t reg, uint8_t vector);
+extern int      cpu_lapic_timer_fire_index(uint8_t lapic_index, int started, uint8_t *vector);
+
+extern void     cpu_lapic_reset_index(uint8_t lapic_index, uint8_t id, uint64_t base_msr);
+extern uint32_t cpu_lapic_timer_initial_read_index(uint8_t lapic_index);
+extern void     cpu_lapic_timer_initial_write_index(uint8_t lapic_index, uint32_t val);
+extern uint32_t cpu_lapic_timer_reload_read_index(uint8_t lapic_index);
+extern int      cpu_lapic_timer_enabled_read_index(uint8_t lapic_index);
+extern uint32_t cpu_lapic_timer_divide_cfg_read_index(uint8_t lapic_index);
+extern void     cpu_lapic_timer_divide_cfg_write_index(uint8_t lapic_index, uint32_t val);
+extern void     cpu_lapic_timer_unschedule_index(uint8_t lapic_index);
+extern uint64_t cpu_lapic_timer_schedule_delay_index(uint8_t lapic_index, uint32_t count);
+extern void     cpu_lapic_timer_host_add_index(uint8_t lapic_index, void (*callback)(void *priv), void *priv);
+extern void     cpu_lapic_timer_host_stop_index(uint8_t lapic_index);
+extern void     cpu_lapic_timer_host_schedule_index(uint8_t lapic_index, uint32_t count, int in_callback);
+extern void     cpu_lapic_timer_stop_index(uint8_t lapic_index);
+extern void     cpu_lapic_timer_arm_index(uint8_t lapic_index, uint32_t count);
+extern void     cpu_lapic_timer_rebase_current_index(uint8_t lapic_index, uint32_t current);
+extern uint32_t cpu_lapic_timer_periodic_restart_index(uint8_t lapic_index);
+extern void     cpu_lapic_timer_oneshot_complete_index(uint8_t lapic_index);
+extern uint32_t cpu_lapic_timer_divisor_read_index(uint8_t lapic_index);
+extern uint32_t cpu_lapic_timer_current_read_index(uint8_t lapic_index);
+extern uint32_t cpu_lapic_timer_restore_index(uint8_t lapic_index, uint32_t initial, uint32_t current, int enabled);
+extern int      cpu_lapic_mmio_reg_read_only(uint32_t reg);
+
+/* Write-action codes keep LAPIC MMIO side effects outside generic register writes. */
+#define CPU_LAPIC_MMIO_WRITE_UNHANDLED      0
+#define CPU_LAPIC_MMIO_WRITE_CPU_OWNED      1
+#define CPU_LAPIC_MMIO_WRITE_MIRROR         2
+#define CPU_LAPIC_MMIO_WRITE_READ_ONLY      3
+#define CPU_LAPIC_MMIO_WRITE_EOI            4
+#define CPU_LAPIC_MMIO_WRITE_ICR_LO         5
+
+extern int      cpu_lapic_mmio_read_index(uint8_t lapic_index, uint32_t reg, uint32_t *val);
+extern int      cpu_lapic_mmio_write_index(uint8_t lapic_index, uint32_t reg, uint32_t val);
+extern int      cpu_lapic_mmio_write_action_index(uint8_t lapic_index, uint32_t reg,
+                                                  uint32_t val, uint32_t *mirror_val);
+extern int      cpu_lapic_mmio_load_index(uint8_t lapic_index, uint32_t reg, uint32_t val);
+extern void     cpu_lapic_mmio_sync_mirror_index(uint8_t lapic_index, uint32_t regs[]);
+extern void     cpu_lapic_mmio_load_mirror_index(uint8_t lapic_index, const uint32_t regs[]);
+
 extern void cpu_register_fast_off_handler(void *timer);
 extern void cpu_fast_off_advance(void);
 extern void cpu_fast_off_period_set(uint16_t vla, double period);
@@ -949,6 +1155,14 @@ extern void cpu_fast_off_reset(void);
 extern void smi_raise(void);
 extern void nmi_raise_cpu(void);
 extern void nmi_raise(void);
+extern void cpu_smi_raise_direct(void);
+extern void cpu_nmi_raise_direct(void);
+extern void cpu_nmi_raise_core(int apic);
+/* An NMI the processor takes now: the board's NMI pin is gated by the
+   port 70h NMI enable (nmi_mask); one from the local APIC (bit 1, an NMI
+   IPI, LINT or I/O APIC entry) is not -- port 70h gates the pin, not the
+   APIC bus. */
+#define NMI_TAKEABLE() (nmi && nmi_enable && (nmi_mask || (nmi & 2)))
 
 extern MMX_REG  *MMP[8];
 extern uint16_t *MMEP[8];
@@ -980,8 +1194,6 @@ extern int  inrecomp;
 extern void mmx_init(void);
 extern void prefetch_flush(void);
 
-extern void prefetch_run(int instr_cycles, int bytes, int modrm, int reads, int reads_l, int writes, int writes_l, int ea32);
-
 extern int lock_legal[256];
 extern int lock_legal_0f[256];
 extern int lock_legal_ba[8];
@@ -1008,9 +1220,6 @@ extern int in_lock;
 extern int cpu_override_interpreter;
 
 extern int cpu_dyn_accurate_fpu_env;
-extern int cpu_dyn_block_link;
-/* 1 if this build's recompiler can link blocks (codegen_block.c). */
-extern const int codegen_has_block_link;
 
 extern int is_lock_legal(uint32_t fetchdat);
 extern int is_lock_legal_at(uint32_t fetchdat, uint32_t opcode_pc);

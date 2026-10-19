@@ -45,11 +45,34 @@ extern "C" {
 
 #include "qt_defs.hpp"
 
+/* The FPU emulation dropdown: the default FPU, the host's x87 (on builds that
+   have it) and softfloat. The host-x87 FPU runs on softfloat's state, so it
+   sets fpu_softfloat underneath as well as fpu_host_x87. */
+enum {
+    FPU_MODE_DEFAULT   = 0,
+    FPU_MODE_HOST_X87  = 1,
+    FPU_MODE_SOFTFLOAT = 2
+};
+
+static int
+fpu_mode_current(void)
+{
+    if (fpu_host_x87)
+        return FPU_MODE_HOST_X87;
+    return fpu_softfloat ? FPU_MODE_SOFTFLOAT : FPU_MODE_DEFAULT;
+}
+
 SettingsMachine::SettingsMachine(QWidget *parent)
     : QWidget(parent)
     , ui(new Ui::SettingsMachine)
 {
     ui->setupUi(this);
+
+    ui->comboBoxFPUMode->addItem(tr("Default"), FPU_MODE_DEFAULT);
+#if X87_HOST_BUILD
+    ui->comboBoxFPUMode->addItem(tr("Host x87 (exact)"), FPU_MODE_HOST_X87);
+#endif
+    ui->comboBoxFPUMode->addItem(tr("Softfloat (exact)"), FPU_MODE_SOFTFLOAT);
 
     machine_cfg_changed             = 0;
 
@@ -143,10 +166,8 @@ SettingsMachine::SettingsMachine(QWidget *parent)
     ui->checkBoxDynamicRecompiler->setVisible(false);
     ui->checkBoxFastRecompiler->setEnabled(false);
     ui->checkBoxFastRecompiler->setVisible(false);
-    ui->checkBoxBlockLinking->setVisible(false);
 #else
     ui->checkBoxFastRecompiler->setChecked(cpu_use_dynarec_fast ? true : false);
-    ui->checkBoxBlockLinking->setVisible(codegen_has_block_link);
 #endif
 }
 
@@ -173,9 +194,8 @@ SettingsMachine::changed()
     has_changed |= (cpu_use_dynarec            != (ui->checkBoxDynamicRecompiler->isChecked() ? 1 : 0));
     has_changed |= (cpu_dyn_accurate_fpu_env   != (ui->checkBoxAccurateFPUEnvironment->isChecked() ? 1 : 0));
     has_changed |= (cpu_use_dynarec_fast       != (ui->checkBoxFastRecompiler->isChecked() ? 1 : 0));
-    has_changed |= (cpu_dyn_block_link         != (ui->checkBoxBlockLinking->isChecked() ? 1 : 0));
 #endif
-    has_changed |= (fpu_softfloat              != (ui->checkBoxFPUSoftfloat->isChecked() ? 1 : 0));
+    has_changed |= (fpu_mode_current()         != ui->comboBoxFPUMode->currentData().toInt());
     has_changed |= (force_10ms                 != (ui->radioButtonLargerFrames->isChecked() ? 1 : 0));
 
     int64_t temp_mem_size;
@@ -237,10 +257,10 @@ SettingsMachine::save(int soft)
 #ifdef USE_DYNAREC
     cpu_use_dynarec          = ui->checkBoxDynamicRecompiler->isChecked() ? 1 : 0;
     cpu_dyn_accurate_fpu_env = ui->checkBoxAccurateFPUEnvironment->isChecked() ? 1 : 0;
-    cpu_dyn_block_link       = ui->checkBoxBlockLinking->isChecked() ? 1 : 0;
 #endif
     cpu_use_dynarec_fast     = ui->checkBoxFastRecompiler->isChecked() ? 1 : 0;
-    fpu_softfloat            = ui->checkBoxFPUSoftfloat->isChecked() ? 1 : 0;
+    fpu_softfloat            = (ui->comboBoxFPUMode->currentData().toInt() != FPU_MODE_DEFAULT) ? 1 : 0;
+    fpu_host_x87             = (ui->comboBoxFPUMode->currentData().toInt() == FPU_MODE_HOST_X87) ? 1 : 0;
     force_10ms               = ui->radioButtonLargerFrames->isChecked() ? 1 : 0;
 
     int64_t temp_mem_size;
@@ -414,26 +434,22 @@ SettingsMachine::on_comboBoxSpeed_currentIndexChanged(int index)
             ui->checkBoxFastRecompiler->setChecked(false);
             ui->checkBoxFastRecompiler->setEnabled(false);
             ui->checkBoxAccurateFPUEnvironment->setEnabled(false);
-            ui->checkBoxBlockLinking->setEnabled(false);
         } else if ((flags & CPU_REQUIRES_DYNAREC) && !cpu_override) {
             ui->checkBoxDynamicRecompiler->setChecked(true);
             ui->checkBoxDynamicRecompiler->setEnabled(false);
             ui->checkBoxFastRecompiler->setChecked(cpu_use_dynarec_fast);
             ui->checkBoxFastRecompiler->setEnabled(true);
             ui->checkBoxAccurateFPUEnvironment->setEnabled(true);
-            ui->checkBoxBlockLinking->setEnabled(true);
         } else {
             ui->checkBoxDynamicRecompiler->setChecked(cpu_use_dynarec);
             ui->checkBoxDynamicRecompiler->setEnabled(true);
             ui->checkBoxFastRecompiler->setChecked(cpu_use_dynarec_fast);
             ui->checkBoxFastRecompiler->setEnabled(ui->checkBoxDynamicRecompiler->isChecked());
             ui->checkBoxAccurateFPUEnvironment->setEnabled(cpu_use_dynarec);
-            ui->checkBoxBlockLinking->setEnabled(cpu_use_dynarec);
         }
 #endif
 
         ui->checkBoxAccurateFPUEnvironment->setChecked(cpu_dyn_accurate_fpu_env);
-        ui->checkBoxBlockLinking->setChecked(cpu_dyn_block_link);
 
         if ((cpuType < CPU_286) || (cpuType == CPU_IBM486SLC) || (cpuType == CPU_IBM486BL) ||
             !strcmp(cpuFamily->manufacturer, "Cyrix") || !strcmp(cpuFamily->manufacturer, "ST") ||
@@ -474,12 +490,25 @@ SettingsMachine::on_comboBoxFPU_currentIndexChanged(int index)
         int         cpuId       = ui->comboBoxSpeed->currentData().toInt();
         int         machineId   = ui->comboBoxMachine->currentData().toInt();
 
+        auto *modes = qobject_cast<QStandardItemModel *>(ui->comboBoxFPUMode->model());
+
         if (fpu_get_type_from_index(cpuFamily, cpuId, index) == FPU_NONE) {
-            ui->checkBoxFPUSoftfloat->setChecked(false);
-            ui->checkBoxFPUSoftfloat->setEnabled(false);
+            ui->comboBoxFPUMode->setCurrentIndex(ui->comboBoxFPUMode->findData(FPU_MODE_DEFAULT));
+            ui->comboBoxFPUMode->setEnabled(false);
         } else {
-            ui->checkBoxFPUSoftfloat->setChecked(machine_has_flags(machineId, MACHINE_SOFTFLOAT_ONLY) ? true : fpu_softfloat);
-            ui->checkBoxFPUSoftfloat->setEnabled(machine_has_flags(machineId, MACHINE_SOFTFLOAT_ONLY) ? false : true);
+            /* A machine that only works with softfloat's FPU may take either
+               exact one, but not the default. */
+            const bool exact_only = machine_has_flags(machineId, MACHINE_SOFTFLOAT_ONLY);
+            int        mode       = fpu_mode_current();
+
+            if (exact_only && (mode == FPU_MODE_DEFAULT))
+                mode = FPU_MODE_SOFTFLOAT;
+            if (modes != nullptr)
+                modes->item(ui->comboBoxFPUMode->findData(FPU_MODE_DEFAULT))->setEnabled(!exact_only);
+            if (ui->comboBoxFPUMode->findData(mode) < 0)
+                mode = exact_only ? FPU_MODE_SOFTFLOAT : FPU_MODE_DEFAULT;
+            ui->comboBoxFPUMode->setCurrentIndex(ui->comboBoxFPUMode->findData(mode));
+            ui->comboBoxFPUMode->setEnabled(true);
         }
     }
 }
@@ -494,9 +523,9 @@ SettingsMachine::on_pushButtonConfigure_clicked()
 }
 
 void
-SettingsMachine::on_checkBoxFPUSoftfloat_stateChanged(int state)
+SettingsMachine::on_comboBoxFPUMode_currentIndexChanged(int index)
 {
-    if (state == Qt::Checked) {
+    if ((index >= 0) && (ui->comboBoxFPUMode->itemData(index).toInt() == FPU_MODE_SOFTFLOAT)) {
         ui->softFloatWarningIcon->setVisible(true);
         ui->softFloatWarningText->setVisible(true);
     } else {
@@ -510,7 +539,6 @@ SettingsMachine::on_checkBoxDynamicRecompiler_stateChanged(int state)
 {
 #ifdef USE_DYNAREC
     ui->checkBoxAccurateFPUEnvironment->setEnabled(state);
-    ui->checkBoxBlockLinking->setEnabled(state);
 #endif
 }
 

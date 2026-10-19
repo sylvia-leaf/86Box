@@ -107,6 +107,7 @@
 #define FLAG_NO_IRQ_STEERING      0x00000040
 #define FLAG_NO_BRIDGES           0x00000080
 #define FLAG_TRC_CONTROLS_CPURST  0x00000100
+#define FLAG_TRC_450KX            0x00000200 /* CF9h is the 82454KX/GX PB's TRC (pci_add_flags) */
 
 #define FLAG_MECHANISM_MASK       FLAG_MECHANISM_1 | FLAG_MECHANISM_2
 #define FLAG_MASK                 0x0000007f
@@ -165,6 +166,8 @@
 #define PCI_IRQS_NUM              16
 #define PCI_IRQ_MAX               (PCI_IRQS_NUM - 1)
 
+typedef struct ioapic_pci_intin_route_state_t ioapic_pci_intin_route_state_t;
+
 /* Legacy flags. */
 #define PCI_REG_COMMAND           PCI_REG_COMMAND_L
 
@@ -200,7 +203,7 @@
 #define pci_clear_iirq(pci_int, irq_state) \
         pci_irq(PCI_IIRQ_BASE | (pci_int), 0, 0, 0, irq_state)
 #define pci_clear_dirq(dirq, irq_state) \
-        pci_irq(PCI_DIRQ_BASE | (irq), 0, 1, 0, irq_state)
+        pci_irq(PCI_DIRQ_BASE | (dirq), 0, 1, 0, irq_state)
 #define pci_clear_irq(slot, pci_int, irq_state) \
         pci_irq(slot, pci_int, 0, 0, irq_state)
 
@@ -259,6 +262,7 @@ extern int         pci_nonburst_time;
 extern int         agp_nonburst_time;
 
 extern int         pci_flags;
+extern int         pci_expansion_bridges(int slots, int cards, int minimum, int registered);
 
 extern uint32_t    pci_base;
 extern uint32_t    pci_size;
@@ -300,11 +304,17 @@ extern uint16_t    pci_readw(uint16_t port, void *priv);
 extern uint32_t    pci_readl(uint16_t port, void *priv);
 
 extern uint8_t     pci_register_bus(void);
+extern int         pci_debug_card(int i, uint8_t *bus, uint8_t *id, void **priv,
+                                  uint8_t (**read)(int func, int addr, int len, void *priv));
 extern void        pci_remap_bus(uint8_t bus_index, uint8_t bus_number);
 extern void        pci_register_bus_slot(int bus, int card, int type, int inta, int intb, int intc, int intd);
 /* One more slot on the bus a slot of this type sits on, next device
    number, INTA-D rotated (a two-IDSEL card such as the Rage Fury MAXX). */
 extern int         pci_register_sibling_slot(int type);
+extern void        pci_apic_set_intin_route(uint8_t bus, uint8_t device, uint8_t intpin, uint8_t intin);
+extern void        pci_apic_clear_intin_routes(void);
+extern uint16_t    pci_apic_save_intin_routes(ioapic_pci_intin_route_state_t *routes, uint16_t capacity);
+extern void        pci_apic_load_intin_routes(const ioapic_pci_intin_route_state_t *routes, uint16_t count);
 
 /* Add a PCI card. */
 extern void        pci_add_card(uint8_t add_type, uint8_t (*read)(int func, int addr, int len, void *priv),
@@ -319,6 +329,7 @@ extern void        pci_add_bridge(uint8_t agp, uint8_t (*read)(int func, int add
 extern void        pci_register_cards(void);
 
 extern void        pci_init(int flags);
+extern void        pci_add_flags(int flags);
 
 /* PCI bridge stuff. */
 extern void        pci_bridge_set_ctl(void *priv, uint8_t ctl);

@@ -1,3 +1,5 @@
+#include "x86_interrupt.h"
+
 static int
 opCBW(UNUSED(uint32_t fetchdat))
 {
@@ -711,9 +713,9 @@ opHLT(UNUSED(uint32_t fetchdat))
     }
     if (smi_line)
         enter_smm_check(1);
-    else if (!((cpu_state.flags & I_FLAG) && pic_pending_int())) {
+    else if (!((cpu_state.flags & I_FLAG) && x86_external_interrupt_pending())) {
         CLOCK_CYCLES_ALWAYS(100);
-        if (!((cpu_state.flags & I_FLAG) && pic_pending_int())) {
+        if (!((cpu_state.flags & I_FLAG) && x86_external_interrupt_pending())) {
             cpu_state.pc--;
             cpu_halted = 1; /* an interrupt taken here returns past the HLT */
         }

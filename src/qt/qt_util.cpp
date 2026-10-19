@@ -56,6 +56,19 @@ extern "C" {
 }
 
 namespace util {
+QString
+machineDirectory()
+{
+    return cfg_path[0] ? QFileInfo(QString::fromUtf8(cfg_path)).absolutePath()
+                       : QDir(QString::fromUtf8(usr_path)).absolutePath();
+}
+
+QString
+newImagePath(const QString &name)
+{
+    return name.isEmpty() ? name : QDir(machineDirectory()).absoluteFilePath(name);
+}
+
 QScreen *
 screenOfWidget(QWidget *widget)
 {

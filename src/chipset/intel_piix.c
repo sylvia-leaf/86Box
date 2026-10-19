@@ -696,7 +696,7 @@ piix_write(int func, int addr, UNUSED(int len), uint8_t val, void *priv)
             case 0x80:
                 if (dev->type > 1) {
                     fregs[addr] = val & 0x7f;
-                    if (dev->type == 3) apic_ioapic_set_base((val >> 2) & 0xF, val & 3);
+                    //if (dev->type == 3) apic_ioapic_set_base((val >> 2) & 0xF, val & 3);
                 }
                 break;
             case 0x81:

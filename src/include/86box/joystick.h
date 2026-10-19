@@ -15,7 +15,7 @@
 #ifndef EMU_JOYSTICK_H
 #define EMU_JOYSTICK_H
 
-extern void   *joystick_standard_init(void);
+extern void   *joystick_standard_init(uint8_t gp);
 extern void    joystick_standard_close(void *priv);
 extern uint8_t joystick_standard_read_2button(void *priv);
 extern uint8_t joystick_standard_read_4button(void *priv);

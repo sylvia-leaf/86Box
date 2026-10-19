@@ -38,9 +38,6 @@
 #ifdef USE_DYNAREC
 #    include "codegen.h"
 #    include "codegen_backend.h"
-#    ifdef CODEGEN_BACKEND_HAS_BLOCK_LINK
-#        include "codegen_link.h"
-#    endif
 #endif
 
 #ifdef IS_DYNAREC
@@ -48,6 +45,7 @@
 #endif
 
 #include "386_common.h"
+#include "x86_interrupt.h"
 
 #if defined(__APPLE__) && defined(__aarch64__)
 #    include <pthread.h>
@@ -344,20 +342,8 @@ dr_blocks_cache(void)
 
 #ifdef USE_DYNAREC
 int32_t         cycles_main = 0;
-#    ifdef CODEGEN_BACKEND_HAS_BLOCK_LINK
-/* The block link routine does the loop-top stores itself. */
-int32_t  cycles_old = 0;
-uint64_t tsc_old    = 0;
-#    else
 static int32_t  cycles_old  = 0;
 static uint64_t tsc_old     = 0;
-#    endif
-
-#    ifdef CODEGEN_BACKEND_HAS_BLOCK_LINK
-/* Slot pair returned by the last compiled block, while the loop has run
-   nothing else since; NULL otherwise. */
-static codegen_link_slot_t *link_from = NULL;
-#    endif
 
 extern int codegen_record_faulted; /* 386_common.c */
 
@@ -518,8 +504,6 @@ update_tsc(void)
 
     if (cycdiff > 0) {
         tsc += cycdiff;
-        if (current_lapic)
-            lapic_timer_advance_ticks(cycdiff);
     }
 
     if (cycdiff > 0) {
@@ -639,9 +623,9 @@ exec386_dynarec_int(void)
             CPU_BLOCK_END();
         else if (trap)
             CPU_BLOCK_END();
-        else if (nmi && nmi_enable && nmi_mask)
+        else if (NMI_TAKEABLE())
             CPU_BLOCK_END();
-        else if ((cpu_state.flags & I_FLAG) && (pic_pending_int()) && !cpu_end_block_after_ins)
+        else if ((cpu_state.flags & I_FLAG) && x86_external_interrupt_pending() && !cpu_end_block_after_ins)
             CPU_BLOCK_END();
     }
 
@@ -660,6 +644,87 @@ block_ended:
     cpu_end_block_after_ins = 0;
 }
 
+#    ifdef CODEGEN_CHAIN
+/* Chains of linked blocks (codegen.h): the stub the last chain left
+   through for want of a link, the PC and CS base it wanted, whether it left
+   by an indirect exit instead, and the generation then, so the dispatcher
+   links it once the block it wanted has passed every test. */
+static uint8_t *codegen_chain_link_stub;
+static uint32_t codegen_chain_link_pc;
+static uint32_t codegen_chain_link_cs;
+static int      codegen_chain_ind_pending;
+static uint64_t codegen_chain_link_gen;
+static uint64_t exec386_chain_tsc; /* tsc at the chain's entry, with cpu_state.chain_cycles */
+
+/* A link stub found the signal word set: the loop's own checks, made here
+   so that a signal the loop has nothing to do for -- port I/O, a timer
+   armed but not due, an 8259 change while interrupts are off -- does not
+   end the chain. 0: the chain goes on; non-zero: it leaves. */
+int
+codegen_chain_service(void)
+{
+    const uint32_t p = __atomic_load_n(&mem_chain_signal.pending, __ATOMIC_SEQ_CST);
+
+    __atomic_store_n(&mem_chain_signal.brk, 0, __ATOMIC_SEQ_CST); /* cleared before looking */
+    if (p & 0xffffff00)
+        return 1; /* code written, relink, revalidate: the loop's work */
+    if (cpu_init || new_ne || smi_line || NMI_TAKEABLE() || cpu_state.abrt || !CACHE_ON() ||
+        x86_was_reset || cpu_force_interpreter || cpu_override_dynarec || cpu_flush_pending)
+        return 1;
+    /* The 8259, or a local APIC (x86_interrupt.h): an interrupt either
+       has to give breaks the chain. */
+    if ((cpu_state.flags & I_FLAG) && x86_external_interrupt_pending())
+        return 1;
+    {
+        /* A timer armed sooner: the chain now runs down only to it. */
+        const int64_t until = (int64_t) (timer_target - exec386_chain_tsc);
+        const int     floor = (until <= 0) ? cpu_state.chain_cycles :
+                                             ((until < cpu_state.chain_cycles) ? (cpu_state.chain_cycles - (int) until) : 0);
+
+        if (floor >= cycles)
+            return 1;
+        if (floor > cpu_state.chain_floor)
+            cpu_state.chain_floor = floor;
+    }
+    return 0;
+}
+
+/* STI compiled in a block: an interrupt already pending breaks the chain,
+   which leaves at the block's end, where STI's shadow ends. */
+void
+codegen_chain_sti(void)
+{
+    if (x86_external_interrupt_pending())
+        mem_chain_break();
+}
+
+/* Whether a block's code is still as compiled, as the lookup tests it. */
+static inline int
+exec386_chain_still_clean(codeblock_t *block)
+{
+    __atomic_thread_fence(__ATOMIC_SEQ_CST);
+    if (block->page_mask & *block->dirty_mask)
+        return 0;
+    if (block->page_mask2 && (block->page_mask2 & *block->dirty_mask2))
+        return 0;
+    return 1;
+}
+
+/* The cycles value below which the next timer is due: a chain runs down to
+   it. Cycles are charged before every branch, so the stub's test is exact. */
+static inline int
+exec386_chain_floor(void)
+{
+    const int64_t until = (int64_t) (timer_target - tsc);
+
+    if (until <= 0)
+        return cycles;
+    if (until < cycles)
+        return cycles - (int) until;
+    return 0;
+}
+#    endif
+
 #if defined(__linux__) && !defined(__clang__)
 void __attribute__((optimize("O2")))
 #else
@@ -667,17 +732,22 @@ void
 #endif
 exec386_dynarec_dyn(void)
 {
+#    ifdef CODEGEN_CHAIN
+    /* The link the last chain wanted, taken once */
+    uint8_t *link_stub = codegen_chain_link_stub;
+    uint32_t link_pc   = codegen_chain_link_pc;
+    uint32_t link_cs   = codegen_chain_link_cs;
+    int      ind_fill  = codegen_chain_ind_pending;
+    uint64_t link_gen  = codegen_chain_link_gen;
+
+    codegen_chain_link_stub   = NULL;
+    codegen_chain_ind_pending = 0;
+#    endif
     uint32_t start_pc  = 0;
     uint32_t phys_addr = get_phys(cs + cpu_state.pc);
     int      hash      = HASH(phys_addr);
     codeblock_t *block = &codeblock[codeblock_hash_get(hash, 0)];
     int valid_block = 0;
-#    ifdef CODEGEN_BACKEND_HAS_BLOCK_LINK
-    /* Only a path that ends in compiled code sets it again. */
-    codegen_link_slot_t *from = link_from;
-
-    link_from = NULL;
-#    endif
 
     /* Code in device memory (a BIOS copying a routine into video memory) is
        fetched through the device's read handlers, and nothing tracks writes
@@ -748,10 +818,6 @@ exec386_dynarec_dyn(void)
 
         if (valid_block && (block->page_mask & *block->dirty_mask)) {
             codegen_check_flush(page, page->dirty_mask, phys_addr);
-#        ifdef CODEGEN_BACKEND_HAS_BLOCK_LINK
-            /* Covers the flag write just below. */
-            codegen_link_block_changed(block);
-#        endif
             if (block->valid && (block->flags & CODEBLOCK_IN_DIRTY_LIST))
                 block->flags &= ~CODEBLOCK_WAS_RECOMPILED;
             else
@@ -773,10 +839,6 @@ exec386_dynarec_dyn(void)
                 valid_block = 0;
             else if (block->page_mask2 & *block->dirty_mask2) {
                 codegen_check_flush(page_2, page_2->dirty_mask, phys_addr_2);
-#        ifdef CODEGEN_BACKEND_HAS_BLOCK_LINK
-                /* Covers the flag write just below. */
-                codegen_link_block_changed(block);
-#        endif
                 if (block->valid && (block->flags & CODEBLOCK_IN_DIRTY_LIST))
                     block->flags &= ~CODEBLOCK_WAS_RECOMPILED;
                 else
@@ -790,18 +852,12 @@ exec386_dynarec_dyn(void)
                 block->flags |= CODEBLOCK_NO_IMMEDIATES;
             else
                 block->flags |= CODEBLOCK_BYTE_MASK;
-#        ifdef CODEGEN_BACKEND_HAS_BLOCK_LINK
-            codegen_link_block_changed(block);
-#        endif
         }
         if (valid_block && (block->flags & CODEBLOCK_WAS_RECOMPILED) && (block->flags & CODEBLOCK_STATIC_TOP) && block->TOP != (cpu_state.TOP & 7))
         {
             /* FPU top-of-stack does not match the value this block was compiled
                with, re-compile using dynamic top-of-stack*/
             block->flags &= ~(CODEBLOCK_STATIC_TOP | CODEBLOCK_WAS_RECOMPILED);
-#        ifdef CODEGEN_BACKEND_HAS_BLOCK_LINK
-            codegen_link_block_changed(block);
-#        endif
         }
         /* A block whose code was rewritten may be back to bytes it was
            compiled from before: put that version back rather than compile
@@ -812,33 +868,48 @@ exec386_dynarec_dyn(void)
 
     if (valid_block && (block->flags & CODEBLOCK_WAS_RECOMPILED))
     {
-#    ifdef CODEGEN_BACKEND_HAS_BLOCK_LINK
-        codegen_link_slot_t *(*code)(void) = (void *) &block->data[BLOCK_START];
-
-        /* from may predate the reset that turned linking off. */
-        if ((from != NULL) && codegen_block_link)
-            codegen_link_patch(from, block, phys_addr);
-#    else
         void (*code)(void) = (void *) &block->data[BLOCK_START];
-#    endif
 
         block->used = 1; /* run: the eviction sweep passes it over once */
-        inrecomp = 1;
-#    ifdef CODEGEN_BACKEND_HAS_BLOCK_LINK
-        /* A block compiled without links returns nothing. */
-        if (codegen_block_link)
-            link_from = code();
-        else
-            code();
-#    else
-        code();
-#    endif
-        inrecomp = 0;
+#    ifdef CODEGEN_CHAIN
+        {
+            /* Read before the code is found clean: a write after it moves
+               the generation, and the link misses. */
+            const uint64_t target_gen = __atomic_load_n(&block->link_gen, __ATOMIC_SEQ_CST);
 
-#    ifdef CODEGEN_BACKEND_HAS_BLOCK_LINK
-        if (x86_was_reset)
-            link_from = NULL;
+            if (link_stub && (block->pc == link_pc) && (block->_cs == link_cs) && (codegen_chain_gen == link_gen) &&
+                block->head_mem_block && !(block->flags & CODEBLOCK_IN_DIRTY_LIST) && exec386_chain_still_clean(block)) {
+                codegen_links_note(block); /* into its group first */
+                (void) codegen_chain_patch(link_stub, block, target_gen);
+            }
+            if (ind_fill && (block->pc == link_pc) && (block->_cs == link_cs) && (codegen_chain_gen == link_gen) &&
+                block->head_mem_block && !(block->flags & CODEBLOCK_IN_DIRTY_LIST) && exec386_chain_still_clean(block))
+                codegen_ind_fill(block, target_gen);
+        }
+        codegen_ind_miss        = 0;
+        cpu_state.chain_signal  = &mem_chain_signal.pending;
+        cpu_state.chain_floor   = exec386_chain_floor();
+        cpu_state.chain_cycles  = cycles;
+        exec386_chain_tsc       = tsc;
+        codegen_chain_last_exit = NULL;
+        x86_was_reset           = 0; /* a reset in the chain ends it (codegen_chain_service) */
 #    endif
+        inrecomp = 1;
+        code();
+        inrecomp = 0;
+#    ifdef CODEGEN_CHAIN
+        /* The chain left for want of a link, or by an indirect exit that
+           missed: linked or filled once the block it wanted passes every
+           test. */
+        if (codegen_chain_last_exit || codegen_ind_miss) {
+            codegen_chain_link_stub   = codegen_chain_last_exit;
+            codegen_chain_ind_pending = !codegen_chain_last_exit;
+            codegen_chain_link_pc     = cs + cpu_state.pc;
+            codegen_chain_link_cs     = cs;
+            codegen_chain_link_gen    = codegen_chain_gen;
+        }
+#    endif
+
         if (x86_was_reset)
             codegen_reset();
     } else if (valid_block && !cpu_state.abrt) {
@@ -848,6 +919,9 @@ exec386_dynarec_dyn(void)
         cpu_block_end = 0;
         x86_was_reset = 0;
         int record_discarded = 0;
+#    ifdef CODEGEN_CHAIN
+        codegen_block_full = 0;
+#    endif
 
 #    if defined(__APPLE__) && defined(__aarch64__)
         if (__builtin_available(macOS 11.0, *)) {
@@ -895,32 +969,67 @@ exec386_dynarec_dyn(void)
                     break;
             }
 
+#    ifdef CODEGEN_CHAIN
+            /* A branch ended the block itself; anything the checks below
+               find ends it too, and then its end must not be a link. */
+            int op_ended = cpu_block_end;
+            int shadow   = cpu_end_block_after_ins;
+            int even_end = 0; /* ended for its size, at an STI shadow's end, or for an event the loop takes */
+
+            /* The instruction limit: an even end, after the instruction. */
+            if (codegen_block_full) {
+                codegen_block_full = 0;
+                CPU_BLOCK_END();
+                if (!op_ended)
+                    even_end = 1;
+            }
+#        define CHAIN_EVEN_END() even_end = 1
+#    else
+#        define CHAIN_EVEN_END()
+#    endif
                 /* Cap source code at 4000 bytes per block; this
                    will prevent any block from spanning more than
                    2 pages. In practice this limit will never be
                    hit, as host block size is only 2kB*/
-            if (((cs + cpu_state.pc) - start_pc) >= max_block_size)
+            if (((cs + cpu_state.pc) - start_pc) >= max_block_size) {
                 CPU_BLOCK_END();
+                CHAIN_EVEN_END();
+            }
 
-            if (cpu_init)
+            /* INIT, SMI, NMI and an interrupt end the block where the loop
+               takes them, and say nothing about the next time it runs: each
+               breaks a chain when it comes (the signal word), which a link
+               tests before it goes on. So those are even ends too. */
+            if (cpu_init) {
                 CPU_BLOCK_END();
+                CHAIN_EVEN_END();
+            }
 
             if (new_ne)
                 CPU_BLOCK_END();
             if ((cpu_state.flags & T_FLAG) || (trap == 2))
                 CPU_BLOCK_END();
-            if (smi_line)
+            if (smi_line) {
                 CPU_BLOCK_END();
-            if (nmi && nmi_enable && nmi_mask)
+                CHAIN_EVEN_END();
+            }
+            if (NMI_TAKEABLE()) {
                 CPU_BLOCK_END();
-            if ((cpu_state.flags & I_FLAG) && (pic_pending_int()) && !cpu_end_block_after_ins)
+                CHAIN_EVEN_END();
+            }
+            if ((cpu_state.flags & I_FLAG) && x86_external_interrupt_pending() && !cpu_end_block_after_ins) {
                 CPU_BLOCK_END();
+                CHAIN_EVEN_END();
+            }
 
             if (cpu_end_block_after_ins) {
                 cpu_end_block_after_ins--;
-                if (!cpu_end_block_after_ins)
+                if (!cpu_end_block_after_ins) {
                     CPU_BLOCK_END();
+                    CHAIN_EVEN_END();
+                }
             }
+#    undef CHAIN_EVEN_END
 
             /* Cut short by an exception delivered as it was recorded: the
                block would keep only the instructions before it for good.
@@ -946,6 +1055,22 @@ exec386_dynarec_dyn(void)
                     codegen_block_remove();
                 CPU_BLOCK_END();
             }
+#    ifdef CODEGEN_CHAIN
+            /* The end is a link when the instruction ended the block itself
+               (a branch), or ended it evenly: for its size, where STI's
+               shadow ends -- an interrupt waiting then broke the chain
+               (codegen_chain_sti), and the link's signal test sees it -- or
+               for INIT, SMI, NMI or an interrupt, which the link's signal
+               test sees each time one comes. An instruction that falls
+               through links only on an even end. An FPU error or a trap
+               keeps the end for the loop. */
+            if (codegen_end_link_ok == 3)
+                codegen_end_link_ok = (even_end && !op_ended) ? 1 : 0;
+            if (new_ne || (cpu_state.flags & T_FLAG) || (trap == 2))
+                codegen_end_link_ok = 0;
+            if ((cpu_block_end && !op_ended && !even_end) || (shadow && !even_end) || cpu_end_block_after_ins || cpu_state.abrt)
+                codegen_end_link_ok = 0;
+#    endif
         }
 
         cpu_end_block_after_ins = 0;
@@ -1035,9 +1160,9 @@ exec386_dynarec_dyn(void)
                 CPU_BLOCK_END();
             if (smi_line)
                 CPU_BLOCK_END();
-            if (nmi && nmi_enable && nmi_mask)
+            if (NMI_TAKEABLE())
                 CPU_BLOCK_END();
-            if ((cpu_state.flags & I_FLAG) && (pic_pending_int()) && !cpu_end_block_after_ins)
+            if ((cpu_state.flags & I_FLAG) && x86_external_interrupt_pending() && !cpu_end_block_after_ins)
                 CPU_BLOCK_END();
 
             if (cpu_end_block_after_ins) {
@@ -1117,23 +1242,32 @@ exec386_dynarec(int32_t cycs)
             tsc_old          = tsc;
             if (cpu_force_interpreter || cpu_override_dynarec || cpu_flush_pending || (!CACHE_ON())) /*Interpret block*/
             {
-#    ifdef CODEGEN_BACKEND_HAS_BLOCK_LINK
-                link_from = NULL;
-#    endif
                 exec386_dynarec_int();
             } else {
                 exec386_dynarec_dyn();
-#    ifdef CODEGEN_BACKEND_HAS_BLOCK_LINK
-                /* Linked blocks moved the loop-top state on; time is counted
-                   from the last link. */
-                oldcyc = cycles_old;
-                oldtsc = tsc_old;
-#    endif
                 /* A CR0 paging toggle ends the block it is in, so it was the
                    last instruction executed. */
                 if (cpu_flush_pending == 1)
                     cpu_flush_pending++;
             }
+#    ifdef CODEGEN_CHAIN
+            /* Whatever broke a chain is looked at below: the break is
+               cleared first, so one set from now on breaks the next chain.
+               Code written, a relink and a translation change are taken
+               here, before the next dispatch. */
+            if (__atomic_load_n(&mem_chain_signal.brk, __ATOMIC_RELAXED))
+                __atomic_store_n(&mem_chain_signal.brk, 0, __ATOMIC_SEQ_CST);
+            if (__atomic_load_n(&mem_chain_signal.code, __ATOMIC_RELAXED)) {
+                const uint8_t why = __atomic_exchange_n(&mem_chain_signal.code, 0, __ATOMIC_SEQ_CST);
+
+                if (why & MEM_CHAIN_CODE_RELINK)
+                    codegen_links_drop_all(1);
+                if (why & MEM_CHAIN_CODE_WRITTEN)
+                    codegen_links_written();
+                if (why & MEM_CHAIN_CODE_REVALIDATE)
+                    codegen_links_revalidate();
+            }
+#    endif
 
             if (cpu_init) {
                 cpu_init = 0;
@@ -1169,12 +1303,27 @@ exec386_dynarec(int32_t cycs)
             }
 
             if (smi_line) {
+                /* Out of a HLT that left pc on itself: entered with pc past
+                   it and the Auto HALT Restart state, as from within the HLT
+                   (opHLT; Pentium Vol. 3, 20.1.5.2). Not taken, it stays as
+                   it was. */
+                const int halted = cpu_halted;
                 const int before = in_smm;
 
-                enter_smm_check(0);
+                if (halted)
+                    cpu_state.pc++;
+                enter_smm_check(halted);
                 if (in_smm != before)
                     cpu_halted = 0;
-            } else if (nmi && nmi_enable && nmi_mask) {
+                else if (halted && before) {
+                    /* An SMI latched in SMM still ends a HLT there: "INTR,
+                       NMI, and SMI# are the only events that take the CPU
+                       out of HALT" in SMM (Pentium Vol. 3, 20.1.6.3), as
+                       opHLT has it. */
+                    cpu_halted = 0;
+                } else if (halted)
+                    cpu_state.pc--;
+            } else if (NMI_TAKEABLE()) {
                 /* Out of a HLT that left pc on itself: "the saved CS:IP (or
                    CS:EIP) value points to the instruction following the HLT
                    instruction" (Pentium Vol. 3, HLT), NMI included. */
@@ -1193,8 +1342,8 @@ exec386_dynarec(int32_t cycs)
 #    else
                 nmi = 0;
 #    endif
-            } else if ((cpu_state.flags & I_FLAG) && (pic_pending_int())) {
-                vector = picinterrupt();
+            } else if ((cpu_state.flags & I_FLAG) && x86_external_interrupt_pending()) {
+                vector = x86_external_interrupt_vector();
                 if (vector != -1) {
                     /* An interrupt that came after the HLT looked: past the
                        HLT, as above. */
@@ -1215,14 +1364,10 @@ exec386_dynarec(int32_t cycs)
                 cycdiff -= delta;
                 if (cycdiff > 0) {
                     tsc += cycdiff;
-                    if (current_lapic)
-                        lapic_timer_advance_ticks(cycdiff);
                 }
             } else {
                 /* TSC has not changed. */
                 tsc += cycdiff;
-                if (current_lapic)
-                    lapic_timer_advance_ticks(cycdiff);
             }
 
             if (cycdiff > 0) {
@@ -1610,7 +1755,7 @@ block_ended:
 
             if (smi_line)
                 enter_smm_check(0);
-            else if (nmi && nmi_enable && nmi_mask) {
+            else if (NMI_TAKEABLE()) {
                 oldcs = CS;
                 cpu_state.oldpc = cpu_state.pc;
                 x86_int(2);
@@ -1623,9 +1768,8 @@ block_ended:
 #else
                 nmi = 0;
 #endif
-
-            } else if ((cpu_state.flags & I_FLAG) && pic_pending_int() && !cpu_end_block_after_ins) {
-                vector = picinterrupt();
+            } else if ((cpu_state.flags & I_FLAG) && x86_external_interrupt_pending() && !cpu_end_block_after_ins) {
+                vector = x86_external_interrupt_vector();
                 if (vector != -1) {
                     flags_rebuild();
                     if (msw & 1)
@@ -1658,8 +1802,6 @@ block_ended:
 
             ins_cycles -= cycles;
             tsc += ins_cycles;
-            if (current_lapic)
-                lapic_timer_advance_ticks(ins_cycles);
 
             cycdiff = oldcyc - cycles;
 

@@ -1287,7 +1287,28 @@ e00:
                 i = strlen(p) - 1; /* get last character offset */
 
                 /* Interpret the command. */
-                if (p[0] == 'i') {
+                if (!strcmp(p, "dumpram")) {
+                    /* Write guest physical RAM to a host file, for looking at
+                       memory that no page table currently maps. The path is
+                       the rest of the line, in the packet buffer the answer
+                       is built in, so the answer is made apart. */
+                    char  *path = strtok_r(NULL, "", &strtok_save);
+                    FILE  *f    = path ? fopen(path, "wb") : NULL;
+                    size_t n    = 0;
+                    char   msg[256];
+                    int    len;
+
+                    if (f != NULL) {
+                        n = fwrite(ram, 1, (size_t) mem_size * 1024, f);
+                        fclose(f);
+                    }
+                    len = snprintf(msg, sizeof(msg), "dumpram: %zu bytes to %s\n", n, path ? path : "(no path)");
+                    if ((len < 0) || (len >= (int) sizeof(msg)))
+                        len = (int) sizeof(msg) - 1;
+                    client->response_pos = 0;
+                    gdbstub_client_respond_hex(client, (uint8_t *) msg, len);
+                    break;
+                } else if (p[0] == 'i') {
                     /* Read I/O operation width. */
                     l = (i < 1) ? '\0' : p[i];
 

@@ -51,6 +51,7 @@
 #include <86box/video.h>
 #include <86box/snd_opl.h>
 #include <86box/snd_cqm_nuked.h>
+#include <86box/thread.h>
 
 #define RSM_FRAC    10
 
@@ -1178,41 +1179,114 @@ nuked_cqm_drv_set_do_cycles(void *priv, int8_t do_cycles)
         dev->flags &= ~FLAG_CYCLES;
 }
 
+/* The synthesis thread: it follows the sound clock, applies each queued
+   register write just before the sample it was made at -- as the
+   emulation's thread did when it generated up to the clock before every
+   write -- and stops at the clock. At a buffer's end the emulation waits
+   for it (nuked_cqm_drv_update); a reset is its own to make, asked for and
+   acknowledged, so its position is only ever written here. After a reset
+   it waits for the clock to start the new period (to fall below where the
+   old one ended), or for the emulation to say so at the next buffer's
+   end. */
+static void
+nuked_cqm_worker(void *priv)
+{
+    nuked_cqm_drv_t *dev = (nuked_cqm_drv_t *) priv;
+
+    while (__atomic_load_n(&dev->run, __ATOMIC_ACQUIRE)) {
+        int pos = dev->pos;
+        int target;
+
+        if (__atomic_load_n(&dev->reset_req, __ATOMIC_ACQUIRE) != __atomic_load_n(&dev->reset_ack, __ATOMIC_RELAXED)) {
+            dev->worker_base += (uint64_t) pos;
+            dev->gate_limit = pos;
+            __atomic_store_n(&dev->gate, 1, __ATOMIC_SEQ_CST);
+            __atomic_store_n(&dev->pos, 0, __ATOMIC_SEQ_CST);
+            __atomic_store_n(&dev->reset_ack, __atomic_load_n(&dev->reset_req, __ATOMIC_RELAXED), __ATOMIC_RELEASE);
+            continue;
+        }
+
+        target = __atomic_load_n(dev->pos_global, __ATOMIC_ACQUIRE);
+        if (__atomic_load_n(&dev->gate, __ATOMIC_ACQUIRE)) {
+            if (target >= dev->gate_limit) {
+                thread_wait_event((event_t *) dev->wake, 1);
+                thread_reset_event((event_t *) dev->wake);
+                continue;
+            }
+            __atomic_store_n(&dev->gate, 0, __ATOMIC_SEQ_CST);
+        }
+        if (target > MUSICBUFLEN)
+            target = MUSICBUFLEN;
+        if (pos >= target) {
+            /* Writes for the sample about to be generated are due now:
+               taken while waiting, the queue drains even while the clock
+               stands still (a burst of writes within one sample), and the
+               emulation never waits on a full queue for the clock it
+               drives. */
+            const uint64_t at   = dev->worker_base + (uint64_t) pos;
+            uint32_t       tail = dev->q_tail;
+
+            while ((tail != __atomic_load_n(&dev->q_head, __ATOMIC_ACQUIRE)) && (dev->q[tail % NUKED_CQM_Q].at <= at)) {
+                CQM_WriteRegBuffered(&dev->cqm, dev->q[tail % NUKED_CQM_Q].reg, dev->q[tail % NUKED_CQM_Q].val);
+                tail++;
+            }
+            __atomic_store_n(&dev->q_tail, tail, __ATOMIC_RELEASE);
+
+            /* Caught up: watch the clock a little before sleeping. Fast
+               forward moves it every few microseconds, and a millisecond's
+               sleep would leave the emulation waiting at the buffer's end. */
+            int spins = 4096;
+
+            while ((spins-- > 0) && (__atomic_load_n(dev->pos_global, __ATOMIC_ACQUIRE) == target) &&
+                   (__atomic_load_n(&dev->reset_req, __ATOMIC_ACQUIRE) == dev->reset_ack) &&
+                   __atomic_load_n(&dev->run, __ATOMIC_ACQUIRE))
+                thread_spin_pause();
+            if (spins < 0) {
+                thread_wait_event((event_t *) dev->wake, 1);
+                thread_reset_event((event_t *) dev->wake);
+            }
+            continue;
+        }
+
+        while ((pos < target) && __atomic_load_n(&dev->run, __ATOMIC_RELAXED)) {
+            const uint64_t at   = dev->worker_base + (uint64_t) pos;
+            uint32_t       tail = dev->q_tail;
+
+            while ((tail != __atomic_load_n(&dev->q_head, __ATOMIC_ACQUIRE)) && (dev->q[tail % NUKED_CQM_Q].at <= at)) {
+                CQM_WriteRegBuffered(&dev->cqm, dev->q[tail % NUKED_CQM_Q].reg, dev->q[tail % NUKED_CQM_Q].val);
+                tail++;
+            }
+            __atomic_store_n(&dev->q_tail, tail, __ATOMIC_RELEASE);
+
+            if (dev->is_48k)
+                CQM_GenerateResampled(&dev->cqm, &dev->buffer[pos * 2]);
+            else
+                CQM_Generate(&dev->cqm, &dev->buffer[pos * 2]);
+            dev->buffer[pos * 2] /= 2;
+            dev->buffer[(pos * 2) + 1] /= 2;
+            pos++;
+            __atomic_store_n(&dev->pos, pos, __ATOMIC_RELEASE);
+        }
+    }
+}
+
+/* The emulation at a buffer's end (the card mixing it): everything up to
+   the clock generated. */
 static int32_t *
 nuked_cqm_drv_update(void *priv)
 {
-    nuked_cqm_drv_t *dev = (nuked_cqm_drv_t *) priv;
+    nuked_cqm_drv_t *dev    = (nuked_cqm_drv_t *) priv;
+    const int        target = *dev->pos_global;
 
-    if (dev->pos >= music_pos_global)
-        return dev->buffer;
-
-    CQM_GenerateStream(&dev->cqm,
-                       &dev->buffer[dev->pos * 2],
-             music_pos_global - dev->pos);
-
-    for (; dev->pos < music_pos_global; dev->pos++) {
-        dev->buffer[dev->pos * 2] /= 2;
-        dev->buffer[(dev->pos * 2) + 1] /= 2;
-    }
-
-    return dev->buffer;
-}
-
-static int32_t *
-nuked_cqm_drv_update_48k(void *priv)
-{
-    nuked_cqm_drv_t *dev = (nuked_cqm_drv_t *) priv;
-
-    if (dev->pos >= sound_pos_global)
-        return dev->buffer;
-
-    CQM_GenerateStreamResampled(&dev->cqm,
-                                &dev->buffer[dev->pos * 2],
-                      sound_pos_global - dev->pos);
-
-    for (; dev->pos < sound_pos_global; dev->pos++) {
-        dev->buffer[dev->pos * 2] /= 2;
-        dev->buffer[(dev->pos * 2) + 1] /= 2;
+    /* The period is certainly under way now: a worker that slept through
+       its start may go on. */
+    __atomic_store_n(&dev->gate, 0, __ATOMIC_SEQ_CST);
+    thread_set_event((event_t *) dev->wake);
+    for (int spins = 0; __atomic_load_n(&dev->pos, __ATOMIC_ACQUIRE) < ((target > MUSICBUFLEN) ? MUSICBUFLEN : target); spins++) {
+        if (spins < 4096)
+            thread_spin_pause();
+        else
+            thread_yield(); /* on a host with fewer cores than threads */
     }
 
     return dev->buffer;
@@ -1226,8 +1300,7 @@ nuked_cqm_drv_read(uint16_t port, void *priv)
     if (dev->flags & FLAG_CYCLES)
         cycles -= ((int) (isa_timing * 8));
 
-    dev->update(dev);
-
+    /* The status is the timers', kept here: nothing to generate first. */
     uint8_t ret = 0xff;
 
     if ((port & 0x0003) == 0x0000) {
@@ -1246,10 +1319,31 @@ nuked_cqm_drv_write(uint16_t port, uint8_t val, void *priv)
 {
     nuked_cqm_drv_t *dev = (nuked_cqm_drv_t *) priv;
 
-    dev->update(dev);
-
     if ((port & 0x0001) == 0x0001) {
-        CQM_WriteRegBuffered(&dev->cqm, dev->port, val);
+        /* Queued with the sample it is made at, for the synthesis thread. */
+        const uint32_t head = dev->q_head;
+
+        /* Full: the worker is behind. If it was put off long enough to
+           miss the start of this period it still waits at the gate, and
+           would never drain what this thread waits on: the period is
+           certainly under way (reset_buffer waited for its answer), so the
+           gate opens, as at a buffer's end. */
+        for (int spins = 0; (head - __atomic_load_n(&dev->q_tail, __ATOMIC_ACQUIRE)) >= NUKED_CQM_Q; spins++) {
+            if ((spins & 1023) == 0) {
+                __atomic_store_n(&dev->gate, 0, __ATOMIC_SEQ_CST);
+                thread_set_event((event_t *) dev->wake);
+            }
+            if (spins < 4096)
+                thread_spin_pause();
+            else
+                thread_yield(); /* on a host with fewer cores than threads */
+        }
+        dev->q[head % NUKED_CQM_Q].at  = dev->emu_base + (uint64_t) *dev->pos_global;
+        dev->q[head % NUKED_CQM_Q].reg = dev->port;
+        dev->q[head % NUKED_CQM_Q].val = val;
+        __atomic_store_n(&dev->q_head, head + 1, __ATOMIC_RELEASE);
+        if (dev->port == 0x105)
+            dev->newm = val & 1;
 
         switch (dev->port) {
             case 0x002: // Timer 1
@@ -1277,16 +1371,34 @@ nuked_cqm_drv_write(uint16_t port, uint8_t val, void *priv)
             default:
                 break;
         }
-    } else
-        dev->port = nuked_cqm_write_addr(&dev->cqm, port, val) & 0x01ff;
+    } else {
+        /* The address decode reads the chip's OPL3 mode: the copy the
+           emulation's own writes left, the chip being the worker's. */
+        uint16_t addr = val;
+
+        if ((port & 0x0002) && ((addr == 0x0005) || dev->newm))
+            addr |= 0x0100;
+        dev->port = addr & 0x01ff;
+    }
 }
 
+/* After the card mixed the buffer: the worker starts the next one, and
+   the emulation's samples are numbered on from where it ended. */
 static void
 nuked_cqm_drv_reset_buffer(void *priv)
 {
     nuked_cqm_drv_t *dev = (nuked_cqm_drv_t *) priv;
+    const int        req = dev->reset_req + 1;
 
-    dev->pos = 0;
+    dev->emu_base += (uint64_t) *dev->pos_global;
+    __atomic_store_n(&dev->reset_req, req, __ATOMIC_RELEASE);
+    thread_set_event((event_t *) dev->wake);
+    for (int spins = 0; __atomic_load_n(&dev->reset_ack, __ATOMIC_ACQUIRE) != req; spins++) {
+        if (spins < 4096)
+            thread_spin_pause();
+        else
+            thread_yield();
+    }
 }
 
 static void
@@ -1294,6 +1406,10 @@ nuked_cqm_drv_close(void *priv)
 {
     nuked_cqm_drv_t *dev = (nuked_cqm_drv_t *) priv;
 
+    __atomic_store_n(&dev->run, 0, __ATOMIC_SEQ_CST);
+    thread_set_event((event_t *) dev->wake);
+    thread_wait((thread_t *) dev->worker);
+    thread_destroy_event((event_t *) dev->wake);
     free(dev);
 }
 
@@ -1307,16 +1423,20 @@ nuked_cqm_drv_init(const device_t *info)
     dev->is_cs       = !!(info->local & FM_CRYSTAL);
 
     // Initialize the NukedCQM object.
-    if (dev->is_48k) {
-        dev->update      = nuked_cqm_drv_update_48k;
-        CQM_Reset(&dev->cqm, FREQ_48000, FREQ_49716);
-    } else {
-        dev->update      = nuked_cqm_drv_update;
-        CQM_Reset(&dev->cqm, FREQ_49716, FREQ_49716);
-    }
+    dev->update = nuked_cqm_drv_update;
+    CQM_Reset(&dev->cqm, dev->is_48k ? FREQ_48000 : FREQ_49716, FREQ_49716);
 
     timer_add(&dev->timers[0], nuked_cqm_timer_1, dev, 0);
     timer_add(&dev->timers[1], nuked_cqm_timer_2, dev, 0);
+
+    dev->pos_global = dev->is_48k ? &sound_pos_global : &music_pos_global;
+    dev->run        = 1;
+    dev->wake       = thread_create_event();
+    if (dev->wake == NULL)
+        fatal("NUKED CQM: cannot create the synthesis thread's event\n");
+    dev->worker     = thread_create(nuked_cqm_worker, dev);
+    if (dev->worker == NULL)
+        fatal("NUKED CQM: cannot start the synthesis thread\n");
 
     return dev;
 }
@@ -1348,7 +1468,7 @@ const fm_drv_t nuked_cqm_drv = {
 const fm_drv_t nuked_cqm_drv_48k = {
     .read          = &nuked_cqm_drv_read,
     .write         = &nuked_cqm_drv_write,
-    .update        = &nuked_cqm_drv_update_48k,
+    .update        = &nuked_cqm_drv_update,
     .reset_buffer  = &nuked_cqm_drv_reset_buffer,
     .set_do_cycles = &nuked_cqm_drv_set_do_cycles,
     .priv          = NULL,

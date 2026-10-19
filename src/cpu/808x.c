@@ -40,6 +40,7 @@
 #include <86box/gdbstub.h>
 #include <86box/plat_fallthrough.h>
 #include <86box/plat_unused.h>
+#include "x86_interrupt.h"
 #include "vx0_biu.h"
 #include "808x_marty_86box.h"
 
@@ -1230,7 +1231,7 @@ irq_pending(int nec_hlt)
 
     /* Isolate Convertible IRET compatibility; this is not a proven CMOS-only
      * instruction difference. Other CPU models retain the upstream predicates. */
-    temp = (nmi && nmi_enable && nmi_mask) || ((cpu_state.flags & T_FLAG) && !noint) || (i_flag && pic.int_pending && (is80c88 ? !(noint & 1) : !noint));
+    temp = (nmi && nmi_enable && nmi_mask) || ((cpu_state.flags & T_FLAG) && !noint) || (i_flag && x86_external_interrupt_pending() && (is80c88 ? !(noint & 1) : !noint));
 
     return temp;
 }
@@ -1257,7 +1258,7 @@ check_interrupts(int nec_hlt)
 #endif
             return;
         }
-        if (i_flag && pic.int_pending && (is80c88 ? !(noint & 1) : !noint)) {
+        if (i_flag && x86_external_interrupt_pending() && (is80c88 ? !(noint & 1) : !noint)) {
             repeating = 0;
             completed = 1;
             ovr_seg   = NULL;

@@ -102,6 +102,7 @@ extern "C" {
 #include <86box/timer.h>
 #include <86box/nvr.h>
 #include <86box/automation.h>
+#include <86box/debugcon.h>
 extern int  qt_nvr_save(void);
 #ifndef Q_OS_MACOS
 extern void exit_pause(void);
@@ -528,8 +529,12 @@ main_thread_fn()
                 pc_reset_hard_init();
             }
 
-            if (dopause)
+            if (dopause) {
                 ack_pause();
+                /* A debug console command runs here, with the machine
+                   stopped between two blocks. */
+                debugcon_poll();
+            }
 
             /* Keep answering a GDB client while the machine isn't running. */
             gdbstub_poll();
@@ -776,10 +781,17 @@ main(int argc, char *argv[])
             manager_socket.IPCConnect(qgetenv("VMM_86BOX_SOCKET"));
             manager_socket.clientRunningStateChanged(VMManagerProtocol::RunningState::PausedWaiting);
         }
-        Settings settings;
-        if (settings.exec() == QDialog::Accepted) {
-            settings.save(0);
-            config_save();
+        /* The new layout's "Use Classic Mode" opens the dialog again. */
+        for (;;) {
+            Settings settings;
+            const int result = settings.exec();
+            if (result == Settings::ReopenClassic)
+                continue;
+            if (result == QDialog::Accepted) {
+                settings.save(0);
+                config_save();
+            }
+            break;
         }
         return 0;
     }

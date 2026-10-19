@@ -17,6 +17,7 @@
 #include "qt_settings_completer.hpp"
 
 #include "qt_deviceconfig.hpp"
+#include "qt_settingscards.hpp"
 #include "ui_qt_deviceconfig.h"
 #include "qt_settings.hpp"
 
@@ -41,6 +42,7 @@ extern "C" {
 #include <86box/ini.h>
 #include <86box/config.h>
 #include <86box/device.h>
+#include <86box/machine.h>
 #include <86box/midi_rtmidi.h>
 #include <86box/mem.h>
 #include <86box/random.h>
@@ -63,8 +65,6 @@ extern "C" {
 #    include <setupapi.h>
 #    include <devguid.h>
 #endif
-
-device_t *cfg_dev = NULL;
 
 DeviceConfig::DeviceConfig(QWidget *parent)
     : QDialog(parent)
@@ -131,28 +131,29 @@ enumerateSerialDevices()
     return serialDevices;
 }
 
-QComboBox *cbox_memory         = nullptr;
-QComboBox *cbox_memory_2       = nullptr;
-
-QComboBox *cbox_bios           = nullptr;
-QComboBox *cbox_in530_bootlogo = nullptr;
-
-const _device_config_ *cfg_memory         = nullptr;
-const _device_config_ *cfg_memory_2       = nullptr;
-
-const _device_config_ *cfg_bios           = nullptr;
-const _device_config_ *cfg_in530_bootlogo = nullptr;
-
-int bios_rows = 0;
+static QList<DeviceConfigPanel *> livePanels;
 
 /* The slot another EISA card is set to, read the way that card's init
-   will read it: from its own section of the configuration, or from its
-   default when it has never been configured. */
+   will read it: from a panel open on it, or from its own section of the
+   configuration, or from its default when it has never been configured. */
 static int
 EisaSlotOf(const _device_ *dev, int instance)
 {
     device_context_t ctx;
     int              def = 1;
+
+    /* In the new layout, the board slot the card is placed in. */
+    if ((Settings::settings != nullptr) && Settings::settings->usesSlotLayout()) {
+        const int slot = Cards::placement(dev, instance);
+
+        if ((slot >> 16) == SLOT_EISA)
+            return slot & 0xffff;
+    }
+
+    for (const auto *panel : livePanels) {
+        if ((panel->device() == dev) && (panel->instance() == instance) && (panel->slotChoice() >= 0))
+            return panel->slotChoice();
+    }
 
     for (const _device_config_ *c = dev->config; (c != nullptr) && (c->type != CONFIG_END); ++c) {
         if (!strcmp(c->name, "slot")) {
@@ -164,55 +165,185 @@ EisaSlotOf(const _device_ *dev, int instance)
     return config_get_int(ctx.name, const_cast<char *>("slot"), def);
 }
 
+DeviceConfigPanel::DeviceConfigPanel(const _device_ *device, int instance, Settings *settings, QWidget *parent)
+    : QWidget(parent)
+    , dev(device)
+    , inst(instance)
+    , settings(settings)
+{
+    form = new QFormLayout(this);
+    form->setContentsMargins(0, 0, 0, 0);
+    livePanels.append(this);
+    build();
+}
+
+DeviceConfigPanel::~DeviceConfigPanel()
+{
+    livePanels.removeAll(this);
+}
+
+const QList<DeviceConfigPanel *> &
+DeviceConfigPanel::panels()
+{
+    return livePanels;
+}
+
+bool
+DeviceConfigPanel::isEmpty() const
+{
+    return form->rowCount() == 0;
+}
+
+int
+DeviceConfigPanel::slotChoice() const
+{
+    return ((cboxSlot != nullptr) && (cboxSlot->currentIndex() >= 0)) ? cboxSlot->currentData().toInt() : -1;
+}
+
+static QVariant
+panelControlValue(QWidget *widget)
+{
+    if (auto *combo = qobject_cast<QComboBox *>(widget))
+        return QVariantList { combo->currentData() };
+    if (auto *spin = qobject_cast<QSpinBox *>(widget))
+        return spin->value();
+    if (auto *check = qobject_cast<QCheckBox *>(widget))
+        return check->isChecked();
+    if (auto *line = qobject_cast<QLineEdit *>(widget)) {
+        if (qobject_cast<QComboBox *>(line->parentWidget()) || qobject_cast<QAbstractSpinBox *>(line->parentWidget()))
+            return {};
+        return line->text();
+    }
+    return {};
+}
+
+bool
+DeviceConfigPanel::hasPendingEdits() const
+{
+    for (auto it = initialValues.cbegin(); it != initialValues.cend(); ++it)
+        if (panelControlValue(it.key()) != it.value())
+            return true;
+    return false;
+}
+
+void
+DeviceConfigPanel::build()
+{
+    device_context_t device_context;
+
+    cboxSlot     = nullptr;
+    cboxMemory   = nullptr;
+    cboxMemory2  = nullptr;
+    cboxBios     = nullptr;
+    cboxBootlogo = nullptr;
+    cfgMemory    = nullptr;
+    cfgMemory2   = nullptr;
+    cfgBios      = nullptr;
+    cfgBootlogo  = nullptr;
+    biosRows     = 0;
+
+    device_set_context(&device_context, dev, inst);
+    processConfig(&device_context, dev->config, false);
+    initialValues.clear();
+    for (auto *widget : findChildren<QWidget *>()) {
+        const auto value = panelControlValue(widget);
+        if (value.isValid())
+            initialValues.insert(widget, value);
+    }
+}
+
+/* What the configuration now holds for the device, after a Configure
+   dialog on it wrote something. */
+void
+DeviceConfigPanel::reload()
+{
+    while (form->rowCount() > 0)
+        form->removeRow(0);
+    build();
+}
+
+void
+DeviceConfigPanel::reloadOthers(const DeviceConfigPanel *from)
+{
+    for (auto *panel : livePanels) {
+        if ((panel != from) && (panel->dev == from->dev) && (panel->inst == from->inst))
+            panel->reload();
+    }
+}
+
+/* Each open panel's changes written, for Settings being accepted: whether
+   any changed. */
+int
+DeviceConfigPanel::applyAll(const QWidget *within)
+{
+    int changed = 0;
+
+    for (auto *panel : livePanels) {
+        if ((within == nullptr) || within->isAncestorOf(panel))
+            changed |= panel->apply();
+    }
+
+    return changed;
+}
+
+void
+DeviceConfigPanel::greyAllTakenSlots()
+{
+    for (auto *panel : livePanels)
+        panel->greyTakenSlots();
+}
+
 /* One card to a slot. The other EISA cards the settings currently hold,
    SCSI and network, each have a slot; those choices are greyed out here,
    the way a SCSI ID already taken is greyed out for a disk. The card being
    configured keeps whatever it has, so a clash left over from an older
    configuration shows as the selected, disabled entry and must be moved. */
 void
-DeviceConfig::GreyOutTakenEisaSlots(QComboBox *cbox, int instance)
+DeviceConfigPanel::greyTakenSlots()
 {
-    auto     *settings = qobject_cast<Settings *>(parentWidget());
-    auto     *model    = qobject_cast<QStandardItemModel *>(cbox->model());
+    if ((cboxSlot == nullptr) || (settings == nullptr))
+        return;
+
+    auto     *model = qobject_cast<QStandardItemModel *>(cboxSlot->model());
     QSet<int> taken;
 
-    if ((settings == nullptr) || (model == nullptr))
+    if (model == nullptr)
         return;
 
     /* A Settings page not built yet has the saved configuration's cards. */
     for (int i = 0; i < SCSI_CARD_MAX; ++i) {
-        const int       card = (settings->storageControllers != nullptr) ? settings->storageControllers->scsiCard(i)
-                                                                         : scsi_card_current[i];
-        const _device_ *dev  = scsi_card_getdevice(card);
+        const int       card  = (settings->storageControllers != nullptr) ? settings->storageControllers->scsiCard(i)
+                                                                          : scsi_card_current[i];
+        const _device_ *other = scsi_card_getdevice(card);
 
-        if ((dev == nullptr) || !(dev->flags & DEVICE_EISA))
+        if ((other == nullptr) || !(other->flags & DEVICE_EISA))
             continue;
-        if ((dev == cfg_dev) && ((i + 1) == instance))
+        if ((other == dev) && ((i + 1) == inst))
             continue;
-        taken.insert(EisaSlotOf(dev, i + 1));
+        taken.insert(EisaSlotOf(other, i + 1));
     }
     for (int i = 0; i < NET_CARD_MAX; ++i) {
-        const int       card = (settings->network != nullptr) ? settings->network->netCard(i)
-                                                              : net_cards_conf[i].device_num;
-        const _device_ *dev  = network_card_getdevice(card);
+        const int       card  = (settings->network != nullptr) ? settings->network->netCard(i)
+                                                               : net_cards_conf[i].device_num;
+        const _device_ *other = network_card_getdevice(card);
 
-        if ((dev == nullptr) || !(dev->flags & DEVICE_EISA))
+        if ((other == nullptr) || !(other->flags & DEVICE_EISA))
             continue;
-        if ((dev == cfg_dev) && ((i + 1) == instance))
+        if ((other == dev) && ((i + 1) == inst))
             continue;
-        taken.insert(EisaSlotOf(dev, i + 1));
+        taken.insert(EisaSlotOf(other, i + 1));
     }
 
     for (int row = 0; row < model->rowCount(); ++row) {
         auto *item = model->item(row);
 
-        if ((item != nullptr) && taken.contains(item->data(Qt::UserRole).toInt()))
-            item->setEnabled(false);
+        if (item != nullptr)
+            item->setEnabled(!taken.contains(item->data(Qt::UserRole).toInt()));
     }
 }
 
 void
-DeviceConfig::ProcessConfig(void *dc, const void *c, const bool is_dep)
+DeviceConfigPanel::processConfig(void *dc, const void *c, const bool is_dep)
 {
     auto         *device_context = static_cast<device_context_t *>(dc);
     const auto   *config         = static_cast<const _device_config_ *>(c);
@@ -229,12 +360,16 @@ DeviceConfig::ProcessConfig(void *dc, const void *c, const bool is_dep)
         const int config_type = config->type & CONFIG_TYPE_MASK;
 
         /* Ignore options of the wrong class. */
-        if (!!(config->type & CONFIG_DEP) != is_dep)
+        if (!!(config->type & CONFIG_DEP) != is_dep) {
+            ++config;
             continue;
+        }
 
         /* If this is a BIOS-dependent option and it's BIOS, ignore it. */
-        if (!!(config->type & CONFIG_DEP) && (config_type == CONFIG_BIOS))
+        if (!!(config->type & CONFIG_DEP) && (config_type == CONFIG_BIOS)) {
+            ++config;
             continue;
+        }
 
         const int config_major_type = (config_type >> CONFIG_SHIFT) << CONFIG_SHIFT;
 
@@ -274,7 +409,7 @@ DeviceConfig::ProcessConfig(void *dc, const void *c, const bool is_dep)
                     auto *cbox = new QCheckBox();
                     cbox->setObjectName(config->name);
                     cbox->setChecked(value > 0);
-                    this->ui->formLayout->addRow(tr(config->description).append(colon), cbox);
+                    form->addRow(tr(config->description).append(colon), cbox);
                     break;
                 }
 #ifdef USE_RTMIDI
@@ -293,7 +428,7 @@ DeviceConfig::ProcessConfig(void *dc, const void *c, const bool is_dep)
                         if (i == value)
                             currentIndex = i;
                     }
-                    this->ui->formLayout->addRow(tr(config->description).append(colon), cbox);
+                    form->addRow(tr(config->description).append(colon), cbox);
                     cbox->setCurrentIndex(currentIndex);
                     break;
                 }
@@ -312,7 +447,7 @@ DeviceConfig::ProcessConfig(void *dc, const void *c, const bool is_dep)
                         if (i == value)
                             currentIndex = i;
                     }
-                    this->ui->formLayout->addRow(tr(config->description).append(colon), cbox);
+                    form->addRow(tr(config->description).append(colon), cbox);
                     cbox->setCurrentIndex(currentIndex);
                     break;
                 }
@@ -338,24 +473,37 @@ DeviceConfig::ProcessConfig(void *dc, const void *c, const bool is_dep)
 
                         rows++;
                     }
-                    this->ui->formLayout->addRow(tr(config->description).append(colon), cbox);
+                    form->addRow(tr(config->description).append(colon), cbox);
                     cbox->setCurrentIndex(currentIndex);
                     if (rows < 2)
                         cbox->setEnabled(false);
-                    if (!strcmp(config->name, "slot") && (cfg_dev != nullptr) && (cfg_dev->flags & DEVICE_EISA))
-                        GreyOutTakenEisaSlots(cbox, device_context->instance);
+                    if (!strcmp(config->name, "slot") && (dev != nullptr) && (dev->flags & DEVICE_EISA)) {
+                        cboxSlot = cbox;
+                        /* In the new layout the slot is chosen on the Cards page. */
+                        if ((Settings::settings != nullptr) && Settings::settings->usesSlotLayout()) {
+                            const int slot = Cards::placement(dev, inst);
+
+                            if ((slot >> 16) == SLOT_EISA) {
+                                cbox->setCurrentIndex(cbox->findData(slot & 0xffff));
+                                cbox->setEnabled(false);
+                                cbox->setToolTip(tr("Choose the board slot on the Cards page."));
+                            }
+                        }
+                        greyTakenSlots();
+                        connect(cbox, QOverload<int>::of(&QComboBox::currentIndexChanged), this, [] { greyAllTakenSlots(); });
+                    }
                     if (!strcmp(config->name, "memory") || !strcmp(config->name, "framebuffer_memory")) {
-                        cbox_memory   = cbox;
-                        cfg_memory    = config;
+                        cboxMemory   = cbox;
+                        cfgMemory    = config;
                     }    
                     if (!strcmp(config->name, "texture_memory")) {
-                        cbox_memory_2 = cbox;
-                        cfg_memory_2  = config;
+                        cboxMemory2 = cbox;
+                        cfgMemory2  = config;
                     }
                     if (!strcmp(config->name, "boot_logo") &&
-                        (cfg_dev != nullptr) && !strcmp(cfg_dev->internal_name, "in530")) {
-                        cbox_in530_bootlogo = cbox;
-                        cfg_in530_bootlogo  = config;
+                        (dev != nullptr) && !strcmp(dev->internal_name, "in530")) {
+                        cboxBootlogo = cbox;
+                        cfgBootlogo  = config;
                     }
                     break;
                 }
@@ -396,15 +544,15 @@ DeviceConfig::ProcessConfig(void *dc, const void *c, const bool is_dep)
                         q++;
                     }
 
-                    bios_rows = rows;
+                    biosRows = rows;
                     if (rows > 1)
-                        this->ui->formLayout->addRow(tr(config->description).append(colon), cbox);
+                        form->addRow(tr(config->description).append(colon), cbox);
 
                     bios = currentIndex;
                     cbox->setCurrentIndex(currentIndex);
 
-                    cbox_bios = cbox;
-                    cfg_bios  = config;
+                    cboxBios = cbox;
+                    cfgBios  = config;
                     break;
                 }
             case CONFIG_SPINNER:
@@ -416,7 +564,7 @@ DeviceConfig::ProcessConfig(void *dc, const void *c, const bool is_dep)
                     if (config->spinner.step > 0)
                         spinBox->setSingleStep(config->spinner.step);
                     spinBox->setValue(value);
-                    this->ui->formLayout->addRow(tr(config->description).append(colon), spinBox);
+                    form->addRow(tr(config->description).append(colon), spinBox);
                     break;
                 }
             case CONFIG_FNAME:
@@ -451,7 +599,7 @@ DeviceConfig::ProcessConfig(void *dc, const void *c, const bool is_dep)
                         extensionList[i] = re.match(extensionList[i]).captured(1);
 #endif
                     fileField->setFilter(tr(description.toUtf8().constData()) % util::DlgFilter(extensionList) % tr("All files") % util::DlgFilter({ "*" }, true));
-                    this->ui->formLayout->addRow(tr(config->description).append(colon), fileField);
+                    form->addRow(tr(config->description).append(colon), fileField);
                     break;
                 }
             case CONFIG_STRING:
@@ -462,7 +610,7 @@ DeviceConfig::ProcessConfig(void *dc, const void *c, const bool is_dep)
                     lineEdit->setText(selected);
                     lineEdit->setSizePolicy(QSizePolicy::MinimumExpanding, QSizePolicy::Preferred);
                     lineEdit->setMinimumWidth(150);
-                    this->ui->formLayout->addRow(tr(config->description).append(colon), lineEdit);
+                    form->addRow(tr(config->description).append(colon), lineEdit);
                     break;
                 }
             case CONFIG_SERPORT:
@@ -488,7 +636,7 @@ DeviceConfig::ProcessConfig(void *dc, const void *c, const bool is_dep)
                             currentIndex = row;
                     }
 
-                    this->ui->formLayout->addRow(tr(config->description).append(colon), cbox);
+                    form->addRow(tr(config->description).append(colon), cbox);
                     cbox->setCurrentIndex(currentIndex);
                     break;
                 }
@@ -501,7 +649,7 @@ DeviceConfig::ProcessConfig(void *dc, const void *c, const bool is_dep)
                     lineEdit->setInputMask("HHHH;0");
                     lineEdit->setText(selected.toUpper());
                     lineEdit->setSizePolicy(QSizePolicy::MinimumExpanding, QSizePolicy::Preferred);
-                    this->ui->formLayout->addRow(tr(config->description).append(colon), lineEdit);
+                    form->addRow(tr(config->description).append(colon), lineEdit);
                     break;
                 }
             case CONFIG_MAC:
@@ -533,49 +681,223 @@ DeviceConfig::ProcessConfig(void *dc, const void *c, const bool is_dep)
                     });
                     hboxLayout->addWidget(lineEdit);
                     hboxLayout->addWidget(generateButton);
-                    this->ui->formLayout->addRow(tr(config->description).append(colon), hboxLayout);
+                    form->addRow(tr(config->description).append(colon), hboxLayout);
                     break;
                 }
         }
         ++config;
     }
 
-    if ((cbox_bios != nullptr) && (cfg_bios != nullptr) && (bios != -1) &&
-        (((cfg_memory != nullptr) && (cbox_memory != nullptr)) ||
-         ((cfg_in530_bootlogo != nullptr) && (cbox_in530_bootlogo != nullptr))))
-        connect(cbox_bios, QOverload<int>::of(&QComboBox::currentIndexChanged), this, &DeviceConfig::on_comboIndexChanged);
+    if ((cboxBios != nullptr) && (cfgBios != nullptr) && (bios != -1) &&
+        (((cfgMemory != nullptr) && (cboxMemory != nullptr)) ||
+         ((cfgBootlogo != nullptr) && (cboxBootlogo != nullptr))))
+        connect(cboxBios, QOverload<int>::of(&QComboBox::currentIndexChanged), this, &DeviceConfigPanel::onBiosChanged);
 
-    on_comboIndexChanged(bios);
+    onBiosChanged(bios);
+}
+
+int
+DeviceConfigPanel::apply()
+{
+    const QString    blank       = "";
+    int              has_changed = 0;
+    device_context_t ctx;
+
+    if (dev->config == nullptr)
+        return 0;
+
+    device_set_context(&ctx, dev, inst);
+
+    const _device_config_ *config = dev->config;
+    while (config->type != CONFIG_END) {
+        const int config_type       = config->type & CONFIG_TYPE_MASK;
+        const int config_major_type = (config_type >> CONFIG_SHIFT) << CONFIG_SHIFT;
+
+        int  value    = 0;
+        auto selected = blank;
+
+        switch (config_major_type) {
+            default:
+                break;
+            case CONFIG_TYPE_INT:
+                value = config_get_int(ctx.name, const_cast<char *>(config->name),
+                                       config->default_int);
+                break;
+            case CONFIG_TYPE_HEX16:
+                value = config_get_hex16(ctx.name, const_cast<char *>(config->name),
+                                         config->default_int);
+                break;
+            case CONFIG_TYPE_HEX20:
+                value = config_get_hex20(ctx.name, const_cast<char *>(config->name),
+                                         config->default_int);
+                break;
+            case CONFIG_TYPE_STRING:
+            case CONFIG_TYPE_STRHEX:
+                selected = config_get_string(ctx.name, const_cast<char *>(config->name),
+                                             const_cast<char *>(config->default_string));
+                break;
+        }
+
+        switch (config->type) {
+            default:
+                break;
+            case CONFIG_BINARY:
+                {
+                    const auto *cbox = findChild<QCheckBox *>(config->name);
+                    if (cbox == nullptr)
+                        break;
+                    if (value != (cbox->isChecked() ? 1 : 0)) {
+                        config_set_int(ctx.name, const_cast<char *>(config->name), cbox->isChecked() ? 1 : 0);
+                        has_changed |= 1;
+                    }
+                    break;
+                }
+            case CONFIG_MIDI_OUT:
+            case CONFIG_MIDI_IN:
+            case CONFIG_INT:
+            case CONFIG_SELECTION:
+                {
+                    auto *cbox = findChild<QComboBox *>(config->name);
+                    if ((cbox == nullptr) || (cbox->currentIndex() < 0))
+                        break;
+                    value = config_get_int(ctx.name, const_cast<char *>(config->name),
+                                           config->default_int);
+                    if (value != cbox->currentData().toInt()) {
+                        config_set_int(ctx.name, const_cast<char *>(config->name), cbox->currentData().toInt());
+                        has_changed |= 1;
+                    }
+                    break;
+                }
+            case CONFIG_BIOS:
+                {
+                    if (biosRows > 1) {
+                        auto *cbox = findChild<QComboBox *>(config->name);
+                        if ((cbox == nullptr) || (cbox->currentIndex() < 0))
+                            break;
+                        int   idx  = cbox->currentData().toInt();
+                        if (strcmp(selected.toUtf8(), const_cast<char *>(config->bios[idx].internal_name))) {
+                            config_set_string(ctx.name, const_cast<char *>(config->name), const_cast<char *>(config->bios[idx].internal_name));
+                            has_changed |= 1;
+                        }
+                    }
+                    break;
+                }
+            case CONFIG_SERPORT:
+                {
+                    auto *cbox = findChild<QComboBox *>(config->name);
+                    if ((cbox == nullptr) || (cbox->currentIndex() < 0))
+                        break;
+                    auto  path = cbox->currentData().toString().toUtf8();
+                    if (strcmp(selected.toUtf8(), path)) {
+                        config_set_string(ctx.name, const_cast<char *>(config->name), path);
+                        has_changed |= 1;
+                    }
+                    break;
+                }
+            case CONFIG_STRING:
+                {
+                    auto *lineEdit = findChild<QLineEdit *>(config->name);
+                    if (lineEdit == nullptr)
+                        break;
+                    if (strcmp(selected.toUtf8(), lineEdit->text().toUtf8())) {
+                        config_set_string(ctx.name, const_cast<char *>(config->name), lineEdit->text().toUtf8());
+                        has_changed |= 1;
+                    }
+                    break;
+                }
+            case CONFIG_HEX16:
+                {
+                    auto *cbox = findChild<QComboBox *>(config->name);
+                    if ((cbox == nullptr) || (cbox->currentIndex() < 0))
+                        break;
+                    if (value != cbox->currentData().toInt()) {
+                        config_set_hex16(ctx.name, const_cast<char *>(config->name), cbox->currentData().toInt());
+                        has_changed |= 1;
+                    }
+                    break;
+                }
+            case CONFIG_HEX20:
+                {
+                    auto *cbox = findChild<QComboBox *>(config->name);
+                    if ((cbox == nullptr) || (cbox->currentIndex() < 0))
+                        break;
+                    if (value != cbox->currentData().toInt()) {
+                        config_set_hex20(ctx.name, const_cast<char *>(config->name), cbox->currentData().toInt());
+                        has_changed |= 1;
+                    }
+                    break;
+                }
+            case CONFIG_FNAME:
+                {
+                    auto *fbox     = findChild<FileField *>(config->name);
+                    if (fbox == nullptr)
+                        break;
+                    auto  fileName = fbox->fileName().toUtf8();
+                    if (strcmp(selected.toUtf8().data(), fileName.data())) {
+                        config_set_string(ctx.name, const_cast<char *>(config->name), fileName.data());
+                        has_changed |= 1;
+                    }
+                    break;
+                }
+            case CONFIG_SPINNER:
+                {
+                    auto *spinBox = findChild<QSpinBox *>(config->name);
+                    if (spinBox == nullptr)
+                        break;
+                    if (value != spinBox->value()) {
+                        config_set_int(ctx.name, const_cast<char *>(config->name), spinBox->value());
+                        has_changed |= 1;
+                    }
+                    break;
+                }
+            case CONFIG_STRHEX:
+                {
+                    const auto *lineEdit = findChild<QLineEdit *>(config->name);
+                    if (lineEdit == nullptr)
+                        break;
+                    // Store the hex value in uppercase; displayText() skips the mask's
+                    // unfilled placeholders, so a partly typed value is not padded out.
+                    auto hexText = lineEdit->displayText().toUpper();
+                    if (strcasecmp(config_get_string(ctx.name, config->name, const_cast<char *>(config->default_string)),
+                                   hexText.toUtf8().constData())) {
+                        config_set_string(ctx.name, config->name, hexText.toUtf8().constData());
+                        has_changed |= 1;
+                    }
+                    break;
+                }
+            case CONFIG_MAC:
+                {
+                    const auto *lineEdit = findChild<QLineEdit *>(config->name);
+                    if (lineEdit == nullptr)
+                        break;
+                    // Store the mac address as lowercase
+                    auto macText     = lineEdit->displayText().toLower();
+                    int  mac_changed = 0;
+                    if (config_get_mac(ctx.name, config->name,
+                                       config->default_int) & 0xFF000000)
+                        mac_changed |= 1;
+                    else
+                        mac_changed |= strcasecmp(config_get_string(ctx.name, config->name,
+                                                                    const_cast<char *>(config->default_string)),
+                                                                    macText.toUtf8().constData());
+                    if (mac_changed) {
+                        config_set_string(ctx.name, config->name, macText.toUtf8().constData());
+                        has_changed |= 1;
+                    }
+                    break;
+                }
+        }
+        config++;
+    }
+
+    return has_changed;
 }
 
 int
 DeviceConfig::ConfigureDevice(const _device_ *device, int instance, Settings *settings)
 {
-    const QString blank          = "";
-
-    int has_changed = 0;
-
-    cfg_dev = (device_t *) device;
-
-    cbox_memory         = nullptr;
-    cbox_memory_2       = nullptr;
-
-    cbox_bios           = nullptr;
-    cbox_in530_bootlogo = nullptr;
-
-    cfg_memory          = nullptr;
-    cfg_memory_2        = nullptr;
-
-    cfg_bios            = nullptr;
-    cfg_in530_bootlogo  = nullptr;
-
-    bios_rows     = 0;
-
     DeviceConfig dc(settings);
     dc.setWindowTitle(tr("%1 Device Configuration").arg(DeviceName(device, device->internal_name, -1)));
-
-    device_context_t device_context;
-    device_set_context(&device_context, device, instance);
 
     const auto device_label = new QLabel(DeviceName(device, device->internal_name, -1));
     device_label->setAlignment(Qt::AlignCenter);
@@ -584,182 +906,17 @@ DeviceConfig::ConfigureDevice(const _device_ *device, int instance, Settings *se
     line->setFrameShape(QFrame::HLine);
     line->setFrameShadow(QFrame::Sunken);
     dc.ui->formLayout->addRow(line);
-    const _device_config_ *config = device->config;
 
-    dc.ProcessConfig(&device_context, config, false);
+    auto *panel = new DeviceConfigPanel(device, instance, settings, &dc);
+    dc.ui->formLayout->addRow(panel);
 
     dc.setFixedSize(dc.minimumSizeHint());
 
-    if (dc.exec() == QDialog::Accepted) {
-        if (config == NULL)
-            return 0;
+    if (dc.exec() != QDialog::Accepted)
+        return 0;
 
-        config = device->config;
-        while (config->type != CONFIG_END) {
-            const int config_type       = config->type & CONFIG_TYPE_MASK;
-            const int config_major_type = (config_type >> CONFIG_SHIFT) << CONFIG_SHIFT;
-
-            int  value    = 0;
-            auto selected = blank;
-
-            switch (config_major_type) {
-                default:
-                    break;
-                case CONFIG_TYPE_INT:
-                    value = config_get_int(device_context.name, const_cast<char *>(config->name),
-                                           config->default_int);
-                    break;
-                case CONFIG_TYPE_HEX16:
-                    value = config_get_hex16(device_context.name, const_cast<char *>(config->name),
-                                             config->default_int);
-                    break;
-                case CONFIG_TYPE_HEX20:
-                    value = config_get_hex20(device_context.name, const_cast<char *>(config->name),
-                                             config->default_int);
-                    break;
-                case CONFIG_TYPE_STRING:
-                    selected = config_get_string(device_context.name, const_cast<char *>(config->name),
-                                                 const_cast<char *>(config->default_string));
-                    break;
-                case CONFIG_TYPE_STRHEX:
-                    selected = config_get_string(device_context.name, const_cast<char *>(config->name),
-                                                 const_cast<char *>(config->default_string));
-                    break;
-            }
-
-            switch (config->type) {
-                default:
-                    break;
-                case CONFIG_BINARY:
-                    {
-                        const auto *cbox = dc.findChild<QCheckBox *>(config->name);
-                        if (value != (cbox->isChecked() ? 1 : 0)) {
-                            config_set_int(device_context.name, const_cast<char *>(config->name), cbox->isChecked() ? 1 : 0);
-                            has_changed |= 1;
-                        }
-                        break;
-                    }
-                case CONFIG_MIDI_OUT:
-                case CONFIG_MIDI_IN:
-                case CONFIG_INT:
-                case CONFIG_SELECTION:
-                    {
-                        auto *cbox = dc.findChild<QComboBox *>(config->name);
-                        value = config_get_int(device_context.name, const_cast<char *>(config->name),
-                                               config->default_int);
-                        if (value != cbox->currentData().toInt()) {
-                            config_set_int(device_context.name, const_cast<char *>(config->name), cbox->currentData().toInt());
-                            has_changed |= 1;
-                        }
-                        break;
-                    }
-                case CONFIG_BIOS:
-                    {
-                        if (bios_rows > 1) {
-                            auto *cbox = dc.findChild<QComboBox *>(config->name);
-                            int   idx  = cbox->currentData().toInt();
-                            if (strcmp(selected.toUtf8(), const_cast<char *>(config->bios[idx].internal_name))) {
-                                config_set_string(device_context.name, const_cast<char *>(config->name), const_cast<char *>(config->bios[idx].internal_name));
-                                has_changed |= 1;
-                            }
-                        }
-                        break;
-                    }
-                case CONFIG_SERPORT:
-                    {
-                        auto *cbox = dc.findChild<QComboBox *>(config->name);
-                        auto  path = cbox->currentData().toString().toUtf8();
-                        if (strcmp(selected.toUtf8(), path)) {
-                            config_set_string(device_context.name, const_cast<char *>(config->name), path);
-                            has_changed |= 1;
-                        }
-                        break;
-                    }
-                case CONFIG_STRING:
-                    {
-                        auto *lineEdit = dc.findChild<QLineEdit *>(config->name);
-                        if (strcmp(selected.toUtf8(), lineEdit->text().toUtf8())) {
-                            config_set_string(device_context.name, const_cast<char *>(config->name), lineEdit->text().toUtf8());
-                            has_changed |= 1;
-                        }
-                        break;
-                    }
-                case CONFIG_HEX16:
-                    {
-                        auto *cbox = dc.findChild<QComboBox *>(config->name);
-                        if (value != cbox->currentData().toInt()) {
-                            config_set_hex16(device_context.name, const_cast<char *>(config->name), cbox->currentData().toInt());
-                            has_changed |= 1;
-                        }
-                        break;
-                    }
-                case CONFIG_HEX20:
-                    {
-                        auto *cbox = dc.findChild<QComboBox *>(config->name);
-                        if (value != cbox->currentData().toInt()) {
-                            config_set_hex20(device_context.name, const_cast<char *>(config->name), cbox->currentData().toInt());
-                            has_changed |= 1;
-                        }
-                        break;
-                    }
-                case CONFIG_FNAME:
-                    {
-                        auto *fbox     = dc.findChild<FileField *>(config->name);
-                        auto  fileName = fbox->fileName().toUtf8();
-                        if (strcmp(selected.toUtf8().data(), fileName.data())) {
-                            config_set_string(device_context.name, const_cast<char *>(config->name), fileName.data());
-                            has_changed |= 1;
-                        }
-                        break;
-                    }
-                case CONFIG_SPINNER:
-                    {
-                        auto *spinBox = dc.findChild<QSpinBox *>(config->name);
-                        if (value != spinBox->value()) {
-                            config_set_int(device_context.name, const_cast<char *>(config->name), spinBox->value());
-                            has_changed |= 1;
-                        }
-                        break;
-                    }
-                case CONFIG_STRHEX:
-                    {
-                        const auto *lineEdit = dc.findChild<QLineEdit *>(config->name);
-                        // Store the hex value in uppercase; displayText() skips the mask's
-                        // unfilled placeholders, so a partly typed value is not padded out.
-                        auto hexText     = lineEdit->displayText().toUpper();
-                        int  hex_changed = 0;
-                        hex_changed |= strcasecmp(config_get_string(device_context.name, config->name,
-                                                                    const_cast<char *>(config->default_string)),
-                                                  hexText.toUtf8().constData());
-                        if (hex_changed) {
-                            config_set_string(device_context.name, config->name, hexText.toUtf8().constData());
-                            has_changed |= 1;
-                        }
-                        break;
-                    }
-                case CONFIG_MAC:
-                    {
-                        const auto *lineEdit = dc.findChild<QLineEdit *>(config->name);
-                        // Store the mac address as lowercase
-                        auto macText     = lineEdit->displayText().toLower();
-                        int  mac_changed = 0;
-                        if (config_get_mac(device_context.name, config->name,
-                                           config->default_int) & 0xFF000000)
-                            mac_changed |= 1;
-                        else
-                            mac_changed |= strcasecmp(config_get_string(device_context.name, config->name,
-                                                                        const_cast<char *>(config->default_string)),
-                                                                        macText.toUtf8().constData());
-                        if (mac_changed) {
-                            config_set_string(device_context.name, config->name, macText.toUtf8().constData());
-                            has_changed |= 1;
-                        }
-                        break;
-                    }
-            }
-            config++;
-        }
-    }
+    const int has_changed = panel->apply();
+    DeviceConfigPanel::reloadOthers(panel);
 
     return has_changed;
 }
@@ -797,15 +954,16 @@ DeviceConfig::DeviceName(const _device_ *device, const char *internalName, const
     }
 }
 
+
 void
-DeviceConfig::on_comboIndexChanged(int index)
+DeviceConfigPanel::onBiosChanged(int index)
 {
-    if ((cbox_memory != nullptr) && (cbox_bios != nullptr) &&
-        (cfg_memory != nullptr)  && (cfg_bios != nullptr)) {
-        int      idx        = index; /* cbox_bios->currentData().toInt(); */
-        int      mem        = cbox_memory->currentData().toInt();
-        char *   bios_name  = const_cast<char *>(cfg_bios->bios[idx].internal_name);
-        uint64_t bios_flags = device_get_bios_flags(cfg_dev, bios_name);
+    if ((cboxMemory != nullptr) && (cboxBios != nullptr) &&
+        (cfgMemory != nullptr)  && (cfgBios != nullptr)) {
+        int      idx        = index; /* cboxBios->currentData().toInt(); */
+        int      mem        = cboxMemory->currentData().toInt();
+        char *   bios_name  = const_cast<char *>(cfgBios->bios[idx].internal_name);
+        uint64_t bios_flags = device_get_bios_flags(dev, bios_name);
         uint16_t min_mem    = 0;
         uint16_t max_mem    = 65535;
         int      rows       = 0;
@@ -817,18 +975,18 @@ DeviceConfig::on_comboIndexChanged(int index)
             max_mem = ((bios_flags >> 8) & 0xff);
 
         if (bios_flags & BIOS_FIXED_MEMORY)
-            min_mem = max_mem = cfg_memory->default_int;
+            min_mem = max_mem = cfgMemory->default_int;
 
         mem = MAX(mem, min_mem);    /* No less than minimum memory. */
         mem = MIN(mem, max_mem);    /* No more than maximum memory. */
 
-        auto *model        = cbox_memory->model();
+        auto *model        = cboxMemory->model();
         int   removeRows   = model->rowCount();
         int   currentIndex = -1;
 
-        cbox_memory->setCurrentIndex(-1);
+        cboxMemory->setCurrentIndex(-1);
 
-        for (auto *sel = cfg_memory->selection; (sel != nullptr) && (sel->description != nullptr) &&
+        for (auto *sel = cfgMemory->selection; (sel != nullptr) && (sel->description != nullptr) &&
                                                 (strlen(sel->description) > 0); ++sel) {
             if ((sel->value >= min_mem) && (sel->value <= max_mem)) {
                 int row = Models::AddEntry(model, tr(sel->description), sel->value);
@@ -842,20 +1000,20 @@ DeviceConfig::on_comboIndexChanged(int index)
 
         model->removeRows(0, removeRows);
 
-        cbox_memory->setCurrentIndex(currentIndex);
+        cboxMemory->setCurrentIndex(currentIndex);
 
         if (rows >= 2)
-            cbox_memory->setEnabled(true);
+            cboxMemory->setEnabled(true);
         else
-            cbox_memory->setEnabled(false);
+            cboxMemory->setEnabled(false);
     }
 
-    if ((cbox_memory_2 != nullptr) && (cbox_bios != nullptr) &&
-        (cfg_memory_2 != nullptr)  && (cfg_bios != nullptr)) {
-        int      idx        = index; /* cbox_bios->currentData().toInt(); */
-        int      mem        = cbox_memory_2->currentData().toInt();
-        char *   bios_name  = const_cast<char *>(cfg_bios->bios[idx].internal_name);
-        uint64_t bios_flags = device_get_bios_flags(cfg_dev, bios_name);
+    if ((cboxMemory2 != nullptr) && (cboxBios != nullptr) &&
+        (cfgMemory2 != nullptr)  && (cfgBios != nullptr)) {
+        int      idx        = index; /* cboxBios->currentData().toInt(); */
+        int      mem        = cboxMemory2->currentData().toInt();
+        char *   bios_name  = const_cast<char *>(cfgBios->bios[idx].internal_name);
+        uint64_t bios_flags = device_get_bios_flags(dev, bios_name);
         uint16_t min_mem    = 0;
         uint16_t max_mem    = 65535;
         int      rows       = 0;
@@ -869,13 +1027,13 @@ DeviceConfig::on_comboIndexChanged(int index)
         mem = MAX(mem, min_mem);    /* No less than minimum memory. */
         mem = MIN(mem, max_mem);    /* No more than maximum memory. */
 
-        auto *model        = cbox_memory_2->model();
+        auto *model        = cboxMemory2->model();
         int   removeRows   = model->rowCount();
         int   currentIndex = -1;
 
-        cbox_memory_2->setCurrentIndex(-1);
+        cboxMemory2->setCurrentIndex(-1);
 
-        for (auto *sel = cfg_memory_2->selection; (sel != nullptr) && (sel->description != nullptr) &&
+        for (auto *sel = cfgMemory2->selection; (sel != nullptr) && (sel->description != nullptr) &&
                                                 (strlen(sel->description) > 0); ++sel) {
             if ((sel->value >= min_mem) && (sel->value <= max_mem)) {
                 int row = Models::AddEntry(model, tr(sel->description), sel->value);
@@ -889,28 +1047,28 @@ DeviceConfig::on_comboIndexChanged(int index)
 
         model->removeRows(0, removeRows);
 
-        cbox_memory_2->setCurrentIndex(currentIndex);
+        cboxMemory2->setCurrentIndex(currentIndex);
 
         if (rows >= 2)
-            cbox_memory_2->setEnabled(true);
+            cboxMemory2->setEnabled(true);
         else
-            cbox_memory_2->setEnabled(false);
+            cboxMemory2->setEnabled(false);
     }
 
-    if ((cbox_in530_bootlogo != nullptr) && (cbox_bios != nullptr) &&
-        (cfg_in530_bootlogo != nullptr) && (cfg_bios != nullptr) &&
-        (cfg_dev != nullptr) && !strcmp(cfg_dev->internal_name, "in530") &&
-        (cbox_bios->currentIndex() >= 0)) {
-        const int   bios_idx  = cbox_bios->currentData().toInt();
-        const char *bios_name = cfg_bios->bios[bios_idx].internal_name;
-        const int   selector  = (cbox_in530_bootlogo->currentIndex() >= 0)
-                                   ? cbox_in530_bootlogo->currentData().toInt()
-                                   : cfg_in530_bootlogo->default_int;
+    if ((cboxBootlogo != nullptr) && (cboxBios != nullptr) &&
+        (cfgBootlogo != nullptr) && (cfgBios != nullptr) &&
+        (dev != nullptr) && !strcmp(dev->internal_name, "in530") &&
+        (cboxBios->currentIndex() >= 0)) {
+        const int   bios_idx  = cboxBios->currentData().toInt();
+        const char *bios_name = cfgBios->bios[bios_idx].internal_name;
+        const int   selector  = (cboxBootlogo->currentIndex() >= 0)
+                                   ? cboxBootlogo->currentData().toInt()
+                                   : cfgBootlogo->default_int;
 
-        cbox_in530_bootlogo->clear();
+        cboxBootlogo->clear();
 
-        auto add_logo = [](const char *description, int value) {
-            Models::AddEntry(cbox_in530_bootlogo->model(), tr(description), value);
+        auto add_logo = [this](const char *description, int value) {
+            Models::AddEntry(cboxBootlogo->model(), tr(description), value);
         };
 
         add_logo("Disabled", 4);
@@ -928,9 +1086,9 @@ DeviceConfig::on_comboIndexChanged(int index)
             add_logo("Enabled", 1);
         }
 
-        int current_index = cbox_in530_bootlogo->findData(selector);
+        int current_index = cboxBootlogo->findData(selector);
         if (current_index < 0)
-            current_index = cbox_in530_bootlogo->findData(cfg_in530_bootlogo->default_int);
-        cbox_in530_bootlogo->setCurrentIndex(current_index);
+            current_index = cboxBootlogo->findData(cfgBootlogo->default_int);
+        cboxBootlogo->setCurrentIndex(current_index);
     }
 }

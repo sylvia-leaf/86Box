@@ -204,6 +204,11 @@
       </item>
      </layout>
     </widget>
+    <widget class="QCheckBox" name="settingsLayoutCheckBox">
+     <property name="text">
+      <string>Use the new Settings layout (preview)</string>
+     </property>
+    </widget>
    </item>
    <item>
     <widget class="QGroupBox" name="groupBoxColorScheme">

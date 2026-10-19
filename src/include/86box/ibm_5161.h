@@ -16,5 +16,19 @@
 #define EMU_IBM_5161_H
 
 extern const device_t ibm_5161_device;
+extern const device_t isa_chassis_8_device;
+extern const device_t isa_chassis_16_device;
 
-#endif /*EMU_IBM_5151_H*/
+/* The ISA expansion units: an extender card in a slot of the system unit,
+   cabled to a receiver card in a unit with slots of its own. A unit adds
+   slots and nothing else; the cards in it are on the one ISA bus. */
+extern void            isa_expansion_reset(void);
+extern const device_t *isa_expansion_get_device(int unit);
+extern const char     *isa_expansion_get_internal_name(int unit);
+extern int             isa_expansion_get_from_internal_name(const char *str);
+extern int             isa_expansion_has_config(int unit);
+extern int             isa_expansion_available(int unit, int machine_id);
+extern int             isa_expansion_slots(const device_t *dev);
+extern int             isa_expansion_slot_kind(const device_t *dev);
+
+#endif /*EMU_IBM_5161_H*/

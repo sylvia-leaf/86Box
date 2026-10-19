@@ -26,6 +26,7 @@
 #include <86box/pci.h>
 #include <86box/device.h>
 #include <86box/chipset.h>
+#include <86box/ioapic_routes.h>
 #include <86box/hdc.h>
 #include <86box/hdc_ide.h>
 #include <86box/keyboard.h>
@@ -52,15 +53,8 @@ machine_at_6gxu_init(const machine_t *model)
 
     machine_at_common_init(model);
 
-    pci_init(PCI_CONFIG_TYPE_1);
-    pci_register_slot(0x00, PCI_CARD_NORTHBRIDGE, 0, 0, 0, 0);
-    pci_register_slot(0x07, PCI_CARD_SOUTHBRIDGE, 1, 2, 3, 4);
-    pci_register_slot(0x08, PCI_CARD_NORMAL,      1, 2, 3, 4);
-    pci_register_slot(0x09, PCI_CARD_NORMAL,      2, 3, 4, 1);
-    pci_register_slot(0x0A, PCI_CARD_NORMAL,      3, 4, 1, 2);
-    pci_register_slot(0x0B, PCI_CARD_NORMAL,      4, 1, 2, 3);
-    pci_register_slot(0x0C, PCI_CARD_NORMAL,      1, 2, 3, 4); /* On-Board SCSI. Not emulated at the moment */
-    pci_register_slot(0x01, PCI_CARD_AGPBRIDGE,   1, 2, 3, 4);
+    machine_pci_init();
+    machine_pci_register_slots();
 
     device_add(&i440gx_device);
     device_add(&piix4e_device);
@@ -107,6 +101,17 @@ static const device_config_t s2dge_config[] = {
             { .files_no = 0 }
         },
     },
+    {
+        .name           = "disable_apic",
+        .description    = "Disable APIC",
+        .type           = CONFIG_BINARY,
+        .default_string = NULL,
+        .default_int    = 0,
+        .file_filter    = NULL,
+        .spinner        = { 0 },
+        .selection      = { { 0 } },
+        .bios           = { { 0 } }
+    },
     { .name = "", .description = "", .type = CONFIG_END }
     // clang-format on
 };
@@ -144,22 +149,27 @@ machine_at_s2dge_init(const machine_t *model)
 
     machine_at_common_init(model);
 
-    pci_init(PCI_CONFIG_TYPE_1);
-    pci_register_slot(0x00, PCI_CARD_NORTHBRIDGE, 0, 0, 0, 0);
-    pci_register_slot(0x07, PCI_CARD_SOUTHBRIDGE, 1, 2, 0, 0);
-    pci_register_slot(0x0F, PCI_CARD_NORMAL,      1, 2, 3, 4);
-    pci_register_slot(0x10, PCI_CARD_NORMAL,      2, 3, 4, 1);
-    pci_register_slot(0x12, PCI_CARD_NORMAL,      3, 4, 1, 2);
-    pci_register_slot(0x14, PCI_CARD_NORMAL,      4, 1, 2, 3);
-    pci_register_slot(0x0D, PCI_CARD_NORMAL,      2, 3, 4, 1);
-    pci_register_slot(0x0E, PCI_CARD_NORMAL,      1, 2, 3, 4);
-    pci_register_slot(0x01, PCI_CARD_AGPBRIDGE,   1, 2, 0, 0);
+    machine_pci_init();
+    machine_pci_register_slots();
 
     device_add(&i440gx_device);
     device_add(&piix4e_device);
     device_add_params(&w83977_device, (void *) (W83977TF | W83977_AMI | W83977_NO_NVR));
     device_add(&intel_flash_bxt_device);
     spd_register(SPD_TYPE_SDRAM, 0xF, 512);
+    {
+        /* Keep S2DGE APIC wiring local: install IOAPIC, then bind board IRQ map. */
+        static const ioapic_legacy_irq_routing_t s2dge_irq_routing = {
+            .irq_to_intin = IOAPIC_LEGACY_IRQ_ROUTE_S2DGE
+        };
+        /* An AMI BIOS: its last POST code before booting is 00h, and its
+           MP table is built by then (IOAPIC_POST_TRIGGER_AMI). */
+        void *ioapic = device_add_params(&ioapic_validated_up_device,
+                                         (void *) (IOAPIC_TOPOLOGY_LAPIC_SLOTS(2) |
+                                                   IOAPIC_TOPOLOGY_UP_APIC_DEFAULT | IOAPIC_POST_TRIGGER_AMI));
+
+        ioapic_set_legacy_irq_routing(ioapic, &s2dge_irq_routing);
+    }
     device_add(&w83781d_device);    /* fans: CPU1, CPU2, Thermal Control; temperatures: unused, CPU1, CPU2? */
     hwm_values.fans[1]         = 0; /* no CPU2 fan */
     hwm_values.temperatures[0] = 0; /* unused */

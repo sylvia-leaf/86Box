@@ -231,10 +231,7 @@ acpi_update_irq(acpi_t *dev)
         default:
             if (dev->irq_line != 0)
             {
-                if (dev->irq_line >= 16 && current_ioapic && current_ioapic->ioapic_mem_window.enable)
-                    apic_ioapic_set_irq(current_ioapic, dev->irq_line, 1);
-                else
-                    picintlevel(1 << dev->irq_line, &dev->irq_state);
+                picintlevel(1 << dev->irq_line, &dev->irq_state);
             }
             else
                 dev->irq_state = 1;
@@ -251,10 +248,7 @@ acpi_update_irq(acpi_t *dev)
         default:
             if (dev->irq_line != 0)
             {
-                if (dev->irq_line >= 16 && current_ioapic && current_ioapic->ioapic_mem_window.enable)
-                    apic_ioapic_clear_irq(current_ioapic, dev->irq_line);
-                else
-                    picintclevel(1 << dev->irq_line, &dev->irq_state);
+                picintclevel(1 << dev->irq_line, &dev->irq_state);
             }
             else
                 dev->irq_state = 0;

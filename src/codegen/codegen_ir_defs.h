@@ -68,6 +68,14 @@
 #define UOP_LOAD_SEG (UOP_TYPE_PARAMS_REGS | UOP_TYPE_PARAMS_POINTER | 0x14 | UOP_TYPE_BARRIER)
 /*UOP_JMP - jump to ptr*/
 #define UOP_JMP (UOP_TYPE_PARAMS_POINTER | 0x15 | UOP_TYPE_ORDER_BARRIER)
+/*UOP_JMP_LINK - leave the block through a link stub: to the block at the
+  PC just stored when one is linked and nothing needs the dispatcher, else
+  to p (codegen_exit_rout)*/
+#define UOP_JMP_LINK (UOP_TYPE_PARAMS_POINTER | 0x1c | UOP_TYPE_ORDER_BARRIER)
+/*UOP_JMP_INDIRECT - leave the block for the PC just stored, known only now:
+  through the indirect link table when it holds that PC and nothing needs
+  the dispatcher, else to p (codegen_exit_rout)*/
+#define UOP_JMP_INDIRECT (UOP_TYPE_PARAMS_POINTER | 0x1b | UOP_TYPE_ORDER_BARRIER)
 /*UOP_CALL_FUNC - call instruction handler at p, dest_reg = return value*/
 #define UOP_CALL_FUNC_RESULT (UOP_TYPE_PARAMS_REGS | UOP_TYPE_PARAMS_POINTER | 0x16 | UOP_TYPE_BARRIER)
 /*UOP_JMP_DEST - jump to ptr*/
@@ -135,9 +143,9 @@
 #define UOP_XOR_IMM (UOP_TYPE_PARAMS_REGS | UOP_TYPE_PARAMS_IMM | 0x3a)
 /*UOP_ANDN - dest_reg = ~src_reg_a & src_reg_b*/
 #define UOP_ANDN (UOP_TYPE_PARAMS_REGS | UOP_TYPE_PARAMS_IMM | 0x3b)
-/*UOP_CALL_REP_STRING - call REP string routine at p with immediate, exit block if it returns non-zero.
-  The routine reads and writes the guest registers in cpu_state, so the caller reloads them*/
-#define UOP_CALL_REP_STRING (UOP_TYPE_PARAMS_POINTER | UOP_TYPE_PARAMS_IMM | 0x3e | UOP_TYPE_ORDER_BARRIER)
+/*UOP_CALL_INSTRUCTION_FUNC_ORDERED - UOP_CALL_INSTRUCTION_FUNC with registers written back but
+  left loaded. The caller reloads what the handler writes*/
+#define UOP_CALL_INSTRUCTION_FUNC_ORDERED (UOP_TYPE_PARAMS_POINTER | UOP_TYPE_PARAMS_IMM | 0x3e | UOP_TYPE_ORDER_BARRIER)
 /*UOP_CALL_FUNC_ORDERED - call C function at p with registers written back but left loaded.
   The function must not change anything the IR caches unless the caller reloads it*/
 #define UOP_CALL_FUNC_ORDERED (UOP_TYPE_PARAMS_POINTER | 0x3f | UOP_TYPE_ORDER_BARRIER)
@@ -264,6 +272,10 @@
   raises the exception and leaves the block, so nothing the IR caches changes on the path that
   continues*/
 #define UOP_FP_ENTER_ORDERED (UOP_TYPE_PARAMS_IMM | 0x8b | UOP_TYPE_ORDER_BARRIER)
+/*UOP_X87H - a host-x87 FPU instruction done inline, imm_data its X87H_DESC(); jumps to its handler's call when the plain case does not hold*/
+#define UOP_X87H (UOP_TYPE_PARAMS_IMM | UOP_TYPE_PARAMS_POINTER | 0x8c | UOP_TYPE_BARRIER | UOP_TYPE_JUMP)
+/*UOP_X87H_DONE - a host-x87 store's flags and pop, after the block has written its value*/
+#define UOP_X87H_DONE (UOP_TYPE_PARAMS_IMM | 0x8d | UOP_TYPE_BARRIER)
 /*UOP_FADD - (floating point) dest_reg = src_reg_a + src_reg_b*/
 #define UOP_FADD (UOP_TYPE_PARAMS_REGS | 0x81)
 /*UOP_FSUB - (floating point) dest_reg = src_reg_a - src_reg_b*/
@@ -1009,12 +1021,13 @@ extern void codegen_fpu_guard_int_indefinite(ir_data_t *ir, uint32_t fetchdat, u
 #define uop_CALL_FUNC_ORDERED(ir, p)                             uop_gen_pointer(UOP_CALL_FUNC_ORDERED, ir, p)
 #if defined __aarch64__ || defined _M_ARM64 || defined __amd64__ || defined _M_X64
 #define uop_CALL_FUNC_RESULT_ORDERED(ir, dst_reg, p)             uop_gen_reg_dst_pointer(UOP_CALL_FUNC_RESULT_ORDERED, ir, dst_reg, p)
+#define uop_CALL_INSTRUCTION_FUNC_ORDERED(ir, p, imm)            uop_gen_pointer_imm(UOP_CALL_INSTRUCTION_FUNC_ORDERED, ir, p, imm)
 #else
 /*Only the arm64 and x86-64 backends keep the cached registers across a C call*/
 #define uop_CALL_FUNC_RESULT_ORDERED(ir, dst_reg, p)             uop_CALL_FUNC_RESULT(ir, dst_reg, p)
+#define uop_CALL_INSTRUCTION_FUNC_ORDERED(ir, p, imm)            uop_CALL_INSTRUCTION_FUNC(ir, p, imm)
 #endif
 #define uop_CALL_INSTRUCTION_FUNC(ir, p, imm)                    uop_gen_pointer_imm(UOP_CALL_INSTRUCTION_FUNC, ir, p, imm)
-#define uop_CALL_REP_STRING(ir, p, imm)                          uop_gen_pointer_imm(UOP_CALL_REP_STRING, ir, p, imm)
 
 #define uop_CMP_IMM_JZ(ir, src_reg, imm, p)                      uop_gen_reg_src_pointer_imm(UOP_CMP_IMM_JZ, ir, src_reg, p, imm)
 
@@ -1159,6 +1172,10 @@ extern void codegen_fpu_guard_int_indefinite(ir_data_t *ir, uint32_t fetchdat, u
 #define uop_CHECK_ALIGN(ir) uop_CHECK_ALIGN_REG(ir, IREG_eaaddr)
 
 #define uop_JMP(ir, p)                                                   uop_gen_pointer(UOP_JMP, ir, p)
+#define uop_JMP_LINK(ir)                                                 uop_gen_pointer(UOP_JMP_LINK, ir, codegen_exit_rout)
+#define uop_JMP_INDIRECT(ir)                                             uop_gen_pointer(UOP_JMP_INDIRECT, ir, codegen_exit_rout)
+#define uop_X87H(ir, desc)                                               uop_gen_imm(UOP_X87H, ir, desc)
+#define uop_X87H_DONE(ir, desc)                                          uop_gen_imm(UOP_X87H_DONE, ir, desc)
 #define uop_JMP_DEST(ir)                                                 uop_gen(UOP_JMP_DEST, ir)
 
 #define uop_LOAD_SEG(ir, p, src_reg)                                     uop_gen_reg_src_pointer(UOP_LOAD_SEG, ir, src_reg, p)

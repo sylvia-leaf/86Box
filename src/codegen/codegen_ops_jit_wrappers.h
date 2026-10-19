@@ -56,6 +56,41 @@ call_flags_rebuild(ir_data_t *ir, void (*rebuild)(void))
 #endif
 }
 
+/*CF into flags before an INC or DEC, which keep it. After another INC or
+  DEC it is there already, which depends on the flags op as much as working
+  it out does, so that use is noted too (codegen_flags_known_note)*/
+static inline void
+codegen_rebuild_c(ir_data_t *ir)
+{
+    if (codegen_flags_changed) {
+        switch (cpu_state.flags_op) {
+            case FLAGS_INC8:
+            case FLAGS_INC16:
+            case FLAGS_INC32:
+            case FLAGS_DEC8:
+            case FLAGS_DEC16:
+            case FLAGS_DEC32:
+                if (codegen_flags_known_note(ir))
+                    return;
+                break;
+
+            default:
+                break;
+        }
+    }
+
+    if (!codegen_flags_rebuild_known(ir, 1)) {
+#if defined __aarch64__ || defined _M_ARM64 || defined __amd64__ || defined _M_X64
+        /*flags_rebuild_c() writes only flags, so the cached registers are
+          written back but left loaded, and flags is reloaded after it.*/
+        uop_CALL_FUNC_ORDERED(ir, jit_flags_rebuild_c);
+        uop_MOVZX_REG_PTR_16(ir, IREG_flags, &cpu_state.flags);
+#else
+        uop_CALL_FUNC(ir, jit_flags_rebuild_c);
+#endif
+    }
+}
+
 /* --- individual flag test functions (void → int) --- */
 
 static JIT_WRAPPER int

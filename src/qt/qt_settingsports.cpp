@@ -41,6 +41,7 @@ extern "C" {
 #include "qt_harddrive_common.hpp"
 
 #include "qt_settingsports.hpp"
+#include "qt_settings.hpp"
 #include "ui_qt_settingsports.h"
 
 #include <QStandardItem>
@@ -191,6 +192,20 @@ void
 SettingsPorts::onCurrentMachineChanged(int machineId)
 {
     this->machineId = machineId;
+
+    /* In the new layout a port past the board's own is a port card, in a
+       slot on the Cards page: each port says which it is. */
+    const bool newLayout = (Settings::settings != nullptr) && Settings::settings->usesSlotLayout();
+    for (int i = 0; i < PARALLEL_MAX; i++) {
+        if (auto *box = findChild<QCheckBox *>(QString("checkBoxParallel%1").arg(i + 1)))
+            box->setText(!newLayout ? tr("LPT%1:").arg(i + 1) :
+                         (i < machine_get_parallel_ports(machineId)) ? tr("LPT%1 (board):").arg(i + 1) : tr("LPT%1 (card):").arg(i + 1));
+    }
+    for (int i = 0; i < SERIAL_MAX_UI; i++) {
+        if (auto *box = findChild<QCheckBox *>(QString("checkBoxSerial%1").arg(i + 1)))
+            box->setText(!newLayout ? tr("COM%1:").arg(i + 1) :
+                         (i < machine_get_serial_ports(machineId)) ? tr("COM%1 (board):").arg(i + 1) : tr("COM%1 (card):").arg(i + 1));
+    }
 
     int c = 0;
 

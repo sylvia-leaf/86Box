@@ -1816,7 +1816,7 @@ decode_instruction(const macro_op_t *ins, uint64_t deps, uint32_t fetchdat, int 
         fpu_st_timestamp[6] = fpu_st_timestamp[7] = 0;
     }
     if (deps & FPU_PUSH) {
-        for (c = 0; c < 7; c++)
+        for (c = 6; c >= 0; c--)
             fpu_st_timestamp[c + 1] = fpu_st_timestamp[c];
         fpu_st_timestamp[0] = 0;
     }
