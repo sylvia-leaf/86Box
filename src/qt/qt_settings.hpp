@@ -84,6 +84,7 @@ private:
     friend class SettingsOtherRemovable;
     friend class SettingsOtherPreipherals;
     friend class DeviceConfig;
+    friend class DeviceConfigPanel;
 };
 
 #endif // QT_SETTINGS_HPP
