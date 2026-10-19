@@ -24,6 +24,8 @@
 #include "codegen_backend.h"
 #include "codegen_ir.h"
 #include "codegen_reg.h"
+#include "codegen_ops.h"
+#include "codegen_ops_x87h.h"
 
 uint8_t *block_write_data = NULL;
 
@@ -1212,6 +1214,9 @@ codegen_init(void)
     codegen_allocator_init();
 
     codegen_backend_init();
+#if X87_HOST_BUILD
+    codegen_x87h_init();
+#endif
     block_versions_init();
 #ifdef CODEGEN_CHAIN
     codegen_ind_reset();

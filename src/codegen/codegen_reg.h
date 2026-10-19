@@ -144,6 +144,10 @@ enum {
     IREG_fpu_ea, */
     IREG_sf_exc,
 
+    IREG_x87h_qx,
+    IREG_x87h_lx,
+    IREG_x87h_wx,
+
     IREG_x87_operandx,
 
     IREG_COUNT,
@@ -227,7 +231,11 @@ enum {
     IREG_fpu_CS_w = IREG_fpu_CS + IREG_SIZE_W,
     IREG_fpu_cs_l = IREG_fpu_cs + IREG_SIZE_L,
     IREG_fpu_pc_l = IREG_fpu_pc + IREG_SIZE_L,
-    IREG_sf_exc_b = IREG_sf_exc + IREG_SIZE_B
+    IREG_sf_exc_b = IREG_sf_exc + IREG_SIZE_B,
+
+    IREG_x87h_q = IREG_x87h_qx + IREG_SIZE_Q,
+    IREG_x87h_L = IREG_x87h_lx + IREG_SIZE_L,
+    IREG_x87h_W = IREG_x87h_wx + IREG_SIZE_W
 };
 
 #define IREG_8(reg)                (((reg) &4) ? (((reg) &3) + IREG_AH) : ((reg) + IREG_AL))

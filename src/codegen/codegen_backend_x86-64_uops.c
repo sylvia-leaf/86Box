@@ -1,5 +1,6 @@
 #if defined __amd64__ || defined _M_X64
 
+#    include <stddef.h>
 #    include <stdint.h>
 #    include <86box/86box.h>
 #    include "cpu.h"
@@ -11,6 +12,7 @@
 #    include "x86seg.h"
 #    include "x87_sf.h"
 #    include "x87.h"
+#    include "x87_host.h"
 #    include "386_common.h"
 #    include "codegen.h"
 #    include "codegen_backend.h"
@@ -18,6 +20,8 @@
 #    include "codegen_backend_x86-64_ops.h"
 #    include "codegen_backend_x86-64_ops_sse.h"
 #    include "codegen_ir_defs.h"
+#    include "codegen_allocator.h"
+#    include "codegen_backend_x86-64_ops_helpers.h"
 
 #    define STACK_ARG0        (0)
 #    define STACK_ARG1        (4)
@@ -1055,6 +1059,14 @@ codegen_JMP_INDIRECT(codeblock_t *block, uop_t *uop)
 #    else
     host_x86_JMP(block, uop->p);
 #    endif
+
+    return 0;
+}
+
+static int
+codegen_JMP_DEST(codeblock_t *block, uop_t *uop)
+{
+    uop->p = host_x86_JMP_long(block);
 
     return 0;
 }
@@ -3432,6 +3444,8 @@ codegen_XOR_IMM(codeblock_t *block, uop_t *uop)
     return 0;
 }
 
+#    include "codegen_backend_x86-64_x87h.c"
+
 const uOpFn uop_handlers[UOP_MAX] = {
     [UOP_CALL_FUNC & UOP_MASK] = codegen_CALL_FUNC,
     [UOP_CALL_FUNC_ORDERED &
@@ -3459,6 +3473,17 @@ const uOpFn uop_handlers[UOP_MAX] = {
     [UOP_JMP_INDIRECT &
         UOP_MASK]
     = codegen_JMP_INDIRECT,
+    [UOP_JMP_DEST &
+        UOP_MASK]
+    = codegen_JMP_DEST,
+#    if X87_HOST_AVAILABLE
+    [UOP_X87H &
+        UOP_MASK]
+    = codegen_X87H,
+    [UOP_X87H_DONE &
+        UOP_MASK]
+    = codegen_X87H_DONE,
+#    endif
 
     [UOP_LOAD_SEG &
         UOP_MASK]

@@ -446,8 +446,20 @@ typedef struct {
        (x87_dyn_fdiv, 386_dynarec.c) */
     double x87_operand;
 
-    /* The host-x87 FPU (cpu/x87_host.h): the exception flags the host x87
+    /* The host-x87 FPU (cpu/x87_host.h): a memory operand loaded for a
+       compiled instruction, or the value it leaves for the block to store,
+       each a permanent register of the recompiler; the status word a store
+       leaves until the block has written its value; the control word an
+       instruction runs with, and the host's own, which it puts back after
+       (the x87 control word is preserved across calls in both host ABIs, and
+       C on this thread uses the x87); and the exception flags the host x87
        of this thread has accumulated that the guest has been given. */
+    uint64_t x87h_q;
+    uint32_t x87h_l;
+    uint16_t x87h_w;
+    uint16_t x87h_sw;
+    uint16_t x87h_cw;
+    uint16_t x87h_hcw;
     uint16_t x87h_fl;
 
     /* The lookup tables (readlookup2, writelookup2), where the ARM64

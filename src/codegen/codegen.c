@@ -12,6 +12,7 @@
 #include "x86seg.h"
 #include "x87_sf.h"
 #include "x87.h"
+#include "x87_host.h"
 
 #include "386_common.h"
 
@@ -21,6 +22,7 @@
 #include "codegen_ir.h"
 #include "codegen_ops.h"
 #include "codegen_ops_helpers.h"
+#include "codegen_ops_x87h.h"
 
 #define MAX_INSTRUCTION_COUNT 50
 
@@ -101,6 +103,16 @@ int codegen_in_recompile;
 static int      last_op_ssegs;
 static x86seg  *last_op_ea_seg;
 static uint32_t last_op_32;
+
+#if X87_HOST_AVAILABLE
+void
+codegen_x87h_forget(void)
+{
+    last_op_ssegs  = -1;
+    last_op_ea_seg = NULL;
+    last_op_32     = -1;
+}
+#endif
 
 void
 codegen_generate_reset(void)
@@ -568,13 +580,21 @@ codegen_fpu_guard_int_range(ir_data_t *ir, uint32_t fetchdat, uint32_t op_32, ui
     uop_set_jump_dest(ir, jump_uop);
 }
 
-/*Escapes the interpreter runs every time: softfloat, no FPU fitted (#NM or
-  nothing), and an 8087 or 287, whose projective infinities (IC clear) the
-  compiled arithmetic and compares don't know*/
-static int
-codegen_x87_interpreted(void)
+/*An x87 escape's compiled forms: none for one the interpreter runs every
+  time (no FPU fitted, #NM or nothing, and an 8087 or 287, whose projective
+  infinities (IC clear) the compiled arithmetic and compares don't know);
+  the host-x87 FPU's in that mode; none in softfloat mode; else those of
+  the double-based FPU*/
+static RecompOpFn *
+codegen_x87_recomp(int esc, RecompOpFn *table)
 {
-    return fpu_softfloat || !hasfpu || (fpu_type < FPU_287XL);
+    if (!hasfpu || (fpu_type < FPU_287XL))
+        return NULL;
+#if X87_HOST_AVAILABLE
+    if (x87_host_on())
+        return recomp_opcodes_x87h[esc];
+#endif
+    return fpu_softfloat ? NULL : table;
 }
 
 /* FIST(P) of a word or doubleword on the x86-64 backend: its conversion
@@ -717,7 +737,7 @@ codegen_generate_call(uint8_t opcode, OpFn op, uint32_t fetchdat, uint32_t new_p
                 x87_op          = ((opcode & 0x07) << 8) | (fetchdat & 0xff);
                 op87            = (op87 & 0xf800) | ((opcode & 0x07) << 8) | (fetchdat & 0xff);
                 op_table        = (op_32 & 0x200) ? x86_dynarec_opcodes_d8_a32 : x86_dynarec_opcodes_d8_a16;
-                recomp_op_table = codegen_x87_interpreted() ? NULL : recomp_opcodes_d8;
+                recomp_op_table = codegen_x87_recomp(0, recomp_opcodes_d8);
                 opcode_shift    = 3;
                 opcode_mask     = 0x1f;
                 over            = 1;
@@ -733,7 +753,7 @@ codegen_generate_call(uint8_t opcode, OpFn op, uint32_t fetchdat, uint32_t new_p
                 x87_op          = ((opcode & 0x07) << 8) | (fetchdat & 0xff);
                 op87            = (op87 & 0xf800) | ((opcode & 0x07) << 8) | (fetchdat & 0xff);
                 op_table        = (op_32 & 0x200) ? x86_dynarec_opcodes_d9_a32 : x86_dynarec_opcodes_d9_a16;
-                recomp_op_table = codegen_x87_interpreted() ? NULL : recomp_opcodes_d9;
+                recomp_op_table = codegen_x87_recomp(1, recomp_opcodes_d9);
                 opcode_mask     = 0xff;
                 over            = 1;
                 pc_off          = -1;
@@ -748,7 +768,7 @@ codegen_generate_call(uint8_t opcode, OpFn op, uint32_t fetchdat, uint32_t new_p
                 x87_op          = ((opcode & 0x07) << 8) | (fetchdat & 0xff);
                 op87            = (op87 & 0xf800) | ((opcode & 0x07) << 8) | (fetchdat & 0xff);
                 op_table        = (op_32 & 0x200) ? x86_dynarec_opcodes_da_a32 : x86_dynarec_opcodes_da_a16;
-                recomp_op_table = codegen_x87_interpreted() ? NULL : recomp_opcodes_da;
+                recomp_op_table = codegen_x87_recomp(2, recomp_opcodes_da);
                 opcode_mask     = 0xff;
                 over            = 1;
                 pc_off          = -1;
@@ -763,7 +783,7 @@ codegen_generate_call(uint8_t opcode, OpFn op, uint32_t fetchdat, uint32_t new_p
                 x87_op          = ((opcode & 0x07) << 8) | (fetchdat & 0xff);
                 op87            = (op87 & 0xf800) | ((opcode & 0x07) << 8) | (fetchdat & 0xff);
                 op_table        = (op_32 & 0x200) ? x86_dynarec_opcodes_db_a32 : x86_dynarec_opcodes_db_a16;
-                recomp_op_table = codegen_x87_interpreted() ? NULL : recomp_opcodes_db;
+                recomp_op_table = codegen_x87_recomp(3, recomp_opcodes_db);
                 opcode_mask     = 0xff;
                 over            = 1;
                 pc_off          = -1;
@@ -778,7 +798,7 @@ codegen_generate_call(uint8_t opcode, OpFn op, uint32_t fetchdat, uint32_t new_p
                 x87_op          = ((opcode & 0x07) << 8) | (fetchdat & 0xff);
                 op87            = (op87 & 0xf800) | ((opcode & 0x07) << 8) | (fetchdat & 0xff);
                 op_table        = (op_32 & 0x200) ? x86_dynarec_opcodes_dc_a32 : x86_dynarec_opcodes_dc_a16;
-                recomp_op_table = codegen_x87_interpreted() ? NULL : recomp_opcodes_dc;
+                recomp_op_table = codegen_x87_recomp(4, recomp_opcodes_dc);
                 opcode_shift    = 3;
                 opcode_mask     = 0x1f;
                 over            = 1;
@@ -794,7 +814,7 @@ codegen_generate_call(uint8_t opcode, OpFn op, uint32_t fetchdat, uint32_t new_p
                 x87_op          = ((opcode & 0x07) << 8) | (fetchdat & 0xff);
                 op87            = (op87 & 0xf800) | ((opcode & 0x07) << 8) | (fetchdat & 0xff);
                 op_table        = (op_32 & 0x200) ? x86_dynarec_opcodes_dd_a32 : x86_dynarec_opcodes_dd_a16;
-                recomp_op_table = codegen_x87_interpreted() ? NULL : recomp_opcodes_dd;
+                recomp_op_table = codegen_x87_recomp(5, recomp_opcodes_dd);
                 opcode_mask     = 0xff;
                 over            = 1;
                 pc_off          = -1;
@@ -809,7 +829,7 @@ codegen_generate_call(uint8_t opcode, OpFn op, uint32_t fetchdat, uint32_t new_p
                 x87_op          = ((opcode & 0x07) << 8) | (fetchdat & 0xff);
                 op87            = (op87 & 0xf800) | ((opcode & 0x07) << 8) | (fetchdat & 0xff);
                 op_table        = (op_32 & 0x200) ? x86_dynarec_opcodes_de_a32 : x86_dynarec_opcodes_de_a16;
-                recomp_op_table = codegen_x87_interpreted() ? NULL : recomp_opcodes_de;
+                recomp_op_table = codegen_x87_recomp(6, recomp_opcodes_de);
                 opcode_mask     = 0xff;
                 over            = 1;
                 pc_off          = -1;
@@ -824,7 +844,7 @@ codegen_generate_call(uint8_t opcode, OpFn op, uint32_t fetchdat, uint32_t new_p
                 x87_op          = ((opcode & 0x07) << 8) | (fetchdat & 0xff);
                 op87            = (op87 & 0xf800) | ((opcode & 0x07) << 8) | (fetchdat & 0xff);
                 op_table        = (op_32 & 0x200) ? x86_dynarec_opcodes_df_a32 : x86_dynarec_opcodes_df_a16;
-                recomp_op_table = codegen_x87_interpreted() ? NULL : recomp_opcodes_df;
+                recomp_op_table = codegen_x87_recomp(7, recomp_opcodes_df);
                 opcode_mask     = 0xff;
                 over            = 1;
                 pc_off          = -1;

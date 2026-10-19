@@ -108,6 +108,114 @@ typedef void (*x87_host_kernel_t)(x87_host_frame_t *f);
    host without them). */
 extern x87_host_kernel_t x87_host_kernel[X87_HOST_COUNT];
 
+/* ------------------------------------------------------------------ */
+/* Compiled instructions: the guest's own instruction on the host x87 */
+/* ------------------------------------------------------------------ */
+
+/* The recompiler has the block do the common x87 instructions of this mode
+   inline (codegen_ops_x87h.c, codegen_backend_x86-64_x87h.c): the guest's
+   own instruction on the host's x87, a memory form's the same escape byte
+   and /digit on the operand as the block has read it, a register form's the
+   same opcode with ST(i) loaded as ST(1). What the guest's x87 would do with
+   it -- the rounding, the flags, the quirks of the reversed DC and DE
+   encodings -- the host's does.
+
+   Memory forms, by escape (D8-DF) and /digit: */
+enum {
+    X87H_NONE = 0,   /* left to the softfloat handler */
+    X87H_ARITH,      /* ST(0) = ST(0) op m: FADD, FMUL, FSUB(R), FDIV(R), their FI forms */
+    X87H_COMPARE,    /* FCOM(P) m, FICOM(P) m */
+    X87H_LOAD,       /* push m: FLD m32/m64, FILD m16/m32/m64 */
+    X87H_STORE,      /* m = ST(0): FST(P) m32/m64, FIST(P) m16/m32, FISTP m64 */
+    X87H_COPY_LOAD,  /* push m80: FLD m80, a copy (no exception, no rounding) */
+    X87H_COPY_STORE  /* m80 = ST(0), pop: FSTP m80, a copy */
+};
+
+/* What escape (0-7 for D8-DF) and /digit do with a memory operand, and the
+   operand's size in bytes. */
+static __inline int
+x87h_mem_kind(int esc, int digit, int *size)
+{
+    static const int8_t sizes[8] = { 4, 4, 4, 4, 8, 8, 2, 2 };
+
+    *size = sizes[esc];
+    switch (esc) {
+        case 0: /* D8: m32 real */
+        case 2: /* DA: m32 int */
+        case 4: /* DC: m64 real */
+        case 6: /* DE: m16 int */
+            return ((digit == 2) || (digit == 3)) ? X87H_COMPARE : X87H_ARITH;
+        case 1: /* D9: FLD m32, FST(P) m32 */
+        case 5: /* DD: FLD m64, FST(P) m64 */
+            if (digit == 0)
+                return X87H_LOAD;
+            return ((digit == 2) || (digit == 3)) ? X87H_STORE : X87H_NONE;
+        case 3: /* DB: FILD m32, FIST(P) m32, FLD m80, FSTP m80 */
+            if (digit == 0)
+                return X87H_LOAD;
+            if ((digit == 2) || (digit == 3))
+                return X87H_STORE;
+            if (digit == 5) {
+                *size = 10;
+                return X87H_COPY_LOAD;
+            }
+            if (digit == 7) {
+                *size = 10;
+                return X87H_COPY_STORE;
+            }
+            return X87H_NONE;
+        case 7: /* DF: FILD m16, FIST(P) m16, FILD m64, FISTP m64 */
+            if (digit == 0)
+                return X87H_LOAD;
+            if ((digit == 2) || (digit == 3))
+                return X87H_STORE;
+            if ((digit == 5) || (digit == 7)) {
+                *size = 8;
+                return (digit == 5) ? X87H_LOAD : X87H_STORE;
+            }
+            return X87H_NONE;
+        default:
+            return X87H_NONE;
+    }
+}
+
+/* Whether a memory form pops ST(0) after it: FSTP, FISTP, FCOMP, FICOMP. */
+static __inline int
+x87h_mem_pops(int esc, int digit)
+{
+    if ((digit == 3) && (esc != 1) && (esc != 5) && (esc != 3) && (esc != 7))
+        return 1; /* FCOMP, FICOMP */
+    if (((esc == 1) || (esc == 5) || (esc == 3) || (esc == 7)) && (digit == 3))
+        return 1; /* FSTP m32/m64, FISTP m32/m16 */
+    return (esc == 7) && (digit == 7); /* FISTP m64 */
+}
+
+/* A compiled instruction as the block does it inline (UOP_X87H,
+   codegen_backend_x86-64_x87h.c): what it is, its escape (0-7 for D8-DF),
+   /digit, ST(i), and one field more: for FCOM the pops (0-2) and whether it
+   is unordered (FUCOM), for FST ST(i) whether it pops, for the sign whether
+   it is FABS, for a constant whether it is FLD1. X87H_OP_MEM is a memory
+   form, x87h_mem_kind() saying which. */
+enum {
+    X87H_OP_MEM = 0,
+    X87H_OP_ARITH_REG,
+    X87H_OP_FCOM_REG,
+    X87H_OP_FXCH,
+    X87H_OP_FLD_ST,
+    X87H_OP_FST_ST,
+    X87H_OP_SIGN,
+    X87H_OP_CONST,
+    X87H_OP_FSQRT
+};
+
+#    define X87H_DESC(op, esc, digit, i, x) \
+    ((uint32_t) (op) | ((uint32_t) (esc) << 4) | ((uint32_t) (digit) << 7) | ((uint32_t) (i) << 10) | ((uint32_t) (x) << 13))
+#    define X87H_DESC_OP(d)    ((d) & 0x0f)
+#    define X87H_DESC_ESC(d)   (((d) >> 4) & 7)
+#    define X87H_DESC_DIGIT(d) (((d) >> 7) & 7)
+#    define X87H_DESC_I(d)     (((d) >> 10) & 7)
+#    define X87H_DESC_X(d)     (((d) >> 13) & 7)
+
 /* The host x87 of this thread, in cpu_state: the exception flags it has
    accumulated since they were last cleared, all of which the guest has been
    given (0x3f: not known). A value that is out of date costs nothing but a

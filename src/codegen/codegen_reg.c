@@ -198,6 +198,10 @@ struct
     [IREG_fpu_pc] = { REG_DWORD,        &cpu_state.fpu_pc,                            REG_INTEGER, REG_PERMANENT},
     [IREG_sf_exc] = { REG_DWORD,        &cpu_state.sf_exc,                            REG_INTEGER, REG_PERMANENT},
 
+    [IREG_x87h_qx] = { REG_QWORD,       &cpu_state.x87h_q,                            REG_FP,      REG_PERMANENT},
+    [IREG_x87h_lx] = { REG_DWORD,       &cpu_state.x87h_l,                            REG_INTEGER, REG_PERMANENT},
+    [IREG_x87h_wx] = { REG_WORD,        &cpu_state.x87h_w,                            REG_INTEGER, REG_PERMANENT},
+
     [IREG_x87_operandx] = { REG_DOUBLE, &cpu_state.x87_operand,                       REG_FP,      REG_PERMANENT},
 
  /*Temporary registers are stored on the stack, and are not guaranteed to
@@ -239,8 +243,8 @@ static const uint8_t native_requested_sizes[9][8] =
 /*The IR registers that hold state outside the block (REG_PERMANENT): a
   version of one may be read by C code the IR does not see -- a helper, the
   interpreter after the block -- so it is kept once such code may have run,
-  wherever it sits in the enumeration (IREG_x87_operandx and IREG_fpu_op..
-  IREG_sf_exc come after the temporaries)*/
+  wherever it sits in the enumeration (IREG_fpu_op..IREG_x87_operandx come
+  after the temporaries)*/
 uint64_t ireg_permanent_mask[2];
 
 void
