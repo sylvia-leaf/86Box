@@ -608,6 +608,12 @@ MainWindow::MainWindow(QWidget *parent)
             debugConsole->raise();
             debugConsole->activateWindow();
         });
+        /* debug_console_port in the config: listening from start-up, with
+           no window, so a headless run can be looked at. */
+        if (debug_console_port) {
+            debugConsole = new DebugConsole(this);
+            debugConsole->listenOn(debug_console_port);
+        }
     }
 
     auto actGroup = new QActionGroup(this);

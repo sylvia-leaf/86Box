@@ -194,6 +194,15 @@ DebugConsole::control(int source, const QString &line)
 }
 
 void
+DebugConsole::listenOn(int port)
+{
+    if (server || (port < 1) || (port > 65535))
+        return;
+    portEdit->setText(QString::number(port));
+    toggleServer();
+}
+
+void
 DebugConsole::toggleServer()
 {
     if (server) {

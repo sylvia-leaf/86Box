@@ -246,6 +246,7 @@ int      fdd_sounds_enabled = 1;                                  /* (C) Floppy 
 int      is_new_808x = 0;                                         /* (C) Use the new 808x code. */
 
 int      gdbstub_port = 12345;                                    /* (C) The GDB stub port. */
+int      debug_console_port = 0;                                  /* (C) The debug console listens here from start-up; 0 off. */
 
 // Accelerator key array
 struct accelKey acc_keys[NUM_ACCELS];

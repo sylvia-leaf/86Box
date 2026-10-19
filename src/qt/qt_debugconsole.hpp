@@ -22,6 +22,8 @@ public:
 
     void append(const QString &text);
     void deliver(int source, const QString &text);
+    /* Share the console over TCP on 127.0.0.1:port now (debug_console_port). */
+    void listenOn(int port);
 
 protected:
     bool eventFilter(QObject *obj, QEvent *event) override;

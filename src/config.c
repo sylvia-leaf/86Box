@@ -398,6 +398,11 @@ load_general(void)
         strncpy(uuid, "", sizeof(uuid) - 1);
 
     gdbstub_port = ini_section_get_int(cat, "gdbstub_port", 12345);
+    /* debug_console_port: the debug console (Action menu) listens on
+       127.0.0.1:port from start-up, no window needed. */
+    debug_console_port = ini_section_get_int(cat, "debug_console_port", 0);
+    if ((debug_console_port < 0) || (debug_console_port > 65535))
+        debug_console_port = 0;
 }
 
 /* Load monitor section. */
@@ -3006,6 +3011,7 @@ config_load(void)
         cpu_dyn_block_link       = 1;
 
         gdbstub_port          = 12345;
+        debug_console_port    = 0;
 
         config_log("VM config file not present or invalid!\n");
     } else {
@@ -3388,6 +3394,11 @@ save_general(void)
         ini_section_delete_var(cat, "gdbstub_port");
     else
         ini_section_set_int(cat, "gdbstub_port", gdbstub_port);
+
+    if (debug_console_port)
+        ini_section_set_int(cat, "debug_console_port", debug_console_port);
+    else
+        ini_section_delete_var(cat, "debug_console_port");
 
     ini_delete_section_if_empty(config, cat);
 }
