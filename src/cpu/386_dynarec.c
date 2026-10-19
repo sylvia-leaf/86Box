@@ -555,12 +555,13 @@ block_ended:
 
 #    ifdef CODEGEN_CHAIN
 /* Chains of linked blocks (codegen.h): the stub the last chain left
-   through for want of a link, the PC and CS base it wanted, and the
-   generation then, so the dispatcher links it once the block it wanted has
-   passed every test. */
+   through for want of a link, the PC and CS base it wanted, whether it left
+   by an indirect exit instead, and the generation then, so the dispatcher
+   links it once the block it wanted has passed every test. */
 static uint8_t *codegen_chain_link_stub;
 static uint32_t codegen_chain_link_pc;
 static uint32_t codegen_chain_link_cs;
+static int      codegen_chain_ind_pending;
 static uint64_t codegen_chain_link_gen;
 static uint64_t exec386_chain_tsc; /* tsc at the chain's entry, with cpu_state.chain_cycles */
 
@@ -643,9 +644,11 @@ exec386_dynarec_dyn(void)
     uint8_t *link_stub = codegen_chain_link_stub;
     uint32_t link_pc   = codegen_chain_link_pc;
     uint32_t link_cs   = codegen_chain_link_cs;
+    int      ind_fill  = codegen_chain_ind_pending;
     uint64_t link_gen  = codegen_chain_link_gen;
 
-    codegen_chain_link_stub = NULL;
+    codegen_chain_link_stub   = NULL;
+    codegen_chain_ind_pending = 0;
 #    endif
     uint32_t start_pc  = 0;
     uint32_t phys_addr = get_phys(cs + cpu_state.pc);
@@ -775,7 +778,11 @@ exec386_dynarec_dyn(void)
                 codegen_links_note(block); /* into its group first */
                 (void) codegen_chain_patch(link_stub, block, target_gen);
             }
+            if (codegen_block_link && ind_fill && (block->pc == link_pc) && (block->_cs == link_cs) && (codegen_chain_gen == link_gen) &&
+                block->head_mem_block && !(block->flags & CODEBLOCK_IN_DIRTY_LIST) && exec386_chain_still_clean(block))
+                codegen_ind_fill(block, target_gen);
         }
+        codegen_ind_miss        = 0;
         cpu_state.chain_signal  = &mem_chain_signal.pending;
         cpu_state.chain_floor   = exec386_chain_floor();
         cpu_state.chain_cycles  = cycles;
@@ -787,13 +794,15 @@ exec386_dynarec_dyn(void)
         code();
         inrecomp = 0;
 #    ifdef CODEGEN_CHAIN
-        /* The chain left for want of a link: linked once the block it
-           wanted passes every test. */
-        if (codegen_chain_last_exit) {
-            codegen_chain_link_stub = codegen_chain_last_exit;
-            codegen_chain_link_pc   = cs + cpu_state.pc;
-            codegen_chain_link_cs   = cs;
-            codegen_chain_link_gen  = codegen_chain_gen;
+        /* The chain left for want of a link, or by an indirect exit that
+           missed: linked or filled once the block it wanted passes every
+           test. */
+        if (codegen_chain_last_exit || codegen_ind_miss) {
+            codegen_chain_link_stub   = codegen_chain_last_exit;
+            codegen_chain_ind_pending = !codegen_chain_last_exit;
+            codegen_chain_link_pc     = cs + cpu_state.pc;
+            codegen_chain_link_cs     = cs;
+            codegen_chain_link_gen    = codegen_chain_gen;
         }
 #    endif
 

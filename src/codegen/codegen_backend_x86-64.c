@@ -1304,6 +1304,140 @@ codegen_backend_link_stub(codeblock_t *block)
     link_rel32(stub + LINK_JMP + 1, stub + LINK_MISS);
 }
 
+/* An indirect exit: a near RET, CALL or indirect JMP has stored a PC known
+   only now. The same checks as a link, then the indirect link table
+   looked up by the linear PC; a hit that holds for the CS base, the key,
+   and its block's link generation and group word goes straight to the
+   block, a miss leaves for the dispatcher, which fills the entry
+   (codegen_ind_fill). At its longest: the tests and the lookup (186
+   bytes), the miss path (16), the exit's JMP and the service's CALL at 13
+   bytes each, TEST, JNZ and the JMP back. */
+#    define IND_SIZE (186 + 16 + 13 + 13 + 2 + 6 + 5)
+
+void
+codegen_backend_indirect_stub(codeblock_t *block)
+{
+    const int32_t sig    = (int32_t) ((uintptr_t) &cpu_state.chain_signal - ((uintptr_t) &cpu_state + 128));
+    const int32_t cyc    = (int32_t) ((uintptr_t) &cpu_state._cycles - ((uintptr_t) &cpu_state + 128));
+    const int32_t flr    = (int32_t) ((uintptr_t) &cpu_state.chain_floor - ((uintptr_t) &cpu_state + 128));
+    const int32_t flg_hi = (int32_t) ((uintptr_t) &cpu_state.flags + 1 - ((uintptr_t) &cpu_state + 128));
+    const int32_t pcoff  = (int32_t) ((uintptr_t) &cpu_state.pc - ((uintptr_t) &cpu_state + 128));
+    const int32_t csoff  = (int32_t) ((uintptr_t) &cpu_state.seg_cs.base - ((uintptr_t) &cpu_state + 128));
+    const int32_t acc    = (int32_t) ((uintptr_t) &cpu_state.seg_cs.access - ((uintptr_t) &cpu_state + 128));
+    uint8_t      *stub;
+    uint8_t      *exit_at;
+    uint8_t      *service_at;
+    uint8_t      *miss_at;
+    uint8_t      *j_sig, *j_cyc, *j_tf, *j_pc, *j_cs, *j_st, *j_gen, *j_grp;
+
+    codegen_alloc_bytes(block, IND_SIZE);
+    stub = &block_write_data[block_pos];
+
+#    define HERE (&block_write_data[block_pos])
+    codegen_addbyte3(block, 0x48, 0x8b, 0x85); /*MOV RAX, [RBP+sig]*/
+    codegen_addlong(block, (uint32_t) sig);
+    codegen_addbyte3(block, 0x83, 0x38, 0x00); /*CMP DWORD [RAX], 0*/
+    codegen_addbyte2(block, 0x0f, 0x85);       /*JNE service*/
+    codegen_addlong(block, 0);
+    j_sig = HERE - 4;
+    /*back:*/
+    codegen_addbyte2(block, 0x8b, 0x85); /*MOV EAX, [RBP+cycles]*/
+    codegen_addlong(block, (uint32_t) cyc);
+    codegen_addbyte2(block, 0x3b, 0x85); /*CMP EAX, [RBP+chain_floor]*/
+    codegen_addlong(block, (uint32_t) flr);
+    codegen_addbyte2(block, 0x0f, 0x8e); /*JLE exit*/
+    codegen_addlong(block, 0);
+    j_cyc = HERE - 4;
+    codegen_addbyte2(block, 0xf6, 0x85); /*TEST BYTE [RBP+flags+1], 1 (TF)*/
+    codegen_addlong(block, (uint32_t) flg_hi);
+    codegen_addbyte(block, 0x01);
+    codegen_addbyte2(block, 0x0f, 0x85); /*JNE exit*/
+    codegen_addlong(block, 0);
+    j_tf = HERE - 4;
+    codegen_addbyte2(block, 0x8b, 0x85); /*MOV EAX, [RBP+pc]*/
+    codegen_addlong(block, (uint32_t) pcoff);
+    codegen_addbyte2(block, 0x03, 0x85); /*ADD EAX, [RBP+cs base]: the linear PC*/
+    codegen_addlong(block, (uint32_t) csoff);
+    codegen_addbyte2(block, 0x89, 0xc1);       /*MOV ECX, EAX*/
+    codegen_addbyte3(block, 0xc1, 0xe9, 0x0c); /*SHR ECX, 12*/
+    codegen_addbyte2(block, 0x31, 0xc1);       /*XOR ECX, EAX*/
+    codegen_addbyte2(block, 0x81, 0xe1);       /*AND ECX, SIZE-1*/
+    codegen_addlong(block, CODEGEN_IND_SIZE - 1);
+    codegen_addbyte4(block, 0x48, 0xc1, 0xe1, 0x06); /*SHL RCX, 6 (64-byte entries)*/
+    codegen_addbyte2(block, 0x48, 0xba);             /*MOV RDX, &codegen_ind_cache*/
+    codegen_addquad(block, (uint64_t) (uintptr_t) codegen_ind_cache);
+    codegen_addbyte3(block, 0x48, 0x01, 0xca); /*ADD RDX, RCX*/
+    codegen_addbyte2(block, 0x3b, 0x02);       /*CMP EAX, [RDX] (pc)*/
+    codegen_addbyte2(block, 0x0f, 0x85);       /*JNE miss*/
+    codegen_addlong(block, 0);
+    j_pc = HERE - 4;
+    codegen_addbyte2(block, 0x8b, 0x85); /*MOV EAX, [RBP+cs base]*/
+    codegen_addlong(block, (uint32_t) csoff);
+    codegen_addbyte3(block, 0x3b, 0x42, 0x04); /*CMP EAX, [RDX+4] (cs)*/
+    codegen_addbyte2(block, 0x0f, 0x85);       /*JNE miss*/
+    codegen_addlong(block, 0);
+    j_cs = HERE - 4;
+    codegen_addbyte2(block, 0x48, 0xb8); /*MOV RAX, &cpu_cur_status*/
+    codegen_addquad(block, (uint64_t) (uintptr_t) &cpu_cur_status);
+    codegen_addbyte3(block, 0x0f, 0xb7, 0x00); /*MOVZX EAX, WORD [RAX]*/
+    codegen_addbyte3(block, 0x0f, 0xb6, 0x8d); /*MOVZX ECX, BYTE [RBP+cs access]*/
+    codegen_addlong(block, (uint32_t) acc);
+    codegen_addbyte3(block, 0x83, 0xe1, 0x60); /*AND ECX, 60h (DPL = CPL)*/
+    codegen_addbyte3(block, 0xc1, 0xe1, 0x0b); /*SHL ECX, 11*/
+    codegen_addbyte2(block, 0x09, 0xc8);       /*OR EAX, ECX: CODEGEN_CHAIN_KEY*/
+    codegen_addbyte3(block, 0x3b, 0x42, 0x08); /*CMP EAX, [RDX+8] (key)*/
+    codegen_addbyte2(block, 0x0f, 0x85);       /*JNE miss*/
+    codegen_addlong(block, 0);
+    j_st = HERE - 4;
+    /* The block's link generation, as a link's (codegen_block.c). */
+    codegen_addbyte4(block, 0x48, 0x8b, 0x42, 0x20); /*MOV RAX, [RDX+32] (&link_gen)*/
+    codegen_addbyte3(block, 0x48, 0x8b, 0x00);       /*MOV RAX, [RAX]*/
+    codegen_addbyte4(block, 0x48, 0x3b, 0x42, 0x10); /*CMP RAX, [RDX+16] (gen)*/
+    codegen_addbyte2(block, 0x0f, 0x85);             /*JNE miss*/
+    codegen_addlong(block, 0);
+    j_gen = HERE - 4;
+    /* And its group's word, as a link's. */
+    codegen_addbyte4(block, 0x48, 0x8b, 0x42, 0x28); /*MOV RAX, [RDX+40] (group word)*/
+    codegen_addbyte3(block, 0x48, 0x8b, 0x00);       /*MOV RAX, [RAX]*/
+    codegen_addbyte4(block, 0x48, 0x3b, 0x42, 0x30); /*CMP RAX, [RDX+48] (value)*/
+    codegen_addbyte2(block, 0x0f, 0x85);             /*JNE miss*/
+    codegen_addlong(block, 0);
+    j_grp = HERE - 4;
+    codegen_addbyte3(block, 0xff, 0x62, 0x18); /*JMP [RDX+24]*/
+    /*miss: have the dispatcher fill the entry*/
+    miss_at = HERE;
+    codegen_addbyte2(block, 0x48, 0xb8); /*MOV RAX, &codegen_ind_miss*/
+    codegen_addquad(block, (uint64_t) (uintptr_t) &codegen_ind_miss);
+    codegen_addbyte2(block, 0xc7, 0x00); /*MOV DWORD [RAX], 1*/
+    codegen_addlong(block, 1);
+    /*exit:*/
+    exit_at = HERE;
+    host_x86_JMP(block, codegen_exit_rout);
+    /*service: as a link's*/
+    service_at = HERE;
+    host_x86_CALL(block, (void *) codegen_chain_service);
+    codegen_addbyte2(block, 0x85, 0xc0); /*TEST EAX, EAX*/
+    codegen_addbyte2(block, 0x0f, 0x85); /*JNZ exit*/
+    codegen_addlong(block, 0);
+    link_rel32(HERE - 4, exit_at);
+    codegen_addbyte(block, 0xe9); /*JMP back*/
+    codegen_addlong(block, 0);
+    link_rel32(HERE - 4, stub + 16);
+#    undef HERE
+
+    if ((&block_write_data[block_pos] - stub) > IND_SIZE)
+        fatal("codegen_backend_indirect_stub: %i bytes\n", (int) (&block_write_data[block_pos] - stub));
+
+    link_rel32(j_sig, service_at);
+    link_rel32(j_cyc, exit_at);
+    link_rel32(j_tf, exit_at);
+    link_rel32(j_pc, miss_at);
+    link_rel32(j_cs, miss_at);
+    link_rel32(j_st, miss_at);
+    link_rel32(j_gen, miss_at);
+    link_rel32(j_grp, miss_at);
+}
+
 /* The dispatcher found `target` valid where a chain left through `stub`
    for want of a link: the stub goes straight there from now on, for as
    long as the target's link generation and the key it saw hold. */

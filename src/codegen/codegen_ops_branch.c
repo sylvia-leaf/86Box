@@ -89,7 +89,11 @@ jcc_exit(ir_data_t *ir, uint32_t dest_addr)
     uop_ADD_IMM(ir, IREG_pc, IREG_temp0, jcc_dynamic.next_pc);
     if (jcc_dynamic.wrap_16)
         uop_AND_IMM(ir, IREG_pc, IREG_pc, 0xffff);
-    uop_JMP(ir, codegen_exit_rout);
+    /* A target read as the block runs: looked up as an indirect branch's */
+    if (cpu_end_block_after_ins)
+        uop_JMP(ir, codegen_exit_rout);
+    else
+        uop_JMP_INDIRECT(ir);
     /* Registers are allocated in uOP order, so the path that falls through must not
        inherit what this one loaded. */
     uop_NOP_BARRIER(ir);

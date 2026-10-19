@@ -1047,6 +1047,19 @@ codegen_JMP_LINK(codeblock_t *block, uop_t *uop)
 }
 
 static int
+codegen_JMP_INDIRECT(codeblock_t *block, uop_t *uop)
+{
+#    ifdef CODEGEN_CHAIN
+    (void) uop;
+    codegen_backend_indirect_stub(block);
+#    else
+    host_x86_JMP(block, uop->p);
+#    endif
+
+    return 0;
+}
+
+static int
 codegen_LOAD_FUNC_ARG0(codeblock_t *block, uop_t *uop)
 {
     int src_reg  = HOST_REG_GET(uop->src_reg_a_real);
@@ -3443,6 +3456,9 @@ const uOpFn uop_handlers[UOP_MAX] = {
     [UOP_JMP_LINK &
         UOP_MASK]
     = codegen_JMP_LINK,
+    [UOP_JMP_INDIRECT &
+        UOP_MASK]
+    = codegen_JMP_INDIRECT,
 
     [UOP_LOAD_SEG &
         UOP_MASK]

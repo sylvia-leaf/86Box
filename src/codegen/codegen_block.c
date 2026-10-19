@@ -1,4 +1,5 @@
 #include <inttypes.h>
+#include <stddef.h>
 #include <stdint.h>
 #include <stdlib.h>
 #include <string.h>
@@ -51,8 +52,8 @@ int        codegen_block_cycles;
 const int codegen_has_block_link = 1;
 
 /* cpu_dyn_block_link as of the last codegen_init() or codegen_reset(), both
-   of which free every block. 0: the dispatcher links no exit, so every
-   block leaves for it. */
+   of which free every block. 0: the dispatcher links no exit and fills no
+   indirect entry, so every block leaves for it. */
 int codegen_block_link = 1;
 
 /* Chains of linked blocks: moved whenever compiled code is freed or every
@@ -63,7 +64,15 @@ uint64_t codegen_chain_gen = 1; /* 64 bits: never wraps back onto a stale stub *
 /* A link generation no block has (codegen.h). */
 uint64_t codegen_link_unlinked = UINT64_MAX;
 
-/* The blocks a link may reach: set as a link is made
+/* The indirect link table (codegen.h). */
+codegen_ind_t codegen_ind_cache[CODEGEN_IND_SIZE];
+_Static_assert(sizeof(codegen_ind_t) == 64, "the indirect stub indexes 64-byte entries");
+_Static_assert((offsetof(codegen_ind_t, gen) == 16) && (offsetof(codegen_ind_t, target) == 24) &&
+                   (offsetof(codegen_ind_t, link_gen) == 32) && (offsetof(codegen_ind_t, group_word) == 40) &&
+                   (offsetof(codegen_ind_t, group_value) == 48),
+               "the indirect stub reads these fields at fixed offsets");
+
+/* The blocks a link or an indirect entry may reach: set as a link is made
    (codegen_links_note), cleared by the dispatcher's side alone. A set bit
    with no link behind it only costs a look. */
 static uint64_t codegen_link_targets[BLOCK_SIZE / 64];
@@ -451,6 +460,18 @@ static int      codegen_reval_all;
 static int      codegen_reval_count;
 static uint32_t codegen_reval_pages[CODEGEN_REVAL_PAGES];
 
+static void
+codegen_ind_reset(void)
+{
+    for (int c = 0; c < CODEGEN_IND_SIZE; c++) {
+        codegen_ind_cache[c].pc          = 0;
+        codegen_ind_cache[c].gen         = 0;
+        codegen_ind_cache[c].link_gen    = &codegen_link_unlinked;
+        codegen_ind_cache[c].group_word  = &codegen_lg_solo_word;
+        codegen_ind_cache[c].group_value = 0;
+    }
+}
+
 void
 codegen_links_note(codeblock_t *block)
 {
@@ -692,6 +713,33 @@ codegen_links_revalidate(void)
         }
         nr = next;
     }
+}
+
+/* Set by an indirect exit that did not find the PC it left for. */
+uint32_t codegen_ind_miss;
+
+static inline uint32_t
+codegen_ind_hash(uint32_t pc)
+{
+    return (pc ^ (pc >> 12)) & (CODEGEN_IND_SIZE - 1);
+}
+
+/* The dispatcher found `block` valid where an indirect exit missed: the
+   exits reach it straight from now on, for as long as its link generation
+   and group word, the CS base and the key hold. */
+void
+codegen_ind_fill(codeblock_t *block, uint64_t gen)
+{
+    codegen_ind_t *e = &codegen_ind_cache[codegen_ind_hash(block->pc)];
+
+    codegen_links_note(block);
+    e->pc         = block->pc;
+    e->cs_base    = block->_cs;
+    e->status     = CODEGEN_CHAIN_KEY();
+    e->gen        = gen;
+    e->target     = &block->data[block->chain_entry];
+    e->link_gen   = &block->link_gen;
+    e->group_word = codegen_link_group_word(block, &e->group_value);
 }
 
 uint8_t *codegen_chain_last_exit;
@@ -1178,6 +1226,7 @@ codegen_init(void)
     codegen_backend_init();
     block_versions_init();
 #ifdef CODEGEN_CHAIN
+    codegen_ind_reset();
     codegen_lg_init();
 #endif
     block_free_list = 0;
@@ -1231,6 +1280,7 @@ codegen_reset(void)
     mem_reset_page_blocks();
 #ifdef CODEGEN_CHAIN
     /* Every link went with its block's code. */
+    codegen_ind_reset();
     memset(codegen_link_targets, 0, sizeof(codegen_link_targets));
     memset(codegen_link_phys_count, 0, sizeof(codegen_link_phys_count));
     codegen_lg_init();

@@ -89,6 +89,8 @@ codegen_ir_compile(ir_data_t *ir, codeblock_t *block)
        where the original did. */
     if (codegen_end_link_pending == 1)
         uop_JMP_LINK(ir);
+    else if (codegen_end_link_pending == 2)
+        uop_JMP_INDIRECT(ir);
     codegen_end_link_pending = 0;
 #endif
 

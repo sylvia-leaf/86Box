@@ -26,10 +26,12 @@
 
 #ifdef CODEGEN_CHAIN
 /* How the block's last instruction lets it end: 1, a near branch to a
-   constant target, in a link; 3, any other with a constant PC after it, in
-   a link if the block ends evenly (the recording loop decides,
-   386_dynarec.c); 0, as it always did. */
+   constant target, in a link; 2, a near RET, CALL or indirect JMP, whose
+   target is known only when it runs, in an indirect link; 3, any other with
+   a constant PC after it, in a link if the block ends evenly (the recording
+   loop decides, 386_dynarec.c); 0, as it always did. */
 int        codegen_end_link_ok;
+static int codegen_is_near_indirect;
 int        codegen_end_link_pending; /* for codegen_ir_compile, after unrolling */
 static int codegen_is_near_branch;
 /* The block reached its instruction limit: the recording loop ends it once
@@ -885,9 +887,12 @@ generate_call:
     codegen_timing_opcode(opcode, fetchdat, op_32, op_pc);
 
 #ifdef CODEGEN_CHAIN
-    codegen_end_link_ok    = 0;
-    codegen_is_near_branch = (op_table == x86_dynarec_opcodes && ((opcode & 0xf0) == 0x70 || (opcode & 0xfc) == 0xe0 || opcode == 0xe8 || opcode == 0xe9 || opcode == 0xeb)) ||
-                             (op_table == x86_dynarec_opcodes_0f && ((opcode & 0xf0) == 0x80));
+    codegen_end_link_ok      = 0;
+    codegen_is_near_branch   = (op_table == x86_dynarec_opcodes && ((opcode & 0xf0) == 0x70 || (opcode & 0xfc) == 0xe0 || opcode == 0xe8 || opcode == 0xe9 || opcode == 0xeb)) ||
+                               (op_table == x86_dynarec_opcodes_0f && ((opcode & 0xf0) == 0x80));
+    codegen_is_near_indirect = (op_table == x86_dynarec_opcodes) &&
+                               ((opcode == 0xc2) || (opcode == 0xc3) || (opcode == 0xe8) ||
+                                ((opcode == 0xff) && (((fetchdat & 0x38) == 0x10) || ((fetchdat & 0x38) == 0x20))));
 #endif
 
     codegen_accumulate(ir, ACCREG_cycles, -codegen_block_cycles);
@@ -1060,12 +1065,16 @@ generate_call:
                 uop_MOV_IMM(ir, IREG_pc, new_pc);
 #ifdef CODEGEN_CHAIN
             /* A near branch with a constant target: if the block ends on
-               it, its end can be a link (codegen_block_end_recompile); any
+               it, its end can be a link (codegen_block_end_recompile); a
+               near RET, CALL or indirect JMP, whose target is known only
+               when it runs, an indirect link (the target looked up); any
                other with a constant PC after it falls through there, and
                can be a link if the block ends for its size or at the end
                of STI's shadow (the recording loop decides, 386_dynarec.c). */
             if ((new_pc != -1) && codegen_is_near_branch)
                 codegen_end_link_ok = 1;
+            else if ((new_pc == -1) && codegen_is_near_indirect)
+                codegen_end_link_ok = 2;
             else if (new_pc != -1)
                 codegen_end_link_ok = 3;
             else

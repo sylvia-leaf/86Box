@@ -109,13 +109,34 @@ extern int codegen_chain_service(void);
 /*STI in a block: an interrupt already pending breaks the chain, at the end
   of the block STI's shadow ends (386_dynarec.c).*/
 extern void codegen_chain_sti(void);
-/*What a link was made under and holds only while it matches: the status
-  word, and the CPL (bits 17:16) -- a page's user or supervisor check was
-  made at the CPL a link was made at, so privilege changes need not drop
-  the links.*/
+/*What a link or an indirect entry was made under and holds only while it
+  matches: the status word, and the CPL (bits 17:16) -- a page's user or
+  supervisor check was made at the CPL a link was made at, so privilege
+  changes need not drop the links.*/
 #    define CODEGEN_CHAIN_KEY() ((cpu_cur_status & 0xffff) | ((uint32_t) (cpu_state.seg_cs.access & 0x60) << 11))
-/*A link generation no block has: where an unlinked stub points.*/
+/*A link generation no block has: where an unlinked stub or an empty
+  indirect entry points.*/
 extern uint64_t codegen_link_unlinked;
+/*The indirect link table: the blocks a near RET, CALL or indirect JMP last
+  reached, looked up by linear PC in the exit stub, each valid for the CS
+  base and key it was filled under and while its block's link generation
+  is the one it was filled under.*/
+#    define CODEGEN_IND_SIZE 32768
+typedef struct codegen_ind_t {
+    uint32_t  pc;
+    uint32_t  cs_base;
+    uint32_t  status; /* CODEGEN_CHAIN_KEY() */
+    uint32_t  pad;
+    uint64_t  gen; /* the block's link_gen when filled */
+    uint8_t  *target;
+    uint64_t *link_gen;   /* &block->link_gen, or &codegen_link_unlinked */
+    uint64_t *group_word; /* its group's word, as a link's (codegen_link_group_word) */
+    uint64_t  group_value;
+    uint64_t  spare;
+} codegen_ind_t; /* 64 bytes: the stub indexes it with SHL 6 */
+extern codegen_ind_t codegen_ind_cache[CODEGEN_IND_SIZE];
+extern uint32_t      codegen_ind_miss;
+extern void          codegen_ind_fill(codeblock_t *block, uint64_t gen);
 /*A link's second test: the word of the target's link group and the value
   it must hold (codegen_block.c).*/
 extern uint64_t  codegen_lg_solo_word;
@@ -125,7 +146,7 @@ extern uint64_t *codegen_link_group_word(const codeblock_t *block, uint64_t *val
 extern int codegen_chain_patch(uint8_t *stub, codeblock_t *target, uint64_t gen);
 
 /*Links into a block, kept exact (codegen_block.c):
-  - note: a link to `block` was just made;
+  - note: a link or indirect entry to `block` was just made;
   - drop: every link into `block` goes (from anywhere);
   - drop_all: every link goes (`owner`: from the dispatcher's side, which
     also empties the link lists; else from anywhere, generations only);
