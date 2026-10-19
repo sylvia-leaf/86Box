@@ -608,6 +608,22 @@ sis_85c411_init(UNUSED(const device_t *info))
     return dev;
 }
 
+/* The debug console: both chips' registers and the configuration RAM's
+   doors. The RAM itself is shown by the EISA side (info eisa). */
+static void
+sis_85c411_debug_dump(void *priv, void (*out)(const char *fmt, ...))
+{
+    const sis_85c411_t *dev = (const sis_85c411_t *) priv;
+
+    out("85C411 index 0x%02x, 85C406 index 0x%02x, NMI status/control (0461h) 0x%02x\n",
+        dev->idx411, dev->idx406, dev->nmi_ext);
+    out("CRAM page (0C00h) %u, byte address (0CA2h) 0x%04x, board ID %02x%02x%02x%02x\n",
+        dev->cram_page, dev->cram_addr,
+        dev->board_id[0], dev->board_id[1], dev->board_id[2], dev->board_id[3]);
+    device_debug_hex(out, "85C411 registers:", dev->regs411, R411_FIRST, R411_LAST - R411_FIRST + 1);
+    device_debug_hex(out, "85C406 registers:", dev->regs406, 0, R406_LAST + 1);
+}
+
 const device_t sis_85c411_device = {
     .name          = "SiS 85C406/85C411 EISA",
     .internal_name = "sis_85c411",
@@ -619,5 +635,6 @@ const device_t sis_85c411_device = {
     .available     = NULL,
     .speed_changed = NULL,
     .force_redraw  = NULL,
-    .config        = NULL
+    .config        = NULL,
+    .debug_dump    = sis_85c411_debug_dump
 };

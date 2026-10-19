@@ -695,6 +695,20 @@ device_debug_of_priv(const void *priv)
     return NULL;
 }
 
+/* For a debug_dump: a title line, then n bytes sixteen to a line, each line
+   led by the index of its first byte, counted from base. */
+void
+device_debug_hex(void (*out)(const char *fmt, ...), const char *title, const uint8_t *p, int base, int n)
+{
+    out("%s\n", title);
+    for (int i = 0; i < n; i += 16) {
+        out("  %02x:", base + i);
+        for (int j = 0; (j < 16) && ((i + j) < n); j++)
+            out(" %02x", p[i + j]);
+        out("\n");
+    }
+}
+
 int
 device_available(const device_t *dev)
 {

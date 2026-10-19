@@ -246,6 +246,7 @@ extern void *device_find_first_priv(uint32_t match_flags);
 extern void *device_get_priv(const device_t *dev);
 extern int   device_debug_get(int i, const device_t **dev, void **priv);
 extern const device_t *device_debug_of_priv(const void *priv);
+extern void  device_debug_hex(void (*out)(const char *fmt, ...), const char *title, const uint8_t *p, int base, int n);
 extern int   device_available(const device_t *dev);
 extern void  device_speed_changed(void);
 extern void  device_force_redraw(void);

@@ -1597,6 +1597,22 @@ esc_init(UNUSED(const device_t *info))
     return dev;
 }
 
+/* The debug console: the configuration registers behind 0022h/0023h and the
+   rest of the ESC's own state. The configuration RAM is shown by the EISA
+   side (info eisa). */
+static void
+esc_debug_dump(void *priv, void (*out)(const char *fmt, ...))
+{
+    const esc_t *dev = (const esc_t *) priv;
+
+    out("index 0x%02x, %s, NMI status/control (0461h) 0x%02x, last EISA master 0x%02x\n",
+        dev->index, dev->unlocked ? "unlocked" : "locked", dev->nmi_esc, dev->last_mst);
+    out("board ID %02x%02x%02x%02x, strap ID %02x%02x%02x%02x, CRAM page %u\n",
+        dev->board_id[0], dev->board_id[1], dev->board_id[2], dev->board_id[3],
+        dev->strap_id[0], dev->strap_id[1], dev->strap_id[2], dev->strap_id[3], dev->cram_page);
+    device_debug_hex(out, "configuration registers:", dev->regs, 0, 256);
+}
+
 const device_t esc_device = {
     .name          = "Intel 82374SB (ESC)",
     .internal_name = "esc",
@@ -1608,7 +1624,8 @@ const device_t esc_device = {
     .available     = NULL,
     .speed_changed = NULL,
     .force_redraw  = NULL,
-    .config        = NULL
+    .config        = NULL,
+    .debug_dump    = esc_debug_dump
 };
 
 /* ------------------------------------------------------------------ */
