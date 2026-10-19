@@ -1980,6 +1980,39 @@ svga_write_common(uint32_t addr, uint8_t val, uint8_t linear, void *priv)
     uint8_t count;
     uint8_t i, orig_i;
 
+    /* The plain planar write: the window banked, write mode 0 with every
+       bit, no rotation, logical operation or set/reset, the planes not
+       chained, nothing of the card's in the way -- what a DOS game in mode X
+       or Y does for each byte -- straight to the planes the map mask
+       enables. The same as the general path below takes for it, without
+       its tests for everything else. */
+    if (!linear && !xga_active && !(svga->adv_flags & (FLAG_ADDR_BY8 | FLAG_ADDR_BY16 | FLAG_EXT_WRITE | FLAG_LATCH8)) &&
+        !svga->chain4 && !svga->chain2_write && !svga->fb_only && (svga->writemode == 0) && (svga->gdcreg[8] == 0xff) &&
+        !(svga->gdcreg[3] & 0x1f) && (!svga->gdcreg[1] || svga->set_reset_disabled) && !svga->translate_address) {
+        cycles -= svga->monitor->mon_video_timing_write_b;
+        addr = svga_decode_addr_here(svga, addr, 1);
+        if (addr == 0xffffffff)
+            return;
+        if (!(svga->gdcreg[6] & 1))
+            svga->fullchange = 2;
+        if (!writemask2)
+            return;
+        addr = (addr << 2) & svga->decode_mask;
+        if (addr >= svga->vram_max)
+            return;
+        addr &= svga->vram_mask;
+        svga->changedvram[addr >> 12] = svga->monitor->mon_changeframecount;
+        if (writemask2 & 1)
+            svga->vram[addr] = val;
+        if (writemask2 & 2)
+            svga->vram[addr | 1] = val;
+        if (writemask2 & 4)
+            svga->vram[addr | 2] = val;
+        if (writemask2 & 8)
+            svga->vram[addr | 3] = val;
+        return;
+    }
+
     if (svga->adv_flags & FLAG_ADDR_BY8)
         writemask2 = svga->seqregs[2];
 
