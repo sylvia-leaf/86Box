@@ -952,8 +952,6 @@ picint_common(uint16_t num, int level, int set, uint8_t *irq_state)
         }
     }
 
-    uint16_t lines = level ? 0x0000 : num;
-
     /* The Tandy VIS firmware leaves the master's ICW3 at 0 and never
        initializes the slave, but the slave is still wired to the master's
        IR2 and its IRQ's still reach its IRR - Modular Windows probes IRQ 9
@@ -962,7 +960,20 @@ picint_common(uint16_t num, int level, int set, uint8_t *irq_state)
     if (!slaves && (machines[machine].init == machine_at_tandy_vis_init))
         slaves = 1;
 
-    if (!slaves)
+    /* The line counts follow the wires, which a board with a slave has for
+       IRQ 8-15 whatever the master's ICW3 says; only what reaches the
+       8259s' IRRs waits on the cascade. A level release while ICW3 is
+       rewritten used to leave the slave's count up for good. IRQ2 is IRQ9
+       on an AT by its wiring, so that too holds while ICW3 is being
+       written. */
+    const int wired16 = (pic.slaves[2] != NULL);
+
+    if (pic.at && wired16 && (num & 0x0004))
+        num = (num & ~0x0004) | 0x0200;
+
+    uint16_t lines = level ? 0x0000 : num;
+
+    if (!wired16)
         max = 8;
 
     if (!num) {
@@ -981,8 +992,14 @@ picint_common(uint16_t num, int level, int set, uint8_t *irq_state)
             w = 1 << i;
 
             if (num & w) {
-                if ((!!*irq_state) != !!set)
-                    set ? dev->lines[b]++ : dev->lines[b]--;
+                /* A release the count never saw raised (the slaves set up
+                   between the two, ICW3) leaves it at 0, not wrapped. */
+                if ((!!*irq_state) != !!set) {
+                    if (set)
+                        dev->lines[b]++;
+                    else if (dev->lines[b])
+                        dev->lines[b]--;
+                }
 
                 if (!pic_level_triggered(dev, b) ||
                     (((!!*irq_state) != !!set) && (dev->lines[b] == (!!set))))
