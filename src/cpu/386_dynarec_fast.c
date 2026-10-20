@@ -83,7 +83,7 @@ exec386_dynarec_fast(int32_t cycs)
     int vector;
     int tempi;
 
-    const int FAST_BLOCK_CYCLES = 32;
+    const int FAST_BLOCK_CYCLES = 256;
     const int BLOCKS_PER_BATCH  = 128;
 
     cycles_main += cycs;
