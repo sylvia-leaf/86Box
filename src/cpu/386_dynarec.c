@@ -737,7 +737,7 @@ exec386_dynarec_int(void)
 void __attribute__((optimize("O2")))
 #else
 /* Inlined into the dispatch loop, which now comes in two copies. */
-__attribute__((always_inline)) inline void
+__attribute__((always_inline)) static inline void
 #endif
 exec386_dynarec_dyn(void)
 {
