@@ -247,7 +247,6 @@ codegen_ir_compile(ir_data_t *ir, codeblock_t *block)
     block_write_data = codeblock_allocator_get_ptr(block->head_mem_block);
     block_pos        = 0;
     codegen_backend_prologue(block);
-#endif
 #ifdef CODEGEN_BACKEND_HAS_MEM_STUBS
     codegen_backend_mem_begin();
 #endif
