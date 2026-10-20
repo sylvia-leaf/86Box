@@ -628,8 +628,13 @@
   <tabstop>spinBoxRAM</tabstop>
   <tabstop>checkBoxDynamicRecompiler</tabstop>
   <tabstop>checkBoxAccurateFPUEnvironment</tabstop>
+<<<<<<< HEAD
   <tabstop>checkBoxFastRecompiler</tabstop>
   <tabstop>comboBoxFPUMode</tabstop>
+=======
+  <tabstop>checkBoxBlockLinking</tabstop>
+  <tabstop>checkBoxFPUSoftfloat</tabstop>
+>>>>>>> 86512212eac412e17179bbeaa9098524db22c25e
   <tabstop>radioButtonDisabled</tabstop>
   <tabstop>radioButtonLocalTime</tabstop>
   <tabstop>radioButtonUTC</tabstop>

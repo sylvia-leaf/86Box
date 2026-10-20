@@ -220,7 +220,7 @@ fetch_ea_64_long(uint32_t rmdat)
             else cpu_state.eaaddr = cpu_state.pc + getlong();
         }
     }
-    if (easeg != 0xFFFFFFFF && EA_FASTPATH_OK() && ((easeg + cpu_state.eaaddr) & 0xFFF) <= 0xFFC) {
+    if (easeg != 0xFFFFFFFF && ((easeg + cpu_state.eaaddr) & 0xFFF) <= 0xFFC) {
         uint32_t addr = easeg + cpu_state.eaaddr;
         if (readlookup2[addr >> 12] != (uintptr_t) -1)
             eal_r = (uint32_t *) (readlookup2[addr >> 12] + addr);
@@ -1384,7 +1384,10 @@ exec386_dynarec(int32_t cycs)
         cycles_main -= (cycles_start - cycles);
     }
 }
+<<<<<<< HEAD
 
+=======
+>>>>>>> 86512212eac412e17179bbeaa9098524db22c25e
 #endif
 
 int
