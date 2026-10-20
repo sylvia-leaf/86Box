@@ -1384,10 +1384,6 @@ exec386_dynarec(int32_t cycs)
         cycles_main -= (cycles_start - cycles);
     }
 }
-<<<<<<< HEAD
-
-=======
->>>>>>> 86512212eac412e17179bbeaa9098524db22c25e
 #endif
 
 int
