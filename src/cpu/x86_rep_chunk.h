@@ -48,7 +48,9 @@ rep_movs_stos_chunk(uint32_t count, uint32_t src_offset, uint32_t dst_offset,
     int64_t   budget    = (int64_t) cycles - cycles_end;
 
     if (count < 2 || trap || (cpu_state.flags & T_FLAG) ||
-        ((dr[7] & 0xff) && cpu_debug_regs_486) ||
+#ifdef USE_DEBUG_REGS_486
+        (dr[7] & 0xff) ||
+#endif
         cpu_state.abrt)
         return 0;
 
@@ -140,7 +142,9 @@ rep_cmps_read(uint32_t offset, unsigned width, uint32_t *translated)
     uint32_t value;
 
     if (base != (uintptr_t) LOOKUP_INV && cpu_state.ea_seg->base != UINT32_MAX &&
-        !((dr[7] & 0xff) && cpu_debug_regs_486) &&
+#ifdef USE_DEBUG_REGS_486
+        !(dr[7] & 0xff) &&
+#endif
         !(linear & (width - 1))) {
         if (width == 1) return *(const uint8_t *) (base + linear);
         if (width == 2) {
@@ -175,7 +179,9 @@ rep_scas_chunk(uint32_t count, uint32_t offset, uint32_t addr_mask,
     int64_t budget = (int64_t) cycles - cycles_end;
 
     if (count < 2 || trap || (cpu_state.flags & T_FLAG) ||
-        ((dr[7] & 0xff) && cpu_debug_regs_486) ||
+#ifdef USE_DEBUG_REGS_486
+        (dr[7] & 0xff) ||
+#endif
         cpu_state.abrt)
         return 0;
     /* Keep the existing SCAS service interval, including its final iteration

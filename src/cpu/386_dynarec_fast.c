@@ -49,7 +49,11 @@ extern int32_t cycles_main;
 extern void exec386_dynarec_int(void);
 extern void exec386_dynarec_dyn(void);
 
+#ifdef USE_DEBUG_REGS_486
 #define CACHE_ON() (!(cr0 & (1 << 30)) && !(cpu_state.flags & T_FLAG) && !(dr[7] & 0xFF))
+#else
+#define CACHE_ON() (!(cr0 & (1 << 30)) && !(cpu_state.flags & T_FLAG))
+#endif
 
 /*
  * Fast dynamic recompiler - sacrifices timing accuracy for speed.
