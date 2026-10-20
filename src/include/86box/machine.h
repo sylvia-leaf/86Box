@@ -1532,7 +1532,6 @@ extern const device_t  p2bls_device;
 extern int             machine_at_p2bls_init(const machine_t *);
 extern int machine_at_p2bls_coreboot_init(const machine_t *);
 extern int             machine_at_p3bf_init(const machine_t *);
-extern int machine_at_p3bf_coreboot_init(const machine_t *);
 #ifdef EMU_DEVICE_H
 extern const device_t  optiplexgx1_device;
 #endif

@@ -324,14 +324,12 @@ opMOV_CRx_r_a32(uint32_t fetchdat)
                 cpu_cache_int_enabled = 0;
             if (hascache && ((cr0 ^ old_cr0) & (1 << 30)))
                 cpu_update_waitstates();
-<<<<<<< HEAD
             /* The cache off or on: blocks run interpreted or compiled */
             if ((cr0 ^ old_cr0) & (1 << 30))
-                mem_chain_break();
-=======
-            if ((cr0 ^ old_cr0) & (1 << 30))
+            {
                 cpu_car_update();
->>>>>>> 8e0a8bf82c7ad8b77336b996e1a89ea353c432dc
+                mem_chain_break();
+            }
             if (cr0 & 1)
                 cpu_cur_status |= CPU_STATUS_PMODE;
             else
