@@ -16,9 +16,6 @@
 void codegen_backend_init(void);
 void codegen_backend_prologue(codeblock_t *block);
 void codegen_backend_epilogue(codeblock_t *block);
-#ifdef CODEGEN_BACKEND_HAS_SELECTIVE_XMM
-void codegen_backend_ir_prologue(codeblock_t *block);
-#endif
 #ifdef CODEGEN_CHAIN
 void codegen_backend_link_stub(codeblock_t *block);
 void codegen_backend_indirect_stub(codeblock_t *block);

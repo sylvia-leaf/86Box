@@ -34,6 +34,7 @@ private slots:
     void on_comboBoxMachine_currentIndexChanged(int index);
     void on_comboBoxMachineType_currentIndexChanged(int index);
     void on_comboBoxFPUMode_currentIndexChanged(int index);
+    void on_checkBoxDebugRegs486_stateChanged(int state);
     void on_checkBoxDynamicRecompiler_stateChanged(int state);
     void on_checkBoxFastRecompiler_stateChanged(int state);
 

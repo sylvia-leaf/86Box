@@ -91,10 +91,6 @@ if(DISCORD)
     add_compile_definitions(DISCORD)
 endif()
 
-if(DEBUGREGS486)
-    add_compile_definitions(USE_DEBUG_REGS_486)
-endif()
-
 if(SCREENSHOT_MODE)
     add_compile_definitions(SCREENSHOT_MODE)
 endif()
@@ -337,4 +333,14 @@ endif()
 
 if(CMAKE_SYSTEM_NAME MATCHES "NetBSD")
     add_custom_command(TARGET PCBox POST_BUILD COMMAND paxctl ARGS +m $<TARGET_FILE:PCBox> COMMENT "Disable PaX MPROTECT")
+endif()
+
+if(AUTOMATION)
+    # Frames sent over the automation connection are zstd-compressed. libchdr
+    # (CD images) already needs the system zstd, found by the same module.
+    if(NOT TARGET zstd::zstd)
+        list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cdrom/libchdr/cmake")
+        find_package(zstd MODULE REQUIRED)
+    endif()
+    target_link_libraries(PCBox zstd::zstd)
 endif()
