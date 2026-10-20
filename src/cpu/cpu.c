@@ -5416,23 +5416,11 @@ cpu_WRMSR(void)
                 /* ECX & 0: MTRRphysBase0 ... MTRRphysBase7
                    ECX & 1: MTRRphysMask0 ... MTRRphysMask7 */
                 case 0x200 ... 0x20f:
-                    temp  = EAX | ((uint64_t) EDX << 32);
-                    temp2 = (ECX - 0x200) >> 1;
-                    if (ECX & 1) {
-                        cpu_log("MTRR physmask[%d] = %08llx\n", temp2, temp);
-
-                        if ((msr.mtrr_physmask[temp2] >> 11) & 0x1)
-                            mem_del_mtrr(msr.mtrr_physbase[temp2] & ~(0xFFF), msr.mtrr_physmask[temp2] & ~(0xFFF));
-
-                        if ((temp >> 11) & 0x1)
-                            mem_add_mtrr(msr.mtrr_physbase[temp2] & ~(0xFFF), temp & ~(0xFFF), msr.mtrr_physbase[temp2] & 0xFF);
-
-                        msr.mtrr_physmask[temp2] = temp;
-                    } else {
-                        cpu_log("MTRR physbase[%d] = %08llx\n", temp2, temp);
-
-                        msr.mtrr_physbase[temp2] = temp;
-                    }
+                    if (ECX & 1)
+                        msr.mtrr_physmask[(ECX - 0x200) >> 1] = EAX | ((uint64_t) EDX << 32);
+                    else
+                        msr.mtrr_physbase[(ECX - 0x200) >> 1] = EAX | ((uint64_t) EDX << 32);
+                    cpu_car_update();
                     break;
                 /* MTRRfix64K_00000 */
                 case 0x250:
@@ -5453,6 +5441,7 @@ cpu_WRMSR(void)
                 /* MTRRdefType */
                 case 0x2ff:
                     msr.mtrr_deftype = EAX | ((uint64_t) EDX << 32);
+                    cpu_car_update();
                     break;
             }
             break;
@@ -5539,23 +5528,11 @@ cpu_WRMSR(void)
                 case 0x20f:
                     if (cpu_s->cpu_type != CPU_ATHLON)
                         goto amd_k_invalid_wrmsr;
-                    temp  = EAX | ((uint64_t) EDX << 32);
-                    temp2 = (ECX - 0x200) >> 1;
-                    if (ECX & 1) {
-                        cpu_log("MTRR physmask[%d] = %08llx\n", temp2, temp);
-
-                        if ((msr.mtrr_physmask[temp2] >> 11) & 0x1)
-                            mem_del_mtrr(msr.mtrr_physbase[temp2] & ~(0xFFF), msr.mtrr_physmask[temp2] & ~(0xFFF));
-
-                        if ((temp >> 11) & 0x1)
-                            mem_add_mtrr(msr.mtrr_physbase[temp2] & ~(0xFFF), temp & ~(0xFFF), msr.mtrr_physbase[temp2] & 0xFF);
-
-                        msr.mtrr_physmask[temp2] = temp;
-                    } else {
-                        cpu_log("MTRR physbase[%d] = %08llx\n", temp2, temp);
-
-                        msr.mtrr_physbase[temp2] = temp;
-                    }
+                    if (ECX & 1)
+                        msr.mtrr_physmask[(ECX - 0x200) >> 1] = EAX | ((uint64_t) EDX << 32);
+                    else
+                        msr.mtrr_physbase[(ECX - 0x200) >> 1] = EAX | ((uint64_t) EDX << 32);
+                    cpu_car_update();
                     break;
                 case 0x250:
                     if (cpu_s->cpu_type != CPU_ATHLON)
@@ -6159,23 +6136,11 @@ pentium_invalid_wrmsr:
                 /* ECX & 0: MTRRphysBase0 ... MTRRphysBase7
                    ECX & 1: MTRRphysMask0 ... MTRRphysMask7 */
                 case 0x200 ... 0x20f:
-                    temp  = EAX | ((uint64_t) EDX << 32);
-                    temp2 = (ECX - 0x200) >> 1;
-                    if (ECX & 1) {
-                        cpu_log("MTRR physmask[%d] = %08llx\n", temp2, temp);
-
-                        if ((msr.mtrr_physmask[temp2] >> 11) & 0x1)
-                            mem_del_mtrr(msr.mtrr_physbase[temp2] & ~(0xFFF), msr.mtrr_physmask[temp2] & ~(0xFFF));
-
-                        if ((temp >> 11) & 0x1)
-                            mem_add_mtrr(msr.mtrr_physbase[temp2] & ~(0xFFF), temp & ~(0xFFF), msr.mtrr_physbase[temp2] & 0xFF);
-
-                        msr.mtrr_physmask[temp2] = temp;
-                    } else {
-                        cpu_log("MTRR physbase[%d] = %08llx\n", temp2, temp);
-
-                        msr.mtrr_physbase[temp2] = temp;
-                    }
+                    if (ECX & 1)
+                        msr.mtrr_physmask[(ECX - 0x200) >> 1] = EAX | ((uint64_t) EDX << 32);
+                    else
+                        msr.mtrr_physbase[(ECX - 0x200) >> 1] = EAX | ((uint64_t) EDX << 32);
+                    cpu_car_update();
                     break;
                 /* MTRRfix64K_00000 */
                 case 0x250:
@@ -6440,27 +6405,11 @@ i686_invalid_wrmsr:
                 /* ECX & 0: MTRRphysBase0 ... MTRRphysBase7
                    ECX & 1: MTRRphysMask0 ... MTRRphysMask7 */
                 case 0x200 ... 0x20f:
-                    temp  = EAX | ((uint64_t) EDX << 32);
-                    temp2 = (ECX - 0x200) >> 1;
-                    if (ECX & 1) {
-                        if ((EAX & 0x000007ff) || (EDX & ~0x0000000f))
-                            goto i686_invalid_wrmsr;
-                        cpu_log("MTRR physmask[%d] = %08llx\n", temp2, temp);
-
-                        if ((msr.mtrr_physmask[temp2] >> 11) & 0x1)
-                            mem_del_mtrr(msr.mtrr_physbase[temp2] & ~(0xFFF), msr.mtrr_physmask[temp2] & ~(0xFFF));
-
-                        if ((temp >> 11) & 0x1)
-                            mem_add_mtrr(msr.mtrr_physbase[temp2] & ~(0xFFF), temp & ~(0xFFF), msr.mtrr_physbase[temp2] & 0xFF);
-
-                        msr.mtrr_physmask[temp2] = temp;
-                    } else {
-                        if ((EAX & 0x00000f00) || (EDX & ~0x0000000f) || !mtrr_type_valid(EAX & 0xff))
-                            goto i686_invalid_wrmsr;
-                        cpu_log("MTRR physbase[%d] = %08llx\n", temp2, temp);
-
-                        msr.mtrr_physbase[temp2] = temp;
-                    }
+                    if (ECX & 1)
+                        msr.mtrr_physmask[(ECX - 0x200) >> 1] = EAX | ((uint64_t) EDX << 32);
+                    else
+                        msr.mtrr_physbase[(ECX - 0x200) >> 1] = EAX | ((uint64_t) EDX << 32);
+                    cpu_car_update();
                     break;
                 /* MTRRfix64K_00000 */
                 case 0x250:
@@ -6502,6 +6451,7 @@ i686_invalid_wrmsr:
                     if ((EAX & ~0x00000cff) || EDX || !mtrr_type_valid(EAX & 0xff))
                         goto i686_invalid_wrmsr;
                     msr.mtrr_deftype = EAX | ((uint64_t) EDX << 32);
+                    cpu_car_update();
                     break;
                 /* MC0_CTL - Machine Check 0 Control */
                 case 0x400:
