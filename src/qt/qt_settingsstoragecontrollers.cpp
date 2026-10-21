@@ -96,6 +96,8 @@ SettingsStorageControllers::SettingsStorageControllers(QWidget *parent)
     fdcCurrent[0]         = fdc_current[0];
     cdromInterfaceCurrent = cdrom_interface_current;
 
+    ui->checkBoxIDETurbo->setChecked(ide_turbo > 0);
+
     onCurrentMachineChanged(machine);
 }
 
@@ -116,7 +118,8 @@ SettingsStorageControllers::~SettingsStorageControllers()
 int
 SettingsStorageControllers::changed()
 {
-    int has_changed = 0;
+    int has_changed  = 0;
+    int soft_changed = 0;
 
     for (uint8_t i = 0; i < HDC_MAX; ++i) {
         QComboBox *cbox = findChild<QComboBox *>(QString("comboBoxHD%1").arg(i + 1));
@@ -136,7 +139,9 @@ SettingsStorageControllers::changed()
     has_changed |= cdrom_interface_cfg_changed;
     has_changed |= (cassette_enable         != (ui->checkBoxCassette->isChecked() ? 1 : 0));
 
-    return has_changed ? (SETTINGS_CHANGED | SETTINGS_REQUIRE_HARD_RESET) : 0;
+    soft_changed |= (ide_turbo != (ui->checkBoxIDETurbo->isChecked() ? 1 : 0));
+
+    return has_changed ? (SETTINGS_CHANGED | SETTINGS_REQUIRE_HARD_RESET) : (soft_changed ? SETTINGS_CHANGED : 0);
 }
 
 void
@@ -163,6 +168,9 @@ SettingsStorageControllers::scsiCard(int i) const
 void
 SettingsStorageControllers::save(int soft)
 {
+    ide_turbo = ui->checkBoxIDETurbo->isChecked() ? 1 : 0;
+    ide_turbo_update();
+
     if (soft)
         return;
 

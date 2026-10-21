@@ -430,6 +430,9 @@ msgstr "Динамический рекомпилятор"
 msgid "Accurate FPU environment on the dynamic recompiler"
 msgstr "Точное окружение FPU в динамическом рекомпиляторе"
 
+msgid "Debug registers on 486 and later processors"
+msgstr ""
+
 msgid "CPU frame size"
 msgstr "Размер кадра ЦП"
 
@@ -621,6 +624,12 @@ msgstr "Контроллер 4:"
 
 msgid "Cassette"
 msgstr "Кассетный магнитофон"
+
+msgid "Turbo IDE"
+msgstr ""
+
+msgid "Removes the IDE transfer mode speed limit. Hard disk and CD-ROM drive timings still apply."
+msgstr ""
 
 msgid "Hard disks:"
 msgstr "Жёсткие диски:"

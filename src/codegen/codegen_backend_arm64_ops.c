@@ -180,7 +180,9 @@
 #    define OPCODE_LDR_REG_F64        (0xfc606800)
 #    define OPCODE_LDR_REG_F64_S      (0xfc607800)
 #    define OPCODE_LSL                (0x1ac02000)
+#    define OPCODE_LSLX               (0x9ac02000)
 #    define OPCODE_LSR                (0x1ac02400)
+#    define OPCODE_LSRX               (0x9ac02400)
 #    define OPCODE_MSR_FPCR           (0xd51b4400)
 #    define OPCODE_MUL_V4H            (0x0e609c00)
 #    define OPCODE_MUL                (0x1b007c00)
@@ -1328,9 +1330,21 @@ host_arm64_LSL(codeblock_t *block, int dst_reg, int src_n_reg, int shift_reg)
 }
 
 void
+host_arm64_LSLX(codeblock_t *block, int dst_reg, int src_n_reg, int shift_reg)
+{
+    codegen_addlong(block, OPCODE_LSLX | Rd(dst_reg) | Rn(src_n_reg) | Rm(shift_reg));
+}
+
+void
 host_arm64_LSR(codeblock_t *block, int dst_reg, int src_n_reg, int shift_reg)
 {
     codegen_addlong(block, OPCODE_LSR | Rd(dst_reg) | Rn(src_n_reg) | Rm(shift_reg));
+}
+
+void
+host_arm64_LSRX(codeblock_t *block, int dst_reg, int src_n_reg, int shift_reg)
+{
+    codegen_addlong(block, OPCODE_LSRX | Rd(dst_reg) | Rn(src_n_reg) | Rm(shift_reg));
 }
 
 void

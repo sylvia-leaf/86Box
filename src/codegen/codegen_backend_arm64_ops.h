@@ -164,7 +164,9 @@ void host_arm64_LDRH_REG(codeblock_t *block, int dest_reg, int base_reg, int off
 void host_arm64_LDRX_REG_LSL3(codeblock_t *block, int dest_reg, int base_reg, int offset_reg);
 
 void host_arm64_LSL(codeblock_t *block, int dst_reg, int src_n_reg, int shift_reg);
+void host_arm64_LSLX(codeblock_t *block, int dst_reg, int src_n_reg, int shift_reg);
 void host_arm64_LSR(codeblock_t *block, int dst_reg, int src_n_reg, int shift_reg);
+void host_arm64_LSRX(codeblock_t *block, int dst_reg, int src_n_reg, int shift_reg);
 
 void host_arm64_MOV_REG_ASR(codeblock_t *block, int dst_reg, int src_m_reg, int shift);
 void host_arm64_MOV_REG(codeblock_t *block, int dst_reg, int src_m_reg, int shift);

@@ -429,6 +429,9 @@ msgstr "Dynamický prekladač"
 msgid "Accurate FPU environment on the dynamic recompiler"
 msgstr ""
 
+msgid "Debug registers on 486 and later processors"
+msgstr ""
+
 msgid "CPU frame size"
 msgstr "Veľkosť rámcov CPU"
 
@@ -620,6 +623,12 @@ msgstr "Radič 4:"
 
 msgid "Cassette"
 msgstr "Kazeta"
+
+msgid "Turbo IDE"
+msgstr ""
+
+msgid "Removes the IDE transfer mode speed limit. Hard disk and CD-ROM drive timings still apply."
+msgstr ""
 
 msgid "Hard disks:"
 msgstr "Pevné disky:"
