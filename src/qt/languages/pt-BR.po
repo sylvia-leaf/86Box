@@ -1297,11 +1297,7 @@ msgid "Machine name and hardware"
 msgstr ""
 
 msgid "Hardware only"
-<<<<<<< HEAD
-msgstr ""
-=======
 msgstr "Apenas hardware"
->>>>>>> c61ecc88c9d8a6c211ec8b7fffbaff75ce8ef1af
 
 msgid "No details"
 msgstr ""
