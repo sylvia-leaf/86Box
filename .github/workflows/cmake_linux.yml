@@ -33,7 +33,6 @@ jobs:
     runs-on: ${{ matrix.environment.runner }}
 
     strategy:
-      fail-fast: true
       matrix:
         build:
           - name: Regular
