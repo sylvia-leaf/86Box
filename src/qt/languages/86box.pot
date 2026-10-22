@@ -429,15 +429,9 @@ msgstr ""
 msgid "Accurate FPU environment on the dynamic recompiler"
 msgstr ""
 
-<<<<<<< HEAD
-=======
-msgid "Block linking on the dynamic recompiler"
-msgstr ""
-
 msgid "Debug registers on 486 and later processors"
 msgstr ""
 
->>>>>>> c61ecc88c9d8a6c211ec8b7fffbaff75ce8ef1af
 msgid "CPU frame size"
 msgstr ""
 
