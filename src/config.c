@@ -56,6 +56,7 @@
 #include <86box/isamem.h>
 #include <86box/isarom.h>
 #include <86box/isartc.h>
+#include <86box/ibm_5161.h>
 #include <86box/lpt.h>
 #include <86box/serial.h>
 #include <86box/hdd.h>
@@ -154,7 +155,14 @@ load_global_emulator(void)
     confirm_save  = ini_section_get_int(cat, "confirm_save", 1);
     color_scheme  = ini_section_get_int(cat, "color_scheme", 0);
 
+    settings_layout   = ini_section_get_int(cat, "settings_layout", 0);
+    settings_advanced = ini_section_get_int(cat, "settings_advanced", 0);
+
     vmm_disabled = ini_section_get_int(cat, "vmm_disabled", 0);
+
+    discord_presence = ini_section_get_int(cat, "discord_presence", 0);
+    if ((discord_presence < 0) || (discord_presence > 3))
+        discord_presence = 0;
 
     chd_precache_level = ini_section_get_int(cat, "chd_precache_level", 0);
 
@@ -238,6 +246,9 @@ load_global_legacy(void)
     confirm_save  = ini_section_get_int(cat, "confirm_save", 1);
     color_scheme  = ini_section_get_int(cat, "color_scheme", 0);
 
+    settings_layout   = ini_section_get_int(cat, "settings_layout", 0);
+    settings_advanced = ini_section_get_int(cat, "settings_advanced", 0);
+
     inhibit_multimedia_keys = ini_section_get_int(cat, "inhibit_multimedia_keys", 0);
 
     mouse_sensitivity = ini_section_get_double(cat, "mouse_sensitivity", 1.0);
@@ -304,6 +315,9 @@ load_general(void)
     char          temp[512];
     char         *p;
 
+    /* The log file, when the command line gave none (-L wins). */
+    pclog_set_config_path(ini_section_get_string(cat, "log_path", NULL));
+
     vid_resize = ini_section_get_int(cat, "vid_resize", 0);
     if (vid_resize & ~3)
         vid_resize &= 3;
@@ -331,6 +345,8 @@ load_general(void)
     video_graytype   = ini_section_get_int(cat, "video_graytype", 0);
 
     force_10ms = !!ini_section_get_int(cat, "force_10ms", 0);
+
+    start_fast_forward = !!ini_section_get_int(cat, "fast_forward", 0);
 
     rctrl_is_lalt = ini_section_get_int(cat, "rctrl_is_lalt", 0);
     update_icons  = ini_section_get_int(cat, "update_icons", 1);
@@ -368,7 +384,8 @@ load_general(void)
     hide_tool_bar   = ini_section_get_int(cat, "hide_tool_bar", 0);
     sound_muted     = ini_section_get_int(cat, "sound_muted", 0);
 
-    enable_discord = !!ini_section_get_int(cat, "enable_discord", 0);
+    /* Discord integration has moved to the VM manager. */
+    ini_section_delete_var(cat, "enable_discord");
 
     video_vk_device = ini_section_get_int(cat, "video_vk_device", 0);
     video_framerate = ini_section_get_int(cat, "video_gl_framerate", -1);
@@ -398,6 +415,11 @@ load_general(void)
         strncpy(uuid, "", sizeof(uuid) - 1);
 
     gdbstub_port = ini_section_get_int(cat, "gdbstub_port", 12345);
+    /* debug_console_port: the debug console (Action menu) listens on
+       127.0.0.1:port from start-up, no window needed. */
+    debug_console_port = ini_section_get_int(cat, "debug_console_port", 0);
+    if ((debug_console_port < 0) || (debug_console_port > 65535))
+        debug_console_port = 0;
 }
 
 /* Load monitor section. */
@@ -578,6 +600,7 @@ load_machine(void)
 
     cpu_override             = ini_section_get_int(cat, "cpu_override", 0);
     cpu_override_interpreter = ini_section_get_int(cat, "cpu_override_interpreter", 0);
+    cpu_debug_regs_486       = !!ini_section_get_int(cat, "cpu_debug_regs_486", 0);
     cpu_f                    = NULL;
     p                        = ini_section_get_string(cat, "cpu_family", NULL);
     if (p) {
@@ -652,6 +675,17 @@ load_machine(void)
     cpu_use_dynarec = !!ini_section_get_int(cat, "cpu_use_dynarec", 0);
     cpu_use_dynarec_fast = !!ini_section_get_int(cat, "cpu_use_dynarec_fast", 0);
     fpu_softfloat = !!ini_section_get_int(cat, "fpu_softfloat", 0);
+    /* The host-x87 FPU runs on softfloat's state and handlers, so it turns
+       softfloat on underneath; a build without it keeps the default FPU. */
+    fpu_host_x87 = !!ini_section_get_int(cat, "fpu_host_x87", 0);
+    if (fpu_softfloat) /* softfloat, where a configuration asks for it, wins */
+        fpu_host_x87 = 0;
+    if (fpu_host_x87 && !X87_HOST_BUILD) {
+        config_log("Config: this build has no host-x87 FPU, using the default FPU\n");
+        fpu_host_x87 = 0;
+    }
+    if (fpu_host_x87)
+        fpu_softfloat = 1;
     if ((fpu_type != FPU_NONE) && machine_has_flags(machine, MACHINE_SOFTFLOAT_ONLY))
         fpu_softfloat = 1;
 
@@ -898,39 +932,52 @@ load_input_devices(void)
     if ((p != NULL) && (strspn(p, "0123456789") != strlen(p)))
         config_known(joystick_type[joy_insn], STRING_UNSUPPORTED_JOYSTICK, p);
 
-    uint8_t gp = 0;
+    /* The second game port's joystick (208h-20Fh). */
+    p                = ini_section_get_string(cat, "joystick2_type", "none");
+    joystick_type[1] = joystick_get_from_internal_name(p);
+    if (strcmp(p, "none"))
+        config_known(joystick_type[1], STRING_UNSUPPORTED_JOYSTICK, p);
 
-    for (int js = 0; js < joystick_get_max_joysticks(joystick_type[joy_insn]); js++) {
-        sprintf(temp, "joystick_%i_nr", js);
-        joystick_state[gp][js].plat_joystick_nr = ini_section_get_int(cat, temp, 0);
+    /* The mappings of each game port's joysticks: joystick_..., then
+       joystick2_... */
+    for (uint8_t gp = 0; gp < GAMEPORT_MAX; gp++) {
+        const char *pre = gp ? "joystick2" : "joystick";
 
-        if (joystick_state[gp][js].plat_joystick_nr) {
-            // --- Load Axis Mappings ---
-            for (int axis_nr = 0; axis_nr < joystick_get_axis_count(joystick_type[joy_insn]); axis_nr++) {
-                sprintf(temp, "joystick_%i_axis_%i", js, axis_nr);
-                joystick_state[gp][js].axis_mapping[axis_nr] = ini_section_get_int(cat, temp, axis_nr);
-            }
+        for (int js = 0; js < joystick_get_max_joysticks(joystick_type[gp]); js++) {
+            sprintf(temp, "%s_%i_nr", pre, js);
+            joystick_state[gp][js].plat_joystick_nr = ini_section_get_int(cat, temp, 0);
 
-            // --- Load Button Mappings ---
-            for (int button_nr = 0; button_nr < joystick_get_button_count(joystick_type[joy_insn]); button_nr++) {
-                sprintf(temp, "joystick_%i_button_%i", js, button_nr);
-                joystick_state[gp][js].button_mapping[button_nr] = ini_section_get_int(cat, temp, button_nr);
-            }
+            if (joystick_state[gp][js].plat_joystick_nr) {
+                // --- Load Axis Mappings ---
+                for (int axis_nr = 0; axis_nr < joystick_get_axis_count(joystick_type[gp]); axis_nr++) {
+                    sprintf(temp, "%s_%i_axis_%i", pre, js, axis_nr);
+                    joystick_state[gp][js].axis_mapping[axis_nr] = ini_section_get_int(cat, temp, axis_nr);
+                }
 
-            // --- Load POV (Hat Switch) Mappings ---
-            for (int pov_nr = 0; pov_nr < joystick_get_pov_count(joystick_type[joy_insn]); pov_nr++) {
-                sprintf(temp, "joystick_%i_pov_%i", js, pov_nr);
-                sprintf(tmp2, "%i, %i", 0, 0);
-                p                                             = ini_section_get_string(cat, temp, tmp2);
-                joystick_state[gp][js].pov_mapping[pov_nr][0] = 0;
-				joystick_state[gp][js].pov_mapping[pov_nr][1] = 0;
-                sscanf(p, "%i, %i", &joystick_state[gp][js].pov_mapping[pov_nr][0],
-                       &joystick_state[gp][js].pov_mapping[pov_nr][1]);
+                // --- Load Button Mappings ---
+                for (int button_nr = 0; button_nr < joystick_get_button_count(joystick_type[gp]); button_nr++) {
+                    sprintf(temp, "%s_%i_button_%i", pre, js, button_nr);
+                    joystick_state[gp][js].button_mapping[button_nr] = ini_section_get_int(cat, temp, button_nr);
+                }
+
+                // --- Load POV (Hat Switch) Mappings ---
+                for (int pov_nr = 0; pov_nr < joystick_get_pov_count(joystick_type[gp]); pov_nr++) {
+                    sprintf(temp, "%s_%i_pov_%i", pre, js, pov_nr);
+                    sprintf(tmp2, "%i, %i", 0, 0);
+                    p                                             = ini_section_get_string(cat, temp, tmp2);
+                    joystick_state[gp][js].pov_mapping[pov_nr][0] = 0;
+                    joystick_state[gp][js].pov_mapping[pov_nr][1] = 0;
+                    sscanf(p, "%i, %i", &joystick_state[gp][js].pov_mapping[pov_nr][0],
+                           &joystick_state[gp][js].pov_mapping[pov_nr][1]);
+                }
             }
         }
     }
 
     tablet_tool_type = !!ini_section_get_int(cat, "tablet_tool_type", 1);
+
+    p                  = ini_section_get_string(cat, "gameport_card", "auto");
+    gameport_card_type = gameport_card_get_from_internal_name(p);
 }
 
 /* Load "Sound" section. */
@@ -1555,6 +1602,8 @@ load_storage_controllers(void)
     if (p != NULL)
         cdrom_interface_current = config_known(cdrom_interface_get_from_internal_name(p), STRING_UNSUPPORTED_CDROM_INTERFACE, p);
 
+    ide_turbo = !!ini_section_get_int(cat, "ide_turbo", 0);
+
     /* The floppy tape is configured from the Tape drives tab now; the old
        keys are stale and get cleaned up. */
     ini_section_delete_var(cat, "floppy_tape_enabled");
@@ -1672,6 +1721,13 @@ load_hard_disks(void)
                &hdd[c].spt, &hdd[c].hpc, &hdd[c].tracks, (int *) &hdd[c].wp, s);
 
         hdd[c].bus_type = hdd_string_to_bus(s, 0);
+        sprintf(temp, "hdd_%02i_disconnected_bus", c + 1);
+        hdd[c].disconnected_bus = 0;
+        if (hdd[c].bus_type == HDD_BUS_DISCONNECTED) {
+            hdd[c].disconnected_bus = hdd_string_to_bus(ini_section_get_string(cat, temp, "ide"), 0);
+            if (!hdd[c].disconnected_bus || hdd[c].disconnected_bus == HDD_BUS_DISCONNECTED)
+                hdd[c].disconnected_bus = hdd_string_to_bus("ide", 0);
+        }
         memset(hdd[c].custom_vendor, 0, sizeof(hdd[c].custom_vendor));
         memset(hdd[c].custom_model, 0, sizeof(hdd[c].custom_model));
         memset(hdd[c].custom_version, 0, sizeof(hdd[c].custom_version));
@@ -1717,6 +1773,7 @@ load_hard_disks(void)
                 max_tracks = 266305;
                 break;
 
+            case HDD_BUS_DISCONNECTED:
             case HDD_BUS_SCSI:
             case HDD_BUS_ATAPI:
                 max_spt    = 255;
@@ -2000,6 +2057,13 @@ load_floppy_and_cdrom_drives(void)
             sscanf("0, none", "%01u, %s", &d, s);
         cdrom[c].sound_on = d;
         cdrom[c].bus_type = hdd_string_to_bus(s, 1);
+        sprintf(temp, "cdrom_%02i_disconnected_bus", c + 1);
+        cdrom[c].disconnected_bus = 0;
+        if (cdrom[c].bus_type == CDROM_BUS_DISCONNECTED) {
+            cdrom[c].disconnected_bus = hdd_string_to_bus(ini_section_get_string(cat, temp, "atapi"), 1);
+            if (!cdrom[c].disconnected_bus || cdrom[c].disconnected_bus == CDROM_BUS_DISCONNECTED)
+                cdrom[c].disconnected_bus = hdd_string_to_bus("atapi", 1);
+        }
 
         sprintf(temp, "cdrom_%02i_speed", c + 1);
         cdrom[c].speed = ini_section_get_int(cat, temp, 8);
@@ -2025,6 +2089,11 @@ load_floppy_and_cdrom_drives(void)
             cdrom_set_type(c, cdrom_type);
         if (cdrom_get_type(c) >= count)
             cdrom_set_type(c, count - 1);
+        if (cdrom[c].bus_type == CDROM_BUS_DISCONNECTED &&
+            cdrom_drive_types[cdrom_get_type(c)].bus_type != BUS_TYPE_BOTH &&
+            cdrom[c].disconnected_bus != CDROM_BUS_LPT)
+            cdrom[c].disconnected_bus = cdrom_drive_types[cdrom_get_type(c)].bus_type;
+
         if (!strcmp(p, "86cd"))
             ini_section_delete_var(cat, temp);
 
@@ -2199,6 +2268,13 @@ load_other_removable_devices(void)
             sscanf("0, none", "%01u, %s", &rdisk_drives[c].type, s);
         rdisk_drives[c].type++;
         rdisk_drives[c].bus_type = hdd_string_to_bus(s, 1);
+        sprintf(temp, "rdisk_%02i_disconnected_bus", c + 1);
+        rdisk_drives[c].disconnected_bus = 0;
+        if (rdisk_drives[c].bus_type == HDD_BUS_DISCONNECTED) {
+            rdisk_drives[c].disconnected_bus = hdd_string_to_bus(ini_section_get_string(cat, temp, "atapi"), 1);
+            if (!rdisk_drives[c].disconnected_bus || rdisk_drives[c].disconnected_bus == HDD_BUS_DISCONNECTED)
+                rdisk_drives[c].disconnected_bus = hdd_string_to_bus("atapi", 1);
+        }
 
         /* Default values, needed for proper operation of the Settings dialog. */
         rdisk_drives[c].ide_channel = rdisk_drives[c].scsi_device_id = c + 2;
@@ -2304,6 +2380,13 @@ load_other_removable_devices(void)
         } else
             sscanf("0, none", "%01u, %s", &rdisk_drives[c].type, s);
         rdisk_drives[c].bus_type = hdd_string_to_bus(s, 1);
+        sprintf(temp, "rdisk_%02i_disconnected_bus", c + 1);
+        rdisk_drives[c].disconnected_bus = 0;
+        if (rdisk_drives[c].bus_type == HDD_BUS_DISCONNECTED) {
+            rdisk_drives[c].disconnected_bus = hdd_string_to_bus(ini_section_get_string(cat, temp, "atapi"), 1);
+            if (!rdisk_drives[c].disconnected_bus || rdisk_drives[c].disconnected_bus == HDD_BUS_DISCONNECTED)
+                rdisk_drives[c].disconnected_bus = hdd_string_to_bus("atapi", 1);
+        }
 
         /* Default values, needed for proper operation of the Settings dialog. */
         rdisk_drives[c].ide_channel = rdisk_drives[c].scsi_device_id = c + 2;
@@ -2420,6 +2503,13 @@ go_to_mo:
         else
             sscanf("00, none", "%u, %s", &mo_drives[c].type, s);
         mo_drives[c].bus_type = hdd_string_to_bus(s, 1);
+        sprintf(temp, "mo_%02i_disconnected_bus", c + 1);
+        mo_drives[c].disconnected_bus = 0;
+        if (mo_drives[c].bus_type == HDD_BUS_DISCONNECTED) {
+            mo_drives[c].disconnected_bus = hdd_string_to_bus(ini_section_get_string(cat, temp, "atapi"), 1);
+            if (!mo_drives[c].disconnected_bus || mo_drives[c].disconnected_bus == HDD_BUS_DISCONNECTED)
+                mo_drives[c].disconnected_bus = hdd_string_to_bus("atapi", 1);
+        }
 
         /* Default values, needed for proper operation of the Settings dialog. */
         mo_drives[c].ide_channel = mo_drives[c].scsi_device_id = c + 2;
@@ -2525,6 +2615,22 @@ go_to_mo:
         else
             sscanf("00, none", "%u, %s", &tape_drives[c].type, s);
         tape_drives[c].bus_type = hdd_string_to_bus(s, 1);
+        sprintf(temp, "tape_%02i_disconnected_bus", c + 1);
+        tape_drives[c].disconnected_bus = 0;
+        if (tape_drives[c].bus_type == HDD_BUS_DISCONNECTED) {
+            tape_drives[c].disconnected_bus = hdd_string_to_bus(ini_section_get_string(cat, temp, "scsi"), 1);
+            if (!tape_drives[c].disconnected_bus || tape_drives[c].disconnected_bus == HDD_BUS_DISCONNECTED)
+                tape_drives[c].disconnected_bus = hdd_string_to_bus("scsi", 1);
+        }
+
+        if (tape_drives[c].bus_type == HDD_BUS_DISCONNECTED &&
+            tape_drives[c].type < KNOWN_TAPE_DRIVE_TYPES) {
+            const int type = tape_drive_types[tape_drives[c].type].drive_type;
+            if (type == TAPE_DRIVE_TYPE_FDC)
+                tape_drives[c].disconnected_bus = TAPE_BUS_FDC;
+            else if (type == TAPE_DRIVE_TYPE_LPT)
+                tape_drives[c].disconnected_bus = TAPE_BUS_LPT;
+        }
 
         sprintf(temp, "tape_%02i_medium_type", c + 1);
         tape_drives[c].medium_type = ini_section_get_int(cat, temp,
@@ -2731,6 +2837,9 @@ load_other_peripherals(void)
     if (!strcmp(p, "none"))
         ini_section_delete_var(cat, temp);
 
+    p                  = ini_section_get_string(cat, "isa_expansion", "none");
+    isa_expansion_type = isa_expansion_get_from_internal_name(p);
+
 #ifdef USE_VFIO
     /* VFIO passthrough devices: a space-separated device list, with
        an optional custom ROM file for each device. */
@@ -2933,6 +3042,7 @@ config_load(void)
         force_constant_mouse = 0;
 
         cpu_override_interpreter = 0;
+        cpu_debug_regs_486       = 0;
 
         fpu_type               = fpu_get_type(cpu_f, cpu, "none");
         gfxcard[0]             = video_get_video_from_internal_name("cga");
@@ -2972,6 +3082,8 @@ config_load(void)
         cdrom[0].sound_on = 1;
         mem_size          = 64;
         isartc_type       = 0;
+        isa_expansion_type = 0;
+        gameport_card_type = GAMEPORT_CARD_AUTO;
         for (i = 0; i < ISAROM_MAX; i++)
             isarom_type[i] = 0;
         for (i = 0; i < ISAMEM_MAX; i++)
@@ -2988,9 +3100,12 @@ config_load(void)
         cassette_pcm          = 0;
         cassette_ui_writeprot = 0;
 
+        ide_turbo = 0;
+
         cpu_dyn_accurate_fpu_env = 0;
 
         gdbstub_port          = 12345;
+        debug_console_port    = 0;
 
         config_log("VM config file not present or invalid!\n");
     } else {
@@ -3097,6 +3212,16 @@ save_global_emulator(void)
     else
         ini_section_delete_var(cat, "confirm_save");
 
+    if (settings_layout != 0)
+        ini_section_set_int(cat, "settings_layout", settings_layout);
+    else
+        ini_section_delete_var(cat, "settings_layout");
+
+    if (settings_advanced != 0)
+        ini_section_set_int(cat, "settings_advanced", settings_advanced);
+    else
+        ini_section_delete_var(cat, "settings_advanced");
+
 
     if (chd_precache_level)
         ini_section_set_int(cat, "chd_precache_level", chd_precache_level);
@@ -3107,6 +3232,11 @@ save_global_emulator(void)
         ini_section_set_int(cat, "vmm_disabled", vmm_disabled);
     else
         ini_section_delete_var(cat, "vmm_disabled");
+
+    if (discord_presence)
+        ini_section_set_int(cat, "discord_presence", discord_presence);
+    else
+        ini_section_delete_var(cat, "discord_presence");
 
     if (vmm_path_cfg[0] != 0) {
         /* Save path as relative to the EXE path in portable mode */
@@ -3201,6 +3331,10 @@ save_general(void)
     ini_section_set_int(cat, "force_10ms", force_10ms);
     if (force_10ms == 0)
         ini_section_delete_var(cat, "force_10ms");
+
+    ini_section_set_int(cat, "fast_forward", start_fast_forward);
+    if (start_fast_forward == 0)
+        ini_section_delete_var(cat, "fast_forward");
 
     ini_section_set_int(cat, "sound_muted", sound_muted);
     if (sound_muted == 0)
@@ -3312,11 +3446,6 @@ save_general(void)
     else
         ini_section_delete_var(cat, "hide_tool_bar");
 
-    if (enable_discord)
-        ini_section_set_int(cat, "enable_discord", enable_discord);
-    else
-        ini_section_delete_var(cat, "enable_discord");
-
     if (video_vk_device != 0)
         ini_section_set_int(cat, "video_vk_device", video_vk_device);
     else
@@ -3362,15 +3491,7 @@ save_general(void)
     else
         ini_section_delete_var(cat, "emu_build_num");
 
-#ifdef USE_DYNAREC
-#   ifdef USE_NEW_DYNAREC
-    ini_section_set_string(cat, "emu_build_dynarec_type", "new");
-#   else
-    ini_section_set_string(cat, "emu_build_dynarec_type", "old");
-#   endif
-#else
     ini_section_delete_var(cat, "emu_build_dynarec_type");
-#endif
 
     if (strnlen(uuid, sizeof(uuid) - 1) > 0)
         ini_section_set_string(cat, "uuid", uuid);
@@ -3381,6 +3502,11 @@ save_general(void)
         ini_section_delete_var(cat, "gdbstub_port");
     else
         ini_section_set_int(cat, "gdbstub_port", gdbstub_port);
+
+    if (debug_console_port)
+        ini_section_set_int(cat, "debug_console_port", debug_console_port);
+    else
+        ini_section_delete_var(cat, "debug_console_port");
 
     ini_delete_section_if_empty(config, cat);
 }
@@ -3435,6 +3561,10 @@ save_machine(void)
         ini_section_set_int(cat, "cpu_override_interpreter", cpu_override_interpreter);
     else
         ini_section_delete_var(cat, "cpu_override_interpreter");
+    if (cpu_debug_regs_486)
+        ini_section_set_int(cat, "cpu_debug_regs_486", cpu_debug_regs_486);
+    else
+        ini_section_delete_var(cat, "cpu_debug_regs_486");
 
     /* Downgrade compatibility with the previous CPU model system. */
     ini_section_delete_var(cat, "cpu_manufacturer");
@@ -3457,10 +3587,16 @@ save_machine(void)
     ini_section_set_int(cat, "cpu_use_dynarec", cpu_use_dynarec);
     ini_section_set_int(cat, "cpu_use_dynarec_fast", cpu_use_dynarec_fast);
 
-    if (fpu_softfloat == 0)
+    /* fpu_softfloat names softfloat itself; the host-x87 FPU, which runs on
+       it, has its own key. */
+    if ((fpu_softfloat == 0) || fpu_host_x87)
         ini_section_delete_var(cat, "fpu_softfloat");
     else
         ini_section_set_int(cat, "fpu_softfloat", fpu_softfloat);
+    if (fpu_host_x87)
+        ini_section_set_int(cat, "fpu_host_x87", 1);
+    else
+        ini_section_delete_var(cat, "fpu_host_x87");
 
     if (time_sync & TIME_SYNC_ENABLED)
         if (time_sync & TIME_SYNC_UTC)
@@ -3582,64 +3718,72 @@ save_input_devices(void)
 
     ini_section_set_string(cat, "tablet_type", tablet_get_internal_name(tablet_type));
 
-    uint8_t joy_insn = 0;
-    if (!joystick_type[joy_insn]) {
-        ini_section_delete_var(cat, "joystick_type");
+    for (uint8_t gp = 0; gp < GAMEPORT_MAX; gp++) {
+        const char *pre = gp ? "joystick2" : "joystick";
 
-        for (int js = 0; js < MAX_PLAT_JOYSTICKS; js++) {
-            sprintf(temp, "joystick_%i_nr", js);
+        if (!joystick_type[gp]) {
+            sprintf(temp, "%s_type", pre);
             ini_section_delete_var(cat, temp);
 
-            // --- Save Axis Mappings ---
-            for (int axis_nr = 0; axis_nr < MAX_JOY_AXES; axis_nr++) {
-                sprintf(temp, "joystick_%i_axis_%i", js, axis_nr);
+            for (int js = 0; js < MAX_PLAT_JOYSTICKS; js++) {
+                sprintf(temp, "%s_%i_nr", pre, js);
                 ini_section_delete_var(cat, temp);
-            }
 
-            // --- Save Button Mappings ---
-            for (int button_nr = 0; button_nr < MAX_JOY_BUTTONS; button_nr++) {
-                sprintf(temp, "joystick_%i_button_%i", js, button_nr);
-                ini_section_delete_var(cat, temp);
-            }
-
-            // --- Save POV (Hat Switch) Mappings ---
-            for (int pov_nr = 0; pov_nr < MAX_JOY_POVS; pov_nr++) {
-                sprintf(temp, "joystick_%i_pov_%i", js, pov_nr);
-                ini_section_delete_var(cat, temp);
-            }
-        }
-    } else {
-        uint8_t gp = 0;
-
-        ini_section_set_string(cat, "joystick_type", joystick_get_internal_name(joystick_type[joy_insn]));
-
-        for (int js = 0; js < joystick_get_max_joysticks(joystick_type[joy_insn]); js++) {
-            sprintf(temp, "joystick_%i_nr", js);
-            ini_section_set_int(cat, temp, joystick_state[gp][js].plat_joystick_nr);
-
-            if (joystick_state[gp][js].plat_joystick_nr) {
                 // --- Save Axis Mappings ---
-                for (int axis_nr = 0; axis_nr < joystick_get_axis_count(joystick_type[joy_insn]); axis_nr++) {
-                    sprintf(temp, "joystick_%i_axis_%i", js, axis_nr);
-                    ini_section_set_int(cat, temp, joystick_state[gp][js].axis_mapping[axis_nr]);
+                for (int axis_nr = 0; axis_nr < MAX_JOY_AXES; axis_nr++) {
+                    sprintf(temp, "%s_%i_axis_%i", pre, js, axis_nr);
+                    ini_section_delete_var(cat, temp);
                 }
 
                 // --- Save Button Mappings ---
-                for (int button_nr = 0; button_nr < joystick_get_button_count(joystick_type[joy_insn]); button_nr++) {
-                    sprintf(temp, "joystick_%i_button_%i", js, button_nr);
-                    ini_section_set_int(cat, temp, joystick_state[gp][js].button_mapping[button_nr]);
+                for (int button_nr = 0; button_nr < MAX_JOY_BUTTONS; button_nr++) {
+                    sprintf(temp, "%s_%i_button_%i", pre, js, button_nr);
+                    ini_section_delete_var(cat, temp);
                 }
 
                 // --- Save POV (Hat Switch) Mappings ---
-                for (int pov_nr = 0; pov_nr < joystick_get_pov_count(joystick_type[joy_insn]); pov_nr++) {
-                    sprintf(temp, "joystick_%i_pov_%i", js, pov_nr);
-                    sprintf(tmp2, "%i, %i", joystick_state[gp][js].pov_mapping[pov_nr][0],
-                                            joystick_state[gp][js].pov_mapping[pov_nr][1]);
-                    ini_section_set_string(cat, temp, tmp2);
+                for (int pov_nr = 0; pov_nr < MAX_JOY_POVS; pov_nr++) {
+                    sprintf(temp, "%s_%i_pov_%i", pre, js, pov_nr);
+                    ini_section_delete_var(cat, temp);
+                }
+            }
+        } else {
+            sprintf(temp, "%s_type", pre);
+            ini_section_set_string(cat, temp, joystick_get_internal_name(joystick_type[gp]));
+
+            for (int js = 0; js < joystick_get_max_joysticks(joystick_type[gp]); js++) {
+                sprintf(temp, "%s_%i_nr", pre, js);
+                ini_section_set_int(cat, temp, joystick_state[gp][js].plat_joystick_nr);
+
+                if (joystick_state[gp][js].plat_joystick_nr) {
+                    // --- Save Axis Mappings ---
+                    for (int axis_nr = 0; axis_nr < joystick_get_axis_count(joystick_type[gp]); axis_nr++) {
+                        sprintf(temp, "%s_%i_axis_%i", pre, js, axis_nr);
+                        ini_section_set_int(cat, temp, joystick_state[gp][js].axis_mapping[axis_nr]);
+                    }
+
+                    // --- Save Button Mappings ---
+                    for (int button_nr = 0; button_nr < joystick_get_button_count(joystick_type[gp]); button_nr++) {
+                        sprintf(temp, "%s_%i_button_%i", pre, js, button_nr);
+                        ini_section_set_int(cat, temp, joystick_state[gp][js].button_mapping[button_nr]);
+                    }
+
+                    // --- Save POV (Hat Switch) Mappings ---
+                    for (int pov_nr = 0; pov_nr < joystick_get_pov_count(joystick_type[gp]); pov_nr++) {
+                        sprintf(temp, "%s_%i_pov_%i", pre, js, pov_nr);
+                        sprintf(tmp2, "%i, %i", joystick_state[gp][js].pov_mapping[pov_nr][0],
+                                                joystick_state[gp][js].pov_mapping[pov_nr][1]);
+                        ini_section_set_string(cat, temp, tmp2);
+                    }
                 }
             }
         }
     }
+
+    if (gameport_card_type == GAMEPORT_CARD_AUTO)
+        ini_section_delete_var(cat, "gameport_card");
+    else
+        ini_section_set_string(cat, "gameport_card", gameport_card_get_internal_name(gameport_card_type));
 
     if (tablet_tool_type != 1)
         ini_section_set_int(cat, "tablet_tool_type", tablet_tool_type);
@@ -4060,6 +4204,11 @@ save_storage_controllers(void)
         ini_section_set_string(cat, "cdrom_interface",
                                cdrom_interface_get_internal_name(cdrom_interface_current));
 
+    if (ide_turbo == 0)
+        ini_section_delete_var(cat, "ide_turbo");
+    else
+        ini_section_set_int(cat, "ide_turbo", ide_turbo);
+
     /* The floppy tape is configured from the Tape drives tab now. */
     ini_section_delete_var(cat, "floppy_tape_enabled");
     ini_section_delete_var(cat, "floppy_tape_unit");
@@ -4212,6 +4361,11 @@ save_other_peripherals(void)
         ini_section_set_string(cat, "isartc_type",
                                isartc_get_internal_name(isartc_type));
 
+    if (isa_expansion_type == 0)
+        ini_section_delete_var(cat, "isa_expansion");
+    else
+        ini_section_set_string(cat, "isa_expansion", isa_expansion_get_internal_name(isa_expansion_type));
+
     ini_delete_section_if_empty(config, cat);
 
 #ifdef USE_VFIO
@@ -4327,6 +4481,12 @@ save_hard_disks(void)
 
     memset(temp, 0x00, sizeof(temp));
     for (uint8_t c = 0; c < HDD_NUM; c++) {
+        sprintf(temp, "hdd_%02i_disconnected_bus", c + 1);
+        if (hdd[c].bus_type == HDD_BUS_DISCONNECTED)
+            ini_section_set_string(cat, temp, hdd_bus_to_string(hdd[c].disconnected_bus, 0));
+        else
+            ini_section_delete_var(cat, temp);
+
         sprintf(temp, "hdd_%02i_parameters", c + 1);
         if (hdd_is_valid(c)) {
             p = hdd_bus_to_string(hdd[c].bus_type, 0);
@@ -4404,25 +4564,25 @@ save_hard_disks(void)
         if (!hdd_is_valid(c) ||
             ((hdd[c].bus_type != HDD_BUS_MFM) && (hdd[c].bus_type != HDD_BUS_ESDI) &&
             (hdd[c].bus_type != HDD_BUS_IDE) && (hdd[c].bus_type != HDD_BUS_SCSI) &&
-            (hdd[c].bus_type != HDD_BUS_ATAPI)))
+            (hdd[c].bus_type != HDD_BUS_ATAPI) && (hdd[c].bus_type != HDD_BUS_DISCONNECTED)))
             ini_section_delete_var(cat, temp);
         else
             ini_section_set_string(cat, temp, hdd_preset_get_internal_name(hdd[c].speed_preset));
 
         sprintf(temp, "hdd_%02i_vendor", c + 1);
-        if ((hdd[c].bus_type == HDD_BUS_IDE || hdd[c].bus_type == HDD_BUS_ATAPI || hdd[c].bus_type == HDD_BUS_SCSI) &&
+        if ((hdd[c].bus_type == HDD_BUS_IDE || hdd[c].bus_type == HDD_BUS_ATAPI || hdd[c].bus_type == HDD_BUS_SCSI || hdd[c].bus_type == HDD_BUS_DISCONNECTED) &&
             hdd_preset_is_generic(hdd[c].speed_preset) && hdd[c].custom_vendor[0])
             ini_section_set_string(cat, temp, hdd[c].custom_vendor);
         else
             ini_section_delete_var(cat, temp);
         sprintf(temp, "hdd_%02i_model", c + 1);
-        if ((hdd[c].bus_type == HDD_BUS_IDE || hdd[c].bus_type == HDD_BUS_ATAPI || hdd[c].bus_type == HDD_BUS_SCSI) &&
+        if ((hdd[c].bus_type == HDD_BUS_IDE || hdd[c].bus_type == HDD_BUS_ATAPI || hdd[c].bus_type == HDD_BUS_SCSI || hdd[c].bus_type == HDD_BUS_DISCONNECTED) &&
             hdd_preset_is_generic(hdd[c].speed_preset) && hdd[c].custom_model[0])
             ini_section_set_string(cat, temp, hdd[c].custom_model);
         else
             ini_section_delete_var(cat, temp);
         sprintf(temp, "hdd_%02i_revision", c + 1);
-        if ((hdd[c].bus_type == HDD_BUS_IDE || hdd[c].bus_type == HDD_BUS_ATAPI || hdd[c].bus_type == HDD_BUS_SCSI) &&
+        if ((hdd[c].bus_type == HDD_BUS_IDE || hdd[c].bus_type == HDD_BUS_ATAPI || hdd[c].bus_type == HDD_BUS_SCSI || hdd[c].bus_type == HDD_BUS_DISCONNECTED) &&
             hdd_preset_is_generic(hdd[c].speed_preset) && hdd[c].custom_version[0])
             ini_section_set_string(cat, temp, hdd[c].custom_version);
         else
@@ -4545,12 +4705,19 @@ save_floppy_and_cdrom_drives(void)
         else
             ini_section_set_string(cat, temp, tn);
 
+        sprintf(temp, "cdrom_%02i_disconnected_bus", c + 1);
+        if (cdrom[c].bus_type == CDROM_BUS_DISCONNECTED)
+            ini_section_set_string(cat, temp, hdd_bus_to_string(cdrom[c].disconnected_bus, 1));
+        else
+            ini_section_delete_var(cat, temp);
+
         sprintf(temp, "cdrom_%02i_parameters", c + 1);
         if (cdrom[c].bus_type == 0)
             ini_section_delete_var(cat, temp);
         else {
             /* In case one wants an ATAPI drive on SCSI and vice-versa. */
-            if ((cdrom[c].bus_type != CDROM_BUS_LPT) &&
+            if ((cdrom[c].bus_type != CDROM_BUS_DISCONNECTED) &&
+                (cdrom[c].bus_type != CDROM_BUS_LPT) &&
                 (cdrom_drive_types[cdrom_get_type(c)].bus_type != BUS_TYPE_BOTH) &&
                 (cdrom_drive_types[cdrom_get_type(c)].bus_type != cdrom[c].bus_type))
                 cdrom[c].bus_type = cdrom_drive_types[cdrom_get_type(c)].bus_type;
@@ -4628,6 +4795,12 @@ save_other_removable_devices(void)
     int           c;
 
     for (c = 0; c < RDISK_NUM; c++) {
+        sprintf(temp, "rdisk_%02i_disconnected_bus", c + 1);
+        if (rdisk_drives[c].bus_type == HDD_BUS_DISCONNECTED)
+            ini_section_set_string(cat, temp, hdd_bus_to_string(rdisk_drives[c].disconnected_bus, 1));
+        else
+            ini_section_delete_var(cat, temp);
+
         sprintf(temp, "rdisk_%02i_parameters", c + 1);
         if (rdisk_drives[c].bus_type == 0) {
             ini_section_delete_var(cat, temp);
@@ -4683,6 +4856,12 @@ save_other_removable_devices(void)
     }
 
     for (c = 0; c < MO_NUM; c++) {
+        sprintf(temp, "mo_%02i_disconnected_bus", c + 1);
+        if (mo_drives[c].bus_type == HDD_BUS_DISCONNECTED)
+            ini_section_set_string(cat, temp, hdd_bus_to_string(mo_drives[c].disconnected_bus, 1));
+        else
+            ini_section_delete_var(cat, temp);
+
         sprintf(temp, "mo_%02i_parameters", c + 1);
         if (mo_drives[c].bus_type == 0) {
             ini_section_delete_var(cat, temp);
@@ -4732,6 +4911,12 @@ save_other_removable_devices(void)
     }
 
     for (c = 0; c < TAPE_NUM; c++) {
+        sprintf(temp, "tape_%02i_disconnected_bus", c + 1);
+        if (tape_drives[c].bus_type == HDD_BUS_DISCONNECTED)
+            ini_section_set_string(cat, temp, hdd_bus_to_string(tape_drives[c].disconnected_bus, 1));
+        else
+            ini_section_delete_var(cat, temp);
+
         sprintf(temp, "tape_%02i_parameters", c + 1);
         if (tape_drives[c].bus_type == 0) {
             ini_section_delete_var(cat, temp);

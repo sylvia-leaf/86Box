@@ -11,7 +11,7 @@
 #    include <sys/mman.h>
 #endif
 
-#include "../../src/codegen_new/codegen_backend_x86-64_uops.c"
+#include "../../src/codegen/codegen_backend_x86-64_uops.c"
 
 #define CHECK(condition) do { \
     if (!(condition)) { \

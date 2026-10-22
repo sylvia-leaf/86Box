@@ -822,13 +822,16 @@ opADDPS_xmm_xmm_a16(uint32_t fetchdat)
 
     fetch_ea_16(fetchdat);
     SSE_REG src;
+    SSE_REG result = cpu_state.XMM[cpu_reg];
     struct softfloat_status_t status = mxcsr_to_softfloat_status_word();
     SSE_GETSRC();
-    cpu_state.XMM[cpu_reg].f[0] = f32_add(cpu_state.XMM[cpu_reg].f[0], src.f[0], &status);
-    cpu_state.XMM[cpu_reg].f[1] = f32_add(cpu_state.XMM[cpu_reg].f[1], src.f[1], &status);
-    cpu_state.XMM[cpu_reg].f[2] = f32_add(cpu_state.XMM[cpu_reg].f[2], src.f[2], &status);
-    cpu_state.XMM[cpu_reg].f[3] = f32_add(cpu_state.XMM[cpu_reg].f[3], src.f[3], &status);
-    softfloat_status_word_to_mxcsr(status);
+    result.f[0] = f32_add(result.f[0], src.f[0], &status);
+    result.f[1] = f32_add(result.f[1], src.f[1], &status);
+    result.f[2] = f32_add(result.f[2], src.f[2], &status);
+    result.f[3] = f32_add(result.f[3], src.f[3], &status);
+    if (softfloat_status_word_to_mxcsr(status))
+        return 1;
+    cpu_state.XMM[cpu_reg] = result;
     
     return 0;
 }
@@ -843,13 +846,16 @@ opADDPS_xmm_xmm_a32(uint32_t fetchdat)
 
     fetch_ea_32(fetchdat);
     SSE_REG src;
+    SSE_REG result = cpu_state.XMM[cpu_reg];
     struct softfloat_status_t status = mxcsr_to_softfloat_status_word();
     SSE_GETSRC();
-    cpu_state.XMM[cpu_reg].f[0] = f32_add(cpu_state.XMM[cpu_reg].f[0], src.f[0], &status);
-    cpu_state.XMM[cpu_reg].f[1] = f32_add(cpu_state.XMM[cpu_reg].f[1], src.f[1], &status);
-    cpu_state.XMM[cpu_reg].f[2] = f32_add(cpu_state.XMM[cpu_reg].f[2], src.f[2], &status);
-    cpu_state.XMM[cpu_reg].f[3] = f32_add(cpu_state.XMM[cpu_reg].f[3], src.f[3], &status);
-    softfloat_status_word_to_mxcsr(status);
+    result.f[0] = f32_add(result.f[0], src.f[0], &status);
+    result.f[1] = f32_add(result.f[1], src.f[1], &status);
+    result.f[2] = f32_add(result.f[2], src.f[2], &status);
+    result.f[3] = f32_add(result.f[3], src.f[3], &status);
+    if (softfloat_status_word_to_mxcsr(status))
+        return 1;
+    cpu_state.XMM[cpu_reg] = result;
 
     return 0;
 }
@@ -860,10 +866,13 @@ opADDSS_xmm_xmm_a16(uint32_t fetchdat)
     SSE_ENTER();
     fetch_ea_16(fetchdat);
     SSE_REG src;
+    SSE_REG result = cpu_state.XMM[cpu_reg];
     struct softfloat_status_t status = mxcsr_to_softfloat_status_word();
     SSE_GETSRC32();
-    cpu_state.XMM[cpu_reg].f[0] = f32_add(cpu_state.XMM[cpu_reg].f[0], src.f[0], &status);
-    softfloat_status_word_to_mxcsr(status);
+    result.f[0] = f32_add(result.f[0], src.f[0], &status);
+    if (softfloat_status_word_to_mxcsr(status))
+        return 1;
+    cpu_state.XMM[cpu_reg] = result;
 
     return 0;
 }
@@ -874,10 +883,13 @@ opADDSS_xmm_xmm_a32(uint32_t fetchdat)
     SSE_ENTER();
     fetch_ea_32(fetchdat);
     SSE_REG src;
+    SSE_REG result = cpu_state.XMM[cpu_reg];
     struct softfloat_status_t status = mxcsr_to_softfloat_status_word();
     SSE_GETSRC32();
-    cpu_state.XMM[cpu_reg].f[0] = f32_add(cpu_state.XMM[cpu_reg].f[0], src.f[0], &status);
-    softfloat_status_word_to_mxcsr(status);
+    result.f[0] = f32_add(result.f[0], src.f[0], &status);
+    if (softfloat_status_word_to_mxcsr(status))
+        return 1;
+    cpu_state.XMM[cpu_reg] = result;
 
     return 0;
 }
@@ -892,13 +904,16 @@ opMULPS_xmm_xmm_a16(uint32_t fetchdat)
 
     fetch_ea_16(fetchdat);
     SSE_REG src;
+    SSE_REG result = cpu_state.XMM[cpu_reg];
     struct softfloat_status_t status = mxcsr_to_softfloat_status_word();
     SSE_GETSRC();
-    cpu_state.XMM[cpu_reg].f[0] = f32_mul(cpu_state.XMM[cpu_reg].f[0], src.f[0], &status);
-    cpu_state.XMM[cpu_reg].f[1] = f32_mul(cpu_state.XMM[cpu_reg].f[1], src.f[1], &status);
-    cpu_state.XMM[cpu_reg].f[2] = f32_mul(cpu_state.XMM[cpu_reg].f[2], src.f[2], &status);
-    cpu_state.XMM[cpu_reg].f[3] = f32_mul(cpu_state.XMM[cpu_reg].f[3], src.f[3], &status);
-    softfloat_status_word_to_mxcsr(status);
+    result.f[0] = f32_mul(result.f[0], src.f[0], &status);
+    result.f[1] = f32_mul(result.f[1], src.f[1], &status);
+    result.f[2] = f32_mul(result.f[2], src.f[2], &status);
+    result.f[3] = f32_mul(result.f[3], src.f[3], &status);
+    if (softfloat_status_word_to_mxcsr(status))
+        return 1;
+    cpu_state.XMM[cpu_reg] = result;
 
     return 0;
 }
@@ -913,13 +928,16 @@ opMULPS_xmm_xmm_a32(uint32_t fetchdat)
 
     fetch_ea_32(fetchdat);
     SSE_REG src;
+    SSE_REG result = cpu_state.XMM[cpu_reg];
     struct softfloat_status_t status = mxcsr_to_softfloat_status_word();
     SSE_GETSRC();
-    cpu_state.XMM[cpu_reg].f[0] = f32_mul(cpu_state.XMM[cpu_reg].f[0], src.f[0], &status);
-    cpu_state.XMM[cpu_reg].f[1] = f32_mul(cpu_state.XMM[cpu_reg].f[1], src.f[1], &status);
-    cpu_state.XMM[cpu_reg].f[2] = f32_mul(cpu_state.XMM[cpu_reg].f[2], src.f[2], &status);
-    cpu_state.XMM[cpu_reg].f[3] = f32_mul(cpu_state.XMM[cpu_reg].f[3], src.f[3], &status);
-    softfloat_status_word_to_mxcsr(status);
+    result.f[0] = f32_mul(result.f[0], src.f[0], &status);
+    result.f[1] = f32_mul(result.f[1], src.f[1], &status);
+    result.f[2] = f32_mul(result.f[2], src.f[2], &status);
+    result.f[3] = f32_mul(result.f[3], src.f[3], &status);
+    if (softfloat_status_word_to_mxcsr(status))
+        return 1;
+    cpu_state.XMM[cpu_reg] = result;
 
     return 0;
 }
@@ -930,10 +948,13 @@ opMULSS_xmm_xmm_a16(uint32_t fetchdat)
     SSE_ENTER();
     fetch_ea_16(fetchdat);
     SSE_REG src;
+    SSE_REG result = cpu_state.XMM[cpu_reg];
     struct softfloat_status_t status = mxcsr_to_softfloat_status_word();
     SSE_GETSRC32();
-    cpu_state.XMM[cpu_reg].f[0] = f32_mul(cpu_state.XMM[cpu_reg].f[0], src.f[0], &status);
-    softfloat_status_word_to_mxcsr(status);
+    result.f[0] = f32_mul(result.f[0], src.f[0], &status);
+    if (softfloat_status_word_to_mxcsr(status))
+        return 1;
+    cpu_state.XMM[cpu_reg] = result;
 
     return 0;
 }
@@ -944,10 +965,13 @@ opMULSS_xmm_xmm_a32(uint32_t fetchdat)
     SSE_ENTER();
     fetch_ea_32(fetchdat);
     SSE_REG src;
+    SSE_REG result = cpu_state.XMM[cpu_reg];
     struct softfloat_status_t status = mxcsr_to_softfloat_status_word();
     SSE_GETSRC32();
-    cpu_state.XMM[cpu_reg].f[0] = f32_mul(cpu_state.XMM[cpu_reg].f[0], src.f[0], &status);
-    softfloat_status_word_to_mxcsr(status);
+    result.f[0] = f32_mul(result.f[0], src.f[0], &status);
+    if (softfloat_status_word_to_mxcsr(status))
+        return 1;
+    cpu_state.XMM[cpu_reg] = result;
 
     return 0;
 }
@@ -962,13 +986,16 @@ opSUBPS_xmm_xmm_a16(uint32_t fetchdat)
 
     fetch_ea_16(fetchdat);
     SSE_REG src;
+    SSE_REG result = cpu_state.XMM[cpu_reg];
     struct softfloat_status_t status = mxcsr_to_softfloat_status_word();
     SSE_GETSRC();
-    cpu_state.XMM[cpu_reg].f[0] = f32_sub(cpu_state.XMM[cpu_reg].f[0], src.f[0], &status);
-    cpu_state.XMM[cpu_reg].f[1] = f32_sub(cpu_state.XMM[cpu_reg].f[1], src.f[1], &status);
-    cpu_state.XMM[cpu_reg].f[2] = f32_sub(cpu_state.XMM[cpu_reg].f[2], src.f[2], &status);
-    cpu_state.XMM[cpu_reg].f[3] = f32_sub(cpu_state.XMM[cpu_reg].f[3], src.f[3], &status);
-    softfloat_status_word_to_mxcsr(status);
+    result.f[0] = f32_sub(result.f[0], src.f[0], &status);
+    result.f[1] = f32_sub(result.f[1], src.f[1], &status);
+    result.f[2] = f32_sub(result.f[2], src.f[2], &status);
+    result.f[3] = f32_sub(result.f[3], src.f[3], &status);
+    if (softfloat_status_word_to_mxcsr(status))
+        return 1;
+    cpu_state.XMM[cpu_reg] = result;
 
     return 0;
 }
@@ -983,13 +1010,16 @@ opSUBPS_xmm_xmm_a32(uint32_t fetchdat)
 
     fetch_ea_32(fetchdat);
     SSE_REG src;
+    SSE_REG result = cpu_state.XMM[cpu_reg];
     struct softfloat_status_t status = mxcsr_to_softfloat_status_word();
     SSE_GETSRC();
-    cpu_state.XMM[cpu_reg].f[0] = f32_sub(cpu_state.XMM[cpu_reg].f[0], src.f[0], &status);
-    cpu_state.XMM[cpu_reg].f[1] = f32_sub(cpu_state.XMM[cpu_reg].f[1], src.f[1], &status);
-    cpu_state.XMM[cpu_reg].f[2] = f32_sub(cpu_state.XMM[cpu_reg].f[2], src.f[2], &status);
-    cpu_state.XMM[cpu_reg].f[3] = f32_sub(cpu_state.XMM[cpu_reg].f[3], src.f[3], &status);
-    softfloat_status_word_to_mxcsr(status);
+    result.f[0] = f32_sub(result.f[0], src.f[0], &status);
+    result.f[1] = f32_sub(result.f[1], src.f[1], &status);
+    result.f[2] = f32_sub(result.f[2], src.f[2], &status);
+    result.f[3] = f32_sub(result.f[3], src.f[3], &status);
+    if (softfloat_status_word_to_mxcsr(status))
+        return 1;
+    cpu_state.XMM[cpu_reg] = result;
 
     return 0;
 }
@@ -1000,10 +1030,13 @@ opSUBSS_xmm_xmm_a16(uint32_t fetchdat)
     SSE_ENTER();
     fetch_ea_16(fetchdat);
     SSE_REG src;
+    SSE_REG result = cpu_state.XMM[cpu_reg];
     struct softfloat_status_t status = mxcsr_to_softfloat_status_word();
     SSE_GETSRC32();
-    cpu_state.XMM[cpu_reg].f[0] = f32_sub(cpu_state.XMM[cpu_reg].f[0], src.f[0], &status);
-    softfloat_status_word_to_mxcsr(status);
+    result.f[0] = f32_sub(result.f[0], src.f[0], &status);
+    if (softfloat_status_word_to_mxcsr(status))
+        return 1;
+    cpu_state.XMM[cpu_reg] = result;
 
     return 0;
 }
@@ -1014,10 +1047,13 @@ opSUBSS_xmm_xmm_a32(uint32_t fetchdat)
     SSE_ENTER();
     fetch_ea_32(fetchdat);
     SSE_REG src;
+    SSE_REG result = cpu_state.XMM[cpu_reg];
     struct softfloat_status_t status = mxcsr_to_softfloat_status_word();
     SSE_GETSRC32();
-    cpu_state.XMM[cpu_reg].f[0] = f32_sub(cpu_state.XMM[cpu_reg].f[0], src.f[0], &status);
-    softfloat_status_word_to_mxcsr(status);
+    result.f[0] = f32_sub(result.f[0], src.f[0], &status);
+    if (softfloat_status_word_to_mxcsr(status))
+        return 1;
+    cpu_state.XMM[cpu_reg] = result;
 
     return 0;
 }
@@ -1032,13 +1068,16 @@ opMINPS_xmm_xmm_a16(uint32_t fetchdat)
 
     fetch_ea_16(fetchdat);
     SSE_REG src;
+    SSE_REG result = cpu_state.XMM[cpu_reg];
     struct softfloat_status_t status = mxcsr_to_softfloat_status_word();
     SSE_GETSRC();
-    cpu_state.XMM[cpu_reg].f[0] = f32_min(cpu_state.XMM[cpu_reg].f[0], src.f[0], &status);
-    cpu_state.XMM[cpu_reg].f[1] = f32_min(cpu_state.XMM[cpu_reg].f[1], src.f[1], &status);
-    cpu_state.XMM[cpu_reg].f[2] = f32_min(cpu_state.XMM[cpu_reg].f[2], src.f[2], &status);
-    cpu_state.XMM[cpu_reg].f[3] = f32_min(cpu_state.XMM[cpu_reg].f[3], src.f[3], &status);
-    softfloat_status_word_to_mxcsr(status);
+    result.f[0] = f32_min(result.f[0], src.f[0], &status);
+    result.f[1] = f32_min(result.f[1], src.f[1], &status);
+    result.f[2] = f32_min(result.f[2], src.f[2], &status);
+    result.f[3] = f32_min(result.f[3], src.f[3], &status);
+    if (softfloat_status_word_to_mxcsr(status))
+        return 1;
+    cpu_state.XMM[cpu_reg] = result;
 
     return 0;
 }
@@ -1053,13 +1092,16 @@ opMINPS_xmm_xmm_a32(uint32_t fetchdat)
 
     fetch_ea_32(fetchdat);
     SSE_REG src;
+    SSE_REG result = cpu_state.XMM[cpu_reg];
     struct softfloat_status_t status = mxcsr_to_softfloat_status_word();
     SSE_GETSRC();
-    cpu_state.XMM[cpu_reg].f[0] = f32_min(cpu_state.XMM[cpu_reg].f[0], src.f[0], &status);
-    cpu_state.XMM[cpu_reg].f[1] = f32_min(cpu_state.XMM[cpu_reg].f[1], src.f[1], &status);
-    cpu_state.XMM[cpu_reg].f[2] = f32_min(cpu_state.XMM[cpu_reg].f[2], src.f[2], &status);
-    cpu_state.XMM[cpu_reg].f[3] = f32_min(cpu_state.XMM[cpu_reg].f[3], src.f[3], &status);
-    softfloat_status_word_to_mxcsr(status);
+    result.f[0] = f32_min(result.f[0], src.f[0], &status);
+    result.f[1] = f32_min(result.f[1], src.f[1], &status);
+    result.f[2] = f32_min(result.f[2], src.f[2], &status);
+    result.f[3] = f32_min(result.f[3], src.f[3], &status);
+    if (softfloat_status_word_to_mxcsr(status))
+        return 1;
+    cpu_state.XMM[cpu_reg] = result;
 
     return 0;
 }
@@ -1070,10 +1112,13 @@ opMINSS_xmm_xmm_a16(uint32_t fetchdat)
     SSE_ENTER();
     fetch_ea_16(fetchdat);
     SSE_REG src;
+    SSE_REG result = cpu_state.XMM[cpu_reg];
     struct softfloat_status_t status = mxcsr_to_softfloat_status_word();
     SSE_GETSRC32();
-    cpu_state.XMM[cpu_reg].f[0] = f32_min(cpu_state.XMM[cpu_reg].f[0], src.f[0], &status);
-    softfloat_status_word_to_mxcsr(status);
+    result.f[0] = f32_min(result.f[0], src.f[0], &status);
+    if (softfloat_status_word_to_mxcsr(status))
+        return 1;
+    cpu_state.XMM[cpu_reg] = result;
 
     return 0;
 }
@@ -1084,10 +1129,13 @@ opMINSS_xmm_xmm_a32(uint32_t fetchdat)
     SSE_ENTER();
     fetch_ea_32(fetchdat);
     SSE_REG src;
+    SSE_REG result = cpu_state.XMM[cpu_reg];
     struct softfloat_status_t status = mxcsr_to_softfloat_status_word();
     SSE_GETSRC32();
-    cpu_state.XMM[cpu_reg].f[0] = f32_min(cpu_state.XMM[cpu_reg].f[0], src.f[0], &status);
-    softfloat_status_word_to_mxcsr(status);
+    result.f[0] = f32_min(result.f[0], src.f[0], &status);
+    if (softfloat_status_word_to_mxcsr(status))
+        return 1;
+    cpu_state.XMM[cpu_reg] = result;
 
 
     return 0;
@@ -1103,13 +1151,16 @@ opDIVPS_xmm_xmm_a16(uint32_t fetchdat)
 
     fetch_ea_16(fetchdat);
     SSE_REG src;
+    SSE_REG result = cpu_state.XMM[cpu_reg];
     struct softfloat_status_t status = mxcsr_to_softfloat_status_word();
     SSE_GETSRC();
-    cpu_state.XMM[cpu_reg].f[0] = f32_div(cpu_state.XMM[cpu_reg].f[0], src.f[0], &status);
-    cpu_state.XMM[cpu_reg].f[1] = f32_div(cpu_state.XMM[cpu_reg].f[1], src.f[1], &status);
-    cpu_state.XMM[cpu_reg].f[2] = f32_div(cpu_state.XMM[cpu_reg].f[2], src.f[2], &status);
-    cpu_state.XMM[cpu_reg].f[3] = f32_div(cpu_state.XMM[cpu_reg].f[3], src.f[3], &status);
-    softfloat_status_word_to_mxcsr(status);
+    result.f[0] = f32_div(result.f[0], src.f[0], &status);
+    result.f[1] = f32_div(result.f[1], src.f[1], &status);
+    result.f[2] = f32_div(result.f[2], src.f[2], &status);
+    result.f[3] = f32_div(result.f[3], src.f[3], &status);
+    if (softfloat_status_word_to_mxcsr(status))
+        return 1;
+    cpu_state.XMM[cpu_reg] = result;
 
     return 0;
 }
@@ -1124,13 +1175,16 @@ opDIVPS_xmm_xmm_a32(uint32_t fetchdat)
 
     fetch_ea_32(fetchdat);
     SSE_REG src;
+    SSE_REG result = cpu_state.XMM[cpu_reg];
     struct softfloat_status_t status = mxcsr_to_softfloat_status_word();
     SSE_GETSRC();
-    cpu_state.XMM[cpu_reg].f[0] = f32_div(cpu_state.XMM[cpu_reg].f[0], src.f[0], &status);
-    cpu_state.XMM[cpu_reg].f[1] = f32_div(cpu_state.XMM[cpu_reg].f[1], src.f[1], &status);
-    cpu_state.XMM[cpu_reg].f[2] = f32_div(cpu_state.XMM[cpu_reg].f[2], src.f[2], &status);
-    cpu_state.XMM[cpu_reg].f[3] = f32_div(cpu_state.XMM[cpu_reg].f[3], src.f[3], &status);
-    softfloat_status_word_to_mxcsr(status);
+    result.f[0] = f32_div(result.f[0], src.f[0], &status);
+    result.f[1] = f32_div(result.f[1], src.f[1], &status);
+    result.f[2] = f32_div(result.f[2], src.f[2], &status);
+    result.f[3] = f32_div(result.f[3], src.f[3], &status);
+    if (softfloat_status_word_to_mxcsr(status))
+        return 1;
+    cpu_state.XMM[cpu_reg] = result;
 
     return 0;
 }
@@ -1141,10 +1195,13 @@ opDIVSS_xmm_xmm_a16(uint32_t fetchdat)
     SSE_ENTER();
     fetch_ea_16(fetchdat);
     SSE_REG src;
+    SSE_REG result = cpu_state.XMM[cpu_reg];
     struct softfloat_status_t status = mxcsr_to_softfloat_status_word();
     SSE_GETSRC32();
-    cpu_state.XMM[cpu_reg].f[0] = f32_div(cpu_state.XMM[cpu_reg].f[0], src.f[0], &status);
-    softfloat_status_word_to_mxcsr(status);
+    result.f[0] = f32_div(result.f[0], src.f[0], &status);
+    if (softfloat_status_word_to_mxcsr(status))
+        return 1;
+    cpu_state.XMM[cpu_reg] = result;
 
     return 0;
 }
@@ -1155,10 +1212,13 @@ opDIVSS_xmm_xmm_a32(uint32_t fetchdat)
     SSE_ENTER();
     fetch_ea_32(fetchdat);
     SSE_REG src;
+    SSE_REG result = cpu_state.XMM[cpu_reg];
     struct softfloat_status_t status = mxcsr_to_softfloat_status_word();
     SSE_GETSRC32();
-    cpu_state.XMM[cpu_reg].f[0] = f32_div(cpu_state.XMM[cpu_reg].f[0], src.f[0], &status);
-    softfloat_status_word_to_mxcsr(status);
+    result.f[0] = f32_div(result.f[0], src.f[0], &status);
+    if (softfloat_status_word_to_mxcsr(status))
+        return 1;
+    cpu_state.XMM[cpu_reg] = result;
 
     return 0;
 }
@@ -1173,13 +1233,16 @@ opMAXPS_xmm_xmm_a16(uint32_t fetchdat)
 
     fetch_ea_16(fetchdat);
     SSE_REG src;
+    SSE_REG result = cpu_state.XMM[cpu_reg];
     struct softfloat_status_t status = mxcsr_to_softfloat_status_word();
     SSE_GETSRC();
-    cpu_state.XMM[cpu_reg].f[0] = f32_max(cpu_state.XMM[cpu_reg].f[0], src.f[0], &status);
-    cpu_state.XMM[cpu_reg].f[1] = f32_max(cpu_state.XMM[cpu_reg].f[1], src.f[1], &status);
-    cpu_state.XMM[cpu_reg].f[2] = f32_max(cpu_state.XMM[cpu_reg].f[2], src.f[2], &status);
-    cpu_state.XMM[cpu_reg].f[3] = f32_max(cpu_state.XMM[cpu_reg].f[3], src.f[3], &status);
-    softfloat_status_word_to_mxcsr(status);
+    result.f[0] = f32_max(result.f[0], src.f[0], &status);
+    result.f[1] = f32_max(result.f[1], src.f[1], &status);
+    result.f[2] = f32_max(result.f[2], src.f[2], &status);
+    result.f[3] = f32_max(result.f[3], src.f[3], &status);
+    if (softfloat_status_word_to_mxcsr(status))
+        return 1;
+    cpu_state.XMM[cpu_reg] = result;
 
     return 0;
 }
@@ -1194,13 +1257,16 @@ opMAXPS_xmm_xmm_a32(uint32_t fetchdat)
 
     fetch_ea_32(fetchdat);
     SSE_REG src;
+    SSE_REG result = cpu_state.XMM[cpu_reg];
     struct softfloat_status_t status = mxcsr_to_softfloat_status_word();
     SSE_GETSRC();
-    cpu_state.XMM[cpu_reg].f[0] = f32_max(cpu_state.XMM[cpu_reg].f[0], src.f[0], &status);
-    cpu_state.XMM[cpu_reg].f[1] = f32_max(cpu_state.XMM[cpu_reg].f[1], src.f[1], &status);
-    cpu_state.XMM[cpu_reg].f[2] = f32_max(cpu_state.XMM[cpu_reg].f[2], src.f[2], &status);
-    cpu_state.XMM[cpu_reg].f[3] = f32_max(cpu_state.XMM[cpu_reg].f[3], src.f[3], &status);
-    softfloat_status_word_to_mxcsr(status);
+    result.f[0] = f32_max(result.f[0], src.f[0], &status);
+    result.f[1] = f32_max(result.f[1], src.f[1], &status);
+    result.f[2] = f32_max(result.f[2], src.f[2], &status);
+    result.f[3] = f32_max(result.f[3], src.f[3], &status);
+    if (softfloat_status_word_to_mxcsr(status))
+        return 1;
+    cpu_state.XMM[cpu_reg] = result;
 
     return 0;
 }
@@ -1211,10 +1277,13 @@ opMAXSS_xmm_xmm_a16(uint32_t fetchdat)
     SSE_ENTER();
     fetch_ea_16(fetchdat);
     SSE_REG src;
+    SSE_REG result = cpu_state.XMM[cpu_reg];
     struct softfloat_status_t status = mxcsr_to_softfloat_status_word();
     SSE_GETSRC32();
-    cpu_state.XMM[cpu_reg].f[0] = f32_max(cpu_state.XMM[cpu_reg].f[0], src.f[0], &status);
-    softfloat_status_word_to_mxcsr(status);
+    result.f[0] = f32_max(result.f[0], src.f[0], &status);
+    if (softfloat_status_word_to_mxcsr(status))
+        return 1;
+    cpu_state.XMM[cpu_reg] = result;
 
     return 0;
 }
@@ -1225,10 +1294,13 @@ opMAXSS_xmm_xmm_a32(uint32_t fetchdat)
     SSE_ENTER();
     fetch_ea_32(fetchdat);
     SSE_REG src;
+    SSE_REG result = cpu_state.XMM[cpu_reg];
     struct softfloat_status_t status = mxcsr_to_softfloat_status_word();
     SSE_GETSRC32();
-    cpu_state.XMM[cpu_reg].f[0] = f32_max(cpu_state.XMM[cpu_reg].f[0], src.f[0], &status);
-    softfloat_status_word_to_mxcsr(status);
+    result.f[0] = f32_max(result.f[0], src.f[0], &status);
+    if (softfloat_status_word_to_mxcsr(status))
+        return 1;
+    cpu_state.XMM[cpu_reg] = result;
 
     return 0;
 }
@@ -1336,7 +1408,7 @@ opPMINUB_mm_mm_a16(uint32_t fetchdat)
     MMX_REG  src;
     MMX_REG *dst;
 
-    MMX_ENTER();
+    MMX_CHECK();
     fetch_ea_16(fetchdat);
 
     dst = MMX_GETREGP(cpu_reg);
@@ -1355,6 +1427,7 @@ opPMINUB_mm_mm_a16(uint32_t fetchdat)
     MMX_SETEXP(cpu_reg);
     CLOCK_CYCLES(1);
 
+    MMX_COMMIT();
     return 0;
 }
 
@@ -1364,7 +1437,7 @@ opPMINUB_mm_mm_a32(uint32_t fetchdat)
     MMX_REG  src;
     MMX_REG *dst;
 
-    MMX_ENTER();
+    MMX_CHECK();
     fetch_ea_32(fetchdat);
     dst = MMX_GETREGP(cpu_reg);
 
@@ -1382,6 +1455,7 @@ opPMINUB_mm_mm_a32(uint32_t fetchdat)
     MMX_SETEXP(cpu_reg);
     CLOCK_CYCLES(1);
 
+    MMX_COMMIT();
     return 0;
 }
 
@@ -1465,7 +1539,7 @@ opPMAXUB_mm_mm_a16(uint32_t fetchdat)
     MMX_REG  src;
     MMX_REG *dst;
 
-    MMX_ENTER();
+    MMX_CHECK();
     fetch_ea_16(fetchdat);
 
     dst = MMX_GETREGP(cpu_reg);
@@ -1484,6 +1558,7 @@ opPMAXUB_mm_mm_a16(uint32_t fetchdat)
     MMX_SETEXP(cpu_reg);
     CLOCK_CYCLES(1);
 
+    MMX_COMMIT();
     return 0;
 }
 
@@ -1493,7 +1568,7 @@ opPMAXUB_mm_mm_a32(uint32_t fetchdat)
     MMX_REG  src;
     MMX_REG *dst;
 
-    MMX_ENTER();
+    MMX_CHECK();
     fetch_ea_32(fetchdat);
 
     dst = MMX_GETREGP(cpu_reg);
@@ -1512,6 +1587,7 @@ opPMAXUB_mm_mm_a32(uint32_t fetchdat)
     MMX_SETEXP(cpu_reg);
     CLOCK_CYCLES(1);
 
+    MMX_COMMIT();
     return 0;
 }
 
@@ -1595,7 +1671,7 @@ opPAVGB_mm_mm_a16(uint32_t fetchdat)
     MMX_REG  src;
     MMX_REG *dst;
 
-    MMX_ENTER();
+    MMX_CHECK();
     fetch_ea_16(fetchdat);
 
     dst = MMX_GETREGP(cpu_reg);
@@ -1625,6 +1701,7 @@ opPAVGB_mm_mm_a16(uint32_t fetchdat)
     CLOCK_CYCLES(1);
     MMX_SETEXP(cpu_reg); 
 
+    MMX_COMMIT();
     return 0;
 }
 
@@ -1634,7 +1711,7 @@ opPAVGB_mm_mm_a32(uint32_t fetchdat)
     MMX_REG  src;
     MMX_REG *dst;
 
-    MMX_ENTER();
+    MMX_CHECK();
     fetch_ea_32(fetchdat);
 
     dst = MMX_GETREGP(cpu_reg);
@@ -1664,6 +1741,7 @@ opPAVGB_mm_mm_a32(uint32_t fetchdat)
     CLOCK_CYCLES(1);
     MMX_SETEXP(cpu_reg); 
 
+    MMX_COMMIT();
     return 0;
 }
 
@@ -1709,7 +1787,7 @@ opPAVGB_xmm_xmm_a16(uint32_t fetchdat)
         cpu_state.XMM[cpu_reg].b[15] = (uint8_t) (tmp[15] >> 1);
         CLOCK_CYCLES(1);
     } else {
-        if (cpu_state.eaaddr & 0xf) {
+        if ((easeg + cpu_state.eaaddr) & 0xf) {
             x86gpf(NULL, 0);
             if (cpu_state.abrt)
                 return 1;
@@ -1847,7 +1925,7 @@ opPAVGB_xmm_xmm_a32(uint32_t fetchdat)
         cpu_state.XMM[cpu_reg].b[15] = (uint8_t) (tmp[15] >> 1);
         CLOCK_CYCLES(1);
     } else {
-        if (cpu_state.eaaddr & 0xf) {
+        if ((easeg + cpu_state.eaaddr) & 0xf) {
             x86gpf(NULL, 0);
             if (cpu_state.abrt)
                 return 1;
@@ -1967,7 +2045,7 @@ opPAVGW_mm_mm_a16(uint32_t fetchdat)
     MMX_REG  src;
     MMX_REG *dst;
 
-    MMX_ENTER();
+    MMX_CHECK();
     fetch_ea_16(fetchdat);
 
     dst = MMX_GETREGP(cpu_reg);
@@ -1989,6 +2067,7 @@ opPAVGW_mm_mm_a16(uint32_t fetchdat)
     CLOCK_CYCLES(1);
     MMX_SETEXP(cpu_reg); 
 
+    MMX_COMMIT();
     return 0;
 }
 
@@ -1998,7 +2077,7 @@ opPAVGW_mm_mm_a32(uint32_t fetchdat)
     MMX_REG  src;
     MMX_REG *dst;
 
-    MMX_ENTER();
+    MMX_CHECK();
     fetch_ea_32(fetchdat);
 
     dst = MMX_GETREGP(cpu_reg);
@@ -2020,6 +2099,7 @@ opPAVGW_mm_mm_a32(uint32_t fetchdat)
     CLOCK_CYCLES(1);
     MMX_SETEXP(cpu_reg); 
 
+    MMX_COMMIT();
     return 0;
 }
 
@@ -2049,7 +2129,7 @@ opPAVGW_xmm_xmm_a16(uint32_t fetchdat)
         cpu_state.XMM[cpu_reg].w[7] = (uint16_t) (tmp[7] >> 1);
         CLOCK_CYCLES(1);
     } else {
-        if (cpu_state.eaaddr & 0xf) {
+        if ((easeg + cpu_state.eaaddr) & 0xf) {
             x86gpf(NULL, 0);
             if (cpu_state.abrt)
                 return 1;
@@ -2131,7 +2211,7 @@ opPAVGW_xmm_xmm_a32(uint32_t fetchdat)
         cpu_state.XMM[cpu_reg].w[7] = (uint16_t) (tmp[7] >> 1);
         CLOCK_CYCLES(1);
     } else {
-        if (cpu_state.eaaddr & 0xf) {
+        if ((easeg + cpu_state.eaaddr) & 0xf) {
             x86gpf(NULL, 0);
             if (cpu_state.abrt)
                 return 1;
@@ -2211,7 +2291,7 @@ opPMULHUW_mm_mm_a16(uint32_t fetchdat)
     MMX_REG  src;
     MMX_REG *dst;
 
-    MMX_ENTER();
+    MMX_CHECK();
     fetch_ea_16(fetchdat);
 
     dst = MMX_GETREGP(cpu_reg);
@@ -2226,6 +2306,7 @@ opPMULHUW_mm_mm_a16(uint32_t fetchdat)
     CLOCK_CYCLES(1);
     MMX_SETEXP(cpu_reg); 
 
+    MMX_COMMIT();
     return 0;
 }
 
@@ -2235,7 +2316,7 @@ opPMULHUW_mm_mm_a32(uint32_t fetchdat)
     MMX_REG  src;
     MMX_REG *dst;
 
-    MMX_ENTER();
+    MMX_CHECK();
     fetch_ea_32(fetchdat);
 
     dst = MMX_GETREGP(cpu_reg);
@@ -2250,6 +2331,7 @@ opPMULHUW_mm_mm_a32(uint32_t fetchdat)
     CLOCK_CYCLES(1);
     MMX_SETEXP(cpu_reg); 
 
+    MMX_COMMIT();
     return 0;
 }
 
@@ -2269,7 +2351,7 @@ opPMULHUW_xmm_xmm_a16(uint32_t fetchdat)
         cpu_state.XMM[cpu_reg].w[7] = ((uint32_t) cpu_state.XMM[cpu_reg].w[7] * (uint32_t) cpu_state.XMM[cpu_rm].w[7]) >> 16;
         CLOCK_CYCLES(1);
     } else {
-        if (cpu_state.eaaddr & 0xf) {
+        if ((easeg + cpu_state.eaaddr) & 0xf) {
             x86gpf(NULL, 0);
             if (cpu_state.abrt)
                 return 1;
@@ -2331,7 +2413,7 @@ opPMULHUW_xmm_xmm_a32(uint32_t fetchdat)
         cpu_state.XMM[cpu_reg].w[7] = ((uint32_t) cpu_state.XMM[cpu_reg].w[7] * (uint32_t) cpu_state.XMM[cpu_rm].w[7]) >> 16;
         CLOCK_CYCLES(1);
     } else {
-        if (cpu_state.eaaddr & 0xf) {
+        if ((easeg + cpu_state.eaaddr) & 0xf) {
             x86gpf(NULL, 0);
             if (cpu_state.abrt)
                 return 1;
@@ -2401,7 +2483,7 @@ opPMINSW_mm_mm_a16(uint32_t fetchdat)
     MMX_REG  src;
     MMX_REG *dst;
 
-    MMX_ENTER();
+    MMX_CHECK();
     fetch_ea_16(fetchdat);
 
     dst = MMX_GETREGP(cpu_reg);
@@ -2416,6 +2498,7 @@ opPMINSW_mm_mm_a16(uint32_t fetchdat)
     CLOCK_CYCLES(1);
     MMX_SETEXP(cpu_reg); 
 
+    MMX_COMMIT();
     return 0;
 }
 
@@ -2425,7 +2508,7 @@ opPMINSW_mm_mm_a32(uint32_t fetchdat)
     MMX_REG  src;
     MMX_REG *dst;
 
-    MMX_ENTER();
+    MMX_CHECK();
     fetch_ea_32(fetchdat);
 
     dst = MMX_GETREGP(cpu_reg);
@@ -2440,6 +2523,7 @@ opPMINSW_mm_mm_a32(uint32_t fetchdat)
     CLOCK_CYCLES(1);
     MMX_SETEXP(cpu_reg); 
 
+    MMX_COMMIT();
     return 0;
 }
 
@@ -2459,7 +2543,7 @@ opPMINSW_xmm_xmm_a16(uint32_t fetchdat)
         cpu_state.XMM[cpu_reg].sw[7] = (cpu_state.XMM[cpu_reg].sw[7] < cpu_state.XMM[cpu_rm].sw[7]) ? cpu_state.XMM[cpu_reg].sw[7] : cpu_state.XMM[cpu_rm].sw[7];
         CLOCK_CYCLES(1);
     } else {
-        if (cpu_state.eaaddr & 0xf) {
+        if ((easeg + cpu_state.eaaddr) & 0xf) {
             x86gpf(NULL, 0);
             if (cpu_state.abrt)
                 return 1;
@@ -2521,7 +2605,7 @@ opPMINSW_xmm_xmm_a32(uint32_t fetchdat)
         cpu_state.XMM[cpu_reg].sw[7] = (cpu_state.XMM[cpu_reg].sw[7] < cpu_state.XMM[cpu_rm].sw[7]) ? cpu_state.XMM[cpu_reg].sw[7] : cpu_state.XMM[cpu_rm].sw[7];
         CLOCK_CYCLES(1);
     } else {
-        if (cpu_state.eaaddr & 0xf) {
+        if ((easeg + cpu_state.eaaddr) & 0xf) {
             x86gpf(NULL, 0);
             if (cpu_state.abrt)
                 return 1;
@@ -2591,7 +2675,7 @@ opPMAXSW_mm_mm_a16(uint32_t fetchdat)
     MMX_REG  src;
     MMX_REG *dst;
 
-    MMX_ENTER();
+    MMX_CHECK();
     fetch_ea_16(fetchdat);
 
     dst = MMX_GETREGP(cpu_reg);
@@ -2606,6 +2690,7 @@ opPMAXSW_mm_mm_a16(uint32_t fetchdat)
     CLOCK_CYCLES(1);
     MMX_SETEXP(cpu_reg); 
 
+    MMX_COMMIT();
     return 0;
 }
 
@@ -2615,7 +2700,7 @@ opPMAXSW_mm_mm_a32(uint32_t fetchdat)
     MMX_REG  src;
     MMX_REG *dst;
 
-    MMX_ENTER();
+    MMX_CHECK();
     fetch_ea_32(fetchdat);
 
     dst = MMX_GETREGP(cpu_reg);
@@ -2630,6 +2715,7 @@ opPMAXSW_mm_mm_a32(uint32_t fetchdat)
     CLOCK_CYCLES(1);
     MMX_SETEXP(cpu_reg); 
 
+    MMX_COMMIT();
     return 0;
 }
 
@@ -2649,7 +2735,7 @@ opPMAXSW_xmm_xmm_a16(uint32_t fetchdat)
         cpu_state.XMM[cpu_reg].sw[7] = (cpu_state.XMM[cpu_reg].sw[7] > cpu_state.XMM[cpu_rm].sw[7]) ? cpu_state.XMM[cpu_reg].sw[7] : cpu_state.XMM[cpu_rm].sw[7];
         CLOCK_CYCLES(1);
     } else {
-        if (cpu_state.eaaddr & 0xf) {
+        if ((easeg + cpu_state.eaaddr) & 0xf) {
             x86gpf(NULL, 0);
             if (cpu_state.abrt)
                 return 1;
@@ -2711,7 +2797,7 @@ opPMAXSW_xmm_xmm_a32(uint32_t fetchdat)
         cpu_state.XMM[cpu_reg].sw[7] = (cpu_state.XMM[cpu_reg].sw[7] > cpu_state.XMM[cpu_rm].sw[7]) ? cpu_state.XMM[cpu_reg].sw[7] : cpu_state.XMM[cpu_rm].sw[7];
         CLOCK_CYCLES(1);
     } else {
-        if (cpu_state.eaaddr & 0xf) {
+        if ((easeg + cpu_state.eaaddr) & 0xf) {
             x86gpf(NULL, 0);
             if (cpu_state.abrt)
                 return 1;
@@ -2782,7 +2868,7 @@ opPSADBW_mm_mm_a16(uint32_t fetchdat)
     MMX_REG *dst;
     MMX_REG  temp;
 
-    MMX_ENTER();
+    MMX_CHECK();
     fetch_ea_16(fetchdat);
 
     dst = MMX_GETREGP(cpu_reg);
@@ -2810,6 +2896,7 @@ opPSADBW_mm_mm_a16(uint32_t fetchdat)
     CLOCK_CYCLES(1);
     MMX_SETEXP(cpu_reg); 
 
+    MMX_COMMIT();
     return 0;
 }
 
@@ -2820,7 +2907,7 @@ opPSADBW_mm_mm_a32(uint32_t fetchdat)
     MMX_REG *dst;
     MMX_REG  temp;
 
-    MMX_ENTER();
+    MMX_CHECK();
     fetch_ea_32(fetchdat);
 
     dst = MMX_GETREGP(cpu_reg);
@@ -2848,6 +2935,7 @@ opPSADBW_mm_mm_a32(uint32_t fetchdat)
     CLOCK_CYCLES(1);
     MMX_SETEXP(cpu_reg); 
 
+    MMX_COMMIT();
     return 0;
 }
 
@@ -2894,7 +2982,7 @@ opPSADBW_xmm_xmm_a16(uint32_t fetchdat)
         cpu_state.XMM[cpu_reg].w[7] = 0;
         CLOCK_CYCLES(1);
     } else {
-        if (cpu_state.eaaddr & 0xf) {
+        if ((easeg + cpu_state.eaaddr) & 0xf) {
             x86gpf(NULL, 0);
             if (cpu_state.abrt)
                 return 1;
@@ -3034,7 +3122,7 @@ opPSADBW_xmm_xmm_a32(uint32_t fetchdat)
         cpu_state.XMM[cpu_reg].w[7] = 0;
         CLOCK_CYCLES(1);
     } else {
-        if (cpu_state.eaaddr & 0xf) {
+        if ((easeg + cpu_state.eaaddr) & 0xf) {
             x86gpf(NULL, 0);
             if (cpu_state.abrt)
                 return 1;

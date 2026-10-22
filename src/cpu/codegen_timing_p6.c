@@ -19,6 +19,7 @@
 #include "codegen.h"
 #include "codegen_ops.h"
 #include "codegen_timing_common.h"
+#include "codegen_timing_simd.h"
 
 typedef enum uop_type_t {
     UOP_ALU = 0,   /*Executes in Port 0 or 1 ALU units*/
@@ -1509,6 +1510,8 @@ static const macro_op_t *opcode_timings_p6_df_mod3[8] = {
 
 static uint8_t last_prefix;
 static int     prefixes;
+static uint8_t simd_prefix;
+static int simd_prefix_cycles;
 
 static int decode_timestamp;
 static int last_complete_timestamp;
@@ -1584,6 +1587,7 @@ static struct {
       part of a dependency chain and the start time is the completion time of
       the previous uop*/
     int earliest_start[6];
+    uint8_t dst_mask[6];
 } decode_buffer;
 
 #define NR_OPSEQS 3
@@ -1597,6 +1601,7 @@ static int next_opseq = 0;
 static int reg_available_timestamp[NR_REGS];
 /*Timestamp of when last operation on an FPU register completed*/
 static int fpu_st_timestamp[8];
+static int xmm_timestamp[8];
 /*Completion time of the last uop to be processed. Used to calculate timing of
   dependent uop chains*/
 static int last_uop_timestamp = 0;
@@ -1624,6 +1629,9 @@ decode_flush_p6(void)
             start_timestamp = decode_buffer.earliest_start[c];
 
         last_uop_timestamp = uop_run(decode_buffer.uops[c], start_timestamp);
+        for (int reg = 0; reg < 8; ++reg)
+            if (decode_buffer.dst_mask[c] & (1 << reg))
+                reg_available_timestamp[reg] = last_uop_timestamp;
         if (last_uop_timestamp > uop_timestamp)
             uop_timestamp = last_uop_timestamp;
     }
@@ -1643,6 +1651,7 @@ decode_flush_p6(void)
 
     decode_timestamp++;
     decode_buffer.nr_uops = 0;
+    memset(decode_buffer.dst_mask, 0, sizeof(decode_buffer.dst_mask));
 }
 
 /*The instruction is only of interest here if it's longer than 7 bytes, as that's the
@@ -1696,34 +1705,42 @@ decode_instruction(const macro_op_t *ins, uint64_t deps, uint32_t fetchdat, int 
     uint32_t      regmask_modified;
     int           c;
     int           d              = 0; /*Complex decoder uOPs*/
-    int           earliest_start = 0;
+    int           earliest_start;
     decode_type_t decode_type    = ins->decode_type;
-    int           instr_length   = codegen_timing_instr_length(deps, fetchdat, op_32);
 
     /*Generate input register mask, and determine the earliest time this
       instruction can start. This is not accurate, as this is calculated per
       x86 instruction when it should be handled per uop*/
-    regmask_required = get_dstdep_mask(deps, fetchdat, bit8);
-    regmask_required |= get_addr_regmask(deps, fetchdat, op_32);
+    regmask_required = get_srcdep_mask(deps, fetchdat, bit8, op_32) | get_addr_regmask(deps, fetchdat, op_32);;
+    regmask_modified = get_dstdep_mask(deps, fetchdat, bit8);
+    /* A queued producer has no completion timestamp yet. Submit it before
+     * reading its result, or replacing the same architectural destination. */
+    for (c = 0; c < 8; ++c) {
+        if (((regmask_required | regmask_modified) & (1 << c)) && reg_available_timestamp[c] < 0) {
+            decode_flush_p6();
+            break;
+        }
+    }
+    earliest_start = decode_timestamp;
     for (c = 0; c < 8; c++) {
         if (regmask_required & (1 << c)) {
-            if (reg_available_timestamp[c] > decode_timestamp)
+            if (reg_available_timestamp[c] > earliest_start)
                 earliest_start = reg_available_timestamp[c];
         }
     }
-    if ((deps & FPU_RW_ST0) && fpu_st_timestamp[0] > decode_timestamp)
+    if ((deps & FPU_READ_ST0) && fpu_st_timestamp[0] > earliest_start)
         earliest_start = fpu_st_timestamp[0];
-    if ((deps & FPU_RW_ST1) && fpu_st_timestamp[1] > decode_timestamp)
+    if ((deps & FPU_READ_ST1) && fpu_st_timestamp[1] > earliest_start)
         earliest_start = fpu_st_timestamp[1];
-    if (deps & FPU_RW_STREG) {
+    if (deps & FPU_READ_STREG) {
         int reg = fetchdat & 7;
 
-        if (fpu_st_timestamp[reg] > decode_timestamp)
+        if (fpu_st_timestamp[reg] > earliest_start)
             earliest_start = fpu_st_timestamp[reg];
     }
 
     /*Simple decoders are limited to 7 bytes & 1 uOP*/
-    if ((decode_type == DECODE_SIMPLE && instr_length > 7) || (decode_type == DECODE_SIMPLE && ins->nr_uops > 1))
+    if (decode_type == DECODE_SIMPLE && (codegen_timing_instr_length(deps, fetchdat, op_32) > 7 || ins->nr_uops > 1))
         decode_type = DECODE_COMPLEX;
 
     switch (decode_type) {
@@ -1777,11 +1794,17 @@ decode_instruction(const macro_op_t *ins, uint64_t deps, uint32_t fetchdat, int 
     }
 
     /*Update write timestamps for any output registers*/
-    regmask_modified = get_dstdep_mask(deps, fetchdat, bit8);
+    if (decode_buffer.nr_uops)
+        decode_buffer.dst_mask[decode_buffer.nr_uops - 1] = regmask_modified & 0xff;
     for (c = 0; c < 8; c++) {
         if (regmask_modified & (1 << c))
-            reg_available_timestamp[c] = last_complete_timestamp;
+            reg_available_timestamp[c] = decode_buffer.nr_uops ? -1 : last_uop_timestamp;
     }
+    for (uint32_t mask = regmask_modified & 0xff; mask; mask &= mask - 1)
+        reg_available_timestamp[__builtin_ctz(mask)] = last_complete_timestamp;
+
+    if (!(deps & (FPU_POP | FPU_POP2 | FPU_PUSH | FPU_WRITE_ST0 | FPU_WRITE_ST1 | FPU_WRITE_STREG)))
+        return;
     if (deps & FPU_POP) {
         for (c = 0; c < 7; c++)
             fpu_st_timestamp[c] = fpu_st_timestamp[c + 1];
@@ -1793,7 +1816,7 @@ decode_instruction(const macro_op_t *ins, uint64_t deps, uint32_t fetchdat, int 
         fpu_st_timestamp[6] = fpu_st_timestamp[7] = 0;
     }
     if (deps & FPU_PUSH) {
-        for (c = 0; c < 7; c++)
+        for (c = 6; c >= 0; c--)
             fpu_st_timestamp[c + 1] = fpu_st_timestamp[c];
         fpu_st_timestamp[0] = 0;
     }
@@ -1829,11 +1852,13 @@ codegen_timing_p6_block_start(void)
         reg_available_timestamp[c] = 0;
     for (c = 0; c < 8; c++)
         fpu_st_timestamp[c] = 0;
+    memset(xmm_timestamp, 0, sizeof(xmm_timestamp));
 
     /* A block that ended on the abort path was never flushed: drop its
        pending uops and dependency-chain timestamp so they cannot carry
        into this block and inflate its unit timestamps without bound. */
     decode_buffer.nr_uops = 0;
+    memset(decode_buffer.dst_mask, 0, sizeof(decode_buffer.dst_mask));
     last_uop_timestamp    = 0;
 }
 
@@ -1849,16 +1874,71 @@ codegen_timing_p6_start(void)
     }
     last_prefix = 0;
     prefixes    = 0;
+    simd_prefix = 0;
+    simd_prefix_cycles = 0;
 }
 
 void
 codegen_timing_p6_prefix(uint8_t prefix, UNUSED(uint32_t fetchdat))
 {
+    if (prefix == 0x66 || prefix == 0xf2 || prefix == 0xf3) {
+        simd_prefix = prefix;
+        simd_prefix_cycles++;
+    }
     if (prefix != 0x0f)
         decode_timestamp++;
 
     last_prefix = prefix;
     prefixes++;
+}
+
+static int
+p6_max(int a, int b)
+{
+    return a > b ? a : b;
+}
+
+static void
+schedule_sse_p3(const simd_timing_t *t, uint32_t fetchdat, int op_32)
+{
+    int mod3=(fetchdat & 0xc0)==0xc0, reg=(fetchdat>>3)&7, rm=fetchdat&7;
+    int *reg_ready=(t->roles & SIMD_GPR_REG) ? reg_available_timestamp :
+                   (t->roles & SIMD_MMX_REG) ? fpu_st_timestamp : xmm_timestamp;
+    int *rm_ready=(t->roles & SIMD_GPR_RM) ? reg_available_timestamp :
+                  (t->roles & SIMD_MMX_RM) ? fpu_st_timestamp : xmm_timestamp;
+
+    /* Resolve pending integer/address producers before using their timestamps. */
+    if (decode_buffer.nr_uops)
+        decode_flush_p6();
+    decode_timestamp -= simd_prefix_cycles; /* Mandatory prefixes are opcode selectors. */
+    int start=decode_timestamp, address=decode_timestamp;
+    uint32_t mask=get_addr_regmask(MODRM,fetchdat,op_32);
+    for (int i=0;i<8;++i)
+        if (mask & (1<<i)) address=p6_max(address,reg_available_timestamp[i]);
+    if (t->roles & SIMD_R_REG) start=p6_max(start,reg_ready[reg]);
+    if (mod3 && (t->roles & SIMD_R_RM)) start=p6_max(start,rm_ready[rm]);
+    if (!mod3 && (t->roles & SIMD_R_RM)) {
+        int load=p6_max(address,(int)units[2].first_available_cycle);
+        units[2].first_available_cycle=load+t->memory_cycles;
+        start=p6_max(start,load+t->memory_cycles);
+    }
+    int complete;
+    if (!mod3 && (t->roles & SIMD_W_RM)) {
+        start=p6_max(start,address);
+        start=p6_max(start,(int)units[3].first_available_cycle);
+        start=p6_max(start,(int)units[4].first_available_cycle);
+        complete=start+t->memory_cycles;
+        units[3].first_available_cycle=units[4].first_available_cycle=complete;
+    } else {
+        int port=t->pipe == SIMD_SHUFFLE || t->pipe == SIMD_MOVE ? 1 : 0;
+        start=p6_max(start,(int)units[port].first_available_cycle);
+        units[port].first_available_cycle=start+t->throughput;
+        complete=start+t->latency;
+        if (t->roles & SIMD_W_REG) reg_ready[reg]=complete;
+        if (t->roles & SIMD_W_RM) rm_ready[rm]=complete;
+    }
+    decode_timestamp += t->decode_cycles;
+    last_complete_timestamp=p6_max(last_complete_timestamp,complete);
 }
 
 void
@@ -1869,6 +1949,14 @@ codegen_timing_p6_opcode(uint8_t opcode, UNUSED(uint32_t fetchdat), int op_32, U
     int                mod3                        = ((fetchdat & 0xc0) == 0xc0);
     int                old_last_complete_timestamp = last_complete_timestamp;
     int                bit8                        = !(opcode & 1);
+
+    simd_timing_t simd;
+    if (cpu_s->cpu_type == CPU_PENTIUM3 && last_prefix == 0x0f &&
+        simd_timing_p3(opcode, simd_prefix, mod3, &simd)) {
+        schedule_sse_p3(&simd, fetchdat, op_32);
+        codegen_block_cycles += last_complete_timestamp - old_last_complete_timestamp;
+        return;
+    }
 
     switch (last_prefix) {
         case 0x0f:
@@ -1971,7 +2059,12 @@ codegen_timing_p6_opcode(uint8_t opcode, UNUSED(uint32_t fetchdat), int op_32, U
             }
     }
 
-    if (ins_table[opcode])
+    /*The MMX rows (0F 60-7F, D0-FF) on a P6 without MMX, the Pentium Pro: the
+      instructions are #UD there, and its units have no MMX uop types to run
+      them on*/
+    if ((last_prefix == 0x0f) && !cpu_has_feature(CPU_FEATURE_MMX) && (((opcode & 0xe0) == 0x60) || (opcode >= 0xd0)))
+        decode_instruction(&complex_alu1_op, 0, fetchdat, op_32, bit8);
+    else if (ins_table[opcode])
         decode_instruction(ins_table[opcode], deps[opcode], fetchdat, op_32, bit8);
     else
         decode_instruction(&complex_alu1_op, 0, fetchdat, op_32, bit8);

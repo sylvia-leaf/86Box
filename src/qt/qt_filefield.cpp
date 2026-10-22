@@ -18,6 +18,7 @@
 #include "ui_qt_filefield.h"
 
 #include <QFileDialog>
+#include <QDir>
 
 FileField::FileField(QWidget *parent)
     : QWidget(parent)
@@ -54,10 +55,12 @@ void
 FileField::on_pushButton_clicked()
 {
     QString fileName;
+    const QString initial = fileName_.isEmpty() ? defaultDirectory_
+                                                : QDir(defaultDirectory_).absoluteFilePath(fileName_);
     if (createFile_) {
-        fileName = QFileDialog::getSaveFileName(this, QString(), QString(), filter_, &selectedFilter_);
+        fileName = QFileDialog::getSaveFileName(this, QString(), initial, filter_, &selectedFilter_);
     } else {
-        fileName = QFileDialog::getOpenFileName(this, QString(), QString(), filter_, &selectedFilter_);
+        fileName = QFileDialog::getOpenFileName(this, QString(), initial, filter_, &selectedFilter_);
     }
 
     if (!fileName.isNull()) {

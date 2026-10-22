@@ -2,6 +2,7 @@
 #include <stdio.h>
 #include <time.h>
 #include <pthread.h>
+#include <sched.h>
 #include <inttypes.h>
 #include <86box/86box.h>
 #include <86box/plat.h>
@@ -39,7 +40,11 @@ thread_create_named(void (*thread_rout)(void *param), void *param, const char *n
     thrparam->thread_rout  = thread_rout;
     thrparam->param        = param;
 
-    pthread_create(thread, NULL, (void *(*) (void *) ) thread_run_wrapper, thrparam);
+    if (pthread_create(thread, NULL, (void *(*) (void *) ) thread_run_wrapper, thrparam)) {
+        free(thrparam);
+        free(thread);
+        return NULL;
+    }
     plat_set_thread_name(thread, name);
 
     return thread;
@@ -85,6 +90,12 @@ thread_reset_event(event_t *handle)
     pthread_mutex_lock(&event->mutex);
     event->state = 0;
     pthread_mutex_unlock(&event->mutex);
+}
+
+void
+thread_yield(void)
+{
+    sched_yield();
 }
 
 int

@@ -46,9 +46,9 @@
 #include <86box/plat_unused.h>
 
 void *
-joystick_standard_init(void)
+joystick_standard_init(uint8_t gp)
 {
-    return NULL;
+    return JOYSTICK_PRIV(gp);
 }
 
 void
@@ -58,9 +58,9 @@ joystick_standard_close(UNUSED(void *priv))
 }
 
 static uint8_t
-joystick_paddle_read(UNUSED(void *priv))
+joystick_paddle_read(void *priv)
 {
-    uint8_t gp  = 0;
+    uint8_t gp  = JOYSTICK_GP(priv);
     uint8_t ret = 0xf0;
 
     if ((JOYSTICK_PRESENT(gp, 0)) && (joystick_state[gp][0].button[0]))
@@ -79,9 +79,9 @@ joystick_paddle_read(UNUSED(void *priv))
 }
 
 static uint8_t
-joystick_standard_read(UNUSED(void *priv))
+joystick_standard_read(void *priv)
 {
-    uint8_t gp  = 0;
+    uint8_t gp  = JOYSTICK_GP(priv);
     uint8_t ret = 0xf0;
 
     if (JOYSTICK_PRESENT(gp, 0)) {
@@ -102,9 +102,9 @@ joystick_standard_read(UNUSED(void *priv))
 }
 
 uint8_t
-joystick_standard_read_2button(UNUSED(void *priv))
+joystick_standard_read_2button(void *priv)
 {
-    uint8_t gp  = 0;
+    uint8_t gp  = JOYSTICK_GP(priv);
     uint8_t ret = 0xf0;
 
     if (JOYSTICK_PRESENT(gp, 0)) {
@@ -118,9 +118,9 @@ joystick_standard_read_2button(UNUSED(void *priv))
 }
 
 static uint8_t
-joystick_standard_read_3button(UNUSED(void *priv))
+joystick_standard_read_3button(void *priv)
 {
-    uint8_t gp  = 0;
+    uint8_t gp  = JOYSTICK_GP(priv);
     uint8_t ret = 0xf0;
 
     if (JOYSTICK_PRESENT(gp, 0)) {
@@ -136,9 +136,9 @@ joystick_standard_read_3button(UNUSED(void *priv))
 }
 
 uint8_t
-joystick_standard_read_4button(UNUSED(void *priv))
+joystick_standard_read_4button(void *priv)
 {
-    uint8_t gp  = 0;
+    uint8_t gp  = JOYSTICK_GP(priv);
     uint8_t ret = 0xf0;
 
     if (JOYSTICK_PRESENT(gp, 0)) {
@@ -162,9 +162,9 @@ joystick_standard_write(UNUSED(void *priv))
 }
 
 static int
-joystick_paddle_read_axis(UNUSED(void *priv), int axis)
+joystick_paddle_read_axis(void *priv, int axis)
 {
-    uint8_t gp = 0;
+    uint8_t gp = JOYSTICK_GP(priv);
 
     switch (axis) {
         case 0:
@@ -189,9 +189,9 @@ joystick_paddle_read_axis(UNUSED(void *priv), int axis)
 }
 
 static int
-joystick_standard_read_axis(UNUSED(void *priv), int axis)
+joystick_standard_read_axis(void *priv, int axis)
 {
-    uint8_t gp = 0;
+    uint8_t gp = JOYSTICK_GP(priv);
 
     switch (axis) {
         case 0:
@@ -216,9 +216,9 @@ joystick_standard_read_axis(UNUSED(void *priv), int axis)
 }
 
 static int
-joystick_standard_read_axis_2axis(UNUSED(void *priv), int axis)
+joystick_standard_read_axis_2axis(void *priv, int axis)
 {
-    uint8_t gp = 0;
+    uint8_t gp = JOYSTICK_GP(priv);
 
     if (!JOYSTICK_PRESENT(gp, 0))
         return AXIS_NOT_PRESENT;
@@ -236,9 +236,9 @@ joystick_standard_read_axis_2axis(UNUSED(void *priv), int axis)
 }
 
 static int
-joystick_standard_read_axis_2axis_t1t2wa(UNUSED(void *priv), int axis)
+joystick_standard_read_axis_2axis_t1t2wa(void *priv, int axis)
 {
-    uint8_t gp = 0;
+    uint8_t gp = JOYSTICK_GP(priv);
 
     if (!JOYSTICK_PRESENT(gp, 0))
         return AXIS_NOT_PRESENT;
@@ -258,9 +258,9 @@ joystick_standard_read_axis_2axis_t1t2wa(UNUSED(void *priv), int axis)
 #if 0
 // For later use
 static int
-joystick_standard_read_axis_with_pov(UNUSED(void *priv), int axis)
+joystick_standard_read_axis_with_pov(void *priv, int axis)
 {
-    uint8_t gp = 0;
+    uint8_t gp = JOYSTICK_GP(priv);
 
     if (!JOYSTICK_PRESENT(gp, 0))
         return AXIS_NOT_PRESENT;
@@ -291,9 +291,9 @@ joystick_standard_read_axis_with_pov(UNUSED(void *priv), int axis)
 #endif
 
 static int
-joystick_standard_read_axis_3axis(UNUSED(void *priv), int axis)
+joystick_standard_read_axis_3axis(void *priv, int axis)
 {
-    uint8_t gp = 0;
+    uint8_t gp = JOYSTICK_GP(priv);
 
     if (!JOYSTICK_PRESENT(gp, 0))
         return AXIS_NOT_PRESENT;
@@ -312,9 +312,9 @@ joystick_standard_read_axis_3axis(UNUSED(void *priv), int axis)
 }
 
 int
-joystick_standard_read_axis_3axis_throttle(UNUSED(void *priv), int axis)
+joystick_standard_read_axis_3axis_throttle(void *priv, int axis)
 {
-    uint8_t gp = 0;
+    uint8_t gp = JOYSTICK_GP(priv);
 
     if (!JOYSTICK_PRESENT(gp, 0))
         return AXIS_NOT_PRESENT;
@@ -333,9 +333,9 @@ joystick_standard_read_axis_3axis_throttle(UNUSED(void *priv), int axis)
 }
 
 int
-joystick_standard_read_axis_4axis(UNUSED(void *priv), int axis)
+joystick_standard_read_axis_4axis(void *priv, int axis)
 {
-    uint8_t gp = 0;
+    uint8_t gp = JOYSTICK_GP(priv);
 
     if (!JOYSTICK_PRESENT(gp, 0))
         return AXIS_NOT_PRESENT;
@@ -355,9 +355,9 @@ joystick_standard_read_axis_4axis(UNUSED(void *priv), int axis)
 }
 
 static int
-joystick_standard_read_axis_6button(UNUSED(void *priv), int axis)
+joystick_standard_read_axis_6button(void *priv, int axis)
 {
-    uint8_t gp = 0;
+    uint8_t gp = JOYSTICK_GP(priv);
 
     if (!JOYSTICK_PRESENT(gp, 0))
         return AXIS_NOT_PRESENT;
@@ -376,9 +376,9 @@ joystick_standard_read_axis_6button(UNUSED(void *priv), int axis)
     }
 }
 static int
-joystick_standard_read_axis_8button(UNUSED(void *priv), int axis)
+joystick_standard_read_axis_8button(void *priv, int axis)
 {
-    uint8_t gp = 0;
+    uint8_t gp = JOYSTICK_GP(priv);
 
     if (!JOYSTICK_PRESENT(gp, 0))
         return AXIS_NOT_PRESENT;

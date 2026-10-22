@@ -34,6 +34,7 @@ add_executable(PCBox
     dma.c
     ddma.c
     nmi.c
+    debugcon.c
     pci_dummy.c
     pic.c
     pit.c
@@ -50,9 +51,7 @@ add_executable(PCBox
     nvr.c
     nvr_at.c
     nvr_ps2.c
-    machine_status.c
-    ioapic_82093aa.c
-    lapic.c
+    machine_status.cpp
 )
 
 if(CMAKE_SYSTEM_NAME MATCHES "Linux")
@@ -68,8 +67,12 @@ if(GDBSTUB)
     target_sources(PCBox PRIVATE gdbstub.c)
 endif()
 
-if(NEW_DYNAREC)
-    add_compile_definitions(USE_NEW_DYNAREC)
+if(AUTOMATION)
+    add_compile_definitions(USE_AUTOMATION)
+    target_sources(PCBox PRIVATE automation.c)
+    if(WIN32)
+        target_link_libraries(PCBox ws2_32)
+    endif()
 endif()
 
 if(RELEASE)
@@ -86,11 +89,6 @@ endif()
 
 if(DISCORD)
     add_compile_definitions(DISCORD)
-    target_sources(PCBox PRIVATE discord.c)
-endif()
-
-if(DEBUGREGS486)
-    add_compile_definitions(USE_DEBUG_REGS_486)
 endif()
 
 if(SCREENSHOT_MODE)
@@ -203,24 +201,14 @@ configure_file(include/86box/version.h.in include/86box/version.h @ONLY)
 include_directories(${CMAKE_CURRENT_BINARY_DIR}/include)
 
 include_directories(include)
-if(NEW_DYNAREC)
-    include_directories(cpu codegen_new)
-elseif(DYNAREC)
-    include_directories(cpu codegen)
-else()
-    include_directories(cpu)
-endif()
+include_directories(cpu codegen)
 
 add_subdirectory(cdrom)
 add_subdirectory(char)
 add_subdirectory(chipset)
 
 add_subdirectory(cpu)
-if(NEW_DYNAREC)
-    add_subdirectory(codegen_new)
-elseif(DYNAREC)
-    add_subdirectory(codegen)
-endif()
+add_subdirectory(codegen)
 
 if(MINITRACE)
     add_compile_definitions(MTR_ENABLED)

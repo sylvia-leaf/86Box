@@ -316,6 +316,78 @@ ini_close(ini_t ini)
     free(list);
 }
 
+/* Make target hold what snapshot holds, changing it in place: values are
+   copied into the entries target already has, so the strings a device
+   holds pointers to stay where they are. */
+void
+ini_restore(ini_t target, ini_t snapshot)
+{
+    if ((target == NULL) || (snapshot == NULL) || (target == snapshot))
+        return;
+
+    for (section_t *sec = (section_t *) ((list_t *) target)->next; sec != NULL; sec = (section_t *) sec->list.next) {
+        section_t *saved = ini_find_section(snapshot, sec->name);
+        entry_t   *entry = (entry_t *) sec->entry_head.next;
+
+        while (entry != NULL) {
+            entry_t *next = (entry_t *) entry->list.next;
+
+            if ((saved == NULL) || (find_entry(saved, entry->name) == NULL))
+                ini_section_delete_var(sec, entry->name);
+            entry = next;
+        }
+    }
+
+    for (section_t *sec = (section_t *) ((list_t *) snapshot)->next; sec != NULL; sec = (section_t *) sec->list.next) {
+        section_t *dest = ini_find_or_create_section(target, sec->name);
+
+        for (entry_t *entry = (entry_t *) sec->entry_head.next; entry != NULL; entry = (entry_t *) entry->list.next) {
+            entry_t *copy = find_entry(dest, entry->name);
+
+            if (copy == NULL)
+                copy = create_entry(dest, entry->name);
+            memcpy(copy->data, entry->data, sizeof(copy->data));
+            memcpy(copy->wdata, entry->wdata, sizeof(copy->wdata));
+        }
+    }
+}
+
+/* A copy of the whole configuration, for ini_restore() or ini_equal(). */
+ini_t
+ini_clone(ini_t ini)
+{
+    ini_t copy = ini_new();
+
+    ini_restore(copy, ini);
+    return copy;
+}
+
+/* Whether two configurations hold the same values. */
+int
+ini_equal(ini_t first, ini_t second)
+{
+    if ((first == NULL) || (second == NULL))
+        return first == second;
+
+    for (int pass = 0; pass < 2; ++pass) {
+        const ini_t from = pass ? second : first;
+        const ini_t to   = pass ? first : second;
+
+        for (section_t *sec = (section_t *) ((list_t *) from)->next; sec != NULL; sec = (section_t *) sec->list.next) {
+            section_t *other = ini_find_section(to, sec->name);
+
+            for (entry_t *entry = (entry_t *) sec->entry_head.next; entry != NULL; entry = (entry_t *) entry->list.next) {
+                const entry_t *value = (other != NULL) ? find_entry(other, entry->name) : NULL;
+
+                if ((value == NULL) || strcmp(value->data, entry->data) || wcscmp(value->wdata, entry->wdata))
+                    return 0;
+            }
+        }
+    }
+
+    return 1;
+}
+
 /* Append the multibyte form of wc to dst at d, if it fits with room for the
    terminator. Returns the new length. The first character that does not fit
    ends the name: the rest of dst is cleared and size - 1 is returned, so no
@@ -726,6 +798,47 @@ ini_dump(ini_t ini)
 
         sec = (section_t *) sec->list.next;
     }
+}
+
+/* Take every entry out of the section. */
+void
+ini_section_clear(ini_section_t self)
+{
+    section_t *section = (section_t *) self;
+    list_t    *entry;
+
+    if (section == NULL)
+        return;
+
+    entry = section->entry_head.next;
+    while (entry != NULL) {
+        list_t *next = entry->next;
+
+        free(entry);
+        entry = next;
+    }
+    section->entry_head.next = NULL;
+}
+
+/* Whether any entry of the section holds the number value. */
+int
+ini_section_contains_int(ini_section_t self, int value)
+{
+    const section_t *section = (section_t *) self;
+
+    if (section == NULL)
+        return 0;
+
+    for (const list_t *item = section->entry_head.next; item != NULL; item = item->next) {
+        const entry_t *entry = (const entry_t *) item;
+        char          *end;
+        const long     parsed = strtol(entry->data, &end, 10);
+
+        if ((end != entry->data) && (*end == '\0') && (parsed == value))
+            return 1;
+    }
+
+    return 0;
 }
 
 void

@@ -30,14 +30,15 @@
 #include <86box/io.h>
 #include <86box/pci.h>
 #include <86box/pic.h>
+#include <86box/mem.h>
 #include <86box/timer.h>
 #include <86box/pit.h>
 #include <86box/device.h>
+#include <86box/chipset.h>
 #include <86box/apm.h>
 #include <86box/nvr.h>
 #include <86box/acpi.h>
 #include <86box/mem.h>
-#include <86box/apic.h>
 #include <86box/plat_unused.h>
 #ifdef USE_VFIO
 #    include <86box/vfio.h>
@@ -80,6 +81,11 @@ static uint16_t latched_irqs   = 0x0000;
 static int16_t  irq_vector_override[8] = {
     -1, -1, -1, -1, -1, -1, -1, -1
 };
+
+/* Lines a device has taken over for a controller of its own: the interrupt
+   controller must not deliver them, whatever the guest writes to its mask
+   register, so those bits are held set here. */
+static uint16_t pic_pinned_irqs = 0x0000;
 
 static void (*update_pending)(void);
 
@@ -280,6 +286,18 @@ find_best_interrupt(pic_t *dev)
     return ret;
 }
 
+/* The master 8259's INTR output, as INTIN0 of an I/O APIC sees it. */
+static int pic_intr_reported;
+
+static __inline void
+pic_intr_report(void)
+{
+    if (pic.int_pending != pic_intr_reported) {
+        pic_intr_reported = pic.int_pending;
+        ioapic_pic_intr(pic_intr_reported);
+    }
+}
+
 static __inline void
 pic_update_pending_xt(void)
 {
@@ -291,6 +309,9 @@ pic_update_pending_xt(void)
         pic.int_pending = (find_best_interrupt(&pic) != -1);
     if (pic.int_pending && (pic.flags & PIC_IBM5140) && ibm5140_wake)
         ibm5140_wake();
+    if (pic.int_pending)
+        mem_chain_break(); /* a chain leaves for the loop to take it */
+    pic_intr_report();
 }
 
 /* Only check if PIC 1 frozen, because it should not happen
@@ -304,13 +325,27 @@ pic_update_pending_at(void)
 #endif
     if (!(pic.interrupt & 0x20)) {
         pic2.int_pending = (find_best_interrupt(&pic2) != -1);
- 
-        if (pic2.int_pending)
-            pic.irr |= (1 << pic2.icw3);
-        else
-            pic.irr &= ~(1 << pic2.icw3);
+
+        /* The slave's INT output is hard-wired to the master's IR2 (see
+           pic.slaves[2]), regardless of the cascade ID programmed into the
+           slave's ICW3 - firmware that never initializes the slave (eg. the
+           Tandy VIS) would otherwise have its IRQ 0 cleared here. */
+        if (machines[machine].init == machine_at_tandy_vis_init) {
+            if (pic2.int_pending)
+                pic.irr |= 0x04;
+            else
+                pic.irr &= ~0x04;
+        } else {
+            if (pic2.int_pending)
+                pic.irr |= (1 << pic2.icw3);
+            else
+                pic.irr &= ~(1 << pic2.icw3);
+        }
 
         pic.int_pending = (find_best_interrupt(&pic) != -1);
+        if (pic.int_pending)
+            mem_chain_break(); /* a chain leaves for the loop to take it */
+        pic_intr_report();
     }
 }
 
@@ -329,6 +364,8 @@ pic_reset(void)
     const uint8_t board_flags = pic.flags & PIC_IBM5140;
 
     memset(&pic, 0, sizeof(pic_t));
+    pic_intr_reported = 0;
+    ioapic_pic_intr(0); /* INTR is inactive after reset, for INTIN0 too */
     memset(&pic2, 0, sizeof(pic_t));
     /* Controller reset preserves the integrated controller's hardware type. */
     pic.flags = board_flags;
@@ -357,6 +394,10 @@ pic_reset(void)
 #ifdef USE_VFIO
     pic_acked = 0x0000;
 #endif
+
+    /* A line a device has taken over stays out of delivery across a reset. */
+    pic.imr  = (uint8_t) pic_pinned_irqs;
+    pic2.imr = (uint8_t) (pic_pinned_irqs >> 8);
 }
 
 void
@@ -390,6 +431,37 @@ pic_set_vector_override(uint8_t irq, int vector)
         irq_vector_override[irq] = (vector >= 0) ? (vector & 0xff) : -1;
 }
 
+/* Keep a line out of the controller's delivery for good, or hand it back when
+   the device that claimed it goes away. The line is still reported to whoever
+   watches the controller, it is only the delivery that is held off. */
+void
+pic_set_line_pinned(int irq, int pinned)
+{
+    uint16_t bit;
+    uint8_t  b;
+    pic_t   *dev;
+
+    if ((irq < 0) || (irq > 15))
+        return;
+
+    dev = (irq < 8) ? &pic : &pic2;
+    bit = (uint16_t) (1u << irq);
+    b   = (uint8_t) (1u << (irq & 7));
+
+    if (pinned)
+        pic_pinned_irqs |= bit;
+    else
+        pic_pinned_irqs &= (uint16_t) ~bit;
+
+    if (pic_pinned_irqs & bit)
+        dev->imr |= b;
+    else
+        dev->imr &= (uint8_t) ~b;
+
+    if (update_pending != NULL)
+        update_pending();
+}
+
 static uint8_t
 pic_level_triggered(pic_t *dev, int irq)
 {
@@ -410,6 +482,13 @@ pic_acknowledge(pic_t *dev)
 {
     int pic_int     = dev->interrupt & 7;
     int pic_int_num = 1 << pic_int;
+
+    /* "A normal IRQ7 interrupt will set the corresponding ISR bit, a default
+       IRQ7 won't" (82374EB 9.6.7). */
+    if (dev->default_irq7) {
+        dev->default_irq7 = 0;
+        return;
+    }
 
     dev->isr |= pic_int_num;
     if (!pic_level_triggered(dev, pic_int) || (dev->lines[pic_int] == 0))
@@ -638,7 +717,7 @@ pic_read(uint16_t addr, void *priv)
     return dev->data_bus;
 }
 
-static void
+void
 pic_write(uint16_t addr, uint8_t val, void *priv)
 {
     pic_t *dev = (pic_t *) priv;
@@ -669,7 +748,7 @@ pic_write(uint16_t addr, uint8_t val, void *priv)
                     update_pending();
                 break;
             case STATE_NONE:
-                dev->imr = val;
+                dev->imr = (uint8_t) (val | (uint8_t) ((dev == &pic2) ? (pic_pinned_irqs >> 8) : pic_pinned_irqs));
                 if ((dev->flags & PIC_IBM5140) || (is286 && !force_xt_imr_timing) || dev->zenith)
                     update_pending();
                 else if (force_xt_imr_timing)
@@ -924,22 +1003,7 @@ picint_common(uint16_t num, int level, int set, uint8_t *irq_state)
      */
     if (update_pending == NULL)
         return;
-    
-    if (set) {
-        if (apic_ioapic_is_enabled(current_ioapic)) {
-            uint8_t i = 0;
-            for (i = 0; i < 16; i++) {
-                if ((num & (1 << i)) && i != 2) apic_ioapic_set_irq(current_ioapic, (i == 0) ? 2 : i, level);
-            }
-        }
-    } else {
-        if (apic_ioapic_is_enabled(current_ioapic)) {
-            uint8_t i = 0;
-            for (i = 0; i < 16; i++) {
-                if ((num & (1 << i)) && i != 2) apic_ioapic_clear_irq(current_ioapic, (i == 0) ? 2 : i);
-            }
-        }
-    }
+
 
     /* Make sure to ignore all slave IRQ's, and in case of AT+,
        translate IRQ 2 to IRQ 9. */
@@ -958,9 +1022,32 @@ picint_common(uint16_t num, int level, int set, uint8_t *irq_state)
         }
     }
 
-    uint16_t lines = level ? 0x0000 : num;
+    /* The Tandy VIS firmware leaves the master's ICW3 at 0 and never
+       initializes the slave, but the slave is still wired to the master's
+       IR2 and its IRQ's still reach its IRR - Modular Windows probes IRQ 9
+       through the IRR's at startup, and the VIS reboots in a loop if the
+       probe fails. */
+    if (!slaves && (machines[machine].init == machine_at_tandy_vis_init))
+        slaves = 1;
 
-    if (!slaves)
+    /* The line counts and the I/O APIC's inputs follow the wires, which a
+       board with a slave has for IRQ 8-15 whatever the master's ICW3 says;
+       only what reaches the 8259s' IRRs waits on the cascade. A level
+       release while ICW3 is rewritten used to leave the slave's count up
+       for good. IRQ2 is IRQ9 on an AT by its wiring, so that too holds
+       while ICW3 is being written. */
+    const int wired16 = (pic.slaves[2] != NULL);
+
+    if (pic.at && wired16 && (num & 0x0004))
+        num = (num & ~0x0004) | 0x0200;
+
+    uint16_t lines = level ? 0x0000 : num;
+    /* What the I/O APIC's inputs see: for a level source, the wired-OR of
+       every source on the line, so only its changes; an edge source's
+       every raise. */
+    uint16_t apic_lines = level ? 0x0000 : num;
+
+    if (!wired16)
         max = 8;
 
     if (!num) {
@@ -979,9 +1066,17 @@ picint_common(uint16_t num, int level, int set, uint8_t *irq_state)
             w = 1 << i;
 
             if (num & w) {
-                if ((!!*irq_state) != !!set)
-                    set ? dev->lines[b]++ : dev->lines[b]--;
+                /* A release the count never saw raised (the slaves set up
+                   between the two, ICW3) leaves it at 0, not wrapped. */
+                if ((!!*irq_state) != !!set) {
+                    if (set)
+                        dev->lines[b]++;
+                    else if (dev->lines[b])
+                        dev->lines[b]--;
+                }
 
+                if (((!!*irq_state) != !!set) && (dev->lines[b] == (!!set)))
+                    apic_lines |= w;
                 if (!pic_level_triggered(dev, b) ||
                     (((!!*irq_state) != !!set) && (dev->lines[b] == (!!set))))
                     lines |= w;
@@ -996,6 +1091,8 @@ picint_common(uint16_t num, int level, int set, uint8_t *irq_state)
 
    if (!slaves)
        num &= 0x00ff;
+   if (!wired16)
+       apic_lines &= 0x00ff;
 
    if (num & 0x0100)
        acpi_rtc_status = !!set;
@@ -1046,7 +1143,11 @@ picint_common(uint16_t num, int level, int set, uint8_t *irq_state)
         }
 
         update_pending();
-   }
+    }
+
+    /* APIC mirror runs after PIC state/latches settle for this request. */
+    if (apic_lines)
+        ioapic_legacy_irq(apic_lines, level, set);
 }
 
 static uint8_t
@@ -1142,22 +1243,20 @@ picinterrupt_common(void)
                 /* If we are on AT, IRQ 2 is pending, and we cannot find a pending IRQ on PIC 2, fatal out. */
                 // fatal("IRQ %i pending on AT without a pending IRQ on PIC %i (normal)\n", pic.interrupt, pic.interrupt);
                 // exit(-1);
-                /* Error correction mechanism: Do a supurious IRQ 15 (spurious IRQ 7 on PIC 2). */
-                pic.slaves[pic.interrupt]->int_pending = 1;
-                pic.slaves[pic.interrupt]->interrupt = 0x07;
-            } else
-                pic.interrupt |= 0x40; /* Mark slave pending. */
+                /* Error correction mechanism: Do a supurious IRQ 15 (spurious IRQ 7 on PIC 2),
+                   through the cascade, the slave's ISR left alone. */
+                pic.slaves[pic.interrupt]->int_pending  = 1;
+                pic.slaves[pic.interrupt]->interrupt    = 0x07;
+                pic.slaves[pic.interrupt]->default_irq7 = 1;
+            }
+            pic.interrupt |= 0x40; /* Mark slave pending. */
         }
     } else {
-        if (current_lapic && apic_ioapic_is_enabled(current_ioapic) && lapic_irq_pending(current_lapic) > 0)
-        {
-            return apic_lapic_picinterrupt();
-        }
-
         /* pic.int_pending was somehow cleared despite the fact we made it here,
-           do a spurious IRQ 7. */
-        pic.int_pending = 1;
-        pic.interrupt = 0x07;
+           do a spurious IRQ 7: the default IRQ7, which sets no ISR bit. */
+        pic.int_pending  = 1;
+        pic.interrupt    = 0x07;
+        pic.default_irq7 = 1;
     }
 
     /* The PS/2 watchdog's gate falls when IRQ 0 is acknowledged. Only the
@@ -1178,6 +1277,10 @@ picinterrupt_common(void)
             if (pic.interrupt & 0x40)
                 pic2.interrupt = 0x17;
             pic.interrupt = 0x17;
+            /* INTR falls with the acknowledge; another request raises it
+               again, a new edge. */
+            pic.int_pending = 0;
+            pic_intr_report();
             update_pending();
         }
     }
@@ -1189,16 +1292,6 @@ int
 picinterrupt(void)
 {
     int ret = -1;
-
-    if (!lapic_is_pic_enabled())
-    {
-        if (current_lapic && apic_ioapic_is_enabled(current_ioapic) && lapic_irq_pending(current_lapic) > 0)
-        {
-            return apic_lapic_picinterrupt();
-        }
-
-        return current_lapic->lapic_spurious_interrupt & 0xff;
-    }
 
     ret = picinterrupt_common();
     return ret;

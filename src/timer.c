@@ -6,6 +6,7 @@
 #include <86box/86box.h>
 #include "cpu.h"
 #include <86box/timer.h>
+#include <86box/mem.h>
 #include <86box/nv/vid_nv_rivatimer.h>
 
 uint64_t TIMER_USEC;
@@ -117,6 +118,10 @@ timer_enable(pc_timer_t *timer)
         timer->flags |= TIMER_ENABLED;
         timer_sift_up(timer_count++, timer);
     }
+
+    /* Due before a chain running now could end: it leaves */
+    if ((int64_t) (timer_target - tsc) < cpu_state.chain_cycles)
+        mem_chain_break();
 
     timer_update_target();
 }
@@ -318,4 +323,8 @@ timer_set_new_tsc(uint64_t new_tsc)
     tsc = new_tsc;
 
     timer_update_target();
+    
+    /* The timers moved with the clock: a chain leaves at its next link,
+       its floor computed from the old one */
+    cpu_state.chain_floor = INT32_MAX;
 }

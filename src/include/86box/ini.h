@@ -28,6 +28,9 @@ typedef void *ini_t;
 typedef void *ini_section_t;
 
 extern ini_t ini_new(void);
+extern ini_t ini_clone(ini_t ini);
+extern int   ini_equal(ini_t first, ini_t second);
+extern void  ini_restore(ini_t target, ini_t snapshot);
 extern ini_t ini_read_ex(const char *fn, int is_rom);
 extern ini_t ini_read(const char *fn);
 extern void  ini_strip_quotes(ini_t ini);
@@ -37,6 +40,8 @@ extern void  ini_dump(ini_t ini);
 extern void  ini_close(ini_t ini);
 
 extern void     ini_section_delete_var(ini_section_t section, const char *name);
+extern void     ini_section_clear(ini_section_t section);
+extern int      ini_section_contains_int(ini_section_t section, int value);
 extern int      ini_section_get_int(ini_section_t section, const char *name, int32_t def);
 extern uint32_t ini_section_get_uint(ini_section_t section, const char *name, uint32_t def);
 extern int64_t  ini_section_get_int64(ini_section_t section, const char *name, int64_t def);

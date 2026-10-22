@@ -12,17 +12,17 @@
 
 /* Keep the full backend table out of this standalone fixture's link. */
 #define uop_handlers unused_uop_handlers
-#include "../../src/codegen_new/codegen_backend_x86-64_uops.c"
+#include "../../src/codegen/codegen_backend_x86-64_uops.c"
 #undef uop_handlers
-#include "../../src/codegen_new/codegen_backend_x86-64.c"
+#include "../../src/codegen/codegen_backend_x86-64.c"
 #ifdef _WIN32
 #    undef REG_DWORD
 #    undef REG_QWORD
 #endif
-#include "../../src/codegen_new/codegen_reg.c"
+#include "../../src/codegen/codegen_reg.c"
 extern const uOpFn uop_handlers[];
-#include "../../src/codegen_new/codegen_ir.c"
-#include "../../src/codegen_new/codegen_ops_mov.h"
+#include "../../src/codegen/codegen_ir.c"
+#include "../../src/codegen/codegen_ops_mov.h"
 
 #define CHECK(condition) do { \
     if (!(condition)) { \

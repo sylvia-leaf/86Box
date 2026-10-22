@@ -99,6 +99,8 @@ NewFloppyDialog::NewFloppyDialog(MediaType type, QWidget *parent, int tape_drive
 {
     ui->setupUi(this);
     ui->fileField->setCreateFile(true);
+    ui->fileField->setDefaultDirectory(util::machineDirectory());
+    ui->fileField->setToolTip(tr("New images are created beside the machine configuration unless you choose another folder."));
 
     auto *model = ui->comboBoxSize->model();
     switch (type) {
@@ -186,7 +188,7 @@ NewFloppyDialog::onCreate()
 {
     auto      filename = ui->fileField->fileName();
     QFileInfo fi(filename);
-    filename = (fi.isRelative() && !fi.filePath().isEmpty()) ? (usr_path + fi.filePath()) : fi.filePath();
+    filename = util::newImagePath(filename);
     ui->fileField->setFileName(filename);
     FileType fileType;
 

@@ -108,31 +108,8 @@ machine_at_54tdp_init(const machine_t *model)
 
     machine_at_common_init(model);
 
-    pci_init(PCI_CONFIG_TYPE_1);
-    pci_register_slot(0x00, PCI_CARD_NORTHBRIDGE, 0, 0, 0, 0);
-    /* The bridge sits where a south bridge would, because on this board
-       it is one. */
-    pci_register_slot(0x07, PCI_CARD_SOUTHBRIDGE, 0, 0, 0, 0);
-    /* The on-board SCSI, then the four slots. */
-    /* The BIOS only ever routes PIRQC and PIRQD, and it programs them
-       the other way round from what this table used to assume: PIRQC to
-       IRQ 11 and PIRQD to IRQ 10 (the ESC's route registers in a POST
-       trace read 60h..63h = 80 80 0B 0A). The on-board SCSI is on IRQ 10
-       on the real board -- lspci shows 00:08.0 at irq 10 -- and the BIOS
-       tells the operating system so, so its INTA is PIRQD. With it on
-       PIRQC the chip raised IRQ 11 while Windows 2000 had its handler on
-       IRQ 10: every command on the on-board bus completed unnoticed and
-       was reset after the driver's timeout, eight seconds at a time. */
-    /* The rest is what the BIOS itself reports through its PCI IRQ
-       routing table (INT 1Ah, B10Eh, as PCIREG prints it): the on-board
-       SCSI at 08h with INTA alone, and four slots at 09h to 0Ch -- slot 4
-       down to slot 1 -- each one a rotation of the last. There is no
-       device 0Dh on this board: a card put there had no routing at all. */
-    pci_register_slot(0x08, PCI_CARD_SCSI,   4, 0, 0, 0); /* Onboard */
-    pci_register_slot(0x09, PCI_CARD_NORMAL, 2, 3, 4, 1); /* Slot 4 */
-    pci_register_slot(0x0a, PCI_CARD_NORMAL, 3, 4, 1, 2); /* Slot 3 */
-    pci_register_slot(0x0b, PCI_CARD_NORMAL, 4, 1, 2, 3); /* Slot 2 */
-    pci_register_slot(0x0c, PCI_CARD_NORMAL, 1, 2, 3, 4); /* Slot 1 */
+    machine_pci_init();
+    machine_pci_register_slots();
 
     /* Four EISA slots. */
     eisa_init(4);
@@ -249,15 +226,8 @@ machine_at_d823_init(const machine_t *model)
 
     machine_at_common_init(model);
 
-    pci_init(PCI_CONFIG_TYPE_2);
-    pci_register_slot(0x00, PCI_CARD_NORTHBRIDGE, 0, 0, 0, 0);
-    pci_register_slot(0x01, PCI_CARD_SOUTHBRIDGE, 0, 0, 0, 0);
-    pci_register_slot(0x02, PCI_CARD_IDE,         0, 0, 0, 0); /* Onboard RZ1000 */
-    /* The BIOS's routing table (F000:346E) and the SNI configuration file's
-       slot list put PCI slot 1 at device 0Fh and slot 3 at device 0Dh. */
-    pci_register_slot(0x0f, PCI_CARD_NORMAL,      1, 2, 3, 4); /* Slot 1 */
-    pci_register_slot(0x0e, PCI_CARD_NORMAL,      2, 3, 4, 1); /* Slot 2 */
-    pci_register_slot(0x0d, PCI_CARD_NORMAL,      3, 4, 1, 2); /* Slot 3 */
+    machine_pci_init();
+    machine_pci_register_slots();
 
     /* Four EISA slots, and the one ISA slot beside them. */
     eisa_init(4);
@@ -358,14 +328,8 @@ machine_at_td3_init(const machine_t *model)
 
     machine_at_common_init(model);
 
-    pci_init(PCI_CONFIG_TYPE_2);
-    pci_register_slot(0x00, PCI_CARD_NORTHBRIDGE, 0, 0, 0, 0);
-    pci_register_slot(0x01, PCI_CARD_SOUTHBRIDGE, 0, 0, 0, 0);
-    pci_register_slot(0x05, PCI_CARD_NORMAL,      1, 2, 3, 4);
-    pci_register_slot(0x08, PCI_CARD_NORMAL,      3, 4, 1, 2);
-    pci_register_slot(0x09, PCI_CARD_NORMAL,      2, 3, 4, 1);
-    pci_register_slot(0x06, PCI_CARD_SCSI,        4, 0, 0, 0);
-    pci_register_slot(0x07, PCI_CARD_NETWORK,     1, 0, 0, 0);
+    machine_pci_init();
+    machine_pci_register_slots();
 
     eisa_init(1);
 

@@ -1251,6 +1251,9 @@ lpt_close(void *priv)
         timer_disable(&dev->char_timer);
     }
 
+    if (lpt_ports[dev->id].lpt_init != NULL)
+        free(lpt_ports[dev->id].lpt_init);
+
     if (lpt1 == dev)
         lpt1 = NULL;
 
@@ -1278,22 +1281,27 @@ lpt_reset(void *priv)
             }
         }
 
-        dev->enable_irq       = 0x00;
-        dev->cfg_regs_enabled = 0;
-        dev->ext              = !!(machine_has_bus(machine, MACHINE_BUS_MCA));
-        dev->epp              = 0;
-        dev->ecp              = 0;
-        dev->ecr              = 0x15;
-        dev->ret_ecr          = 0x15;
-        dev->dat              = 0xff;
-        dev->fifo_stat        = 0x00;
-        dev->dma_stat         = 0x00;
+        if (lpt_ports[dev->id].lpt_init == NULL) {
+            dev->enable_irq       = 0x00;
+            dev->cfg_regs_enabled = 0;
+            dev->ext              = !!(machine_has_bus(machine, MACHINE_BUS_MCA));
+            dev->epp              = 0;
+            dev->ecp              = 0;
+            dev->ecr              = 0x15;
+            dev->ret_ecr          = 0x15;
+            dev->dat              = 0xff;
+            dev->fifo_stat        = 0x00;
+            dev->dma_stat         = 0x00;
 
-        memset(dev->ext_regs, 0x00, 8);
-        dev->ext_regs[0x02]   = 0x80;
-        dev->ext_regs[0x04]   = 0x07;
-        dev->cnfga_readout   &= 0xf7;
+            memset(dev->ext_regs, 0x00, 8);
+            dev->ext_regs[0x02]   = 0x80;
+            dev->ext_regs[0x04]   = 0x07;
+            dev->cnfga_readout   &= 0xf7;
+        }
     }
+
+    if (lpt_ports[dev->id].lpt_init != NULL)
+        memcpy(dev, lpt_ports[dev->id].lpt_init, sizeof(lpt_t));
 }
 
 static void *
@@ -1370,7 +1378,11 @@ lpt_init(const device_t *info)
             timer_add(&dev->fifo_out_timer, lpt_fifo_out_callback, dev, 0);
             timer_add(&dev->char_timer, lpt_char_callback, dev, 0);
         }
-    }
+
+        lpt_ports[next_inst].lpt_init = (lpt_t *) calloc(1, sizeof(lpt_t));
+        memcpy(lpt_ports[next_inst].lpt_init, dev, sizeof(lpt_t));
+    } else
+        lpt_ports[next_inst].lpt_init = NULL;
 
     if (!(info->local & 0xfff00000))
         next_inst++;
@@ -1433,6 +1445,37 @@ lpt_ports_reset(void)
     for (int i = 0; i < PARALLEL_MAX; i++)
         lpt_ports[i].lpt = NULL;
 }
+
+/* A parallel port on a card of its own: what the standalone ports past
+   the board's own are (lpt_standalone_init()), named for the settings. */
+const device_t lpt_card_device = {
+    .name          = "Parallel Port Card",
+    .internal_name = "lpt_card",
+    .flags         = DEVICE_ISA,
+    .local         = 0,
+    .init          = NULL,
+    .close         = NULL,
+    .reset         = NULL,
+    .available     = NULL,
+    .speed_changed = NULL,
+    .force_redraw  = NULL,
+    .config        = NULL
+};
+
+/* The same on a Micro Channel board, where the card would be an MCA one. */
+const device_t lpt_card_mca_device = {
+    .name          = "Parallel Port Card",
+    .internal_name = "lpt_card_mca",
+    .flags         = DEVICE_MCA,
+    .local         = 0,
+    .init          = NULL,
+    .close         = NULL,
+    .reset         = NULL,
+    .available     = NULL,
+    .speed_changed = NULL,
+    .force_redraw  = NULL,
+    .config        = NULL
+};
 
 const device_t lpt_port_device = {
     .name          = "Parallel Port",

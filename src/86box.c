@@ -71,6 +71,7 @@
 #include <86box/isamem.h>
 #include <86box/isarom.h>
 #include <86box/isartc.h>
+#include <86box/ibm_5161.h>
 #include <86box/lpt.h>
 #include <86box/serial.h>
 #include <86box/keyboard.h>
@@ -102,11 +103,18 @@
 #include <86box/plat_dir.h>
 #include <86box/version.h>
 #include <86box/gdbstub.h>
+#include <86box/automation.h>
+#ifdef USE_AUTOMATION
+#    define AUTOMATION_ACTIVE (automation_path[0] != '\0')
+#else
+#    define AUTOMATION_ACTIVE 0
+#endif
 #include <86box/machine_status.h>
 #include <86box/acpi.h>
 #include <86box/apic.h>
 #include <86box/nv/vid_nv_rivatimer.h>
 #include <86box/vfio.h>
+#include "x86_rep_host.h"
 
 /* Stuff that used to be globally declared in plat.h but is now extern there
    and declared here instead. */
@@ -120,8 +128,9 @@ int tracing_on = 0;
 #endif
 
 /* Commandline options. */
-int dump_on_exit        = 0; /* (O) dump regs on exit */
-int start_in_fullscreen = 0; /* (O) start in fullscreen */
+int dump_on_exit          = 0; /* (O) dump regs on exit */
+int start_in_fullscreen   = 0; /* (O) start in fullscreen */
+int start_in_fast_forward = 0; /* (O) start in fast-forward mode */
 #ifdef _WIN32
 int force_debug = 0; /* (O) force debug output */
 #endif
@@ -179,6 +188,7 @@ int      mcamem_type[MCAMEM_MAX]                = { 0, 0, 0, 0 }; /* (C) enable 
 int      isamem_type[ISAMEM_MAX]                = { 0, 0, 0, 0 }; /* (C) enable ISA mem cards */
 int      isarom_type[ISAROM_MAX]                = { 0, 0, 0, 0 }; /* (C) enable ISA ROM cards */
 int      isartc_type                            = 0;              /* (C) enable ISA RTC card */
+int      isa_expansion_type                     = 0;              /* (C) ISA expansion unit */
 int      gfxcard[GFXCARD_MAX]                   = { 0, 0 };       /* (C) graphics/video card */
 int      show_second_monitors                   = 1;              /* (C) show non-primary monitors */
 int      sound_is_float                         = 1;              /* (C) sound uses FP values */
@@ -198,12 +208,14 @@ int      cpu_use_dynarec_fast                   = 0;              /* (C) use fas
 int      cpu                                    = 0;              /* (C) cpu type */
 int      fpu_type                               = 0;              /* (C) fpu type */
 int      fpu_softfloat                          = 0;              /* (C) fpu uses softfloat */
+int      fpu_host_x87                           = 0;              /* (C) fpu uses the host's x87 */
 int      time_sync                              = 0;              /* (C) enable time sync */
 int      confirm_reset                          = 1;              /* (G) enable reset confirmation */
 int      confirm_exit                           = 1;              /* (G) enable exit confirmation */
 int      confirm_save                           = 1;              /* (G) enable save confirmation */
+int      settings_layout                        = 0;              /* (G) Settings dialog: 0 classic, 1 slot-based preview */
+int      settings_advanced                      = 0;              /* (G) slot-based Settings: the Cards page's Advanced view */
 int      chd_precache_level                     = 0;              /* (G) CHD precache level */
-int      enable_discord                         = 0;              /* (C) enable Discord integration */
 int      pit_mode                               = -1;             /* (C) force setting PIT mode */
 int      fm_driver                              = 0;              /* (C) select FM sound driver */
 int      open_dir_usr_path                      = 0;              /* (G) default file open dialog directory
@@ -221,7 +233,9 @@ int      sound_muted                            = 0;              /* (C) Is soun
 int      jumpered_internal_ecp_dma              = 0;              /* (C) Jumpered internal EPC DMA */
 int      inhibit_multimedia_keys;                                 /* (G) Inhibit multimedia keys on Windows. */
 int      force_10ms;                                              /* (C) Force 10ms CPU frame intervals. */
+int      start_fast_forward;                                      /* (C) Start in fast-forward mode. */
 int      vmm_disabled                           = 0;              /* (G) disable built-in manager */
+int      discord_presence                       = 0;              /* (G) Discord status: off, name and hardware, hardware only, no details */
 char     vmm_path_cfg[1024]                     = { '\0' };       /* (G) VMs path (unless -E is used)*/
 
 int      other_ide_present = 0;                                   /* IDE controllers from non-IDE cards are
@@ -247,6 +261,7 @@ int      fdd_sounds_enabled = 1;                                  /* (C) Floppy 
 int      is_new_808x = 0;                                         /* (C) Use the new 808x code. */
 
 int      gdbstub_port = 12345;                                    /* (C) The GDB stub port. */
+int      debug_console_port = 0;                                  /* (C) The debug console listens here from start-up; 0 off. */
 
 // Accelerator key array
 struct accelKey acc_keys[NUM_ACCELS];
@@ -396,6 +411,24 @@ void pclog_ensure_stdlog_open(void);
 #endif
 
 /*
+    A log file named by the machine's configuration, for when no -L was
+    given. Anything already logged went to stdout; from here on it goes
+    to the file.
+*/
+void
+pclog_set_config_path(const char *path)
+{
+    if ((path == NULL) || (path[0] == '\0') || (log_path[0] != '\0'))
+        return;
+
+    snprintf(log_path, sizeof(log_path), "%s", path);
+#ifndef RELEASE_BUILD
+    if (stdlog == stdout)
+        stdlog = NULL;
+#endif
+}
+
+/*
     Ensures STDLOG is open for pclog_ex and pclog_ex_cyclic
 */
 void pclog_ensure_stdlog_open(void)
@@ -534,6 +567,11 @@ fatal(const char *fmt, ...)
 
     do_pause(2);
 
+    /* A connected automation client would wait forever on a machine that has
+       stopped, behind a dialog it can't answer: close its connection now, so
+       it knows. The message is in the log. */
+    automation_close();
+
     ui_msgbox(MBX_ERROR | MBX_FATAL, temp);
 
     /* Cleanly terminate all of the emulator's components so as
@@ -579,6 +617,11 @@ fatal_ex(const char *fmt, va_list ap)
 
     do_pause(2);
 
+    /* A connected automation client would wait forever on a machine that has
+       stopped, behind a dialog it can't answer: close its connection now, so
+       it knows. The message is in the log. */
+    automation_close();
+
     ui_msgbox(MBX_ERROR | MBX_FATAL, temp);
 
     /* Cleanly terminate all of the emulator's components so as
@@ -622,7 +665,11 @@ warning(const char *fmt, ...)
 
     do_pause(2);
 
-    ui_msgbox(MBX_WARNING, temp);
+    /* With an automation client, nobody may be there to dismiss the dialog,
+       and while it's up the machine and the socket are stuck (headless, for
+       good). The message is in the log; carry on. */
+    if (!AUTOMATION_ACTIVE)
+        ui_msgbox(MBX_WARNING, temp);
 
     fflush(stdlog);
     free(temp);
@@ -658,7 +705,11 @@ warning_ex(const char *fmt, va_list ap)
 
     do_pause(2);
 
-    ui_msgbox(MBX_WARNING, temp);
+    /* With an automation client, nobody may be there to dismiss the dialog,
+       and while it's up the machine and the socket are stuck (headless, for
+       good). The message is in the log; carry on. */
+    if (!AUTOMATION_ACTIVE)
+        ui_msgbox(MBX_WARNING, temp);
 
     fflush(stdlog);
     free(temp);
@@ -760,6 +811,17 @@ pc_show_usage(void)
             "\nUsage: 86box [options] [cfg-file]\n\n"
             "Valid options are:\n\n"
             "-? or --help\t\t\t- show this information\n"
+#ifdef USE_AUTOMATION
+            "--automation endpoint\t\t- listen for automation commands: unix:path or\n"
+            "\t\t\t\t   tcp:[host:]port (bare value: a path, or a port on Windows)\n"
+            "--automation-hold\t\t- start with the machine held for automation\n"
+            "--automation-seed n\t\t- make the emulator's random numbers repeatable\n"
+            "\t\t\t\t  (generated MACs, floppy weak bits) from seed 'n'\n"
+            "--automation-token-file path\t- TCP: write the access token to 'path'\n"
+            "--automation-allow-remote\t- TCP: allow a non-loopback listen address\n"
+            "--automation-insecure\t\t- TCP: accept clients without a token (any local process,\n"
+            "\t\t\t\t  or with --automation-allow-remote anyone, controls the machine)\n"
+#endif
             "-A or --assetpath path\t\t- set 'path' to be asset path\n"
 #ifdef SHOW_EXTRA_PARAMS
             "-C or --config path\t\t- set 'path' to be config file\n"
@@ -771,6 +833,7 @@ pc_show_usage(void)
             "-E or --vmmpath\t\t- vm manager path\n"
 #endif
             "-F or --fullscreen\t\t- start in fullscreen mode\n"
+            "--fast-forward\t\t\t- start in fast-forward mode\n"
             "-G or --lang langid\t\t- start with specified language\n"
             "\t\t\t\t   (e.g. en-US, or system)\n"
 #ifdef SHOW_EXTRA_PARAMS
@@ -806,9 +869,18 @@ pc_show_usage(void)
             "-Y or --donothing\t\t- do not show any UI or run the emulation\n"
 #endif
             "-Z or --lastvmpath\t\t- the last param. is VM path rather than config\n"
+            "\n"
+            "--window_x pos_x\t\t- Set window position in the horizontal direction\n"
+            "--window_y pos_y\t\t- Set window position in the vertical direction\n"
+            "--window_w width\t\t- Set window width\n"
+            "--window_h height\t\t- Set window height\n"
+#ifndef USE_SDL_UI
+            "--assume_copied_vm\t\t- Assume the VM is always copied on this run (regenerates UUID and MAC addresses)\n"
+            "--assume_moved_vm\t\t- Assume the VM is always moved on this run (regenerates UUID only)\n"
+#endif
             "\nA config file can be specified. If none is, the default file will be used.\n");
 
-#ifdef _WIN32
+#if defined _WIN32 && !(defined WIN_CONSOLE_LOG)
     ui_msgbox(MBX_INFO, p);
 #else
     always_log("%s", p);
@@ -833,6 +905,14 @@ pc_init(int argc, char *argv[])
     char            *p;
     char             temp[2048];
     char            *fn[FDD_NUM] = { NULL };
+    int              window_x_1 = 0;
+    int              window_y_1 = 0;
+    int              window_w_1 = 0;
+    int              window_h_1 = 0;
+    int              win_rem_set_x = 0;
+    int              win_rem_set_y = 0;
+    int              win_rem_set_w = 0;
+    int              win_rem_set_h = 0;
     char             drive = 0;
     char            *temp2 = NULL;
     char            *what;
@@ -930,8 +1010,34 @@ usage:
             else
                 memcpy(vmm_path, vp, strlen(vp) + 1);
 #endif
+#ifdef USE_AUTOMATION
+        } else if (!strcasecmp(argv[c], "--automation")) {
+            if ((c + 1) == argc)
+                goto usage;
+
+            snprintf(automation_path, sizeof(automation_path), "%s", argv[++c]);
+        } else if (!strcasecmp(argv[c], "--automation-hold")) {
+            automation_start_held = 1;
+        } else if (!strcasecmp(argv[c], "--automation-seed")) {
+            if ((c + 1) == argc)
+                goto usage;
+
+            automation_seed     = (uint32_t) strtoul(argv[++c], NULL, 0);
+            automation_seed_set = 1;
+        } else if (!strcasecmp(argv[c], "--automation-token-file")) {
+            if ((c + 1) == argc)
+                goto usage;
+
+            snprintf(automation_token_file, sizeof(automation_token_file), "%s", argv[++c]);
+        } else if (!strcasecmp(argv[c], "--automation-allow-remote")) {
+            automation_allow_remote = 1;
+        } else if (!strcasecmp(argv[c], "--automation-insecure")) {
+            automation_insecure = 1;
+#endif
         } else if (!strcasecmp(argv[c], "--fullscreen") || !strcasecmp(argv[c], "-F")) {
             start_in_fullscreen = 1;
+        } else if (!strcasecmp(argv[c], "--fast-forward")) {
+            start_in_fast_forward = 1;
         } else if (!strcasecmp(argv[c], "--logfile") || !strcasecmp(argv[c], "-L")) {
             if ((c + 1) == argc)
                 goto usage;
@@ -1009,6 +1115,8 @@ usage:
             do_nothing = 1;
         } else if (!strcasecmp(argv[c], "--nohook") || !strcasecmp(argv[c], "-W")) {
             hook_enabled = 0;
+        } else if (!strcasecmp(argv[c], "--assume_moved_vm") || !strcasecmp(argv[c], "--assume_copied_vm")) {
+            // do nothing, handled in Qt only.
         } else if (!strcasecmp(argv[c], "--clear") || !strcasecmp(argv[c], "-X")) {
             if ((c + 1) == argc)
                 goto usage;
@@ -1049,6 +1157,30 @@ usage:
 
             /* .. and then exit. */
             return 0;
+        } else if (!strcasecmp(argv[c], "--window_x")) {
+            if ((c + 1) == argc)
+                goto usage;
+
+            win_rem_set_x = 1;
+            window_x_1 = strtoull(&(argv[++c][0]), NULL, 10);
+        } else if (!strcasecmp(argv[c], "--window_y")) {
+            if ((c + 1) == argc)
+                goto usage;
+
+            win_rem_set_y = 1;
+            window_y_1 = strtoull(&(argv[++c][0]), NULL, 10);
+        } else if (!strcasecmp(argv[c], "--window_w")) {
+            if ((c + 1) == argc)
+                goto usage;
+
+            win_rem_set_w = 1;
+            window_w_1 = strtoull(&(argv[++c][0]), NULL, 10);
+        } else if (!strcasecmp(argv[c], "--window_h")) {
+            if ((c + 1) == argc)
+                goto usage;
+
+            win_rem_set_h = 1;
+            window_h_1 = strtoull(&(argv[++c][0]), NULL, 10);
 #ifdef USE_INSTRUMENT
         } else if (!strcasecmp(argv[c], "--instrument") || !strcasecmp(argv[c], "-J")) {
             if ((c + 1) == argc)
@@ -1421,6 +1553,16 @@ usage:
                 fn[i] = NULL;
             }
         }
+
+        if (win_rem_set_x || win_rem_set_y || win_rem_set_w || win_rem_set_h) {
+            int old_window_remember = window_remember;
+            window_remember = 1;
+            vid_resize = (win_rem_set_w || win_rem_set_h);
+            window_x = win_rem_set_x ? window_x_1 : (old_window_remember ? window_x : 0);
+            window_y = win_rem_set_y ? window_y_1 : (old_window_remember ? window_y : 0);
+            window_w = win_rem_set_w ? window_w_1 : (old_window_remember ? window_w : 640);
+            window_h = win_rem_set_h ? window_h_1 : (old_window_remember ? window_h : 480);
+        }
     }
 
     /* Load the desired language */
@@ -1562,6 +1704,13 @@ pc_init_modules(void)
     atfullspeed = 0;
 
     random_init();
+#ifdef USE_AUTOMATION
+    if (automation_seed_set)
+        random_seed(automation_seed);
+#endif
+
+    /* How REP string runs are done on this host: its one CPUID check. */
+    rep_host_detect();
 
     mem_init();
 
@@ -1611,6 +1760,8 @@ pc_init_modules(void)
         do_nothing = 0;
         exit(-1);
     }
+
+    automation_init();
 
     return 1;
 }
@@ -1883,6 +2034,12 @@ pc_reset_hard_init(void)
     /* Reset any ISA RTC cards. */
     isartc_reset();
 
+    /* An ISA expansion chassis, if there is one. */
+    isa_expansion_reset();
+
+    /* Add the game port card, if one is chosen. */
+    gameport_card_reset();
+
     /* Initialize the Voodoo cards here inorder to minimize
        the chances of the SCSI controller ending up on the bridge. */
     video_voodoo_init();
@@ -1893,8 +2050,10 @@ pc_reset_hard_init(void)
 #endif
 
     /* installs first game port if no device provides one, must be late */
-    if (joystick_type[0])
-        gameport_update_joystick_type(0);
+    for (uint8_t gp = 0; gp < GAMEPORT_MAX; gp++) {
+        if (joystick_type[gp])
+            gameport_update_joystick_type(gp);
+    }
 
     ui_sb_update_panes();
 
@@ -2029,6 +2188,7 @@ pc_close(UNUSED(thread_t *ptr))
 
     gdbstub_close();
 
+    automation_close();
 }
 
 #ifdef __APPLE__
@@ -2074,7 +2234,9 @@ pc_run(void)
 #ifdef USE_GDBSTUB /* avoid a KBC FIFO overflow when CPU emulation is stalled */
     }
 #endif
-    joystick_process(0); // Gameport 0
+    /* Each game port's joystick */
+    for (uint8_t gp = 0; gp < GAMEPORT_MAX; gp++)
+        joystick_process(gp);
     endblit();
 
     /* Done with this frame, update statistics. */

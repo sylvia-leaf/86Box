@@ -73,7 +73,8 @@ enum {
     HDD_BUS_IDE      =  7,
     HDD_BUS_ATAPI    =  8,
     HDD_BUS_SCSI     =  9,
-    HDD_BUS_USB      = 10
+    HDD_BUS_USB      = 10,
+    HDD_BUS_DISCONNECTED = 255 /* Kept in the configuration, attached to nothing. */
 };
 #endif
 
@@ -153,6 +154,7 @@ typedef struct hard_disk_t {
     };
 
     uint8_t            bus_type;
+    uint8_t            disconnected_bus; /* The interface it keeps while disconnected. */
     uint8_t            bus_mode;     /* Bit 0 = PIO suported;
                                         Bit 1 = DMA supportd. */
     uint8_t            wp;           /* Disk has been mounted

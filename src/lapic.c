@@ -6,785 +6,1548 @@
  *
  *          This file is part of the 86Box distribution.
  *
- *          Local APIC emulation.
- *
- *
- *
- * Authors: Cacodemon345
- *
- *          Copyright 2023 Cacodemon345.
+ *          Copyright 2026 skiretic.
  */
 #include <stdint.h>
 #include <stdlib.h>
-#include <stdatomic.h>
-#include <stdio.h>
-#include <stdbool.h>
+#include <string.h>
 
-#include <86box/86box.h>
-#include "cpu/cpu.h"
-#include <86box/timer.h>
 #include <86box/device.h>
+#include <86box/chipset.h>
 #include <86box/mem.h>
 
-#include <86box/apic.h>
-#include <86box/pic.h> /*ExtINT*/
+#include "cpu.h"
+#include "lapic.h"
+#include "lapic_internal.h"
 
-/* Needed to set the default Local APIC base. */
-#include "cpu/cpu.h"
-#include "cpu/x86seg.h"
+struct local_apic_attachment_t {
+    local_apic_attachment_type_t type;
+    void                         *owner;
+    local_apic_t                 *apic;
+};
 
-#define INITIAL_LAPIC_ADDRESS 0xFEE00000
+typedef struct local_apic_state_save_adapter_t {
+    struct ioapic_state_t *state;
+} local_apic_state_save_adapter_t;
 
-extern double cpuclock;
+typedef struct local_apic_state_load_adapter_t {
+    const struct ioapic_state_t *state;
+    uint8_t                     count;
+    lapic_reset_id_source_t     id_source;
+    void                       *id_priv;
+} local_apic_state_load_adapter_t;
 
-lapic_t* current_lapic;
+/*
+ * CPU-side LAPIC hooks identify a slot by index, not by local_apic_t.  Keep
+ * the currently installed LAPIC device here so those hooks can update the
+ * right MMIO mirror without exposing lapic_device_t outside this module.
+ */
+static lapic_device_t *lapic_active_device;
+static lapic_index_source_t lapic_index_source;
+static lapic_ap_startup_handler_t lapic_ap_startup_handler;
 
-static uint32_t
-lapic_version(void)
+static void                 lapic_device_init(lapic_device_t *dev, void *owner);
+void                        lapic_device_set_count(lapic_device_t *dev, uint8_t count);
+static uint8_t              lapic_device_count(const lapic_device_t *dev);
+void                        lapic_device_set_count_config(lapic_device_t *dev,
+                                                          uint8_t count);
+static uint8_t              lapic_device_count_config(const lapic_device_t *dev);
+static void                 lapic_device_ensure_count_config_min(lapic_device_t *dev,
+                                                                 uint8_t count);
+static void                 lapic_device_reset(lapic_device_t *dev, uint8_t count,
+                                               lapic_reset_id_source_t id_source,
+                                               void *id_priv);
+static void                 lapic_device_set_active(lapic_device_t *dev);
+static void                 lapic_device_clear_active(lapic_device_t *dev);
+static lapic_state_t       *lapic_device_at(lapic_device_t *dev, uint8_t index);
+static const lapic_state_t *lapic_device_at_const(const lapic_device_t *dev,
+                                                  uint8_t index);
+static uint8_t              lapic_device_current_index(lapic_device_t *dev);
+lapic_state_t              *lapic_device_current(lapic_device_t *dev);
+static const lapic_state_t *lapic_device_current_const(const lapic_device_t *dev);
+static uint8_t              lapic_device_current_id(const lapic_device_t *dev);
+static int                  lapic_device_current_base_enabled(const lapic_device_t *dev);
+static int                  lapic_device_current_software_enabled(const lapic_device_t *dev);
+static int                  lapic_device_current_interrupt_pending(const lapic_device_t *dev);
+static int                  lapic_device_current_lint0_extint_enabled(
+                                                    const lapic_device_t *dev);
+static int                  lapic_device_current_lint_deliver(lapic_device_t *dev,
+                                                             uint32_t lint_reg);
+static int                  lapic_device_current_lvt_source_deliver(
+                                                    lapic_device_t *dev,
+                                                    uint32_t lvt_reg);
+static int                  lapic_device_current_promote_irr(lapic_device_t *dev);
+static int                  lapic_device_current_consume_extint(lapic_device_t *dev,
+                                                               uint8_t *pin);
+lapic_state_t              *lapic_device_bsp(lapic_device_t *dev);
+static const lapic_state_t *lapic_device_bsp_const(const lapic_device_t *dev);
+static int                  lapic_device_bsp_id(const lapic_device_t *dev, uint8_t *id);
+static int                  lapic_device_id_at(const lapic_device_t *dev, uint8_t index,
+                                               uint8_t *id);
+static void                 lapic_device_add_timer_hosts(lapic_device_t *dev);
+static void                 lapic_device_stop_timers(lapic_device_t *dev);
+static void                 lapic_device_disable_mappings(lapic_device_t *dev);
+static void                 lapic_device_add_mmio_mapping(lapic_device_t *dev);
+static void                 lapic_device_update_mapping(lapic_device_t *dev);
+static void                 lapic_device_set_log_handler(lapic_device_t *dev,
+                                                         lapic_log_handler_t log);
+static void                 lapic_device_set_icr_write_handler(
+                                                    lapic_device_t *dev,
+                                                    lapic_mmio_icr_write_handler_t icr_write);
+static void                 lapic_device_set_external_ioapic(
+                                                    lapic_device_t *dev,
+                                                    void *external_ioapic,
+                                                    lapic_external_eoi_handler_t external_eoi);
+void                        lapic_device_reset_slot(lapic_device_t *dev, uint8_t index,
+                                                   uint8_t id);
+static int                  lapic_device_select_targets(lapic_device_t *dev, uint8_t dest,
+                                                        int logical,
+                                                        int physical_broadcast,
+                                                        lapic_target_info_t *targets);
+static int                  lapic_device_select_interruptible_targets(
+                                                    lapic_device_t *dev, uint8_t dest,
+                                                    int logical, int physical_broadcast,
+                                                    int route_parked,
+                                                    lapic_target_info_t *targets);
+static void                 lapic_device_icr_write(lapic_device_t *dev, uint32_t val,
+                                                   int route_parked,
+                                                   lapic_icr_startup_handler_t startup_handler,
+                                                   void *startup_priv);
+void                         lapic_mmio_device_init(lapic_mmio_device_t *dev, void *owner);
+void                         lapic_mmio_device_set_lapics(lapic_mmio_device_t *dev,
+                                                          lapic_state_t *lapics);
+void                         lapic_mmio_device_set_active_count(lapic_mmio_device_t *dev,
+                                                                uint8_t active_count);
+void                         lapic_mmio_device_set_current_index_source(
+                                                    lapic_mmio_device_t *dev,
+                                                    lapic_current_index_source_t source,
+                                                    void *priv);
+void                         lapic_mmio_device_set_external_ioapic(
+                                                    lapic_mmio_device_t *dev,
+                                                    void *external_ioapic,
+                                                    lapic_external_eoi_handler_t external_eoi);
+void                         lapic_mmio_device_set_log_handler(lapic_mmio_device_t *dev,
+                                                               lapic_log_handler_t log);
+void                         lapic_mmio_device_set_icr_write_handler(
+                                                    lapic_mmio_device_t *dev,
+                                                    lapic_mmio_icr_write_handler_t icr_write);
+static void                  lapic_reset_regs(lapic_state_t *lapic);
+lapic_state_t               *lapic_at(lapic_state_t *lapics, uint8_t count,
+                                       uint8_t index);
+const lapic_state_t         *lapic_at_const(const lapic_state_t *lapics,
+                                            uint8_t count, uint8_t index);
+uint8_t                      lapic_current_index(lapic_state_t *lapics, uint8_t count,
+                                                 lapic_current_index_source_t source,
+                                                 void *priv);
+lapic_state_t               *lapic_current(lapic_state_t *lapics, uint8_t count,
+                                           lapic_current_index_source_t source,
+                                           void *priv);
+const lapic_state_t         *lapic_current_const(const lapic_state_t *lapics,
+                                                 uint8_t count,
+                                                 lapic_current_index_source_t source,
+                                                 void *priv);
+lapic_state_t               *lapic_bsp(lapic_state_t *lapics, uint8_t count);
+const lapic_state_t         *lapic_bsp_const(const lapic_state_t *lapics,
+                                             uint8_t count);
+uint8_t                      lapic_current_id(const lapic_state_t *lapic);
+int                          lapic_base_enabled(const lapic_state_t *lapic);
+int                          lapic_software_enabled(const lapic_state_t *lapic);
+int                          lapic_interrupt_pending(const lapic_state_t *lapic);
+int                          lapic_highest_deliverable_irr(const lapic_state_t *lapic);
+int                          lapic_extint_deliverable(const lapic_state_t *lapic);
+int                          lapic_lint0_extint_enabled(const lapic_state_t *lapic);
+int                          lapic_lint_deliver(lapic_state_t *lapic, uint32_t lint_reg);
+int                          lapic_promote_irr(lapic_state_t *lapic);
+int                          lapic_consume_extint(lapic_state_t *lapic, uint8_t *pin);
+void                         lapic_timer_host_stop(lapic_state_t *lapic);
+void                         lapic_timer_stop(lapic_state_t *lapic);
+void                         lapic_timer_restore_target(lapic_state_t *lapic,
+                                                        uint32_t initial,
+                                                        uint32_t current, int enabled);
+void                         lapic_timer_callback(void *priv);
+uint32_t                     lapic_mmio_base(const lapic_state_t *lapic);
+void                         lapic_update_mapping(lapic_mmio_device_t *dev);
+uint32_t                     lapic_readl(uint32_t addr, void *priv);
+uint16_t                     lapic_readw(uint32_t addr, void *priv);
+uint8_t                      lapic_readb(uint32_t addr, void *priv);
+void                         lapic_writel(uint32_t addr, uint32_t val, void *priv);
+void                         lapic_writew(uint32_t addr, uint16_t val, void *priv);
+void                         lapic_writeb(uint32_t addr, uint8_t val, void *priv);
+void                         lapic_reset_slot(lapic_state_t *lapic,
+                                              lapic_mmio_device_t *mmio,
+                                              uint8_t index, uint8_t id);
+void                         lapic_icr_write(lapic_state_t *lapic,
+                                             lapic_state_t *lapics, uint8_t count,
+                                             uint8_t current_index, uint32_t val,
+                                             int route_parked,
+                                             lapic_icr_startup_handler_t startup_handler,
+                                             void *startup_priv);
+
+static void
+lapic_device_init(lapic_device_t *dev, void *owner)
 {
-    if (cpu_s && (cpu_s->cpu_type >= CPU_PENTIUM4W))
-        return 0x00050014;
-
-    return 0x00040012;
-}
-
-static __inline uint8_t
-lapic_get_bit_irr(lapic_t *lapic, uint8_t bit)
-{
-    return lapic->irr_ll[bit / 64] & (1ull << (uint64_t)(bit & 63ull));
-}
-
-static __inline void
-lapic_set_bit_irr(lapic_t *lapic, uint8_t bit, uint8_t val)
-{
-    lapic->irr_ll[bit / 64] &= ~(1ull << (bit & 63ull));
-    lapic->irr_ll[bit / 64] |= (((uint64_t)!!val) << (uint64_t)(bit & 63ull));
-}
-
-static __inline uint8_t
-lapic_get_bit_isr(lapic_t *lapic, uint8_t bit)
-{
-    return lapic->isr_ll[bit / 64] & (1ull << (uint64_t)(bit & 63ull));
-}
-
-static __inline void
-lapic_set_bit_isr(lapic_t *lapic, uint8_t bit, uint8_t val)
-{
-    lapic->isr_ll[bit / 64] &= ~(1ull << (bit & 63));
-    lapic->isr_ll[bit / 64] |= (((uint64_t)!!val) << (uint64_t)(bit & 63ull));
-}
-
-static __inline uint8_t
-lapic_get_bit_tmr(lapic_t *lapic, uint8_t bit)
-{
-    return lapic->tmr_ll[bit / 64] & (1ull << (uint64_t)(bit & 63ull));
-}
-
-static __inline void
-lapic_set_bit_tmr(lapic_t *lapic, uint8_t bit, uint8_t val)
-{
-    lapic->tmr_ll[bit / 64] &= ~(1ull << (uint64_t)(bit & 63ull));
-    lapic->tmr_ll[bit / 64] |= (((uint64_t)!!val) << (uint64_t)(bit & 63ull));
-}
-
-static __inline int
-lapic_is_sw_enabled(const lapic_t *lapic)
-{
-    return lapic && (lapic->lapic_spurious_interrupt & 0x100);
-}
-
-static int
-ioapic_has_unmasked_route(const ioapic_t *ioapic)
-{
-    for (uint8_t i = 0; i < IOAPIC_RED_TABL_SIZE; i++) {
-        if (!ioapic->ioredtabl_s[i].intr_mask)
-            return 1;
-    }
-
-    return 0;
-}
-
-int lapic_is_pic_enabled(void)
-{
-    if (!apic_ioapic_is_enabled(current_ioapic) || !current_lapic ||
-        !lapic_is_sw_enabled(current_lapic))
-        return true;
-
-    if (current_ioapic->extended && !(current_ioapic->bootcfg & 1))
-        return true;
-
-    if (!ioapic_has_unmasked_route(current_ioapic))
-        return true;
-
-    return (current_lapic->lapic_mem_window.enable == 0 || current_lapic->lapic_lvt_lvt0.intr_mask == 0 || (current_ioapic->ioredtabl_s[0].delmod == 7 && current_ioapic->ioredtabl_s[0].intr_mask == 0));
-}
-
-/* Find first bit starting from msb */
-static int apic_fls_bit(uint32_t value)
-{
-    return 31 - __builtin_clz(value);
-}
-
-/* return -1 if no bit is set */
-static int get_highest_priority_int(uint32_t *tab)
-{
-    int i;
-    for (i = 7; i >= 0; i--) {
-        if (tab[i] != 0) {
-            return i * 32 + apic_fls_bit(tab[i]);
-        }
-    }
-    return -1;
-}
-
-static int lapic_get_ppr(lapic_t *lapic)
-{
-    int tpr, isrv, ppr;
-
-    tpr = (lapic->lapic_tpr >> 4);
-    isrv = get_highest_priority_int(lapic->isr_l);
-    isrv >>= 4;
-    if ((isrv < 0) || (tpr >= isrv))
-        ppr = lapic->lapic_tpr;
-    else
-        ppr = isrv << 4;
-    return ppr;
-}
-
-static int lapic_get_apr(lapic_t *lapic)
-{
-  uint32_t tpr  = (lapic->lapic_tpr >> 4) & 0xf;
-  int first_isr = get_highest_priority_int(lapic->isr_l);
-  if (first_isr < 0) first_isr = 0;
-  int first_irr = get_highest_priority_int(lapic->irr_l);
-  if (first_irr < 0) first_irr = 0;
-  uint32_t isrv = (first_isr >> 4) & 0xf;
-  uint32_t irrv = (first_irr >> 4) & 0xf;
-  uint8_t apr;
-
-  if((tpr >= irrv) && (tpr > isrv)) {
-    apr = lapic->lapic_tpr & 0xff;
-  }
-  else {
-    apr = ((tpr & isrv) > irrv) ?(tpr & isrv) : irrv;
-    apr <<= 4;
-  }
-
-  return (uint8_t)apr;
-}
-
-int lapic_irq_pending(lapic_t *lapic)
-{
-    int irrv, isrv, tpr;
-
-    if (!lapic_is_sw_enabled(lapic))
-        return -1;
-
-    irrv = get_highest_priority_int(lapic->irr_l);
-    isrv = get_highest_priority_int(lapic->isr_l);
-    if (irrv < 0) {
-        return -1;
-    }
-
-    if (isrv >= 0 && irrv <= isrv) {
-        return -1;
-    }
-
-    tpr = lapic->lapic_tpr & 0xf0;
-    if ((irrv & 0xf0) <= tpr) {
-        return -1;
-    }
-
-    return irrv;
-}
-
-void
-lapic_reset(lapic_t *lapic)
-{
-    /* Always set lapic_id and lapic_arb to 0, regardless of soft/hard resets. */
-    lapic->lapic_id = lapic->lapic_arb = 0;
-    lapic->tmr_ll[0] = lapic->tmr_ll[1] = lapic->tmr_ll[2] = lapic->tmr_ll[3] = 
-    lapic->irr_ll[0] = lapic->irr_ll[1] = lapic->irr_ll[2] = lapic->irr_ll[3] = 
-    lapic->isr_ll[0] = lapic->isr_ll[1] = lapic->isr_ll[2] = lapic->isr_ll[3] = 0;
-
-    lapic->lapic_timer_divider = lapic->lapic_timer_initial_count = lapic->lapic_timer_current_count = 0;
-    lapic->lapic_tpr           = 0;
-    lapic->icr                 = 0;
-    lapic->lapic_id            = 0;
-
-    lapic->lapic_lvt_timer_val   =
-    lapic->lapic_lvt_perf_val    =
-    lapic->lapic_lvt_lvt0_val    =
-    lapic->lapic_lvt_lvt1_val    =
-    lapic->lapic_lvt_thermal_val = 1 << 16;
-
-    lapic->lapic_lvt_error_val = 0;
-    lapic->lapic_lvt_read_error_val = 0;
-
-    lapic->lapic_spurious_interrupt = 0xFF;
-    lapic->lapic_dest_format        = -1;
-    lapic->lapic_local_dest         = 0;
-
-}
-
-void
-apic_lapic_writel(uint32_t addr, uint32_t val, void *priv)
-{
-    lapic_t *dev = (lapic_t *)priv;
-    int bit = 0;
-    uint32_t timer_current_count = dev->lapic_timer_current_count;
-    apic_ioredtable_t deliverstruct = { 0 };
-    uint8_t mode;
-
-    addr -= dev->lapic_mem_window.base;
-
-    //if (addr != 0x80 && addr != 0x300)
-      //  pclog("Local APIC: [W] %04X = %08X\n", addr, val);
-
-    if (addr < 0x400)  switch (addr & 0x3ff) {
-        case 0x020:
-            dev->lapic_id = val;
-            break;
-
-        case 0x080:
-            dev->lapic_tpr = val & 0xFF;
-            if (lapic_irq_pending(dev) > 0)
-                cpu_block_end = 1;
-            break;
-
-        case 0x0b0:
-            bit = get_highest_priority_int(dev->isr_l);
-            if (bit != -1) {
-                lapic_set_bit_isr(dev, bit, 0);
-                if (lapic_get_bit_tmr(dev, bit) && apic_ioapic_is_enabled(current_ioapic)) {
-                    lapic_set_bit_tmr(dev, bit, 0);
-                    apic_lapic_ioapic_remote_eoi(current_ioapic, bit);
-                    if (lapic_irq_pending(dev) > 0)
-                        cpu_block_end = 1;
-                }
-            }
-            break;
-
-        case 0x0d0:
-            dev->lapic_local_dest = val & 0xff000000;
-            break;
-
-        case 0x0e0:
-            dev->lapic_dest_format = val | 0xffffff;
-            break;
-        
-        case 0x0f0:
-            dev->lapic_spurious_interrupt = val;
-            if (!(val & 0x100)) {
-                dev->lapic_lvt_timer_val   =
-                dev->lapic_lvt_perf_val    =
-                dev->lapic_lvt_lvt0_val    =
-                dev->lapic_lvt_lvt1_val    =
-                dev->lapic_lvt_thermal_val = 1 << 16;
-            }
-            if (lapic_irq_pending(dev) > 0)
-                cpu_block_end = 1;
-            break;
-
-        case 0x280:
-            dev->lapic_lvt_read_error_val = dev->lapic_lvt_error_val;
-            dev->lapic_lvt_error_val = 0;
-            break;
-
-        case 0x300:
-            dev->icr0 = val;
-
-            deliverstruct.intvec = dev->icr & 0xFF;
-            deliverstruct.delmod = (dev->icr & 0x700) >> 8;
-            deliverstruct.trigmode = 0;
-
-            switch (deliverstruct.delmod) {
-                case 5:
-                    return; /* INIT Level Deassert not needed to be implemented. */
-                case 6:
-                    break;
-            }
-
-            switch ((dev->icr0 >> 18) & 3) {
-                case 0:
-                    mode = (dev->icr >> 11) & 1;
-                    if (mode == 0 && ((dev->icr >> 56) & 0xf) != ((dev->lapic_id >> 24) & 0xf))
-                        break;
-                    if (mode == 1 && !(((uint8_t)(dev->icr >> 56)) & (1 << ((dev->lapic_id >> 24) & 0xff))))
-                        break;
-                case 1:
-                case 2:
-                    if (deliverstruct.delmod == 6) {
-                        loadcs((deliverstruct.intvec & 0xff) << 8);
-                        cpu_state.oldpc = cpu_state.pc;
-                        cpu_state.pc = 0;
-                        cpu_block_end = 1;
-                    } else
-                        lapic_service_interrupt(dev, deliverstruct);
-                    break;
-            }
-
-            dev->icr0 &= ~(1 << 12);
-            break;
-
-        case 0x310:
-            dev->icr1 = val;
-            break;
-
-        case 0x320:
-            dev->lapic_lvt_timer_val = val;
-            break;
-
-        case 0x330:
-            dev->lapic_lvt_thermal_val = val;
-            break;
-
-        case 0x340:
-            dev->lapic_lvt_perf_val = val;
-            break;
-
-        case 0x350:
-            dev->lapic_lvt_lvt0_val = val;
-            break;
-
-        case 0x360:
-            dev->lapic_lvt_lvt1_val = val;
-            break;
-
-        case 0x370:
-            dev->lapic_lvt_error_val = val;
-            break;
-
-        case 0x380:
-#ifdef USE_DYNAREC
-            if (cpu_use_dynarec)
-                update_tsc();
-#endif
-            dev->lapic_timer_initial_count = dev->lapic_timer_current_count = val;
-            dev->lapic_timer_remainder = 0;
-            cpu_block_end = 1;
-            break;
-
-        case 0x3e0:
-#ifdef USE_DYNAREC
-            if (cpu_use_dynarec)
-                update_tsc();
-#endif
-            dev->lapic_timer_divider = val & 0xb;
-            break;
-    }
-}
-
-uint32_t
-apic_lapic_readl(uint32_t addr, void *priv)
-{
-    lapic_t *dev = (lapic_t *)priv;
-    uint32_t ret = 0x0;
-
-    addr -= dev->lapic_mem_window.base;
-    addr &= ~3;
-
-    if ((addr < 0x400)) {
-        if (addr >= 0x100 && addr <= 0x170)
-            ret = dev->isr_l[(addr - 0x100) >> 4];
-        else if (addr >= 0x180 && addr <= 0x1f0)
-            ret = dev->tmr_l[(addr - 0x180) >> 4];
-        else if (addr >= 0x200 && addr <= 0x270)
-            ret = dev->irr_l[(addr - 0x200) >> 4];
-        else switch (addr & 0x3ff) {
-        case 0x020:
-            ret = dev->lapic_id;
-            break;
-
-        case 0x030:
-            ret = lapic_version();
-            break;
-
-        case 0x080:
-            ret = dev->lapic_tpr;
-            break;
-
-        case 0x090:
-            ret = lapic_get_apr(dev);
-            break;
-
-        case 0x0a0:
-            ret = lapic_get_ppr(dev);
-            break;
-
-        case 0x0d0:
-            ret = dev->lapic_local_dest;
-            break;
-
-        case 0x0e0:
-            ret = dev->lapic_dest_format;
-            break;
-
-        case 0x0f0:
-            ret = dev->lapic_spurious_interrupt;
-            break;
-
-        case 0x280:
-            ret = dev->lapic_lvt_read_error_val;
-            break;
-
-        case 0x300:
-            ret = dev->icr0;
-            break;
-
-        case 0x310:
-            ret = dev->icr1;
-            break;
-
-        case 0x320:
-            ret = dev->lapic_lvt_timer_val;
-            break;
-
-        case 0x330:
-            ret = dev->lapic_lvt_thermal_val;
-            break;
-
-        case 0x340:
-            ret = dev->lapic_lvt_perf_val;
-            break;
-
-        case 0x350:
-            ret = dev->lapic_lvt_lvt0_val;
-            break;
-
-        case 0x360:
-            ret = dev->lapic_lvt_lvt1_val;
-            break;
-
-        case 0x370:
-            ret = dev->lapic_lvt_error_val;
-            break;
-
-        case 0x380:
-            ret = dev->lapic_timer_initial_count;
-            break;
-
-        case 0x390:
-#ifdef USE_DYNAREC
-            if (cpu_use_dynarec)
-                update_tsc();
-#endif
-            ret = dev->lapic_timer_current_count;
-            break;
-
-        case 0x3e0:
-            ret = dev->lapic_timer_divider;
-            break;
-    }
-    }
-    return ret;
-}
-
-void
-apic_lapic_write(uint32_t addr, uint8_t val, void *priv)
-{
-    uint32_t mask = 0xFFFFFFFF & ~(0xFF << (8 * (addr & 3)));
-
-    return apic_lapic_writel(addr, (apic_lapic_readl(addr, priv) & mask) | ((val << (8 * (addr & 3)))), priv);
-}
-
-uint8_t
-apic_lapic_read(uint32_t addr, void *priv)
-{
-    return (apic_lapic_readl(addr, priv) >> (8 * (addr & 3))) & 0xFF;
-}
-
-void apic_lapic_writew(uint32_t addr, uint16_t val, void *priv)
-{
-    apic_lapic_write(addr, val & 0xFF, priv);
-    apic_lapic_write(addr + 1, (val >> 8) & 0xFF, priv);
-}
-
-uint16_t
-apic_lapic_readw(uint32_t addr, void *priv)
-{
-    return apic_lapic_read(addr, priv) | (apic_lapic_read(addr + 1, priv) << 8);
-}
-
-void
-apic_lapic_set_base(uint32_t base)
-{
-    if (!current_lapic)
+    if (dev == NULL)
         return;
 
-    mem_mapping_set_addr(&current_lapic->lapic_mem_window, base & 0xFFFFF000, 0x100000);
-    if (!(base & (1 << 11))) {
-        mem_mapping_disable(&current_lapic->lapic_mem_window);
-        current_lapic->lapic_spurious_interrupt &= ~0x100;
-    }
+    lapic_mmio_device_init(&dev->mmio, owner);
+    lapic_mmio_device_set_lapics(&dev->mmio, dev->lapics);
+    lapic_mmio_device_set_current_index_source(&dev->mmio,
+                                               lapic_index_source_read, NULL);
+    /* Timer and CPU mirror callbacks depend on the active-device bridge. */
+    lapic_device_set_active(dev);
+    lapic_device_add_timer_hosts(dev);
 }
 
 void
-apic_lapic_readd_mapping(void)
+lapic_device_set_count(lapic_device_t *dev, uint8_t count)
 {
-    if (!current_lapic)
+    if (dev == NULL)
         return;
 
-    mem_mapping_add(&current_lapic->lapic_mem_window,
-                    current_lapic->lapic_mem_window.base,
-                    current_lapic->lapic_mem_window.size,
-                    apic_lapic_read,
-                    apic_lapic_readw,
-                    apic_lapic_readl,
-                    NULL,
-                    NULL,
-                    apic_lapic_writel,
-                    NULL,
-                    MEM_MAPPING_EXTERNAL,
-                    current_lapic);
+    dev->count = count;
+    lapic_mmio_device_set_active_count(&dev->mmio, count);
+}
+
+static uint8_t
+lapic_device_count(const lapic_device_t *dev)
+{
+    return (dev != NULL) ? dev->count : 0;
+}
+
+void
+lapic_device_set_count_config(lapic_device_t *dev, uint8_t count)
+{
+    if (dev == NULL)
+        return;
+
+    dev->count_config = count;
+}
+
+static uint8_t
+lapic_device_count_config(const lapic_device_t *dev)
+{
+    return (dev != NULL) ? dev->count_config : 0;
 }
 
 static void
-lapic_service_local_interrupt(lapic_t *lapic, apic_ioredtable_t interrupt, bool lvt01)
+lapic_device_ensure_count_config_min(lapic_device_t *dev, uint8_t count)
 {
-    if (interrupt.intr_mask) {
+    if (dev == NULL)
         return;
-    }
 
-    switch (interrupt.delmod) {
-        case 0:
-        case 1:
-            lapic_set_bit_irr(lapic, interrupt.intvec, 1);
-            lapic_set_bit_tmr(lapic, interrupt.intvec, !lvt01 ? 0 : !!interrupt.trigmode);
-            if (lapic_irq_pending(lapic) > 0)
-                cpu_block_end = 1;
-            break;
-        case 7:
-            if (lvt01)
-                apic_lapic_service_extint();
-            break;
-        case 2:
-            smi_raise();
-            return;
-        case 4:
-            nmi_raise_cpu();
-            return;
-        case 5: /*INIT*/
-            {
-                softresetx86();
-                cpu_set_edx();
-                flushmmucache();
-                lapic_reset(lapic);
-                return;
-            }
-    }
+    if (dev->count_config < count)
+        dev->count_config = count;
 }
 
-#if 0
-void apic_deliver_pic_intr(lapic_t *dev, int level)
+static void
+lapic_device_reset(lapic_device_t *dev, uint8_t count,
+                   lapic_reset_id_source_t id_source, void *id_priv)
 {
-    if (level) {
-        lapic_service_local_interrupt(dev, dev->lapic_lvt_lvt0, true);
-    } else {
-        switch ((dev->lapic_lvt_lvt0_val >> 8) & 7) {
-        case 0:
-            if (!(dev->lapic_lvt_lvt0.trigmode))
-                break;
-            lapic_set_bit_irr(dev, dev->lapic_lvt_lvt0.intvec, 0);
-            break;
-        }
+    if (dev == NULL)
+        return;
+
+    lapic_device_set_count(dev, count);
+    /* Reset dormant slots too; count can grow later through config/load paths. */
+    for (uint8_t i = 0; i < APIC_MAX_LAPICS; i++) {
+        uint8_t id = (id_source != NULL) ? id_source(id_priv, i) : i;
+        lapic_device_reset_slot(dev, i, id);
     }
 }
 
-static bool lapic_check_pic(lapic_t *dev)
+static void
+lapic_device_set_active(lapic_device_t *dev)
 {
-    if (!lapic_is_pic_enabled() || !pic.int_pending) {
-        if (lapic_is_pic_enabled())
-            apic_deliver_pic_intr(dev, 0);
-        return false;
-    }
-    apic_deliver_pic_intr(dev, 1);
-    return true;
+    lapic_active_device = dev;
 }
-#endif
+
+static void
+lapic_device_clear_active(lapic_device_t *dev)
+{
+    if (lapic_active_device == dev)
+        lapic_active_device = NULL;
+}
 
 void
-lapic_timer_advance_ticks(uint32_t ticks)
+lapic_set_index_source(lapic_index_source_t source)
 {
-    lapic_t *dev = (lapic_t *)current_lapic;
-    uint32_t timer_divider_value = 1 << (1 + (dev->lapic_timer_divider & 3) + ((dev->lapic_timer_divider & 0x8) >> 1));
-
-    if (dev->lapic_timer_divider == 0xB) {
-        timer_divider_value = 1;
-    }
-
-    if (ticks == 0)
-        return;
-
-count:
-    if (dev->lapic_timer_current_count) {
-        dev->lapic_timer_remainder += ticks;
-        if (dev->lapic_timer_remainder >= timer_divider_value) {
-            ticks = dev->lapic_timer_remainder / timer_divider_value;
-            dev->lapic_timer_remainder %= timer_divider_value;
-            if (ticks >= dev->lapic_timer_current_count) {
-                ticks -= dev->lapic_timer_current_count;
-                dev->lapic_timer_current_count = 0;
-                dev->lapic_timer_remainder = 0;
-                lapic_service_local_interrupt(dev, dev->lapic_lvt_timer, false);
-                if (dev->lapic_lvt_timer.timer_mode == 1) {
-                    dev->lapic_timer_current_count = (dev->lapic_timer_initial_count);
-                    if (ticks)
-                        goto count;
-                }
-            } else {
-                dev->lapic_timer_current_count -= ticks;
-            }
-        }
-    }
-}
-
-void*
-lapic_init(const device_t* info)
-{
-    lapic_t *dev = NULL;
-    
-    dev = (lapic_t *) calloc(sizeof(lapic_t), 1);
-    current_lapic = dev;
-
-    msr.apic_base = INITIAL_LAPIC_ADDRESS | (1 << 11) | (1 << 8);
-    mem_mapping_add(&dev->lapic_mem_window, INITIAL_LAPIC_ADDRESS, 0x100000, apic_lapic_read, apic_lapic_readw, apic_lapic_readl, NULL, NULL, apic_lapic_writel, NULL, MEM_MAPPING_EXTERNAL, dev);
-    lapic_reset(dev);
-    return dev;
+    lapic_index_source = source;
 }
 
 uint8_t
-apic_lapic_picinterrupt(void)
+lapic_index_source_read(void *priv)
 {
-    lapic_t *lapic = current_lapic;
-    int intno = lapic_irq_pending(lapic);
+    (void) priv;
 
-    if (intno < 0)
-        return lapic->lapic_spurious_interrupt & 0xFF;
-
-    lapic_set_bit_irr(lapic, intno, 0);
-    lapic_set_bit_isr(lapic, intno, 1);
-
-    if (lapic_irq_pending(lapic) > 0)
-        cpu_block_end = 1;
-    return intno;
+    return (lapic_index_source != NULL) ? lapic_index_source() : 0;
 }
 
 void
-apic_lapic_service_extint(void)
+lapic_set_ap_startup_handler(lapic_ap_startup_handler_t handler)
 {
-    apic_ioredtable_t interrupt = { 0 };
-    int intno;
-
-    if (!current_lapic || !pic.int_pending)
-        return;
-
-    intno = picinterrupt_common();
-    if (intno < 0)
-        return;
-
-    interrupt.intvec = intno;
-    lapic_service_interrupt(current_lapic, interrupt);
-}
-
-void
-apic_lapic_service_nmi(void)
-{
-    lapic_service_local_interrupt(current_lapic, current_lapic->lapic_lvt_lvt1, true);
-}
-
-void
-lapic_service_interrupt(lapic_t *lapic, apic_ioredtable_t interrupt)
-{
-    switch (interrupt.delmod) {
-        case 2:
-            smi_raise();
-            return;
-        case 4:
-            nmi_raise_cpu();
-            return;
-        case 5: /*INIT*/
-            {
-                softresetx86();
-                cpu_set_edx();
-                flushmmucache();
-                lapic_reset(lapic);
-                return;
-            }
-    }
-    
-    if (interrupt.delmod == 0 && lapic_get_bit_irr(lapic, interrupt.intvec))
-        return;
-
-    lapic_set_bit_irr(lapic, interrupt.intvec, 1);
-    lapic_set_bit_tmr(lapic, interrupt.intvec, !!interrupt.trigmode);
-    if (lapic_irq_pending(lapic) > 0)
-        cpu_block_end = 1;
-}
-
-void
-lapic_close(void* priv)
-{
-    lapic_t *dev = (lapic_t *)priv;
-    if (dev != NULL) {
-        mem_mapping_disable(&dev->lapic_mem_window);
-        current_lapic = NULL;
-        free(priv);
-    }
-}
-
-void
-lapic_speed_changed(void* priv)
-{
-    #if 0
-    lapic_t* dev = (lapic_t*)priv;
-
-    if (!dev->lapic_timer_current_count)
-        return;
-
-    if ((dev->lapic_timer_divider & 0xF) == 0xB)
-        timer_on_auto(&dev->lapic_timer, (1000000. / cpuclock));
-    else
-        timer_on_auto(&dev->lapic_timer, (1000000. / cpuclock) * (1 << ((dev->lapic_timer_divider & 3) | ((dev->lapic_timer_divider & 0x8) >> 1)) + 1));
-        #endif
+    lapic_ap_startup_handler = handler;
 }
 
 int
-pic_pending_int(void)
+lapic_ap_startup_request(uint8_t lapic_index, uint8_t vector)
 {
-    if (!apic_ioapic_is_enabled(current_ioapic))
-        return pic.int_pending;
-
-    if (!current_lapic)
-        return pic.int_pending;
-
-    if (!lapic_is_pic_enabled()) {
-        goto apic_only; /* PIC interrupts are completely disabled. */
-    }
-
-    if (pic.int_pending)
-        return 1;
-
-apic_only:
-    if (!lapic_is_sw_enabled(current_lapic))
-        return 0;
-
-    if (current_ioapic->irr)
-        apic_ioapic_service_all(current_ioapic);
-
-    return lapic_irq_pending(current_lapic) > 0;
+    return (lapic_ap_startup_handler != NULL) ?
+           lapic_ap_startup_handler(lapic_index, vector) : 0;
 }
 
-const device_t lapic_device = {
-    .name          = "Local Advanced Programmable Interrupt Controller",
-    .internal_name = "lapic",
-    .flags         = DEVICE_ISA16,
-    .local         = 0,
-    .init          = lapic_init,
-    .close         = lapic_close,
-    .reset         = (void (*)(void*))lapic_reset,
-    .available     = NULL,
-    .speed_changed = lapic_speed_changed,
-    .force_redraw  = NULL,
-    .config        = NULL
-};
+static lapic_device_t *
+local_apic_device(local_apic_t *apic)
+{
+    return (apic != NULL) ? &apic->device : NULL;
+}
+
+static const lapic_device_t *
+local_apic_device_const(const local_apic_t *apic)
+{
+    return (apic != NULL) ? &apic->device : NULL;
+}
+
+local_apic_t *
+local_apic_create(void *owner)
+{
+    local_apic_t *apic = (local_apic_t *) calloc(1, sizeof(*apic));
+
+    if (apic != NULL)
+        local_apic_init(apic, owner);
+
+    return apic;
+}
+
+void
+local_apic_free(local_apic_t *apic)
+{
+    if (apic == NULL)
+        return;
+
+    local_apic_close(apic);
+    free(apic);
+}
+
+local_apic_attachment_t *
+local_apic_attachment_create_gated(local_apic_attachment_type_t type, void *owner,
+                                   int enabled)
+{
+    local_apic_attachment_t *attachment;
+
+    if (!enabled)
+        return NULL;
+
+    if ((type != LOCAL_APIC_ATTACHMENT_INTEGRATED_CPU) &&
+        (type != LOCAL_APIC_ATTACHMENT_82489DX))
+        return NULL;
+
+    /*
+     * Attachment owns the LAPIC allocation; owner remains caller-owned context
+     * passed back through MMIO/log callbacks.
+     */
+    attachment = (local_apic_attachment_t *) calloc(1, sizeof(*attachment));
+    if (attachment == NULL)
+        return NULL;
+
+    attachment->type = type;
+    attachment->owner = owner;
+    attachment->apic = local_apic_create(owner);
+    if (attachment->apic == NULL) {
+        free(attachment);
+        return NULL;
+    }
+
+    return attachment;
+}
+
+local_apic_attachment_t *
+local_apic_attachment_create(local_apic_attachment_type_t type, void *owner)
+{
+    return local_apic_attachment_create_gated(type, owner, 1);
+}
+
+void
+local_apic_attachment_free(local_apic_attachment_t *attachment)
+{
+    if (attachment == NULL)
+        return;
+
+    local_apic_free(attachment->apic);
+    free(attachment);
+}
+
+local_apic_t *
+local_apic_attachment_apic(local_apic_attachment_t *attachment)
+{
+    return (attachment != NULL) ? attachment->apic : NULL;
+}
+
+void
+local_apic_attachment_enable_mappings(local_apic_attachment_t *attachment)
+{
+    if (attachment == NULL)
+        return;
+
+    local_apic_enable_mappings(attachment->apic);
+}
+
+void
+local_apic_init(local_apic_t *apic, void *owner)
+{
+    lapic_device_init(local_apic_device(apic), owner);
+}
+
+void
+local_apic_set_count_config(local_apic_t *apic, uint8_t count)
+{
+    lapic_device_set_count_config(local_apic_device(apic), count);
+}
+
+uint8_t
+local_apic_count_config(const local_apic_t *apic)
+{
+    return lapic_device_count_config(local_apic_device_const(apic));
+}
+
+uint8_t
+local_apic_configured_count(const local_apic_t *apic, uint8_t limit)
+{
+    uint8_t count = local_apic_count_config(apic);
+
+    if (!limit)
+        limit = APIC_UP_LAPIC_COUNT;
+
+    /* Unconfigured count means "use the platform limit", with UP as fallback. */
+    if (!count || (count > limit))
+        return limit;
+
+    return count;
+}
+
+void
+local_apic_ensure_count_config_min(local_apic_t *apic, uint8_t count)
+{
+    lapic_device_ensure_count_config_min(local_apic_device(apic), count);
+}
+
+void
+local_apic_reset(local_apic_t *apic, uint8_t count,
+                 lapic_reset_id_source_t id_source, void *id_priv)
+{
+    lapic_device_reset(local_apic_device(apic), count, id_source, id_priv);
+}
+
+uint8_t
+local_apic_count(const local_apic_t *apic)
+{
+    return lapic_device_count(local_apic_device_const(apic));
+}
+
+uint8_t
+local_apic_current_id(const local_apic_t *apic)
+{
+    return lapic_device_current_id(local_apic_device_const(apic));
+}
+
+int
+local_apic_id_at(const local_apic_t *apic, uint8_t index, uint8_t *id)
+{
+    return lapic_device_id_at(local_apic_device_const(apic), index, id);
+}
+
+int
+local_apic_bsp_id(const local_apic_t *apic, uint8_t *id)
+{
+    return lapic_device_bsp_id(local_apic_device_const(apic), id);
+}
+
+int
+local_apic_current_base_enabled(const local_apic_t *apic)
+{
+    return lapic_device_current_base_enabled(local_apic_device_const(apic));
+}
+
+int
+local_apic_current_software_enabled(const local_apic_t *apic)
+{
+    return lapic_device_current_software_enabled(local_apic_device_const(apic));
+}
+
+int
+local_apic_current_external_pending(const local_apic_t *apic,
+                                    local_apic_pic_pending_handler_t pic_pending,
+                                    void *pic_priv)
+{
+    const lapic_device_t *dev = local_apic_device_const(apic);
+
+    if (lapic_device_current_interrupt_pending(dev))
+        return 1;
+
+    /* ExtINT through LINT0 is consulted only after LAPIC IRR. */
+    return lapic_device_current_lint0_extint_enabled(dev) &&
+           (pic_pending != NULL) && pic_pending(pic_priv);
+}
+
+int
+local_apic_current_external_vector(local_apic_t *apic,
+                                   local_apic_pic_pending_handler_t pic_pending,
+                                   local_apic_pic_interrupt_handler_t pic_interrupt,
+                                   void *pic_priv)
+{
+    lapic_device_t *dev = local_apic_device(apic);
+    lapic_state_t  *lapic;
+    uint8_t         pin;
+    int             vector;
+
+    vector = lapic_device_current_promote_irr(dev);
+    if (vector >= 0)
+        return vector;
+
+    /* PIC callbacks are the ownership boundary for ExtINT vector acquisition. */
+    if (pic_interrupt == NULL)
+        return -1;
+
+    if (lapic_device_current_consume_extint(dev, &pin)) {
+        lapic = lapic_device_current(dev);
+        vector = pic_interrupt(pic_priv);
+        lapic_log(lapic->mmio, "LAPIC: ExtINT pin=%u vector=%02x\n", pin, vector);
+        return vector;
+    }
+
+    lapic = lapic_device_current(dev);
+    if (lapic_lint0_extint_enabled(lapic) &&
+        (pic_pending != NULL) && pic_pending(pic_priv)) {
+        vector = pic_interrupt(pic_priv);
+        lapic_log(lapic->mmio, "LAPIC: LINT0 ExtINT vector=%02x\n", vector);
+        return vector;
+    }
+
+    return -1;
+}
+
+/* A board-wide line (the NMI pin) into the same LINT of every local
+   APIC. Claimed if any of them took it. */
+int
+local_apic_lint_deliver_all(local_apic_t *apic, uint32_t lint_reg)
+{
+    lapic_device_t *dev     = local_apic_device(apic);
+    int             claimed = 0;
+
+    if (dev == NULL)
+        return 0;
+
+    for (uint8_t i = 0; i < dev->count; i++)
+        claimed |= lapic_lint_deliver(lapic_at(dev->lapics, dev->count, i), lint_reg);
+
+    return claimed;
+}
+
+int
+local_apic_current_lint_deliver(local_apic_t *apic, uint32_t lint_reg)
+{
+    return lapic_device_current_lint_deliver(local_apic_device(apic), lint_reg);
+}
+
+int
+local_apic_current_thermal_deliver(local_apic_t *apic)
+{
+    return lapic_device_current_lvt_source_deliver(local_apic_device(apic),
+                                                   LAPIC_REG_LVT_THERMAL);
+}
+
+int
+local_apic_current_perf_deliver(local_apic_t *apic)
+{
+    return lapic_device_current_lvt_source_deliver(local_apic_device(apic),
+                                                   LAPIC_REG_LVT_PERF);
+}
+
+int
+local_apic_select_interruptible_targets(local_apic_t *apic, uint8_t dest,
+                                        int logical, int physical_broadcast,
+                                        int route_parked,
+                                        lapic_target_info_t *targets)
+{
+    return lapic_device_select_interruptible_targets(local_apic_device(apic), dest,
+                                                     logical, physical_broadcast,
+                                                     route_parked, targets);
+}
+
+apic_bus_result_t
+local_apic_targets_accept_fixed(local_apic_t *apic,
+                                const lapic_target_info_t *targets,
+                                const apic_bus_message_t *message)
+{
+    (void) apic;
+
+    return lapic_targets_accept_fixed(targets, message);
+}
+
+apic_bus_result_t
+local_apic_targets_accept_lowest_priority(local_apic_t *apic,
+                                          const lapic_target_info_t *targets,
+                                          uint8_t *lowest_priority_next,
+                                          int route_parked,
+                                          const apic_bus_message_t *message)
+{
+    (void) apic;
+
+    return lapic_targets_accept_lowest_priority(targets, lowest_priority_next,
+                                                route_parked, message);
+}
+
+int
+local_apic_targets_deliver_init(local_apic_t *apic,
+                                const lapic_target_info_t *targets)
+{
+    (void) apic;
+
+    return lapic_targets_deliver_init(targets);
+}
+
+void
+local_apic_arbitration_id_reset_from_id(local_apic_t *apic)
+{
+    lapic_device_t *dev = local_apic_device(apic);
+
+    if (dev == NULL)
+        return;
+
+    for (uint8_t i = 0; i < dev->count; i++)
+        lapic_arbitration_id_reset_from_id(&dev->lapics[i]);
+}
+
+void
+local_apic_arbitration_rotate_with_ioapic(local_apic_t *apic,
+                                          uint8_t *ioapic_arb_id)
+{
+    lapic_device_t *dev = local_apic_device(apic);
+
+    if (dev == NULL)
+        return;
+
+    lapic_arbitration_rotate_with_ioapic(dev->lapics, dev->count,
+                                         ioapic_arb_id);
+}
+
+int
+local_apic_targets_mark_extint(local_apic_t *apic,
+                                     const lapic_target_info_t *targets,
+                                     uint8_t pin)
+{
+    (void) apic;
+
+    return lapic_targets_mark_extint(targets, pin);
+}
+
+void
+local_apic_icr_write(local_apic_t *apic, uint32_t val, int route_parked,
+                     lapic_icr_startup_handler_t startup_handler, void *startup_priv)
+{
+    lapic_device_icr_write(local_apic_device(apic), val, route_parked,
+                           startup_handler, startup_priv);
+}
+
+void
+local_apic_set_log_handler(local_apic_t *apic, lapic_log_handler_t log)
+{
+    lapic_device_set_log_handler(local_apic_device(apic), log);
+}
+
+void
+local_apic_set_icr_write_handler(local_apic_t *apic,
+                                 lapic_mmio_icr_write_handler_t icr_write)
+{
+    lapic_device_set_icr_write_handler(local_apic_device(apic), icr_write);
+}
+
+void
+local_apic_set_external_ioapic(local_apic_t *apic,
+                               void *external_ioapic,
+                               lapic_external_eoi_handler_t external_eoi)
+{
+    lapic_device_set_external_ioapic(local_apic_device(apic), external_ioapic,
+                                     external_eoi);
+}
+
+void
+local_apic_enable_mappings(local_apic_t *apic)
+{
+    lapic_device_add_mmio_mapping(local_apic_device(apic));
+}
+
+void
+local_apic_update_mapping(local_apic_t *apic)
+{
+    lapic_device_update_mapping(local_apic_device(apic));
+}
+
+void
+local_apic_stop_timers(local_apic_t *apic)
+{
+    lapic_device_stop_timers(local_apic_device(apic));
+}
+
+void
+local_apic_disable_mappings(local_apic_t *apic)
+{
+    lapic_device_disable_mappings(local_apic_device(apic));
+}
+
+void
+local_apic_close(local_apic_t *apic)
+{
+    lapic_device_t *dev = local_apic_device(apic);
+
+    local_apic_stop_timers(apic);
+    lapic_device_disable_mappings(dev);
+    lapic_device_clear_active(dev);
+}
+
+static lapic_state_t *
+lapic_active_at(uint8_t index)
+{
+    if (lapic_active_device == NULL)
+        return NULL;
+
+    /* Index callbacks from CPU helpers route only through the active device. */
+    return lapic_device_at(lapic_active_device, index);
+}
+
+static lapic_state_t *
+lapic_device_at(lapic_device_t *dev, uint8_t index)
+{
+    return (dev != NULL) ? lapic_at(dev->lapics, dev->count, index) : NULL;
+}
+
+static const lapic_state_t *
+lapic_device_at_const(const lapic_device_t *dev, uint8_t index)
+{
+    return (dev != NULL) ? lapic_at_const(dev->lapics, dev->count, index) : NULL;
+}
+
+static uint8_t
+lapic_device_current_index(lapic_device_t *dev)
+{
+    if (dev == NULL)
+        return 0;
+
+    return lapic_current_index(dev->lapics, dev->count, lapic_index_source_read, NULL);
+}
+
+lapic_state_t *
+lapic_device_current(lapic_device_t *dev)
+{
+    return (dev != NULL) ? lapic_current(dev->lapics, dev->count,
+                                         lapic_index_source_read, NULL) : NULL;
+}
+
+static const lapic_state_t *
+lapic_device_current_const(const lapic_device_t *dev)
+{
+    return (dev != NULL) ? lapic_current_const(dev->lapics, dev->count,
+                                               lapic_index_source_read, NULL) : NULL;
+}
+
+static uint8_t
+lapic_device_current_id(const lapic_device_t *dev)
+{
+    const lapic_state_t *lapic = lapic_device_current_const(dev);
+
+    return (lapic != NULL) ? lapic_current_id(lapic) : 0xff;
+}
+
+static int
+lapic_device_current_base_enabled(const lapic_device_t *dev)
+{
+    return lapic_base_enabled(lapic_device_current_const(dev));
+}
+
+static int
+lapic_device_current_software_enabled(const lapic_device_t *dev)
+{
+    return lapic_software_enabled(lapic_device_current_const(dev));
+}
+
+static int
+lapic_device_current_interrupt_pending(const lapic_device_t *dev)
+{
+    return lapic_interrupt_pending(lapic_device_current_const(dev));
+}
+
+static int
+lapic_device_current_lint0_extint_enabled(const lapic_device_t *dev)
+{
+    return lapic_lint0_extint_enabled(lapic_device_current_const(dev));
+}
+
+/* LINT1 on processor index sampled again: a level-triggered entry whose
+   EOI found the NMI line still up (cpu_lapic_lint_remote_irr_eoi). */
+void
+lapic_lint1_redeliver_index(uint8_t index)
+{
+    if (lapic_active_device != NULL)
+        (void) lapic_lint_deliver(lapic_device_at(lapic_active_device, index), LAPIC_REG_LVT_LINT1);
+}
+
+/* The IPIs a target had no slot for, sent again from their senders when a
+   slot comes free (lapic_slot_freed, lapic_icr_write). */
+void
+lapic_icr_retry_all(void)
+{
+    lapic_device_t *dev = lapic_active_device;
+
+    if (dev == NULL)
+        return;
+    for (uint8_t i = 0; (i < dev->count) && (i < APIC_MAX_LAPICS); i++) {
+        if (!lapic_icr_retry_pending[i])
+            continue;
+        lapic_icr_retry_pending[i] = 0;
+        lapic_icr_write(&dev->lapics[i], dev->lapics, dev->count, i, lapic_icr_retry_val[i],
+                        lapic_icr_retry_route_parked[i], NULL, NULL);
+    }
+}
+
+/* A local APIC has room again: an ISR bit retired (EOI), an IRR bit taken
+   into the ISR (a vector already pending finds no slot,
+   cpu_lapic_slot_free_index), or the APIC reset by an INIT. "All bus
+   messages failing during delivery are automatically retried" (Pentium
+   Pro Vol. 3, 7.4.4): the sender puts a refused message on the bus again
+   and again until it is taken, and these are the only moments one can
+   be. So what every local APIC and I/O APIC was refused goes again here. */
+void
+lapic_slot_freed(void)
+{
+    lapic_icr_retry_all();
+    ioapic_retry_deliveries();
+}
+
+static int
+lapic_device_current_lint_deliver(lapic_device_t *dev, uint32_t lint_reg)
+{
+    return lapic_lint_deliver(lapic_device_current(dev), lint_reg);
+}
+
+static int
+lapic_device_current_lvt_source_deliver(lapic_device_t *dev, uint32_t lvt_reg)
+{
+    return lapic_lvt_source_deliver(lapic_device_current(dev), lvt_reg);
+}
+
+static int
+lapic_device_current_promote_irr(lapic_device_t *dev)
+{
+    return lapic_promote_irr(lapic_device_current(dev));
+}
+
+static int
+lapic_device_current_consume_extint(lapic_device_t *dev, uint8_t *pin)
+{
+    return lapic_consume_extint(lapic_device_current(dev), pin);
+}
+
+lapic_state_t *
+lapic_device_bsp(lapic_device_t *dev)
+{
+    return (dev != NULL) ? lapic_bsp(dev->lapics, dev->count) : NULL;
+}
+
+static const lapic_state_t *
+lapic_device_bsp_const(const lapic_device_t *dev)
+{
+    return (dev != NULL) ? lapic_bsp_const(dev->lapics, dev->count) : NULL;
+}
+
+static int
+lapic_device_bsp_id(const lapic_device_t *dev, uint8_t *id)
+{
+    const lapic_state_t *lapic = lapic_device_bsp_const(dev);
+
+    if ((lapic == NULL) || (id == NULL))
+        return 0;
+
+    *id = lapic->id;
+    return 1;
+}
+
+static int
+lapic_device_id_at(const lapic_device_t *dev, uint8_t index, uint8_t *id)
+{
+    const lapic_state_t *lapic = lapic_device_at_const(dev, index);
+
+    if ((lapic == NULL) || (id == NULL))
+        return 0;
+
+    *id = lapic->id;
+    return 1;
+}
+
+static void
+lapic_device_add_timer_hosts(lapic_device_t *dev)
+{
+    if (dev == NULL)
+        return;
+
+    /* Host timer slots are fixed by LAPIC index, independent of active count. */
+    for (uint8_t i = 0; i < APIC_MAX_LAPICS; i++)
+        cpu_lapic_timer_host_add_index(i, lapic_timer_callback, &dev->lapics[i]);
+}
+
+static void
+lapic_device_stop_timers(lapic_device_t *dev)
+{
+    if (dev == NULL)
+        return;
+
+    for (uint8_t i = 0; i < APIC_MAX_LAPICS; i++)
+        lapic_timer_host_stop(&dev->lapics[i]);
+}
+
+static void
+lapic_device_disable_mappings(lapic_device_t *dev)
+{
+    if (dev == NULL)
+        return;
+
+    for (uint8_t i = 0; i < APIC_MAX_LAPICS; i++) {
+        if (dev->lapics[i].mapping_added)
+            mem_mapping_disable(&dev->lapics[i].mapping);
+    }
+}
+
+static void
+lapic_device_add_mmio_mapping(lapic_device_t *dev)
+{
+    if (dev == NULL)
+        return;
+
+    for (uint8_t i = 0; i < APIC_MAX_LAPICS; i++) {
+        lapic_state_t *lapic = &dev->lapics[i];
+
+        if (lapic->mapping_added)
+            continue;
+
+        /*
+         * Add each possible MMIO window once, then leave exposure to
+         * lapic_update_mapping() so APIC_BASE and enable state stay authoritative.
+         */
+        mem_mapping_add(&lapic->mapping, lapic_mmio_base(lapic), LAPIC_MMIO_SIZE,
+                        lapic_readb, lapic_readw, lapic_readl,
+                        lapic_writeb, lapic_writew, lapic_writel,
+                        NULL, MEM_MAPPING_EXTERNAL, &dev->mmio);
+        lapic->mapping_added = 1;
+        mem_mapping_disable(&lapic->mapping);
+    }
+
+    lapic_device_update_mapping(dev);
+}
+
+static void
+lapic_device_update_mapping(lapic_device_t *dev)
+{
+    if (dev == NULL)
+        return;
+
+    lapic_update_mapping(&dev->mmio);
+}
+
+static void
+lapic_device_set_log_handler(lapic_device_t *dev, lapic_log_handler_t log)
+{
+    if (dev == NULL)
+        return;
+
+    lapic_mmio_device_set_log_handler(&dev->mmio, log);
+}
+
+static void
+lapic_device_set_icr_write_handler(lapic_device_t *dev,
+                                   lapic_mmio_icr_write_handler_t icr_write)
+{
+    if (dev == NULL)
+        return;
+
+    lapic_mmio_device_set_icr_write_handler(&dev->mmio, icr_write);
+}
+
+static void
+lapic_device_set_external_ioapic(lapic_device_t *dev, void *external_ioapic,
+                                 lapic_external_eoi_handler_t external_eoi)
+{
+    if (dev == NULL)
+        return;
+
+    lapic_mmio_device_set_external_ioapic(&dev->mmio, external_ioapic, external_eoi);
+}
+
+void
+lapic_device_reset_slot(lapic_device_t *dev, uint8_t index, uint8_t id)
+{
+    if ((dev == NULL) || (index >= APIC_MAX_LAPICS))
+        return;
+
+    lapic_reset_slot(&dev->lapics[index], &dev->mmio, index, id);
+}
+
+static int
+lapic_device_select_targets(lapic_device_t *dev, uint8_t dest, int logical,
+                            int physical_broadcast, lapic_target_info_t *targets)
+{
+    if ((dev == NULL) || (targets == NULL))
+        return 0;
+
+    return lapic_select_targets(dev->lapics, dev->count, dest, logical,
+                                physical_broadcast, targets);
+}
+
+static int
+lapic_device_select_interruptible_targets(lapic_device_t *dev, uint8_t dest,
+                                          int logical, int physical_broadcast,
+                                          int route_parked,
+                                          lapic_target_info_t *targets)
+{
+    int count;
+
+    count = lapic_device_select_targets(dev, dest, logical, physical_broadcast, targets);
+    if (!count)
+        return 0;
+
+    lapic_targets_keep_interruptible(targets, route_parked);
+    return targets->count;
+}
+
+static void
+lapic_device_icr_write(lapic_device_t *dev, uint32_t val, int route_parked,
+                       lapic_icr_startup_handler_t startup_handler,
+                       void *startup_priv)
+{
+    if (dev == NULL)
+        return;
+
+    lapic_icr_write(lapic_device_current(dev), dev->lapics, dev->count,
+                    lapic_device_current_index(dev), val, route_parked,
+                    startup_handler, startup_priv);
+}
+
+lapic_state_t *
+lapic_at(lapic_state_t *lapics, uint8_t count, uint8_t index)
+{
+    if ((lapics == NULL) || (index >= count))
+        return NULL;
+
+    return (index < APIC_MAX_LAPICS) ? &lapics[index] : NULL;
+}
+
+const lapic_state_t *
+lapic_at_const(const lapic_state_t *lapics, uint8_t count, uint8_t index)
+{
+    if ((lapics == NULL) || (index >= count))
+        return NULL;
+
+    return (index < APIC_MAX_LAPICS) ? &lapics[index] : NULL;
+}
+
+uint8_t
+lapic_current_index(lapic_state_t *lapics, uint8_t count,
+                    lapic_current_index_source_t source, void *priv)
+{
+    uint8_t index;
+
+    if ((lapics == NULL) || (source == NULL))
+        return 0;
+
+    index = source(priv);
+    if (index >= count)
+        return 0;
+
+    if (index >= APIC_MAX_LAPICS)
+        return 0;
+
+    /* Not-started AP slots fall back to BSP for MMIO/callback safety. */
+    if (!lapics[index].started)
+        return 0;
+
+    return index;
+}
+
+lapic_state_t *
+lapic_current(lapic_state_t *lapics, uint8_t count,
+              lapic_current_index_source_t source, void *priv)
+{
+    return lapic_at(lapics, count, lapic_current_index(lapics, count, source, priv));
+}
+
+const lapic_state_t *
+lapic_current_const(const lapic_state_t *lapics, uint8_t count,
+                    lapic_current_index_source_t source, void *priv)
+{
+    return lapic_at_const(lapics, count,
+                          lapic_current_index((lapic_state_t *) lapics, count, source, priv));
+}
+
+lapic_state_t *
+lapic_bsp(lapic_state_t *lapics, uint8_t count)
+{
+    return lapic_at(lapics, count, 0);
+}
+
+const lapic_state_t *
+lapic_bsp_const(const lapic_state_t *lapics, uint8_t count)
+{
+    return lapic_at_const(lapics, count, 0);
+}
+
+void
+lapic_sync_ppr(lapic_state_t *lapic)
+{
+    if (lapic == NULL)
+        return;
+
+    cpu_lapic_ppr_update_index(lapic->index);
+}
+
+uint32_t
+lapic_timer_current(const lapic_state_t *lapic)
+{
+    return cpu_lapic_timer_current_read_index(lapic->index);
+}
+
+void
+lapic_sync_int_regs(lapic_state_t *lapic)
+{
+    uint32_t *irr;
+    uint32_t *isr;
+    uint32_t *tmr;
+
+    if (lapic == NULL)
+        return;
+
+    irr = cpu_lapic_irr_words_index(lapic->index);
+    isr = cpu_lapic_isr_words_index(lapic->index);
+    tmr = cpu_lapic_tmr_words_index(lapic->index);
+
+    /* Interrupt state is CPU-owned; regs[] mirrors it for LAPIC MMIO reads/save. */
+    for (uint8_t i = 0; i < 8; i++) {
+        lapic_mirror_write_reg(lapic, LAPIC_REG_ISR_BASE + (((uint32_t) i) << 4), isr[i]);
+        lapic_mirror_write_reg(lapic, LAPIC_REG_TMR_BASE + (((uint32_t) i) << 4), tmr[i]);
+        lapic_mirror_write_reg(lapic, LAPIC_REG_IRR_BASE + (((uint32_t) i) << 4), irr[i]);
+    }
+    lapic_sync_ppr(lapic);
+    lapic_mirror_write_reg(lapic, LAPIC_REG_CURRENT_CNT, lapic_timer_current(lapic));
+}
+
+void
+lapic_sync_cpu_owned_regs(lapic_state_t *lapic)
+{
+    if (lapic == NULL)
+        return;
+
+    cpu_lapic_mmio_sync_mirror_index(lapic->index, lapic->regs);
+}
+
+void
+lapic_load_cpu_owned_regs(lapic_state_t *lapic)
+{
+    if (lapic == NULL)
+        return;
+
+    /* Restore path pushes saved MMIO mirror values back into CPU-owned storage. */
+    cpu_lapic_mmio_load_mirror_index(lapic->index, lapic->regs);
+}
+
+void
+lapic_reg_sync(lapic_state_t *lapic, uint32_t reg, uint32_t val)
+{
+    lapic_mirror_write_reg(lapic, reg, val);
+}
+
+void
+lapic_id_sync_index(uint8_t lapic_index, uint8_t id)
+{
+    lapic_state_t *lapic = lapic_active_at(lapic_index);
+
+    if (lapic == NULL)
+        return;
+
+    lapic->id = id;
+    lapic_mirror_write_reg(lapic, LAPIC_REG_ID, ((uint32_t) id) << 24);
+}
+
+void
+lapic_svr_sync_index(uint8_t lapic_index, uint32_t svr)
+{
+    lapic_reg_sync(lapic_active_at(lapic_index), LAPIC_REG_SVR, svr);
+}
+
+void
+lapic_tpr_sync_index(uint8_t lapic_index, uint32_t tpr)
+{
+    lapic_state_t *lapic = lapic_active_at(lapic_index);
+
+    lapic_reg_sync(lapic, LAPIC_REG_TPR, tpr);
+    lapic_sync_ppr(lapic);
+}
+
+void
+lapic_ldr_sync_index(uint8_t lapic_index, uint32_t ldr)
+{
+    lapic_reg_sync(lapic_active_at(lapic_index), LAPIC_REG_LDR, ldr);
+}
+
+void
+lapic_dfr_sync_index(uint8_t lapic_index, uint32_t dfr)
+{
+    lapic_reg_sync(lapic_active_at(lapic_index), LAPIC_REG_DFR, dfr);
+}
+
+void
+lapic_version_sync_index(uint8_t lapic_index, uint32_t version)
+{
+    lapic_reg_sync(lapic_active_at(lapic_index), LAPIC_REG_VERSION, version);
+}
+
+void
+lapic_arb_id_sync_index(uint8_t lapic_index, uint32_t apr)
+{
+    lapic_reg_sync(lapic_active_at(lapic_index), LAPIC_REG_APR, apr);
+}
+
+void
+lapic_ppr_sync_index(uint8_t lapic_index, uint32_t ppr)
+{
+    lapic_reg_sync(lapic_active_at(lapic_index), LAPIC_REG_PPR, ppr);
+}
+
+void
+lapic_esr_sync_index(uint8_t lapic_index, uint32_t esr)
+{
+    lapic_reg_sync(lapic_active_at(lapic_index), LAPIC_REG_ESR, esr);
+}
+
+void
+lapic_icr_lo_sync_index(uint8_t lapic_index, uint32_t icr_lo)
+{
+    lapic_reg_sync(lapic_active_at(lapic_index), LAPIC_REG_ICR_LO, icr_lo);
+}
+
+void
+lapic_icr_hi_sync_index(uint8_t lapic_index, uint32_t icr_hi)
+{
+    lapic_reg_sync(lapic_active_at(lapic_index), LAPIC_REG_ICR_HI, icr_hi);
+}
+
+void
+lapic_rrr_sync_index(uint8_t lapic_index, uint32_t rrr)
+{
+    lapic_reg_sync(lapic_active_at(lapic_index), LAPIC_REG_RRR, rrr);
+}
+
+static void
+lapic_lvt_sync_index(uint8_t lapic_index, uint32_t reg, uint32_t lvt)
+{
+    lapic_reg_sync(lapic_active_at(lapic_index), reg, lvt);
+}
+
+void
+lapic_lvt_timer_sync_index(uint8_t lapic_index, uint32_t lvt)
+{
+    lapic_lvt_sync_index(lapic_index, LAPIC_REG_LVT_TIMER, lvt);
+}
+
+void
+lapic_lvt_thermal_sync_index(uint8_t lapic_index, uint32_t lvt)
+{
+    lapic_lvt_sync_index(lapic_index, LAPIC_REG_LVT_THERMAL, lvt);
+}
+
+void
+lapic_lvt_perf_sync_index(uint8_t lapic_index, uint32_t lvt)
+{
+    lapic_lvt_sync_index(lapic_index, LAPIC_REG_LVT_PERF, lvt);
+}
+
+void
+lapic_lvt_lint0_sync_index(uint8_t lapic_index, uint32_t lvt)
+{
+    lapic_lvt_sync_index(lapic_index, LAPIC_REG_LVT_LINT0, lvt);
+}
+
+void
+lapic_lvt_lint1_sync_index(uint8_t lapic_index, uint32_t lvt)
+{
+    lapic_lvt_sync_index(lapic_index, LAPIC_REG_LVT_LINT1, lvt);
+}
+
+void
+lapic_lvt_error_sync_index(uint8_t lapic_index, uint32_t lvt)
+{
+    lapic_lvt_sync_index(lapic_index, LAPIC_REG_LVT_ERROR, lvt);
+}
+
+void
+lapic_timer_initial_sync_index(uint8_t lapic_index, uint32_t initial)
+{
+    lapic_reg_sync(lapic_active_at(lapic_index), LAPIC_REG_INITIAL_CNT, initial);
+}
+
+void
+lapic_timer_divide_cfg_sync_index(uint8_t lapic_index, uint32_t divide_cfg)
+{
+    lapic_reg_sync(lapic_active_at(lapic_index), LAPIC_REG_DIVIDE_CFG, divide_cfg & 0x0b);
+}
+
+void
+lapic_apic_base_msr_sync_index(uint8_t lapic_index, uint64_t val)
+{
+    lapic_state_t *lapic = lapic_active_at(lapic_index);
+
+    if (lapic == NULL)
+        return;
+
+    lapic->base_msr = (val & APIC_BASE_ADDR_MASK) |
+                      (val & APIC_BASE_ENABLE) |
+                      (val & APIC_BASE_BSP);
+    /* Base MSR writes can move or hide the MMIO window. */
+    lapic_update_mapping(&lapic_active_device->mmio);
+}
+
+uint8_t
+lapic_current_id(const lapic_state_t *lapic)
+{
+    return cpu_lapic_id_read_index(lapic->index);
+}
+
+int
+lapic_base_enabled(const lapic_state_t *lapic)
+{
+    return (lapic != NULL) && cpu_lapic_base_enabled_index(lapic->index);
+}
+
+int
+lapic_software_enabled(const lapic_state_t *lapic)
+{
+    return (lapic != NULL) && cpu_lapic_software_enabled_index(lapic->index);
+}
+
+int
+lapic_enabled(const lapic_state_t *lapic)
+{
+    return (lapic != NULL) && cpu_lapic_enabled_index(lapic->index, lapic->started);
+}
+
+/* An INIT message accepted (an IPI, or an I/O APIC entry): "INIT has the
+   same effect on the Local APIC as the power-up Reset, except that the
+   APIC ID and Arb ID registers are not affected" (Pentium Vol. 3,
+   19.3.1.11.3). A processor other than the first goes to wait for a
+   STARTUP. */
+void
+lapic_init_signal(lapic_state_t *lapic)
+{
+    if (lapic == NULL)
+        return;
+
+    lapic->init_asserted  = 0;
+    lapic->extint_pending = 0;
+    lapic->extint_pin     = 0;
+    cpu_lapic_extint_live_set(lapic->index, 0);
+    lapic_reset_regs(lapic);
+    if (!lapic->is_bsp) {
+        lapic->started       = 0;
+        lapic->wait_for_sipi = 1;
+        lapic->sipi_vector   = 0;
+        lapic->parked        = 0;
+    }
+    /* Its IRR and ISR are empty now: what others were refused by it goes
+       again, and meets it as it stands after the INIT. */
+    lapic_slot_freed();
+}
+
+/* A message this local APIC put on the bus other than an IPI (an EOI to
+   the I/O APIC): the arbitration IDs move as for any. */
+void
+lapic_bus_sent_by(lapic_state_t *lapic)
+{
+    if ((lapic_active_device == NULL) || (lapic == NULL))
+        return;
+
+    lapic_arbitration_rotate_after_lapic(lapic_active_device->lapics, lapic_active_device->count,
+                                         lapic->index);
+}
+
+uint64_t
+lapic_reset_base_msr(uint8_t index)
+{
+    if (index == 0)
+        return APIC_BASE_DEFAULT;
+
+    return APIC_BASE_DEFAULT & ~APIC_BASE_BSP;
+}
+
+void
+lapic_reset_startup_state(lapic_state_t *lapic, uint8_t index)
+{
+    lapic->is_bsp = (index == 0);
+    lapic->started = lapic->is_bsp;
+    lapic->init_asserted = 0;
+    /* AP slots start stopped and waiting for SIPI; slot 0 is the BSP boundary. */
+    lapic->wait_for_sipi = !lapic->is_bsp;
+    lapic->sipi_vector = 0;
+    lapic->parked = 0;
+}
+
+static void
+lapic_reset_logs(lapic_state_t *lapic)
+{
+    memset(lapic->accept_log_count, 0, sizeof(lapic->accept_log_count));
+    memset(lapic->promote_log_count, 0, sizeof(lapic->promote_log_count));
+    memset(lapic->eoi_log_count, 0, sizeof(lapic->eoi_log_count));
+    memset(lapic->icr_log_count, 0, sizeof(lapic->icr_log_count));
+    lapic->lint_init_log_count = 0;
+    memset(lapic->read_log_count, 0, sizeof(lapic->read_log_count));
+    memset(lapic->write_log_count, 0, sizeof(lapic->write_log_count));
+}
+
+static void
+lapic_reset_regs(lapic_state_t *lapic)
+{
+    memset(lapic->regs, 0, sizeof(lapic->regs));
+    /* The ICR is cleared, and with it the message it was still sending. */
+    if (lapic->index < APIC_MAX_LAPICS)
+        lapic_icr_retry_pending[lapic->index] = 0;
+    cpu_lapic_reset_index(lapic->index, lapic->id, lapic->base_msr);
+    cpu_lapic_irr_reset_index(lapic->index);
+    cpu_lapic_isr_reset_index(lapic->index);
+    cpu_lapic_tmr_reset_index(lapic->index);
+    lapic_timer_stop(lapic);
+
+    /* CPU helpers own side effects; mirror sync makes regs[] match reset state. */
+    lapic_sync_cpu_owned_regs(lapic);
+    lapic_sync_int_regs(lapic);
+}
+
+void
+lapic_reset_slot(lapic_state_t *lapic, lapic_mmio_device_t *mmio, uint8_t index, uint8_t id)
+{
+    if (lapic == NULL)
+        return;
+
+    lapic->index = index;
+    lapic->mmio = mmio;
+    lapic->id = id;
+    lapic->base_msr = lapic_reset_base_msr(index);
+    lapic->extint_pending = 0;
+    lapic->extint_pin = 0;
+    cpu_lapic_extint_live_set(index, 0);
+    lapic_reset_startup_state(lapic, index);
+    lapic_reset_logs(lapic);
+    lapic_reset_regs(lapic);
+    lapic_arbitration_id_reset_from_id(lapic);
+}
+
+void
+lapic_timer_host_stop(lapic_state_t *lapic)
+{
+    cpu_lapic_timer_host_stop_index(lapic->index);
+}
+
+void
+lapic_timer_stop(lapic_state_t *lapic)
+{
+    lapic_timer_host_stop(lapic);
+    cpu_lapic_timer_stop_index(lapic->index);
+    lapic_mirror_write_reg(lapic, LAPIC_REG_CURRENT_CNT, 0);
+}
+
+static void
+lapic_timer_schedule(lapic_state_t *lapic, uint32_t count, int in_callback)
+{
+    cpu_lapic_timer_host_schedule_index(lapic->index, count, in_callback);
+}
+
+void
+lapic_timer_arm(lapic_mmio_device_t *dev, uint32_t count)
+{
+    lapic_state_t *lapic;
+
+    if (dev == NULL)
+        return;
+
+    lapic = lapic_current(dev->lapics, dev->active_count,
+                          dev->current_index, dev->current_index_priv);
+    if (lapic == NULL)
+        return;
+
+    lapic_timer_host_stop(lapic);
+    cpu_lapic_timer_arm_index(lapic->index, count);
+
+    if (!count) {
+        lapic_mirror_write_reg(lapic, LAPIC_REG_CURRENT_CNT, 0);
+        return;
+    }
+
+    lapic_mirror_write_reg(lapic, LAPIC_REG_CURRENT_CNT, count);
+    lapic_timer_schedule(lapic, count, 0);
+
+    lapic_log(dev, "LAPIC: timer arm count=%08x divisor=%u lvt=%08x\n",
+              count, cpu_lapic_timer_divisor_read_index(lapic->index),
+              cpu_lapic_lvt_timer_read_index(lapic->index));
+}
+
+void
+lapic_timer_restore_target(lapic_state_t *lapic, uint32_t initial, uint32_t current, int enabled)
+{
+    lapic_timer_host_stop(lapic);
+    current = cpu_lapic_timer_restore_index(lapic->index, initial, current, enabled);
+    if (!current) {
+        lapic_mirror_write_reg(lapic, LAPIC_REG_CURRENT_CNT, 0);
+        return;
+    }
+
+    lapic_mirror_write_reg(lapic, LAPIC_REG_CURRENT_CNT, current);
+    lapic_timer_schedule(lapic, current, 0);
+}
+
+void
+lapic_timer_callback(void *priv)
+{
+    lapic_state_t *lapic = (lapic_state_t *) priv;
+    uint32_t       lvt;
+    uint8_t        vector = 0;
+    uint32_t       current;
+    int            accepted;
+
+    if (lapic == NULL)
+        return;
+
+    lvt     = cpu_lapic_lvt_timer_read_index(lapic->index);
+    current = lapic_timer_current(lapic);
+
+    cpu_lapic_timer_unschedule_index(lapic->index);
+
+    /* Host callback can arrive before modeled count reaches zero; do not inject. */
+    if (current) {
+        lapic_timer_schedule(lapic, current, 1);
+        lapic_sync_int_regs(lapic);
+        return;
+    }
+
+    accepted = cpu_lapic_timer_fire_index(lapic->index, lapic->started, &vector);
+    if (accepted < 0) {
+        lapic_error(lapic, LAPIC_ESR_RECV_ILLEGAL_VECTOR);
+        lapic_log(lapic->mmio, "APIC-WARN: LAPIC rejected invalid vector=%02x\n", vector);
+    } else if (accepted && lapic_log_first(&lapic->accept_log_count[vector], 8)) {
+        lapic_log(lapic->mmio, "LAPIC: accepted vector=%02x trigger=edge count=%u\n",
+                  vector, lapic->accept_log_count[vector]);
+    }
+
+    if ((lvt & LAPIC_LVT_TIMER_MODE) == LAPIC_LVT_TIMER_PERIODIC) {
+        uint32_t count = cpu_lapic_timer_periodic_restart_index(lapic->index);
+
+        /* CPU timer helper owns periodic reload; this layer owns host scheduling. */
+        if (count)
+            lapic_timer_schedule(lapic, count, 1);
+    } else {
+        cpu_lapic_timer_oneshot_complete_index(lapic->index);
+    }
+
+    lapic_sync_int_regs(lapic);
+}

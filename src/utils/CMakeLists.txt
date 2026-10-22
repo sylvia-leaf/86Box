@@ -27,7 +27,8 @@ add_library(utils OBJECT
     log.c
     random.c
 
-    # VIDEO
+
+    # Video helpers (NV3)
     video/video_rop.c
 )
 

@@ -50,7 +50,6 @@ typedef struct _gameport_ {
     uint8_t                     len;
     uint8_t                     read_enabled;
     uint8_t                     write_enabled;
-    struct _joystick_instance_ *joystick;
     struct _gameport_          *next;
 } gameport_t;
 
@@ -182,9 +181,59 @@ static const isapnp_device_config_t gameport_pnp_defaults[] = {
 
 const device_t *standalone_gameport_type;
 int             gameport_instance_id = 0;
-/* Linked list of active game ports. Only the top port responds to reads
-   or writes, and ports at the standard 200h location are prioritized. */
+/* Linked list of active game ports. Of the ports in an address range only
+   the first responds, and ports at the standard 200h location are
+   prioritized. */
 static gameport_t *active_gameports = NULL;
+/* The game ports there are: the joysticks go with the last of them. */
+static int gameport_count = 0;
+
+/* The game port an address is on, and so the joystick it reads: the
+   first at 200h-207h, the second at 208h-20Fh (where the ThrustMaster
+   ACM puts its second port). */
+static uint8_t
+gameport_gp(uint16_t addr)
+{
+    return ((addr & 0xfff8) == 0x208) ? 1 : 0;
+}
+
+static void timer_over(void *priv);
+
+/* The joystick on a game port, made the first time it is wanted. */
+static joystick_instance_t *
+gameport_joystick(uint8_t gp)
+{
+    if ((gp >= GAMEPORT_MAX) || !joystick_type[gp])
+        return NULL;
+
+    if (!joystick_instance[gp]) {
+        joystick_instance[gp] = calloc(1, sizeof(joystick_instance_t));
+
+        /* For each analog joystick axis */
+        for (uint8_t i = 0; i < 4; i++) {
+            joystick_instance[gp]->axis[i].joystick = joystick_instance[gp];
+            joystick_instance[gp]->axis[i].axis_nr  = i;
+            timer_add(&joystick_instance[gp]->axis[i].timer, timer_over, &joystick_instance[gp]->axis[i], 0);
+        }
+
+        joystick_instance[gp]->intf = joysticks[joystick_type[gp]].joystick;
+        joystick_instance[gp]->dat  = joystick_instance[gp]->intf->init(gp);
+    }
+
+    return joystick_instance[gp];
+}
+
+/* Whether a port answers: the first of the active ports in its range. */
+static int
+gameport_answers(const gameport_t *dev)
+{
+    for (const gameport_t *other = active_gameports; other != NULL; other = other->next) {
+        if ((other->addr & 0xfff8) == (dev->addr & 0xfff8))
+            return other == dev;
+    }
+
+    return 0;
+}
 
 const char *
 joystick_get_name(int js)
@@ -280,10 +329,10 @@ static void
 gameport_write(UNUSED(uint16_t addr), UNUSED(uint8_t val), void *priv)
 {
     gameport_t          *dev      = (gameport_t *) priv;
-    joystick_instance_t *joystick = dev->joystick;
+    joystick_instance_t *joystick = joystick_instance[gameport_gp(dev->addr)];
 
-    /* Respond only if a joystick is present and this port is at the top of the active ports list. */
-    if (!joystick || (active_gameports != dev))
+    /* Respond only if a joystick is present and this port answers for its range. */
+    if (!joystick || !gameport_answers(dev))
         return;
 
     /* Read all axes. */
@@ -302,10 +351,10 @@ static uint8_t
 gameport_read(UNUSED(uint16_t addr), void *priv)
 {
     gameport_t          *dev      = (gameport_t *) priv;
-    joystick_instance_t *joystick = dev->joystick;
+    joystick_instance_t *joystick = joystick_instance[gameport_gp(dev->addr)];
 
-    /* Respond only if a joystick is present and this port is at the top of the active ports list. */
-    if (!joystick || (active_gameports != dev))
+    /* Respond only if a joystick is present and this port answers for its range. */
+    if (!joystick || !gameport_answers(dev))
         return 0xff;
 
     /* Merge axis state with button state. */
@@ -341,16 +390,25 @@ timer_over(void *priv)
 void
 gameport_update_joystick_type(uint8_t gp)
 {
-    /* Add a standalone game port if a joystick is enabled but no other game ports exist. */
-    if (standalone_gameport_type)
+    /* Add a standalone game port at 200h if a joystick is enabled on the
+       first game port but nothing provides one. */
+    if ((gp == 0) && standalone_gameport_type)
         gameport_add(standalone_gameport_type);
 
     /* Reset the joystick interface. */
     if (joystick_instance[gp]) {
         joystick_instance[gp]->intf->close(joystick_instance[gp]->dat);
+        if (!joystick_type[gp]) {
+            for (uint8_t i = 0; i < 4; i++)
+                timer_disable(&joystick_instance[gp]->axis[i].timer);
+            free(joystick_instance[gp]);
+            joystick_instance[gp] = NULL;
+            return;
+        }
         joystick_instance[gp]->intf = joysticks[joystick_type[gp]].joystick;
-        joystick_instance[gp]->dat  = joystick_instance[gp]->intf->init();
-    }
+        joystick_instance[gp]->dat  = joystick_instance[gp]->intf->init(gp);
+    } else if (gameport_count > 0)
+        gameport_joystick(gp);
 }
 
 static void
@@ -412,6 +470,8 @@ gameport_remap(void *priv, uint16_t address)
     dev->addr = address;
 
     if (dev->addr) {
+        gameport_joystick(gameport_gp(dev->addr));
+
         /* Add this port to the active ports list. */
         if (!active_gameports || ((dev->addr & 0xfff8) == 0x200)) {
             /* No ports have been added yet, or port within 200-207h: add to top. */
@@ -458,27 +518,7 @@ gameport_init(const device_t *info)
 {
     gameport_t *dev = calloc(1, sizeof(gameport_t));
 
-    // TODO: Later we'll actually support more than one gameport
-    uint8_t joy_insn = 0;
-
-    /* Allocate global instance. */
-    if (!joystick_instance[joy_insn] && joystick_type[joy_insn]) {
-        joystick_instance[joy_insn] = calloc(1, sizeof(joystick_instance_t));
-
-        // For each analog joystick axis
-        for (uint8_t i = 0; i < 4; i++) {
-            joystick_instance[joy_insn]->axis[i].joystick = joystick_instance[joy_insn];
-
-            joystick_instance[joy_insn]->axis[i].axis_nr = i;
-
-            timer_add(&joystick_instance[joy_insn]->axis[i].timer, timer_over, &joystick_instance[joy_insn]->axis[i], 0);
-        }
-
-        joystick_instance[joy_insn]->intf = joysticks[joystick_type[joy_insn]].joystick;
-        joystick_instance[joy_insn]->dat  = joystick_instance[joy_insn]->intf->init();
-    }
-
-    dev->joystick = joystick_instance[joy_insn];
+    gameport_count++;
     dev->read_enabled  = 1;
     dev->write_enabled = 1;
 
@@ -545,18 +585,21 @@ gameport_close(void *priv)
 {
     gameport_t *dev = (gameport_t *) priv;
 
-    // TODO: Later we'll actually support more than one gameport
-    uint8_t joy_insn = 0;
-
     /* If this port was active, remove it from the active ports list. */
     gameport_remap(dev, 0);
 
-    /* Free the global instance here, if it wasn't already freed. */
-    if (joystick_instance[joy_insn]) {
-        joystick_instance[joy_insn]->intf->close(joystick_instance[joy_insn]->dat);
-
-        free(joystick_instance[joy_insn]);
-        joystick_instance[joy_insn] = NULL;
+    /* The joysticks go with the last game port. */
+    if (--gameport_count <= 0) {
+        gameport_count = 0;
+        for (uint8_t gp = 0; gp < GAMEPORT_MAX; gp++) {
+            if (joystick_instance[gp]) {
+                joystick_instance[gp]->intf->close(joystick_instance[gp]->dat);
+                for (uint8_t i = 0; i < 4; i++)
+                    timer_disable(&joystick_instance[gp]->axis[i].timer);
+                free(joystick_instance[gp]);
+                joystick_instance[gp] = NULL;
+            }
+        }
     }
 
     free(dev);
@@ -758,19 +801,151 @@ static const device_config_t tmacm_config[] = {
   // clang-format on
 };
 
+static void
+tmacm_close(void *priv)
+{
+    free(priv);
+}
+
 const device_t gameport_tm_acm_device = {
     .name          = "Game port (ThrustMaster ACM)",
     .internal_name = "gameport_tmacm",
     .flags         = DEVICE_ISA,
     .local         = 0,
     .init          = tmacm_init,
-    .close         = NULL,
+    .close         = tmacm_close,
     .reset         = NULL,
     .available     = NULL,
     .speed_changed = NULL,
     .force_redraw  = NULL,
     .config        = tmacm_config
 };
+
+/* A card with one game port: the port is a device of its own. */
+static void *
+gameport_card_init(const device_t *info)
+{
+    gameport_add((const device_t *) info->local);
+
+    return calloc(1, 1);
+}
+
+static void
+gameport_card_close(void *priv)
+{
+    free(priv);
+}
+
+const device_t gameport_card_device = {
+    .name          = "Game Port Card (200h)",
+    .internal_name = "gameport_card",
+    .flags         = DEVICE_ISA,
+    .local         = (uintptr_t) &gameport_200_device,
+    .init          = gameport_card_init,
+    .close         = gameport_card_close,
+    .reset         = NULL,
+    .available     = NULL,
+    .speed_changed = NULL,
+    .force_redraw  = NULL,
+    .config        = NULL
+};
+
+const device_t gameport_card_208_device = {
+    .name          = "Game Port Card (208h, second game port)",
+    .internal_name = "gameport_card_208",
+    .flags         = DEVICE_ISA,
+    .local         = (uintptr_t) &gameport_208_device,
+    .init          = gameport_card_init,
+    .close         = gameport_card_close,
+    .reset         = NULL,
+    .available     = NULL,
+    .speed_changed = NULL,
+    .force_redraw  = NULL,
+    .config        = NULL
+};
+
+const device_t gameport_card_pnp_device = {
+    .name          = "86Box PnP Game Port Card",
+    .internal_name = "gameport_card_pnp",
+    .flags         = DEVICE_ISA16,
+    .local         = (uintptr_t) &gameport_device,
+    .init          = gameport_card_init,
+    .close         = gameport_card_close,
+    .reset         = NULL,
+    .available     = NULL,
+    .speed_changed = NULL,
+    .force_redraw  = NULL,
+    .config        = NULL
+};
+
+/* Not a card: the machine's own choice, a game port card when nothing
+   else provides one (the standalone game port), as 86Box has always
+   done. */
+const device_t gameport_auto_device = {
+    .name          = "Automatic",
+    .internal_name = "auto",
+    .flags         = 0,
+    .local         = 0,
+    .init          = NULL,
+    .close         = NULL,
+    .reset         = NULL,
+    .available     = NULL,
+    .speed_changed = NULL,
+    .force_redraw  = NULL,
+    .config        = NULL
+};
+
+int gameport_card_type = GAMEPORT_CARD_AUTO;
+
+static const device_t *gameport_cards[] = {
+    &device_none,
+    &gameport_auto_device,
+    &gameport_card_device,
+    &gameport_card_208_device,
+    &gameport_card_pnp_device,
+    &gameport_tm_acm_device,
+    NULL
+};
+
+/* The game port card chosen, added after the machine and its other cards:
+   with none, no standalone game port either. */
+void
+gameport_card_reset(void)
+{
+    if (gameport_card_type == 0)
+        standalone_gameport_type = NULL;
+    else if (gameport_card_type > GAMEPORT_CARD_AUTO)
+        device_add(gameport_cards[gameport_card_type]);
+}
+
+const device_t *
+gameport_card_get_device(int card)
+{
+    return gameport_cards[card];
+}
+
+const char *
+gameport_card_get_internal_name(int card)
+{
+    return device_get_internal_name(gameport_cards[card]);
+}
+
+int
+gameport_card_get_from_internal_name(const char *s)
+{
+    for (int c = 0; gameport_cards[c] != NULL; c++) {
+        if (!strcmp(gameport_cards[c]->internal_name, s))
+            return c;
+    }
+
+    return GAMEPORT_CARD_AUTO;
+}
+
+int
+gameport_card_has_config(int card)
+{
+    return (gameport_cards[card] != NULL) && (gameport_cards[card]->config != NULL);
+}
 
 const device_t gameport_pnp_device = {
     .name          = "Game port (Plug and Play only)",

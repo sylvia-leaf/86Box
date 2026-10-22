@@ -380,6 +380,7 @@ esc_fail_safe_timer(int new_out, int old_out, UNUSED(void *priv))
     esc_log("ESC: the fail-safe timer ran out\n");
     dev->nmi_esc |= 0x80;
     nmi            = 1;
+    mem_chain_break(); /* the loop takes it */
     nmi_auto_clear = 1;
     /* FNMIEN: and so is an NMI. */
     esc_system_event(dev, 29);
@@ -419,6 +420,7 @@ esc_serr(void)
     esc_log("ESC: SERR#\n");
     dev->serr_nmi  = 1;
     nmi            = 1;
+    mem_chain_break(); /* the loop takes it */
     nmi_auto_clear = 1;
     esc_system_event(dev, 29);
 }
@@ -1480,6 +1482,7 @@ esc_close(void *priv)
     esc_t *dev = (esc_t *) priv;
 
     esc_cram_save(dev);
+    eisa_set_cram(NULL, 0);
 
     if (flash_bios_write_gate_priv == dev) {
         flash_bios_write_gate      = NULL;
@@ -1589,10 +1592,27 @@ esc_init(UNUSED(const device_t *info))
     snprintf(dev->cram_file, sizeof(dev->cram_file), "%s_eisa.nvr",
              machine_get_internal_name());
     esc_cram_load(dev);
+    eisa_set_cram(dev->cram, sizeof(dev->cram));
 
     esc_reset_hard(dev);
 
     return dev;
+}
+
+/* The debug console: the configuration registers behind 0022h/0023h and the
+   rest of the ESC's own state. The configuration RAM is shown by the EISA
+   side (info eisa). */
+static void
+esc_debug_dump(void *priv, void (*out)(const char *fmt, ...))
+{
+    const esc_t *dev = (const esc_t *) priv;
+
+    out("index 0x%02x, %s, NMI status/control (0461h) 0x%02x, last EISA master 0x%02x\n",
+        dev->index, dev->unlocked ? "unlocked" : "locked", dev->nmi_esc, dev->last_mst);
+    out("board ID %02x%02x%02x%02x, strap ID %02x%02x%02x%02x, CRAM page %u\n",
+        dev->board_id[0], dev->board_id[1], dev->board_id[2], dev->board_id[3],
+        dev->strap_id[0], dev->strap_id[1], dev->strap_id[2], dev->strap_id[3], dev->cram_page);
+    device_debug_hex(out, "configuration registers:", dev->regs, 0, 256);
 }
 
 const device_t esc_device = {
@@ -1606,7 +1626,8 @@ const device_t esc_device = {
     .available     = NULL,
     .speed_changed = NULL,
     .force_redraw  = NULL,
-    .config        = NULL
+    .config        = NULL,
+    .debug_dump    = esc_debug_dump
 };
 
 /* ------------------------------------------------------------------ */

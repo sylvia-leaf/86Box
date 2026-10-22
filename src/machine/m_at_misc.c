@@ -50,17 +50,8 @@ machine_at_vpc2007_init(const machine_t *model)
     machine_at_common_init(model);
     is_vpc = 1;
 
-    pci_init(PCI_CONFIG_TYPE_1);
-    pci_register_slot(0x00, PCI_CARD_NORTHBRIDGE, 0, 0, 0, 0);
-    pci_register_slot(0x07, PCI_CARD_SOUTHBRIDGE, 0, 0, 0, 4);
-    pci_register_slot(0x08, PCI_CARD_NORMAL,      1, 2, 3, 4);
-    pci_register_slot(0x09, PCI_CARD_NORMAL,      1, 2, 3, 4);
-    pci_register_slot(0x0A, PCI_CARD_NORMAL,      1, 2, 3, 4);
-    pci_register_slot(0x0B, PCI_CARD_NORMAL,      1, 2, 3, 4);
-    pci_register_slot(0x0C, PCI_CARD_NORMAL,      1, 2, 3, 4);
-    pci_register_slot(0x0D, PCI_CARD_NORMAL,      1, 2, 3, 4);
-    pci_register_slot(0x0E, PCI_CARD_NORMAL,      1, 2, 3, 4);
-    pci_register_slot(0x0F, PCI_CARD_NORMAL,      1, 2, 3, 4);
+    machine_pci_init();
+    machine_pci_register_slots();
     device_add(&i440bx_no_agp_device);
 
     /*

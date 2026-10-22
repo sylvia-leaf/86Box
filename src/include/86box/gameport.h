@@ -53,11 +53,16 @@
 #define GAMEPORT_SIO        0x1000000
 #define GAMEPORT_PNPROM     0x2000000
 
+/* A joystick on game port gp, for the drivers that keep no state of their
+   own: their private pointer is the port, encoded so it is never NULL. */
+#define JOYSTICK_PRIV(gp) ((void *) (uintptr_t) ((gp) + 1))
+#define JOYSTICK_GP(priv) ((uint8_t) ((uintptr_t) (priv) - 1))
+
 typedef struct joystick_t {
     const char *name;
     const char *internal_name;
 
-    void   *(*init)(void);
+    void   *(*init)(uint8_t gp); /* gp: the game port it is on (JOYSTICK_GP) */
     void    (*close)(void *priv);
     uint8_t (*read)(void *priv);
     void    (*write)(void *priv);
@@ -169,6 +174,19 @@ extern const char *joystick_get_button_name(int js, int id);
 extern const char *joystick_get_pov_name(int js, int id);
 
 extern void  gameport_update_joystick_type(uint8_t gp);
+
+/* The game port cards: none, automatic (a standalone game port when
+   nothing else provides one), or a card. */
+#define GAMEPORT_CARD_AUTO 1
+extern int             gameport_card_type;
+extern void            gameport_card_reset(void);
+extern const device_t *gameport_card_get_device(int card);
+extern const char     *gameport_card_get_internal_name(int card);
+extern int             gameport_card_get_from_internal_name(const char *s);
+extern int             gameport_card_has_config(int card);
+extern const device_t  gameport_card_device;
+extern const device_t  gameport_card_208_device;
+extern const device_t  gameport_card_pnp_device;
 extern void  gameport_remap(void *priv, uint16_t address);
 extern void  gameport_set_decode(void *priv, int read_enabled, int write_enabled);
 extern void *gameport_add(const device_t *gameport_type);

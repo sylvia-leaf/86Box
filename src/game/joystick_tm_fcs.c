@@ -47,9 +47,9 @@
 #include <86box/joystick.h>
 
 static int
-tm_fcs_read_axis(UNUSED(void *priv), int axis)
+tm_fcs_read_axis(void *priv, int axis)
 {
-    uint8_t gp= 0;
+    uint8_t gp= JOYSTICK_GP(priv);
 
     if (!JOYSTICK_PRESENT(gp, 0))
         return AXIS_NOT_PRESENT;
@@ -78,9 +78,9 @@ tm_fcs_read_axis(UNUSED(void *priv), int axis)
 }
 
 static int
-tm_fcs_rcs_read_axis(UNUSED(void *priv), int axis)
+tm_fcs_rcs_read_axis(void *priv, int axis)
 {
-    uint8_t gp = 0;
+    uint8_t gp = JOYSTICK_GP(priv);
 
     if (!JOYSTICK_PRESENT(gp, 0))
         return AXIS_NOT_PRESENT;

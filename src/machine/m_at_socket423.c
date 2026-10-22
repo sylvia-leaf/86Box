@@ -162,6 +162,7 @@ machine_at_ms6529_init(const machine_t *model)
     pci_register_bus_slot(2, 0x05, PCI_CARD_NORMAL,      2, 3, 4, 1);
 
     device_add(&intel_845_device);          /* Intel 845 MCH */
+    device_add(&integrated_cpu_lapic_device);
     device_add(&intel_ich2_device);         /* Intel ICH2 */
     device_add(&w83627hf_no_port_92_device); /* Winbond W83627HF */
     device_add(&sst_flash_49lf002_device);   /* SST 49LF002 2 Mbit Firmware Hub */
@@ -184,7 +185,7 @@ machine_at_abbw7_init(const machine_t *model)
 
     machine_at_common_init(model);
 
-    pci_init(PCI_CONFIG_TYPE_1);
+    /*pci_init(PCI_CONFIG_TYPE_1);
     pci_register_bus_slot(0, 0x00, PCI_CARD_NORTHBRIDGE, 0, 0, 0, 0);
     pci_register_bus_slot(0, 0x01, PCI_CARD_AGPBRIDGE,   1, 2, 3, 4);
     pci_register_bus_slot(0, 0x1e, PCI_CARD_BRIDGE,      0, 0, 0, 0);
@@ -193,14 +194,15 @@ machine_at_abbw7_init(const machine_t *model)
      * AB-BW7 BIOS $PIR: PCI1 is 02:02 on PIRQ[A-D] (60-63);
      * the Award placeholder entries for PCI2-6 are 02:03-07.
      */
-    pci_register_bus_slot(2, 0x02, PCI_CARD_NORMAL,      1, 2, 3, 4);
+    /*pci_register_bus_slot(2, 0x02, PCI_CARD_NORMAL,      1, 2, 3, 4);
     pci_register_bus_slot(2, 0x03, PCI_CARD_NORMAL,      5, 6, 7, 8);
     pci_register_bus_slot(2, 0x04, PCI_CARD_NORMAL,      1, 2, 3, 4);
     pci_register_bus_slot(2, 0x05, PCI_CARD_NORMAL,      2, 3, 4, 1);
     pci_register_bus_slot(2, 0x06, PCI_CARD_NORMAL,      5, 6, 7, 8);
-    pci_register_bus_slot(2, 0x07, PCI_CARD_NORMAL,      8, 5, 6, 7);
+    pci_register_bus_slot(2, 0x07, PCI_CARD_NORMAL,      8, 5, 6, 7);*/
 
     device_add(&intel_845_device);          /* Intel 845 MCH */
+    device_add(&integrated_cpu_lapic_device);
     device_add(&intel_ich2_device);         /* Intel ICH2 */
     device_add(&w83627hf_no_port_92_device); /* Winbond W83627HF */
     device_add(&sst_flash_49lf002_device);   /* SST 49LF002 2 Mbit Firmware Hub */
@@ -238,6 +240,7 @@ machine_at_wb72_init(const machine_t *model)
     pci_register_bus_slot(2, 0x06, PCI_CARD_NORMAL,      4, 1, 2, 3);
     pci_register_bus_slot(2, 0x07, PCI_CARD_NORMAL,      2, 3, 4, 1);
     pci_register_bus_slot(2, 0x08, PCI_CARD_NORMAL,      3, 4, 2, 1);
+    device_add(&integrated_cpu_lapic_device);
 
     device_add(&intel_845_device);          /* Intel 845 MCH */
     device_add(&intel_ich2_device);         /* Intel ICH2 */

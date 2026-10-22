@@ -104,10 +104,6 @@ if(NOT NO_STATIC_OPTION)
     endif()
 endif()
 
-if(NOT (WIN32 OR APPLE OR CMAKE_SYSTEM_NAME STREQUAL "Linux"))
-    set(DISCORD OFF)
-endif()
-
 if(HAIKU)
     set(OPENAL ON)
 endif()
@@ -129,9 +125,9 @@ option(SOUNDCANVAS  "Sound Canvas (CLAP)"                                       
 option(VNC          "VNC renderer"                                               OFF)
 option(MINITRACE    "Enable Chrome tracing using the modified minitrace library" OFF)
 option(GDBSTUB      "Enable GDB stub server for debugging"                       OFF)
+option(AUTOMATION   "Enable the automation control socket"                       OFF)
 option(DEV_BRANCH   "Development branch"                                         OFF)
 option(DISCORD      "Discord Rich Presence support"                              ON)
-option(DEBUGREGS486 "Enable debug register opeartion on 486+ CPUs"               OFF)
 option(LIBASAN      "Enable compilation with the addresss sanitizer"             OFF)
 option(QT           "Use the Qt-based user interface"                            ON)
 option(SDL2         "Use SDL2 instead of SDL3"                                   OFF)
@@ -149,11 +145,6 @@ if(BUILD_TESTING OR BUILD_BENCHMARKS)
     add_subdirectory(tests)
 endif()
 
-# The "new" (PCem v15 style) dynamic recompiler is the only recompiler that
-# supports the Pentium 4 (Socket 423/478) CPUs; without it those machines fall
-# back to the interpreter and run unusably slowly, so enable it by default on
-# all platforms.
-option(NEW_DYNAREC "Use the PCem v15 (\"new\") dynamic recompiler" ON)
 # Fast dynarec sacrifices timing accuracy for speed, as an optional runtime
 # selectable mode. It is built whenever DYNAREC is enabled.
 option(FAST_DYNAREC "Enable fast dynamic recompiler (sacrifice timing for speed)" ON)
@@ -184,6 +175,10 @@ endif()
 if(WIN32 AND GDBSTUB)
     # Force console subsystem when building with GDBSTUB
     set(CMAKE_WIN32_EXECUTABLE OFF CACHE BOOL "Build a Windows GUI executable" FORCE)
+endif()
+
+if(WIN32 AND NOT CMAKE_WIN32_EXECUTABLE)
+    add_compile_definitions(WIN_CONSOLE_LOG=1)
 endif()
 
 if(GDBSTUB)

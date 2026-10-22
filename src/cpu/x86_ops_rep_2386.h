@@ -64,10 +64,10 @@
             else                                                                                                  \
                 DEST_REG += 2;                                                                                    \
             CNT_REG--;                                                                                            \
-            cycles -= 15;                                                                                         \
+            cycles -= IO_STR_CYCLES(DX, 15);                                                                      \
             reads++;                                                                                              \
             writes++;                                                                                             \
-            total_cycles += 15;                                                                                   \
+            total_cycles += IO_STR_CYCLES(DX, 15);                                                                \
         }                                                                                                         \
         PREFETCH_RUN(total_cycles, 1, -1, reads, 0, writes, 0, 0);                                                \
         if (CNT_REG > 0) {                                                                                        \
@@ -103,10 +103,10 @@
             else                                                                                                  \
                 DEST_REG += 4;                                                                                    \
             CNT_REG--;                                                                                            \
-            cycles -= 15;                                                                                         \
+            cycles -= IO_STR_CYCLES(DX, 15);                                                                      \
             reads++;                                                                                              \
             writes++;                                                                                             \
-            total_cycles += 15;                                                                                   \
+            total_cycles += IO_STR_CYCLES(DX, 15);                                                                \
         }                                                                                                         \
         PREFETCH_RUN(total_cycles, 1, -1, 0, reads, 0, writes, 0);                                                \
         if (CNT_REG > 0) {                                                                                        \
@@ -180,10 +180,10 @@
             else                                                                                                  \
                 SRC_REG += 2;                                                                                     \
             CNT_REG--;                                                                                            \
-            cycles -= 14;                                                                                         \
+            cycles -= IO_STR_CYCLES(DX, 14);                                                                      \
             reads++;                                                                                              \
             writes++;                                                                                             \
-            total_cycles += 14;                                                                                   \
+            total_cycles += IO_STR_CYCLES(DX, 14);                                                                \
         }                                                                                                         \
         PREFETCH_RUN(total_cycles, 1, -1, reads, 0, writes, 0, 0);                                                \
         if (CNT_REG > 0) {                                                                                        \
@@ -218,10 +218,10 @@
             else                                                                                                  \
                 SRC_REG += 4;                                                                                     \
             CNT_REG--;                                                                                            \
-            cycles -= 14;                                                                                         \
+            cycles -= IO_STR_CYCLES(DX, 14);                                                                      \
             reads++;                                                                                              \
             writes++;                                                                                             \
-            total_cycles += 14;                                                                                   \
+            total_cycles += IO_STR_CYCLES(DX, 14);                                                                \
         }                                                                                                         \
         PREFETCH_RUN(total_cycles, 1, -1, 0, reads, 0, writes, 0);                                                \
         if (CNT_REG > 0) {                                                                                        \
@@ -858,6 +858,8 @@ REP_OPS_CMPS_SCAS(a32_E, ECX, ESI, EDI, 1)
 static int
 opREPNE(uint32_t fetchdat)
 {
+    if (cpu_check_prefix_length())
+        return 1;
     fetchdat = fastreadl_fetch(cs + cpu_state.pc);
     if (cpu_state.abrt)
         return 1;
@@ -887,6 +889,8 @@ opREPNE_0f(uint32_t fetchdat)
 static int
 opREPE(uint32_t fetchdat)
 {
+    if (cpu_check_prefix_length())
+        return 1;
     fetchdat = fastreadl_fetch(cs + cpu_state.pc);
     if (cpu_state.abrt)
         return 1;

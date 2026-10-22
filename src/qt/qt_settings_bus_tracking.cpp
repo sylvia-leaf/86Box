@@ -43,8 +43,8 @@ SettingsBusTracking::SettingsBusTracking()
     esdi_tracking = 0x0000000000000000ULL;
     xta_tracking  = 0x0000000000000000ULL;
 
-    for (uint8_t i = 0; i < 4; i++)
-        ide_tracking[i] = 0x0000000000000000ULL;
+    for (auto &entry : ide_tracking)
+        entry = 0;
 
     for (uint8_t i = 0; i < 32; i++)
         scsi_tracking[i] = 0x0000000000000000ULL;
@@ -274,7 +274,7 @@ SettingsBusTracking::ide_bus_full()
     uint64_t mask;
     uint8_t  count = 0;
 
-    for (uint8_t i = 0; i < 32; i++) {
+    for (uint8_t i = 0; i < IDE_DRIVES_MAX; i++) {
         element = ((i << 3) >> 6);
         mask    = 0xffULL << ((uint64_t) ((i << 3) & 0x3f));
 
@@ -282,7 +282,7 @@ SettingsBusTracking::ide_bus_full()
             count++;
     }
 
-    return (count == 32);
+    return (count == IDE_DRIVES_MAX);
 }
 
 int
@@ -363,7 +363,7 @@ SettingsBusTracking::busChannelsInUse(const int bus)
             }
             break;
         case HDD_BUS_IDE:
-            for (uint8_t i = 0; i < 32; i++) {
+            for (uint8_t i = 0; i < IDE_DRIVES_MAX; i++) {
                 element = ((i << 3) >> 6);
                 mask    = ((uint64_t) 0xffULL) << ((uint64_t) ((i << 3) & 0x3f));
                 if (ide_tracking[element] & mask)
@@ -371,7 +371,7 @@ SettingsBusTracking::busChannelsInUse(const int bus)
             }
             break;
         case HDD_BUS_ATAPI:
-            for (uint8_t i = 0; i < 32; i++) {
+            for (uint8_t i = 0; i < IDE_DRIVES_MAX; i++) {
                 element = ((i << 3) >> 6);
                 mask    = ((uint64_t) 0xffULL) << ((uint64_t) ((i << 3) & 0x3f));
                 if (ide_tracking[element] & mask)
@@ -412,6 +412,9 @@ SettingsBusTracking::device_track(int set, uint8_t dev_type, int bus, int channe
 {
     int      element;
     uint64_t mask;
+
+    if (channel == CHANNEL_NONE)
+        return;
 
     switch (bus) {
         case CDROM_BUS_HITACHI:

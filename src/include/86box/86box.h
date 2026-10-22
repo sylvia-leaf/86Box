@@ -20,6 +20,8 @@
 #ifndef EMU_86BOX_H
 #define EMU_86BOX_H
 
+#include <stdio.h>
+
 #if defined(__NetBSD__) || defined(__OpenBSD__)
 /* Doesn't compile on NetBSD/OpenBSD without this include */
 #include <stdarg.h>
@@ -145,8 +147,9 @@ extern "C" {
 #endif
 
 /* Global variables. */
-extern int dump_on_exit;        /* (O) dump regs on exit*/
-extern int start_in_fullscreen; /* (O) start in fullscreen */
+extern int dump_on_exit;          /* (O) dump regs on exit*/
+extern int start_in_fullscreen;   /* (O) start in fullscreen */
+extern int start_in_fast_forward; /* (O) start in fast-forward mode */
 #ifdef _WIN32
 extern int force_debug; /* (O) force debug output */
 #endif
@@ -206,6 +209,7 @@ extern int      mcamem_type[];              /* (C) enable MCA mem cards */
 extern int      isamem_type[];              /* (C) enable ISA mem cards */
 extern int      isarom_type[];              /* (C) enable ISA ROM cards */
 extern int      isartc_type;                /* (C) enable ISA RTC card */
+extern int      isa_expansion_type;         /* (C) ISA expansion unit */
 extern int      sound_is_float;             /* (C) sound uses FP values */
 extern char     sound_input_dev_name[512];  /* (C) name of sound input device */
 extern int      sound_input_enabled;        /* (C) enable sound input */
@@ -222,14 +226,24 @@ extern int      cpu_use_dynarec;            /* (C) cpu uses/needs Dyna */
 extern int      cpu_use_dynarec_fast;       /* (C) use fast dynarec (sacrifice timing for speed) */
 extern int      fpu_type;                   /* (C) fpu type */
 extern int      fpu_softfloat;              /* (C) fpu uses softfloat */
+extern int      fpu_host_x87;               /* (C) fpu uses the host's x87 (softfloat's state and handlers) */
+/* Builds with the host-x87 FPU: the x86-64 backend of the new recompiler
+   writes its kernels (cpu/x87_host.h). */
+#if (defined(__x86_64__) || defined(_M_X64)) && defined(USE_DYNAREC)
+#    define X87_HOST_BUILD 1
+#else
+#    define X87_HOST_BUILD 0
+#endif
 extern int      time_sync;                  /* (C) enable time sync */
 extern int      hdd_format_type;            /* (C) hard disk file format */
 extern int      confirm_reset;              /* (G) enable reset confirmation */
 extern int      confirm_exit;               /* (G) enable exit confirmation */
 extern int      confirm_save;               /* (G) enable save confirmation */
+extern int      settings_layout;            /* (G) Settings dialog: 0 classic, 1 slot-based preview */
+extern int      settings_advanced;          /* (G) slot-based Settings: the Cards page's Advanced view */
 extern int      chd_precache_level;         /* (G) CHD precache level */
-extern int      enable_discord;             /* (C) enable Discord integration */
 extern int      force_10ms;                 /* (C) force 10ms CPU frame interval */
+extern int      start_fast_forward;         /* (C) start in fast-forward mode */
 extern int      jumpered_internal_ecp_dma;  /* (C) Jumpered internal EPC DMA */
 extern int      other_ide_present;          /* IDE controllers from non-IDE cards are present */
 extern int      other_scsi_present;         /* SCSI controllers from non-SCSI cards are present */
@@ -254,7 +268,9 @@ extern int    fm_driver;                    /* (C) select FM sound driver */
 extern int    hook_enabled;                 /* (C) Keyboard hook is enabled */
 extern int    vmm_disabled;                 /* (G) disable built-in manager */
 extern char   vmm_path_cfg[1024];           /* (G) VMs path (unless -E is used) */
+extern int    discord_presence;             /* (G) Discord status: off, name and hardware, hardware only, no details */
 extern int    gdbstub_port;                 /* (C) The GDB stub port. */
+extern int    debug_console_port;           /* (C) The debug console listens here from start-up; 0 off. */
 
 extern char exe_path[2048];        /* path (dir) of executable */
 extern char usr_path[1024];        /* path (dir) of user data */
@@ -274,9 +290,6 @@ extern char monitor_edid_path[1024];        /* (C) Path to custom EDID */
 extern int color_scheme;                    /* (C) Color scheme of UI (Windows-only) */
 extern int fdd_sounds_enabled;              /* (C) Enable floppy drive sounds */
 
-#if !defined(USE_NEW_DYNAREC) && defined(FILE)
-extern FILE *stdlog; /* file to log output to */
-#endif
 extern int config_changed; /* config has changed */
 
 extern __thread int is_cpu_thread; /* Is this the CPU thread? */
@@ -288,6 +301,7 @@ extern void fatal_ex(const char *fmt, va_list ap);
 extern void warning_ex(const char *fmt, va_list ap);
 #endif
 extern void pclog_toggle_suppr(void);
+extern void pclog_set_config_path(const char *path);
 extern void pclog(const char *fmt, ...) __attribute__ ((format (printf, 1, 2)));
 /* Optional per-line log callback for UI consumers (e.g. OSD log viewer). */
 extern void (*pclog_hook)(const char *line);

@@ -26,6 +26,7 @@ class MainWindow;
 }
 
 class MachineStatus;
+class DebugConsole;
 
 class MainWindow : public QMainWindow {
     Q_OBJECT
@@ -87,6 +88,7 @@ public slots:
     void destroyRendererMonitorSlot(int monitor_index);
     void updateStatusEmptyIcons();
     void updateUiPauseState();
+    void updateUiFastForwardState();
 private slots:
     void on_actionForce_interpretation_triggered();
     void on_actionFullscreen_triggered();
@@ -116,6 +118,8 @@ private slots:
     void on_actionNearest_triggered();
     void on_actionFullScreen_int_triggered();
     void on_actionFullScreen_int43_triggered();
+    void on_actionFullScreen_center_triggered();
+    void on_actionFullScreen_center43_triggered();
     void on_actionFullScreen_keepRatio_triggered();
     void on_actionFullScreen_43_triggered();
     void on_actionFullScreen_stretch_triggered();
@@ -138,7 +142,6 @@ private slots:
     void on_actionMute_Unmute_triggered();
     void on_actionSound_gain_triggered();
     void on_actionPreferences_triggered();
-    void on_actionEnable_Discord_integration_triggered(bool checked);
     void on_actionRenderer_options_triggered();
     void on_actionFast_forward_triggered();
 
@@ -182,8 +185,7 @@ private slots:
 
 private:
     Ui::MainWindow                *ui;
-
-    // NON-modal dialogs - these use ::show() and therefore have to be maintained as objects     
+    DebugConsole                  *debugConsole = nullptr;
     std::unique_ptr<MachineStatus> status;
     std::shared_ptr<MediaMenu>     mm;
     QMenu                         *dynarecMenu = nullptr;

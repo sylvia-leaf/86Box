@@ -109,6 +109,7 @@ typedef struct mo_drive_t {
     };
 
     uint8_t            bus_type;  /* 0 = ATAPI, 1 = SCSI */
+    uint8_t            disconnected_bus; /* The interface it keeps while disconnected. */
     uint8_t            bus_mode;  /* Bit 0 = PIO suported;
                                      Bit 1 = DMA supportd. */
     uint8_t            read_only; /* Struct variable reserved for

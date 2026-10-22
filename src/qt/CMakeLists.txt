@@ -81,6 +81,22 @@ else()
     include_directories(${Qt5Gui_PRIVATE_INCLUDE_DIRS})
 endif()
 
+# The MSYS2 static Qt 6 finds its third-party libraries through CMake
+# modules that don't know about their static dependencies, so append
+# those to the imported targets to keep them after the library itself
+# on the link line.
+if(QT_STATIC AND MINGW AND USE_QT6)
+    find_package(PkgConfig REQUIRED)
+    if(TARGET TIFF::TIFF)
+        pkg_check_modules(LIBTIFF libtiff-4)
+        set_property(TARGET TIFF::TIFF APPEND PROPERTY INTERFACE_LINK_LIBRARIES ${LIBTIFF_STATIC_LIBRARIES})
+    endif()
+    if(TARGET OpenSSL::Crypto)
+        pkg_check_modules(LIBCRYPTO libcrypto)
+        set_property(TARGET OpenSSL::Crypto APPEND PROPERTY INTERFACE_LINK_LIBRARIES ${LIBCRYPTO_STATIC_LIBRARIES})
+    endif()
+endif()
+
 # TODO: Is this the correct way to do this, and is it required on any
 # other platforms or with Qt 5?
 if(APPLE AND USE_QT6 AND VCPKG_TOOLCHAIN)
@@ -122,6 +138,8 @@ add_library(ui STATIC
     qt_mainwindow.cpp
     qt_mainwindow.hpp
     qt_mainwindow.ui
+    qt_debugconsole.cpp
+    qt_debugconsole.hpp
     qt_machinestatus.cpp
     qt_machinestatus.hpp
     qt_mediamenu.cpp
@@ -189,6 +207,12 @@ add_library(ui STATIC
     qt_settingsotherremovable.ui
     qt_settingsotherperipherals.cpp
     qt_settingsotherperipherals.hpp
+    qt_settingscards.cpp
+    qt_settingscards.hpp
+    qt_settingsoverview.cpp
+    qt_settingsoverview.hpp
+    qt_settingsdrives.cpp
+    qt_settingsdrives.hpp
     qt_settingsotherperipherals.ui
     qt_settings_bus_tracking.cpp
     qt_settings_bus_tracking.hpp
@@ -336,6 +360,15 @@ if(EMU_BUILD_NUM)
         qt_updatedetails.cpp
         qt_updatedetails.hpp
         qt_updatedetails.ui
+    )
+endif()
+
+if(DISCORD)
+    target_sources(ui PRIVATE
+        qt_vmmanager_discord.cpp
+        qt_vmmanager_discord.hpp
+        qt_vmmanager_discordclient.cpp
+        qt_vmmanager_discordclient.hpp
     )
 endif()
 
@@ -492,7 +525,13 @@ endif()
 if(WIN32)
     if(STATIC_BUILD)
         # needed for static builds
-        qt_import_plugins(plat INCLUDE Qt${QT_MAJOR}::QWindowsIntegrationPlugin Qt${QT_MAJOR}::QICOPlugin Qt${QT_MAJOR}::QWindowsVistaStylePlugin)
+        if(TARGET Qt${QT_MAJOR}::QModernWindowsStylePlugin)
+            # Qt 6.7 renamed the windowsvista style plugin
+            set(QT_WINDOWS_STYLE_PLUGIN Qt${QT_MAJOR}::QModernWindowsStylePlugin)
+        else()
+            set(QT_WINDOWS_STYLE_PLUGIN Qt${QT_MAJOR}::QWindowsVistaStylePlugin)
+        endif()
+        qt_import_plugins(plat INCLUDE Qt${QT_MAJOR}::QWindowsIntegrationPlugin Qt${QT_MAJOR}::QICOPlugin ${QT_WINDOWS_STYLE_PLUGIN})
     else()
         if(USE_QT6)
             install(CODE "

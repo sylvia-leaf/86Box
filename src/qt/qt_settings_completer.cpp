@@ -18,6 +18,8 @@
 #include <QStringBuilder>
 #include <QComboBox>
 #include <QCompleter>
+#include <QAbstractItemView>
+#include <QKeyEvent>
 #include <QLineEdit>
 #include <QStandardItemModel>
 #include <QTimer>
@@ -41,13 +43,27 @@ bool
 SettingsCompleter::eventFilter(QObject *watched, QEvent *event)
 {
     if (watched == comboBoxMain) {
-        if (event->type() == QEvent::FocusIn)
+        if (event->type() == QEvent::FocusIn || event->type() == QEvent::MouseButtonPress || event->type() == QEvent::KeyPress) {
+            activate();
             flush();
-        else if (event->type() == QEvent::FocusOut && comboBoxMain->lineEdit()) {
+            /* Enter in the search box is the search's, not the dialog's: the
+               combo would pass it on, and OK would take it. */
+            if (event->type() == QEvent::KeyPress) {
+                const int key = static_cast<QKeyEvent *>(event)->key();
+                if ((key == Qt::Key_Return) || (key == Qt::Key_Enter))
+                    return true;
+            }
+        } else if (event->type() == QEvent::FocusOut && comboBoxMain->lineEdit()) {
             int     i    = comboBoxMain->currentIndex();
             QString name = comboBoxMain->model()->data(comboBoxMain->model()->index(i, 0), Qt::DisplayRole).toString();
             comboBoxMain->lineEdit()->setText(name);
         }
+    } else if ((comboBoxMain->lineEdit() != nullptr) && (watched == comboBoxMain->lineEdit()) && (event->type() == QEvent::KeyPress)) {
+        /* Enter in the search box is the search's, not the dialog's: it
+           must not press OK. With the completions open, they take it. */
+        const int key = static_cast<QKeyEvent *>(event)->key();
+        if (((key == Qt::Key_Return) || (key == Qt::Key_Enter)) && !((completer != nullptr) && completer->popup()->isVisible()))
+            return true;
     }
 
     return false;
@@ -59,9 +75,19 @@ SettingsCompleter::SettingsCompleter(QComboBox *cb, QComboBox *cbSort)
     comboBoxMain = cb;
     comboBoxSort = cbSort;
 
+    model = new QStandardItemModel(this);
+    comboBoxMain->setFocusPolicy(Qt::StrongFocus);
+    comboBoxMain->installEventFilter(this);
+}
+
+void
+SettingsCompleter::activate()
+{
+    if (active)
+        return;
+    active = true;
     comboBoxMain->setEditable(true);
     completer = new QCompleter(this);
-    model     = new QStandardItemModel(this);
     completer->setModel(model);
     comboBoxMain->lineEdit()->setCompleter(completer);
     completer->setCompletionMode(QCompleter::PopupCompletion);
@@ -70,8 +96,7 @@ SettingsCompleter::SettingsCompleter(QComboBox *cb, QComboBox *cbSort)
     completer->setCaseSensitivity(Qt::CaseInsensitive);
     completer->setMaxVisibleItems(30);
     comboBoxMain->lineEdit()->setClearButtonEnabled(true);
-    comboBoxMain->setFocusPolicy(Qt::StrongFocus);
-    comboBoxMain->installEventFilter(this);
+    comboBoxMain->lineEdit()->installEventFilter(this);
 
     connect(completer, QOverload<const QModelIndex &>::of(&QCompleter::activated), this, [this](const QModelIndex &idx) {
         int  sort_id = idx.model()->data(idx, Qt::UserRole + 1).toInt();
@@ -95,7 +120,6 @@ SettingsCompleter::SettingsCompleter(QComboBox *cb, QComboBox *cbSort)
             }
         }
     });
-
 }
 
 SettingsCompleter::~SettingsCompleter()
@@ -134,7 +158,7 @@ SettingsCompleter::addRow(QString name, QString alias, int special, int id)
 void
 SettingsCompleter::flush()
 {
-    if (pending.isEmpty())
+    if (!active || pending.isEmpty())
         return;
 
     /* Model signals can re-enter the event filter or rebuild the list.
@@ -147,11 +171,15 @@ SettingsCompleter::flush()
 void
 SettingsCompleter::addMachine(int i, int j)
 {
-    addRow(machines[j].name, machines[j].name, 0, machine_types[machine_get_type(j)].id);
+    const QString name = machines[j].name;
+    addRow(name, name, 0, machine_types[machine_get_type(j)].id);
 
     int k = 0;
     while (machines[j].aliases[k][0] != 0x00) {
-        addRow(machines[j].name, machines[j].aliases[k], 0, machine_types[machine_get_type(j)].id);
+        const QString alias = machines[j].aliases[k];
+        /* MatchContains already finds aliases included in the display name. */
+        if (!name.contains(alias, Qt::CaseInsensitive))
+            addRow(name, alias, 0, machine_types[machine_get_type(j)].id);
         k++;
     };
 }

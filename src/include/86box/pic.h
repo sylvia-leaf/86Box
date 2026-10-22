@@ -49,7 +49,7 @@ typedef struct pic {
     uint8_t     has_slaves;
     uint8_t     flags;
     uint8_t     edge_lines;
-    uint8_t     pad;
+    uint8_t     default_irq7; /* the acknowledge under way found nothing to take */
     uint32_t    lines[8];
     uint32_t    at;
     uint32_t    zenith;
@@ -77,6 +77,7 @@ extern int  pic_get_pci_flag(void);
 extern void pic_set_pci_flag(int pci);
 extern void pic_set_pci(void);
 extern void pic_set_vector_override(uint8_t irq, int vector);
+extern void pic_set_line_pinned(int irq, int pinned);
 extern void pic_kbd_latch(int enable);
 extern void pic_mouse_latch(int enable);
 extern void pic_init(void);
@@ -89,6 +90,8 @@ extern void pic_handler(int set, uint16_t base, int size);
 extern void pic2_init(void);
 extern void pic_reset(void);
 
+extern uint8_t pic_read(uint16_t addr, void *priv);
+extern void    pic_write(uint16_t addr, uint8_t val, void *priv);
 extern uint8_t pic_read_icw(uint8_t pic_id, uint8_t icw);
 extern uint8_t pic_read_ocw(uint8_t pic_id, uint8_t ocw);
 extern int     picint_is_level(int irq);

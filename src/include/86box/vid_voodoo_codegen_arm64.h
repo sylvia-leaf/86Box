@@ -144,6 +144,7 @@ typedef struct voodoo_arm64_data_t {
     uint32_t trexInit1;
     int      is_tiled;
     int      bilinear_enabled;
+    uint32_t tDetail[2];
     int      valid;
     int      rejected;
 } voodoo_arm64_data_t;
@@ -4480,7 +4481,9 @@ arm64_codegen_store_cache_key(voodoo_arm64_data_t *data, voodoo_t *voodoo, voodo
     data->textureMode[1] = params->textureMode[1];
     data->tLOD[0]        = params->tLOD[0] & LOD_MASK;
     data->tLOD[1]        = params->tLOD[1] & LOD_MASK;
-    data->is_tiled       = (params->col_tiled || params->aux_tiled) ? 1 : 0;
+    data->is_tiled       = voodoo_codegen_tiled_key(params);
+    data->tDetail[0]     = voodoo_codegen_detail_key(params, 0);
+    data->tDetail[1]     = voodoo_codegen_detail_key(params, 1);
     data->bilinear_enabled = voodoo->bilinear_enabled;
     data->valid          = valid;
     data->rejected       = rejected;
@@ -4563,7 +4566,9 @@ voodoo_get_block(voodoo_t *voodoo, voodoo_params_t *params, voodoo_state_t *stat
             && params->textureMode[1] == data->textureMode[1]
             && (params->tLOD[0] & LOD_MASK) == data->tLOD[0]
             && (params->tLOD[1] & LOD_MASK) == data->tLOD[1]
-            && ((params->col_tiled || params->aux_tiled) ? 1 : 0) == data->is_tiled
+            && voodoo_codegen_tiled_key(params) == data->is_tiled
+            && voodoo_codegen_detail_key(params, 0) == data->tDetail[0]
+            && voodoo_codegen_detail_key(params, 1) == data->tDetail[1]
             && voodoo->bilinear_enabled == data->bilinear_enabled) {
             if (data->rejected)
                 return NULL;

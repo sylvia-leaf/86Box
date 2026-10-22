@@ -68,6 +68,7 @@ PreferencesEmulator::PreferencesEmulator(QWidget *parent)
     ui->checkBoxAutoDialogPause->setChecked(do_auto_dialog_pause);
     ui->checkBoxConfirmExit->setChecked(confirm_exit);
     ui->checkBoxConfirmSave->setChecked(confirm_save);
+    ui->checkBoxSettingsLayout->setChecked(settings_layout == 1);
     ui->checkBoxConfirmHardReset->setChecked(confirm_reset);
     ui->checkBoxCHDPrecache->setChecked(chd_precache_level > 0);
 
@@ -104,6 +105,7 @@ PreferencesEmulator::save()
     do_auto_dialog_pause    = ui->checkBoxAutoDialogPause->isChecked() ? 1 : 0;
     confirm_exit            = ui->checkBoxConfirmExit->isChecked() ? 1 : 0;
     confirm_save            = ui->checkBoxConfirmSave->isChecked() ? 1 : 0;
+    settings_layout         = ui->checkBoxSettingsLayout->isChecked() ? 1 : 0;
     confirm_reset           = ui->checkBoxConfirmHardReset->isChecked() ? 1 : 0;
     chd_precache_level      = ui->checkBoxCHDPrecache->isChecked() ? 1 : 0;
 
