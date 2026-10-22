@@ -345,16 +345,20 @@
        <item>
         <layout class="QHBoxLayout" name="softFloatLayout">
          <item>
-          <widget class="QCheckBox" name="checkBoxFPUSoftfloat">
+          <widget class="QLabel" name="labelFPUMode">
+           <property name="text">
+            <string>FPU emulation:</string>
+           </property>
+          </widget>
+         </item>
+         <item>
+          <widget class="QComboBox" name="comboBoxFPUMode">
            <property name="sizePolicy">
             <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
              <horstretch>3</horstretch>
              <verstretch>3</verstretch>
             </sizepolicy>
            </property>
-           <property name="text">
-            <string>Softfloat FPU</string>
-            </property>
           </widget>
          </item>
          <item>
@@ -525,6 +529,51 @@
       </item>
 
       <item>
+       <layout class="QHBoxLayout" name="debugRegs486Layout">
+        <item>
+        <widget class="QCheckBox" name="checkBoxDebugRegs486">
+          <property name="sizePolicy">
+           <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
+          <horstretch>2</horstretch>
+           <verstretch>2</verstretch>
+           </sizepolicy>
+          </property>
+          <property name="text">
+           <string>Debug registers on 486 and later processors</string>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <widget class="QLabel" name="debugRegs486WarningIcon">
+          <property name="text">
+           <string/>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <widget class="QLabel" name="debugRegs486WarningText">
+          <property name="text">
+           <string>High performance impact</string>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <spacer name="debugRegs486HorizontalSpacer">
+          <property name="orientation">
+           <enum>Qt::Horizontal</enum>
+          </property>
+          <property name="sizeHint" stdset="0">
+           <size>
+            <width>40</width>
+            <height>20</height>
+           </size>
+          </property>
+         </spacer>
+        </item>
+       </layout>
+      </item>
+
+      <item>
        <layout class="QHBoxLayout" name="groupBoxesLayout_2">
         <item>
          <layout class="QVBoxLayout" name="verticalLayoutCPUFrameSize">
@@ -625,7 +674,8 @@
   <tabstop>checkBoxDynamicRecompiler</tabstop>
   <tabstop>checkBoxAccurateFPUEnvironment</tabstop>
   <tabstop>checkBoxFastRecompiler</tabstop>
-  <tabstop>checkBoxFPUSoftfloat</tabstop>
+  <tabstop>comboBoxFPUMode</tabstop>
+  <tabstop>checkBoxDebugRegs486</tabstop>
   <tabstop>radioButtonDisabled</tabstop>
   <tabstop>radioButtonLocalTime</tabstop>
   <tabstop>radioButtonUTC</tabstop>

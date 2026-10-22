@@ -51,6 +51,29 @@ SettingsStorageControllers::SettingsStorageControllers(QWidget *parent)
 {
     inMachineChange = true;
     ui->setupUi(this);
+    for (int i = 4; i < HDC_MAX; ++i) {
+        auto *label = new QLabel(tr("Controller %1:").arg(i + 1), ui->groupBoxHD);
+        label->setObjectName(QString("labelHD%1").arg(i + 1));
+        auto *combo = new QComboBox(ui->groupBoxHD);
+        combo->setObjectName(QString("comboBoxHD%1").arg(i + 1));
+        combo->setMaxVisibleItems(30);
+        combo->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Fixed);
+        auto *button = new QPushButton(tr("Configure"), ui->groupBoxHD);
+        button->setObjectName(QString("pushButtonHD%1").arg(i + 1));
+        ui->gridLayoutHD->addWidget(label, i, 0);
+        ui->gridLayoutHD->addWidget(combo, i, 2);
+        ui->gridLayoutHD->addWidget(button, i, 3);
+        connect(combo, QOverload<int>::of(&QComboBox::currentIndexChanged), this, [this, combo, button, i](int index) {
+            if (index < 0)
+                return;
+            button->setEnabled(hdc_has_config(combo->currentData().toInt()) > 0);
+            if (!inMachineChange)
+                hdcCurrent[i] = combo->currentData().toInt();
+        });
+        connect(button, &QPushButton::clicked, this, [this, combo, i]() {
+            hdc_cfg_changed[i] |= DeviceConfig::ConfigureDevice(hdc_get_device(combo->currentData().toInt()), i + 1);
+        });
+    }
 
     for (uint8_t i = 0; i < HDC_MAX; ++i) {
         scHD[i]       = new SettingsCompleter(findChild<QComboBox *>(QString("comboBoxHD%1").arg(i + 1)), nullptr);
@@ -73,6 +96,8 @@ SettingsStorageControllers::SettingsStorageControllers(QWidget *parent)
     fdcCurrent[0]         = fdc_current[0];
     cdromInterfaceCurrent = cdrom_interface_current;
 
+    ui->checkBoxIDETurbo->setChecked(ide_turbo > 0);
+
     onCurrentMachineChanged(machine);
 }
 
@@ -93,7 +118,8 @@ SettingsStorageControllers::~SettingsStorageControllers()
 int
 SettingsStorageControllers::changed()
 {
-    int has_changed = 0;
+    int has_changed  = 0;
+    int soft_changed = 0;
 
     for (uint8_t i = 0; i < HDC_MAX; ++i) {
         QComboBox *cbox = findChild<QComboBox *>(QString("comboBoxHD%1").arg(i + 1));
@@ -113,7 +139,9 @@ SettingsStorageControllers::changed()
     has_changed |= cdrom_interface_cfg_changed;
     has_changed |= (cassette_enable         != (ui->checkBoxCassette->isChecked() ? 1 : 0));
 
-    return has_changed ? (SETTINGS_CHANGED | SETTINGS_REQUIRE_HARD_RESET) : 0;
+    soft_changed |= (ide_turbo != (ui->checkBoxIDETurbo->isChecked() ? 1 : 0));
+
+    return has_changed ? (SETTINGS_CHANGED | SETTINGS_REQUIRE_HARD_RESET) : (soft_changed ? SETTINGS_CHANGED : 0);
 }
 
 void
@@ -140,6 +168,9 @@ SettingsStorageControllers::scsiCard(int i) const
 void
 SettingsStorageControllers::save(int soft)
 {
+    ide_turbo = ui->checkBoxIDETurbo->isChecked() ? 1 : 0;
+    ide_turbo_update();
+
     if (soft)
         return;
 
@@ -312,10 +343,8 @@ SettingsStorageControllers::onCurrentMachineChanged(int machineId)
 
     cdromInterfaceCurrent = ui->comboBoxCDInterface->currentData().toInt();
     fdcCurrent[0]         = ui->comboBoxFD->currentData().toInt();
-    hdcCurrent[0]         = ui->comboBoxHD1->currentData().toInt();
-    hdcCurrent[1]         = ui->comboBoxHD2->currentData().toInt();
-    hdcCurrent[2]         = ui->comboBoxHD3->currentData().toInt();
-    hdcCurrent[3]         = ui->comboBoxHD4->currentData().toInt();
+    for (int i = 0; i < HDC_MAX; ++i)
+        hdcCurrent[i] = hdcCard(i);
     scsiCardCurrent[0]    = ui->comboBoxSCSI1->currentData().toInt();
     scsiCardCurrent[1]    = ui->comboBoxSCSI2->currentData().toInt();
     scsiCardCurrent[2]    = ui->comboBoxSCSI3->currentData().toInt();

@@ -10,9 +10,9 @@ opBT_w_r_a16(uint32_t fetchdat)
     uint16_t temp;
 
     fetch_ea_16(fetchdat);
-    if (cpu_mod != 3)
+    if (cpu_mod != 3) /* the register form references no memory */
         SEG_CHECK_READ(cpu_state.ea_seg);
-    BT_EA_W(0xffff);
+    cpu_state.eaaddr = (cpu_state.eaaddr + (((int32_t) (int16_t) cpu_state.regs[cpu_reg].w >> 4) * 2)) & 0xffff; /* 16-bit addressing wraps */
     eal_r = 0;
     temp  = geteaw();
     if (cpu_state.abrt)
@@ -33,9 +33,9 @@ opBT_w_r_a32(uint32_t fetchdat)
     uint16_t temp;
 
     fetch_ea_32(fetchdat);
-    if (cpu_mod != 3)
+    if (cpu_mod != 3) /* the register form references no memory */
         SEG_CHECK_READ(cpu_state.ea_seg);
-    BT_EA_W(0xffffffff);
+    cpu_state.eaaddr += (((int32_t) (int16_t) cpu_state.regs[cpu_reg].w >> 4) * 2);
     eal_r = 0;
     temp  = geteaw();
     if (cpu_state.abrt)
@@ -56,15 +56,15 @@ opBT_l_r_a16(uint32_t fetchdat)
     uint32_t temp;
 
     fetch_ea_16(fetchdat);
-    if (cpu_mod != 3)
+    if (cpu_mod != 3) /* the register form references no memory */
         SEG_CHECK_READ(cpu_state.ea_seg);
-    BT_EA_L(0xffff);
+    cpu_state.eaaddr = (cpu_state.eaaddr + (((int32_t) cpu_state.regs[cpu_reg].l >> 5) * 4)) & 0xffff; /* 16-bit addressing wraps */
     eal_r = 0;
     temp  = geteal();
     if (cpu_state.abrt)
         return 1;
     flags_rebuild();
-    if (temp & (1 << (cpu_state.regs[cpu_reg].l & 31)))
+    if (temp & (1u << (cpu_state.regs[cpu_reg].l & 31)))
         cpu_state.flags |= C_FLAG;
     else
         cpu_state.flags &= ~C_FLAG;
@@ -79,15 +79,15 @@ opBT_l_r_a32(uint32_t fetchdat)
     uint32_t temp;
 
     fetch_ea_32(fetchdat);
-    if (cpu_mod != 3)
+    if (cpu_mod != 3) /* the register form references no memory */
         SEG_CHECK_READ(cpu_state.ea_seg);
-    BT_EA_L(0xffffffff);
+    cpu_state.eaaddr += (((int32_t) cpu_state.regs[cpu_reg].l >> 5) * 4);
     eal_r = 0;
     temp  = geteal();
     if (cpu_state.abrt)
         return 1;
     flags_rebuild();
-    if (temp & (1 << (cpu_state.regs[cpu_reg].l & 31)))
+    if (temp & (1u << (cpu_state.regs[cpu_reg].l & 31)))
         cpu_state.flags |= C_FLAG;
     else
         cpu_state.flags &= ~C_FLAG;
@@ -106,7 +106,7 @@ opBT_l_r_a32(uint32_t fetchdat)
         fetch_ea_16(fetchdat);                                            \
         if (cpu_mod != 3)                                                 \
             SEG_CHECK_WRITE(cpu_state.ea_seg);                            \
-        BT_EA_W(0xffff);                                                  \
+        cpu_state.eaaddr = (cpu_state.eaaddr + (((int32_t) (int16_t) cpu_state.regs[cpu_reg].w >> 4) * 2)) & 0xffff; /* 16-bit addressing wraps */       \
         eal_r = eal_w = 0;                                                \
         temp          = geteaw();                                         \
         if (cpu_state.abrt)                                               \
@@ -134,7 +134,7 @@ opBT_l_r_a32(uint32_t fetchdat)
         fetch_ea_32(fetchdat);                                            \
         if (cpu_mod != 3)                                                 \
             SEG_CHECK_WRITE(cpu_state.ea_seg);                            \
-        BT_EA_W(0xffffffff);                                              \
+        cpu_state.eaaddr += (((int32_t) (int16_t) cpu_state.regs[cpu_reg].w >> 4) * 2);       \
         eal_r = eal_w = 0;                                                \
         temp          = geteaw();                                         \
         if (cpu_state.abrt)                                               \
@@ -162,13 +162,13 @@ opBT_l_r_a32(uint32_t fetchdat)
         fetch_ea_16(fetchdat);                                            \
         if (cpu_mod != 3)                                                 \
             SEG_CHECK_WRITE(cpu_state.ea_seg);                            \
-        BT_EA_L(0xffff);                                                  \
+        cpu_state.eaaddr = (cpu_state.eaaddr + (((int32_t) cpu_state.regs[cpu_reg].l >> 5) * 4)) & 0xffff; /* 16-bit addressing wraps */       \
         eal_r = eal_w = 0;                                                \
         temp          = geteal();                                         \
         if (cpu_state.abrt)                                               \
             return 1;                                                     \
-        tempc = (temp & (1 << (cpu_state.regs[cpu_reg].l & 31))) ? 1 : 0; \
-        temp operation(1 << (cpu_state.regs[cpu_reg].l & 31));            \
+        tempc = (temp & (1u << (cpu_state.regs[cpu_reg].l & 31))) ? 1 : 0; \
+        temp operation(1u << (cpu_state.regs[cpu_reg].l & 31));            \
         seteal(temp);                                                     \
         if (cpu_state.abrt)                                               \
             return 1;                                                     \
@@ -190,13 +190,13 @@ opBT_l_r_a32(uint32_t fetchdat)
         fetch_ea_32(fetchdat);                                            \
         if (cpu_mod != 3)                                                 \
             SEG_CHECK_WRITE(cpu_state.ea_seg);                            \
-        BT_EA_L(0xffffffff);                                              \
+        cpu_state.eaaddr += (((int32_t) cpu_state.regs[cpu_reg].l >> 5) * 4);       \
         eal_r = eal_w = 0;                                                \
         temp          = geteal();                                         \
         if (cpu_state.abrt)                                               \
             return 1;                                                     \
-        tempc = (temp & (1 << (cpu_state.regs[cpu_reg].l & 31))) ? 1 : 0; \
-        temp operation(1 << (cpu_state.regs[cpu_reg].l & 31));            \
+        tempc = (temp & (1u << (cpu_state.regs[cpu_reg].l & 31))) ? 1 : 0; \
+        temp operation(1u << (cpu_state.regs[cpu_reg].l & 31));            \
         seteal(temp);                                                     \
         if (cpu_state.abrt)                                               \
             return 1;                                                     \
@@ -227,12 +227,16 @@ opBA_w_a16(uint32_t fetchdat)
     uint16_t temp;
 
     fetch_ea_16(fetchdat);
-    ILLEGAL_ON((rmdat & 0x38) < 0x20);
-    if (cpu_mod != 3)
-        SEG_CHECK_WRITE(cpu_state.ea_seg);
+    ILLEGAL_ON(!(rmdat & 0x20)); /* /0-/3 are reserved: #UD before any access */
+    if (cpu_mod != 3) {
+        if ((rmdat & 0x38) == 0x20) /*BT only reads*/
+            SEG_CHECK_READ(cpu_state.ea_seg);
+        else
+            SEG_CHECK_WRITE(cpu_state.ea_seg);
+    }
 
     temp  = geteaw();
-    count = getbyte() & 15;
+    count = getbyte() & 15; /*the bit offset is modulo the operand size*/
     if (cpu_state.abrt)
         return 1;
     tempc = temp & (1 << count);
@@ -256,10 +260,8 @@ opBA_w_a16(uint32_t fetchdat)
             temp ^= (1 << count);
             break;
 
-        default:
-            cpu_state.pc = cpu_state.oldpc;
-            x86illegal();
-            return 0;
+        default: /* not reached: /0-/3 were refused above */
+            break;
     }
     seteaw(temp);
     if (cpu_state.abrt)
@@ -280,9 +282,13 @@ opBA_w_a32(uint32_t fetchdat)
     uint16_t temp;
 
     fetch_ea_32(fetchdat);
-    ILLEGAL_ON((rmdat & 0x38) < 0x20);
-    if (cpu_mod != 3)
-        SEG_CHECK_WRITE(cpu_state.ea_seg);
+    ILLEGAL_ON(!(rmdat & 0x20)); /* /0-/3 are reserved: #UD before any access */
+    if (cpu_mod != 3) {
+        if ((rmdat & 0x38) == 0x20) /*BT only reads*/
+            SEG_CHECK_READ(cpu_state.ea_seg);
+        else
+            SEG_CHECK_WRITE(cpu_state.ea_seg);
+    }
 
     temp  = geteaw();
     count = getbyte() & 15;
@@ -309,10 +315,8 @@ opBA_w_a32(uint32_t fetchdat)
             temp ^= (1 << count);
             break;
 
-        default:
-            cpu_state.pc = cpu_state.oldpc;
-            x86illegal();
-            return 0;
+        default: /* not reached: /0-/3 were refused above */
+            break;
     }
     seteaw(temp);
     if (cpu_state.abrt)
@@ -334,15 +338,19 @@ opBA_l_a16(uint32_t fetchdat)
     uint32_t temp;
 
     fetch_ea_16(fetchdat);
-    ILLEGAL_ON((rmdat & 0x38) < 0x20);
-    if (cpu_mod != 3)
-        SEG_CHECK_WRITE(cpu_state.ea_seg);
+    ILLEGAL_ON(!(rmdat & 0x20)); /* /0-/3 are reserved: #UD before any access */
+    if (cpu_mod != 3) {
+        if ((rmdat & 0x38) == 0x20) /*BT only reads*/
+            SEG_CHECK_READ(cpu_state.ea_seg);
+        else
+            SEG_CHECK_WRITE(cpu_state.ea_seg);
+    }
 
     temp  = geteal();
-    count = getbyte() & 31;
+    count = getbyte() & 31; /*the bit offset is modulo the operand size*/
     if (cpu_state.abrt)
         return 1;
-    tempc = temp & (1 << count);
+    tempc = (temp & (1u << count)) != 0;
     flags_rebuild();
     switch (rmdat & 0x38) {
         case 0x20: /*BT w,imm*/
@@ -354,19 +362,17 @@ opBA_l_a16(uint32_t fetchdat)
             PREFETCH_RUN(3, 3, rmdat, 0, (cpu_mod == 3) ? 0 : 1, 0, 0, 0);
             return 0;
         case 0x28: /*BTS w,imm*/
-            temp |= (1 << count);
+            temp |= (1u << count);
             break;
         case 0x30: /*BTR w,imm*/
-            temp &= ~(1 << count);
+            temp &= ~(1u << count);
             break;
         case 0x38: /*BTC w,imm*/
-            temp ^= (1 << count);
+            temp ^= (1u << count);
             break;
 
-        default:
-            cpu_state.pc = cpu_state.oldpc;
-            x86illegal();
-            return 0;
+        default: /* not reached: /0-/3 were refused above */
+            break;
     }
     seteal(temp);
     if (cpu_state.abrt)
@@ -387,15 +393,19 @@ opBA_l_a32(uint32_t fetchdat)
     uint32_t temp;
 
     fetch_ea_32(fetchdat);
-    ILLEGAL_ON((rmdat & 0x38) < 0x20);
-    if (cpu_mod != 3)
-        SEG_CHECK_WRITE(cpu_state.ea_seg);
+    ILLEGAL_ON(!(rmdat & 0x20)); /* /0-/3 are reserved: #UD before any access */
+    if (cpu_mod != 3) {
+        if ((rmdat & 0x38) == 0x20) /*BT only reads*/
+            SEG_CHECK_READ(cpu_state.ea_seg);
+        else
+            SEG_CHECK_WRITE(cpu_state.ea_seg);
+    }
 
     temp  = geteal();
     count = getbyte() & 31;
     if (cpu_state.abrt)
         return 1;
-    tempc = temp & (1 << count);
+    tempc = (temp & (1u << count)) != 0;
     flags_rebuild();
     switch (rmdat & 0x38) {
         case 0x20: /*BT w,imm*/
@@ -407,19 +417,17 @@ opBA_l_a32(uint32_t fetchdat)
             PREFETCH_RUN(3, 3, rmdat, 0, (cpu_mod == 3) ? 0 : 1, 0, 0, 1);
             return 0;
         case 0x28: /*BTS w,imm*/
-            temp |= (1 << count);
+            temp |= (1u << count);
             break;
         case 0x30: /*BTR w,imm*/
-            temp &= ~(1 << count);
+            temp &= ~(1u << count);
             break;
         case 0x38: /*BTC w,imm*/
-            temp ^= (1 << count);
+            temp ^= (1u << count);
             break;
 
-        default:
-            cpu_state.pc = cpu_state.oldpc;
-            x86illegal();
-            return 0;
+        default: /* not reached: /0-/3 were refused above */
+            break;
     }
     seteal(temp);
     if (cpu_state.abrt)

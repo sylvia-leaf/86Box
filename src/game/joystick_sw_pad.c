@@ -75,6 +75,8 @@ typedef struct sw_data {
 
     pc_timer_t trigger_timer;
     int        data_mode;
+
+    uint8_t    gp; /* the game port it is on */
 } sw_data;
 
 static void
@@ -117,9 +119,11 @@ sw_parity(uint16_t data)
 }
 
 static void *
-sw_init(void)
+sw_init(uint8_t gp)
 {
     sw_data *sw = (sw_data *) calloc(1, sizeof(sw_data));
+
+    sw->gp = gp;
 
     timer_add(&sw->poll_timer, sw_timer_over, sw, 0);
     timer_add(&sw->trigger_timer, sw_trigger_timer_over, sw, 0);
@@ -138,8 +142,8 @@ sw_close(void *priv)
 static uint8_t
 sw_read(void *priv)
 {
-    uint8_t  gp   = 0;
     sw_data *sw   = (sw_data *) priv;
+    uint8_t  gp   = sw->gp;
     uint8_t  temp = 0;
 
     if (!JOYSTICK_PRESENT(gp, 0))
@@ -165,8 +169,8 @@ sw_read(void *priv)
 static void
 sw_write(void *priv)
 {
-    uint8_t  gp              = 0;
     sw_data *sw              = (sw_data *) priv;
+    uint8_t  gp              = sw->gp;
     int64_t  time_since_last = timer_get_remaining_us(&sw->trigger_timer);
 
     if (!JOYSTICK_PRESENT(gp, 0))
@@ -230,9 +234,10 @@ sw_write(void *priv)
 }
 
 static int
-sw_read_axis(UNUSED(void *priv), UNUSED(int axis))
+sw_read_axis(void *priv, UNUSED(int axis))
 {
-    uint8_t gp = 0;
+    const sw_data *sw = (sw_data *) priv;
+    uint8_t        gp = sw->gp;
 
     if (!JOYSTICK_PRESENT(gp, 0))
         return AXIS_NOT_PRESENT;

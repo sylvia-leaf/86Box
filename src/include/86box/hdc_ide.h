@@ -17,8 +17,8 @@
 #ifndef EMU_IDE_H
 #define EMU_IDE_H
 
-#define IDE_BUS_MAX         12    /* The four legacy boards, and two for each of the
-                                     four disk controller slots: never more */
+#define IDE_BUS_MAX         30    /* The four legacy boards, and two for each of the
+                                     thirteen disk controller slots: never more */
 #define IDE_CHAN_MAX        2
 #define IDE_DRIVES_MAX      (IDE_BUS_MAX * IDE_CHAN_MAX)
 
@@ -149,10 +149,13 @@ typedef struct ide_s {
     void *  get_timings;
     void *  identify;
     void *  stop;
+    void *  packet_command;
     void *  device_reset;
     void *  phase_data_out;
     void *  command_stop;
     void *  bus_master_error;
+    void *  read;
+    void *  write;
 #endif
 } ide_t;
 
@@ -186,6 +189,10 @@ enum {
     TIMINGS_PIO    = 1,
     TIMINGS_PIO_FC = 2
 };
+
+extern int ide_turbo;
+
+extern void ide_turbo_update(void);
 
 #ifdef SCSI_DEVICE_H
 extern ide_t *ide_get_drive(int ch);

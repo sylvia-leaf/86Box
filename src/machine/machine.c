@@ -99,7 +99,6 @@ machine_init_ex(int m)
         /* Reset the memory state. */
         if (!dump_missing)
             mem_reset();
-        apic_lapic_readd_mapping();
         smbase = is_am486dxl ? 0x00060000 : 0x00030000;
 
         if (cassette_enable)
@@ -211,4 +210,72 @@ machine_common_init(UNUSED(const machine_t *model))
         pit_type += 2;
 
     pit_common_init(pit_type, pit_irq0_timer, NULL);
+}
+
+/* The board's PCI, as its table entry has it. */
+void
+machine_pci_init(void)
+{
+    pci_init(machines[machine].pci_flags);
+}
+
+/* Register the PCI device numbers of the machine's slot table, in order,
+   as its init did with pci_register_slot() one by one: the table is the
+   only record of them. An entry may apply with one BIOS only. */
+void
+machine_pci_register_slots(void)
+{
+    const machine_t *m         = &machines[machine];
+    char             bios[128] = { 0 };
+
+    if (m->slot_layout == NULL)
+        return;
+
+    /* The selected BIOS, for the entries that depend on it. */
+    for (const machine_slot_t *s = m->slot_layout; s->kind != SLOT_END; s++) {
+        if ((s->if_bios != NULL) && (m->device != NULL)) {
+            device_context(m->device);
+            const char *b = device_get_config_bios("bios");
+            if (b != NULL)
+                snprintf(bios, sizeof(bios), "%s", b);
+            device_context_restore();
+            break;
+        }
+    }
+
+    for (const machine_slot_t *s = m->slot_layout; s->kind != SLOT_END; s++) {
+        if (s->kind != SLOT_PCI)
+            continue;
+        if (s->if_bios != NULL) {
+            const int negate = (s->if_bios[0] == '!');
+
+            if ((strcmp(bios, s->if_bios + negate) == 0) == negate)
+                continue;
+        }
+
+        pci_register_slot(s->pci_dev, s->pci_type, s->irq[0], s->irq[1], s->irq[2], s->irq[3]);
+    }
+}
+
+/* The slots and devices of the bus behind the board's bridge of type
+   pci_type (its layout entry's .bus), on bus index bus: for a bus whose
+   number is known only once its bridge is up, such as the one behind the
+   Dell OptiPlex riser's DEC 21152. */
+void
+machine_pci_register_bus_slots(uint8_t pci_type, uint8_t bus)
+{
+    const machine_t *m = &machines[machine];
+
+    if (m->slot_layout == NULL)
+        return;
+
+    for (const machine_slot_t *s = m->slot_layout; s->kind != SLOT_END; s++) {
+        if ((s->kind != SLOT_PCI) || (s->pci_type != pci_type) || (s->bus == NULL))
+            continue;
+        for (const machine_slot_t *b = s->bus; b->kind != SLOT_END; b++) {
+            if (b->kind == SLOT_PCI)
+                pci_register_bus_slot(bus, b->pci_dev, b->pci_type, b->irq[0], b->irq[1], b->irq[2], b->irq[3]);
+        }
+        return;
+    }
 }

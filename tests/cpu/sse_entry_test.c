@@ -5,7 +5,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "../../src/codegen_new/codegen_ir.c"
+#include "../../src/codegen/codegen_ir.c"
 
 #define CHECK(condition) do { \
     if (!(condition)) { \
@@ -28,6 +28,8 @@ int max_version_refcount;
 static uint8_t code_buffer[1];
 static uint32_t entry_pcs[32];
 static int entries, rechecks, arithmetic, full_flushes, order_flushes, patched_jumps;
+static int mxcsr_begins, mxcsr_ends;
+static int mmx_arithmetic, mmx_commits, mmx_entries;
 
 void fatal(const char *fmt, ...)
 {
@@ -40,9 +42,14 @@ void fatal(const char *fmt, ...)
 
 uint8_t *codeblock_allocator_get_ptr(struct mem_block_t *block) { (void)block; return code_buffer; }
 void codegen_backend_prologue(codeblock_t *block) { (void)block; }
+#ifdef CODEGEN_BACKEND_HAS_SELECTIVE_XMM
+void codegen_backend_ir_prologue(codeblock_t *block) { (void)block; }
+#endif
 void codegen_backend_epilogue(codeblock_t *block) { (void)block; }
 void codegen_backend_mem_begin(void) { }
 void codegen_backend_mem_finish(codeblock_t *block) { (void)block; }
+void codegen_backend_sse_mxcsr_begin(codeblock_t *block) { (void)block; mxcsr_begins++; }
+void codegen_backend_sse_mxcsr_end(codeblock_t *block) { (void)block; mxcsr_ends++; }
 void codegen_set_jump_dest(codeblock_t *block, void *p) { (void)block; (void)p; patched_jumps++; }
 void codegen_reg_mark_as_required(void) { }
 void codegen_reg_process_dead_list(ir_data_t *ir) { (void)ir; }
@@ -72,6 +79,14 @@ static int record_uop(codeblock_t *block, uop_t *uop)
         entry_pcs[entries++] = uop->imm_data;
     } else if ((uop->type & UOP_MASK) == (UOP_ADDPS & UOP_MASK))
         arithmetic++;
+    else if ((uop->type & UOP_MASK) == (UOP_PADDD & UOP_MASK))
+        mmx_arithmetic++;
+    else if ((uop->type & UOP_MASK) == (UOP_MMX_COMMIT & UOP_MASK)) {
+        CHECK(mmx_arithmetic & 1);
+        mmx_commits++;
+    }
+    else if ((uop->type & UOP_MASK) == (UOP_MMX_ENTER & UOP_MASK))
+        mmx_entries++;
     return 0;
 }
 
@@ -91,11 +106,18 @@ const uOpFn uop_handlers[UOP_MAX] = {
     [UOP_MEM_LOAD_REG & UOP_MASK] = record_uop,
     [UOP_CHECK_ALIGN & UOP_MASK] = record_uop,
     [UOP_JMP_DEST & UOP_MASK] = record_uop,
+    [UOP_JMP & UOP_MASK] = record_uop,
+    [UOP_CMP_IMM_JNZ_DEST & UOP_MASK] = record_uop,
+    [UOP_MMX_ENTER & UOP_MASK] = record_uop,
+    [UOP_MMX_COMMIT & UOP_MASK] = record_uop,
+    [UOP_PADDD & UOP_MASK] = record_uop,
 };
 
 static ir_data_t *start_block(void)
 {
     entries = rechecks = arithmetic = full_flushes = order_flushes = patched_jumps = 0;
+    mxcsr_begins = mxcsr_ends = 0;
+    mmx_arithmetic = mmx_commits = mmx_entries = 0;
     memset(reg_last_version, 0, sizeof(reg_last_version));
     memset(reg_version, 0, sizeof(reg_version));
     dirty_ir_regs[0] = dirty_ir_regs[1] = 0;
@@ -116,6 +138,14 @@ static void compile(ir_data_t *ir)
     codegen_ir_compile(ir, &block);
 }
 
+static void add_mmx(ir_data_t *ir, unsigned pc)
+{
+    uop_gen_imm(UOP_MMX_ENTER, ir, pc);
+    uop_PADDD(ir, IREG_MM(0), IREG_MM(0), IREG_MM(1));
+    uop_MMX_COMMIT(ir);
+    uop_PADDD(ir, IREG_MM(0), IREG_MM(0), IREG_MM(1));
+}
+
 int main(void)
 {
     ir_data_t *ir;
@@ -131,6 +161,7 @@ int main(void)
         compile(ir);
         CHECK(entries == 1 && entry_pcs[0] == (uint32_t)(0x100 + run * 0x100));
         CHECK(arithmetic == 3);
+        CHECK(mxcsr_begins == 1 && mxcsr_ends == 1); /* Preserve batching. */
         CHECK(full_flushes == 1); /* Only the final block writeback. */
     }
 
@@ -216,6 +247,83 @@ int main(void)
     CHECK(entry_pcs[1] == 0x200 && entry_pcs[2] == 0x200);
     CHECK(arithmetic == 7);
 
-    puts("SSE entry lowering tests passed");
+    /* Delayed MMX entry must retain its first arithmetic result in a host
+       register, including after a faultable load, without an extra spill. */
+    for (int memory = 0; memory < 2; memory++) {
+        ir = start_block();
+        uop_gen_imm(UOP_MMX_ENTER, ir, 0x100);
+        if (memory) uop_gen(UOP_MEM_LOAD_REG, ir);
+        uop_PADDD(ir, IREG_MM(0), IREG_MM(0), IREG_MM(1));
+        uop_MMX_COMMIT(ir);
+        uop_PADDD(ir, IREG_MM(0), IREG_MM(0), IREG_MM(1));
+        codegen_ir_set_unroll(3, 0, 0);
+        compile(ir);
+        CHECK(mmx_commits == (memory ? 3 : 1) && mmx_arithmetic == 6);
+        CHECK(mmx_entries == (memory ? 3 : 1));
+        CHECK(full_flushes == (memory ? 4 : 2) && order_flushes == 0);
+    }
+
+    /* Match a real DEC/JNZ unrolled loop: the carry helper remains a full
+       ABI barrier, but it and the conditional exit preserve MMX state. */
+    ir = start_block();
+    add_mmx(ir, 0x100);
+    uop_CALL_INT_FLAGS(ir, NULL);
+    branch = uop_CMP_IMM_JNZ_DEST(ir, IREG_ECX, 0);
+    uop_JMP(ir, NULL);
+    uop_set_jump_dest(ir, branch);
+    uop_MOV_IMM(ir, IREG_op32, 0x300);
+    codegen_ir_set_unroll(3, 0, 0);
+    compile(ir);
+    CHECK(mmx_entries == 1 && mmx_commits == 1 && mmx_arithmetic == 6);
+    CHECK(patched_jumps == 3 && full_flushes == 5); /* Entry, three calls, final writeback. */
+
+    /* Even a redundant entry at a dominated join must patch the branch. */
+    ir = start_block();
+    add_mmx(ir, 0x100);
+    branch = uop_CMP_IMM_JNZ_DEST(ir, IREG_ECX, 0);
+    uop_MOV_IMM(ir, IREG_EAX, 7);
+    uop_set_jump_dest(ir, branch);
+    add_mmx(ir, 0x200);
+    compile(ir);
+    CHECK(mmx_entries == 1 && mmx_commits == 1 && patched_jumps == 1);
+
+    /* A path that bypasses the first entry must still check at the join. */
+    ir = start_block();
+    branch = uop_CMP_IMM_JNZ_DEST(ir, IREG_ECX, 0);
+    add_mmx(ir, 0x100);
+    uop_set_jump_dest(ir, branch);
+    add_mmx(ir, 0x200);
+    compile(ir);
+    CHECK(mmx_entries == 2 && mmx_commits == 2 && patched_jumps == 1);
+
+    /* Checking entry is not the same as committing the tags: a predecessor
+       that skipped the commit still requires it at the join. */
+    ir = start_block();
+    uop_gen_imm(UOP_MMX_ENTER, ir, 0x100);
+    uop_PADDD(ir, IREG_MM(0), IREG_MM(0), IREG_MM(1));
+    branch = uop_CMP_IMM_JNZ_DEST(ir, IREG_ECX, 0);
+    uop_MMX_COMMIT(ir);
+    uop_PADDD(ir, IREG_MM(0), IREG_MM(0), IREG_MM(1));
+    uop_set_jump_dest(ir, branch);
+    add_mmx(ir, 0x200);
+    compile(ir);
+    CHECK(mmx_entries == 1 && mmx_commits == 2 && patched_jumps == 1);
+
+    /* General calls and memory callbacks can change pending exceptions or
+       control state on either predecessor, including in an unrolled copy. */
+    for (unsigned i = 0; i < sizeof(barriers) / sizeof(barriers[0]); i++) {
+        ir = start_block();
+        add_mmx(ir, 0x100);
+        branch = uop_CMP_IMM_JNZ_DEST(ir, IREG_ECX, 0);
+        uop_gen(barriers[i], ir);
+        uop_set_jump_dest(ir, branch);
+        add_mmx(ir, 0x200);
+        codegen_ir_set_unroll(3, 0, 0);
+        compile(ir);
+        CHECK(mmx_entries == 4 && mmx_commits == 4 && mmx_arithmetic == 12);
+        CHECK(patched_jumps == 3);
+    }
+
+    puts("SIMD entry lowering tests passed");
     return 0;
 }

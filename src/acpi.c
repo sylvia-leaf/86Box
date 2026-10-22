@@ -43,6 +43,7 @@
 #include <86box/i2c.h>
 #include <86box/video.h>
 #include <86box/smbus.h>
+#include <86box/flash.h>
 #include <86box/hdc.h>
 #include <86box/hdc_ide.h>
 #include <86box/hdc_ide_sff8038i.h>
@@ -231,10 +232,7 @@ acpi_update_irq(acpi_t *dev)
         default:
             if (dev->irq_line != 0)
             {
-                if (dev->irq_line >= 16 && current_ioapic && current_ioapic->ioapic_mem_window.enable)
-                    apic_ioapic_set_irq(current_ioapic, dev->irq_line, 1);
-                else
-                    picintlevel(1 << dev->irq_line, &dev->irq_state);
+                picintlevel(1 << dev->irq_line, &dev->irq_state);
             }
             else
                 dev->irq_state = 1;
@@ -251,10 +249,7 @@ acpi_update_irq(acpi_t *dev)
         default:
             if (dev->irq_line != 0)
             {
-                if (dev->irq_line >= 16 && current_ioapic && current_ioapic->ioapic_mem_window.enable)
-                    apic_ioapic_clear_irq(current_ioapic, dev->irq_line);
-                else
-                    picintclevel(1 << dev->irq_line, &dev->irq_state);
+                picintclevel(1 << dev->irq_line, &dev->irq_state);
             }
             else
                 dev->irq_state = 0;
@@ -1385,6 +1380,8 @@ acpi_reg_write_intel(int size, uint16_t addr, uint8_t val, void *priv)
             dev->regs.gporeg[addr & 3] = val;
             if ((addr == 0x34) && (machines[machine].init == machine_at_cubx_init))
                 hdc_onboard_enabled = (val & 0x01);
+            else if ((addr == 0x37) && (machines[machine].init == machine_at_acerv66ma_init))
+                sst_set_xor(!(val & 0x20));
             break;
         default:
             acpi_reg_write_common_regs(size, addr, val, priv);
@@ -2044,6 +2041,11 @@ acpi_reg_write_sis_5595(int size, uint16_t addr, uint8_t val, void *priv)
             break;
         case 0x1d:
             dev->regs.gpe_pin = ((dev->regs.gpe_pin & ~(0x0f << shift32)) | ((val & 0x0f) << shift32));
+            if ((machines[machine].init == machine_at_m748mr_init) && (val & 0x02) &&
+                !(dev->regs.gpe_io & 0x00000200)) {
+                acpi_log("ACPI: GPIO9 driven high, resetting the machine\n");
+                pci_write(0xcf9, 0x06, NULL);
+                }
             break;
         case 0x1e:
             dev->regs.gpe_pin = ((dev->regs.gpe_pin & ~(0x03 << shift32)) | ((val & 0x03) << shift32));
@@ -2624,6 +2626,12 @@ acpi_ali_soft_smi_status_write(acpi_t *dev, uint8_t soft_smi)
 }
 
 void
+acpi_pwrbut_press(void)
+{
+    acpi_pwrbut_pressed = 1;
+}
+
+void
 acpi_pwrbtn_timer(void *priv)
 {
     acpi_t *dev = (acpi_t *) priv;
@@ -2758,7 +2766,8 @@ acpi_reset(void *priv)
         (machines[machine].init == machine_at_bl440zx_init))
         /* ED = Normal, DD (2-3) - Maintenance, BD, FD (none) - Recovery. */
         dev->regs.gpireg[2] = 0xed;
-    else if ((machines[machine].init == machine_at_in440ex_init) || (machines[machine].init == machine_at_in440exd_init))
+    else if ((machines[machine].init == machine_at_in440ex_init) ||
+             (machines[machine].init == machine_at_in440exd_init))
         /* Bit 5: CMOS clear jumper(?) - must be set as otherwise CMOS is not saved */
         dev->regs.gpireg[2] = 0xfd;
     else if (machines[machine].init == machine_at_em440_init)
@@ -2768,6 +2777,12 @@ acpi_reset(void *priv)
         dev->regs.gpireg[2] = dev->gpireg2_default;
     for (uint8_t i = 0; i < 4; i++)
         dev->regs.gporeg[i] = dev->gporeg_default[i];
+    if (machines[machine].init == machine_at_acerv66ma_init) {
+        /* Bit 4 must be cleared to avoid the password violated error. */
+        dev->regs.gpireg[2] = 0xcd;
+        /* Bit 5 must be set at reset to disable the A17 xor for the Flash. */
+        dev->regs.gporeg[3] |= 0x20;
+    }
     if (dev->vendor == VEN_VIA_596B) {
         dev->regs.gpo_val = 0x7fffffff;
         /*
@@ -2808,7 +2823,7 @@ acpi_reset(void *priv)
 
     if (acpi_power_on) {
         /* Power on always generates a resume event. */
-        dev->regs.pmsts |= 0x8100;
+        // dev->regs.pmsts |= 0x8100;
         acpi_power_on = 0;
     }
 
@@ -2841,6 +2856,14 @@ acpi_reset(void *priv)
         /* Fix for the IN530 CMOS reset jumper */
         if (machines[machine].init == machine_at_in530_init)
             dev->regs.gpe_pin = 0x0003ffff;
+    }
+
+    if (dev->vendor == VEN_SIS_5582) {
+        /* SiS Proprietary Bit, must be 1 */
+        dev->regs.pmcntrl |= 0x0200;
+
+        if (machines[machine].init == machine_at_sp97xv_init)
+            dev->regs.reg_18  |= 0x0480;
     }
 }
 

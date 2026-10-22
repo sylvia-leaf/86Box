@@ -84,8 +84,8 @@ typedef union {
     } while (0)
 
 /* Dynarec blocks are keyed on PC=24 and RC!=nearest, but FLDCW/FLDENV/
-   FRSTOR/FSAVE run as helper calls inside a block: a change to either must
-   end the block so the ops after it are compiled under the new value. */
+   FRSTOR/FSAVE/FINIT run as helper calls inside a block: a change to either
+   must end the block so the ops after it are compiled under the new value. */
 #define x87_set_control_word(w)                                                                                                 \
     do {                                                                                                                        \
         uint16_t old_npxc_ = cpu_state.npxc;                                                                                    \
@@ -93,6 +93,16 @@ typedef union {
         codegen_set_rounding_mode((cpu_state.npxc >> 10) & 3);                                                                  \
         if (((!(old_npxc_ & 0x300)) != (!(cpu_state.npxc & 0x300))) || ((!(old_npxc_ & 0xc00)) != (!(cpu_state.npxc & 0xc00)))) \
             CPU_BLOCK_END();                                                                                                    \
+        /* Blocks are keyed on these, and a chain compares the key at  */                                                       \
+        /* every link without a dispatch to refresh them               */                                                       \
+        if (cpu_state.npxc & 0x300)                                                                                             \
+            cpu_cur_status &= ~CPU_STATUS_FPU_PC24;                                                                             \
+        else                                                                                                                    \
+            cpu_cur_status |= CPU_STATUS_FPU_PC24;                                                                              \
+        if ((cpu_state.npxc >> 10) & 3)                                                                                         \
+            cpu_cur_status |= CPU_STATUS_FPU_RC_NZ;                                                                             \
+        else                                                                                                                    \
+            cpu_cur_status &= ~CPU_STATUS_FPU_RC_NZ;                                                                            \
     } while (0)
 
 #ifdef FPU_8087
@@ -113,40 +123,24 @@ typedef union {
             } else                                      \
                 dst = src1 / (double) src2;             \
         } while (0)
+#    define x87_div_memory(dst, src1, src2, mem) x87_div(dst, src1, src2)
 #else
-#    define x87_div(dst, src1, src2)                    \
-        do {                                            \
-            if (((double) src2) == 0.0) {               \
-                cpu_state.npxs |= FPU_SW_Zero_Div;      \
-                if (cpu_state.npxc & FPU_SW_Zero_Div)   \
-                    dst = src1 / (double) src2;         \
-                else {                                  \
-                    fpu_log("FPU : divide by zero\n");  \
-                    if (is486 && (cr0 & 0x20))          \
-                        new_ne = 1;                     \
-                    else                                \
-                        picint(1 << 13);                \
-                    return 1;                           \
-                }                                       \
-            } else                                      \
-                dst = src1 / (double) src2;             \
+#    define x87_div_memory(dst, src1, src2, mem)                            \
+        do {                                                               \
+            int denormal_ = (mem) != 0 && fabs((double)(mem)) <             \
+                            (sizeof(mem) == 4 ? 0x1p-126 : 0x1p-1022);    \
+            if (x87_legacy_divide(&(dst), (double) (src1), (double) (src2), \
+                                  X87_ST_EMPTY(0) | (denormal_ << 1))) \
+                return 0;                                                  \
         } while (0)
 #endif
 
 static __inline void
 x87_push(double i)
 {
-#ifdef USE_NEW_DYNAREC
     cpu_state.TOP--;
-#else
-    cpu_state.TOP                    = (cpu_state.TOP - 1) & 7;
-#endif
     cpu_state.ST[cpu_state.TOP & 7] = i;
-#ifdef USE_NEW_DYNAREC
     cpu_state.tag[cpu_state.TOP & 7] = TAG_VALID;
-#else
-    cpu_state.tag[cpu_state.TOP & 7] = (i == 0.0) ? TAG_VALID : 0;
-#endif
 }
 
 static __inline void
@@ -159,17 +153,9 @@ x87_push_u64(uint64_t i)
 
     td.ll = i;
 
-#ifdef USE_NEW_DYNAREC
     cpu_state.TOP--;
-#else
-    cpu_state.TOP                    = (cpu_state.TOP - 1) & 7;
-#endif
     cpu_state.ST[cpu_state.TOP & 7] = td.d;
-#ifdef USE_NEW_DYNAREC
     cpu_state.tag[cpu_state.TOP & 7] = TAG_VALID;
-#else
-    cpu_state.tag[cpu_state.TOP & 7] = (td.d == 0.0) ? TAG_VALID : 0;
-#endif
 }
 
 static __inline double
@@ -177,113 +163,11 @@ x87_pop(void)
 {
     double t                         = cpu_state.ST[cpu_state.TOP & 7];
     cpu_state.tag[cpu_state.TOP & 7] = TAG_EMPTY;
-#ifdef USE_NEW_DYNAREC
     cpu_state.TOP++;
-#else
-    /* Old-dynarec "empty" is packed tag 3 (see FINIT's 0x0303... and the dynarec's
-       FP_POP, which writes 3). The previous `|= TAG_UINT64` left the vacated slot
-       tagged as a live 64-bit integer (x87_gettag maps TAG_UINT64 -> non-empty 2),
-       diverging from the dynarec and causing FXSAVE to serialize a stale MM.q with
-       the 0x5555 sentinel. Mark it empty like FP_POP/FINIT do. */
-    cpu_state.tag[cpu_state.TOP & 7] = 3;
-    cpu_state.TOP = (cpu_state.TOP + 1) & 7;
-#endif
     return t;
 }
 
-static __inline int64_t
-x87_fround_nearest(double b)
-{
-    double da, dc;
-    int64_t a, c;
-    
-    da = floor(b);
-    dc = floor(b + 1.0);
-    a = (int64_t) da;
-    c = (int64_t) dc;
-    if ((b - a) < (c - b))
-        return a;
-    else if ((b - a) > (c - b))
-        return c;
-    else
-        return (a & 1) ? c : a;
-}
-
-static __inline int64_t
-x87_fround(double b)
-{
-    double da;
-    double dc;
-    int64_t a;
-    int64_t c;
-
-    switch ((cpu_state.npxc >> 10) & 3) {
-        case 0: /*Nearest*/
-            da = floor(b);
-            dc = floor(b + 1.0);
-            a = (int64_t) da;
-            c = (int64_t) dc;
-            if ((b - a) < (c - b))
-                return a;
-            else if ((b - a) > (c - b))
-                return c;
-            else
-                return (a & 1) ? c : a;
-        case 1: /*Down*/
-            da = floor(b);
-            return (int64_t) da;
-        case 2: /*Up*/
-            da = ceil(b);
-            return (int64_t) da;
-        case 3: /*Chop*/
-            return (int64_t) b;
-    }
-
-    return 0LL;
-}
-
-/*A value outside -32768..32767 after rounding, or a NaN, stores the integer
-  indefinite (0x8000) as the chip does with IE masked. The range is checked on
-  the double first: converting an out-of-range double is undefined on the host.*/
-static __inline int16_t
-x87_fround16(double b)
-{
-    int64_t r;
-
-    if (!((b > -32769.0) && (b < 32768.0)))
-        return (int16_t) 0x8000;
-    r = x87_fround(b);
-    if ((r < -32768) || (r > 32767))
-        return (int16_t) 0x8000;
-    return (int16_t) r;
-}
-
-static __inline int64_t
-x87_fround16_64(double b)
-{
-    return (int64_t) x87_fround16(b);
-}
-
-/*x87_fround16() for FIST m32: the integer indefinite is 0x80000000. Rounding
-  in 64 bits keeps the neighbours of INT32_MAX from overflowing on the way.*/
-static __inline int32_t
-x87_fround32(double b)
-{
-    int64_t r;
-
-    if (!((b > -2147483649.0) && (b < 2147483648.0)))
-        return INT32_MIN;
-    r = x87_fround(b);
-    if ((r < INT32_MIN) || (r > INT32_MAX))
-        return INT32_MIN;
-    return (int32_t) r;
-}
-
-static __inline int64_t
-x87_fround32_64(double b)
-{
-    return (int64_t) x87_fround32(b);
-}
+#include "x87_ops_fist.h"
 
 /*x87_fround16() for FISTTP, which always truncates. Truncation keeps every
   value in (-32769, 32768) in range.*/
@@ -374,16 +258,10 @@ x87_ld_frstor(int reg)
        way FNSAVE/FRSTOR does; the previous `tag == 2` condition depended on a
        correctly-reconstructed abridged tag, which FXRSTOR cannot guarantee. */
     if (cpu_state.MM_w4[reg] == 0x5555) {
-#ifdef USE_NEW_DYNAREC
         cpu_state.tag[reg] = TAG_VALID | TAG_UINT64;
-#else
-        cpu_state.tag[reg] = TAG_UINT64;
-#endif
         cpu_state.ST[reg] = (double) cpu_state.MM[reg].q;
     } else {
-#ifdef USE_NEW_DYNAREC
         cpu_state.tag[reg] &= ~TAG_UINT64;
-#endif
         cpu_state.ST[reg] = x87_ld80();
     }
 }
@@ -530,20 +408,16 @@ typedef union {
         } while (0)
 #endif
 
-#ifdef USE_NEW_DYNAREC
-#    define FP_TAG_VALID   cpu_state.tag[cpu_state.TOP & 7] = TAG_VALID
-#    define FP_TAG_VALID_F cpu_state.tag[(cpu_state.TOP + fetchdat) & 7] = TAG_VALID
-#    define FP_TAG_DEFAULT cpu_state.tag[cpu_state.TOP & 7] = TAG_VALID | TAG_UINT64
-#    define FP_TAG_VALID_N cpu_state.tag[(cpu_state.TOP + 1) & 7] = TAG_VALID
-#else
-#    define FP_TAG_VALID   cpu_state.tag[cpu_state.TOP] &= ~TAG_UINT64
-#    define FP_TAG_VALID_F cpu_state.tag[(cpu_state.TOP + fetchdat) & 7] &= ~TAG_UINT64
-#    define FP_TAG_DEFAULT cpu_state.tag[cpu_state.TOP] |= TAG_UINT64;
-#    define FP_TAG_VALID_N cpu_state.tag[(cpu_state.TOP + 1) & 7] &= ~TAG_UINT64
-#endif
+#define FP_TAG_VALID   cpu_state.tag[cpu_state.TOP & 7] = TAG_VALID
+#define FP_TAG_VALID_F cpu_state.tag[(cpu_state.TOP + fetchdat) & 7] = TAG_VALID
+#define FP_TAG_DEFAULT cpu_state.tag[cpu_state.TOP & 7] = TAG_VALID | TAG_UINT64
+#define FP_TAG_VALID_N cpu_state.tag[(cpu_state.TOP + 1) & 7] = TAG_VALID
 
 #include "softfloat3e/softfloat-specialize.h"
 #include "softfloat3e/fpu_trans.h"
+/* The softfloat handlers below do their arithmetic on the host's x87 when
+   fpu_host_x87 is set; softfloat's own transcendentals above do not. */
+#include "x87_host.h"
 
 #include "x87_ops_sf_arith.h"
 #include "x87_ops_sf_compare.h"
@@ -598,7 +472,15 @@ FPU_ILLEGAL_a16(UNUSED(uint32_t fetchdat))
 static int
 FPU_ILLEGAL_a16(uint32_t fetchdat)
 {
+    /* An undefined ESC opcode takes #NM like a defined one, then #UD on
+       the 486 and later; no pending-exception check, no state change
+       (Pentium Vol. 3, 23.3.5) */
+    FP_ENTER();
     fetch_ea_16(fetchdat);
+    if (is486 || isibm486) {
+        x86illegal();
+        return 1;
+    }
     CLOCK_CYCLES(timing_rr);
     PREFETCH_RUN(timing_rr, 2, rmdat, 0, 0, 0, 0, 0);
     return 0;
@@ -607,7 +489,15 @@ FPU_ILLEGAL_a16(uint32_t fetchdat)
 static int
 FPU_ILLEGAL_a32(uint32_t fetchdat)
 {
+    /* An undefined ESC opcode takes #NM like a defined one, then #UD on
+       the 486 and later; no pending-exception check, no state change
+       (Pentium Vol. 3, 23.3.5) */
+    FP_ENTER();
     fetch_ea_32(fetchdat);
+    if (is486 || isibm486) {
+        x86illegal();
+        return 1;
+    }
     CLOCK_CYCLES(timing_rr);
     PREFETCH_RUN(timing_rr, 2, rmdat, 0, 0, 0, 0, 0);
     return 0;

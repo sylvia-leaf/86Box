@@ -41,6 +41,7 @@ extern "C" {
 #include "qt_util.hpp"
 #include "qt_defs.hpp"
 #include "qt_settingsinput.hpp"
+#include "qt_settings.hpp"
 
 SettingsDisplay::SettingsDisplay(QWidget *parent)
     : QWidget(parent)
@@ -336,8 +337,12 @@ SettingsDisplay::on_comboBoxVideo_currentIndexChanged(int index)
     secondaryRows.add(QObject::tr("None"), 0);
     scSecondary->addDevice(NULL, "None");
 
+    /* In the new layout the Cards page's slots decide what fits, and any
+       card that fits a free slot can be a second one. */
+    const bool slotLayout = (Settings::settings != nullptr) && Settings::settings->usesSlotLayout();
+
     // TODO: Implement support for selecting non-MDA secondary cards properly when MDA cards are the primary ones.
-    if (video_card_get_flags(videoCard[0]) == VIDEO_FLAG_TYPE_MDA) {
+    if (!slotLayout && (video_card_get_flags(videoCard[0]) == VIDEO_FLAG_TYPE_MDA)) {
         secondaryRows.commit();
         ui->comboBoxVideoSecondary->setCurrentIndex(0);
         return;
@@ -369,8 +374,8 @@ SettingsDisplay::on_comboBoxVideo_currentIndexChanged(int index)
 
         if (card.available
             && device_is_valid(video_dev, machineId)
-            && (secondaryFlags == VIDEO_FLAG_TYPE_SECONDARY)
-            && !(primary_is_agp && secondary_is_agp)) {
+            && (slotLayout || ((secondaryFlags == VIDEO_FLAG_TYPE_SECONDARY)
+                               && !(primary_is_agp && secondary_is_agp)))) {
             int row = secondaryRows.add(name, c);
             scSecondary->addDevice(video_dev, name);
             if (c == curVideoCard_2)

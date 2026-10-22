@@ -307,6 +307,8 @@ opPOPW_a16(uint32_t fetchdat)
 {
     uint16_t temp;
 
+    ILLEGAL_ON(fetchdat & 0x38); /*8F /1-/7*/
+
     temp = POP_W();
     if (cpu_state.abrt)
         return 1;
@@ -334,6 +336,8 @@ static int
 opPOPW_a32(uint32_t fetchdat)
 {
     uint16_t temp;
+
+    ILLEGAL_ON(fetchdat & 0x38); /*8F /1-/7*/
 
     temp = POP_W();
     if (cpu_state.abrt)
@@ -364,6 +368,8 @@ opPOPL_a16(uint32_t fetchdat)
 {
     uint32_t temp;
 
+    ILLEGAL_ON(fetchdat & 0x38); /*8F /1-/7*/
+
     temp = POP_L();
     if (cpu_state.abrt)
         return 1;
@@ -391,6 +397,8 @@ static int
 opPOPL_a32(uint32_t fetchdat)
 {
     uint32_t temp;
+
+    ILLEGAL_ON(fetchdat & 0x38); /*8F /1-/7*/
 
     temp = POP_L();
     if (cpu_state.abrt)
@@ -433,7 +441,7 @@ opENTER_w(uint32_t fetchdat)
     uint32_t walk;
 
     offset = getwordf();
-    count  = (fetchdat >> 16) & 0x1f; /*The nesting level is taken mod 32*/
+    count  = (fetchdat >> 16) & 0x1f; /* The level, mod 32 */
     cpu_state.pc++;
     tempEBP = EBP;
     tempESP = ESP;
@@ -515,7 +523,7 @@ opENTER_l(uint32_t fetchdat)
     uint32_t walk;
 
     offset = getwordf();
-    count  = (fetchdat >> 16) & 0x1f; /*The nesting level is taken mod 32*/
+    count  = (fetchdat >> 16) & 0x1f; /* The level, mod 32 */
     cpu_state.pc++;
     tempEBP = EBP;
     tempESP = ESP;

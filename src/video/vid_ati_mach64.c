@@ -3859,6 +3859,117 @@ mach64_force_redraw(void *priv)
     mach64->svga.fullchange = mach64->svga.monitor->mon_changeframecount;
 }
 
+/* ---- the debug console's view of the card ------------------------------ */
+
+static const char *
+mach64_render_name(const svga_t *svga)
+{
+    static const struct {
+        void (*render)(svga_t *svga);
+        const char *name;
+    } renders[] = {
+        { svga_render_blank,              "blank"              },
+        { svga_render_text_80,            "text_80"            },
+        { svga_render_4bpp_highres,       "vga 4bpp_highres"   },
+        { svga_render_8bpp_highres,       "vga 8bpp_highres"   },
+        { svga_render_8bpp_clone_highres, "8bpp_clone_highres" },
+        { svga_render_15bpp_highres,      "15bpp_highres"      },
+        { svga_render_16bpp_highres,      "16bpp_highres"      },
+        { svga_render_24bpp_highres,      "24bpp_highres"      },
+        { svga_render_32bpp_highres,      "32bpp_highres"      },
+        { mach64_render_4bpp,             "mach64_render_4bpp" }
+    };
+
+    for (size_t i = 0; i < (sizeof(renders) / sizeof(renders[0])); i++) {
+        if (svga->render == renders[i].render)
+            return renders[i].name;
+    }
+    return "other";
+}
+
+/* The registers as the card holds them, its mappings, what the display and
+   the drawing engine are doing; read from the card's state only. */
+static void
+mach64_debug_dump(void *priv, void (*out)(const char *fmt, ...))
+{
+    const mach64_t          *m       = (const mach64_t *) priv;
+    const svga_t            *svga    = &m->svga;
+    static const char *const types[] = { "GX", "CT", "VT", "VT2", "GTB", "VT3" };
+
+    out("type %s  pci %i vlb %i on_board %u  vram %u MB  linear_base 0x%08x  block I/O 0x%04x (%s)\n",
+        ((m->type >= 0) && (m->type < (int) (sizeof(types) / sizeof(types[0])))) ? types[m->type] : "?",
+        m->pci, m->vlb, m->on_board, m->vram_size, m->linear_base, m->block_decoded_io,
+        m->use_block_decoded_io ? "used" : "sparse");
+    out("PCI cmd 0x%02x  BAR0 %02x%02x%02x%02x  BAR1 %02x%02x%02x%02x  ROM %02x%02x%02x%02x  int_line %u\n",
+        m->pci_regs[4], m->pci_regs[0x13], m->pci_regs[0x12], m->pci_regs[0x11], m->pci_regs[0x10],
+        m->pci_regs[0x17], m->pci_regs[0x16], m->pci_regs[0x15], m->pci_regs[0x14],
+        m->pci_regs[0x33], m->pci_regs[0x32], m->pci_regs[0x31], m->pci_regs[0x30], m->int_line);
+    out("mappings: svga A0000 %s base %08x size %x | linear %s %08x+%x | linear BE %s %08x+%x\n",
+        svga->mapping.enable ? "on" : "off", svga->mapping.base, svga->mapping.size,
+        m->linear_mapping.enable ? "on" : "off", m->linear_mapping.base, m->linear_mapping.size,
+        m->linear_mapping_big_endian.enable ? "on" : "off", m->linear_mapping_big_endian.base, m->linear_mapping_big_endian.size);
+    out("          mmio BFxxx %s %08x+%x | mmio linear %s %08x+%x | bios %s %08x\n",
+        m->mmio_mapping.enable ? "on" : "off", m->mmio_mapping.base, m->mmio_mapping.size,
+        m->mmio_linear_mapping.enable ? "on" : "off", m->mmio_linear_mapping.base, m->mmio_linear_mapping.size,
+        m->bios_rom.mapping.enable ? "on" : "off", m->bios_rom.mapping.base);
+
+    out("\nCRTC_H_TOTAL_DISP  %08x  CRTC_H_SYNC_STRT_WID %08x  CRTC_V_TOTAL_DISP %08x  CRTC_V_SYNC_STRT_WID %08x\n",
+        m->crtc_h_total_disp, m->crtc_h_sync_strt_wid, m->crtc_v_total_disp, m->crtc_v_sync_strt_wid);
+    out("CRTC_VLINE         %08x  CRTC_OFF_PITCH       %08x  CRTC_INT_CNTL     %08x  CRTC_GEN_CNTL        %08x\n",
+        m->crtc_vline, m->crtc_off_pitch, m->crtc_int_cntl, m->crtc_gen_cntl);
+    out("DSP_CONFIG         %08x  DSP_ON_OFF           %08x  VGA_DSP_CONFIG    %08x  VGA_DSP_ON_OFF       %08x\n",
+        m->dsp_config, m->dsp_on_off, m->vga_dsp_config, m->vga_dsp_on_off);
+    out("OVR_CLR            %08x  OVR_WID_LEFT_RIGHT   %08x  OVR_WID_TOP_BOTTOM %08x\n",
+        m->ovr_clr, m->ovr_wid_left_right, m->ovr_wid_top_bottom);
+    out("CUR_CLR0           %08x  CUR_CLR1             %08x  CUR_OFFSET        %08x  CUR_HORZ_VERT_POSN   %08x  CUR_HORZ_VERT_OFF %08x\n",
+        m->cur_clr0, m->cur_clr1, m->cur_offset, m->cur_horz_vert_posn, m->cur_horz_vert_off);
+    out("GP_IO              %08x  SCRATCH0/1           %08x %08x  CLOCK_CNTL %08x  pll_addr %i  pll_freq %.3f %.3f %.3f %.3f MHz\n",
+        m->gp_io, m->scratch_reg0, m->scratch_reg1, m->clock_cntl, m->pll_addr,
+        m->pll_freq[0] / 1e6, m->pll_freq[1] / 1e6, m->pll_freq[2] / 1e6, m->pll_freq[3] / 1e6);
+    out("PLL regs          ");
+    for (int i = 0; i < 32; i++)
+        out(" %02x", m->pll_regs[i]);
+    out("\nBUS_CNTL           %08x  MEM_CNTL             %08x  MEM_VGA_WP_SEL    %04x %04x  MEM_VGA_RP_SEL %04x %04x\n",
+        m->bus_cntl, m->mem_cntl, m->bank_w[0] >> 15, m->bank_w[1] >> 15, m->bank_r[0] >> 15, m->bank_r[1] >> 15);
+    out("DAC_CNTL           %08x  GEN_TEST_CNTL        %08x  CONFIG_CNTL       %08x  CONFIG_CHIP_ID       %08x  CONFIG_STAT0 %08x\n",
+        m->dac_cntl, m->gen_test_cntl, m->config_cntl, m->config_chip_id, m->config_stat0);
+
+    out("\nDST_OFF_PITCH      %08x  DST_Y_X              %08x  DST_HEIGHT_WIDTH  %08x  DST_BRES_LNTH/ERR/INC/DEC %08x %08x %08x %08x\n",
+        m->dst_off_pitch, m->dst_y_x, m->dst_height_width, m->dst_bres_lnth, m->dst_bres_err, m->dst_bres_inc, m->dst_bres_dec);
+    out("DST_CNTL           %08x  SRC_OFF_PITCH        %08x  SRC_Y_X           %08x  SRC_HEIGHT1_WIDTH1   %08x  SRC_Y_X_START %08x  SRC_HEIGHT2_WIDTH2 %08x  SRC_CNTL %08x\n",
+        m->dst_cntl, m->src_off_pitch, m->src_y_x, m->src_height1_width1, m->src_y_x_start, m->src_height2_width2, m->src_cntl);
+    out("HOST_CNTL          %08x  PAT_REG0/1           %08x %08x  PAT_CNTL %08x  SC_LEFT_RIGHT %08x  SC_TOP_BOTTOM %08x\n",
+        m->host_cntl, m->pat_reg0, m->pat_reg1, m->pat_cntl, m->sc_left_right, m->sc_top_bottom);
+    out("DP_BKGD_CLR        %08x  DP_FRGD_CLR          %08x  DP_WRITE_MSK      %08x  DP_CHAIN_MSK         %08x\n",
+        m->dp_bkgd_clr, m->dp_frgd_clr, m->write_mask, m->chain_mask);
+    out("DP_PIX_WIDTH       %08x  DP_MIX               %08x  DP_SRC            %08x  DP_SET_GUI_ENGINE    %08x\n",
+        m->dp_pix_width, m->dp_mix, m->dp_src, m->dp_set_gui_engine);
+    out("CLR_CMP_CLR        %08x  CLR_CMP_MSK          %08x  CLR_CMP_CNTL      %08x  CONTEXT_MASK %08x  CONTEXT_LOAD_CNTL %08x  GUI_TRAJ_CNTL %08x\n",
+        m->clr_cmp_clr, m->clr_cmp_mask, m->clr_cmp_cntl, m->context_mask, m->context_load_cntl, m->gui_traj_cntl);
+    out("OVERLAY: Y_X %08x-%08x  KEY_CNTL %08x  SCALE_CNTL %08x  SCALE_INC %08x  HEIGHT_WIDTH %08x  BUF0 %08x/%08x  SCALER_BUF0 %08x/%08x\n",
+        m->overlay_y_x_start, m->overlay_y_x_end, m->overlay_key_cntl, m->overlay_scale_cntl, m->overlay_scale_inc,
+        m->scaler_height_width, m->buf_offset[0], m->buf_pitch[0], m->scaler_buf_offset[0], m->scaler_buf_pitch);
+
+    out("\ndisplay: render %s  bpp %i  hdisp %i  dispend %i  rowoffset %i  memaddr_latch %08x  vram_display_mask %08x\n",
+        mach64_render_name(svga), svga->bpp, svga->hdisp, svga->dispend, svga->rowoffset, svga->memaddr_latch, svga->vram_display_mask);
+    out("         fb_only %u  packed_4bpp %i  lut_map %i  ramdac_type %u  dac_mask %02x  interlace %i  hwcursor %s at %i,%i addr %08x\n",
+        svga->fb_only, svga->packed_4bpp, svga->lut_map, svga->ramdac_type, svga->dac_mask, svga->interlace,
+        svga->hwcursor.ena ? "on" : "off", svga->hwcursor.x, svga->hwcursor.y, svga->hwcursor.addr);
+    out("         VGA: SR4 %02x GR5 %02x GR6 %02x AR10 %02x AR13 %02x CR13 %02x CR14 %02x CR17 %02x misc %02x  chain4 %i  banked_mask %x\n",
+        svga->seqregs[4], svga->gdcreg[5], svga->gdcreg[6], svga->attrregs[0x10], svga->attrregs[0x13],
+        svga->crtc[0x13], svga->crtc[0x14], svga->crtc[0x17], svga->miscout, svga->chain4, svga->banked_mask);
+    out("engine: busy %i  op %i  fifo r %i w %i  blitter_busy %i\n",
+        m->accel.busy, m->accel.op, (int) m->fifo_read_idx, (int) m->fifo_write_idx, (int) m->blitter_busy);
+    out("accel: dst_pix_width %i src %i host %i  dst_pitch %u dst_offset %u src_pitch %u src_offset %u  mix fg %i bg %i  src fg %i bg %i mono %i host %i\n",
+        m->accel.dst_pix_width, m->accel.src_pix_width, m->accel.host_pix_width, m->accel.dst_pitch, m->accel.dst_offset,
+        m->accel.src_pitch, m->accel.src_offset, m->accel.mix_fg, m->accel.mix_bg, m->accel.source_fg, m->accel.source_bg,
+        m->accel.source_mix, m->accel.source_host);
+    out("       dst %i,%i start %i,%i  x_count %i y_count %i  src %i,%i start %i,%i  xinc %i yinc %i  sc %i..%i x %i..%i  skip_byte %i\n",
+        m->accel.dst_x, m->accel.dst_y, m->accel.dst_x_start, m->accel.dst_y_start, m->accel.x_count, m->accel.y_count,
+        m->accel.src_x, m->accel.src_y, m->accel.src_x_start, m->accel.src_y_start, m->accel.xinc, m->accel.yinc,
+        m->accel.sc_left, m->accel.sc_right, m->accel.sc_top, m->accel.sc_bottom, m->accel.skip_byte);
+}
+
 // clang-format off
 /* The Graphics Pro Turbo (ISA and VLB BIOSes): 2 or 4 MB VRAM, and the
    interrupt jumper: 2, 3 or 5 on the VLB, and 10 as well on ISA, where
@@ -4143,7 +4254,7 @@ static const device_config_t mach64gtb_onboard_config[] = {
 // clang-format on
 
 const device_t mach64gx_isa_device = {
-    .name          = "ATI Graphics Pro Turbo (Mach64GX) ISA",
+    .name          = "ATI Mach64GX (Graphics Pro Turbo)",
     .internal_name = "mach64gx_isa",
     .flags         = DEVICE_ISA16,
     .local         = MACH64_GX,
@@ -4153,11 +4264,12 @@ const device_t mach64gx_isa_device = {
     .available     = mach64gx_isa_available,
     .speed_changed = mach64_speed_changed,
     .force_redraw  = mach64_force_redraw,
-    .config        = mach64gx_vram_isa_config
+    .config        = mach64gx_vram_isa_config,
+    .debug_dump    = mach64_debug_dump
 };
 
 const device_t mach64gx_vlb_device = {
-    .name          = "ATI Graphics Pro Turbo (Mach64GX) VLB",
+    .name          = "ATI Mach64GX (Graphics Pro Turbo)",
     .internal_name = "mach64gx_vlb",
     .flags         = DEVICE_VLB,
     .local         = MACH64_GX,
@@ -4167,7 +4279,8 @@ const device_t mach64gx_vlb_device = {
     .available     = mach64gx_vlb_available,
     .speed_changed = mach64_speed_changed,
     .force_redraw  = mach64_force_redraw,
-    .config        = mach64gx_vram_config
+    .config        = mach64gx_vram_config,
+    .debug_dump    = mach64_debug_dump
 };
 
 const device_t mach64gx_vlb_onboard_device = {
@@ -4181,7 +4294,8 @@ const device_t mach64gx_vlb_onboard_device = {
     .available     = NULL,
     .speed_changed = mach64_speed_changed,
     .force_redraw  = mach64_force_redraw,
-    .config        = mach64gx_vram_config
+    .config        = mach64gx_vram_config,
+    .debug_dump    = mach64_debug_dump
 };
 
 const device_t mach64gx_xpression_vlb_device = {
@@ -4195,7 +4309,8 @@ const device_t mach64gx_xpression_vlb_device = {
     .available     = mach64gx_xpression_vlb_available,
     .speed_changed = mach64_speed_changed,
     .force_redraw  = mach64_force_redraw,
-    .config        = mach64gx_xpression_config
+    .config        = mach64gx_xpression_config,
+    .debug_dump    = mach64_debug_dump
 };
 
 const device_t mach64gx_pci_device = {
@@ -4210,7 +4325,8 @@ const device_t mach64gx_pci_device = {
     .speed_changed = mach64_speed_changed,
     .force_redraw  = mach64_force_redraw,
     .config        = mach64gx_config,
-    .alias         = "ATI WinTurbo"
+    .alias         = "ATI WinTurbo",
+    .debug_dump    = mach64_debug_dump
 };
 
 const device_t mach64gx_pci_onboard_device = {
@@ -4225,6 +4341,7 @@ const device_t mach64gx_pci_onboard_device = {
     .speed_changed = mach64_speed_changed,
     .force_redraw  = mach64_force_redraw,
     .config        = mach64gx_config,
+    .debug_dump    = mach64_debug_dump
 };
 
 const device_t mach64ct_device = {
@@ -4238,7 +4355,8 @@ const device_t mach64ct_device = {
     .available     = mach64ct_available,
     .speed_changed = mach64_speed_changed,
     .force_redraw  = mach64_force_redraw,
-    .config        = NULL
+    .config        = NULL,
+    .debug_dump    = mach64_debug_dump
 };
 
 const device_t mach64ct_onboard_device = {
@@ -4252,7 +4370,8 @@ const device_t mach64ct_onboard_device = {
     .available     = NULL,
     .speed_changed = mach64_speed_changed,
     .force_redraw  = mach64_force_redraw,
-    .config        = NULL
+    .config        = NULL,
+    .debug_dump    = mach64_debug_dump
 };
 
 const device_t mach64vt_device = {
@@ -4266,7 +4385,8 @@ const device_t mach64vt_device = {
     .available     = mach64vt_available,
     .speed_changed = mach64_speed_changed,
     .force_redraw  = mach64_force_redraw,
-    .config        = NULL
+    .config        = NULL,
+    .debug_dump    = mach64_debug_dump
 };
 
 const device_t mach64vt2_device = {
@@ -4280,7 +4400,8 @@ const device_t mach64vt2_device = {
     .available     = mach64vt2_available,
     .speed_changed = mach64_speed_changed,
     .force_redraw  = mach64_force_redraw,
-    .config        = mach64vt2_config
+    .config        = mach64vt2_config,
+    .debug_dump    = mach64_debug_dump
 };
 
 const device_t mach64gtb_device = {
@@ -4295,7 +4416,8 @@ const device_t mach64gtb_device = {
     .speed_changed = mach64_speed_changed,
     .force_redraw  = mach64_force_redraw,
     .config        = mach64gtb_config,
-    .alias         = "ATI 3D Charger"
+    .alias         = "ATI 3D Charger",
+    .debug_dump    = mach64_debug_dump
 };
 
 const device_t mach64gtb_onboard_device = {
@@ -4309,7 +4431,8 @@ const device_t mach64gtb_onboard_device = {
     .available     = NULL,
     .speed_changed = mach64_speed_changed,
     .force_redraw  = mach64_force_redraw,
-    .config        = mach64gtb_onboard_config
+    .config        = mach64gtb_onboard_config,
+    .debug_dump    = mach64_debug_dump
 };
 
 const device_t mach64vt3_onboard_device = {
@@ -4323,5 +4446,6 @@ const device_t mach64vt3_onboard_device = {
     .available     = NULL,
     .speed_changed = mach64_speed_changed,
     .force_redraw  = mach64_force_redraw,
-    .config        = NULL
+    .config        = NULL,
+    .debug_dump    = mach64_debug_dump
 };

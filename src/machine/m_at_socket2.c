@@ -222,13 +222,8 @@ machine_at_pci400ca_init(const machine_t *model)
 
     machine_at_common_init(model);
 
-    pci_init(PCI_CONFIG_TYPE_2 | PCI_NO_IRQ_STEERING);
-    pci_register_slot(0x00, PCI_CARD_NORTHBRIDGE, 0, 0, 0, 0);
-    pci_register_slot(0x01, PCI_CARD_SCSI,        1, 2, 3, 4);
-    pci_register_slot(0x03, PCI_CARD_NORMAL,      1, 2, 3, 4);
-    pci_register_slot(0x04, PCI_CARD_NORMAL,      2, 3, 4, 1);
-    pci_register_slot(0x05, PCI_CARD_NORMAL,      3, 4, 1, 2);
-    pci_register_slot(0x02, PCI_CARD_SOUTHBRIDGE, 0, 0, 0, 0);
+    machine_pci_init();
+    machine_pci_register_slots();
 
     device_add_params(machine_get_kbc_device(machine), (void *) model->kbc_params);
 
@@ -259,11 +254,8 @@ machine_at_g486ip_init(const machine_t *model)
 
     machine_at_common_init(model);
 
-    pci_init(PCI_CONFIG_TYPE_1);
-    pci_register_slot(0x00, PCI_CARD_NORTHBRIDGE, 0, 0, 0, 0);
-    pci_register_slot(0x0F, PCI_CARD_NORMAL,      3, 4, 1, 2); /* 03 = Slot 1 */
-    pci_register_slot(0x0E, PCI_CARD_NORMAL,      2, 3, 4, 1); /* 04 = Slot 2 */
-    pci_register_slot(0x0D, PCI_CARD_NORMAL,      1, 2, 3, 4); /* 05 = Slot 3 */
+    machine_pci_init();
+    machine_pci_register_slots();
 
     device_add_params(machine_get_kbc_device(machine), (void *) model->kbc_params);
 

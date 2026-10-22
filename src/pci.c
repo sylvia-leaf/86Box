@@ -28,12 +28,15 @@
 #include <86box/device.h>
 #include <86box/dma.h>
 #include <86box/pci.h>
+#include <86box/chipset.h>
 #include <86box/keyboard.h>
 #include <86box/plat_unused.h>
 #include <86box/timer.h>
 #include <86box/apic.h>
 
-#define PCI_ENABLED               0x80000000
+#define PCI_ENABLED 0x80000000
+#define PCI_APIC_INTIN_NUM 24
+#define PCI_APIC_INTIN_INVALID 0xff
 
 typedef struct pci_card_t {
     uint8_t     bus;
@@ -47,6 +50,7 @@ typedef struct pci_card_t {
 } pci_card_t;
 
 typedef struct pci_card_desc_t {
+    int         board_slot;
     uint8_t     type;
     void *      priv;
     void        (*write)(int func, int addr, int len, uint8_t val, void *priv);
@@ -77,6 +81,7 @@ static uint8_t     pci_pmc = 0;
 static uint8_t     last_pci_card = 0;
 static uint8_t     last_normal_pci_card = 0;
 static uint8_t     last_normal_pci_card_id = 0;
+static uint8_t     next_bridge_slot = PCI_CARD_INVALID; /* the slot of a bridge put in by hand */
 static uint8_t     last_pci_bus = 1;
 static uint8_t     next_pci_card = 0;
 static uint8_t     normal_pci_cards = 0;
@@ -85,6 +90,11 @@ static uint8_t     pci_card_to_slot_mapping[256][PCI_CARDS_NUM];
 static uint8_t     pci_bus_number_to_index_mapping[256];
 static uint8_t     pci_irqs[PCI_IRQS_NUM];
 static uint8_t     pci_irq_level[PCI_IRQS_NUM];
+static uint8_t     pci_apic_intin_route[256][PCI_CARDS_NUM][PCI_INT_PINS_NUM];
+static uint8_t     pci_apic_intin_route_log_seen[256][PCI_CARDS_NUM][PCI_INT_PINS_NUM];
+static uint8_t     pci_irq_route_log_seen[256][PCI_CARDS_NUM][PCI_INT_PINS_NUM];
+static uint16_t    pci_apic_intin_level_count[PCI_APIC_INTIN_NUM];
+static uint8_t     pci_apic_intin_level_asserted[PCI_APIC_INTIN_NUM];
 static uint64_t    pci_irq_hold[PCI_IRQS_NUM];
 static pci_mirq_t  pci_mirqs[PCI_MIRQS_NUM];
 static int         pci_index;
@@ -97,6 +107,25 @@ static int         pci_access_len = 0;
 static uint32_t    pci_enable = 0x00000000;
 
 static void        pci_reset_regs(void);
+
+#ifdef ENABLE_PCI_LOG
+static const char *
+pci_irq_name(uint8_t irq)
+{
+    static char buf[4][4];
+    static int  index = 0;
+    char       *dst;
+
+    if (irq != (uint8_t) PCI_IRQ_DISABLED) {
+        snprintf(buf[index], sizeof(buf[index]), "%u", irq);
+        dst = buf[index];
+        index = (index + 1) & 3;
+        return dst;
+    }
+
+    return "off";
+}
+#endif
 
 #ifdef ENABLE_PCI_LOG
 int pci_do_log = ENABLE_PCI_LOG;
@@ -119,13 +148,94 @@ pci_log(const char *fmt, ...)
 void
 pci_set_irq_routing(int pci_int, int irq)
 {
-    pci_irqs[pci_int - 1] = irq;
+    uint8_t pci_irq = pci_int - 1;
+
+    pci_irqs[pci_irq] = irq;
 }
 
 void
 pci_set_irq_level(int pci_int, int level)
 {
     pci_irq_level[pci_int - 1] = !!level;
+}
+
+static void
+pci_apic_set_intin_route_index(uint8_t bus, uint8_t device, uint8_t intpin, uint8_t intin)
+{
+    if ((device >= PCI_CARDS_NUM) || (intpin >= PCI_INT_PINS_NUM) ||
+        (intin >= PCI_APIC_INTIN_NUM))
+        return;
+
+    if ((pci_apic_intin_route[bus][device][intpin] != intin) ||
+        !pci_apic_intin_route_log_seen[bus][device][intpin]) {
+        pci_log("PCI APIC INTIN route: bus=%u dev=%u INT%c -> INTIN%u\n",
+              bus, device, 'A' + intpin, intin);
+        pci_apic_intin_route_log_seen[bus][device][intpin] = 1;
+    }
+
+    pci_apic_intin_route[bus][device][intpin] = intin;
+}
+
+void
+pci_apic_set_intin_route(uint8_t bus, uint8_t device, uint8_t intpin, uint8_t intin)
+{
+    uint8_t bus_index = pci_bus_number_to_index_mapping[bus];
+
+    if (bus_index == PCI_BUS_INVALID)
+        bus_index = bus;
+
+    pci_apic_set_intin_route_index(bus_index, device, intpin, intin);
+}
+
+void
+pci_apic_clear_intin_routes(void)
+{
+    memset(pci_apic_intin_route, PCI_APIC_INTIN_INVALID, sizeof(pci_apic_intin_route));
+    memset(pci_apic_intin_route_log_seen, 0, sizeof(pci_apic_intin_route_log_seen));
+}
+
+uint16_t
+pci_apic_save_intin_routes(ioapic_pci_intin_route_state_t *routes, uint16_t capacity)
+{
+    uint16_t count = 0;
+
+    if ((routes == NULL) || (capacity == 0))
+        return 0;
+
+    for (uint16_t bus = 0; bus < 256; bus++) {
+        for (uint8_t device = 0; device < PCI_CARDS_NUM; device++) {
+            for (uint8_t intpin = 0; intpin < PCI_INT_PINS_NUM; intpin++) {
+                uint8_t intin = pci_apic_intin_route[bus][device][intpin];
+
+                if (intin == PCI_APIC_INTIN_INVALID)
+                    continue;
+
+                if (count >= capacity)
+                    return count;
+
+                routes[count].bus    = bus;
+                routes[count].device = device;
+                routes[count].intpin = intpin;
+                routes[count].intin  = intin;
+                count++;
+            }
+        }
+    }
+
+    return count;
+}
+
+void
+pci_apic_load_intin_routes(const ioapic_pci_intin_route_state_t *routes, uint16_t count)
+{
+    pci_apic_clear_intin_routes();
+
+    if (routes == NULL)
+        return;
+
+    for (uint16_t i = 0; i < count; i++)
+        pci_apic_set_intin_route_index(routes[i].bus, routes[i].device,
+                                       routes[i].intpin, routes[i].intin);
 }
 
 void
@@ -152,6 +262,85 @@ pci_set_mirq_level(int mirq, uint8_t level)
     pci_mirqs[mirq].irq_level = level;
 }
 
+static int
+pci_apic_intin_level_track(uint8_t intin, int level, int set, int old_state)
+{
+    uint16_t count;
+    int      asserted;
+
+    if ((intin >= PCI_APIC_INTIN_NUM) || !level)
+        return 0;
+
+    if (!!old_state == !!set)
+        return 0;
+
+    count = pci_apic_intin_level_count[intin];
+    if (set) {
+        if (count != UINT16_MAX)
+            count++;
+    } else if (count != 0)
+        count--;
+
+    pci_apic_intin_level_count[intin] = count;
+    asserted = (count != 0);
+    if (pci_apic_intin_level_asserted[intin] == asserted)
+        return 0;
+
+    pci_apic_intin_level_asserted[intin] = asserted;
+    return 1;
+}
+
+static int
+pci_apic_intin_irq(uint8_t intin, int level, int set, uint8_t *irq_state)
+{
+    int old_state = (irq_state != NULL) ? !!*irq_state : 0;
+
+    if (intin >= PCI_APIC_INTIN_NUM)
+        return 0;
+
+    if (!ioapic_legacy_irq_enabled()) {
+        if (irq_state != NULL)
+            pci_apic_intin_level_track(intin, level, set, old_state);
+        return 0;
+    }
+
+    if (!level || (irq_state == NULL)) {
+        ioapic_intin_irq(intin, level, set);
+        if (level && (irq_state != NULL))
+            *irq_state = !!set;
+        return 1;
+    }
+
+    if (old_state == !!set)
+        return 1;
+
+    if (pci_apic_intin_level_track(intin, level, set, old_state))
+        ioapic_intin_irq(intin, level, pci_apic_intin_level_asserted[intin]);
+    *irq_state = !!set;
+    return 1;
+}
+
+/* A PCI INTx on the I/O APIC input the MP table gives it, when that is a
+   wire of its own (ioapic_pci_intin_own_wire). Both this and the 8259
+   side see the line's state before this change: *irq_state is updated by
+   picint_common, so this side works on a copy of it. */
+static void
+pci_apic_direct_intin(uint8_t intin, uint8_t irq_line, int set, uint8_t *irq_state)
+{
+    if (!ioapic_pci_intin_own_wire(intin, irq_line))
+        return;
+
+    if (irq_state != NULL) {
+        uint8_t direct_state = *irq_state;
+
+        (void) pci_apic_intin_irq(intin, 1, set, &direct_state);
+        /* Steered nowhere, nothing else keeps the line's state. */
+        if (irq_line == 0xff)
+            *irq_state = direct_state;
+    } else
+        (void) pci_apic_intin_irq(intin, 1, set, NULL);
+}
+
 /* PCI raise IRQ: the first parameter is slot if < PCI_MIRQ_BASE, MIRQ if >= PCI_MIRQ_BASE
                   and < PCI_DIRQ_BASE, and direct IRQ line if >= PCI_DIRQ_BASE (RichardG's
                   hack that may no longer be needed). */
@@ -162,6 +351,8 @@ pci_irq(uint8_t slot, uint8_t pci_int, int level, int set, uint8_t *irq_state)
     uint8_t pci_int_index = pci_int - PCI_INTA;
     uint8_t irq_line      = 0;
     uint8_t is_vfio       = 0;
+    uint8_t intin;
+    uint8_t direct_intin_route = 0;
 
     /* The fast path out an invalid PCI card. */
     if (slot == PCI_CARD_INVALID)
@@ -176,14 +367,26 @@ pci_irq(uint8_t slot, uint8_t pci_int, int level, int set, uint8_t *irq_state)
             if (!last_pci_card)
                 return;
 
+            if (pci_int_index >= PCI_INT_PINS_NUM)
+                return;
+
+            /* An I/O APIC input the MP table gives this INTx: driven at the
+               end, once the IRQ it is steered to is known (it may be the
+               same wire). */
+            intin = pci_apic_intin_route[pci_cards[slot].bus][pci_cards[slot].id][pci_int_index];
+            direct_intin_route = (intin != PCI_APIC_INTIN_INVALID);
+
             if (pci_flags & FLAG_NO_IRQ_STEERING)
-                irq_line = pci_cards[slot].read(0, 0x3c, 1, pci_cards[slot].priv);
+                irq_line = pci_cards[slot].read(0, PCI_REG_INT_LINE, 1, pci_cards[slot].priv);
             else {
                 irq_routing = pci_cards[slot].irq_routing[pci_int_index];
 
                 switch (irq_routing) {
                     default:
                     case 0x00:
+                        /* Steered nowhere: an input of its own is all it reaches. */
+                        if (direct_intin_route)
+                            pci_apic_direct_intin(intin, 0xff, set, irq_state);
                         return;
 
                     case 0x01 ... PCI_IRQS_NUM:
@@ -203,9 +406,18 @@ pci_irq(uint8_t slot, uint8_t pci_int, int level, int set, uint8_t *irq_state)
                     /* Sometimes, PCI devices are mapped to direct IRQ's. */
                     case (PCI_DIRQ_BASE | 0x00) ... (PCI_DIRQ_BASE | PCI_DIRQ_MAX):
                         /* Direct IRQ line, always edge-triggered. */
-                        irq_line = slot & PCI_IRQ_MAX;
+                        irq_line = irq_routing & PCI_DIRQ_MAX;
                         break;
                 }
+            }
+            if (!pci_irq_route_log_seen[pci_cards[slot].bus][pci_cards[slot].id][pci_int_index]) {
+                pci_log("PCI IRQ route first: slot=%u bus=%u dev=%u INT%c direct=%s INTIN=%s PIRQ=%02X irq=%s level=%u set=%u\n",
+                      slot, pci_cards[slot].bus, pci_cards[slot].id,
+                      'A' + pci_int_index, direct_intin_route ? "hit" : "miss",
+                      direct_intin_route ? pci_irq_name(intin) : "none",
+                      pci_cards[slot].irq_routing[pci_int_index],
+                      pci_irq_name(irq_line), level, !!set);
+                pci_irq_route_log_seen[pci_cards[slot].bus][pci_cards[slot].id][pci_int_index] = 1;
             }
             break;
         case (PCI_IIRQ_BASE | 0x00) ... (PCI_IIRQ_BASE | PCI_IIRQS_NUM):
@@ -238,42 +450,20 @@ pci_irq(uint8_t slot, uint8_t pci_int, int level, int set, uint8_t *irq_state)
             break;
     }
 
-    if (slot >= PCI_MIRQ_BASE && slot <= (PCI_MIRQ_BASE | 0x1)) {
-        if (set)
-        {
-            if (apic_ioapic_is_enabled(current_ioapic)) {
-                //pclog("Slot %d, IRQ %d\n", slot, 20 + (slot - PCI_MIRQ_BASE));
-                apic_ioapic_set_irq(current_ioapic, 20 + (slot - PCI_MIRQ_BASE), 1);
-            }
-        }
-        else
-        {
-            if (apic_ioapic_is_enabled(current_ioapic)) {
-                //pclog("Slot %d, IRQ %d (clear)\n", slot, 20 + (slot - PCI_MIRQ_BASE));
-                apic_ioapic_clear_irq(current_ioapic, 20 + (slot - PCI_MIRQ_BASE));
-            }
-        }
-    }
-
-    if (slot >= 0 && slot <= PCI_CARD_MAX) {
-        if (set)
-        {
-            if (apic_ioapic_is_enabled(current_ioapic)) {
-                //pclog("Slot %d, IRQ %d\n", slot, 16 + pci_int_index);
-                apic_ioapic_set_irq(current_ioapic, 16 + pci_int_index, level);
-            }
-        }
-        else
-        {
-            if (apic_ioapic_is_enabled(current_ioapic)) {
-                //pclog("Slot %d, IRQ %d (clear)\n", slot, 16 + pci_int_index);
-                apic_ioapic_clear_irq(current_ioapic, 16 + pci_int_index);
-            }
-        }
-    }
-
-    if (irq_line > PCI_IRQ_MAX)
+    if (irq_line > PCI_IRQ_MAX) {
+        /* Steered to no IRQ (the router's PIRQ off): an input of its own
+           is still wired to the device. */
+        if (direct_intin_route)
+            pci_apic_direct_intin(intin, 0xff, set, irq_state);
         return;
+    }
+
+    /* A steered PIRQ drives the 8259 input and, through picint_common's
+       mirror, the I/O APIC pin for the same IRQ, at the same time: which
+       of the two the operating system listens to is its choice, made in
+       the redirection table and the 8259 masks, not ours. */
+    if (direct_intin_route)
+        pci_apic_direct_intin(intin, irq_line, set, irq_state);
 
     picint_common(1 << irq_line, level, set, irq_state);
 }
@@ -460,6 +650,10 @@ pci_reset_hard(void)
         }
     }
 
+    memset(pci_apic_intin_level_count, 0, sizeof(pci_apic_intin_level_count));
+    memset(pci_apic_intin_level_asserted, 0, sizeof(pci_apic_intin_level_asserted));
+    memset(pci_irq_route_log_seen, 0, sizeof(pci_irq_route_log_seen));
+
     pci_pic_reset();
 }
 
@@ -521,6 +715,28 @@ pci_write(uint16_t port, uint8_t val, UNUSED(void *priv))
         case 0xcf9:
             if (pci_flags & FLAG_TRC_CONTROLS_CPURST)
                 cpu_cpurst_on_sr = !(val & 0x10);
+
+            if (pci_flags & FLAG_TRC_450KX) {
+                /* The PB's TRC (82454KX/GX 2.2.2): bits 3:0 read back as
+                   written, the reset starting as Reset CPU goes from 0 to
+                   1, of the type Hard Reset Enable says. The hard reset
+                   (RESET#) returns every PB register to its default, this
+                   one's 00h (2.3); the soft reset (INIT#) keeps them. */
+                const int start = !(pci_trc_reg & 4) && (val & 4);
+
+                pci_trc_reg = val & 0x0f;
+                if (start && (val & 2)) {
+                    pci_trc_reg = 0x00;
+                    pci_trc_reset(val);
+                } else if (start) {
+                    /* INIT# to the processor, as the keyboard controller's
+                       reset pulse gives it. */
+                    softresetx86();
+                    cpu_set_edx();
+                    flushmmucache();
+                }
+                break;
+            }
 
             if (!(pci_trc_reg & 4) && (val & 4))
                 pci_trc_reset(val);
@@ -673,7 +889,8 @@ pci_read(uint16_t port, UNUSED(void *priv))
                 ret = pci_key | (pci_func << 1);
             break;
         case 0xcf9:
-            ret = pci_trc_reg & 0xfb;
+            /* The 82454's Reset CPU reads back as written too. */
+            ret = (pci_flags & FLAG_TRC_450KX) ? pci_trc_reg : (pci_trc_reg & 0xfb);
             break;
         case 0xcfa:
             if (pci_flags & FLAG_MECHANISM_2)
@@ -907,6 +1124,9 @@ pci_add_card(uint8_t add_type, uint8_t (*read)(int func, int addr, int len, void
     if (next_pci_card < PCI_CARDS_NUM) {
         dev = &pci_card_descs[next_pci_card];
 
+        dev->board_slot = device_current_board_slot();
+        if ((dev->board_slot >> 16) != SLOT_PCI)
+            dev->board_slot = -1;
         dev->type  = add_type | PCI_ADD_STRICT;
         dev->read  = read;
         dev->write = write;
@@ -945,8 +1165,25 @@ pci_register_card(int pci_card)
         dev = &pci_card_descs[pci_card];
 
         if (last_pci_card) {
-            /* First, find the next available slot. */
-            i = pci_find_slot(dev->type, 0xff);
+            /* First, the board slot chosen for the card, if it is free;
+               otherwise the next available slot. */
+            i = PCI_CARD_INVALID;
+            if (dev->board_slot >= 0) {
+                const unsigned bus    = (dev->board_slot >> 8) & 0xff;
+                const unsigned number = dev->board_slot & 0xff;
+
+                for (unsigned s = 0; s < last_pci_card; s++) {
+                    if ((pci_cards[s].bus == bus) && (pci_cards[s].id == number) &&
+                        (pci_cards[s].type == PCI_CARD_NORMAL) && !pci_cards[s].read && !pci_cards[s].write) {
+                        i = s;
+                        break;
+                    }
+                }
+                if (i == PCI_CARD_INVALID)
+                    pclog("PCI: board slot %02X:%02X chosen for a card is not free; it goes to the next free one\n", bus, number);
+            }
+            if (i == PCI_CARD_INVALID)
+                i = pci_find_slot(dev->type, 0xff);
 
             if (i != PCI_CARD_INVALID) {
                 card = &pci_cards[i];
@@ -976,6 +1213,11 @@ pci_add_bridge(uint8_t add_type, uint8_t (*read)(int func, int addr, int len, vo
     uint8_t bridge_slot = (add_type == PCI_ADD_NORMAL) ? last_normal_pci_card_id :
                                                          pci_find_slot(add_type | PCI_ADD_STRICT, 0xff);
 
+    if ((add_type == PCI_ADD_NORMAL) && (next_bridge_slot != PCI_CARD_INVALID)) {
+        bridge_slot      = next_bridge_slot;
+        next_bridge_slot = PCI_CARD_INVALID;
+    }
+
     if (bridge_slot != PCI_CARD_INVALID) {
         card = &pci_cards[bridge_slot];
         card->read  = read;
@@ -984,6 +1226,27 @@ pci_add_bridge(uint8_t add_type, uint8_t (*read)(int func, int addr, int len, vo
     }
 
     *slot = bridge_slot;
+}
+
+/* How many DEC 21150 bridges a board with this many free normal slots
+   needs for this many cards, with at least minimum of them (for a card
+   placed behind one), when registered slots are already in use: each
+   bridge takes a slot and gives nine. -1 when they do not fit. */
+int
+pci_expansion_bridges(int slots, int cards, int minimum, int registered)
+{
+    int bridges = 0;
+
+    if (slots == 0)
+        return cards ? -1 : 0;
+    while (cards > slots || bridges < minimum) {
+        if (registered + 9 > PCI_CARDS_NUM)
+            return -1;
+        slots += 8;
+        registered += 9;
+        bridges++;
+    }
+    return bridges;
 }
 
 /* Register the cards that have been added into slots. */
@@ -998,8 +1261,75 @@ pci_register_cards(void)
 
     next_normal_pci_card = 0;
 
+    /* The bridges put in by hand, each in the board slot chosen for it,
+       before any card: the buses behind them come first, in their order. */
+    int manual = 0;
+    for (int n = 1; !(pci_flags & FLAG_NO_BRIDGES); n++) {
+        const int slot = device_board_pci_bridge(n);
+        if (slot < 0)
+            break;
+        uint8_t found = PCI_CARD_INVALID;
+        for (uint8_t s = 0; s < last_pci_card; s++) {
+            if ((pci_cards[s].bus == ((slot >> 8) & 0xff)) && (pci_cards[s].id == (slot & 0xff)) &&
+                (pci_cards[s].type == PCI_CARD_NORMAL) && !pci_cards[s].read && !pci_cards[s].write) {
+                found = s;
+                break;
+            }
+        }
+        if (((slot >> 16) != SLOT_PCI) || (found == PCI_CARD_INVALID)) {
+            pclog("PCI: the board slot %02X:%02X chosen for PCI-PCI bridge %i is unavailable\n", (slot >> 8) & 0xff, slot & 0xff, n);
+            continue;
+        }
+        next_bridge_slot = found;
+        device_add_inst(&dec21150_device, last_pci_bus);
+        next_bridge_slot = PCI_CARD_INVALID;
+        manual++;
+    }
+
     if (next_pci_card > 0) {
+        int minimum = 0;
         for (uint8_t i = 0; i < next_pci_card; i++) {
+            if (pci_card_descs[i].board_slot >= 0) {
+                const int bus = (pci_card_descs[i].board_slot >> 8) & 0xff;
+                if (bus >= last_pci_bus && bus - last_pci_bus + 1 > minimum)
+                    minimum = bus - last_pci_bus + 1;
+            }
+        }
+        /* A slot holding a bridge put in by hand takes no card. */
+        const int bridges = (pci_flags & FLAG_NO_BRIDGES) ? 0 :
+            pci_expansion_bridges(last_normal_pci_card - manual, normal_pci_cards, minimum, last_pci_card);
+        for (int b = 0; b < bridges; b++) {
+            const pci_card_t *parent      = &pci_cards[last_normal_pci_card_id];
+            const int         parent_slot = (SLOT_PCI << 16) | (parent->bus << 8) | parent->id;
+            /* The bridge takes the last slot: a card placed there moves to
+               the first free slot behind the bridge, and every other card
+               keeps the slot chosen for it. */
+            int destination = -1;
+            for (int d = 0; d < 9 && destination < 0; d++) {
+                const int candidate = (SLOT_PCI << 16) | (last_pci_bus << 8) | d;
+                int       occupied  = 0;
+                for (uint8_t i = 0; i < next_pci_card; i++)
+                    occupied |= pci_card_descs[i].board_slot == candidate;
+                if (!occupied)
+                    destination = candidate;
+            }
+            for (uint8_t i = 0; i < next_pci_card; i++)
+                if (pci_card_descs[i].board_slot == parent_slot)
+                    pci_card_descs[i].board_slot = destination;
+            device_add_inst(&dec21150_device, last_pci_bus);
+        }
+        uint8_t assigned[PCI_CARDS_NUM] = { 0 };
+        for (uint8_t i = 0; i < next_pci_card; i++) {
+            if (pci_card_descs[i].board_slot >= 0) {
+                assigned[i] = 1;
+                pci_register_card(i);
+            }
+        }
+        for (uint8_t i = 0; i < next_pci_card; i++) {
+            if (assigned[i]) {
+                next_normal_pci_card++;
+                continue;
+            }
 #ifdef ENABLE_PCI_LOG
             type = pci_card_descs[i].type;
             slot = pci_card_descs[i].slot;
@@ -1009,12 +1339,6 @@ pci_register_cards(void)
             /* If this is a normal card, increase the next normal card index. */
             if (normal)
                 next_normal_pci_card++;
-
-            /* If this is a normal card and the next one is going to be beyond the last slot,
-               add the bridge. */
-            if (normal && (next_normal_pci_card >= last_normal_pci_card) &&
-                (normal_pci_cards > last_normal_pci_card) && !(pci_flags & FLAG_NO_BRIDGES))
-                device_add_inst(&dec21150_device, last_pci_bus);
 
             pci_register_card(i);
             pci_log("pci_register_cards(): PCI card #%02i: type = %02X, pci device = %02X:%02X\n",
@@ -1053,6 +1377,14 @@ pci_slots_clear(void)
     } while (i++ < 0xff);
 
     pci_bus_number_to_index_mapping[0] = 0; /* always map bus 0 to index 0 */
+}
+
+/* What a chipset device adds to the machine's flags: a register it owns
+   that the ports here serve (FLAG_TRC_450KX). After pci_init. */
+void
+pci_add_flags(int flags)
+{
+    pci_flags |= flags;
 }
 
 void
@@ -1097,10 +1429,31 @@ pci_init(int flags)
         pci_irq_level[c] = (pci_flags & FLAG_NO_IRQ_STEERING) ? 0 : 1;
     }
 
+    pci_apic_clear_intin_routes();
+    memset(pci_apic_intin_level_count, 0, sizeof(pci_apic_intin_level_count));
+    memset(pci_apic_intin_level_asserted, 0, sizeof(pci_apic_intin_level_asserted));
+    memset(pci_irq_route_log_seen, 0, sizeof(pci_irq_route_log_seen));
+
     for (c = 0; c < PCI_MIRQS_NUM; c++) {
         pci_mirqs[c].enabled  = 0;
         pci_mirqs[c].irq_line = PCI_IRQ_DISABLED;
     }
 
     pic_set_pci_flag(1);
+}
+
+/* The debug console's view of the PCI slots: slot i's bus, device number,
+   state and configuration read; 0 for an empty slot or past the end. */
+int
+pci_debug_card(int i, uint8_t *bus, uint8_t *id, void **priv,
+               uint8_t (**read)(int func, int addr, int len, void *priv))
+{
+    if ((i < 0) || (i >= PCI_CARDS_NUM) || (pci_cards[i].read == NULL))
+        return 0;
+
+    *bus  = pci_cards[i].bus;
+    *id   = pci_cards[i].id;
+    *priv = pci_cards[i].priv;
+    *read = pci_cards[i].read;
+    return 1;
 }

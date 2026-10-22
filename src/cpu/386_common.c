@@ -51,6 +51,9 @@ uint32_t cr3;
 uint32_t cr4;
 uint32_t dr[8];
 
+int cpu_debug_regs_486 = 0;
+int cpu_dr_armed       = 0;
+
 uint32_t use32;
 int      stack32;
 
@@ -64,19 +67,15 @@ int nmi_enable = 1;
 int alt_access;
 int cpl_override = 0;
 
-#ifdef USE_NEW_DYNAREC
 uint16_t cpu_cur_status = 0;
-#else
-uint32_t cpu_cur_status = 0;
-#endif
 
 extern uint8_t *pccache2;
 
 extern int      optype;
 extern uint32_t pccache;
+extern int      ioapic_lint1_raise(void);
 
 int      new_ne            = 0;
-int      fpu_ignne         = 0;
 int      in_sys            = 0;
 int      unmask_a20_in_smm = 0;
 uint32_t old_rammask       = 0xffffffff;
@@ -86,6 +85,7 @@ int soft_reset_mask = 0;
 int smi_latched = 0;
 int smm_in_hlt  = 0;
 int smi_block   = 0;
+int cpu_halted  = 0;
 
 /* RSM restarted a HLT and a latched SMI is about to be entered. */
 static int smm_rsm_restart = 0;
@@ -142,6 +142,8 @@ int opcode_has_modrm[256] = {
     0, 0, 0, 0,  0, 0, 1, 1,  0, 0, 0, 0,  0, 0, 1, 1, /*f0*/
 };
 
+/* How many bytes of an instruction the fetch helpers read at a page end,
+   so the ModR/M comes along (fastreadw_fetch/fastreadl_fetch) */
 int opcode_length[256] = { 3, 3, 3, 3, 3, 3, 1, 1, 3, 3, 3, 3, 3, 3, 1, 3,   /* 0x0x */
                            3, 3, 3, 3, 3, 3, 1, 1, 3, 3, 3, 3, 3, 3, 1, 1,   /* 0x1x */
                            3, 3, 3, 3, 3, 3, 1, 1, 3, 3, 3, 3, 3, 3, 1, 1,   /* 0x2x */
@@ -157,13 +159,33 @@ int opcode_length[256] = { 3, 3, 3, 3, 3, 3, 1, 1, 3, 3, 3, 3, 3, 3, 1, 3,   /* 
                            3, 3, 3, 1, 3, 3, 3, 3, 3, 1, 3, 1, 1, 2, 1, 1,   /* 0xcx */
                            3, 3, 3, 3, 2, 2, 1, 1, 3, 3, 3, 3, 3, 3, 3, 3,   /* 0xdx */
                            2, 2, 2, 2, 2, 2, 2, 2, 3, 3, 3, 2, 1, 1, 1, 1,   /* 0xex */
-                           1, 1, 1, 1, 1, 1, 3, 3, 1, 1, 1, 1, 1, 1, 3, 3 }; /* 0xfx */
+                           1, 1, 1, 1, 1, 1, 3, 3, 1, 1, 1, 1, 1, 1, 3, 3 };
 
-/* 0 = no, 1 = always, 2 = depends on second opcode, 3 = depends on mod/rm */
-int lock_legal[256]    = { 1, 1, 1, 1, 1, 1, 0, 0, 1, 1, 1, 1, 1, 1, 0, 2,   /* 0x0x */
-                           1, 1, 1, 1, 1, 1, 0, 0, 1, 1, 1, 1, 1, 1, 0, 0,   /* 0x1x */
-                           1, 1, 1, 1, 1, 1, 4, 0, 1, 1, 1, 1, 1, 1, 4, 0,   /* 0x2x */
-                           1, 1, 1, 1, 1, 1, 4, 0, 0, 0, 0, 0, 0, 0, 4, 0,   /* 0x3x */
+/* The shortest each opcode can be (a ModR/M byte, an imm8, a second opcode
+   byte): the 2386 core checks that many bytes against the CS limit before
+   running it. */
+int opcode_min_length[256] = { 2, 2, 2, 2, 2, 3, 1, 1, 2, 2, 2, 2, 2, 3, 1, 2,   /* 0x0x */
+                           2, 2, 2, 2, 2, 3, 1, 1, 2, 2, 2, 2, 2, 3, 1, 1,   /* 0x1x */
+                           2, 2, 2, 2, 2, 3, 1, 1, 2, 2, 2, 2, 2, 3, 1, 1,   /* 0x2x */
+                           2, 2, 2, 2, 2, 3, 1, 1, 2, 2, 2, 2, 2, 3, 1, 1,   /* 0x3x */
+                           1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,   /* 0x4x */
+                           1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,   /* 0x5x */
+                           1, 1, 2, 2, 1, 1, 1, 1, 3, 3, 2, 3, 1, 1, 1, 1,   /* 0x6x */
+                           2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2,   /* 0x7x */
+                           3, 3, 3, 3, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2,   /* 0x8x */
+                           1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 3, 1, 1, 1, 1, 1,   /* 0x9x */
+                           3, 3, 3, 3, 1, 1, 1, 1, 2, 3, 1, 1, 1, 1, 1, 1,   /* 0xax */
+                           2, 2, 2, 2, 2, 2, 2, 2, 3, 3, 3, 3, 3, 3, 3, 3,   /* 0xbx */
+                           3, 3, 3, 1, 2, 2, 3, 3, 3, 1, 3, 1, 1, 2, 1, 1,   /* 0xcx */
+                           2, 2, 2, 2, 2, 2, 1, 1, 2, 2, 2, 2, 2, 2, 2, 2,   /* 0xdx */
+                           2, 2, 2, 2, 2, 2, 2, 2, 3, 3, 3, 2, 1, 1, 1, 1,   /* 0xex */
+                           1, 1, 1, 1, 1, 1, 2, 2, 1, 1, 1, 1, 1, 1, 2, 2 }; /* 0xfx */
+
+/* 0 = no, 1 = memory destination, 2 = two-byte opcode, 3 = group, 4 = prefix */
+int lock_legal[256]    = { 1, 1, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 2,   /* 0x0x */
+                           1, 1, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0,   /* 0x1x */
+                           1, 1, 0, 0, 0, 0, 4, 0, 1, 1, 0, 0, 0, 0, 4, 0,   /* 0x2x */
+                           1, 1, 0, 0, 0, 0, 4, 0, 0, 0, 0, 0, 0, 0, 4, 0,   /* 0x3x */
                            0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,   /* 0x4x */
                            0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,   /* 0x5x */
                            0, 0, 0, 0, 4, 4, 4, 4, 0, 0, 0, 0, 0, 0, 0, 0,   /* 0x6x */
@@ -466,7 +488,7 @@ x386_common_log(const char *fmt, ...)
 #endif
 
 int
-is_lock_legal(uint32_t fetchdat)
+is_lock_legal_at(uint32_t fetchdat, uint32_t opcode_pc)
 {
     int legal = 1;
 
@@ -475,8 +497,19 @@ is_lock_legal(uint32_t fetchdat)
         fetch_dat.fd = fetchdat;
 
         legal = lock_legal[fetch_dat.b[0]];
+        /* Segment and size prefixes after LOCK do not bypass validation. */
+        while (legal == 4) {
+            if (opcode_pc - cpu_state.oldpc >= 14) {
+                x86gpf(NULL, 0);
+                return 1;
+            }
+            fetch_dat.fd = fastreadl(cs + ++opcode_pc);
+            if (cpu_state.abrt)
+                return 1;
+            legal = lock_legal[fetch_dat.b[0]];
+        }
         if (legal == 1)
-            legal = 1; // ((fetch_dat.b[1] >> 6) != 0x03);    /* reg is illegal */
+            legal = ((fetch_dat.b[1] >> 6) != 0x03);    /* reg is illegal */
         else if (legal == 2) {
             legal = lock_legal_0f[fetch_dat.b[1]];
             if (legal == 1)
@@ -514,6 +547,12 @@ is_lock_legal(uint32_t fetchdat)
     return legal;
 }
 
+int
+is_lock_legal(uint32_t fetchdat)
+{
+    return is_lock_legal_at(fetchdat, cpu_state.pc - 1);
+}
+
 /*Prefetch emulation is a fairly simplistic model:
   - All instruction bytes must be fetched before it starts.
   - Cycles used for non-instruction memory accesses are counted and subtracted
@@ -523,61 +562,7 @@ is_lock_legal(uint32_t fetchdat)
   Note that this is only used for 286 / 386 systems. It is disabled when the
   internal cache on 486+ CPUs is enabled.
 */
-static int prefetch_bytes = 0;
-
-void
-prefetch_run(int instr_cycles, int bytes, int modrm, int reads, int reads_l, int writes, int writes_l, int ea32)
-{
-    int mem_cycles = reads * cpu_cycles_read + reads_l * cpu_cycles_read_l + writes * cpu_cycles_write + writes_l * cpu_cycles_write_l;
-
-    if (instr_cycles < mem_cycles)
-        instr_cycles = mem_cycles;
-
-    prefetch_bytes -= prefetch_prefixes;
-    prefetch_bytes -= bytes;
-    if (modrm != -1) {
-        if (ea32) {
-            if ((modrm & 7) == 4) {
-                if ((modrm & 0x700) == 0x500)
-                    prefetch_bytes -= 5;
-                else if ((modrm & 0xc0) == 0x40)
-                    prefetch_bytes -= 2;
-                else if ((modrm & 0xc0) == 0x80)
-                    prefetch_bytes -= 5;
-            } else {
-                if ((modrm & 0xc7) == 0x05)
-                    prefetch_bytes -= 4;
-                else if ((modrm & 0xc0) == 0x40)
-                    prefetch_bytes--;
-                else if ((modrm & 0xc0) == 0x80)
-                    prefetch_bytes -= 4;
-            }
-        } else {
-            if ((modrm & 0xc7) == 0x06)
-                prefetch_bytes -= 2;
-            else if ((modrm & 0xc0) != 0xc0)
-                prefetch_bytes -= ((modrm & 0xc0) >> 6);
-        }
-    }
-
-    /* Fill up prefetch queue */
-    while (prefetch_bytes < 0) {
-        prefetch_bytes += cpu_prefetch_width;
-        cycles -= cpu_prefetch_cycles;
-    }
-
-    /* Subtract cycles used for memory access by instruction */
-    instr_cycles -= mem_cycles;
-
-    while (instr_cycles >= cpu_prefetch_cycles) {
-        prefetch_bytes += cpu_prefetch_width;
-        instr_cycles -= cpu_prefetch_cycles;
-    }
-
-    prefetch_prefixes = 0;
-    if (prefetch_bytes > 16)
-        prefetch_bytes = 16;
-}
+int prefetch_bytes = 0;
 
 void
 prefetch_flush(void)
@@ -641,6 +626,12 @@ smm_seg_load(x86seg *s)
             cpu_cur_status &= ~CPU_STATUS_NOTFLATDS;
         else
             cpu_cur_status |= CPU_STATUS_NOTFLATDS;
+    }
+    if (s == &cpu_state.seg_es) {
+        if (s->base == 0 && s->limit_low == 0 && s->limit_high == 0xffffffff)
+            cpu_cur_status &= ~CPU_STATUS_NOTFLATES;
+        else
+            cpu_cur_status |= CPU_STATUS_NOTFLATES;
     }
 
     if (s == &cpu_state.seg_ss) {
@@ -760,9 +751,11 @@ smram_restore_state_p5(uint32_t *saved_state)
 
     cr0   = saved_state[SMRAM_FIELD_P5_CR0];
     cr3   = saved_state[SMRAM_FIELD_P5_CR3];
+    pae_load_pdptes(); /* used only with PAE paging */
     cr4   = saved_state[SMRAM_FIELD_P5_CR4];
     dr[6] = saved_state[SMRAM_FIELD_P5_DR6];
     dr[7] = saved_state[SMRAM_FIELD_P5_DR7];
+    cpu_dr7_update();
 
     /* TR */
     tr.seg     = saved_state[SMRAM_FIELD_P5_TR_SELECTOR];
@@ -956,9 +949,11 @@ smram_restore_state_p6(uint32_t *saved_state)
 
     cr0   = saved_state[SMRAM_FIELD_P6_CR0];
     cr3   = saved_state[SMRAM_FIELD_P6_CR3];
+    pae_load_pdptes(); /* used only with PAE paging */
     cr4   = saved_state[SMRAM_FIELD_P6_CR4];
     dr[6] = saved_state[SMRAM_FIELD_P6_DR6];
     dr[7] = saved_state[SMRAM_FIELD_P6_DR7];
+    cpu_dr7_update();
 
     /* TR */
     tr.seg     = saved_state[SMRAM_FIELD_P6_TR_SELECTOR];
@@ -1150,9 +1145,11 @@ smram_restore_state_amd_k(uint32_t *saved_state)
     cr0   = saved_state[SMRAM_FIELD_AMD_K_CR0];
     cr2   = saved_state[SMRAM_FIELD_AMD_K_CR2];
     cr3   = saved_state[SMRAM_FIELD_AMD_K_CR3];
+    pae_load_pdptes(); /* used only with PAE paging */
     cr4   = saved_state[SMRAM_FIELD_AMD_K_CR4];
     dr[6] = saved_state[SMRAM_FIELD_AMD_K_DR6];
     dr[7] = saved_state[SMRAM_FIELD_AMD_K_DR7];
+    cpu_dr7_update();
 
     /* TR */
     tr.seg     = saved_state[SMRAM_FIELD_AMD_K_TR_SELECTOR];
@@ -1240,7 +1237,9 @@ smram_save_state_cyrix(uint32_t *saved_state, int in_hlt)
     saved_state[0] = dr[7];
     saved_state[1] = cpu_state.flags | (cpu_state.eflags << 16);
     saved_state[2] = cr0;
-    saved_state[3] = cpu_state.oldpc;
+    /* Out of a HLT, CURRENT_IP and NEXT_IP both point past it (Cyrix SMM
+       guide 94211, Appendix B), which a handler uses to tell the case. */
+    saved_state[3] = in_hlt ? cpu_state.pc : cpu_state.oldpc;
     saved_state[4] = cpu_state.pc;
     saved_state[5] = CS | (CPL << 21);
     saved_state[6] = 0x00000000;
@@ -1279,6 +1278,7 @@ static void
 smram_restore_state_cyrix(uint32_t *saved_state)
 {
     dr[7]            = saved_state[0];
+    cpu_dr7_update();
     cpu_state.flags  = saved_state[1] & 0xffff;
     cpu_state.eflags = saved_state[1] >> 16;
     cr0              = saved_state[2];
@@ -1369,6 +1369,7 @@ enter_smm(int in_hlt)
     cr4 = 0;
 
     dr[7] = 0x400;
+    cpu_dr7_update();
 
     if (is_cxsmm) {
         cpu_state.pc = 0x0000;
@@ -1441,7 +1442,10 @@ enter_smm(int in_hlt)
     }
     cpl_override = 0;
 
-    nmi_mask = 0;
+    /* The processor holds NMI off inside the handler, until an IRET or the
+       RSM (SDM 1999 vol. 3, 12.7); the chipset's NMI mask (port 70h) is
+       not the processor's to change. */
+    nmi_enable = 0;
 
     /* Entering consumes the latch; this stay can latch one SMI of its own,
        even when it was entered from the latch. */
@@ -1461,6 +1465,10 @@ enter_smm(int in_hlt)
     oldcpl = 0;
 
     cpu_cur_status &= ~(CPU_STATUS_PMODE | CPU_STATUS_V86);
+    /* CR0, CR3 and CR4 were loaded for SMM, with SMRAM mapped or not, and
+       the debug registers cleared: the translations go, and every link with
+       them */
+    flushmmucache();
     CPU_BLOCK_END();
 }
 
@@ -1566,6 +1574,8 @@ leave_smm(void)
         smram_restore_state_p6(saved_state);
         restart = saved_state[SMRAM_FIELD_P6_AUTOHALT_RESTART] & 0xffff;
     }
+    /* RSM reloads CR0, CD with it. */
+    cpu_car_update();
 
     /* An auto HALT restart re-enters the HALT state, EIP past the HLT again
        (Intel SDM vol. 3, 34.10). A latched SMI is taken there, at once, so
@@ -1585,7 +1595,11 @@ leave_smm(void)
             cpu_cur_status |= CPU_STATUS_V86;
     }
 
-    nmi_mask = 1;
+    /* RSM lifts the blocking: an NMI latched in SMM is taken before the
+       next instruction. The processor does not save the blocking of an NMI
+       handler that the SMI interrupted, so one may nest inside that
+       handler (SDM 1999 vol. 3, 12.7). */
+    nmi_enable = 1;
 
     oldcpl = CPL;
 
@@ -1622,15 +1636,40 @@ leave_smm(void)
     x386_common_log("EAX = %08X, EBX = %08X, ECX = %08X, EDX = %08X, ESI = %08X, EDI = %08X, ESP = %08X, EBP = %08X\n",
                     EAX, EBX, ECX, EDX, ESI, EDI, ESP, EBP);
     x386_common_log("leave_smm()\n");
+
+    /* The state before SMM back, CR0, CR3, CR4 and the debug registers
+       with it: as on entry */
+    flushmmucache();
 }
+
+/* #NM delivered while a block was being recorded (an x87 or MMX
+   instruction with CR0.TS set): the block is cut short by the lazy FPU
+   switch, not by its code, and must not be kept that way (386_dynarec.c).
+   Any other exception belongs to the code -- #UD from the ARPL Windows 9x
+   uses as a V86 breakpoint, #DE, #BR -- and the block ends there for good,
+   as it always did: discarding those recorded them afresh on every run. */
+int codegen_record_faulted;
 
 void
 x86_int(int num)
 {
     uint32_t addr;
 
+    /* A fault did not retire the instruction being stepped. Drop its
+       pending debug trap before entering the handler; a task switch may
+       establish a new task-switch trap during delivery. */
+    trap = 0;
+#ifdef USE_DYNAREC
+    if (codegen_in_recompile && (num == 7))
+        codegen_record_faulted = 1;
+#endif
     flags_rebuild();
     cpu_state.pc = cpu_state.oldpc;
+
+    /* Entering the debug exception handler clears DR7.GD, so the handler
+       can reach the debug registers */
+    if (num == 1)
+        dr[7] &= ~0x2000;
 
     if (msw & 1)
         cpu_use_exec ? pmodeint(num, 0) : pmodeint_2386(num, 0);
@@ -1646,7 +1685,7 @@ x86_int(int num)
                 x386_common_log("Triple fault in real mode - reset\n");
 #endif
             } else
-                x86_int(8);
+                x86_int((is_p6 && (num != 0x08) && (num != 0x0d)) ? 0x0d : 0x08);
         } else {
             if (stack32) {
                 writememw(ss, ESP - 2, cpu_state.flags);
@@ -1662,9 +1701,6 @@ x86_int(int num)
 
             cpu_state.flags &= ~I_FLAG;
             cpu_state.flags &= ~T_FLAG;
-#ifndef USE_NEW_DYNAREC
-            oxpc = cpu_state.pc;
-#endif
             cpu_state.pc = readmemw(0, addr);
             cpu_use_exec ? loadcs(readmemw(0, addr + 2)) : loadcs_2386(readmemw(0, addr + 2));
         }
@@ -1673,6 +1709,10 @@ x86_int(int num)
     cycles -= 70;
     CPU_BLOCK_END();
 }
+
+/* INT3 and INTO: software interrupts, but not IOPL-sensitive in V86 mode
+   (only INT n is) */
+int x86_int_sw_iopl_exempt = 0;
 
 void
 x86_int_sw(int num)
@@ -1687,8 +1727,10 @@ x86_int_sw(int num)
     else {
         addr = (num << 2) + idt.base;
 
+        /* Beyond the IDT limit: double fault on the 386 to the P5,
+           #GP on the P6 (the same for every source) */
         if ((num << 2UL) + 3UL > idt.limit)
-            x86_int(0x0d);
+            x86_int(is_p6 ? 0x0d : 0x08);
         else if (!stack_cr_push(3, 2)) {
             if (stack32) {
                 writememw(ss, ESP - 2, cpu_state.flags);
@@ -1704,23 +1746,16 @@ x86_int_sw(int num)
 
             cpu_state.flags &= ~I_FLAG;
             cpu_state.flags &= ~T_FLAG;
-#ifndef USE_NEW_DYNAREC
-            oxpc = cpu_state.pc;
-#endif
             cpu_state.pc = readmemw(0, addr);
             cpu_use_exec ? loadcs(readmemw(0, addr + 2)) : loadcs_2386(readmemw(0, addr + 2));
             cycles -= timing_int_rm;
         }
     }
 
-#ifdef USE_DEBUG_REGS_486
-    trap &= ~1;
-#else
-    if (cpu_use_exec)
+    if (cpu_use_exec && !cpu_debug_regs_486)
         trap = 0;
     else
         trap &= ~1;
-#endif
     CPU_BLOCK_END();
 }
 
@@ -1760,19 +1795,12 @@ x86_int_sw_rm(int num)
     cpu_state.flags &= ~T_FLAG;
     cpu_state.pc = new_pc;
     cpu_use_exec ? loadcs(new_cs) : loadcs_2386(new_cs);
-#ifndef USE_NEW_DYNAREC
-    oxpc = cpu_state.pc;
-#endif
 
     cycles -= timing_int_rm;
-#ifdef USE_DEBUG_REGS_486
-    trap &= ~1;
-#else
-    if (cpu_use_exec)
+    if (cpu_use_exec && !cpu_debug_regs_486)
         trap = 0;
     else
         trap &= ~1;
-#endif
     CPU_BLOCK_END();
 
     return 0;
@@ -1875,6 +1903,23 @@ cpu_386_flags_rebuild(void)
     flags_rebuild();
 }
 
+/* While a breakpoint is armed no page is entered into the read and write
+   lookup tables, so every data access takes the slow path, which makes the
+   check. The memory access macros and the effective-address fast path then
+   need no test of their own, and cost nothing with the option off. The tables
+   are flushed as a breakpoint gets armed. */
+void
+cpu_dr7_update(void)
+{
+    int armed = cpu_debug_regs_486 && is386 && (dr[7] & 0xff);
+
+    if (armed && !cpu_dr_armed) {
+        cpu_dr_armed = 1;
+        flushmmucache_nopc();
+    } else
+        cpu_dr_armed = armed;
+}
+
 extern uint64_t mmutranslate_noabrt_2386(uint32_t addr, int rw);
 int
 cpu_386_check_instruction_fault(void)
@@ -1921,7 +1966,7 @@ sysenter(UNUSED(uint32_t fetchdat))
         return cpu_state.abrt;
     }
 
-    if (!(msr.sysenter_cs & 0xFFF8)) {
+    if (!msr.sysenter_cs) { /* #GP only if the MSR is zero (Intel SDM 1999, SYSENTER/SYSEXIT) */
 #ifdef ENABLE_386_COMMON_LOG
         x386_common_log("SYSENTER: CS MSR is zero");
 #endif
@@ -1993,7 +2038,7 @@ sysexit(UNUSED(uint32_t fetchdat))
     x386_common_log("SYSEXIT called\n");
 #endif
 
-    if (!(msr.sysenter_cs & 0xFFF8)) {
+    if (!msr.sysenter_cs) { /* #GP only if the MSR is zero (Intel SDM 1999, SYSENTER/SYSEXIT) */
 #ifdef ENABLE_386_COMMON_LOG
         x386_common_log("SYSEXIT: CS MSR is zero");
 #endif
@@ -2054,7 +2099,7 @@ sysexit(UNUSED(uint32_t fetchdat))
 
     cpu_cur_status &= ~(CPU_STATUS_NOTFLATSS /* | CPU_STATUS_V86*/);
     cpu_cur_status |= (CPU_STATUS_USE32 | CPU_STATUS_STACK32 | CPU_STATUS_PMODE);
-    flushmmucache_nopc();
+    flushmmucache_cpl();
     set_use32(1);
     set_stack32(1);
 
@@ -2163,7 +2208,7 @@ sysret(UNUSED(uint32_t fetchdat))
     cpu_state.seg_ss.limit      = 0xffffffff;
     cpu_state.seg_ss.limit_high = 0xffffffff;
     cpu_state.seg_ss.access     = 0xf3;
-    cpu_state.seg_cs.ar_high    = 0xcf;
+    cpu_state.seg_ss.ar_high    = 0xcf;
     cpu_state.seg_ss.checked    = 1;
 #ifdef USE_DYNAREC
     codegen_flat_ss = 0;
@@ -2171,7 +2216,7 @@ sysret(UNUSED(uint32_t fetchdat))
 
     cpu_cur_status &= ~(CPU_STATUS_NOTFLATSS /* | CPU_STATUS_V86*/);
     cpu_cur_status |= (CPU_STATUS_USE32 | CPU_STATUS_STACK32 | CPU_STATUS_PMODE);
-    flushmmucache_nopc();
+    flushmmucache_cpl();
     set_use32(1);
     set_stack32(1);
 
@@ -2210,7 +2255,7 @@ cpu_fast_off_reset(void)
 }
 
 void
-smi_raise(void)
+cpu_smi_raise_direct(void)
 {
     uint8_t ccr1_check;
 
@@ -2228,10 +2273,11 @@ smi_raise(void)
         cpu_fast_off_advance();
 
     smi_line = 1;
+    mem_chain_break(); /* the loop takes it: a chain leaves at its next link */
 }
 
 void
-nmi_raise_cpu(void)
+cpu_nmi_raise_direct(void)
 {
     if (is486 && (cpu_fast_off_flags & 0x20000000)) {
         if (!is_cpu_thread)
@@ -2242,15 +2288,33 @@ nmi_raise_cpu(void)
     }
 
     nmi = 1;
+    mem_chain_break(); /* the loop takes it: a chain leaves at its next link */
+}
+
+/* An NMI raised in the processor; apic marks one from the local APIC,
+   which port 70h does not gate (NMI_TAKEABLE). */
+void
+cpu_nmi_raise_core(int apic)
+{
+    cpu_nmi_raise_direct();
+    if (apic)
+        nmi |= 2;
 }
 
 void
+smi_raise(void)
+{
+    cpu_smi_raise_direct();
+}
+
+/* Public NMI wrapper gives IOAPIC LINT1 first claim before legacy NMI line. */
+void
 nmi_raise(void)
 {
-    if (current_lapic && (current_lapic->lapic_spurious_interrupt & 0x100)) {
-        apic_lapic_service_nmi();
-    } else
-        nmi_raise_cpu();
+    if (ioapic_lint1_raise())
+        return;
+
+    cpu_nmi_raise_direct();
 }
 
 #ifndef USE_DYNAREC
@@ -2261,3 +2325,203 @@ codegen_set_rounding_mode(int mode)
     /* cpu_state.new_npxc = (cpu_state.old_npxc & ~0xc00) | (mode << 10); */
 }
 #endif
+
+// clang-format off
+const uint8_t x86_opcode_modrm[256] = {
+    1, 1, 1, 1,  0, 0, 0, 0,  1, 1, 1, 1,  0, 0, 0, 0, /*00*/
+    1, 1, 1, 1,  0, 0, 0, 0,  1, 1, 1, 1,  0, 0, 0, 0, /*10*/
+    1, 1, 1, 1,  0, 0, 0, 0,  1, 1, 1, 1,  0, 0, 0, 0, /*20*/
+    1, 1, 1, 1,  0, 0, 0, 0,  1, 1, 1, 1,  0, 0, 0, 0, /*30*/
+
+    0, 0, 0, 0,  0, 0, 0, 0,  0, 0, 0, 0,  0, 0, 0, 0, /*40*/
+    0, 0, 0, 0,  0, 0, 0, 0,  0, 0, 0, 0,  0, 0, 0, 0, /*50*/
+    0, 0, 1, 1,  0, 0, 0, 0,  0, 1, 0, 1,  0, 0, 0, 0, /*60*/
+    0, 0, 0, 0,  0, 0, 0, 0,  0, 0, 0, 0,  0, 0, 0, 0, /*70*/
+
+    1, 1, 1, 1,  1, 1, 1, 1,  1, 1, 1, 1,  1, 1, 1, 1, /*80*/
+    0, 0, 0, 0,  0, 0, 0, 0,  0, 0, 0, 0,  0, 0, 0, 0, /*90*/
+    0, 0, 0, 0,  0, 0, 0, 0,  0, 0, 0, 0,  0, 0, 0, 0, /*a0*/
+    0, 0, 0, 0,  0, 0, 0, 0,  0, 0, 0, 0,  0, 0, 0, 0, /*b0*/
+
+    1, 1, 0, 0,  1, 1, 1, 1,  0, 0, 0, 0,  0, 0, 0, 0, /*c0*/
+    1, 1, 1, 1,  0, 0, 0, 0,  1, 1, 1, 1,  1, 1, 1, 1, /*d0*/
+    0, 0, 0, 0,  0, 0, 0, 0,  0, 0, 0, 0,  0, 0, 0, 0, /*e0*/
+    0, 0, 0, 0,  0, 0, 1, 1,  0, 0, 0, 0,  0, 0, 1, 1, /*f0*/
+};
+
+const uint8_t x86_opcode_0f_modrm[256] = {
+    1, 1, 1, 1,  0, 0, 0, 0,  0, 0, 0, 0,  0, 1, 0, 1, /*00*/
+    1, 1, 1, 1,  1, 1, 1, 1,  1, 1, 1, 1,  1, 1, 1, 1, /*10*/
+    1, 1, 1, 1,  1, 1, 1, 0,  1, 1, 1, 1,  1, 1, 1, 1, /*20*/ /*0F 26: MOV TRx, r32*/
+    0, 0, 0, 0,  0, 0, 1, 1,  0, 0, 0, 0,  0, 0, 0, 1, /*30*/
+
+    1, 1, 1, 1,  1, 1, 1, 1,  1, 1, 1, 1,  1, 1, 1, 1, /*40*/
+    1, 1, 1, 1,  1, 1, 1, 1,  1, 1, 1, 1,  1, 1, 1, 1, /*50*/
+    1, 1, 1, 1,  1, 1, 1, 1,  1, 1, 1, 1,  1, 1, 1, 1, /*60*/
+    1, 1, 1, 1,  1, 1, 1, 0,  1, 1, 1, 1,  1, 1, 1, 1, /*70*/
+
+    0, 0, 0, 0,  0, 0, 0, 0,  0, 0, 0, 0,  0, 0, 0, 0, /*80*/
+    1, 1, 1, 1,  1, 1, 1, 1,  1, 1, 1, 1,  1, 1, 1, 1, /*90*/
+    0, 0, 0, 1,  1, 1, 0, 0,  0, 0, 0, 1,  1, 1, 1, 1, /*a0*/
+    1, 1, 1, 1,  1, 1, 1, 1,  0, 0, 1, 1,  1, 1, 1, 1, /*b0*/
+
+    1, 1, 1, 1,  1, 1, 1, 1,  0, 0, 0, 0,  0, 0, 0, 0, /*c0*/
+    1, 1, 1, 1,  1, 1, 1, 1,  1, 1, 1, 1,  1, 1, 1, 1, /*d0*/
+    1, 1, 1, 1,  1, 1, 1, 1,  1, 1, 1, 1,  1, 1, 1, 1, /*e0*/
+    1, 1, 1, 1,  1, 1, 1, 1,  1, 1, 1, 1,  1, 1, 1, 0  /*f0*/
+};
+
+const uint8_t x86_opcode_0f_38_modrm[256] = {
+    1, 1, 1, 1,  1, 1, 1, 1,  1, 1, 1, 1,  0, 0, 0, 0, /*00*/
+    0, 0, 0, 0,  0, 0, 0, 0,  0, 0, 0, 0,  1, 1, 1, 0, /*10*/
+    0, 0, 0, 0,  0, 0, 0, 0,  0, 0, 0, 0,  0, 0, 0, 0, /*20*/
+    0, 0, 0, 0,  0, 0, 0, 0,  0, 0, 0, 0,  0, 0, 0, 0, /*30*/
+
+    0, 0, 0, 0,  0, 0, 0, 0,  0, 0, 0, 0,  0, 0, 0, 0, /*40*/
+    0, 0, 0, 0,  0, 0, 0, 0,  0, 0, 0, 0,  0, 0, 0, 0, /*50*/
+    0, 0, 0, 0,  0, 0, 0, 0,  0, 0, 0, 0,  0, 0, 0, 0, /*60*/
+    0, 0, 0, 0,  0, 0, 0, 0,  0, 0, 0, 0,  0, 0, 0, 0, /*70*/
+
+    0, 0, 0, 0,  0, 0, 0, 0,  0, 0, 0, 0,  0, 0, 0, 0, /*80*/
+    0, 0, 0, 0,  0, 0, 0, 0,  0, 0, 0, 0,  0, 0, 0, 0, /*90*/
+    0, 0, 0, 0,  0, 0, 0, 0,  0, 0, 0, 0,  0, 0, 0, 0, /*a0*/
+    0, 0, 0, 0,  0, 0, 0, 0,  0, 0, 0, 0,  0, 0, 0, 0, /*b0*/
+
+    0, 0, 0, 0,  0, 0, 0, 0,  0, 0, 0, 0,  0, 0, 0, 0, /*c0*/
+    0, 0, 0, 0,  0, 0, 0, 0,  0, 0, 0, 0,  0, 0, 0, 0, /*d0*/
+    0, 0, 0, 0,  0, 0, 0, 0,  0, 0, 0, 0,  0, 0, 0, 0, /*e0*/
+    0, 0, 0, 0,  0, 0, 0, 0,  0, 0, 0, 0,  0, 0, 0, 0  /*f0*/
+};
+
+const uint8_t x86_opcode_0f_3a_modrm[256] = {
+    0, 0, 0, 0,  0, 0, 0, 0,  0, 0, 0, 0,  0, 0, 0, 1, /*00*/
+    0, 0, 0, 0,  0, 0, 0, 0,  0, 0, 0, 0,  0, 0, 0, 0, /*10*/
+    0, 0, 0, 0,  0, 0, 0, 0,  0, 0, 0, 0,  0, 0, 0, 0, /*20*/
+    0, 0, 0, 0,  0, 0, 0, 0,  0, 0, 0, 0,  0, 0, 0, 0, /*30*/
+
+    0, 0, 0, 0,  0, 0, 0, 0,  0, 0, 0, 0,  0, 0, 0, 0, /*40*/
+    0, 0, 0, 0,  0, 0, 0, 0,  0, 0, 0, 0,  0, 0, 0, 0, /*50*/
+    0, 0, 0, 0,  0, 0, 0, 0,  0, 0, 0, 0,  0, 0, 0, 0, /*60*/
+    0, 0, 0, 0,  0, 0, 0, 0,  0, 0, 0, 0,  0, 0, 0, 0, /*70*/
+
+    0, 0, 0, 0,  0, 0, 0, 0,  0, 0, 0, 0,  0, 0, 0, 0, /*80*/
+    0, 0, 0, 0,  0, 0, 0, 0,  0, 0, 0, 0,  0, 0, 0, 0, /*90*/
+    0, 0, 0, 0,  0, 0, 0, 0,  0, 0, 0, 0,  0, 0, 0, 0, /*a0*/
+    0, 0, 0, 0,  0, 0, 0, 0,  0, 0, 0, 0,  0, 0, 0, 0, /*b0*/
+
+    0, 0, 0, 0,  0, 0, 0, 0,  0, 0, 0, 0,  0, 0, 0, 0, /*c0*/
+    0, 0, 0, 0,  0, 0, 0, 0,  0, 0, 0, 0,  0, 0, 0, 0, /*d0*/
+    0, 0, 0, 0,  0, 0, 0, 0,  0, 0, 0, 0,  0, 0, 0, 0, /*e0*/
+    0, 0, 0, 0,  0, 0, 0, 0,  0, 0, 0, 0,  0, 0, 0, 0  /*f0*/
+};
+// clang-format on
+
+static int
+instruction_length_byte(unsigned *length)
+{
+    if (*length == 15) {
+        x86gpf(NULL, 0);
+        return -1;
+    }
+    int value = fastreadb(cs + cpu_state.oldpc + (*length)++);
+    return cpu_state.abrt ? -1 : value;
+}
+
+/* Check the complete instruction before an overlong encoding can change any
+   architectural state. Ordinary instructions never enter this slow path. */
+int
+cpu_check_instruction_length(void)
+{
+    unsigned length = 0, immediate = 0, displacement = 0;
+    unsigned operand = (use32 & 0x100) ? 4 : 2;
+    unsigned address = (use32 & 0x200) ? 4 : 2;
+    unsigned map = 0;
+    int opcode, modrm = 0, has_modrm;
+    for (;;) {
+        opcode = instruction_length_byte(&length);
+        if (opcode < 0)
+            return 1;
+        switch (opcode) {
+            case 0x66: operand = (use32 & 0x100) ? 2 : 4; continue;
+            case 0x67: address = (use32 & 0x200) ? 2 : 4; continue;
+            case 0x26: case 0x2e: case 0x36: case 0x3e:
+            case 0x64: case 0x65: case 0xf0: case 0xf2: case 0xf3:
+                continue;
+        }
+        break;
+    }
+    if (opcode == 0x0f) {
+        map = 1;
+        opcode = instruction_length_byte(&length);
+        if (opcode < 0)
+            return 1;
+        if (opcode == 0x38 || opcode == 0x3a) {
+            map = opcode == 0x38 ? 2 : 3;
+            opcode = instruction_length_byte(&length);
+            if (opcode < 0)
+                return 1;
+        }
+    }
+    has_modrm = map == 0 ? x86_opcode_modrm[opcode] : map == 1 ? x86_opcode_0f_modrm[opcode] :
+                map == 2 ? x86_opcode_0f_38_modrm[opcode] : x86_opcode_0f_3a_modrm[opcode];
+    if (has_modrm) {
+        modrm = instruction_length_byte(&length);
+        if (modrm < 0)
+            return 1;
+        unsigned mod = modrm >> 6, rm = modrm & 7;
+        /* MOV CR/DR/TR uses a register even when the Mod bits are not 11. */
+        if (map == 1 && opcode >= 0x20 && opcode <= 0x26)
+            mod = 3;
+        if (mod != 3) {
+            if (address == 4) {
+                if (rm == 4) {
+                    int sib = instruction_length_byte(&length);
+                    if (sib < 0)
+                        return 1;
+                    if (!mod && (sib & 7) == 5)
+                        displacement = 4;
+                } else if (!mod && rm == 5)
+                    displacement = 4;
+                if (mod == 1) displacement = 1;
+                if (mod == 2) displacement = 4;
+            } else {
+                if (!mod && rm == 6) displacement = 2;
+                if (mod == 1) displacement = 1;
+                if (mod == 2) displacement = 2;
+            }
+        }
+    }
+    if (map == 0) {
+        if (opcode < 0x40 && (opcode & 7) == 4) immediate = 1;
+        if (opcode < 0x40 && (opcode & 7) == 5) immediate = operand;
+        if (opcode >= 0x70 && opcode <= 0x7f) immediate = 1;
+        if (opcode >= 0xa0 && opcode <= 0xa3) immediate = address;
+        if (opcode >= 0xb0 && opcode <= 0xb7) immediate = 1;
+        if (opcode >= 0xb8 && opcode <= 0xbf) immediate = operand;
+        switch (opcode) {
+            case 0x68: case 0x69: case 0x81: case 0xa9: case 0xc7:
+            case 0xe8: case 0xe9: immediate = operand; break;
+            case 0x6a: case 0x6b: case 0x80: case 0x82: case 0x83:
+            case 0xa8: case 0xc0: case 0xc1: case 0xc6: case 0xcd:
+            case 0xd4: case 0xd5: case 0xe0: case 0xe1: case 0xe2: case 0xe3:
+            case 0xe4: case 0xe5: case 0xe6: case 0xe7: case 0xeb: immediate = 1; break;
+            case 0x9a: case 0xea: immediate = operand + 2; break;
+            case 0xc2: case 0xca: immediate = 2; break;
+            case 0xc8: immediate = 3; break;
+            case 0xf6: if ((modrm & 0x38) <= 8) immediate = 1; break;
+            case 0xf7: if ((modrm & 0x38) <= 8) immediate = operand; break;
+        }
+    } else if (map == 1) {
+        if (opcode >= 0x80 && opcode <= 0x8f) immediate = operand;
+        switch (opcode) {
+            case 0x0f: case 0x70: case 0x71: case 0x72: case 0x73:
+            case 0xa4: case 0xac: case 0xba: case 0xc2: case 0xc4: case 0xc5:
+            case 0xc6: immediate = 1; break;
+        }
+    } else if (map == 3 && has_modrm)
+        immediate = 1;
+    for (unsigned n = 0; n < displacement + immediate; n++)
+        if (instruction_length_byte(&length) < 0)
+            return 1;
+    return 0;
+}

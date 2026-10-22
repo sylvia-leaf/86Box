@@ -64,10 +64,10 @@
             else                                                                                                  \
                 DEST_REG += 2;                                                                                    \
             CNT_REG--;                                                                                            \
-            cycles -= 15;                                                                                         \
+            cycles -= IO_STR_CYCLES(DX, 15);                                                                      \
             reads++;                                                                                              \
             writes++;                                                                                             \
-            total_cycles += 15;                                                                                   \
+            total_cycles += IO_STR_CYCLES(DX, 15);                                                                \
         }                                                                                                         \
         PREFETCH_RUN(total_cycles, 1, -1, reads, 0, writes, 0, 0);                                                \
         if (CNT_REG > 0) {                                                                                        \
@@ -103,10 +103,10 @@
             else                                                                                                  \
                 DEST_REG += 4;                                                                                    \
             CNT_REG--;                                                                                            \
-            cycles -= 15;                                                                                         \
+            cycles -= IO_STR_CYCLES(DX, 15);                                                                      \
             reads++;                                                                                              \
             writes++;                                                                                             \
-            total_cycles += 15;                                                                                   \
+            total_cycles += IO_STR_CYCLES(DX, 15);                                                                \
         }                                                                                                         \
         PREFETCH_RUN(total_cycles, 1, -1, 0, reads, 0, writes, 0);                                                \
         if (CNT_REG > 0) {                                                                                        \
@@ -180,10 +180,10 @@
             else                                                                                                  \
                 SRC_REG += 2;                                                                                     \
             CNT_REG--;                                                                                            \
-            cycles -= 14;                                                                                         \
+            cycles -= IO_STR_CYCLES(DX, 14);                                                                      \
             reads++;                                                                                              \
             writes++;                                                                                             \
-            total_cycles += 14;                                                                                   \
+            total_cycles += IO_STR_CYCLES(DX, 14);                                                                \
         }                                                                                                         \
         PREFETCH_RUN(total_cycles, 1, -1, reads, 0, writes, 0, 0);                                                \
         if (CNT_REG > 0) {                                                                                        \
@@ -218,10 +218,10 @@
             else                                                                                                  \
                 SRC_REG += 4;                                                                                     \
             CNT_REG--;                                                                                            \
-            cycles -= 14;                                                                                         \
+            cycles -= IO_STR_CYCLES(DX, 14);                                                                      \
             reads++;                                                                                              \
             writes++;                                                                                             \
-            total_cycles += 14;                                                                                   \
+            total_cycles += IO_STR_CYCLES(DX, 14);                                                                \
         }                                                                                                         \
         PREFETCH_RUN(total_cycles, 1, -1, 0, reads, 0, writes, 0);                                                \
         if (CNT_REG > 0) {                                                                                        \
@@ -240,6 +240,27 @@
         if (trap)                                                                                                 \
             cycles_end = cycles + 1; /*Force the instruction to end after only one iteration when trap flag set*/ \
         while (CNT_REG > 0) {                                                                                     \
+            if (rep_host_mode && !trap) {                                                                         \
+                const uint32_t run = rep_fast_movs(cpu_state.ea_seg, SRC_REG, DEST_REG, 1, REP_AMASK_##size,      \
+                                                   CNT_REG, rep_fast_budget(cycles, cycles_end, is486 ? 3 : 4));  \
+                if (run) {                                                                                        \
+                    if (cpu_state.flags & D_FLAG) {                                                               \
+                        DEST_REG -= run * 1;                                                                      \
+                        SRC_REG -= run * 1;                                                                       \
+                    } else {                                                                                      \
+                        DEST_REG += run * 1;                                                                      \
+                        SRC_REG += run * 1;                                                                       \
+                    }                                                                                             \
+                    CNT_REG -= run;                                                                               \
+                    cycles -= run * (is486 ? 3 : 4);                                                              \
+                    reads += run;                                                                                 \
+                    writes += run;                                                                                \
+                    total_cycles += run * (is486 ? 3 : 4);                                                        \
+                    if (cycles < cycles_end)                                                                      \
+                        break;                                                                                    \
+                    continue;                                                                                     \
+                }                                                                                                 \
+            }                                                                                                     \
             uint8_t temp;                                                                                         \
                                                                                                                   \
             SEG_CHECK_READ_REP(cpu_state.ea_seg);                                                                 \
@@ -291,6 +312,27 @@
         if (trap)                                                                                                 \
             cycles_end = cycles + 1; /*Force the instruction to end after only one iteration when trap flag set*/ \
         while (CNT_REG > 0) {                                                                                     \
+            if (rep_host_mode && !trap) {                                                                         \
+                const uint32_t run = rep_fast_movs(cpu_state.ea_seg, SRC_REG, DEST_REG, 2, REP_AMASK_##size,      \
+                                                   CNT_REG, rep_fast_budget(cycles, cycles_end, is486 ? 3 : 4));  \
+                if (run) {                                                                                        \
+                    if (cpu_state.flags & D_FLAG) {                                                               \
+                        DEST_REG -= run * 2;                                                                      \
+                        SRC_REG -= run * 2;                                                                       \
+                    } else {                                                                                      \
+                        DEST_REG += run * 2;                                                                      \
+                        SRC_REG += run * 2;                                                                       \
+                    }                                                                                             \
+                    CNT_REG -= run;                                                                               \
+                    cycles -= run * (is486 ? 3 : 4);                                                              \
+                    reads += run;                                                                                 \
+                    writes += run;                                                                                \
+                    total_cycles += run * (is486 ? 3 : 4);                                                        \
+                    if (cycles < cycles_end)                                                                      \
+                        break;                                                                                    \
+                    continue;                                                                                     \
+                }                                                                                                 \
+            }                                                                                                     \
             uint16_t temp;                                                                                        \
                                                                                                                   \
             SEG_CHECK_READ_REP(cpu_state.ea_seg);                                                                 \
@@ -342,6 +384,27 @@
         if (trap)                                                                                                 \
             cycles_end = cycles + 1; /*Force the instruction to end after only one iteration when trap flag set*/ \
         while (CNT_REG > 0) {                                                                                     \
+            if (rep_host_mode && !trap) {                                                                         \
+                const uint32_t run = rep_fast_movs(cpu_state.ea_seg, SRC_REG, DEST_REG, 4, REP_AMASK_##size,      \
+                                                   CNT_REG, rep_fast_budget(cycles, cycles_end, is486 ? 3 : 4));  \
+                if (run) {                                                                                        \
+                    if (cpu_state.flags & D_FLAG) {                                                               \
+                        DEST_REG -= run * 4;                                                                      \
+                        SRC_REG -= run * 4;                                                                       \
+                    } else {                                                                                      \
+                        DEST_REG += run * 4;                                                                      \
+                        SRC_REG += run * 4;                                                                       \
+                    }                                                                                             \
+                    CNT_REG -= run;                                                                               \
+                    cycles -= run * (is486 ? 3 : 4);                                                              \
+                    reads += run;                                                                                 \
+                    writes += run;                                                                                \
+                    total_cycles += run * (is486 ? 3 : 4);                                                        \
+                    if (cycles < cycles_end)                                                                      \
+                        break;                                                                                    \
+                    continue;                                                                                     \
+                }                                                                                                 \
+            }                                                                                                     \
             uint32_t temp;                                                                                        \
                                                                                                                   \
             SEG_CHECK_READ_REP(cpu_state.ea_seg);                                                                 \
@@ -392,6 +455,24 @@
         if (trap)                                                                                                 \
             cycles_end = cycles + 1; /*Force the instruction to end after only one iteration when trap flag set*/ \
         while (CNT_REG > 0) {                                                                                     \
+            if (rep_host_mode && !trap) {                                                                         \
+                const uint32_t run = rep_fast_stos(DEST_REG, 1, REP_AMASK_##size, AL, CNT_REG,                    \
+                                                   rep_fast_budget(cycles, cycles_end, is486 ? 4 : 5));           \
+                if (run) {                                                                                        \
+                    if (cpu_state.flags & D_FLAG) {                                                               \
+                        DEST_REG -= run * 1;                                                                      \
+                    } else {                                                                                      \
+                        DEST_REG += run * 1;                                                                      \
+                    }                                                                                             \
+                    CNT_REG -= run;                                                                               \
+                    cycles -= run * (is486 ? 4 : 5);                                                              \
+                    writes += run;                                                                                \
+                    total_cycles += run * (is486 ? 4 : 5);                                                        \
+                    if (cycles < cycles_end)                                                                      \
+                        break;                                                                                    \
+                    continue;                                                                                     \
+                }                                                                                                 \
+            }                                                                                                     \
                                                                                                                   \
             SEG_CHECK_WRITE_REP(&cpu_state.seg_es);                                                               \
             CHECK_WRITE_REP(&cpu_state.seg_es, DEST_REG, DEST_REG);                                               \
@@ -425,6 +506,24 @@
         if (trap)                                                                                                 \
             cycles_end = cycles + 1; /*Force the instruction to end after only one iteration when trap flag set*/ \
         while (CNT_REG > 0) {                                                                                     \
+            if (rep_host_mode && !trap) {                                                                         \
+                const uint32_t run = rep_fast_stos(DEST_REG, 2, REP_AMASK_##size, AX, CNT_REG,                    \
+                                                   rep_fast_budget(cycles, cycles_end, is486 ? 4 : 5));           \
+                if (run) {                                                                                        \
+                    if (cpu_state.flags & D_FLAG) {                                                               \
+                        DEST_REG -= run * 2;                                                                      \
+                    } else {                                                                                      \
+                        DEST_REG += run * 2;                                                                      \
+                    }                                                                                             \
+                    CNT_REG -= run;                                                                               \
+                    cycles -= run * (is486 ? 4 : 5);                                                              \
+                    writes += run;                                                                                \
+                    total_cycles += run * (is486 ? 4 : 5);                                                        \
+                    if (cycles < cycles_end)                                                                      \
+                        break;                                                                                    \
+                    continue;                                                                                     \
+                }                                                                                                 \
+            }                                                                                                     \
                                                                                                                   \
             SEG_CHECK_WRITE_REP(&cpu_state.seg_es);                                                               \
             CHECK_WRITE_REP(&cpu_state.seg_es, DEST_REG, DEST_REG + 1UL);                                         \
@@ -458,6 +557,24 @@
         if (trap)                                                                                                 \
             cycles_end = cycles + 1; /*Force the instruction to end after only one iteration when trap flag set*/ \
         while (CNT_REG > 0) {                                                                                     \
+            if (rep_host_mode && !trap) {                                                                         \
+                const uint32_t run = rep_fast_stos(DEST_REG, 4, REP_AMASK_##size, EAX, CNT_REG,                   \
+                                                   rep_fast_budget(cycles, cycles_end, is486 ? 4 : 5));           \
+                if (run) {                                                                                        \
+                    if (cpu_state.flags & D_FLAG) {                                                               \
+                        DEST_REG -= run * 4;                                                                      \
+                    } else {                                                                                      \
+                        DEST_REG += run * 4;                                                                      \
+                    }                                                                                             \
+                    CNT_REG -= run;                                                                               \
+                    cycles -= run * (is486 ? 4 : 5);                                                              \
+                    writes += run;                                                                                \
+                    total_cycles += run * (is486 ? 4 : 5);                                                        \
+                    if (cycles < cycles_end)                                                                      \
+                        break;                                                                                    \
+                    continue;                                                                                     \
+                }                                                                                                 \
+            }                                                                                                     \
                                                                                                                   \
             SEG_CHECK_WRITE_REP(&cpu_state.seg_es);                                                               \
             CHECK_WRITE_REP(&cpu_state.seg_es, DEST_REG, DEST_REG + 3UL);                                         \
@@ -595,6 +712,24 @@
         addr64 = addr64_2 = 0x00000000;                                                                           \
                                                                                                                   \
         tempz = FV;                                                                                               \
+        if ((CNT_REG > 0) && (FV == tempz) && rep_host_mode && !trap) {                                           \
+            const int cycles_end = cycles - ((is386 && cpu_use_dynarec) ? 1000 : 100);                            \
+            const uint32_t run = rep_fast_cmps(cpu_state.ea_seg, SRC_REG, DEST_REG, 1, REP_AMASK_##size, FV,      \
+                                               CNT_REG, rep_fast_budget(cycles, cycles_end, is486 ? 7 : 9));      \
+            if (run) {                                                                                            \
+                if (cpu_state.flags & D_FLAG) {                                                                   \
+                    DEST_REG -= run * 1;                                                                          \
+                    SRC_REG -= run * 1;                                                                           \
+                } else {                                                                                          \
+                    DEST_REG += run * 1;                                                                          \
+                    SRC_REG += run * 1;                                                                           \
+                }                                                                                                 \
+                CNT_REG -= run;                                                                                   \
+                cycles -= run * (is486 ? 7 : 9);                                                                  \
+                reads += 2 * run;                                                                                 \
+                total_cycles += run * (is486 ? 7 : 9);                                                            \
+            }                                                                                                     \
+        }                                                                                                         \
         if ((CNT_REG > 0) && (FV == tempz)) {                                                                     \
             uint8_t temp, temp2;                                                                                  \
                                                                                                                   \
@@ -646,6 +781,24 @@
         addr64a_2[0] = addr64a_2[1] = 0x00000000;                                                                 \
                                                                                                                   \
         tempz = FV;                                                                                               \
+        if ((CNT_REG > 0) && (FV == tempz) && rep_host_mode && !trap) {                                           \
+            const int cycles_end = cycles - ((is386 && cpu_use_dynarec) ? 1000 : 100);                            \
+            const uint32_t run = rep_fast_cmps(cpu_state.ea_seg, SRC_REG, DEST_REG, 2, REP_AMASK_##size, FV,      \
+                                               CNT_REG, rep_fast_budget(cycles, cycles_end, is486 ? 7 : 9));      \
+            if (run) {                                                                                            \
+                if (cpu_state.flags & D_FLAG) {                                                                   \
+                    DEST_REG -= run * 2;                                                                          \
+                    SRC_REG -= run * 2;                                                                           \
+                } else {                                                                                          \
+                    DEST_REG += run * 2;                                                                          \
+                    SRC_REG += run * 2;                                                                           \
+                }                                                                                                 \
+                CNT_REG -= run;                                                                                   \
+                cycles -= run * (is486 ? 7 : 9);                                                                  \
+                reads += 2 * run;                                                                                 \
+                total_cycles += run * (is486 ? 7 : 9);                                                            \
+            }                                                                                                     \
+        }                                                                                                         \
         if ((CNT_REG > 0) && (FV == tempz)) {                                                                     \
             uint16_t temp, temp2;                                                                                 \
                                                                                                                   \
@@ -697,6 +850,24 @@
         addr64a_2[0] = addr64a_2[1] = addr64a_2[2] = addr64a_2[3] = 0x00000000;                                   \
                                                                                                                   \
         tempz = FV;                                                                                               \
+        if ((CNT_REG > 0) && (FV == tempz) && rep_host_mode && !trap) {                                           \
+            const int cycles_end = cycles - ((is386 && cpu_use_dynarec) ? 1000 : 100);                            \
+            const uint32_t run = rep_fast_cmps(cpu_state.ea_seg, SRC_REG, DEST_REG, 4, REP_AMASK_##size, FV,      \
+                                               CNT_REG, rep_fast_budget(cycles, cycles_end, is486 ? 7 : 9));      \
+            if (run) {                                                                                            \
+                if (cpu_state.flags & D_FLAG) {                                                                   \
+                    DEST_REG -= run * 4;                                                                          \
+                    SRC_REG -= run * 4;                                                                           \
+                } else {                                                                                          \
+                    DEST_REG += run * 4;                                                                          \
+                    SRC_REG += run * 4;                                                                           \
+                }                                                                                                 \
+                CNT_REG -= run;                                                                                   \
+                cycles -= run * (is486 ? 7 : 9);                                                                  \
+                reads += 2 * run;                                                                                 \
+                total_cycles += run * (is486 ? 7 : 9);                                                            \
+            }                                                                                                     \
+        }                                                                                                         \
         if ((CNT_REG > 0) && (FV == tempz)) {                                                                     \
             uint32_t temp, temp2;                                                                                 \
                                                                                                                   \
@@ -750,6 +921,22 @@
             cycles_end = cycles + 1; /*Force the instruction to end after only one iteration when trap flag set*/ \
         tempz = FV;                                                                                               \
         while ((CNT_REG > 0) && (FV == tempz)) {                                                                  \
+            if (rep_host_mode && !trap) {                                                                         \
+                const uint32_t run = rep_fast_scas(DEST_REG, 1, REP_AMASK_##size, AL, FV, CNT_REG,                \
+                                                   rep_fast_budget(cycles, cycles_end, is486 ? 5 : 8));           \
+                if (run) {                                                                                        \
+                    if (cpu_state.flags & D_FLAG) {                                                               \
+                        DEST_REG -= run * 1;                                                                      \
+                    } else {                                                                                      \
+                        DEST_REG += run * 1;                                                                      \
+                    }                                                                                             \
+                    CNT_REG -= run;                                                                               \
+                    cycles -= run * (is486 ? 5 : 8);                                                              \
+                    reads += run;                                                                                 \
+                    total_cycles += run * (is486 ? 5 : 8);                                                        \
+                    continue;                                                                                     \
+                }                                                                                                 \
+            }                                                                                                     \
             SEG_CHECK_READ_REP(&cpu_state.seg_es);                                                                \
             CHECK_READ_REP(&cpu_state.seg_es, DEST_REG, DEST_REG);                                                \
             uint8_t temp = readmemb(es, DEST_REG);                                                                \
@@ -785,6 +972,22 @@
             cycles_end = cycles + 1; /*Force the instruction to end after only one iteration when trap flag set*/ \
         tempz = FV;                                                                                               \
         while ((CNT_REG > 0) && (FV == tempz)) {                                                                  \
+            if (rep_host_mode && !trap) {                                                                         \
+                const uint32_t run = rep_fast_scas(DEST_REG, 2, REP_AMASK_##size, AX, FV, CNT_REG,                \
+                                                   rep_fast_budget(cycles, cycles_end, is486 ? 5 : 8));           \
+                if (run) {                                                                                        \
+                    if (cpu_state.flags & D_FLAG) {                                                               \
+                        DEST_REG -= run * 2;                                                                      \
+                    } else {                                                                                      \
+                        DEST_REG += run * 2;                                                                      \
+                    }                                                                                             \
+                    CNT_REG -= run;                                                                               \
+                    cycles -= run * (is486 ? 5 : 8);                                                              \
+                    reads += run;                                                                                 \
+                    total_cycles += run * (is486 ? 5 : 8);                                                        \
+                    continue;                                                                                     \
+                }                                                                                                 \
+            }                                                                                                     \
             SEG_CHECK_READ_REP(&cpu_state.seg_es);                                                                \
             CHECK_READ_REP(&cpu_state.seg_es, DEST_REG, DEST_REG + 1UL);                                          \
             uint16_t temp = readmemw(es, DEST_REG);                                                               \
@@ -820,6 +1023,22 @@
             cycles_end = cycles + 1; /*Force the instruction to end after only one iteration when trap flag set*/ \
         tempz = FV;                                                                                               \
         while ((CNT_REG > 0) && (FV == tempz)) {                                                                  \
+            if (rep_host_mode && !trap) {                                                                         \
+                const uint32_t run = rep_fast_scas(DEST_REG, 4, REP_AMASK_##size, EAX, FV, CNT_REG,               \
+                                                   rep_fast_budget(cycles, cycles_end, is486 ? 5 : 8));           \
+                if (run) {                                                                                        \
+                    if (cpu_state.flags & D_FLAG) {                                                               \
+                        DEST_REG -= run * 4;                                                                      \
+                    } else {                                                                                      \
+                        DEST_REG += run * 4;                                                                      \
+                    }                                                                                             \
+                    CNT_REG -= run;                                                                               \
+                    cycles -= run * (is486 ? 5 : 8);                                                              \
+                    reads += run;                                                                                 \
+                    total_cycles += run * (is486 ? 5 : 8);                                                        \
+                    continue;                                                                                     \
+                }                                                                                                 \
+            }                                                                                                     \
             SEG_CHECK_READ_REP(&cpu_state.seg_es);                                                                \
             CHECK_READ_REP(&cpu_state.seg_es, DEST_REG, DEST_REG + 3UL);                                          \
             uint32_t temp = readmeml(es, DEST_REG);                                                               \
@@ -858,6 +1077,8 @@ REP_OPS_CMPS_SCAS(a32_E, ECX, ESI, EDI, 1)
 static int
 opREPNE(uint32_t fetchdat)
 {
+    if (cpu_check_prefix_length())
+        return 1;
     fetchdat = fastreadl(cs + cpu_state.pc);
     if (cpu_state.abrt)
         return 1;
@@ -887,6 +1108,8 @@ opREPNE_0f(uint32_t fetchdat)
 static int
 opREPE(uint32_t fetchdat)
 {
+    if (cpu_check_prefix_length())
+        return 1;
     fetchdat = fastreadl(cs + cpu_state.pc);
     if (cpu_state.abrt)
         return 1;

@@ -1417,13 +1417,13 @@ svga_do_render(svga_t *svga)
     if (svga->dpms) {
         if (svga->dpms_render != NULL)
             svga->dpms_render(svga);
-        else
+        else if (svga->crtc[0x17] & 0x80)
             svga_render_blank(svga);
 
         return;
     }
 
-    if (!svga->override) {
+    if (!svga->override && (svga->crtc[0x17] & 0x80)) {
         svga->render_line_offset = svga->start_retrace_latch - svga->crtc[0x4];
         svga->render(svga);
     }
@@ -1453,7 +1453,7 @@ svga_do_render(svga_t *svga)
             svga->hwcursor_on--;
     }
 
-    if (!svga->override) {
+    if (!svga->override && (svga->crtc[0x17] & 0x80)) {
         svga->x_add = svga->left_overscan;
         svga_render_overscan_left(svga);
         svga_render_overscan_right(svga);
@@ -1924,8 +1924,10 @@ svga_close(svga_t *svga)
     svga_pri = NULL;
 }
 
-uint32_t
-svga_decode_addr(svga_t *svga, uint32_t addr, int write)
+/* The window's address to the plane address: inline for svga's own reads
+   and writes, every one of which takes it; svga_decode_addr for the cards'. */
+static __inline uint32_t
+svga_decode_addr_here(svga_t *svga, uint32_t addr, int write)
 {
     int memory_map_mode = (svga->gdcreg[6] >> 2) & 3;
 
@@ -1961,6 +1963,12 @@ svga_decode_addr(svga_t *svga, uint32_t addr, int write)
     return addr;
 }
 
+uint32_t
+svga_decode_addr(svga_t *svga, uint32_t addr, int write)
+{
+    return svga_decode_addr_here(svga, addr, write);
+}
+
 static __inline void
 svga_write_common(uint32_t addr, uint8_t val, uint8_t linear, void *priv)
 {
@@ -1972,14 +1980,48 @@ svga_write_common(uint32_t addr, uint8_t val, uint8_t linear, void *priv)
     uint8_t count;
     uint8_t i, orig_i;
 
+    /* The plain planar write: the window banked, write mode 0 with every
+       bit, no rotation, logical operation or set/reset, the planes not
+       chained, nothing of the card's in the way -- what a DOS game in mode X
+       or Y does for each byte -- straight to the planes the map mask
+       enables. The same as the general path below takes for it, without
+       its tests for everything else. */
+    if (!linear && !xga_active && !(svga->adv_flags & (FLAG_ADDR_BY8 | FLAG_ADDR_BY16 | FLAG_EXT_WRITE | FLAG_LATCH8)) &&
+        !svga->chain4 && !svga->chain2_write && !svga->fb_only && (svga->writemode == 0) && (svga->gdcreg[8] == 0xff) &&
+        !(svga->gdcreg[3] & 0x1f) && (!svga->gdcreg[1] || svga->set_reset_disabled) && !svga->translate_address) {
+        cycles -= svga->monitor->mon_video_timing_write_b;
+        addr = svga_decode_addr_here(svga, addr, 1);
+        if (addr == 0xffffffff)
+            return;
+        if (!(svga->gdcreg[6] & 1))
+            svga->fullchange = 2;
+        if (!writemask2)
+            return;
+        addr = (addr << 2) & svga->decode_mask;
+        if (addr >= svga->vram_max)
+            return;
+        addr &= svga->vram_mask;
+        svga->changedvram[addr >> 12] = svga->monitor->mon_changeframecount;
+        if (writemask2 & 1)
+            svga->vram[addr] = val;
+        if (writemask2 & 2)
+            svga->vram[addr | 1] = val;
+        if (writemask2 & 4)
+            svga->vram[addr | 2] = val;
+        if (writemask2 & 8)
+            svga->vram[addr | 3] = val;
+        return;
+    }
+
     if (svga->adv_flags & FLAG_ADDR_BY8)
         writemask2 = svga->seqregs[2];
 
     cycles -= svga->monitor->mon_video_timing_write_b;
 
     if (!linear) {
-        xga_write_test(addr, val, svga);
-        addr = svga_decode_addr(svga, addr, 1);
+        if (xga_active) /* the XGA's memory test, only with one */
+            xga_write_test(addr, val, svga);
+        addr = svga_decode_addr_here(svga, addr, 1);
         if (addr == 0xffffffff) {
             svga_log("WriteCommon Over.\n");
             return;
@@ -2182,7 +2224,7 @@ svga_read_common(uint32_t addr, uint8_t linear, void *priv)
 
     if (!linear) {
         (void) xga_read_test(addr, svga);
-        addr = svga_decode_addr(svga, addr, 0);
+        addr = svga_decode_addr_here(svga, addr, 0);
         if (addr == 0xffffffff)
             return 0xff;
     }
@@ -2375,7 +2417,7 @@ svga_doblit(int wx, int wy, svga_t *svga)
     video_blit_memtoscreen_monitor(x_start, y_start, svga->monitor->mon_xsize + x_add, svga->monitor->mon_ysize + y_add, svga->monitor_index);
 
     if (svga->vertical_linedbl)
-        svga->vertical_linedbl >>= 1;
+        svga->y_add >>= 1;
 }
 
 void
@@ -2416,9 +2458,11 @@ svga_writew_common(uint32_t addr, uint16_t val, uint8_t linear, void *priv)
     cycles -= svga->monitor->mon_video_timing_write_w;
 
     if (!linear) {
-        xga_write_test(addr, val & 0xff, svga);
-        xga_write_test(addr + 1, val >> 8, svga);
-        addr = svga_decode_addr(svga, addr, 1);
+        if (xga_active) {
+            xga_write_test(addr, val & 0xff, svga);
+            xga_write_test(addr + 1, val >> 8, svga);
+        }
+        addr = svga_decode_addr_here(svga, addr, 1);
 
         if (addr == 0xffffffff)
             return;
@@ -2480,11 +2524,13 @@ svga_writel_common(uint32_t addr, uint32_t val, uint8_t linear, void *priv)
     cycles -= svga->monitor->mon_video_timing_write_l;
 
     if (!linear) {
-        xga_write_test(addr, val & 0xff, svga);
-        xga_write_test(addr + 1, (val >> 8) & 0xff, svga);
-        xga_write_test(addr + 2, (val >> 16) & 0xff, svga);
-        xga_write_test(addr + 3, (val >> 24) & 0xff, svga);
-        addr = svga_decode_addr(svga, addr, 1);
+        if (xga_active) {
+            xga_write_test(addr, val & 0xff, svga);
+            xga_write_test(addr + 1, (val >> 8) & 0xff, svga);
+            xga_write_test(addr + 2, (val >> 16) & 0xff, svga);
+            xga_write_test(addr + 3, (val >> 24) & 0xff, svga);
+        }
+        addr = svga_decode_addr_here(svga, addr, 1);
 
         if (addr == 0xffffffff)
             return;
@@ -2571,7 +2617,7 @@ svga_readw_common(uint32_t addr, uint8_t linear, void *priv)
     if (!linear) {
         (void) xga_read_test(addr, svga);
         (void) xga_read_test(addr + 1, svga);
-        addr = svga_decode_addr(svga, addr, 0);
+        addr = svga_decode_addr_here(svga, addr, 0);
         if (addr == 0xffffffff)
             return 0xffff;
     }
@@ -2629,7 +2675,7 @@ svga_readl_common(uint32_t addr, uint8_t linear, void *priv)
         (void) xga_read_test(addr + 1, svga);
         (void) xga_read_test(addr + 2, svga);
         (void) xga_read_test(addr + 3, svga);
-        addr = svga_decode_addr(svga, addr, 0);
+        addr = svga_decode_addr_here(svga, addr, 0);
         if (addr == 0xffffffff)
             return 0xffffffff;
     }

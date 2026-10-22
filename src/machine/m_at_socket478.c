@@ -68,6 +68,7 @@ machine_at_platinix2_init(const machine_t *model)
     pci_register_bus_slot(2, 0x07, PCI_CARD_NORMAL,      5, 6, 7, 8);
 
     device_add(&intel_845_device);          /* Intel 845 MCH */
+    device_add(&integrated_cpu_lapic_device);
     device_add(&intel_ich2_device);         /* Intel ICH2 */
     device_add(&w83627hf_no_port_92_device); /* Winbond W83627HF */
     device_add(&sst_flash_49lf002_device);   /* SST 49LF002 2 Mbit Firmware Hub */

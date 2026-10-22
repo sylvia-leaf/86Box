@@ -438,6 +438,17 @@ fdc37c669_init(const device_t *info)
     return dev;
 }
 
+/* The debug console: the configuration registers, as the last unlock left
+   them. */
+static void
+fdc37c669_debug_dump(void *priv, void (*out)(const char *fmt, ...))
+{
+    const fdc37c669_t *dev = (const fdc37c669_t *) priv;
+
+    out("configuration %s, index 0x%02x\n", dev->locked ? "locked" : "open", dev->cur_reg);
+    device_debug_hex(out, "configuration registers:", dev->regs, 0, 0x30);
+}
+
 const device_t fdc37c669_device = {
     .name          = "SMC FDC37C669 Super I/O",
     .internal_name = "fdc37c669",
@@ -449,5 +460,6 @@ const device_t fdc37c669_device = {
     .available     = NULL,
     .speed_changed = NULL,
     .force_redraw  = NULL,
-    .config        = NULL
+    .config        = NULL,
+    .debug_dump    = fdc37c669_debug_dump
 };

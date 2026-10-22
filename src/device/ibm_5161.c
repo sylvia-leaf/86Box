@@ -4,7 +4,9 @@
  *          PC systems and compatibles from 1981 through fairly recent
  *          system designs based on the PCI bus.
  *
- *          Emulation of the IBM Expansion Unit (5161).
+ *          Emulation of the IBM Expansion Unit (5161), and of generic
+ *          ISA expansion chassis: a card in a slot of the system unit,
+ *          cabled to a unit with slots of its own.
  *
  * Authors: Miran Grca, <mgrca8@gmail.com>
  *
@@ -27,6 +29,9 @@
 #include <86box/plat_unused.h>
 #include <86box/port_92.h>
 #include <86box/machine.h>
+#include <86box/ini.h>
+#include <86box/config.h>
+#include <86box/ibm_5161.h>
 
 typedef struct ibm_5161_t {
     uint8_t regs[8];
@@ -119,3 +124,156 @@ const device_t ibm_5161_device = {
     .force_redraw  = NULL,
     .config        = NULL
 };
+
+/* A generic ISA expansion chassis: an extender card and a backplane with
+   as many slots as configured, 8-bit or 16-bit. Nothing of it is seen by
+   software; it gives the cards more slots. */
+static void *
+isa_chassis_init(UNUSED(const device_t *info))
+{
+    return calloc(1, 1);
+}
+
+static void
+isa_chassis_close(void *priv)
+{
+    free(priv);
+}
+
+static const device_config_t isa_chassis_config[] = {
+    // clang-format off
+    {
+        .name           = "slots",
+        .description    = "Slots",
+        .type           = CONFIG_SELECTION,
+        .default_string = NULL,
+        .default_int    = 8,
+        .file_filter    = NULL,
+        .spinner        = { 0 },
+        .selection      = {
+            { .description = "4",  .value = 4  },
+            { .description = "6",  .value = 6  },
+            { .description = "8",  .value = 8  },
+            { .description = "10", .value = 10 },
+            { .description = "12", .value = 12 },
+            { .description = ""                }
+        },
+        .bios           = { { 0 } }
+    },
+    { .name = "", .description = "", .type = CONFIG_END }
+    // clang-format on
+};
+
+const device_t isa_chassis_8_device = {
+    .name          = "ISA Expansion Chassis (8-bit)",
+    .internal_name = "isa_chassis_8",
+    .flags         = DEVICE_ISA,
+    .local         = 8,
+    .init          = isa_chassis_init,
+    .close         = isa_chassis_close,
+    .reset         = NULL,
+    .available     = NULL,
+    .speed_changed = NULL,
+    .force_redraw  = NULL,
+    .config        = isa_chassis_config
+};
+
+const device_t isa_chassis_16_device = {
+    .name          = "ISA Expansion Chassis (16-bit)",
+    .internal_name = "isa_chassis_16",
+    .flags         = DEVICE_ISA16,
+    .local         = 16,
+    .init          = isa_chassis_init,
+    .close         = isa_chassis_close,
+    .reset         = NULL,
+    .available     = NULL,
+    .speed_changed = NULL,
+    .force_redraw  = NULL,
+    .config        = isa_chassis_config
+};
+
+/* The units chosen as isa_expansion_type. The IBM 5161 is not one of
+   them: IBM's machines that take it have it as an option of their own
+   (enable_5161). */
+static const struct {
+    const device_t *dev;
+} units[] = {
+    // clang-format off
+    { &device_none           },
+    { &isa_chassis_8_device  },
+    { &isa_chassis_16_device },
+    { NULL                   }
+    // clang-format on
+};
+
+void
+isa_expansion_reset(void)
+{
+    if ((isa_expansion_type == 0) || !isa_expansion_available(isa_expansion_type, machine))
+        return;
+
+    device_add(units[isa_expansion_type].dev);
+}
+
+const device_t *
+isa_expansion_get_device(int unit)
+{
+    return units[unit].dev;
+}
+
+const char *
+isa_expansion_get_internal_name(int unit)
+{
+    return device_get_internal_name(units[unit].dev);
+}
+
+int
+isa_expansion_get_from_internal_name(const char *str)
+{
+    for (int c = 0; units[c].dev != NULL; c++) {
+        if (!strcmp(units[c].dev->internal_name, str))
+            return c;
+    }
+
+    return 0;
+}
+
+int
+isa_expansion_has_config(int unit)
+{
+    return (units[unit].dev != NULL) && (units[unit].dev->config != NULL);
+}
+
+/* A chassis goes with any machine that has ISA slots; a 16-bit one with
+   one that has 16-bit slots. */
+int
+isa_expansion_available(int unit, int machine_id)
+{
+    if (units[unit].dev == &isa_chassis_16_device)
+        return machine_has_bus(machine_id, MACHINE_BUS_ISA16);
+
+    return (unit == 0) || machine_has_bus(machine_id, MACHINE_BUS_ISA);
+}
+
+/* The slots a unit has for cards: the 5161's eight but the one its
+   receiver card takes, a chassis's as configured. */
+int
+isa_expansion_slots(const device_t *dev)
+{
+    device_context_t context;
+
+    if (dev == &ibm_5161_device)
+        return 7;
+    if ((dev != &isa_chassis_8_device) && (dev != &isa_chassis_16_device))
+        return 0;
+
+    device_set_context(&context, dev, 0);
+    return config_get_int(context.name, "slots", 8);
+}
+
+/* What the unit's slots are: 8-bit ISA, or 16-bit. */
+int
+isa_expansion_slot_kind(const device_t *dev)
+{
+    return (dev == &isa_chassis_16_device) ? SLOT_ISA16 : SLOT_ISA8;
+}

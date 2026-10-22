@@ -38,7 +38,6 @@ jobs:
         shell: msys2 {0}
 
     strategy:
-      fail-fast: true
       matrix:
         build:
           - name: Regular
@@ -49,13 +48,6 @@ jobs:
           - name: Dev
             preset: development
             slug: -Dev
-        dynarec:
-          - name: ODR
-            new: off
-            slug: -ODR
-          - name: NDR
-            new: on
-            slug: -NDR
         ui:
           - name: Qt 5 GUI
             qt: on
@@ -81,14 +73,9 @@ jobs:
             prefix: mingw-w64-ucrt-x86_64
             slug: "-64"
             runner: windows-2022
-          - msystem: CLANGARM64
-            slug: -arm64
-            runner: windows-11-arm
-        exclude:
-          - dynarec:
-              new: off
-            environment:
-              msystem: CLANGARM64
+#          - msystem: CLANGARM64
+#            slug: -arm64
+#            runner: windows-11-arm
 
     steps:
       - name: Prepare MSYS2 environment
@@ -123,7 +110,6 @@ jobs:
       - name: Configure CMake
         run: >-
           cmake -S . -B build --preset ${{ matrix.build.preset }}
-          -D NEW_DYNAREC=${{ matrix.dynarec.new }}
           -D QT=${{ matrix.ui.qt }}
 
       - name: Build
@@ -135,5 +121,5 @@ jobs:
       - name: Upload artifact
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
-          name: 'PCBox${{ matrix.dynarec.slug }}${{ matrix.build.slug }}-Windows${{ matrix.environment.slug }}-gha${{ github.run_number }}'
+          name: 'PCBox${{ matrix.build.slug }}-Windows${{ matrix.environment.slug }}-gha${{ github.run_number }}'
           path: build/artifacts/**

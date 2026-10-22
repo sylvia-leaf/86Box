@@ -206,7 +206,7 @@ opPSxxQ_xmm_imm(uint32_t fetchdat)
     } else {                                       \
         SEG_CHECK_READ(cpu_state.ea_seg);          \
         CHECK_READ(cpu_state.ea_seg, cpu_state.eaaddr, cpu_state.eaaddr + 15UL); \
-        if (cpu_state.eaaddr & 0xf) {              \
+        if ((easeg + cpu_state.eaaddr) & 0xf) {              \
             x86gpf(NULL, 0);                       \
             if (cpu_state.abrt)                    \
                 return 1;                          \

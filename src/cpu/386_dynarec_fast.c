@@ -29,13 +29,11 @@
 #include <86box/plat_fallthrough.h>
 #include <86box/plat_unused.h>
 #ifdef USE_DYNAREC
-#    include "codegen.h"
-#    ifdef USE_NEW_DYNAREC
-#        include "codegen_backend.h"
-#    endif
+#include "codegen_backend.h"
 #endif
 
 #include "386_common.h"
+#include "x86_interrupt.h"
 
 #define CPU_BLOCK_END() cpu_block_end = 1
 
@@ -85,7 +83,7 @@ exec386_dynarec_fast(int32_t cycs)
     int vector;
     int tempi;
 
-    const int FAST_BLOCK_CYCLES = 32;
+    const int FAST_BLOCK_CYCLES = 256;
     const int BLOCKS_PER_BATCH  = 128;
 
     cycles_main += cycs;
@@ -96,12 +94,6 @@ exec386_dynarec_fast(int32_t cycs)
         while (blocks_executed < BLOCKS_PER_BATCH && cycles_main > 0) {
             oldcs  = CS;
             oldcpl = CPL;
-#ifdef USE_NEW_DYNAREC
-            /* new dynarec manages oldpc/op32 internally */
-#else
-            cpu_state.oldpc = cpu_state.pc;
-            cpu_state.op32  = use32;
-#endif
 
             if (cpu_force_interpreter || cpu_override_dynarec || !CACHE_ON()) {
                 exec386_dynarec_int();
@@ -122,9 +114,6 @@ exec386_dynarec_fast(int32_t cycs)
                 if (cpu_state.abrt) {
                     cpu_state.abrt = 0;
                     cpu_state.pc   = cpu_state.oldpc;
-#ifndef USE_NEW_DYNAREC
-                    CS = oldcs;
-#endif
                     pmodeint(8, 0);
                     if (cpu_state.abrt) {
                         cpu_state.abrt = 0;
@@ -156,7 +145,7 @@ exec386_dynarec_fast(int32_t cycs)
 #else
                 nmi = 0;
 #endif
-            } else if ((cpu_state.flags & I_FLAG) && pic_pending_int()) {
+            } else if ((cpu_state.flags & I_FLAG) && x86_external_interrupt_pending()) {
                 vector = picinterrupt();
                 if (vector != -1) {
                     oldcs           = CS;
@@ -166,8 +155,6 @@ exec386_dynarec_fast(int32_t cycs)
             }
 
             tsc += FAST_BLOCK_CYCLES;
-            if (current_lapic)
-                lapic_timer_advance_ticks(FAST_BLOCK_CYCLES);
             cycles_main -= FAST_BLOCK_CYCLES;
             blocks_executed++;
 

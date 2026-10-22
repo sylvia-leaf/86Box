@@ -36,6 +36,8 @@ private:
     bool                eventFilter(QObject *watched, QEvent *event);
     void                addRow(QString name, QString alias, int special, int id);
     void                flush();
+    void                activate();
+    bool                active = false;
 };
 
 #endif // QT_SETTINGS_COMPLETER

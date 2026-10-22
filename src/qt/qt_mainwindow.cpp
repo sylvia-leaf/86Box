@@ -21,6 +21,7 @@
 #include <QDebug>
 
 #include "qt_mainwindow.hpp"
+#include "qt_debugconsole.hpp"
 #include "ui_qt_mainwindow.h"
 
 #include "qt_specifydimensions.h"
@@ -41,9 +42,6 @@ extern "C" {
 #include <86box/keyboard.h>
 #include <86box/plat.h>
 #include <86box/ui.h>
-#ifdef DISCORD
-#    include <86box/discord.h>
-#endif
 #include <86box/device.h>
 #include <86box/video.h>
 #include <86box/mouse.h>
@@ -304,9 +302,6 @@ MainWindow::MainWindow(QWidget *parent)
     statusBar()->setStyleSheet("QStatusBar::item {border: None; } QStatusBar QLabel { margin-right: 2px; margin-bottom: 1px; }");
     this->centralWidget()->setStyleSheet("background-color: black;");
     ui->toolBar->setVisible(!hide_tool_bar);
-#ifdef _WIN32
-    ui->toolBar->setBackgroundRole(QPalette::Light);
-#endif
     renderers[0].reset(nullptr);
 
     auto toolbar_label_widget = new QWidget();
@@ -547,17 +542,10 @@ MainWindow::MainWindow(QWidget *parent)
     ui->actionHide_tool_bar->setChecked(hide_tool_bar);
     ui->actionShow_non_primary_monitors->setChecked(show_second_monitors);
     ui->actionUpdate_status_bar_icons->setChecked(update_icons);
-    ui->actionEnable_Discord_integration->setChecked(enable_discord);
     ui->actionApply_fullscreen_stretch_mode_when_maximized->setChecked(video_fullscreen_scale_maximized);
 
 #ifdef Q_OS_MACOS
     ui->actionApply_fullscreen_stretch_mode_when_maximized->setVisible(false);
-#endif
-
-#ifndef DISCORD
-    ui->actionEnable_Discord_integration->setVisible(false);
-#else
-    ui->actionEnable_Discord_integration->setEnabled(discord_loaded);
 #endif
 
     if ((QApplication::platformName().contains("eglfs") || QApplication::platformName() == "haiku")) {
@@ -593,6 +581,29 @@ MainWindow::MainWindow(QWidget *parent)
         if (vid_api == RENDERER_VULKAN)
             vid_api = RENDERER_SOFTWARE;
         ui->actionVulkan->setVisible(false);
+    }
+
+    /* Action > Debug console: registers and memory of the paused machine. */
+    {
+        auto *dbg = new QAction(tr("&Debug console..."), this);
+        ui->menuAction->insertAction(ui->actionFullscreen, dbg);
+        ui->menuAction->insertSeparator(ui->actionFullscreen);
+        connect(dbg, &QAction::triggered, this, [this]() {
+            emit setMouseCapture(false);
+            releaseKeyboard();
+            keyboard_all_up();
+            if (!debugConsole)
+                debugConsole = new DebugConsole(this);
+            debugConsole->show();
+            debugConsole->raise();
+            debugConsole->activateWindow();
+        });
+        /* debug_console_port in the config: listening from start-up, with
+           no window, so a headless run can be looked at. */
+        if (debug_console_port) {
+            debugConsole = new DebugConsole(this);
+            debugConsole->listenOn(debug_console_port);
+        }
     }
 
     auto actGroup = new QActionGroup(this);
@@ -780,6 +791,12 @@ MainWindow::MainWindow(QWidget *parent)
         case FULLSCR_SCALE_INT43:
             ui->actionFullScreen_int43->setChecked(true);
             break;
+        case FULLSCR_SCALE_CENTER:
+            ui->actionFullScreen_center->setChecked(true);
+            break;
+        case FULLSCR_SCALE_CENTER43:
+            ui->actionFullScreen_center43->setChecked(true);
+            break;
     }
 
     actGroup = new QActionGroup(this);
@@ -816,6 +833,8 @@ MainWindow::MainWindow(QWidget *parent)
     actGroup->addAction(ui->actionFullScreen_keepRatio);
     actGroup->addAction(ui->actionFullScreen_int);
     actGroup->addAction(ui->actionFullScreen_int43);
+    actGroup->addAction(ui->actionFullScreen_center);
+    actGroup->addAction(ui->actionFullScreen_center43);
     switch (video_gl_input_scale_mode) {
         default:
             break;
@@ -856,6 +875,12 @@ MainWindow::MainWindow(QWidget *parent)
     refreshDisplayRatioActions();
     if (force_constant_mouse > 0) {
         ui->actionUpdate_mouse_every_CPU_frame->setChecked(true);
+    }
+    /* --fast-forward, or fast_forward = 1 in the machine's configuration:
+       start fast-forwarded. */
+    if (start_in_fast_forward || start_fast_forward) {
+        fast_forward = true;
+        updateUiFastForwardState();
     }
 
     if (!vnc_enabled)
@@ -1233,6 +1258,8 @@ MainWindow::initRendererMonitorSlot(int monitor_index)
             this->renderers[monitor_index]->show();
         });
         secondaryRenderer->setWindowFlags(Qt::CustomizeWindowHint | Qt::WindowTitleHint | Qt::WindowCloseButtonHint);
+        /* Without a maximize button, Windows maximizes the window over the taskbar. */
+        secondaryRenderer->setWindowFlag(Qt::WindowMaximizeButtonHint, vid_resize == 1);
         secondaryRenderer->setWindowTitle(QObject::tr("PCBox Monitor #%1").arg(monitor_index + 1));
         secondaryRenderer->setContextMenuPolicy(Qt::PreventContextMenu);
 
@@ -1409,33 +1436,38 @@ MainWindow::on_actionSettings_triggered()
 {
     const int currentPause = dopause;
     plat_pause(1);
-    Settings settings(this);
-    settings.setModal(true);
-    settings.setWindowModality(Qt::WindowModal);
-    settings.setWindowFlag(Qt::CustomizeWindowHint, true);
-    settings.setWindowFlag(Qt::WindowTitleHint, true);
-    settings.setWindowFlag(Qt::WindowSystemMenuHint, false);
-    settings.exec();
+    /* The new layout's "Use Classic Mode" opens the dialog again. */
+    for (;;) {
+        Settings settings(this);
+        settings.setModal(true);
+        settings.setWindowModality(Qt::WindowModal);
+        settings.setWindowFlag(Qt::CustomizeWindowHint, true);
+        settings.setWindowFlag(Qt::WindowTitleHint, true);
+        settings.setWindowFlag(Qt::WindowSystemMenuHint, false);
+        if (settings.exec() == Settings::ReopenClassic)
+            continue;
 
-    switch (settings.result()) {
-        default:
-            break;
-        case QDialog::Accepted:
-            settings.save(0);
-            config_changed = 2;
-            emit vmmConfigurationChanged();
-            pc_reset_hard();
-            video_copy = (video_grayscale || invert_display) ? video_transform_copy : memcpy;
-            config_save();
-            reset_screen_size();
-            device_force_redraw();
-            for (int i = 0; i < MONITORS_NUM; i++) {
-                if (monitors[i].target_buffer)
-                    video_force_resize_set_monitor(1, i);
-            }
-            break;
-        case QDialog::Rejected:
-            break;
+        switch (settings.result()) {
+            default:
+                break;
+            case QDialog::Accepted:
+                settings.save(0);
+                config_changed = 2;
+                emit vmmConfigurationChanged();
+                pc_reset_hard();
+                video_copy = (video_grayscale || invert_display) ? video_transform_copy : memcpy;
+                config_save();
+                reset_screen_size();
+                device_force_redraw();
+                for (int i = 0; i < MONITORS_NUM; i++) {
+                    if (monitors[i].target_buffer)
+                        video_force_resize_set_monitor(1, i);
+                }
+                break;
+            case QDialog::Rejected:
+                break;
+        }
+        break;
     }
     plat_pause(currentPause);
 }
@@ -1713,6 +1745,18 @@ MainWindow::keyMatchesAccelerator(const QKeyEvent *ke, const char *name)
 bool
 MainWindow::eventFilter(QObject *receiver, QEvent *event)
 {
+    /* The application-wide guest keyboard filter must leave the modeless
+       console's text input alone, including while the machine is running. */
+    if (debugConsole) {
+        if (debugConsole->isActiveWindow()
+            && (event->type() == QEvent::KeyPress || event->type() == QEvent::KeyRelease
+                || event->type() == QEvent::ShortcutOverride))
+            return false;
+        auto *widget = qobject_cast<QWidget *>(receiver);
+        if (widget && (widget == debugConsole || debugConsole->isAncestorOf(widget)))
+            return QMainWindow::eventFilter(receiver, event);
+    }
+
     if (event->type() == QEvent::KeyPress || event->type() == QEvent::KeyRelease) {
         auto      *ke   = static_cast<QKeyEvent *>(event);
         const bool down = event->type() == QEvent::KeyPress;
@@ -2214,6 +2258,8 @@ update_fullscreen_scale_checkboxes(Ui::MainWindow *ui, QAction *selected)
     ui->actionFullScreen_keepRatio->setChecked(selected == ui->actionFullScreen_keepRatio);
     ui->actionFullScreen_int->setChecked(selected == ui->actionFullScreen_int);
     ui->actionFullScreen_int43->setChecked(selected == ui->actionFullScreen_int43);
+    ui->actionFullScreen_center->setChecked(selected == ui->actionFullScreen_center);
+    ui->actionFullScreen_center43->setChecked(selected == ui->actionFullScreen_center43);
 
     {
         auto widget = ui->stackedWidget->currentWidget();
@@ -2263,6 +2309,20 @@ MainWindow::on_actionFullScreen_int43_triggered()
 {
     video_fullscreen_scale = FULLSCR_SCALE_INT43;
     update_fullscreen_scale_checkboxes(ui, ui->actionFullScreen_int43);
+}
+
+void
+MainWindow::on_actionFullScreen_center_triggered()
+{
+    video_fullscreen_scale = FULLSCR_SCALE_CENTER;
+    update_fullscreen_scale_checkboxes(ui, ui->actionFullScreen_center);
+}
+
+void
+MainWindow::on_actionFullScreen_center43_triggered()
+{
+    video_fullscreen_scale = FULLSCR_SCALE_CENTER43;
+    update_fullscreen_scale_checkboxes(ui, ui->actionFullScreen_center43);
 }
 
 void
@@ -2543,6 +2603,13 @@ MainWindow::updateUiPauseState()
     emit vmmRunningStateChanged(static_cast<VMManagerProtocol::RunningState>(window_blocked ? (dopause ? VMManagerProtocol::RunningState::PausedWaiting : VMManagerProtocol::RunningState::RunningWaiting) : (VMManagerProtocol::RunningState) dopause));
 }
 
+/* The menu's check follows fast forward set from elsewhere (automation). */
+void
+MainWindow::updateUiFastForwardState()
+{
+    ui->actionFast_forward->setChecked(fast_forward);
+}
+
 void
 MainWindow::updateStatusEmptyIcons()
 {
@@ -2571,23 +2638,6 @@ MainWindow::on_actionPreferences_triggered()
         case QDialog::Rejected:
             break;
     }
-}
-
-void
-MainWindow::on_actionEnable_Discord_integration_triggered(bool checked)
-{
-    enable_discord = checked;
-#ifdef DISCORD
-    if (enable_discord) {
-        discord_init();
-        discord_update_activity(dopause);
-        discordupdate.start(1000);
-    } else {
-        discord_close();
-        discordupdate.stop();
-    }
-#endif
-    config_save();
 }
 
 void
@@ -2628,6 +2678,13 @@ MainWindow::changeEvent(QEvent *event)
     if (isVisible()) {
         monitor_settings[0].mon_window_maximized = isMaximized();
         config_save();
+    }
+    /* The renderer can get its resize event before the window reports being
+       maximized, so redo the stretch mode once the state is known. */
+    if (event->type() == QEvent::WindowStateChange) {
+        const auto widget = ui->stackedWidget->currentWidget();
+        if (widget)
+            ui->stackedWidget->onResize(widget->width(), widget->height());
     }
 }
 
@@ -2789,7 +2846,7 @@ void
 MainWindow::on_actionACPI_Shutdown_triggered()
 {
     if (acpi_enabled) {
-        acpi_pwrbut_pressed = 1;
+        acpi_pwrbut_press();
         return;
     }
 

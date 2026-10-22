@@ -52,6 +52,12 @@ thread_test_mutex(thread_t *arg)
     return (WaitForSingleObject(arg, 0) == WAIT_OBJECT_0) ? 1 : 0;
 }
 
+void
+thread_yield(void)
+{
+    SwitchToThread();
+}
+
 int
 thread_wait(thread_t *arg)
 {

@@ -4,6 +4,9 @@
 #include <QWidget>
 #include <QStandardItemModel>
 
+class QAbstractItemView;
+class QComboBox;
+
 namespace Ui {
 class SettingsOtherRemovable;
 }
@@ -17,6 +20,19 @@ public:
     void reloadBusChannels_MO();
     void reloadBusChannels_RDisk();
     void reloadBusChannels_Tape();
+    void refreshChannelNames();
+
+    /* The kinds of drive on this page, as the new layout puts them on a
+       bus and channel: the first drive of the kind that is off is set to
+       it, a drive there is selected, or turned off. */
+    enum Kind {
+        KIND_MO = 0,
+        KIND_RDISK,
+        KIND_TAPE
+    };
+    bool addDrive(int kind, int bus, int channel);
+    bool selectDrive(int kind, int bus, int channel);
+    void removeDrive(int kind, int bus, int channel);
 
     int  changed();
 
@@ -61,6 +77,15 @@ private:
     void enableCurrentlySelectedChannel_MO();
     void enableCurrentlySelectedChannel_RDisk();
     void enableCurrentlySelectedChannel_Tape();
+
+    struct KindControls {
+        QAbstractItemView *view;
+        QComboBox         *bus;
+        QComboBox         *channel;
+        void (SettingsOtherRemovable::*busActivated)(int);
+        void (SettingsOtherRemovable::*channelActivated)(int);
+    };
+    KindControls controlsOf(int kind) const;
 
     QIcon mo_disabled_icon;
     QIcon mo_icon;

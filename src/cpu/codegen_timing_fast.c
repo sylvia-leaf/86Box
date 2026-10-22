@@ -31,11 +31,7 @@
 #include "x87_sf.h"
 #include "x87.h"
 
-#ifdef USE_NEW_DYNAREC
-#    include "../codegen_new/codegen.h"
-#else
-#    include "../codegen/codegen.h"
-#endif
+#include "../codegen/codegen.h"
 
 #include "codegen_timing_common.h"
 

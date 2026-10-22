@@ -31,6 +31,7 @@
 #include <86box/fdd.h>
 #include <86box/fdc.h>
 #include <86box/hdc.h>
+#include <86box/pci.h>
 #include <86box/scsi_ncr53c8xx.h>
 #include <86box/scsi_aic7xxx.h>
 #include <86box/keyboard.h>
@@ -51,6 +52,7 @@ const machine_filter_t machine_types[] = {
     { "None",                             MACHINE_TYPE_NONE        },
     { "[1979] 8088",                      MACHINE_TYPE_8088        },
     { "[1978] 8086",                      MACHINE_TYPE_8086        },
+    { "[1982] 80186",                     MACHINE_TYPE_186         },
     { "[1982] 80286",                     MACHINE_TYPE_286         },
     { "[1988] i386SX",                    MACHINE_TYPE_386SX       },
     { "[1997] ALi M6117",                 MACHINE_TYPE_M6117       },
@@ -209,6 +211,19 @@ const machine_filter_t machine_chipsets[] = {
      Write Input Port, same as on AMIKey-3.
 */
 
+/* The buses behind the bridges most boards have: the ISA bus behind a
+   south bridge, its slots not recorded yet, and the one AGP slot. */
+static const machine_slot_t machine_bus_isa[] = { MSLOT_BUS(SLOT_ISA16, 0), MSLOT_END };
+static const machine_slot_t machine_bus_agp[] = { MSLOT_BUS(SLOT_AGP, 1), MSLOT_END };
+/* The Dell OptiPlex riser's DEC 21152 bridge at device 0Fh and its three
+   slots (machine_at_optiplex_21152_init()). */
+static const machine_slot_t machine_bus_optiplex_riser[] = {
+    MSLOT_PCI(0x09, PCI_CARD_NORMAL, 1, 2, 3, 4),
+    MSLOT_PCI(0x0a, PCI_CARD_NORMAL, 4, 2, 1, 3),
+    MSLOT_PCI(0x0b, PCI_CARD_NORMAL, 1, 3, 4, 2),
+    MSLOT_END
+};
+
 const machine_t machines[] = {
     // clang-format off
     /* 8088 Machines */
@@ -253,10 +268,14 @@ const machine_t machines[] = {
         .gpio_acpi                = 0xffffffff,
         .device                   = &ibmpc_device,
         .kbd_device               = &keyboard_pc_xt_device,
-        .fdc_device               = NULL,
+        .fdc_device               = &fdc_xt_device,
         .vid_device               = NULL,
         .snd_device               = NULL,
         .net_device               = NULL,
+        .slot_layout              = (const machine_slot_t[]) {
+            MSLOT_BUS(SLOT_ISA8, 5),
+            MSLOT_END
+        },
         .aliases                  = { "" }
     },
     {
@@ -300,10 +319,14 @@ const machine_t machines[] = {
         .gpio_acpi                = 0xffffffff,
         .device                   = &ibmpc82_device,
         .kbd_device               = &keyboard_pc_xt_device,
-        .fdc_device               = NULL,
+        .fdc_device               = &fdc_xt_device,
         .vid_device               = NULL,
         .snd_device               = NULL,
         .net_device               = NULL,
+        .slot_layout              = (const machine_slot_t[]) {
+            MSLOT_BUS(SLOT_ISA8, 5),
+            MSLOT_END
+        },
         .aliases                  = { "" }
     },
     {
@@ -327,7 +350,7 @@ const machine_t machines[] = {
             .max_multi   = 0
         },
         .bus_flags = MACHINE_PCJR,
-        .flags     = MACHINE_VIDEO_FIXED | MACHINE_KEYBOARD | MACHINE_CARTRIDGE | MACHINE_FDC,
+        .flags     = MACHINE_VIDEO_FIXED | MACHINE_KEYBOARD | MACHINE_CARTRIDGE | MACHINE_FDC | MACHINE_UART_PRI,
         .ram       = {
             .min  = 64,
             .max  = 640,
@@ -449,10 +472,14 @@ const machine_t machines[] = {
         .gpio_acpi                = 0xffffffff,
         .device                   = &ibmxt_device,
         .kbd_device               = &keyboard_pc_xt_device,
-        .fdc_device               = NULL,
+        .fdc_device               = &fdc_xt_device,
         .vid_device               = NULL,
         .snd_device               = NULL,
         .net_device               = NULL,
+        .slot_layout              = (const machine_slot_t[]) {
+            MSLOT_BUS(SLOT_ISA8, 8),
+            MSLOT_END
+        },
         .aliases                  = { "" }
     },
     {
@@ -496,10 +523,14 @@ const machine_t machines[] = {
         .gpio_acpi                = 0xffffffff,
         .device                   = &ibmxt86_device,
         .kbd_device               = &keyboard_pc_xt_device,
-        .fdc_device               = NULL,
+        .fdc_device               = &fdc_xt_device,
         .vid_device               = NULL,
         .snd_device               = NULL,
         .net_device               = NULL,
+        .slot_layout              = (const machine_slot_t[]) {
+            MSLOT_BUS(SLOT_ISA8, 8),
+            MSLOT_END
+        },
         .aliases                  = { "" }
     },
     /* The IBM 3270 PC is an XT planar carrying the 3270 display adapter and
@@ -547,7 +578,7 @@ const machine_t machines[] = {
         .gpio_acpi                = 0xffffffff,
         .device                   = NULL,
         .kbd_device               = &keyboard_pc_xt_device,
-        .fdc_device               = NULL,
+        .fdc_device               = &fdc_xt_device,
         .vid_device               = &ibm3270pc_vid_device,
         .snd_device               = NULL,
         .net_device               = NULL,
@@ -594,7 +625,7 @@ const machine_t machines[] = {
         .gpio_acpi                = 0xffffffff,
         .device                   = NULL,
         .kbd_device               = &keyboard_pc_xt_device,
-        .fdc_device               = NULL,
+        .fdc_device               = &fdc_xt_device,
         .vid_device               = NULL,
         .snd_device               = NULL,
         .net_device               = NULL,
@@ -641,7 +672,7 @@ const machine_t machines[] = {
         .gpio_acpi                = 0xffffffff,
         .device                   = NULL,
         .kbd_device               = &keyboard_pc_xt_device,
-        .fdc_device               = NULL,
+        .fdc_device               = &fdc_xt_device,
         .vid_device               = NULL,
         .snd_device               = NULL,
         .net_device               = NULL,
@@ -688,7 +719,7 @@ const machine_t machines[] = {
         .gpio_acpi                = 0xffffffff,
         .device                   = NULL,
         .kbd_device               = &keyboard_pc_xt_device,
-        .fdc_device               = NULL,
+        .fdc_device               = &fdc_xt_device,
         .vid_device               = NULL,
         .snd_device               = NULL,
         .net_device               = NULL,
@@ -735,7 +766,7 @@ const machine_t machines[] = {
         .gpio_acpi                = 0xffffffff,
         .device                   = NULL,
         .kbd_device               = &keyboard_pc_xt_device,
-        .fdc_device               = NULL,
+        .fdc_device               = &fdc_xt_device,
         .vid_device               = NULL,
         .snd_device               = NULL,
         .net_device               = NULL,
@@ -782,7 +813,7 @@ const machine_t machines[] = {
         .gpio_acpi                = 0xffffffff,
         .device                   = NULL,
         .kbd_device               = &keyboard_pc_xt_device,
-        .fdc_device               = NULL,
+        .fdc_device               = &fdc_xt_device,
         .vid_device               = NULL,
         .snd_device               = NULL,
         .net_device               = NULL,
@@ -809,7 +840,7 @@ const machine_t machines[] = {
             .max_multi   = 0
         },
         .bus_flags = MACHINE_PC,
-        .flags     = MACHINE_KEYBOARD,
+        .flags     = MACHINE_KEYBOARD | MACHINE_LPT_PRI,
         .ram       = {
             .min  = 128,
             .max  = 640,
@@ -829,10 +860,14 @@ const machine_t machines[] = {
         .gpio_acpi                = 0xffffffff,
         .device                   = NULL,
         .kbd_device               = NULL,
-        .fdc_device               = NULL,
+        .fdc_device               = &fdc_xt_device,
         .vid_device               = NULL,
         .snd_device               = NULL,
         .net_device               = NULL,
+        .slot_layout              = (const machine_slot_t[]) {
+            MSLOT_BUS(SLOT_ISA8, 5),
+            MSLOT_END
+        },
         .aliases                  = { "Compaq Portable Plus", "" }
     },
     {
@@ -876,10 +911,14 @@ const machine_t machines[] = {
         .gpio_acpi                = 0xffffffff,
         .device                   = &dtk_device,
         .kbd_device               = &keyboard_pc_xt_device,
-        .fdc_device               = NULL,
+        .fdc_device               = &fdc_xt_device,
         .vid_device               = NULL,
         .snd_device               = NULL,
         .net_device               = NULL,
+        .slot_layout              = (const machine_slot_t[]) {
+            MSLOT_BUS(SLOT_ISA8, 8),
+            MSLOT_END
+        },
         .aliases                  = { "" }
     },
     {
@@ -923,7 +962,7 @@ const machine_t machines[] = {
         .gpio_acpi                = 0xffffffff,
         .device                   = NULL,
         .kbd_device               = &keyboard_pc_xt_device,
-        .fdc_device               = NULL,
+        .fdc_device               = &fdc_xt_device,
         .vid_device               = NULL,
         .snd_device               = NULL,
         .net_device               = NULL,
@@ -970,7 +1009,7 @@ const machine_t machines[] = {
         .gpio_acpi                = 0xffffffff,
         .device                   = NULL,
         .kbd_device               = &keyboard_pc_xt_device,
-        .fdc_device               = NULL,
+        .fdc_device               = &fdc_xt_device,
         .vid_device               = NULL,
         .snd_device               = NULL,
         .net_device               = NULL,
@@ -1017,7 +1056,7 @@ const machine_t machines[] = {
         .gpio_acpi                = 0xffffffff,
         .device                   = NULL,
         .kbd_device               = &keyboard_pc_xt_device,
-        .fdc_device               = NULL,
+        .fdc_device               = &fdc_xt_device,
         .vid_device               = NULL,
         .snd_device               = NULL,
         .net_device               = NULL,
@@ -1068,6 +1107,10 @@ const machine_t machines[] = {
         .vid_device               = NULL,
         .snd_device               = NULL,
         .net_device               = NULL,
+        .slot_layout              = (const machine_slot_t[]) {
+            MSLOT_BUS(SLOT_ISA8, 5),
+            MSLOT_END
+        },
         .aliases                  = { "" }
     },
     {
@@ -1115,6 +1158,10 @@ const machine_t machines[] = {
         .vid_device               = NULL,
         .snd_device               = NULL,
         .net_device               = NULL,
+        .slot_layout              = (const machine_slot_t[]) {
+            MSLOT_BUS(SLOT_ISA8, 6),
+            MSLOT_END
+        },
         .aliases                  = { "" }
     },
     {
@@ -1162,6 +1209,10 @@ const machine_t machines[] = {
         .vid_device               = NULL,
         .snd_device               = NULL,
         .net_device               = NULL,
+        .slot_layout              = (const machine_slot_t[]) {
+            MSLOT_BUS(SLOT_ISA8, 6),
+            MSLOT_END
+        },
         .aliases                  = { "" }
     },
     {
@@ -1205,7 +1256,7 @@ const machine_t machines[] = {
         .gpio_acpi                = 0xffffffff,
         .device                   = &jukopc_device,
         .kbd_device               = &keyboard_pc_xt_device,
-        .fdc_device               = NULL,
+        .fdc_device               = &fdc_xt_device,
         .vid_device               = NULL,
         .snd_device               = NULL,
         .net_device               = NULL,
@@ -1252,7 +1303,7 @@ const machine_t machines[] = {
         .gpio_acpi                = 0xffffffff,
         .device                   = NULL,
         .kbd_device               = &keyboard_pc_xt_device,
-        .fdc_device               = NULL,
+        .fdc_device               = &fdc_xt_device,
         .vid_device               = NULL,
         .snd_device               = NULL,
         .net_device               = NULL,
@@ -1299,7 +1350,7 @@ const machine_t machines[] = {
         .gpio_acpi                = 0xffffffff,
         .device                   = &pc500_device,
         .kbd_device               = &keyboard_pc_xt_device,
-        .fdc_device               = NULL,
+        .fdc_device               = &fdc_xt_device,
         .vid_device               = NULL,
         .snd_device               = NULL,
         .net_device               = NULL,
@@ -1346,7 +1397,7 @@ const machine_t machines[] = {
         .gpio_acpi                = 0xffffffff,
         .device                   = &pc500plus_device,
         .kbd_device               = &keyboard_pc_xt_device,
-        .fdc_device               = NULL,
+        .fdc_device               = &fdc_xt_device,
         .vid_device               = NULL,
         .snd_device               = NULL,
         .net_device               = NULL,
@@ -1393,7 +1444,7 @@ const machine_t machines[] = {
         .gpio_acpi                = 0xffffffff,
         .device                   = &pc700_device,
         .kbd_device               = &keyboard_pc_xt_device,
-        .fdc_device               = NULL,
+        .fdc_device               = &fdc_xt_device,
         .vid_device               = NULL,
         .snd_device               = NULL,
         .net_device               = NULL,
@@ -1440,7 +1491,7 @@ const machine_t machines[] = {
         .gpio_acpi                = 0xffffffff,
         .device                   = NULL,
         .kbd_device               = &keyboard_pc_xt_device,
-        .fdc_device               = NULL,
+        .fdc_device               = &fdc_xt_device,
         .vid_device               = NULL,
         .snd_device               = NULL,
         .net_device               = NULL,
@@ -1487,10 +1538,14 @@ const machine_t machines[] = {
         .gpio_acpi                = 0xffffffff,
         .device                   = NULL,
         .kbd_device               = NULL,
-        .fdc_device               = NULL,
+        .fdc_device               = &fdc_xt_device,
         .vid_device               = &m19_vid_device,
         .snd_device               = NULL,
         .net_device               = NULL,
+        .slot_layout              = (const machine_slot_t[]) {
+            MSLOT_BUS(SLOT_ISA8, 3),
+            MSLOT_END
+        },
         .aliases                  = { "" }
     },
     {
@@ -1534,7 +1589,7 @@ const machine_t machines[] = {
         .gpio_acpi                = 0xffffffff,
         .device                   = NULL,
         .kbd_device               = &keyboard_pc_xt_device,
-        .fdc_device               = NULL,
+        .fdc_device               = &fdc_xt_device,
         .vid_device               = NULL,
         .snd_device               = NULL,
         .net_device               = NULL,
@@ -1581,7 +1636,7 @@ const machine_t machines[] = {
         .gpio_acpi                = 0xffffffff,
         .device                   = NULL,
         .kbd_device               = &keyboard_pc_xt_device,
-        .fdc_device               = NULL,
+        .fdc_device               = &fdc_xt_device,
         .vid_device               = NULL,
         .snd_device               = NULL,
         .net_device               = NULL,
@@ -1628,7 +1683,7 @@ const machine_t machines[] = {
         .gpio_acpi                = 0xffffffff,
         .device                   = NULL,
         .kbd_device               = &keyboard_pc_xt_device,
-        .fdc_device               = NULL,
+        .fdc_device               = &fdc_xt_device,
         .vid_device               = NULL,
         .snd_device               = NULL,
         .net_device               = NULL,
@@ -1675,7 +1730,7 @@ const machine_t machines[] = {
         .gpio_acpi                = 0xffffffff,
         .device                   = NULL,
         .kbd_device               = &keyboard_pc_xt_device,
-        .fdc_device               = NULL,
+        .fdc_device               = &fdc_xt_device,
         .vid_device               = NULL,
         .snd_device               = NULL,
         .net_device               = NULL,
@@ -1722,7 +1777,7 @@ const machine_t machines[] = {
         .gpio_acpi                = 0xffffffff,
         .device                   = NULL,
         .kbd_device               = &keyboard_pc_xt_device,
-        .fdc_device               = NULL,
+        .fdc_device               = &fdc_xt_device,
         .vid_device               = NULL,
         .snd_device               = NULL,
         .net_device               = NULL,
@@ -1769,7 +1824,7 @@ const machine_t machines[] = {
         .gpio_acpi                = 0xffffffff,
         .device                   = NULL,
         .kbd_device               = &keyboard_pc_xt_device,
-        .fdc_device               = NULL,
+        .fdc_device               = &fdc_xt_device,
         .vid_device               = NULL,
         .snd_device               = NULL,
         .net_device               = NULL,
@@ -1816,7 +1871,7 @@ const machine_t machines[] = {
         .gpio_acpi                = 0xffffffff,
         .device                   = NULL,
         .kbd_device               = &keyboard_pc_xt_device,
-        .fdc_device               = NULL,
+        .fdc_device               = &fdc_xt_device,
         .vid_device               = NULL,
         .snd_device               = NULL,
         .net_device               = NULL,
@@ -1910,7 +1965,7 @@ const machine_t machines[] = {
         .gpio_acpi                = 0xffffffff,
         .device                   = &europc_device,
         .kbd_device               = NULL,
-        .fdc_device               = NULL,
+        .fdc_device               = &fdc_xt_device,
         .vid_device               = NULL,
         .snd_device               = NULL,
         .net_device               = NULL,
@@ -1957,7 +2012,7 @@ const machine_t machines[] = {
         .gpio_acpi                = 0xffffffff,
         .device                   = NULL,
         .kbd_device               = &keyboard_pc_xt_device,
-        .fdc_device               = NULL,
+        .fdc_device               = &fdc_xt_device,
         .vid_device               = NULL,
         .snd_device               = NULL,
         .net_device               = NULL,
@@ -2004,7 +2059,7 @@ const machine_t machines[] = {
         .gpio_acpi                = 0xffffffff,
         .device                   = NULL,
         .kbd_device               = NULL,
-        .fdc_device               = NULL,
+        .fdc_device               = &fdc_xt_tandy_device,
         .vid_device               = &tandy_1000_video_device,
         .snd_device               = NULL,
         .net_device               = NULL,
@@ -2051,7 +2106,7 @@ const machine_t machines[] = {
         .gpio_acpi                = 0xffffffff,
         .device                   = NULL,
         .kbd_device               = NULL,
-        .fdc_device               = NULL,
+        .fdc_device               = &fdc_xt_tandy_device,
         .vid_device               = &tandy_1000hx_video_device,
         .snd_device               = NULL,
         .net_device               = NULL,
@@ -2098,7 +2153,7 @@ const machine_t machines[] = {
         .gpio_acpi                = 0xffffffff,
         .device                   = &to16_device,
         .kbd_device               = &keyboard_pc_xt_device,
-        .fdc_device               = NULL,
+        .fdc_device               = &fdc_xt_device,
         .vid_device               = NULL,
         .snd_device               = NULL,
         .net_device               = NULL,
@@ -2145,7 +2200,7 @@ const machine_t machines[] = {
         .gpio_acpi                = 0xffffffff,
         .device                   = NULL,
         .kbd_device               = NULL,
-        .fdc_device               = NULL,
+        .fdc_device               = &fdc_xt_device,
         .vid_device               = &t1000_video_device,
         .snd_device               = NULL,
         .net_device               = NULL,
@@ -2239,7 +2294,7 @@ const machine_t machines[] = {
         .gpio_acpi                = 0xffffffff,
         .device                   = &laserxt_device,
         .kbd_device               = &keyboard_pc_xt_device,
-        .fdc_device               = NULL,
+        .fdc_device               = &fdc_xt_device,
         .vid_device               = NULL,
         .snd_device               = NULL,
         .net_device               = NULL,
@@ -2286,7 +2341,7 @@ const machine_t machines[] = {
         .gpio_acpi                = 0xffffffff,
         .device                   = &xi8088_device,
         .kbd_device               = NULL,
-        .fdc_device               = NULL,
+        .fdc_device               = &fdc_at_device,
         .vid_device               = NULL,
         .snd_device               = NULL,
         .net_device               = NULL,
@@ -2333,7 +2388,7 @@ const machine_t machines[] = {
         .gpio_acpi                = 0xffffffff,
         .device                   = NULL,
         .kbd_device               = &keyboard_pc_xt_device,
-        .fdc_device               = NULL,
+        .fdc_device               = &fdc_xt_device,
         .vid_device               = NULL,
         .snd_device               = NULL,
         .net_device               = NULL,
@@ -2380,7 +2435,7 @@ const machine_t machines[] = {
         .gpio_acpi                = 0xffffffff,
         .device                   = NULL,
         .kbd_device               = &keyboard_pc_xt_device,
-        .fdc_device               = NULL,
+        .fdc_device               = &fdc_xt_device,
         .vid_device               = NULL,
         .snd_device               = NULL,
         .net_device               = NULL,
@@ -2407,7 +2462,7 @@ const machine_t machines[] = {
             .max_multi   = 0
         },
         .bus_flags = MACHINE_PC,
-        .flags     = MACHINE_ZENITH,
+        .flags     = MACHINE_ZENITH | MACHINE_LPT_PRI,
         .ram       = {
             .min  = 128,
             .max  = 640,
@@ -2427,7 +2482,7 @@ const machine_t machines[] = {
         .gpio_acpi                = 0xffffffff,
         .device                   = NULL,
         .kbd_device               = &keyboard_pc_xt_device,
-        .fdc_device               = NULL,
+        .fdc_device               = &fdc_xt_tandy_device,
         .vid_device               = NULL,
         .snd_device               = NULL,
         .net_device               = NULL,
@@ -2454,7 +2509,7 @@ const machine_t machines[] = {
             .max_multi   = 0
         },
         .bus_flags = MACHINE_PC,
-        .flags     = MACHINE_ZENITH | MACHINE_VIDEO_FIXED,
+        .flags     = MACHINE_ZENITH | MACHINE_VIDEO_FIXED | MACHINE_UART_PRI | MACHINE_LPT_PRI,
         .ram       = {
             .min  = 128,
             .max  = 640,
@@ -2474,7 +2529,7 @@ const machine_t machines[] = {
         .gpio_acpi                = 0xffffffff,
         .device                   = NULL,
         .kbd_device               = &keyboard_pc_xt_device,
-        .fdc_device               = NULL,
+        .fdc_device               = &fdc_xt_device,
         .vid_device               = &v6355d_device,
         .snd_device               = NULL,
         .net_device               = NULL,
@@ -2521,10 +2576,14 @@ const machine_t machines[] = {
         .gpio_acpi                = 0xffffffff,
         .device                   = NULL,
         .kbd_device               = &keyboard_pc_xt_device,
-        .fdc_device               = NULL,
+        .fdc_device               = &fdc_at_device,
         .vid_device               = NULL,
         .snd_device               = NULL,
         .net_device               = NULL,
+        .slot_layout              = (const machine_slot_t[]) {
+            MSLOT_BUS(SLOT_ISA8, 5),
+            MSLOT_END
+        },
         .aliases                  = { "" }
     },
     {
@@ -2568,7 +2627,7 @@ const machine_t machines[] = {
         .gpio_acpi                = 0xffffffff,
         .device                   = NULL,
         .kbd_device               = &keyboard_pc_xt_device,
-        .fdc_device               = NULL,
+        .fdc_device               = &fdc_xt_device,
         .vid_device               = NULL,
         .snd_device               = NULL,
         .net_device               = NULL,
@@ -2615,7 +2674,7 @@ const machine_t machines[] = {
         .gpio_acpi                = 0xffffffff,
         .device                   = NULL,
         .kbd_device               = &keyboard_pc_xt_device,
-        .fdc_device               = NULL,
+        .fdc_device               = &fdc_at_device,
         .vid_device               = NULL,
         .snd_device               = NULL,
         .net_device               = NULL,
@@ -2644,7 +2703,7 @@ const machine_t machines[] = {
             .max_multi   = 0
         },
         .bus_flags = MACHINE_PC,
-        .flags     = MACHINE_VIDEO_FIXED | MACHINE_KEYBOARD | MACHINE_MOUSE,
+        .flags     = MACHINE_VIDEO_FIXED | MACHINE_KEYBOARD | MACHINE_MOUSE | MACHINE_LPT_PRI,
         .ram       = {
             .min  = 512,
             .max  = 640,
@@ -2664,10 +2723,14 @@ const machine_t machines[] = {
         .gpio_acpi                = 0xffffffff,
         .device                   = NULL,
         .kbd_device               = NULL,
-        .fdc_device               = NULL,
+        .fdc_device               = &fdc_xt_device,
         .vid_device               = &vid_1512_device,
         .snd_device               = NULL,
         .net_device               = NULL,
+        .slot_layout              = (const machine_slot_t[]) {
+            MSLOT_BUS(SLOT_ISA8, 3),
+            MSLOT_END
+        },
         .aliases                  = { "" }
     },
     {
@@ -2691,7 +2754,7 @@ const machine_t machines[] = {
             .max_multi   = 0
         },
         .bus_flags = MACHINE_PC,
-        .flags     = MACHINE_VIDEO | MACHINE_KEYBOARD | MACHINE_MOUSE,
+        .flags     = MACHINE_VIDEO | MACHINE_KEYBOARD | MACHINE_MOUSE | MACHINE_LPT_PRI,
         .ram       = {
             .min  = 640,
             .max  = 640,
@@ -2711,10 +2774,14 @@ const machine_t machines[] = {
         .gpio_acpi                = 0xffffffff,
         .device                   = NULL,
         .kbd_device               = NULL,
-        .fdc_device               = NULL,
+        .fdc_device               = &fdc_xt_device,
         .vid_device               = &vid_1640_device,
         .snd_device               = NULL,
         .net_device               = NULL,
+        .slot_layout              = (const machine_slot_t[]) {
+            MSLOT_BUS(SLOT_ISA8, 4),
+            MSLOT_END
+        },
         .aliases                  = { "" }
     },
     {
@@ -2738,7 +2805,7 @@ const machine_t machines[] = {
             .max_multi   = 0
         },
         .bus_flags = MACHINE_PC,
-        .flags     = MACHINE_VIDEO_FIXED | MACHINE_KEYBOARD | MACHINE_MOUSE,
+        .flags     = MACHINE_VIDEO_FIXED | MACHINE_KEYBOARD | MACHINE_MOUSE | MACHINE_LPT_PRI,
         .ram       = {
             .min  = 640,
             .max  = 640,
@@ -2758,7 +2825,7 @@ const machine_t machines[] = {
         .gpio_acpi                = 0xffffffff,
         .device                   = NULL,
         .kbd_device               = NULL,
-        .fdc_device               = NULL,
+        .fdc_device               = &fdc_at_actlow_device,
         .vid_device               = &vid_pc2086_device,
         .snd_device               = NULL,
         .net_device               = NULL,
@@ -2785,7 +2852,7 @@ const machine_t machines[] = {
             .max_multi   = 0
         },
         .bus_flags = MACHINE_PC,
-        .flags     = MACHINE_XTA | MACHINE_VIDEO_FIXED | MACHINE_KEYBOARD | MACHINE_MOUSE,
+        .flags     = MACHINE_XTA | MACHINE_VIDEO_FIXED | MACHINE_KEYBOARD | MACHINE_MOUSE | MACHINE_LPT_PRI,
         .ram       = {
             .min  = 640,
             .max  = 640,
@@ -2805,7 +2872,7 @@ const machine_t machines[] = {
         .gpio_acpi                = 0xffffffff,
         .device                   = NULL,
         .kbd_device               = NULL,
-        .fdc_device               = NULL,
+        .fdc_device               = &fdc_at_actlow_device,
         .vid_device               = &vid_pc3086_device,
         .snd_device               = NULL,
         .net_device               = NULL,
@@ -2832,7 +2899,7 @@ const machine_t machines[] = {
             .max_multi   = 0
         },
         .bus_flags = MACHINE_PC | MACHINE_BUS_PS2,
-        .flags     = MACHINE_XTA,
+        .flags     = MACHINE_XTA | MACHINE_UART_PRI | MACHINE_LPT_PRI,
         .ram       = {
             .min  = 512,
             .max  = 640,
@@ -2845,7 +2912,7 @@ const machine_t machines[] = {
         .kbc_params               = 0x00000000,
         .nvr_device               = &nvr_at_device,
         .nvr_params               = NVR_AT_ZERO_DEFAULT,
-        .sio_device               = NULL,
+        .sio_device               = &f82c710_pc5086_device,
         .sio_params               = 0x00000000,
         .kbc_p1                   = 0xff,
         .gpio                     = 0xffffffff,
@@ -2879,7 +2946,7 @@ const machine_t machines[] = {
             .max_multi   = 0
         },
         .bus_flags = MACHINE_PC,
-        .flags     = MACHINE_VIDEO | MACHINE_KEYBOARD | MACHINE_MOUSE,
+        .flags     = MACHINE_VIDEO | MACHINE_KEYBOARD | MACHINE_MOUSE | MACHINE_LPT_PRI,
         .ram       = {
             .min  = 512,
             .max  = 640,
@@ -2899,7 +2966,7 @@ const machine_t machines[] = {
         .gpio_acpi                = 0xffffffff,
         .device                   = NULL,
         .kbd_device               = NULL,
-        .fdc_device               = NULL,
+        .fdc_device               = &fdc_xt_device,
         .vid_device               = &vid_200_device,
         .snd_device               = NULL,
         .net_device               = NULL,
@@ -2926,7 +2993,7 @@ const machine_t machines[] = {
             .max_multi   = 0
         },
         .bus_flags = MACHINE_PC,
-        .flags     = MACHINE_VIDEO | MACHINE_KEYBOARD | MACHINE_MOUSE,
+        .flags     = MACHINE_VIDEO | MACHINE_KEYBOARD | MACHINE_MOUSE | MACHINE_LPT_PRI,
         .ram       = {
             .min  = 512,
             .max  = 640,
@@ -2946,7 +3013,7 @@ const machine_t machines[] = {
         .gpio_acpi                = 0xffffffff,
         .device                   = NULL,
         .kbd_device               = NULL,
-        .fdc_device               = NULL,
+        .fdc_device               = &fdc_xt_device,
         .vid_device               = &vid_ppc512_device,
         .snd_device               = NULL,
         .net_device               = NULL,
@@ -2973,7 +3040,7 @@ const machine_t machines[] = {
             .max_multi   = 0
         },
         .bus_flags = MACHINE_PC,
-        .flags     = MACHINE_FLAGS_NONE,
+        .flags     = MACHINE_FLAGS_NONE | MACHINE_LPT_PRI,
         .ram       = {
             .min  = 128,
             .max  = 640,
@@ -2993,7 +3060,7 @@ const machine_t machines[] = {
         .gpio_acpi                = 0xffffffff,
         .device                   = NULL,
         .kbd_device               = &keyboard_pc_xt_device,
-        .fdc_device               = NULL,
+        .fdc_device               = &fdc_xt_device,
         .vid_device               = NULL,
         .snd_device               = NULL,
         .net_device               = NULL,
@@ -3040,7 +3107,7 @@ const machine_t machines[] = {
         .gpio_acpi                = 0xffffffff,
         .device                   = NULL,
         .kbd_device               = &keyboard_pc_xt_device,
-        .fdc_device               = NULL,
+        .fdc_device               = &fdc_xt_device,
         .vid_device               = NULL, /* Discrete onboard video card? */
         .snd_device               = NULL,
         .net_device               = NULL,
@@ -3067,7 +3134,7 @@ const machine_t machines[] = {
             .max_multi   = 0
         },
         .bus_flags = MACHINE_PC,
-        .flags     = MACHINE_VIDEO_FIXED | MACHINE_FDC | MACHINE_KEYBOARD | MACHINE_MOUSE,
+        .flags     = MACHINE_VIDEO_FIXED | MACHINE_FDC | MACHINE_KEYBOARD | MACHINE_MOUSE | MACHINE_UART_PRI | MACHINE_LPT_PRI,
         .ram       = {
             .min  = 256,
             .max  = 640,
@@ -3087,7 +3154,7 @@ const machine_t machines[] = {
         .gpio_acpi                = 0xffffffff,
         .device                   = &ibm5550_device,
         .kbd_device               = NULL,
-        .fdc_device               = NULL,
+        .fdc_device               = &fdc_xt_5550_device,
         .vid_device               = NULL,
         .snd_device               = NULL,
         .net_device               = NULL,
@@ -3115,7 +3182,7 @@ const machine_t machines[] = {
             .max_multi   = 0
         },
         .bus_flags = MACHINE_PC | MACHINE_BUS_PS2,
-        .flags     = MACHINE_XTA | MACHINE_VIDEO,
+        .flags     = MACHINE_XTA | MACHINE_VIDEO | MACHINE_UART_PRI | MACHINE_LPT_PRI,
         .ram       = {
             .min  = 512,
             .max  = 640,
@@ -3135,10 +3202,14 @@ const machine_t machines[] = {
         .gpio_acpi                = 0xffffffff,
         .device                   = &ps2_m25_device,
         .kbd_device               = NULL,
-        .fdc_device               = NULL,
+        .fdc_device               = &fdc_ps2_device,
         .vid_device               = &mcga_device,
         .snd_device               = NULL,
         .net_device               = NULL,
+        .slot_layout              = (const machine_slot_t[]) {
+            MSLOT_BUS(SLOT_ISA8, 2),
+            MSLOT_END
+        },
         .aliases                  = { "" }
     },
     /* Type 8530-002/8530-021, original 8 MHz 8086 with integrated MCGA and an RTC. */
@@ -3163,7 +3234,7 @@ const machine_t machines[] = {
             .max_multi   = 0
         },
         .bus_flags = MACHINE_PC | MACHINE_BUS_PS2,
-        .flags     = MACHINE_XTA | MACHINE_VIDEO,
+        .flags     = MACHINE_XTA | MACHINE_VIDEO | MACHINE_UART_PRI | MACHINE_LPT_PRI,
         .ram       = {
             .min  = 640,
             .max  = 640,
@@ -3183,10 +3254,14 @@ const machine_t machines[] = {
         .gpio_acpi                = 0xffffffff,
         .device                   = &ps2_m30_device,
         .kbd_device               = NULL,
-        .fdc_device               = NULL,
+        .fdc_device               = &fdc_ps2_device,
         .vid_device               = &mcga_device,
         .snd_device               = NULL,
         .net_device               = NULL,
+        .slot_layout              = (const machine_slot_t[]) {
+            MSLOT_BUS(SLOT_ISA8, 3),
+            MSLOT_END
+        },
         .aliases                  = { "" }
     },
     /* Type 7690, essentially a PS/2 Model 30 with an LCD based touchscreen */
@@ -3211,7 +3286,7 @@ const machine_t machines[] = {
             .max_multi   = 0
         },
         .bus_flags = MACHINE_PC | MACHINE_BUS_PS2,
-        .flags     = MACHINE_XTA | MACHINE_VIDEO,
+        .flags     = MACHINE_XTA | MACHINE_VIDEO | MACHINE_UART_PRI | MACHINE_LPT_PRI,
         .ram       = {
             .min  = 640,
             .max  = 640,
@@ -3231,7 +3306,7 @@ const machine_t machines[] = {
         .gpio_acpi                = 0xffffffff,
         .device                   = &ibm7690_device,
         .kbd_device               = NULL,
-        .fdc_device               = NULL,
+        .fdc_device               = &fdc_ps2_device,
         .vid_device               = &ibm7690_video_device,
         .tablet_device            = &mouse_ibm7690_touch_device,
         .snd_device               = NULL,
@@ -3278,7 +3353,7 @@ const machine_t machines[] = {
         .gpio_acpi                = 0xffffffff,
         .device                   = NULL,
         .kbd_device               = &keyboard_pc_xt_device,
-        .fdc_device               = NULL,
+        .fdc_device               = &fdc_xt_device,
         .vid_device               = NULL,
         .snd_device               = NULL,
         .net_device               = NULL,
@@ -3325,10 +3400,14 @@ const machine_t machines[] = {
         .gpio_acpi                = 0xffffffff,
         .device                   = NULL,
         .kbd_device               = NULL,
-        .fdc_device               = NULL,
+        .fdc_device               = &fdc_xt_device,
         .vid_device               = &ogc_m24_device,
         .snd_device               = NULL,
         .net_device               = NULL,
+        .slot_layout              = (const machine_slot_t[]) {
+            MSLOT_BUS(SLOT_ISA8, 7),
+            MSLOT_END
+        },
         .aliases                  = { "Olivetti M21", "Olivetti M24SP", "AT&T PC 6300", "" }
     },
     /* Has Olivetti KBC firmware. */
@@ -3373,7 +3452,7 @@ const machine_t machines[] = {
         .gpio_acpi                = 0xffffffff,
         .device                   = NULL,
         .kbd_device               = NULL,
-        .fdc_device               = NULL,
+        .fdc_device               = &fdc_at_device,
         .vid_device               = NULL,
         .snd_device               = NULL,
         .net_device               = NULL,
@@ -3420,7 +3499,7 @@ const machine_t machines[] = {
         .gpio_acpi                = 0xffffffff,
         .device                   = NULL,
         .kbd_device               = &keyboard_pc_xt_device,
-        .fdc_device               = NULL,
+        .fdc_device               = &fdc_xt_device,
         .vid_device               = NULL,
         .snd_device               = NULL,
         .net_device               = NULL,
@@ -3447,7 +3526,7 @@ const machine_t machines[] = {
             .max_multi   = 0
         },
         .bus_flags = MACHINE_PC,
-        .flags     = MACHINE_VIDEO_FIXED | MACHINE_KEYBOARD,
+        .flags     = MACHINE_VIDEO_FIXED | MACHINE_SOUND | MACHINE_KEYBOARD,
         .ram       = {
             .min  = 512,
             .max  = 768,
@@ -3467,10 +3546,14 @@ const machine_t machines[] = {
         .gpio_acpi                = 0xffffffff,
         .device                   = NULL,
         .kbd_device               = NULL,
-        .fdc_device               = NULL,
+        .fdc_device               = &fdc_xt_tandy_device,
         .vid_device               = &tandy_1000sl_video_device,
-        .snd_device               = NULL,
+        .snd_device               = &pssj_device,
         .net_device               = NULL,
+        .slot_layout              = (const machine_slot_t[]) {
+            MSLOT_BUS(SLOT_ISA8, 5),
+            MSLOT_END
+        },
         .aliases                  = { "" }
     },
     {
@@ -3514,7 +3597,7 @@ const machine_t machines[] = {
         .gpio_acpi                = 0xffffffff,
         .device                   = NULL,
         .kbd_device               = NULL,
-        .fdc_device               = NULL,
+        .fdc_device               = &fdc_xt_t1x00_device,
         .vid_device               = &t1200_video_device,
         .snd_device               = NULL,
         .net_device               = NULL,
@@ -3541,7 +3624,7 @@ const machine_t machines[] = {
             .max_multi   = 0
         },
         .bus_flags = MACHINE_PC,
-        .flags     = MACHINE_VIDEO | MACHINE_KEYBOARD | MACHINE_MFM,
+        .flags     = MACHINE_VIDEO | MACHINE_KEYBOARD | MACHINE_MFM | MACHINE_UART_PRI | MACHINE_UART_SEC | MACHINE_LPT_PRI,
         .ram       = {
             .min  = 512,
             .max  = 1024,
@@ -3563,7 +3646,7 @@ const machine_t machines[] = {
         .gpio_acpi                = 0xffffffff,
         .device                   = &v86p_device,
         .kbd_device               = NULL,
-        .fdc_device               = NULL,
+        .fdc_device               = &fdc_xt_device,
         .vid_device               = NULL,
         .snd_device               = NULL,
         .net_device               = NULL,
@@ -3610,6 +3693,55 @@ const machine_t machines[] = {
         .gpio_acpi                = 0xffffffff,
         .device                   = &lxt3_device,
         .kbd_device               = &keyboard_pc_xt_device,
+        .fdc_device               = &fdc_xt_device,
+        .vid_device               = NULL,
+        .snd_device               = NULL,
+        .net_device               = NULL,
+        .aliases                  = { "" }
+    },
+
+    /* 80186 Machines */
+    {
+        .name              = "[80186] IBM Multistation 3477-S",
+        .internal_name     = "ibm3477",
+        .type              = MACHINE_TYPE_186,
+        .chipset           = MACHINE_CHIPSET_PROPRIETARY,
+        .init              = machine_xt_ibm3477_init,
+        .p1_handler        = NULL,
+        .gpio_handler      = NULL,
+        .available_flag    = MACHINE_AVAILABLE,
+        .gpio_acpi_handler = NULL,
+        .cpu               = {
+            .package     = CPU_PKG_186,
+            .block       = CPU_BLOCK_NONE,
+            .min_bus     = 12000000,
+            .max_bus     = 12000000,
+            .min_voltage = 0,
+            .max_voltage = 0,
+            .min_multi   = 0,
+            .max_multi   = 0
+        },
+        .bus_flags = MACHINE_PC | MACHINE_BUS_PS2_PORTS,
+        .flags     = MACHINE_VIDEO_FIXED | MACHINE_FDC | MACHINE_PS2_KBC | MACHINE_KEYBOARD | MACHINE_KEYBOARD_JIS,
+        .ram       = {
+            .min  = 640,
+            .max  = 640,
+            .step = 640
+        },
+        .nvrmask                  = 15,
+        .jumpered_ecp_dma         = 0,
+        .default_jumpered_ecp_dma = -1,
+        .kbc_device               = &kbc_at_device,
+        .kbc_params               = 0x00000000,
+        .nvr_device               = NULL,
+        .nvr_params               = 0x00000000,
+        .sio_device               = NULL,
+        .sio_params               = 0x00000000,
+        .kbc_p1                   = 0xff,
+        .gpio                     = 0xffffffff,
+        .gpio_acpi                = 0xffffffff,
+        .device                   = &ibm3477_device,
+        .kbd_device               = NULL,
         .fdc_device               = NULL,
         .vid_device               = NULL,
         .snd_device               = NULL,
@@ -3660,10 +3792,15 @@ const machine_t machines[] = {
         .gpio_acpi                = 0xffffffff,
         .device                   = &ibmat_device,
         .kbd_device               = NULL,
-        .fdc_device               = NULL,
+        .fdc_device               = &fdc_at_device,
         .vid_device               = NULL,
         .snd_device               = NULL,
         .net_device               = NULL,
+        .slot_layout              = (const machine_slot_t[]) {
+            MSLOT_BUS(SLOT_ISA16, 6),
+            MSLOT_BUS(SLOT_ISA8, 2),
+            MSLOT_END
+        },
         .aliases                  = { "" }
     },
     /* Has IBM PS/2 Type 1 KBC firmware. */
@@ -3688,7 +3825,7 @@ const machine_t machines[] = {
             .max_multi   = 0
         },
         .bus_flags = MACHINE_PS2,
-        .flags     = MACHINE_XTA | MACHINE_VIDEO_FIXED,
+        .flags     = MACHINE_XTA | MACHINE_SOUND | MACHINE_VIDEO_FIXED | MACHINE_UART_PRI | MACHINE_LPT_PRI,
         .ram       = {
             .min  = 512,
             .max  = 2560,
@@ -3708,9 +3845,9 @@ const machine_t machines[] = {
         .gpio_acpi                = 0xffffffff,
         .device                   = &ps1_2011_device,
         .kbd_device               = NULL,
-        .fdc_device               = NULL,
+        .fdc_device               = &fdc_ps2_device,
         .vid_device               = NULL,
-        .snd_device               = NULL,
+        .snd_device               = &ps1snd_device,
         .net_device               = NULL,
         .aliases                  = { "" }
     },
@@ -3736,7 +3873,7 @@ const machine_t machines[] = {
             .max_multi   = 0
         },
         .bus_flags = MACHINE_PS2,
-        .flags     = MACHINE_XTA | MACHINE_VIDEO,
+        .flags     = MACHINE_XTA | MACHINE_VIDEO | MACHINE_UART_PRI | MACHINE_LPT_PRI,
         .ram       = {
             .min  = 512,
             .max  = 4096,
@@ -3756,10 +3893,14 @@ const machine_t machines[] = {
         .gpio_acpi                = 0xffffffff,
         .device                   = &ps2_m30_286_device,
         .kbd_device               = NULL,
-        .fdc_device               = NULL,
+        .fdc_device               = &fdc_ps2_device,
         .vid_device               = NULL,
         .snd_device               = NULL,
         .net_device               = NULL,
+        .slot_layout              = (const machine_slot_t[]) {
+            MSLOT_BUS(SLOT_ISA16, 3),
+            MSLOT_END
+        },
         .aliases                  = { "IBM PS/2 model 25-286", "" }
     },
     /* Has IBM AT KBC firmware. */
@@ -3804,10 +3945,15 @@ const machine_t machines[] = {
         .gpio_acpi                = 0xffffffff,
         .device                   = &ibmxt286_device,
         .kbd_device               = NULL,
-        .fdc_device               = NULL,
+        .fdc_device               = &fdc_at_device,
         .vid_device               = NULL,
         .snd_device               = NULL,
         .net_device               = NULL,
+        .slot_layout              = (const machine_slot_t[]) {
+            MSLOT_BUS(SLOT_ISA16, 5),
+            MSLOT_BUS(SLOT_ISA8, 3),
+            MSLOT_END
+        },
         .aliases                  = { "" }
     },
     /* Uses Commodore (CBM) KBC firmware, to be implemented as identical to the
@@ -3833,7 +3979,7 @@ const machine_t machines[] = {
             .max_multi   = 0
         },
         .bus_flags = MACHINE_AT,
-        .flags     = MACHINE_FLAGS_NONE,
+        .flags     = MACHINE_FLAGS_NONE | MACHINE_UART_PRI | MACHINE_LPT_PRI,
         .ram       = {
             .min  = 384, /* gets stuck at POST code 00 with less */
             .max  = 1024,
@@ -3853,10 +3999,15 @@ const machine_t machines[] = {
         .gpio_acpi                = 0xffffffff,
         .device                   = NULL,
         .kbd_device               = NULL,
-        .fdc_device               = NULL,
+        .fdc_device               = &fdc_at_device,
         .vid_device               = NULL,
         .snd_device               = NULL,
         .net_device               = NULL,
+        .slot_layout              = (const machine_slot_t[]) {
+            MSLOT_BUS(SLOT_ISA16, 3),
+            MSLOT_BUS(SLOT_ISA8, 1),
+            MSLOT_END
+        },
         .aliases                  = { "Commodore Colt286", "" }
     },
     /* Uses Compaq KBC firmware. */
@@ -3901,10 +4052,15 @@ const machine_t machines[] = {
         .gpio_acpi                = 0xffffffff,
         .device                   = NULL,
         .kbd_device               = NULL,
-        .fdc_device               = NULL,
+        .fdc_device               = &fdc_at_device,
         .vid_device               = NULL,
         .snd_device               = NULL,
         .net_device               = NULL,
+        .slot_layout              = (const machine_slot_t[]) {
+            MSLOT_BUS(SLOT_ISA16, 2),
+            MSLOT_BUS(SLOT_ISA8, 2),
+            MSLOT_END
+        },
         .aliases                  = { "" }
     },
     /* Uses Compaq KBC firmware. */
@@ -3951,7 +4107,7 @@ const machine_t machines[] = {
         .gpio_acpi                = 0xffffffff,
         .device                   = NULL,
         .kbd_device               = NULL,
-        .fdc_device               = NULL,
+        .fdc_device               = &fdc_at_device,
         .vid_device               = &compaq_plasma_device,
         .snd_device               = NULL,
         .net_device               = NULL,
@@ -4000,7 +4156,7 @@ const machine_t machines[] = {
         .gpio_acpi                = 0xffffffff,
         .device                   = NULL,
         .kbd_device               = NULL,
-        .fdc_device               = NULL,
+        .fdc_device               = &fdc_at_device,
         .vid_device               = NULL,
         .snd_device               = NULL,
         .net_device               = NULL,
@@ -4047,7 +4203,7 @@ const machine_t machines[] = {
         .gpio_acpi                = 0xffffffff,
         .device                   = NULL,
         .kbd_device               = NULL,
-        .fdc_device               = NULL,
+        .fdc_device               = &fdc_at_device,
         .vid_device               = NULL,
         .snd_device               = NULL,
         .net_device               = NULL,
@@ -4095,7 +4251,7 @@ const machine_t machines[] = {
         .gpio_acpi                = 0xffffffff,
         .device                   = &pc900_device,
         .kbd_device               = NULL,
-        .fdc_device               = NULL,
+        .fdc_device               = &fdc_at_device,
         .vid_device               = NULL,
         .snd_device               = NULL,
         .net_device               = NULL,
@@ -4143,7 +4299,7 @@ const machine_t machines[] = {
         .gpio_acpi                = 0xffffffff,
         .device                   = NULL,
         .kbd_device               = NULL,
-        .fdc_device               = NULL,
+        .fdc_device               = &fdc_at_device,
         .vid_device               = NULL,
         .snd_device               = NULL,
         .net_device               = NULL,
@@ -4192,7 +4348,7 @@ const machine_t machines[] = {
         .gpio_acpi                = 0xffffffff,
         .device                   = NULL,
         .kbd_device               = NULL,
-        .fdc_device               = NULL,
+        .fdc_device               = &fdc_at_device,
         .vid_device               = NULL,
         .snd_device               = NULL,
         .net_device               = NULL,
@@ -4240,7 +4396,7 @@ const machine_t machines[] = {
         .gpio_acpi                = 0xffffffff,
         .device                   = NULL,
         .kbd_device               = NULL,
-        .fdc_device               = NULL,
+        .fdc_device               = &fdc_at_device,
         .vid_device               = NULL,
         .snd_device               = NULL,
         .net_device               = NULL,
@@ -4289,7 +4445,7 @@ const machine_t machines[] = {
         .gpio_acpi                = 0xffffffff,
         .device                   = NULL,
         .kbd_device               = NULL,
-        .fdc_device               = NULL,
+        .fdc_device               = &fdc_at_device,
         .vid_device               = NULL,
         .snd_device               = NULL,
         .net_device               = NULL,
@@ -4337,7 +4493,7 @@ const machine_t machines[] = {
         .gpio_acpi                = 0xffffffff,
         .device                   = NULL,
         .kbd_device               = NULL,
-        .fdc_device               = NULL,
+        .fdc_device               = &fdc_at_device,
         .vid_device               = NULL,
         .snd_device               = NULL,
         .net_device               = NULL,
@@ -4385,7 +4541,7 @@ const machine_t machines[] = {
         .gpio_acpi                = 0xffffffff,
         .device                   = NULL,
         .kbd_device               = NULL,
-        .fdc_device               = NULL,
+        .fdc_device               = &fdc_at_device,
         .vid_device               = NULL,
         .snd_device               = NULL,
         .net_device               = NULL,
@@ -4433,10 +4589,14 @@ const machine_t machines[] = {
         .gpio_acpi                = 0xffffffff,
         .device                   = NULL,
         .kbd_device               = NULL,
-        .fdc_device               = NULL,
+        .fdc_device               = &fdc_at_device,
         .vid_device               = NULL,
         .snd_device               = NULL,
         .net_device               = NULL,
+        .slot_layout              = (const machine_slot_t[]) {
+            MSLOT_BUS(SLOT_ISA16, 1),
+            MSLOT_END
+        },
         .aliases                  = { "" }
     },
     /* Has unknown KBC firmware. */
@@ -4482,7 +4642,7 @@ const machine_t machines[] = {
         .gpio_acpi                = 0xffffffff,
         .device                   = NULL,
         .kbd_device               = NULL,
-        .fdc_device               = NULL,
+        .fdc_device               = &fdc_at_device,
         .vid_device               = NULL,
         .snd_device               = NULL,
         .net_device               = NULL,
@@ -4530,7 +4690,7 @@ const machine_t machines[] = {
         .gpio_acpi                = 0xffffffff,
         .device                   = NULL,
         .kbd_device               = NULL,
-        .fdc_device               = NULL,
+        .fdc_device               = &fdc_at_device,
         .vid_device               = NULL,
         .snd_device               = NULL,
         .net_device               = NULL,
@@ -4578,7 +4738,7 @@ const machine_t machines[] = {
         .gpio_acpi                = 0xffffffff,
         .device                   = NULL,
         .kbd_device               = NULL,
-        .fdc_device               = NULL,
+        .fdc_device               = &fdc_at_device,
         .vid_device               = NULL,
         .snd_device               = NULL,
         .net_device               = NULL,
@@ -4625,7 +4785,7 @@ const machine_t machines[] = {
         .gpio                     = 0xffffffff,
         .gpio_acpi                = 0xffffffff,
         .device                   = NULL,
-        .fdc_device               = NULL,
+        .fdc_device               = &fdc_at_device,
         .vid_device               = NULL,
         .snd_device               = NULL,
         .net_device               = NULL,
@@ -4674,10 +4834,15 @@ const machine_t machines[] = {
         .gpio_acpi                = 0xffffffff,
         .device                   = NULL,
         .kbd_device               = NULL,
-        .fdc_device               = NULL,
+        .fdc_device               = &fdc_at_device,
         .vid_device               = NULL,
         .snd_device               = NULL,
         .net_device               = NULL,
+        .slot_layout              = (const machine_slot_t[]) {
+            MSLOT_BUS(SLOT_ISA16, 4),
+            MSLOT_BUS(SLOT_ISA8, 2),
+            MSLOT_END
+        },
         .aliases                  = { "" }
     },
     /* Early AMIBIOS (Access Methods) that requires disk-based BIOS setup. */
@@ -4722,7 +4887,7 @@ const machine_t machines[] = {
         .gpio_acpi                = 0xffffffff,
         .device                   = NULL,
         .kbd_device               = NULL,
-        .fdc_device               = NULL,
+        .fdc_device               = &fdc_at_device,
         .vid_device               = NULL,
         .snd_device               = NULL,
         .net_device               = NULL,
@@ -4769,7 +4934,7 @@ const machine_t machines[] = {
         .gpio                     = 0xffffffff,
         .gpio_acpi                = 0xffffffff,
         .device                   = NULL,
-        .fdc_device               = NULL,
+        .fdc_device               = &fdc_at_device,
         .vid_device               = NULL,
         .snd_device               = NULL,
         .net_device               = NULL,
@@ -4818,7 +4983,7 @@ const machine_t machines[] = {
         .gpio_acpi                = 0xffffffff,
         .device                   = NULL,
         .kbd_device               = NULL,
-        .fdc_device               = NULL,
+        .fdc_device               = &fdc_at_device,
         .vid_device               = NULL,
         .snd_device               = NULL,
         .net_device               = NULL,
@@ -4867,7 +5032,7 @@ const machine_t machines[] = {
         .gpio_acpi                = 0xffffffff,
         .device                   = NULL,
         .kbd_device               = NULL,
-        .fdc_device               = NULL,
+        .fdc_device               = &fdc_at_device,
         .vid_device               = NULL,
         .snd_device               = NULL,
         .net_device               = NULL,
@@ -4915,7 +5080,7 @@ const machine_t machines[] = {
         .gpio_acpi                = 0xffffffff,
         .device                   = NULL,
         .kbd_device               = NULL,
-        .fdc_device               = NULL,
+        .fdc_device               = &fdc_at_device,
         .vid_device               = NULL,
         .snd_device               = NULL,
         .net_device               = NULL,
@@ -4963,7 +5128,7 @@ const machine_t machines[] = {
         .gpio_acpi                = 0xffffffff,
         .device                   = NULL,
         .kbd_device               = NULL,
-        .fdc_device               = NULL,
+        .fdc_device               = &fdc_at_device,
         .vid_device               = NULL,
         .snd_device               = NULL,
         .net_device               = NULL,
@@ -5011,10 +5176,15 @@ const machine_t machines[] = {
         .gpio_acpi                = 0xffffffff,
         .device                   = NULL,
         .kbd_device               = NULL,
-        .fdc_device               = NULL,
+        .fdc_device               = &fdc_at_device,
         .vid_device               = NULL,
         .snd_device               = NULL,
         .net_device               = NULL,
+        .slot_layout              = (const machine_slot_t[]) {
+            MSLOT_BUS(SLOT_ISA16, 4),
+            MSLOT_BUS(SLOT_ISA8, 2),
+            MSLOT_END
+        },
         .aliases                  = { "TriGem TG-286M", "" }
     },
     /* Has Phoenix MultiKey/42 KBC firmware. */
@@ -5059,7 +5229,7 @@ const machine_t machines[] = {
         .gpio                     = 0xffffffff,
         .gpio_acpi                = 0xffffffff,
         .device                   = NULL,
-        .fdc_device               = NULL,
+        .fdc_device               = &fdc_at_device,
         .vid_device               = NULL,
         .snd_device               = NULL,
         .net_device               = NULL,
@@ -5108,9 +5278,61 @@ const machine_t machines[] = {
         .gpio_acpi                = 0xffffffff,
         .device                   = NULL,
         .kbd_device               = NULL,
-        .fdc_device               = NULL,
+        .fdc_device               = &fdc_at_device,
         .vid_device               = NULL,
         .snd_device               = NULL,
+        .net_device               = NULL,
+        .slot_layout              = (const machine_slot_t[]) {
+            MSLOT_BUS(SLOT_ISA16, 4),
+            MSLOT_BUS(SLOT_ISA8, 1),
+            MSLOT_END
+        },
+        .aliases                  = { "" }
+    },
+    {
+        .name              = "[Tandy] Tandy VIS",
+        .internal_name     = "tvis",
+        .type              = MACHINE_TYPE_286,
+        .chipset           = MACHINE_CHIPSET_PROPRIETARY,
+        .init              = machine_at_tandy_vis_init,
+        .p1_handler        = machine_generic_p1_handler,
+        .gpio_handler      = NULL,
+        .available_flag    = MACHINE_AVAILABLE,
+        .gpio_acpi_handler = NULL,
+        .cpu               = {
+            .package     = CPU_PKG_286,
+            .block       = CPU_BLOCK_NONE,
+            .min_bus     = 0,
+            .max_bus     = 0,
+            .min_voltage = 0,
+            .max_voltage = 0,
+            .min_multi   = 0,
+            .max_multi   = 0
+        },
+        .bus_flags = MACHINE_BUS_PS2,
+        .flags     = MACHINE_VIDEO | MACHINE_VIDEO_ONLY | MACHINE_SOUND | MACHINE_KEYBOARD,
+        .ram       = {
+            .min  = 1024,
+            .max  = 1024,
+            .step = 1
+        },
+        .nvrmask                  = 127,
+        .jumpered_ecp_dma         = 0,
+        .default_jumpered_ecp_dma = -1,
+        .kbc_device               = &kbc_tvis_device,
+        .kbc_params               = 0,
+        .nvr_device               = NULL,
+        .nvr_params               = 0,
+        .sio_device               = NULL,
+        .sio_params               = 0x00000000,
+        .kbc_p1                   = 0x000004f0,
+        .gpio                     = 0xffffffff,
+        .gpio_acpi                = 0xffffffff,
+        .device                   = &tvis_device,
+        .kbd_device               = NULL,
+        .fdc_device               = NULL,
+        .vid_device               = NULL,
+        .snd_device               = &sensationaud_device,
         .net_device               = NULL,
         .aliases                  = { "" }
     },
@@ -5157,7 +5379,7 @@ const machine_t machines[] = {
         .gpio_acpi                = 0xffffffff,
         .device                   = NULL,
         .kbd_device               = NULL,
-        .fdc_device               = NULL,
+        .fdc_device               = &fdc_at_device,
         .vid_device               = NULL,
         .snd_device               = NULL,
         .net_device               = NULL,
@@ -5205,7 +5427,7 @@ const machine_t machines[] = {
         .gpio_acpi                = 0xffffffff,
         .device                   = NULL,
         .kbd_device               = NULL,
-        .fdc_device               = NULL,
+        .fdc_device               = &fdc_at_device,
         .vid_device               = &paradise_pvga1a_ncr3302_device,
         .snd_device               = NULL,
         .net_device               = NULL,
@@ -5255,7 +5477,7 @@ const machine_t machines[] = {
         .gpio_acpi                = 0xffffffff,
         .device                   = NULL,
         .kbd_device               = NULL,
-        .fdc_device               = NULL,
+        .fdc_device               = &fdc_at_device,
         .vid_device               = NULL,
         .snd_device               = NULL,
         .net_device               = NULL,
@@ -5283,7 +5505,7 @@ const machine_t machines[] = {
             .max_multi   = 0
         },
         .bus_flags = MACHINE_PS2,
-        .flags     = MACHINE_IDE | MACHINE_VIDEO,
+        .flags     = MACHINE_IDE | MACHINE_VIDEO | MACHINE_UART_PRI | MACHINE_UART_SEC | MACHINE_LPT_PRI,
         .ram       = {
             .min  = 1024, /* soldered amount */
             .max  = 16384,
@@ -5297,8 +5519,8 @@ const machine_t machines[] = {
         /* The NVR is on the VLSI VL82C113. */
         .nvr_device               = NULL,
         .nvr_params               = 0x00000000,
-        .sio_device               = NULL,
-        .sio_params               = 0x00000000,
+        .sio_device               = &dw90c50_device,
+        .sio_params               = (uintptr_t) (DW90C50_IDE),
         .kbc_p1                   = 0x000004f0,
         .gpio                     = 0xffffffff,
         .gpio_acpi                = 0xffffffff,
@@ -5332,7 +5554,7 @@ const machine_t machines[] = {
             .max_multi   = 0
         },
         .bus_flags = MACHINE_AT | MACHINE_BUS_PS2,
-        .flags     = MACHINE_IDE,
+        .flags     = MACHINE_IDE | MACHINE_UART_PRI | MACHINE_LPT_PRI,
         .ram       = {
             .min  = 1024, /* soldered amount(?) */
             .max  = 4096,
@@ -5345,7 +5567,7 @@ const machine_t machines[] = {
         .kbc_params               = 0x00000000,
         .nvr_device               = &nvr_at_device,
         .nvr_params               = NVR_AT,
-        .sio_device               = NULL,
+        .sio_device               = &f82c710_device,
         .sio_params               = 0x00000000,
         .kbc_p1                   = 0x000004f0,
         .gpio                     = 0xffffffff,
@@ -5380,7 +5602,7 @@ const machine_t machines[] = {
             .max_multi   = 0
         },
         .bus_flags = MACHINE_AT,
-        .flags     = MACHINE_IDE,
+        .flags     = MACHINE_IDE | MACHINE_UART_PRI | MACHINE_LPT_PRI,
         .ram       = {
             .min  = 512, /* crashes at POST code 00 with less */
             .max  = 16384,
@@ -5393,7 +5615,7 @@ const machine_t machines[] = {
         .kbc_params               = KBC_VEN_CHIPS | 0x0000a600,
         .nvr_device               = &nvr_at_device,
         .nvr_params               = NVR_AT,
-        .sio_device               = NULL,
+        .sio_device               = &f82c710_device,
         .sio_params               = 0x00000000,
         .kbc_p1                   = 0x000004f0,
         .gpio                     = 0xffffffff,
@@ -5404,6 +5626,11 @@ const machine_t machines[] = {
         .vid_device               = NULL,
         .snd_device               = NULL,
         .net_device               = NULL,
+        .slot_layout              = (const machine_slot_t[]) {
+            MSLOT_BUS(SLOT_ISA16, 5),
+            MSLOT_BUS(SLOT_ISA8, 2),
+            MSLOT_END
+        },
         .aliases                  = { "" }
     },
     /* Has IBM PS/2 Type 1 KBC firmware - that's actually a guess since we
@@ -5450,7 +5677,7 @@ const machine_t machines[] = {
         .gpio_acpi                = 0xffffffff,
         .device                   = NULL,
         .kbd_device               = NULL,
-        .fdc_device               = NULL,
+        .fdc_device               = &fdc_at_device,
         .vid_device               = NULL,
         .snd_device               = NULL,
         .net_device               = NULL,
@@ -5498,7 +5725,7 @@ const machine_t machines[] = {
         .gpio_acpi                = 0xffffffff,
         .device                   = NULL,
         .kbd_device               = NULL,
-        .fdc_device               = NULL,
+        .fdc_device               = &fdc_at_device,
         .vid_device               = NULL,
         .snd_device               = NULL,
         .net_device               = NULL,
@@ -5546,7 +5773,7 @@ const machine_t machines[] = {
         .gpio_acpi                = 0xffffffff,
         .device                   = NULL,
         .kbd_device               = NULL,
-        .fdc_device               = NULL,
+        .fdc_device               = &fdc_at_device,
         .vid_device               = NULL,
         .snd_device               = NULL,
         .net_device               = NULL,
@@ -5573,7 +5800,7 @@ const machine_t machines[] = {
             .max_multi   = 0
         },
         .bus_flags = MACHINE_PS2,
-        .flags     = MACHINE_IDE | MACHINE_VIDEO, /* Machine has Super I/O: C&T F82C711 */
+        .flags     = MACHINE_IDE | MACHINE_VIDEO | MACHINE_UART_PRI | MACHINE_UART_SEC | MACHINE_LPT_PRI, /* Machine has Super I/O: C&T F82C711 */
         .ram       = {
             .min  = 512, /* crashes at POST code 60 with less */
             .max  = 5120,
@@ -5586,8 +5813,8 @@ const machine_t machines[] = {
         .kbc_params               = 0x00000000,
         .nvr_device               = &nvr_at_device,
         .nvr_params               = NVR_AT,
-        .sio_device               = NULL,
-        .sio_params               = 0x00000000,
+        .sio_device               = &fdc37c6xx_device,
+        .sio_params               = (uintptr_t) ((FDC37C651 | FDC37C6XX_IDE_PRI)),
         .kbc_p1                   = 0x000004f0,
         .gpio                     = 0xffffffff,
         .gpio_acpi                = 0xffffffff,
@@ -5621,7 +5848,7 @@ const machine_t machines[] = {
             .max_multi   = 0
         },
         .bus_flags = MACHINE_PS2,
-        .flags     = MACHINE_IDE, /* Machine has internal video: C&T VGA 411 (not yet implemented) */
+        .flags     = MACHINE_IDE | MACHINE_UART_PRI | MACHINE_LPT_PRI, /* Machine has internal video: C&T VGA 411 (not yet implemented) */
         .ram       = {
             .min  = 512, /* crashes and bootloops during POST with less */
             .max  = 8192,
@@ -5634,7 +5861,7 @@ const machine_t machines[] = {
         .kbc_params               = KBC_VEN_AMI | 0x00004600,
         .nvr_device               = &nvr_at_device,
         .nvr_params               = NVR_AT,
-        .sio_device               = NULL,
+        .sio_device               = &f82c710_device,
         .sio_params               = 0x00000000,
         .kbc_p1                   = 0x00000cf0,
         .gpio                     = 0xffffffff,
@@ -5645,6 +5872,10 @@ const machine_t machines[] = {
         .vid_device               = NULL,
         .snd_device               = NULL,
         .net_device               = NULL,
+        .slot_layout              = (const machine_slot_t[]) {
+            MSLOT_BUS(SLOT_ISA16, 3),
+            MSLOT_END
+        },
         .aliases                  = { "" }
     },
     /* Has a Samsung (SEC) V1.4 KBC firmware. */
@@ -5670,7 +5901,7 @@ const machine_t machines[] = {
             .max_multi   = 0
         },
         .bus_flags = MACHINE_PS2,
-        .flags     = MACHINE_IDE, /* Machine has internal video: C&T VGA 411 (not yet implemented) */
+        .flags     = MACHINE_IDE | MACHINE_UART_PRI | MACHINE_LPT_PRI, /* Machine has internal video: C&T VGA 411 (not yet implemented) */
         .ram       = {
             .min  = 512, /* crashes and bootloops during POST with less */
             .max  = 8192,
@@ -5683,7 +5914,7 @@ const machine_t machines[] = {
         .kbc_params               = KBC_VEN_AMI | 0x00004600,
         .nvr_device               = &nvr_at_device,
         .nvr_params               = NVR_AT,
-        .sio_device               = NULL,
+        .sio_device               = &f82c710_device,
         .sio_params               = 0x00000000,
         .kbc_p1                   = 0x00000cf0,
         .gpio                     = 0xffffffff,
@@ -5718,7 +5949,7 @@ const machine_t machines[] = {
             .max_multi   = 0
         },
         .bus_flags = MACHINE_PS2,
-        .flags     = MACHINE_FLAGS_NONE,
+        .flags     = MACHINE_FLAGS_NONE | MACHINE_UART_PRI | MACHINE_LPT_PRI,
         .ram       = {
             .min  = 512, /* crashes and bootloops during POST with less */
             .max  = 5120,
@@ -5731,7 +5962,7 @@ const machine_t machines[] = {
         .kbc_params               = KBC_VEN_AMI | 0x00004600,
         .nvr_device               = &nvr_at_device,
         .nvr_params               = NVR_AT,
-        .sio_device               = NULL,
+        .sio_device               = &f82c710_device,
         .sio_params               = 0x00000000,
         .kbc_p1                   = 0x00000cf0,
         .gpio                     = 0xffffffff,
@@ -5766,7 +5997,7 @@ const machine_t machines[] = {
             .max_multi   = 0
         },
         .bus_flags = MACHINE_PS2,
-        .flags     = MACHINE_IDE | MACHINE_VIDEO,
+        .flags     = MACHINE_IDE | MACHINE_VIDEO | MACHINE_UART_PRI | MACHINE_LPT_PRI,
         .ram       = {
             .min  = 512, /* crashes and bootloops during POST with less */
             .max  = 8192,
@@ -5779,7 +6010,7 @@ const machine_t machines[] = {
         .kbc_params               = KBC_VEN_AMI | 0x00004600,
         .nvr_device               = &nvr_at_device,
         .nvr_params               = NVR_AT,
-        .sio_device               = NULL,
+        .sio_device               = &f82c710_device,
         .sio_params               = 0x00000000,
         .kbc_p1                   = 0x00000cf0,
         .gpio                     = 0xffffffff,
@@ -5834,7 +6065,7 @@ const machine_t machines[] = {
         .gpio_acpi                = 0xffffffff,
         .device                   = NULL,
         .kbd_device               = NULL,
-        .fdc_device               = NULL,
+        .fdc_device               = &fdc_at_device,
         .vid_device               = NULL,
         .snd_device               = NULL,
         .net_device               = NULL,
@@ -5862,7 +6093,7 @@ const machine_t machines[] = {
             .max_multi   = 0
         },
         .bus_flags = MACHINE_PC,
-        .flags     = MACHINE_VIDEO_FIXED | MACHINE_FDC | MACHINE_KEYBOARD | MACHINE_MOUSE,
+        .flags     = MACHINE_VIDEO_FIXED | MACHINE_FDC | MACHINE_KEYBOARD | MACHINE_MOUSE | MACHINE_UART_PRI | MACHINE_LPT_PRI,
         /* The IPL's memory walk hard-codes the low window as 64K-640K and rejects
            anything less with error 6111, so 1MB (640K low plus the extended 384K)
            is the smallest configuration. The presence bitmap in the memory
@@ -5886,7 +6117,7 @@ const machine_t machines[] = {
         .gpio_acpi                = 0xffffffff,
         .device                   = &ibm5535_device,
         .kbd_device               = NULL,
-        .fdc_device               = NULL,
+        .fdc_device               = &fdc_xt_5550_device,
         .vid_device               = NULL,
         .snd_device               = NULL,
         .net_device               = NULL,
@@ -5915,7 +6146,7 @@ const machine_t machines[] = {
             .max_multi   = 0
         },
         .bus_flags = MACHINE_PS2_MCA,
-        .flags     = MACHINE_VIDEO | MACHINE_MFM | MACHINE_ESDI,
+        .flags     = MACHINE_VIDEO | MACHINE_MFM | MACHINE_ESDI | MACHINE_UART_PRI | MACHINE_LPT_PRI,
         .ram       = {
             .min  = 1024,
             .max  = 2048,
@@ -5935,10 +6166,14 @@ const machine_t machines[] = {
         .gpio_acpi                = 0xffffffff,
         .device                   = &ps2_model_50_device,
         .kbd_device               = NULL,
-        .fdc_device               = NULL,
+        .fdc_device               = &fdc_ps2_mca_device,
         .vid_device               = NULL,
         .snd_device               = NULL,
         .net_device               = NULL,
+        .slot_layout              = (const machine_slot_t[]) {
+            MSLOT_BUS(SLOT_MCA, 4),
+            MSLOT_END
+        },
         .aliases                  = { "" }
     },
     /* Has IBM PS/2 Type 1 KBC firmware. */
@@ -5963,7 +6198,7 @@ const machine_t machines[] = {
             .max_multi   = 0
         },
         .bus_flags = MACHINE_PS2_MCA,
-        .flags     = MACHINE_VIDEO,
+        .flags     = MACHINE_VIDEO | MACHINE_UART_PRI | MACHINE_LPT_PRI,
         .ram       = {
             .min  = 1024,
             .max  = 4096,
@@ -5983,10 +6218,14 @@ const machine_t machines[] = {
         .gpio_acpi                = 0xffffffff,
         .device                   = NULL,
         .kbd_device               = NULL,
-        .fdc_device               = NULL,
+        .fdc_device               = &fdc_ps2_mca_device,
         .vid_device               = NULL,
         .snd_device               = NULL,
         .net_device               = NULL,
+        .slot_layout              = (const machine_slot_t[]) {
+            MSLOT_BUS(SLOT_MCA, 8),
+            MSLOT_END
+        },
         .aliases                  = { "" }
     },
 
@@ -6014,7 +6253,7 @@ const machine_t machines[] = {
             .max_multi   = 0
         },
         .bus_flags = MACHINE_PS2,
-        .flags     = MACHINE_IDE | MACHINE_VIDEO,
+        .flags     = MACHINE_IDE | MACHINE_SOUND | MACHINE_VIDEO | MACHINE_UART_PRI | MACHINE_LPT_PRI,
         .ram       = {
             .min  = 2048,
             .max  = 6144,
@@ -6033,9 +6272,9 @@ const machine_t machines[] = {
         .gpio                     = 0xffffffff,
         .gpio_acpi                = 0xffffffff,
         .device                   = &ps1_2121_device,
-        .fdc_device               = NULL,
+        .fdc_device               = &fdc_ps2_device,
         .vid_device               = NULL,
-        .snd_device               = NULL,
+        .snd_device               = &ps1snd_device,
         .net_device               = NULL,
         .aliases                  = { "" }
     },
@@ -6081,10 +6320,14 @@ const machine_t machines[] = {
         .gpio_acpi                = 0xffffffff,
         .device                   = NULL,
         .kbd_device               = NULL,
-        .fdc_device               = NULL,
+        .fdc_device               = &fdc_at_device,
         .vid_device               = NULL,
         .snd_device               = NULL,
         .net_device               = NULL,
+        .slot_layout              = (const machine_slot_t[]) {
+            MSLOT_BUS(SLOT_ISA16, 1),
+            MSLOT_END
+        },
         .aliases                  = { "" }
     },
     /* Has Quadtel KBC firmware. */
@@ -6129,7 +6372,7 @@ const machine_t machines[] = {
         .gpio_acpi                = 0xffffffff,
         .device                   = NULL,
         .kbd_device               = NULL,
-        .fdc_device               = NULL,
+        .fdc_device               = &fdc_at_device,
         .vid_device               = NULL,
         .snd_device               = NULL,
         .net_device               = NULL,
@@ -6157,7 +6400,7 @@ const machine_t machines[] = {
             .max_multi   = 0
         },
         .bus_flags = MACHINE_PS2,
-        .flags     = MACHINE_IDE | MACHINE_VIDEO,
+        .flags     = MACHINE_IDE | MACHINE_VIDEO | MACHINE_UART_PRI | MACHINE_UART_SEC | MACHINE_LPT_PRI,
         .ram       = {
             .min  = 1024, /* POST hangs with less than this amount */
             .max  = 16384,
@@ -6171,8 +6414,8 @@ const machine_t machines[] = {
         .kbc_params               = KBC_VEN_PHOENIX | 0x00010500,
         .nvr_device               = &nvr_at_device,
         .nvr_params               = NVR_AT,
-        .sio_device               = NULL,
-        .sio_params               = 0x00000000,
+        .sio_device               = &um866x_device,
+        .sio_params               = (uintptr_t) ((UM82C862F | UM866X_IDE_PRI)),
         .kbc_p1                   = 0x000004f0,
         .gpio                     = 0xffffffff,
         .gpio_acpi                = 0xffffffff,
@@ -6207,7 +6450,7 @@ const machine_t machines[] = {
             .max_multi   = 0
         },
         .bus_flags = MACHINE_AT,
-        .flags     = MACHINE_IDE,
+        .flags     = MACHINE_IDE | MACHINE_UART_PRI | MACHINE_UART_SEC | MACHINE_LPT_PRI,
         .ram       = {
             .min  = 1024,
             .max  = 16384,
@@ -6220,8 +6463,8 @@ const machine_t machines[] = {
         .kbc_params               = KBC_VEN_AMI | 0x00004800,
         .nvr_device               = &nvr_at_device,
         .nvr_params               = NVR_AT,
-        .sio_device               = NULL,
-        .sio_params               = 0x00000000,
+        .sio_device               = &fdc37c6xx_device,
+        .sio_params               = (uintptr_t) ((FDC37C665 | FDC37C6XX_IDE_PRI)),
         .kbc_p1                   = 0x000004f0,
         .gpio                     = 0xffffffff,
         .gpio_acpi                = 0xffffffff,
@@ -6255,7 +6498,7 @@ const machine_t machines[] = {
             .max_multi   = 0
         },
         .bus_flags = MACHINE_PS2,
-        .flags     = MACHINE_IDE,
+        .flags     = MACHINE_IDE | MACHINE_UART_PRI | MACHINE_UART_SEC | MACHINE_LPT_PRI,
         .ram       = {
             .min  = 1024,
             .max  = 16384,
@@ -6268,8 +6511,8 @@ const machine_t machines[] = {
         .kbc_params               = KBC_VEN_HOLTEK | 0x00004800,
         .nvr_device               = &nvr_at_device,
         .nvr_params               = NVR_AT,
-        .sio_device               = NULL,
-        .sio_params               = 0x00000000,
+        .sio_device               = &w83877_device,
+        .sio_params               = (uintptr_t) ((W83877F | W83877_3F0 | W83XX7_IDE_PRI)),
         .kbc_p1                   = 0x00000cf0,
         .gpio                     = 0xffffffff,
         .gpio_acpi                = 0xffffffff,
@@ -6323,7 +6566,7 @@ const machine_t machines[] = {
         .gpio_acpi                = 0xffffffff,
         .device                   = &c325ax_device,
         .kbd_device               = NULL,
-        .fdc_device               = NULL,
+        .fdc_device               = &fdc_at_device,
         .vid_device               = NULL,
         .snd_device               = NULL,
         .net_device               = NULL,
@@ -6351,7 +6594,7 @@ const machine_t machines[] = {
             .max_multi   = 0
         },
         .bus_flags = MACHINE_AT,
-        .flags     = MACHINE_IDE | MACHINE_VIDEO,
+        .flags     = MACHINE_IDE | MACHINE_VIDEO | MACHINE_UART_PRI | MACHINE_UART_SEC | MACHINE_LPT_PRI,
         .ram       = {
             .min  = 1024,
             .max  = 16384,
@@ -6364,8 +6607,8 @@ const machine_t machines[] = {
         .kbc_params               = KBC_VEN_VIA | 0x00424600,
         .nvr_device               = &nvr_at_device,
         .nvr_params               = NVR_AT,
-        .sio_device               = NULL,
-        .sio_params               = 0x00000000,
+        .sio_device               = &w837x7_device,
+        .sio_params               = (uintptr_t) ((W83787F | W837X7_KEY_89 | W83XX7_IDE_PRI | W837X7_IDE_START)),
         .kbc_p1                   = 0x000004f0,
         .gpio                     = 0xffffffff,
         .gpio_acpi                = 0xffffffff,
@@ -6400,7 +6643,7 @@ const machine_t machines[] = {
             .max_multi   = 0,
         },
         .bus_flags = MACHINE_PS2,
-        .flags     = MACHINE_IDE | MACHINE_VIDEO,
+        .flags     = MACHINE_IDE | MACHINE_VIDEO | MACHINE_UART_PRI | MACHINE_UART_SEC | MACHINE_LPT_PRI,
         .ram       = {
             .min  = 2048,
             .max  = 16256,
@@ -6413,8 +6656,8 @@ const machine_t machines[] = {
         .kbc_params               = KBC_VEN_ACER,
         .nvr_device               = &nvr_at_device,
         .nvr_params               = NVR_AT,
-        .sio_device               = NULL,
-        .sio_params               = 0x00000000,
+        .sio_device               = &pc87310_device,
+        .sio_params               = (uintptr_t) ((PC87310_ALI)),
         .kbc_p1                   = 0x004008f0,
         .gpio                     = 0xffffffff,
         .gpio_acpi                = 0xffffffff,
@@ -6450,7 +6693,7 @@ const machine_t machines[] = {
             .max_multi   = 0
         },
         .bus_flags = MACHINE_AT,
-        .flags     = MACHINE_IDE | MACHINE_VIDEO,
+        .flags     = MACHINE_IDE | MACHINE_VIDEO | MACHINE_UART_PRI | MACHINE_UART_SEC | MACHINE_LPT_PRI,
         .ram       = {
             .min  = 512,
             .max  = 8192,
@@ -6463,8 +6706,8 @@ const machine_t machines[] = {
         .kbc_params               = KBC_VEN_AMI | 0x00004600,
         .nvr_device               = &nvr_at_device,
         .nvr_params               = NVR_AT,
-        .sio_device               = NULL,
-        .sio_params               = 0x00000000,
+        .sio_device               = &pc87310_device,
+        .sio_params               = (uintptr_t) ((PC87310_ALI)),
         .kbc_p1                   = 0x000004f0,
         .gpio                     = 0xffffffff,
         .gpio_acpi                = 0xffffffff,
@@ -6498,7 +6741,7 @@ const machine_t machines[] = {
             .max_multi   = 0
         },
         .bus_flags = MACHINE_PS2,
-        .flags     = MACHINE_IDE | MACHINE_VIDEO | MACHINE_GAMEPORT,
+        .flags     = MACHINE_IDE | MACHINE_VIDEO | MACHINE_SOUND | MACHINE_GAMEPORT,
         .ram       = {
             .min  = 1024,
             .max  = 9216,
@@ -6518,10 +6761,14 @@ const machine_t machines[] = {
         .gpio_acpi                = 0xffffffff,
         .device                   = NULL,
         .kbd_device               = NULL,
-        .fdc_device               = NULL,
+        .fdc_device               = &fdc_at_device,
         .vid_device               = &gd5402_onboard_device,
-        .snd_device               = NULL,
+        .snd_device               = &pssj_1e0_device,
         .net_device               = NULL,
+        .slot_layout              = (const machine_slot_t[]) {
+            MSLOT_BUS(SLOT_ISA16, 2),
+            MSLOT_END
+        },
         .aliases                  = { "" }
     },
     /* Most likely has a Phoenix MultiKey/42 keyboard controller. */
@@ -6566,7 +6813,7 @@ const machine_t machines[] = {
         .gpio_acpi                = 0xffffffff,
         .device                   = NULL,
         .kbd_device               = NULL,
-        .fdc_device               = NULL,
+        .fdc_device               = &fdc_at_device,
         .vid_device               = NULL,
         .snd_device               = NULL,
         .net_device               = NULL,
@@ -6614,10 +6861,15 @@ const machine_t machines[] = {
         .gpio_acpi                = 0xffffffff,
         .device                   = NULL,
         .kbd_device               = NULL,
-        .fdc_device               = NULL,
+        .fdc_device               = &fdc_at_device,
         .vid_device               = NULL,
         .snd_device               = NULL,
         .net_device               = NULL,
+        .slot_layout              = (const machine_slot_t[]) {
+            MSLOT_BUS(SLOT_ISA16, 6),
+            MSLOT_BUS(SLOT_ISA8, 2),
+            MSLOT_END
+        },
         .aliases                  = { "Shuttle 386SX", "" }
     },
     /* Uses Commodore (CBM) KBC firmware, to be implemented as identical to
@@ -6644,7 +6896,7 @@ const machine_t machines[] = {
             .max_multi   = 0
         },
         .bus_flags = MACHINE_PS2,
-        .flags     = MACHINE_IDE,
+        .flags     = MACHINE_IDE | MACHINE_UART_PRI | MACHINE_UART_SEC,
         .ram       = {
             .min  = 512,
             .max  = 8192,
@@ -6664,7 +6916,7 @@ const machine_t machines[] = {
         .gpio_acpi                = 0xffffffff,
         .device                   = NULL,
         .kbd_device               = NULL,
-        .fdc_device               = NULL,
+        .fdc_device               = &fdc_at_device,
         .vid_device               = NULL,
         .snd_device               = NULL,
         .net_device               = NULL,
@@ -6712,10 +6964,15 @@ const machine_t machines[] = {
         .gpio_acpi                = 0xffffffff,
         .device                   = NULL,
         .kbd_device               = NULL,
-        .fdc_device               = NULL,
+        .fdc_device               = &fdc_at_device,
         .vid_device               = NULL,
         .snd_device               = NULL,
         .net_device               = NULL,
+        .slot_layout              = (const machine_slot_t[]) {
+            MSLOT_BUS(SLOT_ISA16, 6),
+            MSLOT_BUS(SLOT_ISA8, 2),
+            MSLOT_END
+        },
         .aliases                  = { "" }
     },
     /* Most likely has an Award keyboard controller. */
@@ -6760,7 +7017,7 @@ const machine_t machines[] = {
         .gpio_acpi                = 0xffffffff,
         .device                   = NULL,
         .kbd_device               = NULL,
-        .fdc_device               = NULL,
+        .fdc_device               = &fdc_at_device,
         .vid_device               = NULL,
         .snd_device               = NULL,
         .net_device               = NULL,
@@ -6787,7 +7044,7 @@ const machine_t machines[] = {
             .max_multi   = 0
         },
         .bus_flags = MACHINE_AT,
-        .flags     = MACHINE_IDE,
+        .flags     = MACHINE_IDE | MACHINE_UART_PRI | MACHINE_UART_SEC | MACHINE_LPT_PRI,
         .ram       = {
             .min  = 512,
             .max  = 8192,
@@ -6807,7 +7064,7 @@ const machine_t machines[] = {
         .gpio_acpi                = 0xffffffff,
         .device                   = NULL,
         .kbd_device               = NULL,
-        .fdc_device               = NULL,
+        .fdc_device               = &fdc_at_device,
         .vid_device               = NULL,
         .snd_device               = NULL,
         .net_device               = NULL,
@@ -6834,7 +7091,7 @@ const machine_t machines[] = {
             .max_multi   = 0
         },
         .bus_flags = MACHINE_AT,
-        .flags     = MACHINE_VIDEO_FIXED | MACHINE_KEYBOARD | MACHINE_KEYBOARD_AX,
+        .flags     = MACHINE_VIDEO_FIXED | MACHINE_KEYBOARD | MACHINE_KEYBOARD_AX | MACHINE_UART_PRI,
         .ram       = {
             .min  = 1024,
             .max  = 4096,
@@ -6855,7 +7112,7 @@ const machine_t machines[] = {
         .gpio_acpi                = 0xffffffff,
         .device                   = NULL,
         .kbd_device               = NULL,
-        .fdc_device               = NULL,
+        .fdc_device               = &fdc_at_device,
         .vid_device               = &if386jega_device,
         .snd_device               = NULL,
         .net_device               = NULL,
@@ -6903,7 +7160,7 @@ const machine_t machines[] = {
         .gpio_acpi                = 0xffffffff,
         .device                   = NULL,
         .kbd_device               = NULL,
-        .fdc_device               = NULL,
+        .fdc_device               = &fdc_at_device,
         .vid_device               = NULL,
         .snd_device               = NULL,
         .net_device               = NULL,
@@ -6951,10 +7208,14 @@ const machine_t machines[] = {
         .gpio_acpi                = 0xffffffff,
         .device                   = NULL,
         .kbd_device               = NULL,
-        .fdc_device               = NULL,
+        .fdc_device               = &fdc_at_device,
         .vid_device               = NULL,
         .snd_device               = NULL,
         .net_device               = NULL,
+        .slot_layout              = (const machine_slot_t[]) {
+            MSLOT_BUS(SLOT_ISA16, 6),
+            MSLOT_END
+        },
         .aliases                  = { "" }
     },
     /* Uses Commodore (CBM) KBC firmware, to be implemented as identical to
@@ -6981,7 +7242,7 @@ const machine_t machines[] = {
             .max_multi   = 0
         },
         .bus_flags = MACHINE_PS2,
-        .flags     = MACHINE_IDE | MACHINE_VIDEO,
+        .flags     = MACHINE_IDE | MACHINE_VIDEO | MACHINE_UART_PRI | MACHINE_UART_SEC | MACHINE_LPT_PRI,
         .ram       = {
             .min  = 1024, /* Extended Memory display in SETUP glitches with less than this amount */
             .max  = 16384,
@@ -6995,8 +7256,8 @@ const machine_t machines[] = {
         /* The NVR is on the VLSI VL82C113. */
         .nvr_device               = NULL,
         .nvr_params               = 0x00000000,
-        .sio_device               = NULL,
-        .sio_params               = 0x00000000,
+        .sio_device               = &pc87310_device,
+        .sio_params               = (uintptr_t) ((PC87310_ALI)),
         .kbc_p1                   = 0x00000cf0,
         .gpio                     = 0xffffffff,
         .gpio_acpi                = 0xffffffff,
@@ -7052,10 +7313,14 @@ const machine_t machines[] = {
         .gpio_acpi                = 0xffffffff,
         .device                   = NULL,
         .kbd_device               = NULL,
-        .fdc_device               = NULL,
+        .fdc_device               = &fdc_at_device,
         .vid_device               = NULL,
         .snd_device               = NULL,
         .net_device               = NULL,
+        .slot_layout              = (const machine_slot_t[]) {
+            MSLOT_BUS(SLOT_ISA16, 6),
+            MSLOT_END
+        },
         .aliases                  = { "" }
     },
     /* No proper pictures of the KBC exist, though it seems to have the IBM AT KBC
@@ -7081,7 +7346,7 @@ const machine_t machines[] = {
             .max_multi   = 0
         },
         .bus_flags = MACHINE_PS2,
-        .flags     = MACHINE_IDE | MACHINE_VIDEO,
+        .flags     = MACHINE_IDE | MACHINE_VIDEO | MACHINE_UART_PRI | MACHINE_UART_SEC | MACHINE_LPT_PRI,
         .ram       = {
             .min  = 1024,
             .max  = 16384,
@@ -7095,8 +7360,8 @@ const machine_t machines[] = {
         /* The NVR is on the VLSI VL82C113. */
         .nvr_device               = NULL,
         .nvr_params               = 0x00000000,
-        .sio_device               = NULL,
-        .sio_params               = 0x00000000,
+        .sio_device               = &pc873xx_device,
+        .sio_params               = (uintptr_t) ((PCX73XX_IDE_PRI | PCX730X_26E)),
         .kbc_p1                   = 0x00002020,
         .gpio                     = 0xffffffff,
         .gpio_acpi                = 0xffffffff,
@@ -7106,6 +7371,10 @@ const machine_t machines[] = {
         .vid_device               = &gd5420_onboard_device,
         .snd_device               = NULL,
         .net_device               = NULL,
+        .slot_layout              = (const machine_slot_t[]) {
+            MSLOT_BUS(SLOT_ISA16, 1),
+            MSLOT_END
+        },
         .aliases                  = { "Jostens System 333s/L", "" }
     },
     /* The only photo we have is too blurry to read the marking on the
@@ -7151,7 +7420,7 @@ const machine_t machines[] = {
         .gpio_acpi                = 0xffffffff,
         .device                   = NULL,
         .kbd_device               = NULL,
-        .fdc_device               = NULL,
+        .fdc_device               = &fdc_at_device,
         .vid_device               = &ati28800k_spc6033p_device,
         .snd_device               = NULL,
         .net_device               = NULL,
@@ -7200,10 +7469,15 @@ const machine_t machines[] = {
         .gpio_acpi                = 0xffffffff,
         .device                   = NULL,
         .kbd_device               = NULL,
-        .fdc_device               = NULL,
+        .fdc_device               = &fdc_at_device,
         .vid_device               = NULL,
         .snd_device               = NULL,
         .net_device               = NULL,
+        .slot_layout              = (const machine_slot_t[]) {
+            MSLOT_BUS(SLOT_ISA16, 6),
+            MSLOT_BUS(SLOT_ISA8, 1),
+            MSLOT_END
+        },
         .aliases                  = { "" }
     },
     /* Has Quadtel KBC firmware. */
@@ -7228,7 +7502,7 @@ const machine_t machines[] = {
             .max_multi   = 0
         },
         .bus_flags = MACHINE_PS2,
-        .flags     = MACHINE_IDE | MACHINE_VIDEO,
+        .flags     = MACHINE_IDE | MACHINE_VIDEO | MACHINE_UART_PRI | MACHINE_UART_SEC | MACHINE_LPT_PRI,
         .ram       = {
             .min  = 512,
             .max  = 16384,
@@ -7248,7 +7522,7 @@ const machine_t machines[] = {
         .gpio_acpi                = 0xffffffff,
         .device                   = NULL,
         .kbd_device               = NULL,
-        .fdc_device               = NULL,
+        .fdc_device               = &fdc_at_device,
         .vid_device               = &paradise_wd90c11_megapc_device,
         .snd_device               = NULL,
         .net_device               = NULL,
@@ -7278,7 +7552,7 @@ const machine_t machines[] = {
             .max_multi   = 0
         },
         .bus_flags = MACHINE_PS2_MCA,
-        .flags     = MACHINE_VIDEO | MACHINE_ESDI,
+        .flags     = MACHINE_VIDEO | MACHINE_ESDI | MACHINE_UART_PRI | MACHINE_LPT_PRI,
         .ram       = {
             .min  = 1024,
             .max  = 8192,
@@ -7302,9 +7576,18 @@ const machine_t machines[] = {
         .vid_device               = NULL,
         .snd_device               = NULL,
         .net_device               = NULL,
+        .slot_layout              = (const machine_slot_t[]) {
+            MSLOT_BUS(SLOT_MCA, 3),
+            MSLOT_BUS(SLOT_MCA_INTERNAL, 1), /* slot 4: the integrated fixed disk adapter's cable port */
+            MSLOT_END
+        },
         .aliases                  = { "" }
     },
     /* Has IBM PS/2 Type 1 KBC firmware. */
+    /* The machine's init sets up 4 MCA positions; the board has 3
+       connectors (The Retro Web), and the fourth is the integrated fixed
+       disk adapter's cable port.
+       https://theretroweb.com/motherboards/s/ibm-ps-2-model-55sx-and-55ls-8555-early */
     {
         .name              = "[MCA] IBM PS/2 model 55SX",
         .internal_name     = "ibmps2_m55sx",
@@ -7326,7 +7609,7 @@ const machine_t machines[] = {
             .max_multi   = 0
         },
         .bus_flags = MACHINE_PS2_MCA,
-        .flags     = MACHINE_VIDEO | MACHINE_ESDI,
+        .flags     = MACHINE_VIDEO | MACHINE_ESDI | MACHINE_UART_PRI | MACHINE_LPT_PRI,
         .ram       = {
             .min  = 1024,
             .max  = 8192,
@@ -7346,13 +7629,21 @@ const machine_t machines[] = {
         .gpio_acpi                = 0xffffffff,
         .device                   = NULL,
         .kbd_device               = NULL,
-        .fdc_device               = NULL,
+        .fdc_device               = &fdc_ps2_mca_device,
         .vid_device               = NULL,
         .snd_device               = NULL,
         .net_device               = NULL,
+        .slot_layout              = (const machine_slot_t[]) {
+            MSLOT_BUS(SLOT_MCA, 3),
+            MSLOT_BUS(SLOT_MCA_INTERNAL, 1), /* slot 4: the integrated fixed disk adapter's cable port */
+            MSLOT_END
+        },
         .aliases                  = { "" }
     },
     /* Has IBM PS/2 Type 1 KBC firmware. */
+    /* The machine's init sets up 8 MCA positions, one for each of the
+       board's 8 connectors (The Retro Web).
+       https://theretroweb.com/motherboards/s/ibm-ps-2-model-65sx-8565 */
     {
         .name              = "[MCA] IBM PS/2 model 65SX",
         .internal_name     = "ibmps2_m65sx",
@@ -7374,7 +7665,7 @@ const machine_t machines[] = {
             .max_multi   = 0
         },
         .bus_flags = MACHINE_PS2_MCA,
-        .flags     = MACHINE_VIDEO,
+        .flags     = MACHINE_VIDEO | MACHINE_UART_PRI | MACHINE_LPT_PRI,
         .ram       = {
             .min  = 1024,
             .max  = 8192,
@@ -7391,10 +7682,14 @@ const machine_t machines[] = {
         .gpio                     = 0xffffffff,
         .gpio_acpi                = 0xffffffff,
         .device                   = NULL,
-        .fdc_device               = NULL,
+        .fdc_device               = &fdc_ps2_mca_device,
         .vid_device               = NULL,
         .snd_device               = NULL,
         .net_device               = NULL,
+        .slot_layout              = (const machine_slot_t[]) {
+            MSLOT_BUS(SLOT_MCA, 8),
+            MSLOT_END
+        },
         .aliases                  = { "" }
     },
     /* Has IBM PS/2 Type 1 KBC firmware. */
@@ -7419,7 +7714,7 @@ const machine_t machines[] = {
             .max_multi   = 0
         },
         .bus_flags = MACHINE_PS2_MCA,
-        .flags     = MACHINE_VIDEO | MACHINE_ESDI | MACHINE_KEYBOARD_JIS,
+        .flags     = MACHINE_VIDEO | MACHINE_ESDI | MACHINE_KEYBOARD_JIS | MACHINE_UART_PRI | MACHINE_LPT_PRI,
         .ram       = {
             /* 1MB is not enough for the reference disk */
             .min  = 2048,
@@ -7444,6 +7739,10 @@ const machine_t machines[] = {
         .vid_device               = NULL,
         .snd_device               = NULL,
         .net_device               = NULL,
+        .slot_layout              = (const machine_slot_t[]) {
+            MSLOT_BUS(SLOT_MCA, 3),
+            MSLOT_END
+        },
         .aliases                  = { "" }
     },
 
@@ -7470,7 +7769,7 @@ const machine_t machines[] = {
             .max_multi   = 0
         },
         .bus_flags = MACHINE_PS2,
-        .flags     = MACHINE_IDE,
+        .flags     = MACHINE_IDE | MACHINE_UART_PRI | MACHINE_UART_SEC | MACHINE_UART_TER | MACHINE_UART_QUA | MACHINE_LPT_PRI | MACHINE_LPT_SEC,
         .ram       = {
             .min  = 1024,  /* assumed? */
             .max  = 32768, /* assumed? */
@@ -7483,8 +7782,8 @@ const machine_t machines[] = {
         .kbc_params               = KBC_VEN_AMI | 0x00004800,
         .nvr_device               = &nvr_at_device,
         .nvr_params               = NVR_AT,
-        .sio_device               = NULL,
-        .sio_params               = 0x00000000,
+        .sio_device               = &fdc37c669_device,
+        .sio_params               = (uintptr_t) (FDC37C6XX_IDE_PRI),
         .kbc_p1                   = 0x00000cf0,
         .gpio                     = 0xffffffff,
         .gpio_acpi                = 0xffffffff,
@@ -7518,7 +7817,7 @@ const machine_t machines[] = {
             .max_multi   = 0
         },
         .bus_flags = MACHINE_PS2,
-        .flags     = MACHINE_IDE,
+        .flags     = MACHINE_IDE | MACHINE_UART_PRI | MACHINE_UART_SEC | MACHINE_LPT_PRI,
         .ram       = {
             .min  = 4096,
             .max  = 20480,
@@ -7531,8 +7830,8 @@ const machine_t machines[] = {
         .kbc_params               = KBC_VEN_AMI | 0x00004800,
         .nvr_device               = &nvr_at_device,
         .nvr_params               = NVR_AT,
-        .sio_device               = NULL,
-        .sio_params               = 0x00000000,
+        .sio_device               = &ali5113_device,
+        .sio_params               = (uintptr_t) (0x03f1),
         .kbc_p1                   = 0x00000cf0,
         .gpio                     = 0xffffffff,
         .gpio_acpi                = 0xffffffff,
@@ -7566,7 +7865,7 @@ const machine_t machines[] = {
             .max_multi   = 0
         },
         .bus_flags = MACHINE_PS2,
-        .flags     = MACHINE_IDE,
+        .flags     = MACHINE_IDE | MACHINE_UART_PRI | MACHINE_UART_SEC | MACHINE_LPT_PRI,
         .ram       = {
             .min  = 2048,
             .max  = 8192,
@@ -7579,8 +7878,8 @@ const machine_t machines[] = {
         .kbc_params               = KBC_VEN_AMI | 0x00004800,
         .nvr_device               = &nvr_at_device,
         .nvr_params               = NVR_AT,
-        .sio_device               = NULL,
-        .sio_params               = 0x00000000,
+        .sio_device               = &fdc37c669_device,
+        .sio_params               = (uintptr_t) (FDC37C6XX_IDE_PRI),
         .kbc_p1                   = 0x00000cf0,
         .gpio                     = 0xffffffff,
         .gpio_acpi                = 0xffffffff,
@@ -7614,7 +7913,7 @@ const machine_t machines[] = {
             .max_multi   = 0
         },
         .bus_flags = MACHINE_PS2,
-        .flags     = MACHINE_IDE,
+        .flags     = MACHINE_IDE | MACHINE_UART_PRI | MACHINE_UART_SEC | MACHINE_LPT_PRI,
         .ram       = {
             .min  = 1024,
             .max  = 65536,
@@ -7627,8 +7926,8 @@ const machine_t machines[] = {
         .kbc_params               = KBC_VEN_AMI | 0x00004800,
         .nvr_device               = &nvr_at_device,
         .nvr_params               = NVR_AT,
-        .sio_device               = NULL,
-        .sio_params               = 0x00000000,
+        .sio_device               = &fdc37c669_device,
+        .sio_params               = (uintptr_t) ((FDC37C6XX_370 | FDC37C6XX_IDE_PRI)),
         .kbc_p1                   = 0x00000cf0,
         .gpio                     = 0xffffffff,
         .gpio_acpi                = 0xffffffff,
@@ -7685,7 +7984,7 @@ const machine_t machines[] = {
         .gpio_acpi                = 0xffffffff,
         .device                   = NULL,
         .kbd_device               = NULL,
-        .fdc_device               = NULL,
+        .fdc_device               = &fdc_at_device,
         .vid_device               = NULL,
         .snd_device               = NULL,
         .net_device               = NULL,
@@ -7749,7 +8048,7 @@ const machine_t machines[] = {
         .gpio_acpi                = 0xffffffff,
         .device                   = &ibmxt_inboard386_device,
         .kbd_device               = &keyboard_pc_xt_device,
-        .fdc_device               = NULL,
+        .fdc_device               = &fdc_xt_device,
         .vid_device               = NULL,
         .snd_device               = NULL,
         .net_device               = NULL,
@@ -7792,12 +8091,12 @@ const machine_t machines[] = {
         .nvr_params               = NVR_AT,
         .sio_device               = NULL,
         .sio_params               = 0x00000000,
-        .kbc_p1                   = 0x000000f4,
+        .kbc_p1                   = 0x000000fc,
         .gpio                     = 0xffffffff,
         .gpio_acpi                = 0xffffffff,
         .device                   = &deskpro386_device,
         .kbd_device               = NULL,
-        .fdc_device               = NULL,
+        .fdc_device               = &fdc_at_device,
         .vid_device               = NULL,
         .snd_device               = NULL,
         .net_device               = NULL,
@@ -7840,12 +8139,12 @@ const machine_t machines[] = {
         .nvr_params               = NVR_AT,
         .sio_device               = NULL,
         .sio_params               = 0x00000000,
-        .kbc_p1                   = 0x000000f4,
+        .kbc_p1                   = 0x000000fc,
         .gpio                     = 0xffffffff,
         .gpio_acpi                = 0xffffffff,
         .device                   = NULL,
         .kbd_device               = NULL,
-        .fdc_device               = NULL,
+        .fdc_device               = &fdc_at_device,
         .vid_device               = &compaq_plasma_device,
         .snd_device               = NULL,
         .net_device               = NULL,
@@ -7893,7 +8192,7 @@ const machine_t machines[] = {
         .gpio_acpi                = 0xffffffff,
         .device                   = NULL,
         .kbd_device               = NULL,
-        .fdc_device               = NULL,
+        .fdc_device               = &fdc_at_device,
         .vid_device               = NULL,
         .snd_device               = NULL,
         .net_device               = NULL,
@@ -7941,7 +8240,7 @@ const machine_t machines[] = {
         .gpio_acpi                = 0xffffffff,
         .device                   = NULL,
         .kbd_device               = NULL,
-        .fdc_device               = NULL,
+        .fdc_device               = &fdc_at_device,
         .vid_device               = NULL,
         .snd_device               = NULL,
         .net_device               = NULL,
@@ -7990,10 +8289,15 @@ const machine_t machines[] = {
         .gpio_acpi                = 0xffffffff,
         .device                   = NULL,
         .kbd_device               = NULL,
-        .fdc_device               = NULL,
+        .fdc_device               = &fdc_at_device,
         .vid_device               = NULL,
         .snd_device               = NULL,
         .net_device               = NULL,
+        .slot_layout              = (const machine_slot_t[]) {
+            MSLOT_BUS(SLOT_ISA16, 5),
+            MSLOT_BUS(SLOT_ISA8, 1),
+            MSLOT_END
+        },
         .aliases                  = { "" }
     },
     /* Has a Lance LT38C41 that clones an AMIKEY ('F'). */
@@ -8040,9 +8344,15 @@ const machine_t machines[] = {
         .gpio                     = 0xffffffff,
         .gpio_acpi                = 0xffffffff,
         .device                   = NULL,
+        .fdc_device               = &fdc_at_device,
         .vid_device               = NULL,
         .snd_device               = NULL,
         .net_device               = NULL,
+        .slot_layout              = (const machine_slot_t[]) {
+            MSLOT_BUS(SLOT_ISA16, 4),
+            MSLOT_BUS(SLOT_ISA_VLB, 2),
+            MSLOT_END
+        },
         .aliases                  = { "ECS AL486V-D", "Daewoo AL486V-D", "" }
     },
     /* Has an AMI Keyboard BIOS PLUS KBC firmware ('8'). */
@@ -8087,10 +8397,15 @@ const machine_t machines[] = {
         .gpio_acpi                = 0xffffffff,
         .device                   = NULL,
         .kbd_device               = NULL,
-        .fdc_device               = NULL,
+        .fdc_device               = &fdc_at_device,
         .vid_device               = NULL,
         .snd_device               = NULL,
         .net_device               = NULL,
+        .slot_layout              = (const machine_slot_t[]) {
+            MSLOT_BUS(SLOT_ISA16, 5),
+            MSLOT_BUS(SLOT_ISA8, 2),
+            MSLOT_END
+        },
         .aliases                  = { "Addonics 386/32", "" }
     },
     /* Unknown - we give it an AT Award keyboard controller. */
@@ -8135,7 +8450,7 @@ const machine_t machines[] = {
         .gpio_acpi                = 0xffffffff,
         .device                   = NULL,
         .kbd_device               = NULL,
-        .fdc_device               = NULL,
+        .fdc_device               = &fdc_at_device,
         .vid_device               = NULL,
         .snd_device               = NULL,
         .net_device               = NULL,
@@ -8184,7 +8499,7 @@ const machine_t machines[] = {
         .gpio_acpi                = 0xffffffff,
         .device                   = NULL,
         .kbd_device               = NULL,
-        .fdc_device               = NULL,
+        .fdc_device               = &fdc_at_device,
         .vid_device               = NULL,
         .snd_device               = NULL,
         .net_device               = NULL,
@@ -8232,7 +8547,7 @@ const machine_t machines[] = {
         .gpio_acpi                = 0xffffffff,
         .device                   = &dataexpert386wb_device,
         .kbd_device               = NULL,
-        .fdc_device               = NULL,
+        .fdc_device               = &fdc_at_device,
         .vid_device               = NULL,
         .snd_device               = NULL,
         .net_device               = NULL,
@@ -8282,7 +8597,7 @@ const machine_t machines[] = {
         .gpio_acpi                = 0xffffffff,
         .device                   = NULL,
         .kbd_device               = NULL,
-        .fdc_device               = NULL,
+        .fdc_device               = &fdc_at_device,
         .vid_device               = NULL,
         .snd_device               = NULL,
         .net_device               = NULL,
@@ -8333,10 +8648,15 @@ const machine_t machines[] = {
         .gpio_acpi                = 0xffffffff,
         .device                   = NULL,
         .kbd_device               = NULL,
-        .fdc_device               = NULL,
+        .fdc_device               = &fdc_at_device,
         .vid_device               = NULL,
         .snd_device               = NULL,
         .net_device               = NULL,
+        .slot_layout              = (const machine_slot_t[]) {
+            MSLOT_BUS(SLOT_ISA16, 6),
+            MSLOT_BUS(SLOT_ISA8, 2),
+            MSLOT_END
+        },
         .aliases                  = { "" }
     },
     /* Has AMIKey F KBC firmware. */
@@ -8381,10 +8701,15 @@ const machine_t machines[] = {
         .gpio_acpi                = 0xffffffff,
         .device                   = NULL,
         .kbd_device               = NULL,
-        .fdc_device               = NULL,
+        .fdc_device               = &fdc_at_device,
         .vid_device               = NULL,
         .snd_device               = NULL,
         .net_device               = NULL,
+        .slot_layout              = (const machine_slot_t[]) {
+            MSLOT_BUS(SLOT_ISA16, 6),
+            MSLOT_BUS(SLOT_ISA8, 2),
+            MSLOT_END
+        },
         .aliases                  = { "" }
     },
     /* Has AMIKey F KBC firmware. */
@@ -8429,10 +8754,15 @@ const machine_t machines[] = {
         .gpio_acpi                = 0xffffffff,
         .device                   = NULL,
         .kbd_device               = NULL,
-        .fdc_device               = NULL,
+        .fdc_device               = &fdc_at_device,
         .vid_device               = NULL,
         .snd_device               = NULL,
         .net_device               = NULL,
+        .slot_layout              = (const machine_slot_t[]) {
+            MSLOT_BUS(SLOT_ISA16, 6),
+            MSLOT_BUS(SLOT_ISA8, 2),
+            MSLOT_END
+        },
         .aliases                  = { "" }
     },
 
@@ -8459,7 +8789,7 @@ const machine_t machines[] = {
             .max_multi   = 0
         },
         .bus_flags = MACHINE_PS2_MCA | MACHINE_BUS_MCA32,
-        .flags     = MACHINE_VIDEO | MACHINE_ESDI,
+        .flags     = MACHINE_VIDEO | MACHINE_ESDI | MACHINE_UART_PRI | MACHINE_LPT_PRI,
         .ram       = {
             .min  = 1024,
             .max  = 65536,
@@ -8479,10 +8809,15 @@ const machine_t machines[] = {
         .gpio_acpi                = 0xffffffff,
         .device                   = NULL,
         .kbd_device               = NULL,
-        .fdc_device               = NULL,
+        .fdc_device               = &fdc_ps2_mca_device,
         .vid_device               = NULL,
         .snd_device               = NULL,
         .net_device               = NULL,
+        .slot_layout              = (const machine_slot_t[]) {
+            MSLOT_BUS(SLOT_MCA, 3),
+            MSLOT_BUS(SLOT_MCA_INTERNAL, 1), /* slot 4: the integrated fixed disk adapter's cable port */
+            MSLOT_END
+        },
         .aliases                  = { "" }
     },
     /* Has IBM PS/2 Type 2 KBC firmware. */
@@ -8507,7 +8842,7 @@ const machine_t machines[] = {
             .max_multi   = 0
         },
         .bus_flags = MACHINE_PS2_MCA | MACHINE_BUS_MCA32,
-        .flags     = MACHINE_VIDEO | MACHINE_ESDI,
+        .flags     = MACHINE_VIDEO | MACHINE_ESDI | MACHINE_UART_PRI | MACHINE_LPT_PRI,
         .ram       = {
             .min  = 1024,
             .max  = 65536,
@@ -8527,10 +8862,15 @@ const machine_t machines[] = {
         .gpio_acpi                = 0xffffffff,
         .device                   = NULL,
         .kbd_device               = NULL,
-        .fdc_device               = NULL,
+        .fdc_device               = &fdc_ps2_mca_device,
         .vid_device               = NULL,
         .snd_device               = NULL,
         .net_device               = NULL,
+        .slot_layout              = (const machine_slot_t[]) {
+            MSLOT_BUS(SLOT_MCA, 3),
+            MSLOT_BUS(SLOT_MCA_INTERNAL, 1), /* slot 4: the integrated fixed disk adapter's cable port */
+            MSLOT_END
+        },
         .aliases                  = { "" }
     },
     /* Has IBM PS/2 Type 1 KBC firmware. */
@@ -8555,7 +8895,7 @@ const machine_t machines[] = {
             .max_multi   = 0
         },
         .bus_flags = MACHINE_PS2_MCA | MACHINE_BUS_MCA32,
-        .flags     = MACHINE_VIDEO,
+        .flags     = MACHINE_VIDEO | MACHINE_UART_PRI | MACHINE_LPT_PRI,
         .ram       = {
             .min  = 1024,
             .max  = 4096,
@@ -8575,10 +8915,14 @@ const machine_t machines[] = {
         .gpio_acpi                = 0xffffffff,
         .device                   = NULL,
         .kbd_device               = NULL,
-        .fdc_device               = NULL,
+        .fdc_device               = &fdc_ps2_mca_device,
         .vid_device               = NULL,
         .snd_device               = NULL,
         .net_device               = NULL,
+        .slot_layout              = (const machine_slot_t[]) {
+            MSLOT_BUS(SLOT_MCA, 8),
+            MSLOT_END
+        },
         .aliases                  = { "" }
     },
     /* Has IBM PS/2 Type 1 KBC firmware. */
@@ -8603,7 +8947,7 @@ const machine_t machines[] = {
             .max_multi   = 0
         },
         .bus_flags = MACHINE_PS2_MCA | MACHINE_BUS_MCA32,
-        .flags     = MACHINE_VIDEO,
+        .flags     = MACHINE_VIDEO | MACHINE_UART_PRI | MACHINE_LPT_PRI,
         .ram       = {
             .min  = 1024,
             .max  = 65536,
@@ -8623,10 +8967,14 @@ const machine_t machines[] = {
         .gpio_acpi                = 0xffffffff,
         .device                   = NULL,
         .kbd_device               = NULL,
-        .fdc_device               = NULL,
+        .fdc_device               = &fdc_ps2_mca_device,
         .vid_device               = NULL,
         .snd_device               = NULL,
         .net_device               = NULL,
+        .slot_layout              = (const machine_slot_t[]) {
+            MSLOT_BUS(SLOT_MCA, 8),
+            MSLOT_END
+        },
         .aliases                  = { "" }
     },
     /* Has IBM PS/2 Type 1 KBC firmware. */
@@ -8651,7 +8999,7 @@ const machine_t machines[] = {
             .max_multi   = 0
         },
         .bus_flags = MACHINE_PS2_MCA | MACHINE_BUS_MCA32,
-        .flags     = MACHINE_VIDEO_PANEL | MACHINE_ESDI,
+        .flags     = MACHINE_VIDEO_PANEL | MACHINE_ESDI | MACHINE_UART_PRI | MACHINE_LPT_PRI,
         .ram       = {
             .min  = 1024,
             .max  = 8192,
@@ -8671,10 +9019,15 @@ const machine_t machines[] = {
         .gpio_acpi                = 0xffffffff,
         .device                   = NULL,
         .kbd_device               = NULL,
-        .fdc_device               = NULL,
+        .fdc_device               = &fdc_ps2_mca_device,
         .vid_device               = &ibm_plasma_vga_device,
         .snd_device               = NULL,
         .net_device               = NULL,
+        .slot_layout              = (const machine_slot_t[]) {
+            MSLOT_BUS(SLOT_MCA, 3),
+            MSLOT_BUS(SLOT_MCA_INTERNAL, 1), /* slot 4: the integrated fixed disk adapter's cable port */
+            MSLOT_END
+        },
         .aliases                  = { "" }
     },
     /* Has IBM PS/2 Type 2 KBC firmware. */
@@ -8699,7 +9052,7 @@ const machine_t machines[] = {
             .max_multi   = 0
         },
         .bus_flags = MACHINE_PS2_MCA | MACHINE_BUS_MCA32,
-        .flags     = MACHINE_VIDEO_PANEL | MACHINE_ESDI,
+        .flags     = MACHINE_VIDEO_PANEL | MACHINE_ESDI | MACHINE_UART_PRI | MACHINE_LPT_PRI,
         .ram       = {
             .min  = 1024,
             .max  = 8192,
@@ -8719,10 +9072,15 @@ const machine_t machines[] = {
         .gpio_acpi                = 0xffffffff,
         .device                   = NULL,
         .kbd_device               = NULL,
-        .fdc_device               = NULL,
+        .fdc_device               = &fdc_ps2_mca_device,
         .vid_device               = &ibm_plasma_vga_device,
         .snd_device               = NULL,
         .net_device               = NULL,
+        .slot_layout              = (const machine_slot_t[]) {
+            MSLOT_BUS(SLOT_MCA, 3),
+            MSLOT_BUS(SLOT_MCA_INTERNAL, 1), /* slot 4: the integrated fixed disk adapter's cable port */
+            MSLOT_END
+        },
         .aliases                  = { "" }
     },
     /* Has IBM PS/2 Type 1 KBC firmware. */
@@ -8747,7 +9105,7 @@ const machine_t machines[] = {
             .max_multi   = 0
         },
         .bus_flags = MACHINE_PS2_MCA | MACHINE_BUS_MCA32,
-        .flags     = MACHINE_VIDEO | MACHINE_ESDI | MACHINE_KEYBOARD_JIS,
+        .flags     = MACHINE_VIDEO | MACHINE_ESDI | MACHINE_KEYBOARD_JIS | MACHINE_UART_PRI | MACHINE_LPT_PRI,
         .ram       = {
             .min  = 2048,
             .max  = 65536,
@@ -8771,6 +9129,11 @@ const machine_t machines[] = {
         .vid_device               = &ps55db2_device,
         .snd_device               = NULL,
         .net_device               = NULL,
+        .slot_layout              = (const machine_slot_t[]) {
+            MSLOT_BUS(SLOT_MCA, 3),
+            MSLOT_BUS(SLOT_MCA_INTERNAL, 1), /* slot 4: the Integrated Fixed Disk II */
+            MSLOT_END
+        },
         .aliases                  = { "" }
     },
     /* Has IBM PS/2 Type 1 KBC firmware. */
@@ -8795,7 +9158,7 @@ const machine_t machines[] = {
             .max_multi   = 0
         },
         .bus_flags = MACHINE_PS2_MCA | MACHINE_BUS_MCA32,
-        .flags     = MACHINE_VIDEO | MACHINE_ESDI | MACHINE_KEYBOARD_JIS,
+        .flags     = MACHINE_VIDEO | MACHINE_ESDI | MACHINE_KEYBOARD_JIS | MACHINE_UART_PRI | MACHINE_LPT_PRI,
         .ram       = {
             .min  = 2048,
             .max  = 65536,
@@ -8815,10 +9178,15 @@ const machine_t machines[] = {
         .gpio_acpi                = 0xffffffff,
         .device                   = NULL,
         .kbd_device               = NULL,
-        .fdc_device               = NULL,
+        .fdc_device               = &fdc_ps2_mca_device,
         .vid_device               = NULL,
         .snd_device               = NULL,
         .net_device               = NULL,
+        .slot_layout              = (const machine_slot_t[]) {
+            MSLOT_BUS(SLOT_MCA, 4),
+            MSLOT_BUS(SLOT_MCA_INTERNAL, 1), /* slot 5: the Integrated Fixed Disk II */
+            MSLOT_END
+        },
         .aliases                  = { "" }
     },
 
@@ -8865,10 +9233,15 @@ const machine_t machines[] = {
         .gpio_acpi                = 0xffffffff,
         .device                   = NULL,
         .kbd_device               = NULL,
-        .fdc_device               = NULL,
+        .fdc_device               = &fdc_at_device,
         .vid_device               = NULL,
         .snd_device               = NULL,
         .net_device               = NULL,
+        .slot_layout              = (const machine_slot_t[]) {
+            MSLOT_BUS(SLOT_ISA16, 3),
+            MSLOT_BUS(SLOT_ISA_VLB, 3),
+            MSLOT_END
+        },
         .aliases                  = { "" }
     },
     /* Has AMIKey F KBC firmware. The EFAR chipst is a rebrand of OPTi 495SX. */
@@ -8893,7 +9266,7 @@ const machine_t machines[] = {
             .max_multi   = 0
         },
         .bus_flags = MACHINE_AT,
-        .flags     = MACHINE_IDE,
+        .flags     = MACHINE_IDE | MACHINE_UART_PRI | MACHINE_UART_SEC | MACHINE_LPT_PRI,
         .ram       = {
             .min  = 1024,
             .max  = 32768,
@@ -8906,8 +9279,8 @@ const machine_t machines[] = {
         .kbc_params               = KBC_VEN_SIEMENS,
         .nvr_device               = &nvr_at_device,
         .nvr_params               = NVR_AT,
-        .sio_device               = NULL,
-        .sio_params               = 0x00000000,
+        .sio_device               = &um866x_device,
+        .sio_params               = (uintptr_t) ((UM82C862F | UM866X_IDE_PRI)),
         .kbc_p1                   = 0x000004f0,
         .gpio                     = 0xffffffff,
         .gpio_acpi                = 0xffffffff,
@@ -8962,7 +9335,7 @@ const machine_t machines[] = {
         .gpio_acpi                = 0xffffffff,
         .device                   = &opti495_ami_device,
         .kbd_device               = NULL,
-        .fdc_device               = NULL,
+        .fdc_device               = &fdc_at_device,
         .vid_device               = NULL,
         .snd_device               = NULL,
         .net_device               = NULL,
@@ -8990,7 +9363,7 @@ const machine_t machines[] = {
             .max_multi   = 0
         },
         .bus_flags = MACHINE_PS2_VLB,
-        .flags     = MACHINE_IDE,
+        .flags     = MACHINE_IDE | MACHINE_UART_PRI | MACHINE_UART_SEC | MACHINE_LPT_PRI,
         .ram       = {
             .min  = 1024,
             .max  = 65536,
@@ -9003,8 +9376,8 @@ const machine_t machines[] = {
         .kbc_params               = KBC_VEN_AMI | 0x00004800,
         .nvr_device               = &nvr_at_device,
         .nvr_params               = NVR_AT,
-        .sio_device               = NULL,
-        .sio_params               = 0x00000000,
+        .sio_device               = &fdc37c6xx_device,
+        .sio_params               = (uintptr_t) ((FDC37C651 | FDC37C6XX_IDE_PRI)),
         .kbc_p1                   = 0x00000cf0,
         .gpio                     = 0xffffffff,
         .gpio_acpi                = 0xffffffff,
@@ -9014,6 +9387,11 @@ const machine_t machines[] = {
         .vid_device               = NULL,
         .snd_device               = NULL,
         .net_device               = NULL,
+        .slot_layout              = (const machine_slot_t[]) {
+            MSLOT_BUS(SLOT_ISA16, 5),
+            MSLOT_BUS(SLOT_ISA_VLB, 2),
+            MSLOT_END
+        },
         .aliases                  = { "APC FP-PR1PW-01", "" }
     },
     /* Has a Lance LT38C41 that clones an AMIKEY ('F'). */
@@ -9058,13 +9436,23 @@ const machine_t machines[] = {
         .gpio_acpi                = 0xffffffff,
         .device                   = &fic4386vcv_device,
         .kbd_device               = NULL,
-        .fdc_device               = NULL,
+        .fdc_device               = &fdc_at_device,
         .vid_device               = NULL,
         .snd_device               = NULL,
         .net_device               = NULL,
+        .slot_layout              = (const machine_slot_t[]) {
+            MSLOT_BUS(SLOT_ISA16, 4),
+            MSLOT_BUS(SLOT_ISA_VLB, 2),
+            MSLOT_BUS(SLOT_ISA8, 2),
+            MSLOT_END
+        },
         .aliases                  = { "" }
     },
     /* Has IBM PS/2 Type 1 KBC firmware. */
+    /* The machine's init sets up 4 MCA positions; the board has 3
+       connectors (The Retro Web), and the fourth is the integrated fixed
+       disk adapter's cable port.
+       https://theretroweb.com/motherboards/s/ibm-ps-2-model-70-8570-386-25mhz-type-3-pla */
     {
         .name              = "[MCA] IBM PS/2 model 70 (type 3)",
         .internal_name     = "ibmps2_m70_type3",
@@ -9086,7 +9474,7 @@ const machine_t machines[] = {
             .max_multi   = 0
         },
         .bus_flags = MACHINE_PS2_MCA | MACHINE_BUS_MCA32,
-        .flags     = MACHINE_VIDEO | MACHINE_ESDI,
+        .flags     = MACHINE_VIDEO | MACHINE_ESDI | MACHINE_UART_PRI | MACHINE_LPT_PRI,
         .ram       = {
             .min  = 2048,
             .max  = 65536,
@@ -9106,10 +9494,15 @@ const machine_t machines[] = {
         .gpio_acpi                = 0xffffffff,
         .device                   = NULL,
         .kbd_device               = NULL,
-        .fdc_device               = NULL,
+        .fdc_device               = &fdc_ps2_mca_device,
         .vid_device               = NULL,
         .snd_device               = NULL,
         .net_device               = NULL,
+        .slot_layout              = (const machine_slot_t[]) {
+            MSLOT_BUS(SLOT_MCA, 3),
+            MSLOT_BUS(SLOT_MCA_INTERNAL, 1), /* slot 4: the integrated fixed disk adapter's cable port */
+            MSLOT_END
+        },
         .aliases                  = { "" }
     },
     /* Has IBM PS/2 Type 1 KBC firmware. */
@@ -9134,7 +9527,7 @@ const machine_t machines[] = {
             .max_multi   = 0
         },
         .bus_flags = MACHINE_PS2_MCA | MACHINE_BUS_MCA32,
-        .flags     = MACHINE_VIDEO,
+        .flags     = MACHINE_VIDEO | MACHINE_UART_PRI | MACHINE_LPT_PRI,
         .ram       = {
             .min  = 4096,
             .max  = 65536,
@@ -9154,10 +9547,14 @@ const machine_t machines[] = {
         .gpio_acpi                = 0xffffffff,
         .device                   = NULL,
         .kbd_device               = NULL,
-        .fdc_device               = NULL,
+        .fdc_device               = &fdc_ps2_mca_device,
         .vid_device               = NULL,
         .snd_device               = NULL,
         .net_device               = NULL,
+        .slot_layout              = (const machine_slot_t[]) {
+            MSLOT_BUS(SLOT_MCA, 8),
+            MSLOT_END
+        },
         .aliases                  = { "IBM PS/55 model 5570-V0/V1", "" }
     },
     /* Has IBM PS/2 Type 1 KBC firmware. */
@@ -9182,7 +9579,7 @@ const machine_t machines[] = {
             .max_multi   = 0
         },
         .bus_flags = MACHINE_PS2_MCA | MACHINE_BUS_MCA32,
-        .flags     = MACHINE_VIDEO | MACHINE_ESDI | MACHINE_KEYBOARD_JIS,
+        .flags     = MACHINE_VIDEO | MACHINE_ESDI | MACHINE_KEYBOARD_JIS | MACHINE_UART_PRI | MACHINE_LPT_PRI,
         .ram       = {
             .min  = 4096,
             .max  = 65536,
@@ -9202,10 +9599,15 @@ const machine_t machines[] = {
         .gpio_acpi                = 0xffffffff,
         .device                   = NULL,
         .kbd_device               = NULL,
-        .fdc_device               = NULL,
+        .fdc_device               = &fdc_ps2_mca_device,
         .vid_device               = NULL,
         .snd_device               = NULL,
         .net_device               = NULL,
+        .slot_layout              = (const machine_slot_t[]) {
+            MSLOT_BUS(SLOT_MCA, 4),
+            MSLOT_BUS(SLOT_MCA_INTERNAL, 1), /* slot 5: the Integrated Fixed Disk II */
+            MSLOT_END
+        },
         .aliases                  = { "" }
     },
 
@@ -9253,7 +9655,7 @@ const machine_t machines[] = {
         .gpio_acpi                = 0xffffffff,
         .device                   = NULL,
         .kbd_device               = NULL,
-        .fdc_device               = NULL,
+        .fdc_device               = &fdc_at_device,
         .vid_device               = NULL,
         .snd_device               = NULL,
         .net_device               = NULL,
@@ -9301,10 +9703,15 @@ const machine_t machines[] = {
         .gpio_acpi                = 0xffffffff,
         .device                   = NULL,
         .kbd_device               = NULL,
-        .fdc_device               = NULL,
+        .fdc_device               = &fdc_at_device,
         .vid_device               = NULL,
         .snd_device               = NULL,
         .net_device               = NULL,
+        .slot_layout              = (const machine_slot_t[]) {
+            MSLOT_BUS(SLOT_ISA16, 6),
+            MSLOT_BUS(SLOT_ISA8, 2),
+            MSLOT_END
+        },
         .aliases                  = { "" }
     },
     /* Uses the AMIKey 'F' keyboard controller firmware. */
@@ -9349,10 +9756,14 @@ const machine_t machines[] = {
         .gpio_acpi                = 0xffffffff,
         .device                   = NULL,
         .kbd_device               = NULL,
-        .fdc_device               = NULL,
+        .fdc_device               = &fdc_at_device,
         .vid_device               = NULL,
         .snd_device               = NULL,
         .net_device               = NULL,
+        .slot_layout              = (const machine_slot_t[]) {
+            MSLOT_BUS(SLOT_ISA16, 8),
+            MSLOT_END
+        },
         .aliases                  = { "" }
     },
     /* Uses the AMIKey 'F' keyboard controller firmware. */
@@ -9397,10 +9808,15 @@ const machine_t machines[] = {
         .gpio_acpi                = 0xffffffff,
         .device                   = &precisionv486_device,
         .kbd_device               = NULL,
-        .fdc_device               = NULL,
+        .fdc_device               = &fdc_at_device,
         .vid_device               = NULL,
         .snd_device               = NULL,
         .net_device               = NULL,
+        .slot_layout              = (const machine_slot_t[]) {
+            MSLOT_BUS(SLOT_ISA16, 7),
+            MSLOT_BUS(SLOT_ISA8, 1),
+            MSLOT_END
+        },
         .aliases                  = { "" }
     },
     /* Uses Phoenix keyboard controller firmware. */
@@ -9445,7 +9861,7 @@ const machine_t machines[] = {
         .gpio_acpi                = 0xffffffff,
         .device                   = NULL,
         .kbd_device               = NULL,
-        .fdc_device               = NULL,
+        .fdc_device               = &fdc_at_device,
         .vid_device               = NULL,
         .snd_device               = NULL,
         .net_device               = NULL,
@@ -9493,7 +9909,7 @@ const machine_t machines[] = {
         .gpio_acpi                = 0xffffffff,
         .device                   = NULL,
         .kbd_device               = NULL,
-        .fdc_device               = NULL,
+        .fdc_device               = &fdc_at_device,
         .vid_device               = NULL,
         .snd_device               = NULL,
         .net_device               = NULL,
@@ -9521,7 +9937,7 @@ const machine_t machines[] = {
             .max_multi   = 0
         },
         .bus_flags = MACHINE_PS2,
-        .flags     = MACHINE_IDE | MACHINE_VIDEO,
+        .flags     = MACHINE_IDE | MACHINE_VIDEO | MACHINE_UART_PRI | MACHINE_UART_SEC | MACHINE_LPT_PRI,
         .ram       = {
             .min  = 4096,
             .max  = 20480,
@@ -9534,8 +9950,8 @@ const machine_t machines[] = {
         .kbc_params               = KBC_VEN_PHOENIX | 0x00012900,
         .nvr_device               = &nvr_at_device,
         .nvr_params               = NVR_AT,
-        .sio_device               = NULL,
-        .sio_params               = 0x00000000,
+        .sio_device               = &um866x_device,
+        .sio_params               = (uintptr_t) ((UM82C862F | UM866X_IDE_PRI)),
         .kbc_p1                   = 0x000004f0,
         .gpio                     = 0xffffffff,
         .gpio_acpi                = 0xffffffff,
@@ -9570,7 +9986,7 @@ const machine_t machines[] = {
             .max_multi   = 0
         },
         .bus_flags = MACHINE_VLB,
-        .flags     = MACHINE_IDE,
+        .flags     = MACHINE_IDE | MACHINE_UART_PRI | MACHINE_UART_SEC | MACHINE_LPT_PRI,
         .ram       = {
             .min  = 1024,
             .max  = 65536,
@@ -9583,8 +9999,8 @@ const machine_t machines[] = {
         .kbc_params               = KBC_VEN_PHOENIX | 0x00012900, /* Guess. */
         .nvr_device               = &nvr_at_device,
         .nvr_params               = NVR_AT,
-        .sio_device               = NULL,
-        .sio_params               = 0x00000000,
+        .sio_device               = &pc873xx_device,
+        .sio_params               = (uintptr_t) ((PCX73XX_IDE_PRI | PCX730X_398)),
         .kbc_p1                   = 0x000004f0,
         .gpio                     = 0xffffffff,
         .gpio_acpi                = 0xffffffff,
@@ -9594,6 +10010,12 @@ const machine_t machines[] = {
         .vid_device               = NULL,
         .snd_device               = NULL,
         .net_device               = NULL,
+        .slot_layout              = (const machine_slot_t[]) {
+            MSLOT_BUS(SLOT_ISA16, 4),
+            MSLOT_BUS(SLOT_ISA_VLB, 2),
+            MSLOT_BUS(SLOT_ISA8, 1),
+            MSLOT_END
+        },
         .aliases                  = { "" }
     },
     /* Has AMI KF KBC firmware. */
@@ -9638,10 +10060,15 @@ const machine_t machines[] = {
         .gpio_acpi                = 0xffffffff,
         .device                   = NULL,
         .kbd_device               = NULL,
-        .fdc_device               = NULL,
+        .fdc_device               = &fdc_at_device,
         .vid_device               = NULL,
         .snd_device               = NULL,
         .net_device               = NULL,
+        .slot_layout              = (const machine_slot_t[]) {
+            MSLOT_BUS(SLOT_ISA16, 7),
+            MSLOT_BUS(SLOT_ISA8, 1),
+            MSLOT_END
+        },
         .aliases                  = { "" }
     },
     /* Has AMIKey H KBC firmware, per the screenshot in "How computers & MS-DOS work".
@@ -9687,7 +10114,7 @@ const machine_t machines[] = {
         .gpio_acpi                = 0xffffffff,
         .device                   = NULL,
         .kbd_device               = NULL,
-        .fdc_device               = NULL,
+        .fdc_device               = &fdc_at_device,
         .vid_device               = NULL,
         .snd_device               = NULL,
         .net_device               = NULL,
@@ -9735,10 +10162,15 @@ const machine_t machines[] = {
         .gpio_acpi                = 0xffffffff,
         .device                   = NULL,
         .kbd_device               = NULL,
-        .fdc_device               = NULL,
+        .fdc_device               = &fdc_at_device,
         .vid_device               = NULL,
         .snd_device               = NULL,
         .net_device               = NULL,
+        .slot_layout              = (const machine_slot_t[]) {
+            MSLOT_BUS(SLOT_ISA16, 5),
+            MSLOT_BUS(SLOT_ISA_VLB, 2),
+            MSLOT_END
+        },
         .aliases                  = { "" }
     },
     /* Uses an Intel KBC with Phoenix MultiKey KBC firmware. */
@@ -9763,7 +10195,7 @@ const machine_t machines[] = {
             .max_multi   = 0
         },
         .bus_flags = MACHINE_PS2,
-        .flags     = MACHINE_IDE | MACHINE_VIDEO | MACHINE_APM,
+        .flags     = MACHINE_IDE | MACHINE_VIDEO | MACHINE_APM | MACHINE_UART_PRI | MACHINE_UART_SEC | MACHINE_LPT_PRI,
         .ram       = {
             .min  = 1024,
             .max  = 65536,
@@ -9776,8 +10208,8 @@ const machine_t machines[] = {
         .kbc_params               = KBC_VEN_PHOENIX | 0x00012900, /* Guess. */
         .nvr_device               = &nvr_at_device,
         .nvr_params               = NVR_AT,
-        .sio_device               = NULL,
-        .sio_params               = 0x00000000,
+        .sio_device               = &fdc37c6xx_device,
+        .sio_params               = (uintptr_t) ((FDC37C663 | FDC37C6XX_IDE_PRI)),
         .kbc_p1                   = 0x00000cf0,
         .gpio                     = 0xffffffff,
         .gpio_acpi                = 0xffffffff,
@@ -9811,7 +10243,7 @@ const machine_t machines[] = {
             .max_multi   = 2
         },
         .bus_flags = MACHINE_PS2_VLB,
-        .flags     = MACHINE_IDE | MACHINE_VIDEO | MACHINE_APM,
+        .flags     = MACHINE_IDE | MACHINE_VIDEO | MACHINE_APM | MACHINE_UART_PRI | MACHINE_UART_SEC | MACHINE_LPT_PRI,
         .ram       = {
             .min  = 4096,
             .max  = 36864,
@@ -9824,8 +10256,8 @@ const machine_t machines[] = {
         .kbc_params               = KBC_VEN_PHOENIX | 0x00012900, /* Guess. */
         .nvr_device               = &nvr_at_device,
         .nvr_params               = NVR_AT,
-        .sio_device               = NULL,
-        .sio_params               = 0x00000000,
+        .sio_device               = &um866x_device,
+        .sio_params               = (uintptr_t) ((UM82C863F | UM866X_IDE_PRI)),
         .kbc_p1                   = 0x00000cf0,
         .gpio                     = 0xffffffff,
         .gpio_acpi                = 0xffffffff,
@@ -9879,10 +10311,14 @@ const machine_t machines[] = {
         .gpio_acpi                = 0xffffffff,
         .device                   = NULL,
         .kbd_device               = NULL,
-        .fdc_device               = NULL,
+        .fdc_device               = &fdc_at_device,
         .vid_device               = NULL,
         .snd_device               = NULL,
         .net_device               = NULL,
+        .slot_layout              = (const machine_slot_t[]) {
+            MSLOT_BUS(SLOT_ISA16, 8),
+            MSLOT_END
+        },
         .aliases                  = { "" }
     },
     /* The chip is a Lance LT38C41, a clone of the Intel 8041, and the BIOS sends
@@ -9931,10 +10367,14 @@ const machine_t machines[] = {
         .gpio_acpi                = 0xffffffff,
         .device                   = NULL,
         .kbd_device               = NULL,
-        .fdc_device               = NULL,
+        .fdc_device               = &fdc_at_device,
         .vid_device               = NULL,
         .snd_device               = NULL,
         .net_device               = NULL,
+        .slot_layout              = (const machine_slot_t[]) {
+            MSLOT_BUS(SLOT_ISA16, 6),
+            MSLOT_END
+        },
         .aliases                  = { "" }
     },
     /* Has a VLSI VL82C113A SCAMP Combination I/O which holds the KBC. */
@@ -9959,7 +10399,7 @@ const machine_t machines[] = {
             .max_multi   = 0
         },
         .bus_flags = MACHINE_PS2,
-        .flags     = MACHINE_IDE | MACHINE_VIDEO,
+        .flags     = MACHINE_IDE | MACHINE_VIDEO | MACHINE_UART_PRI | MACHINE_UART_SEC | MACHINE_LPT_PRI,
         .ram       = {
             .min  = 2048,
             .max  = 32768,
@@ -9973,8 +10413,8 @@ const machine_t machines[] = {
         /* The NVR is on the VLSI VL82C113. */
         .nvr_device               = NULL,
         .nvr_params               = 0x00000000,
-        .sio_device               = NULL, /*Has SIO (sorta): VLSI VL82C113A SCAMP Combination I/O*/
-        .sio_params               = 0x00000000,
+        .sio_device               = &fdc37c6xx_device, /*Has SIO (sorta): VLSI VL82C113A SCAMP Combination I/O*/
+        .sio_params               = (uintptr_t) ((FDC37C651 | FDC37C6XX_IDE_PRI)),
         .kbc_p1                   = 0x00000cf0,
         .gpio                     = 0xffffffff,
         .gpio_acpi                = 0xffffffff,
@@ -10008,7 +10448,7 @@ const machine_t machines[] = {
             .max_multi   = 0
         },
         .bus_flags = MACHINE_PS2,
-        .flags     = MACHINE_IDE | MACHINE_VIDEO,
+        .flags     = MACHINE_IDE | MACHINE_VIDEO | MACHINE_UART_PRI | MACHINE_UART_SEC | MACHINE_LPT_PRI,
         .ram       = {
             .min  = 2048,
             .max  = 32768,
@@ -10022,8 +10462,8 @@ const machine_t machines[] = {
         /* The NVR is on the VLSI VL82C113. */
         .nvr_device               = NULL,
         .nvr_params               = 0x00000000,
-        .sio_device               = NULL,
-        .sio_params               = 0x00000000,
+        .sio_device               = &fdc37c6xx_device,
+        .sio_params               = (uintptr_t) (FDC37C651),
         .kbc_p1                   = 0x00000cf0,
         .gpio                     = 0xffffffff,
         .gpio_acpi                = 0xffffffff,
@@ -10031,57 +10471,6 @@ const machine_t machines[] = {
         .kbd_device               = NULL,
         .fdc_device               = NULL,
         .vid_device               = &gd5428_onboard_device,
-        .snd_device               = NULL,
-        .net_device               = NULL,
-        .aliases                  = { "" }
-    },
-    /* The VLSI VL82C113A holds the KBC and RTC.
-       See doc/hardware/hp-vectra-486n.md for firmware and cache options. */
-    {
-        .name              = "[VLSI 82C486] HP Vectra 486N (D26xxA)",
-        .internal_name     = "vect486n",
-        .type              = MACHINE_TYPE_SOCKET1,
-        .chipset           = MACHINE_CHIPSET_VLSI_VL82C486,
-        .init              = machine_at_vect486n_init,
-        .p1_handler        = machine_generic_p1_handler,
-        .gpio_handler      = NULL,
-        .available_flag    = MACHINE_AVAILABLE,
-        .gpio_acpi_handler = NULL,
-        .cpu               = {
-            .package     = CPU_PKG_SOCKET1,
-            .block       = CPU_BLOCK_NONE,
-            .min_bus     = 25000000,
-            .max_bus     = 50000000,
-            .min_voltage = 5000,
-            .max_voltage = 5000,
-            .min_multi   = 0,
-            .max_multi   = 0
-        },
-        .bus_flags = MACHINE_PS2,
-        .flags     = MACHINE_IDE | MACHINE_VIDEO,
-        .ram       = {
-            .min  = 2048,
-            .max  = 49152,
-            .step = 2048
-        },
-        .nvrmask                  = 127,
-        .jumpered_ecp_dma         = 0,
-        .default_jumpered_ecp_dma = -1,
-        .kbc_device               = &kbc_at_vectra_device,
-        .kbc_params               = 0x00000000,
-        /* The NVR is on the VLSI VL82C113. */
-        .nvr_device               = NULL,
-        .nvr_params               = 0x00000000,
-        .sio_device               = NULL,
-        .sio_params               = 0x00000000,
-        .kbc_p1                   = 0x00000cd0,
-        .gpio                     = 0xffffffff,
-        .gpio_acpi                = 0xffffffff,
-        .device                   = &vect486n_device,
-        .kbd_device               = NULL,
-        .fdc_device               = NULL,
-        /* Reuse the non-internal S3 86c924 for now; the AMI and HP Ultra VGA BIOSes are selectable. */
-        .vid_device               = &s3_86c924_isa_device, /* TODO: to implement the internal video configuration */
         .snd_device               = NULL,
         .net_device               = NULL,
         .aliases                  = { "" }
@@ -10108,7 +10497,7 @@ const machine_t machines[] = {
             .max_multi   = 0
         },
         .bus_flags = MACHINE_PS2,
-        .flags     = MACHINE_IDE | MACHINE_VIDEO,
+        .flags     = MACHINE_IDE | MACHINE_VIDEO | MACHINE_UART_PRI | MACHINE_UART_SEC | MACHINE_LPT_PRI,
         .ram       = {
             .min  = 1024,
             .max  = 20480,
@@ -10122,8 +10511,8 @@ const machine_t machines[] = {
         /* The NVR is on the VLSI VL82C113. */
         .nvr_device               = NULL,
         .nvr_params               = 0x00000000,
-        .sio_device               = NULL,
-        .sio_params               = 0x00000000,
+        .sio_device               = &pc873xx_device,
+        .sio_params               = (uintptr_t) ((PCX73XX_IDE_PRI | PCX730X_398)),
         .kbc_p1                   = 0x00000cf0,
         .gpio                     = 0xffffffff,
         .gpio_acpi                = 0xffffffff,
@@ -10178,7 +10567,7 @@ const machine_t machines[] = {
         .gpio_acpi                = 0xffffffff,
         .device                   = NULL,
         .kbd_device               = NULL,
-        .fdc_device               = NULL,
+        .fdc_device               = &fdc_at_nsc_dp8473_device,
         .vid_device               = &paradise_wd90c31_onboard_device,
         .snd_device               = &sensationaud_device,
         .net_device               = NULL,
@@ -10206,7 +10595,7 @@ const machine_t machines[] = {
             .max_multi   = 0
         },
         .bus_flags = MACHINE_AT,
-        .flags     = MACHINE_IDE | MACHINE_VIDEO | MACHINE_APM,
+        .flags     = MACHINE_IDE | MACHINE_VIDEO | MACHINE_APM | MACHINE_UART_PRI | MACHINE_UART_SEC | MACHINE_LPT_PRI,
         .ram       = {
             .min  = 2048,
             .max  = 32768,
@@ -10220,8 +10609,8 @@ const machine_t machines[] = {
         /* The NVR is on the VLSI VL82C113. */
         .nvr_device               = NULL,
         .nvr_params               = 0x00000000,
-        .sio_device               = NULL,
-        .sio_params               = 0x00000000,
+        .sio_device               = &fdc37c6xx_device,
+        .sio_params               = (uintptr_t) ((FDC37C651 | FDC37C6XX_IDE_PRI)),
         .kbc_p1                   = 0x000004f0,
         .gpio                     = 0xffffffff,
         .gpio_acpi                = 0xffffffff,
@@ -10233,6 +10622,55 @@ const machine_t machines[] = {
         .net_device               = NULL,
         .aliases                  = { "Tulip TC38", "" }
     },
+
+    /* Has Award KBC firmware. */	
+    {
+        .name              = "[ZyMOS Poach] ASUS 486/25",
+        .internal_name     = "asus48625",
+        .type              = MACHINE_TYPE_SOCKET1,
+        .chipset           = MACHINE_CHIPSET_ZYMOS_POACH,
+        .init              = machine_at_asus48625_init,
+        .p1_handler        = machine_generic_p1_handler,
+        .gpio_handler      = NULL,
+        .available_flag    = MACHINE_AVAILABLE,
+        .gpio_acpi_handler = NULL,
+        .cpu               = {
+            .package     = CPU_PKG_SOCKET1,
+            .block       = CPU_BLOCK_NONE,
+            .min_bus     = 25000000,
+            .max_bus     = 25000000,
+            .min_voltage = 5000,
+            .max_voltage = 5000,
+            .min_multi   = 0,
+            .max_multi   = 0
+        },
+        .bus_flags = MACHINE_AT,
+        .flags     = MACHINE_FLAGS_NONE,
+        .ram       = {
+            .min  = 1024,
+            .max  = 16384,
+            .step = 1024
+        },
+        .nvrmask                  = 127,
+        .jumpered_ecp_dma         = 0,
+        .default_jumpered_ecp_dma = -1,
+        .kbc_device               = &kbc_at_device,
+        .kbc_params               = KBC_VEN_AWARD | 0x00424600,
+        .nvr_device               = &nvr_at_device,
+        .nvr_params               = NVR_AT,
+        .sio_device               = NULL,
+        .sio_params               = 0x00000000,
+        .kbc_p1                   = 0x000004f0,
+        .gpio                     = 0xffffffff,
+        .gpio_acpi                = 0xffffffff,
+        .device                   = NULL,
+        .kbd_device               = NULL,
+        .fdc_device               = &fdc_at_device,
+        .vid_device               = NULL,
+        .snd_device               = NULL,
+        .net_device               = NULL,
+        .aliases                  = { "" }
+    },		
     /* Has Award KBC firmware. */
     {
         .name              = "[ZyMOS Poach] ASUS ISA-486C",
@@ -10275,10 +10713,15 @@ const machine_t machines[] = {
         .gpio_acpi                = 0xffffffff,
         .device                   = NULL,
         .kbd_device               = NULL,
-        .fdc_device               = NULL,
+        .fdc_device               = &fdc_at_device,
         .vid_device               = NULL,
         .snd_device               = NULL,
         .net_device               = NULL,
+        .slot_layout              = (const machine_slot_t[]) {
+            MSLOT_BUS(SLOT_ISA16, 6),
+            MSLOT_BUS(SLOT_ISA8, 1),
+            MSLOT_END
+        },
         .aliases                  = { "" }
     },
     /* Has AMI KF KBC firmware. */
@@ -10323,13 +10766,17 @@ const machine_t machines[] = {
         .gpio_acpi                = 0xffffffff,
         .device                   = NULL,
         .kbd_device               = NULL,
-        .fdc_device               = NULL,
+        .fdc_device               = &fdc_at_device,
         .vid_device               = NULL,
         .snd_device               = NULL,
         .net_device               = NULL,
         .aliases                  = { "" }
     },
     /* Has IBM PS/2 Type 1 KBC firmware. */
+    /* The machine's init sets up 4 MCA positions; the board has 3
+       connectors (The Retro Web), and the fourth is the integrated fixed
+       disk adapter's cable port.
+       https://theretroweb.com/motherboards/s/ibm-ps-2-model-70-8570-486-25mhz-type-4-pla */
     {
         .name              = "[MCA] IBM PS/2 model 70 (type 4)",
         .internal_name     = "ibmps2_m70_type4",
@@ -10351,7 +10798,7 @@ const machine_t machines[] = {
             .max_multi   = 0
         },
         .bus_flags = MACHINE_PS2_MCA | MACHINE_BUS_MCA32,
-        .flags     = MACHINE_VIDEO | MACHINE_ESDI | MACHINE_SOFTFLOAT_ONLY,
+        .flags     = MACHINE_VIDEO | MACHINE_ESDI | MACHINE_SOFTFLOAT_ONLY | MACHINE_UART_PRI | MACHINE_LPT_PRI,
         .ram       = {
             .min  = 2048,
             .max  = 65536,
@@ -10371,10 +10818,15 @@ const machine_t machines[] = {
         .gpio_acpi                = 0xffffffff,
         .device                   = NULL,
         .kbd_device               = NULL,
-        .fdc_device               = NULL,
+        .fdc_device               = &fdc_ps2_mca_device,
         .vid_device               = NULL,
         .snd_device               = NULL,
         .net_device               = NULL,
+        .slot_layout              = (const machine_slot_t[]) {
+            MSLOT_BUS(SLOT_MCA, 3),
+            MSLOT_BUS(SLOT_MCA_INTERNAL, 1), /* slot 4: the integrated fixed disk adapter's cable port */
+            MSLOT_END
+        },
         .aliases                  = { "" }
     },
     /* Socket 2 machines */
@@ -10402,7 +10854,7 @@ const machine_t machines[] = {
             .max_multi   = 0
         },
         .bus_flags = MACHINE_PS2,
-        .flags     = MACHINE_IDE | MACHINE_VIDEO | MACHINE_GAMEPORT,
+        .flags     = MACHINE_IDE | MACHINE_VIDEO | MACHINE_GAMEPORT | MACHINE_UART_PRI | MACHINE_UART_SEC | MACHINE_LPT_PRI,
         .ram       = {
             .min  = 4096,
             .max  = 36864,
@@ -10415,7 +10867,7 @@ const machine_t machines[] = {
         .kbc_params               = KBC_VEN_PHOENIX | 0x00012900, /* Guess. */
         .nvr_device               = &nvr_at_device,
         .nvr_params               = NVR_AT,
-        .sio_device               = NULL,
+        .sio_device               = &acc3221_device,
         .sio_params               = 0x00000000,
         .kbc_p1                   = 0x00000cf0,
         .gpio                     = 0xffffffff,
@@ -10471,7 +10923,7 @@ const machine_t machines[] = {
         .gpio_acpi                = 0xffffffff,
         .device                   = NULL,
         .kbd_device               = NULL,
-        .fdc_device               = NULL,
+        .fdc_device               = &fdc_at_device,
         .vid_device               = NULL,
         .snd_device               = NULL,
         .net_device               = NULL,
@@ -10499,7 +10951,7 @@ const machine_t machines[] = {
             .max_multi   = 0
         },
         .bus_flags = MACHINE_PS2,
-        .flags     = MACHINE_IDE | MACHINE_VIDEO | MACHINE_APM,
+        .flags     = MACHINE_IDE | MACHINE_VIDEO | MACHINE_APM | MACHINE_UART_PRI | MACHINE_UART_SEC | MACHINE_LPT_PRI,
         .ram       = {
             .min  = 4096,
             .max  = 36864,
@@ -10512,8 +10964,8 @@ const machine_t machines[] = {
         .kbc_params               = KBC_VEN_ACER,
         .nvr_device               = &nvr_at_device,
         .nvr_params               = NVR_AT,
-        .sio_device               = NULL,
-        .sio_params               = 0x00000000,
+        .sio_device               = &pc87310_device,
+        .sio_params               = (uintptr_t) ((PC87310_ALI)),
         .kbc_p1                   = 0x004008f0,
         .gpio                     = 0xffffffff,
         .gpio_acpi                = 0xffffffff,
@@ -10568,10 +11020,16 @@ const machine_t machines[] = {
         .gpio_acpi                = 0xffffffff,
         .device                   = NULL,
         .kbd_device               = NULL,
-        .fdc_device               = NULL,
+        .fdc_device               = &fdc_at_device,
         .vid_device               = NULL,
         .snd_device               = NULL,
         .net_device               = NULL,
+        .slot_layout              = (const machine_slot_t[]) {
+            MSLOT_BUS(SLOT_ISA16, 4),
+            MSLOT_BUS(SLOT_ISA_VLB, 3),
+            MSLOT_BUS(SLOT_ISA8, 1),
+            MSLOT_END
+        },
         .aliases                  = { "" }
     },
     /* Has AMI 'H' KBC.  */
@@ -10616,11 +11074,21 @@ const machine_t machines[] = {
         .gpio_acpi                = 0xffffffff,
         .device                   = NULL,
         .kbd_device               = NULL,
-        .fdc_device               = NULL,
+        .fdc_device               = &fdc_at_device,
         .vid_device               = NULL,
         .snd_device               = NULL,
         .net_device               = NULL,
         .scsi_device              = &ncr53c810_onboard_pci_device,
+        .pci_flags                = PCI_CONFIG_TYPE_2 | PCI_NO_IRQ_STEERING,
+        .slot_layout              = (const machine_slot_t[]) {
+            MSLOT_PCI(0x00, PCI_CARD_NORTHBRIDGE, 0, 0, 0, 0),
+            MSLOT_PCI(0x01, PCI_CARD_SCSI, 1, 2, 3, 4),
+            MSLOT_PCI(0x03, PCI_CARD_NORMAL, 1, 2, 3, 4),
+            MSLOT_PCI(0x04, PCI_CARD_NORMAL, 2, 3, 4, 1),
+            MSLOT_PCI(0x05, PCI_CARD_NORMAL, 3, 4, 1, 2),
+            MSLOT_BRIDGE(0x02, PCI_CARD_SOUTHBRIDGE, 0, 0, 0, 0, ((const machine_slot_t[]) { MSLOT_BUS(SLOT_ISA16, 5), MSLOT_END })),
+            MSLOT_END
+        },
         .aliases                  = { "" }
     },
     /* This has a standalone AMI Megakey 1993, which is type 'P'. */
@@ -10665,10 +11133,18 @@ const machine_t machines[] = {
         .gpio_acpi                = 0xffffffff,
         .device                   = NULL,
         .kbd_device               = NULL,
-        .fdc_device               = NULL,
+        .fdc_device               = &fdc_at_device,
         .vid_device               = NULL,
         .snd_device               = NULL,
         .net_device               = NULL,
+        .pci_flags                = PCI_CONFIG_TYPE_1,
+        .slot_layout              = (const machine_slot_t[]) {
+            MSLOT_PCI(0x00, PCI_CARD_NORTHBRIDGE, 0, 0, 0, 0),
+            MSLOT_PCI(0x0F, PCI_CARD_NORMAL, 3, 4, 1, 2), /* 03 = Slot 1 */
+            MSLOT_PCI(0x0E, PCI_CARD_NORMAL, 2, 3, 4, 1), /* 04 = Slot 2 */
+            MSLOT_PCI(0x0D, PCI_CARD_NORMAL, 1, 2, 3, 4), /* 05 = Slot 3 */
+            MSLOT_END
+        },
         .aliases                  = { "" }
     },
     /* Has AMIKey-2 'H' KBC firmware. */
@@ -10693,7 +11169,7 @@ const machine_t machines[] = {
             .max_multi   = 0
         },
         .bus_flags = MACHINE_VLB,
-        .flags     = MACHINE_IDE,
+        .flags     = MACHINE_IDE | MACHINE_UART_PRI | MACHINE_UART_SEC | MACHINE_LPT_PRI,
         .ram       = {
             .min  = 1024,
             .max  = 65536,
@@ -10706,8 +11182,8 @@ const machine_t machines[] = {
         .kbc_params               = KBC_VEN_AMI | 0x00004800,
         .nvr_device               = &nvr_at_device,
         .nvr_params               = NVR_AT,
-        .sio_device               = NULL,
-        .sio_params               = 0x00000000,
+        .sio_device               = &fdc37c6xx_device,
+        .sio_params               = (uintptr_t) ((FDC37C665 | FDC37C6XX_IDE_PRI)),
         .kbc_p1                   = 0x000004f0,
         .gpio                     = 0xffffffff,
         .gpio_acpi                = 0xffffffff,
@@ -10717,6 +11193,11 @@ const machine_t machines[] = {
         .vid_device               = NULL,
         .snd_device               = NULL,
         .net_device               = NULL,
+        .slot_layout              = (const machine_slot_t[]) {
+            MSLOT_BUS(SLOT_ISA16, 5),
+            MSLOT_BUS(SLOT_ISA_VLB, 2),
+            MSLOT_END
+        },
         .aliases                  = { "" }
     },
     /* Tyan S1437: SiS 85C405/406/411/420/431, eight EISA slots and two
@@ -10764,10 +11245,14 @@ const machine_t machines[] = {
         .gpio_acpi                = 0xffffffff,
         .device                   = NULL,
         .kbd_device               = NULL,
-        .fdc_device               = NULL,
+        .fdc_device               = &fdc_at_device,
         .vid_device               = NULL,
         .snd_device               = NULL,
         .net_device               = NULL,
+        .slot_layout              = (const machine_slot_t[]) {
+            MSLOT_BUS(SLOT_EISA, 8),
+            MSLOT_END
+        },
         .aliases                  = { "" }
     },
     /* Uses an Intel KBC with Phoenix MultiKey 2.03 KBC firmware. */
@@ -10793,7 +11278,7 @@ const machine_t machines[] = {
             .max_multi   = 0
         },
         .bus_flags = MACHINE_PS2,
-        .flags     = MACHINE_IDE | MACHINE_APM, /* Machine has internal Adaptec SCSI which is not identified. */
+        .flags     = MACHINE_IDE | MACHINE_APM | MACHINE_UART_PRI | MACHINE_UART_SEC | MACHINE_LPT_PRI, /* Machine has internal Adaptec SCSI which is not identified. */
         .ram       = {
             .min  = 1024,
             .max  = 65536,
@@ -10806,8 +11291,8 @@ const machine_t machines[] = {
         .kbc_params               = KBC_VEN_PHOENIX | 0x00020300, /* Guess. */
         .nvr_device               = &nvr_at_device,
         .nvr_params               = NVR_AT,
-        .sio_device               = NULL,
-        .sio_params               = 0x00000000,
+        .sio_device               = &pc87310_device,
+        .sio_params               = (uintptr_t) (PCX73XX_IDE),
         .kbc_p1                   = 0x00000cf0,
         .gpio                     = 0xffffffff,
         .gpio_acpi                = 0xffffffff,
@@ -10861,7 +11346,7 @@ const machine_t machines[] = {
         .gpio_acpi                = 0xffffffff,
         .device                   = NULL,
         .kbd_device               = NULL,
-        .fdc_device               = NULL,
+        .fdc_device               = &fdc_at_device,
         .vid_device               = NULL,
         .snd_device               = NULL,
         .net_device               = NULL,
@@ -10889,7 +11374,7 @@ const machine_t machines[] = {
             .max_multi   = 0
         },
         .bus_flags = MACHINE_PS2,
-        .flags     = MACHINE_IDE | MACHINE_VIDEO,
+        .flags     = MACHINE_IDE | MACHINE_VIDEO | MACHINE_UART_PRI | MACHINE_UART_SEC | MACHINE_LPT_PRI,
         .ram       = {
             .min  = 1024,
             .max  = 32768,
@@ -10902,8 +11387,8 @@ const machine_t machines[] = {
         .kbc_params               = KBC_VEN_PHOENIX | 0x00012900, /* Guess. */
         .nvr_device               = &nvr_at_device,
         .nvr_params               = NVR_AT,
-        .sio_device               = NULL,
-        .sio_params               = 0x00000000,
+        .sio_device               = &fdc37c6xx_device,
+        .sio_params               = (uintptr_t) ((FDC37C661 | FDC37C6XX_IDE_PRI)),
         .kbc_p1                   = 0x00002420,
         .gpio                     = 0xffffffff,
         .gpio_acpi                = 0xffffffff,
@@ -10938,7 +11423,7 @@ const machine_t machines[] = {
             .max_multi   = 0
         },
         .bus_flags = MACHINE_PS2,
-        .flags     = MACHINE_IDE | MACHINE_VIDEO,
+        .flags     = MACHINE_IDE | MACHINE_VIDEO | MACHINE_UART_PRI | MACHINE_UART_SEC | MACHINE_LPT_PRI,
         .ram       = {
             .min  = 1024,
             .max  = 65536,
@@ -10951,8 +11436,8 @@ const machine_t machines[] = {
         .kbc_params               = 0x00000000,
         .nvr_device               = &nvr_at_device,
         .nvr_params               = NVR_AT_ZERO_DEFAULT,
-        .sio_device               = NULL,
-        .sio_params               = 0x00000000,
+        .sio_device               = &fdc37c6xx_device,
+        .sio_params               = (uintptr_t) ((FDC37C661 | FDC37C6XX_IDE_PRI)),
         .kbc_p1                   = 0x00000cf0,
         .gpio                     = 0xffffffff,
         .gpio_acpi                = 0xffffffff,
@@ -10986,7 +11471,7 @@ const machine_t machines[] = {
             .max_multi   = 0
         },
         .bus_flags = MACHINE_PS2,
-        .flags     = MACHINE_IDE | MACHINE_VIDEO,
+        .flags     = MACHINE_IDE | MACHINE_VIDEO | MACHINE_UART_PRI | MACHINE_UART_SEC | MACHINE_LPT_PRI,
         .ram       = {
             .min  = 2048,
             .max  = 32768,
@@ -11000,8 +11485,8 @@ const machine_t machines[] = {
         /* The NVR is on the VLSI VL82C113. */
         .nvr_device               = NULL,
         .nvr_params               = 0x00000000,
-        .sio_device               = NULL,
-        .sio_params               = 0x00000000,
+        .sio_device               = &fdc37c6xx_device,
+        .sio_params               = (uintptr_t) ((FDC37C651 | FDC37C6XX_IDE_PRI)),
         .kbc_p1                   = 0x00000ce0,
         .gpio                     = 0xffffffff,
         .gpio_acpi                = 0xffffffff,
@@ -11011,6 +11496,10 @@ const machine_t machines[] = {
         .vid_device               = &gd5428_onboard_vlb_device,
         .snd_device               = NULL,
         .net_device               = NULL,
+        .slot_layout              = (const machine_slot_t[]) {
+            MSLOT_BUS(SLOT_ISA16, 1),
+            MSLOT_END
+        },
         .aliases                  = { "Intel Classic R Plus", "Intel Monsoon", "" }
     },
     /* Has a VLSI VL82C113A SCAMP Combination I/O which holds the KBC. */
@@ -11035,7 +11524,7 @@ const machine_t machines[] = {
             .max_multi   = 0
         },
         .bus_flags = MACHINE_VLB,
-        .flags     = MACHINE_IDE,
+        .flags     = MACHINE_IDE | MACHINE_UART_PRI | MACHINE_UART_SEC | MACHINE_LPT_PRI,
         .ram       = {
             .min  = 2048,
             .max  = 65536,
@@ -11049,8 +11538,8 @@ const machine_t machines[] = {
         /* The NVR is on the VLSI VL82C113. */
         .nvr_device               = NULL,
         .nvr_params               = 0x00000000,
-        .sio_device               = NULL,
-        .sio_params               = 0x00000000,
+        .sio_device               = &fdc37c6xx_device,
+        .sio_params               = (uintptr_t) ((FDC37C651 | FDC37C6XX_IDE_PRI)),
         .kbc_p1                   = 0x000004f0,
         .gpio                     = 0xffffffff,
         .gpio_acpi                = 0xffffffff,
@@ -11060,6 +11549,12 @@ const machine_t machines[] = {
         .vid_device               = NULL,
         .snd_device               = NULL,
         .net_device               = NULL,
+        .slot_layout              = (const machine_slot_t[]) {
+            MSLOT_BUS(SLOT_ISA16, 5),
+            MSLOT_BUS(SLOT_ISA_VLB, 2),
+            MSLOT_BUS(SLOT_ISA8, 1),
+            MSLOT_END
+        },
         .aliases                  = { "" }
     },
     /* Has a VLSI VL82C113A SCAMP Combination I/O which holds the KBC. */
@@ -11084,7 +11579,7 @@ const machine_t machines[] = {
             .max_multi   = 0
         },
         .bus_flags = MACHINE_PS2,
-        .flags     = MACHINE_IDE | MACHINE_VIDEO,
+        .flags     = MACHINE_IDE | MACHINE_VIDEO | MACHINE_UART_PRI | MACHINE_UART_SEC | MACHINE_LPT_PRI,
         .ram       = {
             .min  = 2048,
             .max  = 65536,
@@ -11098,8 +11593,8 @@ const machine_t machines[] = {
         /* The NVR is on the VLSI VL82C113. */
         .nvr_device               = NULL,
         .nvr_params               = 0x00000000,
-        .sio_device               = NULL,
-        .sio_params               = 0x00000000,
+        .sio_device               = &fdc37c6xx_device,
+        .sio_params               = (uintptr_t) ((FDC37C651 | FDC37C6XX_IDE_PRI)),
         .kbc_p1                   = 0x000004f0,
         .gpio                     = 0xffffffff,
         .gpio_acpi                = 0xffffffff,
@@ -11137,7 +11632,7 @@ const machine_t machines[] = {
             .max_multi   = 0
         },
         .bus_flags = MACHINE_PS2,
-        .flags     = MACHINE_IDE | MACHINE_VIDEO | MACHINE_GAMEPORT,
+        .flags     = MACHINE_IDE | MACHINE_VIDEO | MACHINE_GAMEPORT | MACHINE_UART_PRI | MACHINE_UART_SEC | MACHINE_LPT_PRI,
         .ram       = {
             .min  = 4096,
             .max  = 65536,
@@ -11150,7 +11645,7 @@ const machine_t machines[] = {
         .kbc_params               = KBC_VEN_PHOENIX | 0x00012900, /* Guess. */
         .nvr_device               = &nvr_at_device,
         .nvr_params               = NVR_AT,
-        .sio_device               = NULL,
+        .sio_device               = &acc3221_device,
         .sio_params               = 0x00000000,
         .kbc_p1                   = 0x00000cf0,
         .gpio                     = 0xffffffff,
@@ -11205,10 +11700,15 @@ const machine_t machines[] = {
         .gpio_acpi                = 0xffffffff,
         .device                   = NULL,
         .kbd_device               = NULL,
-        .fdc_device               = NULL,
+        .fdc_device               = &fdc_at_device,
         .vid_device               = NULL,
         .snd_device               = NULL,
         .net_device               = NULL,
+        .slot_layout              = (const machine_slot_t[]) {
+            MSLOT_BUS(SLOT_ISA16, 3),
+            MSLOT_BUS(SLOT_ISA_VLB, 3),
+            MSLOT_END
+        },
         .aliases                  = { "" }
     },
     /* This has an AMIKey-2, which is an updated version of type 'H'. */
@@ -11253,10 +11753,16 @@ const machine_t machines[] = {
         .gpio_acpi                = 0xffffffff,
         .device                   = NULL,
         .kbd_device               = NULL,
-        .fdc_device               = NULL,
+        .fdc_device               = &fdc_at_device,
         .vid_device               = NULL,
         .snd_device               = NULL,
         .net_device               = NULL,
+        .slot_layout              = (const machine_slot_t[]) {
+            MSLOT_BUS(SLOT_ISA16, 3),
+            MSLOT_BUS(SLOT_ISA_VLB, 3),
+            MSLOT_BUS(SLOT_ISA8, 1),
+            MSLOT_END
+        },
         .aliases                  = { "" }
     },
     /* This uses a VIA VT82C42N KBC, which is a clone of type 'F' with additional commands.
@@ -11295,8 +11801,8 @@ const machine_t machines[] = {
         .kbc_params               = KBC_VEN_VIA | 0x00424600,
         .nvr_device               = &nvr_at_device,
         .nvr_params               = NVR_AMI_1994,
-        .sio_device               = NULL,
-        .sio_params               = 0x00000000,
+        .sio_device               = &um866x_device,
+        .sio_params               = (uintptr_t) (UM8663BF),
         .kbc_p1                   = 0x00000cf0,
         .gpio                     = 0xffffffff,
         .gpio_acpi                = 0xffffffff,
@@ -11350,10 +11856,15 @@ const machine_t machines[] = {
         .gpio_acpi                = 0xffffffff,
         .device                   = NULL,
         .kbd_device               = NULL,
-        .fdc_device               = NULL,
+        .fdc_device               = &fdc_at_device,
         .vid_device               = NULL,
         .snd_device               = NULL,
         .net_device               = NULL,
+        .slot_layout              = (const machine_slot_t[]) {
+            MSLOT_BUS(SLOT_ISA16, 4),
+            MSLOT_BUS(SLOT_ISA_VLB, 3),
+            MSLOT_END
+        },
         .aliases                  = { "" }
     },
     /* Has AMI MegaKey 'P' KBC firmware. */
@@ -11398,7 +11909,7 @@ const machine_t machines[] = {
         .gpio_acpi                = 0xffffffff,
         .device                   = NULL,
         .kbd_device               = NULL,
-        .fdc_device               = NULL,
+        .fdc_device               = &fdc_at_device,
         .vid_device               = NULL,
         .snd_device               = NULL,
         .net_device               = NULL,
@@ -11426,7 +11937,7 @@ const machine_t machines[] = {
             .max_multi   = 0
         },
         .bus_flags = MACHINE_PS2_VLB,
-        .flags     = MACHINE_IDE,
+        .flags     = MACHINE_IDE | MACHINE_UART_PRI | MACHINE_UART_SEC | MACHINE_LPT_PRI,
         .ram       = {
             .min  = 1024,
             .max  = 65536,
@@ -11439,8 +11950,8 @@ const machine_t machines[] = {
         .kbc_params               = KBC_VEN_AMI | 0x00004600,
         .nvr_device               = &nvr_at_device,
         .nvr_params               = NVR_AT,
-        .sio_device               = NULL,
-        .sio_params               = 0x00000000,
+        .sio_device               = &fdc37c6xx_device,
+        .sio_params               = (uintptr_t) ((FDC37C661 | FDC37C6XX_IDE_PRI)),
         .kbc_p1                   = 0x00000cf0,
         .gpio                     = 0xffffffff,
         .gpio_acpi                = 0xffffffff,
@@ -11450,6 +11961,11 @@ const machine_t machines[] = {
         .vid_device               = NULL,
         .snd_device               = NULL,
         .net_device               = NULL,
+        .slot_layout              = (const machine_slot_t[]) {
+            MSLOT_BUS(SLOT_ISA16, 5),
+            MSLOT_BUS(SLOT_ISA_VLB, 3),
+            MSLOT_END
+        },
         .aliases                  = { "" }
     },
     /* Has AMIKey-2 'H' KBC firmware. */
@@ -11474,7 +11990,7 @@ const machine_t machines[] = {
             .max_multi   = 0
         },
         .bus_flags = MACHINE_PS2_VLB,
-        .flags     = MACHINE_VIDEO | MACHINE_IDE_DUAL,
+        .flags     = MACHINE_VIDEO | MACHINE_IDE_DUAL | MACHINE_UART_PRI | MACHINE_UART_SEC | MACHINE_LPT_PRI,
         .ram       = {
             .min  = 1024,
             .max  = 65536,
@@ -11487,8 +12003,8 @@ const machine_t machines[] = {
         .kbc_params               = KBC_VEN_AMI | 0x00004800,
         .nvr_device               = &nvr_at_device,
         .nvr_params               = NVR_AT,
-        .sio_device               = NULL,
-        .sio_params               = 0x00000000,
+        .sio_device               = &fdc37c6xx_device,
+        .sio_params               = (uintptr_t) (FDC37C665),
         .kbc_p1                   = 0x00000cf0,
         .gpio                     = 0xffffffff,
         .gpio_acpi                = 0xffffffff,
@@ -11544,7 +12060,7 @@ const machine_t machines[] = {
         .gpio_acpi                = 0xffffffff,
         .device                   = &j403tg_device,
         .kbd_device               = NULL,
-        .fdc_device               = NULL,
+        .fdc_device               = &fdc_at_device,
         .vid_device               = NULL,
         .snd_device               = NULL,
         .net_device               = NULL,
@@ -11593,10 +12109,15 @@ const machine_t machines[] = {
         .gpio_acpi                = 0xffffffff,
         .device                   = NULL,
         .kbd_device               = NULL,
-        .fdc_device               = NULL,
+        .fdc_device               = &fdc_at_device,
         .vid_device               = NULL,
         .snd_device               = NULL,
         .net_device               = NULL,
+        .slot_layout              = (const machine_slot_t[]) {
+            MSLOT_BUS(SLOT_ISA16, 6),
+            MSLOT_BUS(SLOT_ISA_VLB, 2),
+            MSLOT_END
+        },
         .aliases                  = { "" }
     },
     /* The BIOS string ends in -U, unless command 0xA1 (AMIKey get version) returns an
@@ -11643,10 +12164,16 @@ const machine_t machines[] = {
         .gpio_acpi                = 0xffffffff,
         .device                   = NULL,
         .kbd_device               = NULL,
-        .fdc_device               = NULL,
+        .fdc_device               = &fdc_at_device,
         .vid_device               = NULL,
         .snd_device               = NULL,
         .net_device               = NULL,
+        .slot_layout              = (const machine_slot_t[]) {
+            MSLOT_BUS(SLOT_ISA16, 4),
+            MSLOT_BUS(SLOT_ISA_VLB, 3),
+            MSLOT_BUS(SLOT_ISA8, 1),
+            MSLOT_END
+        },
         .aliases                  = { "" }
     },
     /* JETKey 5.0 KBC */
@@ -11691,10 +12218,16 @@ const machine_t machines[] = {
         .gpio_acpi                = 0xffffffff,
         .device                   = &win471t_device,
         .kbd_device               = NULL,
-        .fdc_device               = NULL,
+        .fdc_device               = &fdc_at_device,
         .vid_device               = NULL,
         .snd_device               = NULL,
         .net_device               = NULL,
+        .slot_layout              = (const machine_slot_t[]) {
+            MSLOT_BUS(SLOT_ISA16, 4),
+            MSLOT_BUS(SLOT_ISA_VLB, 3),
+            MSLOT_BUS(SLOT_ISA8, 1),
+            MSLOT_END
+        },
         .aliases                  = { "" }
     },
     /* Has AMIKey-2 'H' keyboard BIOS. */
@@ -11739,10 +12272,15 @@ const machine_t machines[] = {
         .gpio_acpi                = 0xffffffff,
         .device                   = NULL,
         .kbd_device               = NULL,
-        .fdc_device               = NULL,
+        .fdc_device               = &fdc_at_device,
         .vid_device               = NULL,
         .snd_device               = NULL,
         .net_device               = NULL,
+        .slot_layout              = (const machine_slot_t[]) {
+            MSLOT_BUS(SLOT_ISA16, 4),
+            MSLOT_BUS(SLOT_ISA_VLB, 3),
+            MSLOT_END
+        },
         .aliases                  = { "AOpen Vi15G", "" }
     },
     /* This has an AMIKey-2, which is an updated version of type 'H'. */
@@ -11787,10 +12325,15 @@ const machine_t machines[] = {
         .gpio_acpi                = 0xffffffff,
         .device                   = NULL,
         .kbd_device               = NULL,
-        .fdc_device               = NULL,
+        .fdc_device               = &fdc_at_device,
         .vid_device               = NULL,
         .snd_device               = NULL,
         .net_device               = NULL,
+        .slot_layout              = (const machine_slot_t[]) {
+            MSLOT_BUS(SLOT_ISA16, 5),
+            MSLOT_BUS(SLOT_ISA_VLB, 2),
+            MSLOT_END
+        },
         .aliases                  = { "" }
     },
     /* Has an Intel 82C42PE with Phoenix MultiKey/C42 KBC firmware, copyrighted 1993. */
@@ -11815,7 +12358,7 @@ const machine_t machines[] = {
             .max_multi   = 0
         },
         .bus_flags = MACHINE_PS2,
-        .flags     = MACHINE_IDE_DUAL | MACHINE_SUPER_IO | MACHINE_APM | MACHINE_VIDEO,
+        .flags     = MACHINE_IDE_DUAL | MACHINE_SUPER_IO | MACHINE_APM | MACHINE_VIDEO | MACHINE_PS2_KBC,
         .ram       = {
             .min  = 4096,
             .max  = 69632,
@@ -11828,8 +12371,8 @@ const machine_t machines[] = {
         .kbc_params               = KBC_VEN_PHOENIX | 0x00021400, /* Guess. */
         .nvr_device               = &nvr_at_device,
         .nvr_params               = NVR_AT,
-        .sio_device               = NULL,
-        .sio_params               = 0x00000000,
+        .sio_device               = &fdc37c6xx_device,
+        .sio_params               = (uintptr_t) ((FDC37C665 | FDC37C6XX_IDE_SEC)),
         .kbc_p1                   = 0x00000cf0,
         .gpio                     = 0xffffffff,
         .gpio_acpi                = 0xffffffff,
@@ -11884,7 +12427,7 @@ const machine_t machines[] = {
         .gpio_acpi                = 0xffffffff,
         .device                   = NULL,
         .kbd_device               = NULL,
-        .fdc_device               = NULL,
+        .fdc_device               = &fdc_at_device,
         .vid_device               = NULL,
         .snd_device               = NULL,
         .net_device               = NULL,
@@ -11932,10 +12475,16 @@ const machine_t machines[] = {
         .gpio_acpi                = 0xffffffff,
         .device                   = NULL,
         .kbd_device               = NULL,
-        .fdc_device               = NULL,
+        .fdc_device               = &fdc_at_device,
         .vid_device               = NULL,
         .snd_device               = NULL,
         .net_device               = NULL,
+        .slot_layout              = (const machine_slot_t[]) {
+            MSLOT_BUS(SLOT_ISA16, 4),
+            MSLOT_BUS(SLOT_ISA_VLB, 3),
+            MSLOT_BUS(SLOT_ISA8, 1),
+            MSLOT_END
+        },
         .aliases                  = { "" }
     },
     /* Uses some variant of the Phoenix MultiKey/42 */
@@ -11960,7 +12509,7 @@ const machine_t machines[] = {
             .max_multi   = 0
         },
         .bus_flags = MACHINE_PS2_VLB,
-        .flags     = MACHINE_IDE_DUAL | MACHINE_SUPER_IO | MACHINE_APM | MACHINE_SOUND | MACHINE_VIDEO,
+        .flags     = MACHINE_IDE_DUAL | MACHINE_SUPER_IO | MACHINE_APM | MACHINE_SOUND | MACHINE_VIDEO | MACHINE_PS2_KBC,
         .ram       = {
             .min  = 1024,
             .max  = 131072,
@@ -12009,7 +12558,7 @@ const machine_t machines[] = {
             .max_multi   = 0
         },
         .bus_flags = MACHINE_PS2_VLB,
-        .flags     = MACHINE_IDE, /* Machine has internal video: Western Digital WD90C33-ZZ (not yet implemented) */
+        .flags     = MACHINE_IDE | MACHINE_UART_PRI | MACHINE_UART_SEC | MACHINE_LPT_PRI, /* Machine has internal video: Western Digital WD90C33-ZZ (not yet implemented) */
         .ram       = {
         /* In theory, this machine should support up to 128 MB RAM. In practice, likely 
            due to a BIOS bug, it does not detect more than 64 MB at all. */
@@ -12024,8 +12573,8 @@ const machine_t machines[] = {
         .kbc_params               = KBC_VEN_AMI_TRIGEM | 0x00005a00,
         .nvr_device               = &nvr_at_device,
         .nvr_params               = NVR_AT_ZERO_DEFAULT,
-        .sio_device               = NULL,
-        .sio_params               = 0x00000000,
+        .sio_device               = &fdc37c6xx_device,
+        .sio_params               = (uintptr_t) ((FDC37C651 | FDC37C6XX_IDE_PRI)),
         .kbc_p1                   = 0x00000cf0,
         .gpio                     = 0xffffffff,
         .gpio_acpi                = 0xffffffff,
@@ -12079,7 +12628,7 @@ const machine_t machines[] = {
         .gpio_acpi                = 0xffffffff,
         .device                   = NULL,
         .kbd_device               = NULL,
-        .fdc_device               = NULL,
+        .fdc_device               = &fdc_at_device,
         .vid_device               = NULL,
         .snd_device               = NULL,
         .net_device               = NULL,
@@ -12127,10 +12676,15 @@ const machine_t machines[] = {
         .gpio_acpi                = 0xffffffff,
         .device                   = NULL,
         .kbd_device               = NULL,
-        .fdc_device               = NULL,
+        .fdc_device               = &fdc_at_device,
         .vid_device               = NULL,
         .snd_device               = NULL,
         .net_device               = NULL,
+        .slot_layout              = (const machine_slot_t[]) {
+            MSLOT_BUS(SLOT_ISA16, 5),
+            MSLOT_BUS(SLOT_ISA_VLB, 3),
+            MSLOT_END
+        },
         .aliases                  = { "VEGA MB-SYP243LV-V12", "" }
     },
 
@@ -12159,7 +12713,7 @@ const machine_t machines[] = {
             .max_multi   = 0
         },
         .bus_flags = MACHINE_PCIV,
-        .flags     = MACHINE_IDE | MACHINE_APM,
+        .flags     = MACHINE_IDE | MACHINE_APM | MACHINE_UART_PRI | MACHINE_UART_SEC | MACHINE_LPT_PRI,
         .ram       = {
             .min  = 1024,
             .max  = 131072,
@@ -12172,8 +12726,8 @@ const machine_t machines[] = {
         .kbc_params               = KBC_VEN_AMI | 0x00004800,
         .nvr_device               = &nvr_at_device,
         .nvr_params               = NVR_AT,
-        .sio_device               = NULL,
-        .sio_params               = 0x00000000,
+        .sio_device               = &fdc37c6xx_device,
+        .sio_params               = (uintptr_t) ((FDC37C665 | FDC37C6XX_IDE_PRI)),
         .kbc_p1                   = 0x00000cf0,
         .gpio                     = 0xffffffff,
         .gpio_acpi                = 0xffffffff,
@@ -12183,6 +12737,16 @@ const machine_t machines[] = {
         .vid_device               = NULL,
         .snd_device               = NULL,
         .net_device               = NULL,
+        .pci_flags                = FLAG_MECHANISM_1 | FLAG_MECHANISM_2 | PCI_ALWAYS_EXPOSE_DEV0,
+        .slot_layout              = (const machine_slot_t[]) {
+            MSLOT_PCI(0x00, PCI_CARD_NORTHBRIDGE, 0, 0, 0, 0),
+            MSLOT_PCI(0x0B, PCI_CARD_SCSI, 4, 1, 2, 3),
+            MSLOT_PCI(0x08, PCI_CARD_NORMAL, 1, 2, 3, 4),
+            MSLOT_PCI(0x09, PCI_CARD_NORMAL, 2, 3, 4, 1),
+            MSLOT_PCI(0x0A, PCI_CARD_NORMAL, 3, 4, 1, 2),
+            MSLOT_PCI(0x10, PCI_CARD_NORMAL, 1, 2, 3, 4),
+            MSLOT_END
+        },
         .aliases                  = { "" }
     },
     /* TriGem machine with M1429G and PhoenixBIOS */
@@ -12207,7 +12771,7 @@ const machine_t machines[] = {
             .max_multi   = 0
         },
         .bus_flags = MACHINE_PS2_PCIV,
-        .flags     = MACHINE_IDE | MACHINE_APM,
+        .flags     = MACHINE_IDE | MACHINE_APM | MACHINE_UART_PRI | MACHINE_UART_SEC | MACHINE_LPT_PRI,
         .ram       = {
             .min  = 1024,
             .max  = 131072,
@@ -12220,8 +12784,8 @@ const machine_t machines[] = {
         .kbc_params               = KBC_VEN_AMI_TRIGEM | 0x00005a00,
         .nvr_device               = &nvr_at_device,
         .nvr_params               = NVR_AT,
-        .sio_device               = NULL,
-        .sio_params               = 0x00000000,
+        .sio_device               = &fdc37c6xx_device,
+        .sio_params               = (uintptr_t) ((FDC37C665 | FDC37C6XX_IDE_PRI)),
         .kbc_p1                   = 0x000004f0,
         .gpio                     = 0xffffffff,
         .gpio_acpi                = 0xffffffff,
@@ -12231,6 +12795,15 @@ const machine_t machines[] = {
         .vid_device               = NULL,
         .snd_device               = NULL,
         .net_device               = NULL,
+        .pci_flags                = FLAG_MECHANISM_1 | FLAG_MECHANISM_2 | PCI_ALWAYS_EXPOSE_DEV0,
+        .slot_layout              = (const machine_slot_t[]) {
+            MSLOT_PCI(0x00, PCI_CARD_NORTHBRIDGE, 0, 0, 0, 0),
+            MSLOT_PCI(0x0F, PCI_CARD_NORMAL, 1, 2, 3, 4),
+            MSLOT_PCI(0x0D, PCI_CARD_NORMAL, 2, 3, 4, 1),
+            MSLOT_PCI(0x0B, PCI_CARD_NORMAL, 3, 4, 1, 2),
+            MSLOT_PCI(0x10, PCI_CARD_NORMAL, 1, 2, 3, 4),
+            MSLOT_END
+        },
         .aliases                  = { "TriGem Talent", "" }
     },
     /* This has an AMIKey-2, which is an updated version of type 'H'. */
@@ -12255,7 +12828,7 @@ const machine_t machines[] = {
             .max_multi   = 0
         },
         .bus_flags = MACHINE_PS2_PCI,
-        .flags     = MACHINE_IDE_DUAL | MACHINE_VIDEO | MACHINE_APM,
+        .flags     = MACHINE_IDE_DUAL | MACHINE_VIDEO | MACHINE_APM | MACHINE_UART_PRI | MACHINE_UART_SEC | MACHINE_LPT_PRI,
         .ram       = {
             .min  = 1024,
             .max  = 131072,
@@ -12268,8 +12841,8 @@ const machine_t machines[] = {
         .kbc_params               = KBC_VEN_AMI | 0x00004800,
         .nvr_device               = &nvr_at_device,
         .nvr_params               = NVR_AT,
-        .sio_device               = NULL,
-        .sio_params               = 0x00000000,
+        .sio_device               = &fdc37c6xx_device,
+        .sio_params               = (uintptr_t) (FDC37C665),
         .kbc_p1                   = 0x00000cf0,
         .gpio                     = 0xffffffff,
         .gpio_acpi                = 0xffffffff,
@@ -12279,6 +12852,16 @@ const machine_t machines[] = {
         .vid_device               = &tgui9440_onboard_pci_device,
         .snd_device               = NULL,
         .net_device               = NULL,
+        .pci_flags                = PCI_CONFIG_TYPE_1,
+        .slot_layout              = (const machine_slot_t[]) {
+            MSLOT_PCI(0x00, PCI_CARD_NORTHBRIDGE, 0, 0, 0, 0),
+            MSLOT_PCI(0x0F, PCI_CARD_NORMAL, 2, 3, 4, 1),
+            MSLOT_PCI(0x0E, PCI_CARD_NORMAL, 3, 4, 1, 2),
+            MSLOT_PCI(0x0D, PCI_CARD_NORMAL, 4, 1, 2, 3),
+            MSLOT_PCI(0x0C, PCI_CARD_NORMAL, 1, 2, 3, 4),
+            MSLOT_PCI(0x01, PCI_CARD_VIDEO, 4, 1, 2, 3),
+            MSLOT_END
+        },
         .aliases                  = { "" }
     },
     /* Has the ALi M1487/9's on-chip keyboard controller which clones a standard AT
@@ -12304,7 +12887,7 @@ const machine_t machines[] = {
             .max_multi   = 0
         },
         .bus_flags = MACHINE_PCI, /* Machine has a PISA slot */
-        .flags     = MACHINE_IDE_DUAL | MACHINE_APM,
+        .flags     = MACHINE_IDE_DUAL | MACHINE_APM | MACHINE_UART_PRI | MACHINE_UART_SEC | MACHINE_LPT_PRI,
         .ram       = {
             .min  = 1024,
             .max  = 65536,
@@ -12317,8 +12900,8 @@ const machine_t machines[] = {
         .kbc_params               = KBC_VEN_ALI | 0x00004600,
         .nvr_device               = &nvr_at_device,
         .nvr_params               = NVR_AT,
-        .sio_device               = NULL,
-        .sio_params               = 0x00000000,
+        .sio_device               = &w837x7_device,
+        .sio_params               = (uintptr_t) ((W83787F | W837X7_KEY_89)),
         .kbc_p1                   = 0x000004f0,
         .gpio                     = 0xffffffff,
         .gpio_acpi                = 0xffffffff,
@@ -12328,6 +12911,14 @@ const machine_t machines[] = {
         .vid_device               = NULL,
         .snd_device               = NULL,
         .net_device               = NULL,
+        .pci_flags                = PCI_CAN_SWITCH_TYPE,
+        .slot_layout              = (const machine_slot_t[]) {
+            MSLOT_PCI(0x00, PCI_CARD_NORTHBRIDGE, 0, 0, 0, 0),
+            MSLOT_PCI(0x03, PCI_CARD_NORMAL, 1, 2, 3, 4),
+            MSLOT_PCI(0x04, PCI_CARD_NORMAL, 2, 3, 4, 1),
+            MSLOT_PCI(0x05, PCI_CARD_NORMAL, 3, 4, 1, 2),
+            MSLOT_END
+        },
         .aliases                  = { "" }
     },
     /* Has an ALi M5042 with phoenix firmware like the ESA TF-486. */
@@ -12352,7 +12943,7 @@ const machine_t machines[] = {
             .max_multi   = 0
         },
         .bus_flags = MACHINE_PS2,
-        .flags     = MACHINE_SUPER_IO | MACHINE_IDE, /* Machine has internal video: C&T F65545 (not yet implemented) */
+        .flags     = MACHINE_SUPER_IO | MACHINE_IDE | MACHINE_PS2_KBC, /* Machine has internal video: C&T F65545 (not yet implemented) */
         .ram       = {
             .min  = 8192,
             .max  = 73728,
@@ -12365,7 +12956,7 @@ const machine_t machines[] = {
         .kbc_params               = KBC_VEN_PHOENIX | 0x00014000, /* Guess. */
         .nvr_device               = &nvr_at_device,
         .nvr_params               = NVR_AT,
-        .sio_device               = NULL,
+        .sio_device               = &fdc37c669_device,
         .sio_params               = 0x00000000,
         .kbc_p1                   = 0x00000cf0,
         .gpio                     = 0xffffffff,
@@ -12376,6 +12967,11 @@ const machine_t machines[] = {
         .vid_device               = NULL,
         .snd_device               = NULL,
         .net_device               = NULL,
+        .pci_flags                = PCI_CONFIG_TYPE_1,
+        .slot_layout              = (const machine_slot_t[]) {
+            MSLOT_PCI(0x00, PCI_CARD_NORTHBRIDGE, 0, 0, 0, 0),
+            MSLOT_END
+        },
         .aliases                  = { "" }
     },
     /* Has an ALi M5042 keyboard controller with Phoenix MultiKey/42 v1.40 firmware. */
@@ -12400,7 +12996,7 @@ const machine_t machines[] = {
             .max_multi   = 0
         },
         .bus_flags = MACHINE_PS2_PCI,
-        .flags     = MACHINE_IDE_DUAL | MACHINE_APM,
+        .flags     = MACHINE_IDE_DUAL | MACHINE_APM | MACHINE_UART_PRI | MACHINE_UART_SEC | MACHINE_LPT_PRI,
         .ram       = {
             .min  = 1024,
             .max  = 65536,
@@ -12413,8 +13009,8 @@ const machine_t machines[] = {
         .kbc_params               = KBC_VEN_PHOENIX | 0x00014000,
         .nvr_device               = &nvr_at_device,
         .nvr_params               = NVR_AT,
-        .sio_device               = NULL,
-        .sio_params               = 0x00000000,
+        .sio_device               = &w83977_device,
+        .sio_params               = (uintptr_t) ((W83977EF | W83977_NO_NVR)),
         .kbc_p1                   = 0x00000cf0,
         .gpio                     = 0xffffffff,
         .gpio_acpi                = 0xffffffff,
@@ -12424,6 +13020,12 @@ const machine_t machines[] = {
         .vid_device               = NULL,
         .snd_device               = NULL,
         .net_device               = NULL,
+        .pci_flags                = PCI_CONFIG_TYPE_1,
+        .slot_layout              = (const machine_slot_t[]) {
+            MSLOT_PCI(0x00, PCI_CARD_NORTHBRIDGE, 0, 0, 0, 0),
+            MSLOT_PCI(0x0C, PCI_CARD_NORMAL, 1, 2, 3, 4),
+            MSLOT_END
+        },
         .aliases                  = { "" }
     },
     /* Has the ALi M1487/9's on-chip keyboard controller which clones a standard AT
@@ -12452,7 +13054,7 @@ const machine_t machines[] = {
             .max_multi   = 0
         },
         .bus_flags = MACHINE_PCI,
-        .flags     = MACHINE_PS2_KBC | MACHINE_IDE_DUAL | MACHINE_APM,
+        .flags     = MACHINE_PS2_KBC | MACHINE_IDE_DUAL | MACHINE_APM | MACHINE_UART_PRI | MACHINE_UART_SEC | MACHINE_LPT_PRI,
         .ram       = {
             .min  = 1024,
             .max  = 65536,
@@ -12465,8 +13067,8 @@ const machine_t machines[] = {
         .kbc_params               = KBC_VEN_ALI | 0x00004600,
         .nvr_device               = &nvr_at_device,
         .nvr_params               = NVR_AT,
-        .sio_device               = NULL,
-        .sio_params               = 0x00000000,
+        .sio_device               = &w837x7_device,
+        .sio_params               = (uintptr_t) ((W83787F | W837X7_KEY_88)),
         .kbc_p1                   = 0x000004f0,
         .gpio                     = 0xffffffff,
         .gpio_acpi                = 0xffffffff,
@@ -12476,6 +13078,15 @@ const machine_t machines[] = {
         .vid_device               = NULL,
         .snd_device               = NULL,
         .net_device               = NULL,
+        .pci_flags                = PCI_CONFIG_TYPE_1,
+        .slot_layout              = (const machine_slot_t[]) {
+            MSLOT_PCI(0x00, PCI_CARD_NORTHBRIDGE, 0, 0, 0, 0),
+            MSLOT_PCI(0x03, PCI_CARD_NORMAL, 1, 2, 3, 4),
+            MSLOT_PCI(0x04, PCI_CARD_NORMAL, 2, 3, 4, 1),
+            MSLOT_PCI(0x05, PCI_CARD_NORMAL, 3, 4, 1, 2),
+            MSLOT_PCI(0x06, PCI_CARD_NORMAL, 4, 1, 2, 3),
+            MSLOT_END
+        },
         .aliases                  = { "" }
     },
     /* Has the ALi M1487/9's on-chip keyboard controller which clones a standard AT
@@ -12504,7 +13115,7 @@ const machine_t machines[] = {
             .max_multi   = 0
         },
         .bus_flags = MACHINE_PCI,
-        .flags     = MACHINE_IDE_DUAL | MACHINE_APM,
+        .flags     = MACHINE_IDE_DUAL | MACHINE_APM | MACHINE_UART_PRI | MACHINE_UART_SEC | MACHINE_LPT_PRI,
         .ram       = {
             .min  = 1024,
             .max  = 65536,
@@ -12517,8 +13128,8 @@ const machine_t machines[] = {
         .kbc_params               = 0x00005500,
         .nvr_device               = &nvr_at_device,
         .nvr_params               = NVR_AT,
-        .sio_device               = NULL,
-        .sio_params               = 0x00000000,
+        .sio_device               = &gm82c803ab_device,
+        .sio_params               = (uintptr_t) (GM82C803B),
         .kbc_p1                   = 0x000004f0,
         .gpio                     = 0xffffffff,
         .gpio_acpi                = 0xffffffff,
@@ -12528,6 +13139,14 @@ const machine_t machines[] = {
         .vid_device               = NULL,
         .snd_device               = NULL,
         .net_device               = NULL,
+        .pci_flags                = PCI_CONFIG_TYPE_1,
+        .slot_layout              = (const machine_slot_t[]) {
+            MSLOT_PCI(0x00, PCI_CARD_NORTHBRIDGE, 0, 0, 0, 0),
+            MSLOT_PCI(0x03, PCI_CARD_NORMAL, 1, 2, 3, 4),
+            MSLOT_PCI(0x04, PCI_CARD_NORMAL, 2, 3, 4, 1),
+            MSLOT_PCI(0x05, PCI_CARD_NORMAL, 3, 4, 1, 2),
+            MSLOT_END
+        },
         .aliases                  = { "" }
     },
     /* This has an AMIKey-2, which is an updated version of type 'H'. */
@@ -12565,8 +13184,8 @@ const machine_t machines[] = {
         .kbc_params               = KBC_VEN_AMI | 0x00004800,
         .nvr_device               = &nvr_at_device,
         .nvr_params               = NVR_AT,
-        .sio_device               = NULL,
-        .sio_params               = 0x00000000,
+        .sio_device               = &fdc37c6xx_device,
+        .sio_params               = (uintptr_t) (FDC37C665),
         .kbc_p1                   = 0x00000cf0,
         .gpio                     = 0xffffffff,
         .gpio_acpi                = 0xffffffff,
@@ -12576,6 +13195,14 @@ const machine_t machines[] = {
         .vid_device               = NULL,
         .snd_device               = NULL,
         .net_device               = NULL,
+        .pci_flags                = PCI_CONFIG_TYPE_1,
+        .slot_layout              = (const machine_slot_t[]) {
+            MSLOT_PCI(0x05, PCI_CARD_NORTHBRIDGE, 0, 0, 0, 0),
+            MSLOT_PCI(0x12, PCI_CARD_NORMAL, 1, 2, 1, 2),
+            MSLOT_PCI(0x13, PCI_CARD_NORMAL, 2, 1, 2, 1),
+            MSLOT_PCI(0x14, PCI_CARD_NORMAL, 1, 2, 1, 2),
+            MSLOT_END
+        },
         .aliases                  = { "Advanced Integration Research 486PI", "" }
     },
     /* Has Phoenix Multikey/42 PS/2 KBC, but unknown version */
@@ -12600,7 +13227,7 @@ const machine_t machines[] = {
             .max_multi   = 0
         },
         .bus_flags = MACHINE_PS2_PCI,
-        .flags     = MACHINE_SUPER_IO | MACHINE_IDE_DUAL | MACHINE_APM,
+        .flags     = MACHINE_SUPER_IO | MACHINE_IDE_DUAL | MACHINE_APM | MACHINE_PS2_KBC,
         .ram       = {
             .min  = 1024,
             .max  = 131072,
@@ -12613,8 +13240,8 @@ const machine_t machines[] = {
         .kbc_params               = KBC_VEN_PHOENIX | 0x00021400, /* Guess. */
         .nvr_device               = &nvr_at_device,
         .nvr_params               = NVR_AT,
-        .sio_device               = NULL,
-        .sio_params               = 0x00000000,
+        .sio_device               = &fdc37c6xx_device,
+        .sio_params               = (uintptr_t) ((FDC37C665 | FDC37C6XX_IDE_SEC)),
         .kbc_p1                   = 0x00000cf0,
         .gpio                     = 0xffffffff,
         .gpio_acpi                = 0xffffffff,
@@ -12625,6 +13252,15 @@ const machine_t machines[] = {
         .snd_device               = NULL,
         .net_device               = NULL,
         .ide_device               = &ide_cmd640_pci_single_channel_device,
+        .pci_flags                = PCI_CONFIG_TYPE_1,
+        .slot_layout              = (const machine_slot_t[]) {
+            MSLOT_PCI(0x05, PCI_CARD_NORTHBRIDGE, 0, 0, 0, 0),
+            MSLOT_PCI(0x0b, PCI_CARD_IDE, 0xfe, 0xff, 0, 0),
+            MSLOT_PCI(0x08, PCI_CARD_NORMAL, 1, 2, 1, 2),
+            MSLOT_PCI(0x09, PCI_CARD_NORMAL, 2, 1, 2, 1),
+            MSLOT_PCI(0x0a, PCI_CARD_NORMAL, 1, 2, 1, 2),
+            MSLOT_END
+        },
         .aliases                  = { "" }
     },
     /* This has an AMIKey-2, which is an updated version of type 'H'. */
@@ -12669,10 +13305,19 @@ const machine_t machines[] = {
         .gpio_acpi                = 0xffffffff,
         .device                   = NULL,
         .kbd_device               = NULL,
-        .fdc_device               = NULL,
+        .fdc_device               = &fdc_at_device,
         .vid_device               = NULL,
         .snd_device               = NULL,
         .net_device               = NULL,
+        .pci_flags                = PCI_CONFIG_TYPE_1,
+        .slot_layout              = (const machine_slot_t[]) {
+            MSLOT_PCI(0x05, PCI_CARD_NORTHBRIDGE, 0, 0, 0, 0),
+            MSLOT_PCI(0x09, PCI_CARD_NORMAL, 1, 2, 3, 4), /* 09 = Slot 1 */
+            MSLOT_PCI(0x0a, PCI_CARD_NORMAL, 2, 3, 4, 1), /* 0a = Slot 2 */
+            MSLOT_PCI(0x0b, PCI_CARD_NORMAL, 3, 4, 1, 2), /* 0b = Slot 3 */
+            MSLOT_PCI(0x0c, PCI_CARD_NORMAL, 4, 1, 2, 3), /* 0c = Slot 4 */
+            MSLOT_END
+        },
         .aliases                  = { "" }
     },
     /* absolutely no KBC info */
@@ -12710,8 +13355,8 @@ const machine_t machines[] = {
         .kbc_params               = KBC_VEN_AMI | 0x00005200, /* Guess. */
         .nvr_device               = &nvr_at_device,
         .nvr_params               = NVR_AT,
-        .sio_device               = NULL,
-        .sio_params               = 0x00000000,
+        .sio_device               = &i82091aa_device,
+        .sio_params               = (uintptr_t) (I82091AA_26E),
         .kbc_p1                   = 0x00000cf0,
         .gpio                     = 0xffffffff,
         .gpio_acpi                = 0xffffffff,
@@ -12721,6 +13366,13 @@ const machine_t machines[] = {
         .vid_device               = NULL,
         .snd_device               = NULL,
         .net_device               = NULL,
+        .pci_flags                = PCI_CONFIG_TYPE_1,
+        .slot_layout              = (const machine_slot_t[]) {
+            MSLOT_PCI(0x05, PCI_CARD_NORTHBRIDGE, 0, 0, 0, 0),
+            MSLOT_PCI(0x14, PCI_CARD_NORMAL, 1, 2, 1, 2),
+            MSLOT_PCI(0x13, PCI_CARD_NORMAL, 2, 1, 2, 1),
+            MSLOT_END
+        },
         .aliases                  = { "" }
     },
     /* This has the Phoenix MultiKey KBC firmware. */
@@ -12745,7 +13397,7 @@ const machine_t machines[] = {
             .max_multi   = 0
         },
         .bus_flags = MACHINE_PCI,
-        .flags     = MACHINE_PS2_KBC | MACHINE_IDE | MACHINE_APM,
+        .flags     = MACHINE_PS2_KBC | MACHINE_IDE | MACHINE_APM | MACHINE_UART_PRI | MACHINE_UART_SEC | MACHINE_LPT_PRI,
         .ram       = {
             .min  = 1024,
             .max  = 131072,
@@ -12758,8 +13410,8 @@ const machine_t machines[] = {
         .kbc_params               = KBC_VEN_PHOENIX | 0x00012900, /* Guess. */
         .nvr_device               = &nvr_at_device,
         .nvr_params               = NVR_AT_ZERO_DEFAULT,
-        .sio_device               = NULL,
-        .sio_params               = 0x00000000,
+        .sio_device               = &i82091aa_device,
+        .sio_params               = (uintptr_t) (I82091AA_022),
         .kbc_p1                   = 0x00000cf0,
         .gpio                     = 0xffffffff,
         .gpio_acpi                = 0xffffffff,
@@ -12769,6 +13421,14 @@ const machine_t machines[] = {
         .vid_device               = NULL,
         .snd_device               = NULL,
         .net_device               = NULL,
+        .pci_flags                = PCI_CONFIG_TYPE_1,
+        .slot_layout              = (const machine_slot_t[]) {
+            MSLOT_PCI(0x05, PCI_CARD_NORTHBRIDGE, 0, 0, 0, 0),
+            MSLOT_PCI(0x11, PCI_CARD_NORMAL, 1, 2, 1, 2),
+            MSLOT_PCI(0x13, PCI_CARD_NORMAL, 2, 1, 2, 1),
+            MSLOT_PCI(0x0B, PCI_CARD_NORMAL, 2, 1, 2, 1),
+            MSLOT_END
+        },
         .aliases                  = { "Intel Ninja", "Intel Classic/PCI Expandable Desktop", "" }
     },
     /* According to another string seen on the UH19 website, this has AMI 'H' KBC. */
@@ -12806,8 +13466,8 @@ const machine_t machines[] = {
         .kbc_params               = KBC_VEN_AMI | 0x00004800,
         .nvr_device               = &nvr_at_device,
         .nvr_params               = NVR_AT,
-        .sio_device               = NULL,
-        .sio_params               = 0x00000000,
+        .sio_device               = &fdc37c6xx_device,
+        .sio_params               = (uintptr_t) (FDC37C665),
         .kbc_p1                   = 0x00000cf0,
         .gpio                     = 0xffffffff,
         .gpio_acpi                = 0xffffffff,
@@ -12817,6 +13477,15 @@ const machine_t machines[] = {
         .vid_device               = NULL,
         .snd_device               = NULL,
         .net_device               = NULL,
+        .pci_flags                = PCI_CONFIG_TYPE_2 | PCI_NO_IRQ_STEERING,
+        .slot_layout              = (const machine_slot_t[]) {
+            MSLOT_PCI(0x00, PCI_CARD_NORTHBRIDGE, 0, 0, 0, 0),
+            // MSLOT_PCI(0x01, PCI_CARD_IDE, 1, 2, 3, 4),
+            MSLOT_PCI(0x0E, PCI_CARD_NORMAL, 1, 2, 3, 4),
+            MSLOT_PCI(0x0F, PCI_CARD_NORMAL, 2, 3, 4, 1),
+            MSLOT_BRIDGE(0x02, PCI_CARD_SOUTHBRIDGE, 0, 0, 0, 0, ((const machine_slot_t[]) { MSLOT_BUS(SLOT_ISA16, 5), MSLOT_END })),
+            MSLOT_END
+        },
         .aliases                  = { "AMI S76", "" }
     },
     /*
@@ -12844,7 +13513,7 @@ const machine_t machines[] = {
             .max_multi   = 0
         },
         .bus_flags = MACHINE_PCI,
-        .flags     = MACHINE_IDE | MACHINE_SCSI,
+        .flags     = MACHINE_IDE | MACHINE_SCSI | MACHINE_UART_PRI | MACHINE_UART_SEC | MACHINE_LPT_PRI,
         .ram       = {
             .min  = 1024,
             .max  = 131072,
@@ -12857,8 +13526,8 @@ const machine_t machines[] = {
         .kbc_params               = KBC_VEN_AMI | 0x00004800, /* Guess. */
         .nvr_device               = &nvr_at_device,
         .nvr_params               = NVR_AT,
-        .sio_device               = NULL,
-        .sio_params               = 0x00000000,
+        .sio_device               = &fdc37c6xx_device,
+        .sio_params               = (uintptr_t) ((FDC37C663 | FDC37C6XX_IDE_PRI)),
         .kbc_p1                   = 0x00000cf0,
         .gpio                     = 0xffffffff,
         .gpio_acpi                = 0xffffffff,
@@ -12869,6 +13538,17 @@ const machine_t machines[] = {
         .snd_device               = NULL,
         .net_device               = NULL,
         .scsi_device              = &ncr53c810_onboard_pci_device,
+        .pci_flags                = PCI_CONFIG_TYPE_2 | PCI_NO_IRQ_STEERING,
+        .slot_layout              = (const machine_slot_t[]) {
+            MSLOT_PCI(0x00, PCI_CARD_NORTHBRIDGE, 0, 0, 0, 0),
+            MSLOT_PCI(0x01, PCI_CARD_SCSI, 1, 2, 3, 4), /* 01 = SCSI */
+            MSLOT_PCI(0x03, PCI_CARD_NORMAL, 1, 2, 3, 4), /* 03 = Slot 1 */
+            MSLOT_PCI(0x04, PCI_CARD_NORMAL, 2, 3, 4, 1), /* 04 = Slot 2 */
+            MSLOT_PCI(0x05, PCI_CARD_NORMAL, 3, 4, 1, 2), /* 05 = Slot 3 */
+            MSLOT_PCI(0x06, PCI_CARD_NORMAL, 4, 1, 2, 3), /* 06 = Slot 4 */
+            MSLOT_BRIDGE(0x02, PCI_CARD_SOUTHBRIDGE, 0, 0, 0, 0, machine_bus_isa),
+            MSLOT_END
+        },
         .aliases                  = { "" }
     },
     /* This has the Phoenix MultiKey KBC firmware. */
@@ -12893,7 +13573,7 @@ const machine_t machines[] = {
             .max_multi   = 0
         },
         .bus_flags = MACHINE_PS2_PCI,
-        .flags     = MACHINE_IDE,
+        .flags     = MACHINE_IDE | MACHINE_UART_PRI | MACHINE_UART_SEC | MACHINE_LPT_PRI,
         .ram       = {
             .min  = 2048,
             .max  = 131072,
@@ -12906,8 +13586,8 @@ const machine_t machines[] = {
         .kbc_params               = KBC_VEN_PHOENIX | 0x00012900, /* Guess. */
         .nvr_device               = &nvr_at_device,
         .nvr_params               = NVR_AT,
-        .sio_device               = NULL,
-        .sio_params               = 0x00000000,
+        .sio_device               = &fdc37c6xx_device,
+        .sio_params               = (uintptr_t) (FDC37C663),
         .kbc_p1                   = 0x00000ce0,
         .gpio                     = 0xffffffff,
         .gpio_acpi                = 0xffffffff,
@@ -12917,6 +13597,16 @@ const machine_t machines[] = {
         .vid_device               = NULL,
         .snd_device               = NULL,
         .net_device               = NULL,
+        .pci_flags                = PCI_CONFIG_TYPE_2 | PCI_NO_IRQ_STEERING,
+        .slot_layout              = (const machine_slot_t[]) {
+            MSLOT_PCI(0x00, PCI_CARD_NORTHBRIDGE, 0, 0, 0, 0),
+            MSLOT_PCI(0x01, PCI_CARD_IDE, 0, 0, 0, 0),
+            MSLOT_PCI(0x06, PCI_CARD_NORMAL, 3, 2, 1, 4),
+            MSLOT_PCI(0x0E, PCI_CARD_NORMAL, 2, 1, 3, 4),
+            MSLOT_PCI(0x0C, PCI_CARD_NORMAL, 1, 3, 2, 4),
+            MSLOT_BRIDGE(0x02, PCI_CARD_SOUTHBRIDGE, 0, 0, 0, 0, ((const machine_slot_t[]) { MSLOT_BUS(SLOT_ISA16, 5), MSLOT_END })),
+            MSLOT_END
+        },
         .aliases                  = { "Intel Alfredo", "" }
     },
     /* This has an AMIKey-2, which is an updated version of type 'H'. Also has a
@@ -12942,7 +13632,7 @@ const machine_t machines[] = {
             .max_multi   = 0
         },
         .bus_flags = MACHINE_PS2_PCI,
-        .flags     = MACHINE_IDE | MACHINE_SCSI | MACHINE_APM,
+        .flags     = MACHINE_IDE | MACHINE_SCSI | MACHINE_APM | MACHINE_UART_PRI | MACHINE_UART_SEC | MACHINE_LPT_PRI,
         .ram       = {
             .min  = 1024,
             .max  = 131072,
@@ -12955,8 +13645,8 @@ const machine_t machines[] = {
         .kbc_params               = KBC_VEN_AMI | 0x00004800,
         .nvr_device               = &nvr_at_device,
         .nvr_params               = NVR_AT,
-        .sio_device               = NULL,
-        .sio_params               = 0x00000000,
+        .sio_device               = &pc873xx_device,
+        .sio_params               = (uintptr_t) ((PC87332 | PCX73XX_IDE_PRI | PCX730X_398)),
         .kbc_p1                   = 0x00000cf0,
         .gpio                     = 0xffffffff,
         .gpio_acpi                = 0xffffffff,
@@ -12967,6 +13657,16 @@ const machine_t machines[] = {
         .snd_device               = NULL,
         .net_device               = NULL,
         .scsi_device              = &ncr53c810_onboard_pci_device,
+        .pci_flags                = PCI_CONFIG_TYPE_2,
+        .slot_layout              = (const machine_slot_t[]) {
+            MSLOT_PCI(0x00, PCI_CARD_NORTHBRIDGE, 0, 0, 0, 0),
+            MSLOT_PCI(0x01, PCI_CARD_SCSI, 1, 2, 3, 4), /* 01 = SCSI */
+            MSLOT_PCI(0x06, PCI_CARD_NORMAL, 1, 2, 3, 4), /* 06 = Slot 1 */
+            MSLOT_PCI(0x05, PCI_CARD_NORMAL, 2, 3, 4, 1), /* 05 = Slot 2 */
+            MSLOT_PCI(0x04, PCI_CARD_NORMAL, 3, 4, 1, 2), /* 04 = Slot 3 */
+            MSLOT_BRIDGE(0x02, PCI_CARD_SOUTHBRIDGE, 0, 0, 0, 0, ((const machine_slot_t[]) { MSLOT_BUS(SLOT_ISA16, 4), MSLOT_END })),
+            MSLOT_END
+        },
         .aliases                  = { "" }
     },
     /* This has an AMI MEGAKey 'P' or 'R' keyboard controller. */
@@ -12992,7 +13692,7 @@ const machine_t machines[] = {
         },
         /* Has PCI but no user-facing slots. */
         .bus_flags = MACHINE_PCI,
-        .flags     = MACHINE_PS2_KBC | MACHINE_IDE | MACHINE_VIDEO | MACHINE_PCI_INTERNAL,
+        .flags     = MACHINE_PS2_KBC | MACHINE_IDE | MACHINE_VIDEO | MACHINE_PCI_INTERNAL | MACHINE_UART_PRI | MACHINE_UART_SEC | MACHINE_LPT_PRI,
         .ram       = {
             .min  = 2048,
             .max  = 65536,
@@ -13005,8 +13705,8 @@ const machine_t machines[] = {
         .kbc_params               = KBC_VEN_AMI | 0x00005000,
         .nvr_device               = &nvr_at_device,
         .nvr_params               = NVR_AT,
-        .sio_device               = NULL,
-        .sio_params               = 0x00000000,
+        .sio_device               = &i82091aa_device,
+        .sio_params               = (uintptr_t) (I82091AA_26E),
         .kbc_p1                   = 0x00000cf0,
         .gpio                     = 0xffffffff,
         .gpio_acpi                = 0xffffffff,
@@ -13017,6 +13717,14 @@ const machine_t machines[] = {
         .snd_device               = NULL,
         .net_device               = NULL,
         .ide_device               = &ide_rz1000_pci_single_channel_device,
+        .pci_flags                = PCI_CONFIG_TYPE_2,
+        .slot_layout              = (const machine_slot_t[]) {
+            MSLOT_PCI(0x00, PCI_CARD_NORTHBRIDGE, 0, 0, 0, 0),
+            MSLOT_PCI(0x0e, PCI_CARD_IDE, 0, 0, 0, 0),
+            MSLOT_PCI(0x0f, PCI_CARD_VIDEO, 1, 2, 3, 4),
+            MSLOT_BRIDGE(0x02, PCI_CARD_SOUTHBRIDGE, 0, 0, 0, 0, ((const machine_slot_t[]) { MSLOT_BUS(SLOT_ISA16, 1), MSLOT_END })),
+            MSLOT_END
+        },
         .aliases                  = { "" }
     },
     /* This most likely has a standalone AMI Megakey 1993, which is type 'P', like the below Tekram board. */
@@ -13061,10 +13769,19 @@ const machine_t machines[] = {
         .gpio_acpi                = 0xffffffff,
         .device                   = &pci400cb_device,
         .kbd_device               = NULL,
-        .fdc_device               = NULL,
+        .fdc_device               = &fdc_at_device,
         .vid_device               = NULL,
         .snd_device               = NULL,
         .net_device               = NULL,
+        .pci_flags                = PCI_CONFIG_TYPE_1,
+        .slot_layout              = (const machine_slot_t[]) {
+            MSLOT_PCI(0x00, PCI_CARD_NORTHBRIDGE, 0, 0, 0, 0),
+            MSLOT_PCI(0x0F, PCI_CARD_NORMAL, 4, 3, 2, 1), /* 0F = Slot 1 */
+            MSLOT_PCI(0x0E, PCI_CARD_NORMAL, 3, 4, 1, 2), /* 0E = Slot 2 */
+            MSLOT_PCI(0x0D, PCI_CARD_NORMAL, 2, 3, 4, 1), /* 0D = Slot 3 */
+            MSLOT_PCI(0x0C, PCI_CARD_NORMAL, 1, 2, 3, 4), /* 0C = Slot 4 */
+            MSLOT_END
+        },
         .aliases                  = { "" }
     },
     /* Has IBM PS/2 Type 1 KBC firmware. */
@@ -13091,7 +13808,7 @@ const machine_t machines[] = {
         .bus_flags = MACHINE_PS2_PCI,
         /* Machine has custom (currently unemulated) power management harware
            needed for the APM interface to function */
-        .flags     = MACHINE_IDE_DUAL | MACHINE_VIDEO | MACHINE_APM,
+        .flags     = MACHINE_IDE_DUAL | MACHINE_VIDEO | MACHINE_APM | MACHINE_UART_PRI | MACHINE_UART_SEC | MACHINE_LPT_PRI,
         .ram       = {
             .min  = 1024,
             .max  = 65536,
@@ -13105,8 +13822,8 @@ const machine_t machines[] = {
         /* The NVR is on the OPTi 82c602. */
         .nvr_device               = NULL,
         .nvr_params               = 0x00000000,
-        .sio_device               = NULL,
-        .sio_params               = 0x00000000,
+        .sio_device               = &fdc37c6xx_device,
+        .sio_params               = (uintptr_t) ((FDC37C665 | FDC37C6XX_IDE_SEC)),
         .kbc_p1                   = 0x00000cf0,
         .gpio                     = 0xffffffff,
         .gpio_acpi                = 0xffffffff,
@@ -13117,6 +13834,18 @@ const machine_t machines[] = {
         .snd_device               = NULL,
         .net_device               = NULL,
         .ide_device               = &ide_opti611_vlb_device,
+        .pci_flags                = PCI_CONFIG_TYPE_1,
+        .slot_layout              = (const machine_slot_t[]) {
+            MSLOT_PCI(0x10, PCI_CARD_NORTHBRIDGE, 0, 0, 0, 0),
+            MSLOT_PCI(0x0B, PCI_CARD_NORMAL, 1, 2, 3, 4),
+            MSLOT_PCI(0x0C, PCI_CARD_NORMAL, 5, 6, 7, 8),
+            MSLOT_PCI(0x0D, PCI_CARD_NORMAL, 9, 10, 11, 12),
+            /* This is a guess because the BIOS always gives it a video BIOS
+               and never gives it an IRQ, so it is impossible to known for
+               certain until we obtain PCI readouts from the real machine. */
+            MSLOT_PCI(0x0E, PCI_CARD_VIDEO, 13, 14, 15, 16),
+            MSLOT_END
+        },
         .aliases                  = { "Aptiva 510", "Aptiva 710", "Aptiva Vision", "" }
     },
     /* has a Phoenix PLCC Multikey copyrighted 1993, version unknown. */
@@ -13141,7 +13870,7 @@ const machine_t machines[] = {
             .max_multi   = 0
         },
         .bus_flags = MACHINE_PS2_PCI,
-        .flags     = MACHINE_SUPER_IO | MACHINE_IDE_DUAL | MACHINE_VIDEO,
+        .flags     = MACHINE_SUPER_IO | MACHINE_IDE_DUAL | MACHINE_VIDEO | MACHINE_PS2_KBC,
         .ram       = {
             .min  = 1024,
             .max  = 65536,
@@ -13155,8 +13884,8 @@ const machine_t machines[] = {
         /* The NVR is on the OPTi 82c602. */
         .nvr_device               = NULL,
         .nvr_params               = 0x00000000,
-        .sio_device               = NULL,
-        .sio_params               = 0x00000000,
+        .sio_device               = &fdc37c6xx_device,
+        .sio_params               = (uintptr_t) ((FDC37C665 | FDC37C6XX_IDE_SEC)),
         .kbc_p1                   = 0x00000cf0,
         .gpio                     = 0xffffffff,
         .gpio_acpi                = 0xffffffff,
@@ -13167,6 +13896,13 @@ const machine_t machines[] = {
         .snd_device               = NULL,
         .net_device               = NULL,
         .ide_device               = &ide_opti611_vlb_device,
+        .pci_flags                = PCI_CONFIG_TYPE_1,
+        .slot_layout              = (const machine_slot_t[]) {
+            MSLOT_PCI(0x10, PCI_CARD_NORTHBRIDGE, 0, 0, 0, 0),
+            MSLOT_PCI(0x11, PCI_CARD_NORMAL, 1, 2, 3, 4),
+            MSLOT_PCI(0x12, PCI_CARD_NORMAL, 5, 6, 7, 8),
+            MSLOT_END
+        },
         .aliases                  = { "Packard Bell Firehawk", "" }
     },
     /* Has Acer KBC firmware. */
@@ -13191,7 +13927,7 @@ const machine_t machines[] = {
             .max_multi   = 0
         },
         .bus_flags = MACHINE_PS2_PCI,
-        .flags     = MACHINE_IDE_DUAL | MACHINE_APM | MACHINE_VIDEO,
+        .flags     = MACHINE_IDE_DUAL | MACHINE_APM | MACHINE_VIDEO | MACHINE_UART_PRI | MACHINE_UART_SEC | MACHINE_LPT_PRI,
         .ram       = {
             .min  = 2048, /* Becomes unstable with less than this amount */
             .max  = 262144,
@@ -13204,8 +13940,8 @@ const machine_t machines[] = {
         .kbc_params               = KBC_VEN_ACER | 0x00004200,
         .nvr_device               = NULL,
         .nvr_params               = 0x00000000,
-        .sio_device               = NULL,
-        .sio_params               = 0x00000000,
+        .sio_device               = &fdc37c6xx_device,
+        .sio_params               = (uintptr_t) ((FDC37C665 | FDC37C6XX_IDE_PRI)),
         .kbc_p1                   = 0x004008f0,
         .gpio                     = 0xffffffff,
         .gpio_acpi                = 0xffffffff,
@@ -13216,6 +13952,16 @@ const machine_t machines[] = {
         .snd_device               = NULL,
         .net_device               = NULL,
         .ide_device               = &ide_cmd640_pci_legacy_only_device,
+        .pci_flags                = PCI_CONFIG_TYPE_1 | FLAG_TRC_CONTROLS_CPURST,
+        .slot_layout              = (const machine_slot_t[]) {
+            MSLOT_PCI(0x05, PCI_CARD_NORTHBRIDGE, 0, 0, 0, 0),
+            MSLOT_PCI(0x09, PCI_CARD_VIDEO, 0, 0, 0, 0),
+            MSLOT_PCI(0x0A, PCI_CARD_IDE, 0, 0, 0, 0),
+            MSLOT_PCI(0x12, PCI_CARD_NORMAL, 3, 4, 1, 2),
+            MSLOT_PCI(0x13, PCI_CARD_NORMAL, 2, 3, 4, 1),
+            MSLOT_PCI(0x14, PCI_CARD_NORMAL, 1, 2, 3, 4),
+            MSLOT_END
+        },
         .aliases                  = { "" }
     },
     /* This has an AMIKey-2, which is type 'H'. */
@@ -13240,7 +13986,7 @@ const machine_t machines[] = {
             .max_multi   = 0
         },
         .bus_flags = MACHINE_PS2_PCIV,
-        .flags     = MACHINE_IDE_DUAL | MACHINE_APM,
+        .flags     = MACHINE_IDE_DUAL | MACHINE_APM | MACHINE_UART_PRI | MACHINE_UART_SEC | MACHINE_LPT_PRI,
         .ram       = {
             .min  = 1024,
             .max  = 131072,
@@ -13253,8 +13999,8 @@ const machine_t machines[] = {
         .kbc_params               = KBC_VEN_AMI | 0x00004800,
         .nvr_device               = NULL,
         .nvr_params               = 0x00000000,
-        .sio_device               = NULL,
-        .sio_params               = 0x00000000,
+        .sio_device               = &fdc37c6xx_device,
+        .sio_params               = (uintptr_t) (FDC37C665),
         .kbc_p1                   = 0x00000cf0,
         .gpio                     = 0xffffffff,
         .gpio_acpi                = 0xffffffff,
@@ -13264,6 +14010,14 @@ const machine_t machines[] = {
         .vid_device               = NULL,
         .snd_device               = NULL,
         .net_device               = NULL,
+        .pci_flags                = PCI_CONFIG_TYPE_1 | FLAG_TRC_CONTROLS_CPURST,
+        .slot_layout              = (const machine_slot_t[]) {
+            MSLOT_PCI(0x05, PCI_CARD_NORTHBRIDGE, 0, 0, 0, 0),
+            MSLOT_PCI(0x0C, PCI_CARD_NORMAL, 1, 2, 3, 4),
+            MSLOT_PCI(0x0B, PCI_CARD_NORMAL, 2, 3, 4, 1),
+            MSLOT_PCI(0x0A, PCI_CARD_NORMAL, 3, 4, 1, 2),
+            MSLOT_END
+        },
         .aliases                  = { "" }
     },
     /* This has an AMIKey-2, which is an updated version of type 'H'. */
@@ -13288,7 +14042,7 @@ const machine_t machines[] = {
             .max_multi   = 0
         },
         .bus_flags = MACHINE_PCI,
-        .flags     = MACHINE_PS2_KBC | MACHINE_IDE_DUAL | MACHINE_APM,
+        .flags     = MACHINE_PS2_KBC | MACHINE_IDE_DUAL | MACHINE_APM | MACHINE_UART_PRI | MACHINE_UART_SEC | MACHINE_LPT_PRI,
         .ram       = {
             .min  = 2048, /* Gets stuck at POST code D3 with less than this amount */
             .max  = 229376, /* Gets stuck at the same code with 256 MB */
@@ -13301,8 +14055,8 @@ const machine_t machines[] = {
         .kbc_params               = KBC_VEN_AMI | 0x00004800,
         .nvr_device               = NULL,
         .nvr_params               = 0x00000000,
-        .sio_device               = NULL,
-        .sio_params               = 0x00000000,
+        .sio_device               = &fdc37c6xx_device,
+        .sio_params               = (uintptr_t) (FDC37C665),
         .kbc_p1                   = 0x00000cf0,
         .gpio                     = 0xffffffff,
         .gpio_acpi                = 0xffffffff,
@@ -13312,6 +14066,15 @@ const machine_t machines[] = {
         .vid_device               = NULL,
         .snd_device               = NULL,
         .net_device               = NULL,
+        .pci_flags                = PCI_CONFIG_TYPE_1 | FLAG_TRC_CONTROLS_CPURST,
+        .slot_layout              = (const machine_slot_t[]) {
+            MSLOT_PCI(0x05, PCI_CARD_NORTHBRIDGE, 0, 0, 0, 0),
+            MSLOT_PCI(0x0B, PCI_CARD_NORMAL, 1, 2, 3, 4),
+            MSLOT_PCI(0x0D, PCI_CARD_NORMAL, 2, 3, 4, 1),
+            MSLOT_PCI(0x0F, PCI_CARD_NORMAL, 3, 4, 1, 2),
+            MSLOT_PCI(0x06, PCI_CARD_NORMAL, 4, 1, 2, 3),
+            MSLOT_END
+        },
         .aliases                  = { "" }
     },
     /* Has a VIA VT82C42N KBC. */
@@ -13336,7 +14099,7 @@ const machine_t machines[] = {
             .max_multi   = 0
         },
         .bus_flags = MACHINE_PS2_PCI,
-        .flags     = MACHINE_IDE_DUAL | MACHINE_APM,
+        .flags     = MACHINE_IDE_DUAL | MACHINE_APM | MACHINE_UART_PRI | MACHINE_UART_SEC | MACHINE_LPT_PRI,
         .ram       = {
             .min  = 1024,
             .max  = 262144,
@@ -13349,8 +14112,8 @@ const machine_t machines[] = {
         .kbc_params               = KBC_VEN_VIA | 0x00424600,
         .nvr_device               = NULL,
         .nvr_params               = 0x00000000,
-        .sio_device               = NULL,
-        .sio_params               = 0x00000000,
+        .sio_device               = &fdc37c6xx_device,
+        .sio_params               = (uintptr_t) (FDC37C665),
         .kbc_p1                   = 0x00000cf0,
         .gpio                     = 0xffffffff,
         .gpio_acpi                = 0xffffffff,
@@ -13360,6 +14123,15 @@ const machine_t machines[] = {
         .vid_device               = NULL,
         .snd_device               = NULL,
         .net_device               = NULL,
+        .pci_flags                = PCI_CONFIG_TYPE_1 | FLAG_TRC_CONTROLS_CPURST,
+        .slot_layout              = (const machine_slot_t[]) {
+            MSLOT_PCI(0x05, PCI_CARD_NORTHBRIDGE, 0, 0, 0, 0),
+            MSLOT_PCI(0x0B, PCI_CARD_NORMAL, 1, 2, 3, 4),
+            MSLOT_PCI(0x0D, PCI_CARD_NORMAL, 2, 3, 4, 1),
+            MSLOT_PCI(0x07, PCI_CARD_NORMAL, 4, 1, 2, 3),
+            MSLOT_PCI(0x0F, PCI_CARD_NORMAL, 3, 4, 1, 2),
+            MSLOT_END
+        },
         .aliases                  = { "Micron MBD001035-xx", "" }
     },
     /* AMIKEY-2 */
@@ -13397,8 +14169,8 @@ const machine_t machines[] = {
         .kbc_params               = KBC_VEN_AMI | 0x00004800,
         .nvr_device               = NULL,
         .nvr_params               = 0x00000000,
-        .sio_device               = NULL,
-        .sio_params               = 0x00000000,
+        .sio_device               = &w837x7_device,
+        .sio_params               = (uintptr_t) ((W83787F | W837X7_KEY_89)),
         .kbc_p1                   = 0x000004f0,
         .gpio                     = 0xffffffff,
         .gpio_acpi                = 0xffffffff,
@@ -13408,6 +14180,14 @@ const machine_t machines[] = {
         .vid_device               = NULL,
         .snd_device               = NULL,
         .net_device               = NULL,
+        .pci_flags                = PCI_CONFIG_TYPE_1 | FLAG_TRC_CONTROLS_CPURST,
+        .slot_layout              = (const machine_slot_t[]) {
+            MSLOT_PCI(0x05, PCI_CARD_NORTHBRIDGE, 0, 0, 0, 0),
+            MSLOT_PCI(0x03, PCI_CARD_NORMAL, 1, 2, 3, 4),
+            MSLOT_PCI(0x0D, PCI_CARD_NORMAL, 2, 3, 4, 1),
+            MSLOT_PCI(0x0F, PCI_CARD_NORMAL, 3, 4, 1, 2),
+            MSLOT_END
+        },
         .aliases                  = { "" }
     },
     /* Revision 1 has a Lance LT38C41L, revision 2 has a Holtek HT6542B.
@@ -13433,7 +14213,7 @@ const machine_t machines[] = {
             .max_multi   = 0
         },
         .bus_flags = MACHINE_PCI,
-        .flags     = MACHINE_PS2_KBC | MACHINE_IDE_DUAL | MACHINE_APM,
+        .flags     = MACHINE_PS2_KBC | MACHINE_IDE_DUAL | MACHINE_APM | MACHINE_UART_PRI | MACHINE_UART_SEC | MACHINE_LPT_PRI,
         .ram       = {
             .min  = 1024,
             .max  = 262144,
@@ -13446,8 +14226,8 @@ const machine_t machines[] = {
         .kbc_params               = KBC_VEN_HOLTEK | 0x00004800,
         .nvr_device               = NULL,
         .nvr_params               = 0x00000000,
-        .sio_device               = NULL,
-        .sio_params               = 0x00000000,
+        .sio_device               = &fdc37c6xx_device,
+        .sio_params               = (uintptr_t) (FDC37C665),
         .kbc_p1                   = 0x00000cf0,
         .gpio                     = 0xffffffff,
         .gpio_acpi                = 0xffffffff,
@@ -13457,6 +14237,15 @@ const machine_t machines[] = {
         .vid_device               = NULL,
         .snd_device               = NULL,
         .net_device               = NULL,
+        .pci_flags                = PCI_CONFIG_TYPE_1 | FLAG_TRC_CONTROLS_CPURST,
+        .slot_layout              = (const machine_slot_t[]) {
+            MSLOT_PCI(0x05, PCI_CARD_NORTHBRIDGE, 0, 0, 0, 0),
+            MSLOT_PCI(0x0B, PCI_CARD_NORMAL, 1, 2, 3, 4),
+            MSLOT_PCI(0x0D, PCI_CARD_NORMAL, 2, 3, 4, 1),
+            MSLOT_PCI(0x0F, PCI_CARD_NORMAL, 3, 4, 1, 2),
+            MSLOT_PCI(0x07, PCI_CARD_NORMAL, 4, 1, 2, 3),
+            MSLOT_END
+        },
         .aliases                  = { "" }
     },
     /* This has a Holtek HT6542B KBC and the BIOS does not send a single non-standard KBC command.
@@ -13482,7 +14271,7 @@ const machine_t machines[] = {
             .max_multi   = 0
         },
         .bus_flags = MACHINE_PS2_PCIV,
-        .flags     = MACHINE_IDE_DUAL | MACHINE_APM,
+        .flags     = MACHINE_IDE_DUAL | MACHINE_APM | MACHINE_UART_PRI | MACHINE_UART_SEC | MACHINE_LPT_PRI,
         .ram       = {
             .min  = 2048, /* Freezes during POST with less than this amount */
             .max  = 262144,
@@ -13495,8 +14284,8 @@ const machine_t machines[] = {
         .kbc_params               = KBC_VEN_HOLTEK | 0x00004800,
         .nvr_device               = NULL,
         .nvr_params               = 0x00000000,
-        .sio_device               = NULL,
-        .sio_params               = 0x00000000,
+        .sio_device               = &w837x7_device,
+        .sio_params               = (uintptr_t) ((W83777F | W837X7_KEY_89)),
         .kbc_p1                   = 0x00000cf0,
         .gpio                     = 0xffffffff,
         .gpio_acpi                = 0xffffffff,
@@ -13506,6 +14295,15 @@ const machine_t machines[] = {
         .vid_device               = NULL,
         .snd_device               = NULL,
         .net_device               = NULL,
+        .pci_flags                = PCI_CONFIG_TYPE_1 | FLAG_TRC_CONTROLS_CPURST,
+        .slot_layout              = (const machine_slot_t[]) {
+            MSLOT_PCI(0x05, PCI_CARD_NORTHBRIDGE, 0, 0, 0, 0),
+            MSLOT_PCI(0x0B, PCI_CARD_NORMAL, 1, 2, 3, 4),
+            MSLOT_PCI(0x0D, PCI_CARD_NORMAL, 2, 3, 4, 1),
+            MSLOT_PCI(0x0F, PCI_CARD_NORMAL, 3, 4, 1, 2),
+            MSLOT_PCI(0x11, PCI_CARD_NORMAL, 4, 1, 2, 3),
+            MSLOT_END
+        },
         .aliases                  = { "" }
     },
     /* According to MrKsoft, his real 4DPS has an AMIKey-2, which is an updated version
@@ -13531,7 +14329,7 @@ const machine_t machines[] = {
             .max_multi   = 0
         },
         .bus_flags = MACHINE_PS2_PCI,
-        .flags     = MACHINE_IDE_DUAL | MACHINE_APM | MACHINE_GAMEPORT,
+        .flags     = MACHINE_IDE_DUAL | MACHINE_APM | MACHINE_GAMEPORT | MACHINE_UART_PRI | MACHINE_UART_SEC | MACHINE_LPT_PRI,
         .ram       = {
             .min  = 1024,
             .max  = 131072,
@@ -13544,8 +14342,8 @@ const machine_t machines[] = {
         .kbc_params               = KBC_VEN_AMI | 0x00004800,
         .nvr_device               = NULL,
         .nvr_params               = 0x00000000,
-        .sio_device               = NULL,
-        .sio_params               = 0x00000000,
+        .sio_device               = &w837x7_device,
+        .sio_params               = (uintptr_t) ((W83787IF | W837X7_KEY_89)),
         .kbc_p1                   = 0x00000cf0,
         .gpio                     = 0xffffffff,
         .gpio_acpi                = 0xffffffff,
@@ -13555,6 +14353,15 @@ const machine_t machines[] = {
         .vid_device               = NULL,
         .snd_device               = NULL,
         .net_device               = NULL,
+        .pci_flags                = PCI_CONFIG_TYPE_1 | FLAG_TRC_CONTROLS_CPURST,
+        .slot_layout              = (const machine_slot_t[]) {
+            MSLOT_PCI(0x05, PCI_CARD_NORTHBRIDGE, 0, 0, 0, 0),
+            MSLOT_PCI(0x0B, PCI_CARD_NORMAL, 1, 2, 3, 4),
+            MSLOT_PCI(0x0D, PCI_CARD_NORMAL, 2, 3, 4, 1),
+            MSLOT_PCI(0x0E, PCI_CARD_NORMAL, 3, 4, 1, 2),
+            MSLOT_PCI(0x07, PCI_CARD_NORMAL, 4, 1, 2, 3),
+            MSLOT_END
+        },
         .aliases                  = { "J-Bond PCI400-02", "Taken PCI400-4", "Funworld Photo Play 2000", "" }
     },
     /* This has the UMC 88xx on-chip KBC. */
@@ -13599,10 +14406,19 @@ const machine_t machines[] = {
         .gpio_acpi                = 0xffffffff,
         .device                   = NULL,
         .kbd_device               = NULL,
-        .fdc_device               = NULL,
+        .fdc_device               = &fdc_at_device,
         .vid_device               = NULL,
         .snd_device               = NULL,
         .net_device               = NULL,
+        .pci_flags                = PCI_CONFIG_TYPE_1,
+        .slot_layout              = (const machine_slot_t[]) {
+            MSLOT_PCI(0x10, PCI_CARD_NORTHBRIDGE, 0, 0, 0, 0),
+            MSLOT_BRIDGE(0x12, PCI_CARD_SOUTHBRIDGE, 1, 2, 3, 4, ((const machine_slot_t[]) { MSLOT_BUS(SLOT_ISA16, 3), MSLOT_BUS(SLOT_ISA8, 1), MSLOT_END })),
+            MSLOT_PCI(0x0C, PCI_CARD_NORMAL, 1, 2, 3, 4),
+            MSLOT_PCI(0x13, PCI_CARD_NORMAL, 4, 1, 2, 3),
+            MSLOT_PCI(0x14, PCI_CARD_NORMAL, 3, 4, 1, 2),
+            MSLOT_END
+        },
         .aliases                  = { "" }
     },
     /* This has the UMC 88xx on-chip KBC. All the copies of the BIOS string I can find, end in
@@ -13628,7 +14444,7 @@ const machine_t machines[] = {
             .max_multi   = 0
         },
         .bus_flags = MACHINE_PS2_PCI,
-        .flags     = MACHINE_IDE_DUAL | MACHINE_APM,
+        .flags     = MACHINE_IDE_DUAL | MACHINE_APM | MACHINE_UART_PRI | MACHINE_UART_SEC | MACHINE_LPT_PRI,
         .ram       = {
             .min  = 1024,
             .max  = 131072,
@@ -13641,8 +14457,8 @@ const machine_t machines[] = {
         .kbc_params               = 0x00004800,
         .nvr_device               = &nvr_at_device,
         .nvr_params               = NVR_AT,
-        .sio_device               = NULL,
-        .sio_params               = 0x00000000,
+        .sio_device               = &um866x_device,
+        .sio_params               = (uintptr_t) (UM8663BF),
         .kbc_p1                   = 0x00000cf0,
         .gpio                     = 0xffffffff,
         .gpio_acpi                = 0xffffffff,
@@ -13652,6 +14468,15 @@ const machine_t machines[] = {
         .vid_device               = NULL,
         .snd_device               = NULL,
         .net_device               = NULL,
+        .pci_flags                = PCI_CONFIG_TYPE_1,
+        .slot_layout              = (const machine_slot_t[]) {
+            MSLOT_PCI(0x10, PCI_CARD_NORTHBRIDGE, 0, 0, 0, 0),
+            MSLOT_BRIDGE(0x12, PCI_CARD_SOUTHBRIDGE, 1, 2, 3, 4, machine_bus_isa),
+            MSLOT_PCI(0x03, PCI_CARD_NORMAL, 1, 2, 3, 4),
+            MSLOT_PCI(0x04, PCI_CARD_NORMAL, 2, 3, 4, 1),
+            MSLOT_PCI(0x05, PCI_CARD_NORMAL, 3, 4, 1, 2),
+            MSLOT_END
+        },
         .aliases                  = { "" }
     },
     /* Compaq Presario 7100 Series, using MiTAC/Trigon PL4600C (486). */
@@ -13677,7 +14502,7 @@ const machine_t machines[] = {
             .max_multi   = 0
         },
         .bus_flags = MACHINE_PS2_PCI,
-        .flags     = MACHINE_IDE_DUAL | MACHINE_VIDEO | MACHINE_SOUND | MACHINE_APM,
+        .flags     = MACHINE_IDE_DUAL | MACHINE_VIDEO | MACHINE_SOUND | MACHINE_APM | MACHINE_UART_PRI | MACHINE_UART_SEC | MACHINE_LPT_PRI,
         .ram       = {
             .min  = 1024,
             .max  = 65536,
@@ -13690,8 +14515,8 @@ const machine_t machines[] = {
         .kbc_params               = KBC_VEN_VIA | 0x00424600,
         .nvr_device               = &nvr_at_device,
         .nvr_params               = NVR_AT,
-        .sio_device               = NULL,
-        .sio_params               = 0x00000000,
+        .sio_device               = &um866x_device,
+        .sio_params               = (uintptr_t) (UM8663AF),
         .kbc_p1                   = 0x00000cf0,
         .gpio                     = 0xffffffff,
         .gpio_acpi                = 0xffffffff,
@@ -13701,6 +14526,15 @@ const machine_t machines[] = {
         .vid_device               = &gd5430_onboard_pci_device,
         .snd_device               = &ess_1688_compaq_device,
         .net_device               = NULL,
+        .pci_flags                = PCI_CONFIG_TYPE_1,
+        .slot_layout              = (const machine_slot_t[]) {
+            MSLOT_PCI(0x0C, PCI_CARD_NORMAL, 1, 2, 3, 4), /* Slot 01 */
+            MSLOT_PCI(0x0D, PCI_CARD_NORMAL, 4, 1, 2, 3), /* Slot 02 */
+            MSLOT_PCI(0x10, PCI_CARD_NORTHBRIDGE, 0, 0, 0, 0),
+            MSLOT_BRIDGE(0x12, PCI_CARD_SOUTHBRIDGE, 0, 0, 0, 0, machine_bus_isa), /* Onboard */
+            MSLOT_PCI(0x13, PCI_CARD_VIDEO, 0, 0, 0, 0), /* Onboard */
+            MSLOT_END
+        },
         .aliases                  = { "MiTAC/Trigon PL4600C", "" }
     },
     /* This has an AMIKey-2, which is an updated version of type 'H'. */
@@ -13725,7 +14559,7 @@ const machine_t machines[] = {
             .max_multi   = 0
         },
         .bus_flags = MACHINE_PS2_PCI,
-        .flags     = MACHINE_IDE_DUAL | MACHINE_APM,
+        .flags     = MACHINE_IDE_DUAL | MACHINE_APM | MACHINE_UART_PRI | MACHINE_UART_SEC | MACHINE_LPT_PRI,
         .ram       = {
             .min  = 1024,
             .max  = 131072,
@@ -13738,8 +14572,8 @@ const machine_t machines[] = {
         .kbc_params               = KBC_VEN_AMI | 0x00004800,
         .nvr_device               = &nvr_at_device,
         .nvr_params               = NVR_AT,
-        .sio_device               = NULL,
-        .sio_params               = 0x00000000,
+        .sio_device               = &fdc37c6xx_device,
+        .sio_params               = (uintptr_t) (FDC37C665),
         .kbc_p1                   = 0x00000cf0,
         .gpio                     = 0xffffffff,
         .gpio_acpi                = 0xffffffff,
@@ -13750,6 +14584,16 @@ const machine_t machines[] = {
         .snd_device               = NULL,
         .net_device               = NULL,
         .ide_device               = &ide_cmd640_pci_legacy_only_device,
+        .pci_flags                = PCI_CONFIG_TYPE_1,
+        .slot_layout              = (const machine_slot_t[]) {
+            MSLOT_PCI(0x10, PCI_CARD_NORTHBRIDGE, 0, 0, 0, 0),
+            MSLOT_BRIDGE(0x12, PCI_CARD_SOUTHBRIDGE, 1, 2, 3, 4, machine_bus_isa),
+            MSLOT_PCI(0x0F, PCI_CARD_IDE, 0, 0, 0, 0),
+            MSLOT_PCI(0x0C, PCI_CARD_NORMAL, 1, 2, 3, 4),
+            MSLOT_PCI(0x0D, PCI_CARD_NORMAL, 2, 3, 4, 1),
+            MSLOT_PCI(0x0E, PCI_CARD_NORMAL, 3, 4, 1, 2),
+            MSLOT_END
+        },
         .aliases                  = { "" }
     },
     /* Has AMIKey Z(!) KBC firmware. */
@@ -13774,7 +14618,7 @@ const machine_t machines[] = {
             .max_multi   = 0
         },
         .bus_flags = MACHINE_PS2_PCI,
-        .flags     = MACHINE_IDE_DUAL | MACHINE_APM | MACHINE_VIDEO,
+        .flags     = MACHINE_IDE_DUAL | MACHINE_APM | MACHINE_VIDEO | MACHINE_UART_PRI | MACHINE_UART_SEC | MACHINE_LPT_PRI,
         .ram       = {
             .min  = 1024,
             .max  = 262144,
@@ -13787,8 +14631,8 @@ const machine_t machines[] = {
         .kbc_params               = KBC_VEN_AMI_TRIGEM | 0x00005a00,
         .nvr_device               = &nvr_at_device,
         .nvr_params               = NVR_AT,
-        .sio_device               = NULL,
-        .sio_params               = 0x00000000,
+        .sio_device               = &fdc37c6xx_device,
+        .sio_params               = (uintptr_t) (FDC37C665),
         .kbc_p1                   = 0x000004f0,
         .gpio                     = 0xffffffff,
         .gpio_acpi                = 0xffffffff,
@@ -13798,6 +14642,15 @@ const machine_t machines[] = {
         .vid_device               = &tgui9440_onboard_pci_device,
         .snd_device               = NULL,
         .net_device               = NULL,
+        .pci_flags                = PCI_CONFIG_TYPE_1,
+        .slot_layout              = (const machine_slot_t[]) {
+            MSLOT_PCI(0x10, PCI_CARD_NORTHBRIDGE, 0, 0, 0, 3),
+            MSLOT_BRIDGE(0x12, PCI_CARD_SOUTHBRIDGE, 1, 2, 3, 4, machine_bus_isa),
+            MSLOT_PCI(0x0E, PCI_CARD_VIDEO, 0, 0, 0, 0),
+            MSLOT_PCI(0x0C, PCI_CARD_NORMAL, 1, 2, 3, 4),
+            MSLOT_PCI(0x0D, PCI_CARD_NORMAL, 4, 1, 2, 3),
+            MSLOT_END
+        },
         .aliases                  = { "Epson ActionPC 5500", "Epson Endeavor II", "TriGem SanJose" "TriGem TG486AP", "" }
     },
     /* This has the UMC 88xx on-chip KBC. All the copies of the BIOS string I can find, end in
@@ -13836,8 +14689,8 @@ const machine_t machines[] = {
         .kbc_params               = KBC_VEN_AMI_TRIGEM | 0x00005a00, /* Guess. */
         .nvr_device               = &nvr_at_device,
         .nvr_params               = NVR_AT,
-        .sio_device               = NULL,
-        .sio_params               = 0x00000000,
+        .sio_device               = &fdc37c6xx_device,
+        .sio_params               = (uintptr_t) (FDC37C665),
         .kbc_p1                   = 0x00000cf0,
         .gpio                     = 0xffffffff,
         .gpio_acpi                = 0xffffffff,
@@ -13848,6 +14701,16 @@ const machine_t machines[] = {
         .snd_device               = NULL,
         .net_device               = NULL,
         .ide_device               = &ide_cmd640_pci_device,
+        .pci_flags                = PCI_CONFIG_TYPE_1,
+        .slot_layout              = (const machine_slot_t[]) {
+            MSLOT_PCI(0x10, PCI_CARD_NORTHBRIDGE, 0, 0, 0, 0),
+            MSLOT_BRIDGE(0x12, PCI_CARD_SOUTHBRIDGE, 1, 2, 3, 4, machine_bus_isa),
+            MSLOT_PCI(0x15, PCI_CARD_VIDEO, 0, 0, 0, 0),
+            MSLOT_PCI(0x16, PCI_CARD_IDE, 0, 0, 0, 0),
+            MSLOT_PCI(0x13, PCI_CARD_NORMAL, 1, 2, 3, 4),
+            MSLOT_PCI(0x14, PCI_CARD_NORMAL, 2, 3, 4, 1),
+            MSLOT_END
+        },
         .aliases                  = { "Epson ActionTower 7300", "Epson ActionTower 7500", "Epson ActionTower 8400", "" }
     },
     /* This has the UMC 88xx on-chip KBC. All the copies of the BIOS string I can find, end in
@@ -13873,7 +14736,7 @@ const machine_t machines[] = {
             .max_multi   = 0
         },
         .bus_flags = MACHINE_PCIV,
-        .flags     = MACHINE_IDE_DUAL | MACHINE_APM,
+        .flags     = MACHINE_IDE_DUAL | MACHINE_APM | MACHINE_UART_PRI | MACHINE_UART_SEC | MACHINE_LPT_PRI,
         .ram       = {
             .min  = 1024,
             .max  = 131072,
@@ -13886,8 +14749,8 @@ const machine_t machines[] = {
         .kbc_params               = 0x00004800,
         .nvr_device               = &nvr_at_device,
         .nvr_params               = NVR_AT,
-        .sio_device               = NULL,
-        .sio_params               = 0x00000000,
+        .sio_device               = &um866x_device,
+        .sio_params               = (uintptr_t) (UM8663BF),
         .kbc_p1                   = 0x000004f0,
         .gpio                     = 0xffffffff,
         .gpio_acpi                = 0xffffffff,
@@ -13897,6 +14760,15 @@ const machine_t machines[] = {
         .vid_device               = NULL,
         .snd_device               = NULL,
         .net_device               = NULL,
+        .pci_flags                = PCI_CONFIG_TYPE_1,
+        .slot_layout              = (const machine_slot_t[]) {
+            MSLOT_PCI(0x10, PCI_CARD_NORTHBRIDGE, 0, 0, 0, 0),
+            MSLOT_BRIDGE(0x12, PCI_CARD_SOUTHBRIDGE, 1, 2, 3, 4, machine_bus_isa),
+            MSLOT_PCI(0x0C, PCI_CARD_NORMAL, 1, 2, 3, 4),
+            MSLOT_PCI(0x0D, PCI_CARD_NORMAL, 4, 1, 2, 3),
+            MSLOT_PCI(0x0E, PCI_CARD_NORMAL, 3, 4, 1, 2),
+            MSLOT_END
+        },
         .aliases                  = { "" }
     },
     /* Has IBM PS/2 Type 1 KBC firmware. Uses a mysterious I/O port C05. */
@@ -13921,7 +14793,7 @@ const machine_t machines[] = {
             .max_multi   = 0
         },
         .bus_flags = MACHINE_PS2_PCI,
-        .flags     = MACHINE_IDE_DUAL | MACHINE_APM,
+        .flags     = MACHINE_IDE_DUAL | MACHINE_APM | MACHINE_UART_PRI | MACHINE_UART_SEC | MACHINE_LPT_PRI,
         .ram       = {
             .min  = 1024,
             .max  = 131072,
@@ -13934,8 +14806,8 @@ const machine_t machines[] = {
         .kbc_params               = 0x00004800,
         .nvr_device               = &nvr_at_device,
         .nvr_params               = NVR_AT,
-        .sio_device               = NULL,
-        .sio_params               = 0x00000000,
+        .sio_device               = &fdc37c6xx_device,
+        .sio_params               = (uintptr_t) (FDC37C665),
         .kbc_p1                   = 0x00000cf0,
         .gpio                     = 0xffffffff,
         .gpio_acpi                = 0xffffffff,
@@ -13945,6 +14817,15 @@ const machine_t machines[] = {
         .vid_device               = NULL,
         .snd_device               = NULL,
         .net_device               = NULL,
+        .pci_flags                = PCI_CONFIG_TYPE_1,
+        .slot_layout              = (const machine_slot_t[]) {
+            MSLOT_PCI(0x10, PCI_CARD_NORTHBRIDGE, 0, 0, 0, 0),
+            MSLOT_BRIDGE(0x12, PCI_CARD_SOUTHBRIDGE, 1, 2, 3, 4, machine_bus_isa),
+            MSLOT_PCI(0x0C, PCI_CARD_NORMAL, 2, 3, 4, 1),
+            MSLOT_PCI(0x0D, PCI_CARD_NORMAL, 1, 2, 3, 4),
+            MSLOT_PCI(0x0E, PCI_CARD_NORMAL, 3, 4, 1, 2),
+            MSLOT_END
+        },
         .aliases                  = { "" }
     },
     /* This has a Holtek KBC. */
@@ -13969,7 +14850,7 @@ const machine_t machines[] = {
             .max_multi   = 0
         },
         .bus_flags = MACHINE_PS2_PCI,
-        .flags     = MACHINE_IDE_DUAL | MACHINE_APM,
+        .flags     = MACHINE_IDE_DUAL | MACHINE_APM | MACHINE_UART_PRI | MACHINE_UART_SEC | MACHINE_LPT_PRI,
         .ram       = {
             .min  = 1024,
             .max  = 262144,
@@ -13983,7 +14864,7 @@ const machine_t machines[] = {
         /* TODO: Per-BIOS NVR parameters. */
         .nvr_device               = NULL,
         .nvr_params               = 0x00000000,
-        .sio_device               = NULL,
+        .sio_device               = &um8669f_device,
         .sio_params               = 0x00000000,
         .kbc_p1                   = 0x00000cf0,
         .gpio                     = 0xffffffff,
@@ -13994,6 +14875,16 @@ const machine_t machines[] = {
         .vid_device               = NULL,
         .snd_device               = NULL,
         .net_device               = NULL,
+        .pci_flags                = PCI_CONFIG_TYPE_1,
+        .slot_layout              = (const machine_slot_t[]) {
+            MSLOT_PCI(0x10, PCI_CARD_NORTHBRIDGE, 0, 0, 0, 0),
+            MSLOT_BRIDGE(0x12, PCI_CARD_SOUTHBRIDGE, 1, 2, 3, 4, machine_bus_isa),
+            MSLOT_PCI(0x0C, PCI_CARD_NORMAL, 1, 2, 3, 4),
+            MSLOT_PCI(0x0D, PCI_CARD_NORMAL, 4, 1, 2, 3),
+            MSLOT_PCI(0x0E, PCI_CARD_NORMAL, 3, 4, 1, 2),
+            MSLOT_PCI(0x0F, PCI_CARD_NORMAL, 2, 3, 4, 1),
+            MSLOT_END
+        },
         .aliases                  = { "" }
     },
     /* Has a VIA VT82C406 KBC+RTC that likely has identical commands to the VT82C42N. */
@@ -14018,7 +14909,7 @@ const machine_t machines[] = {
             .max_multi   = 0
         },
         .bus_flags = MACHINE_PS2_PCIV,
-        .flags     = MACHINE_IDE_DUAL | MACHINE_APM,
+        .flags     = MACHINE_IDE_DUAL | MACHINE_APM | MACHINE_UART_PRI | MACHINE_UART_SEC | MACHINE_LPT_PRI,
         .ram       = {
             .min  = 1024,
             .max  = 131072,
@@ -14031,8 +14922,8 @@ const machine_t machines[] = {
         .kbc_params               = KBC_VEN_VIA | 0x00424600,
         .nvr_device               = &nvr_at_device,
         .nvr_params               = NVR_AT,
-        .sio_device               = NULL,
-        .sio_params               = 0x00000000,
+        .sio_device               = &pc873xx_device,
+        .sio_params               = (uintptr_t) ((PC87332 | PCX73XX_IDE_SEC | PCX730X_398)),
         .kbc_p1                   = 0x00000cf0,
         .gpio                     = 0xffffffff,
         .gpio_acpi                = 0xffffffff,
@@ -14042,6 +14933,15 @@ const machine_t machines[] = {
         .vid_device               = NULL,
         .snd_device               = NULL,
         .net_device               = NULL,
+        .pci_flags                = PCI_CONFIG_TYPE_1,
+        .slot_layout              = (const machine_slot_t[]) {
+            MSLOT_PCI(0x00, PCI_CARD_NORTHBRIDGE, 0, 0, 0, 0),
+            MSLOT_PCI(0x08, PCI_CARD_NORMAL, 1, 2, 3, 4),
+            MSLOT_PCI(0x09, PCI_CARD_NORMAL, 2, 3, 4, 1),
+            MSLOT_PCI(0x0A, PCI_CARD_NORMAL, 3, 4, 1, 2),
+            MSLOT_PCI(0x0B, PCI_CARD_NORMAL, 4, 1, 2, 3),
+            MSLOT_END
+        },
         .aliases                  = { "" }
     },
     /* Has a VIA VT82C42N KBC. */
@@ -14066,7 +14966,7 @@ const machine_t machines[] = {
             .max_multi   = 0
         },
         .bus_flags = MACHINE_PS2_PCIV,
-        .flags     = MACHINE_IDE_DUAL | MACHINE_APM | MACHINE_GAMEPORT,
+        .flags     = MACHINE_IDE_DUAL | MACHINE_APM | MACHINE_GAMEPORT | MACHINE_UART_PRI | MACHINE_UART_SEC | MACHINE_LPT_PRI,
         .ram       = {
             .min  = 1024,
             .max  = 131072,
@@ -14079,8 +14979,8 @@ const machine_t machines[] = {
         .kbc_params               = KBC_VEN_VIA | 0x00424600,
         .nvr_device               = &nvr_at_device,
         .nvr_params               = NVR_AT,
-        .sio_device               = NULL,
-        .sio_params               = 0x00000000,
+        .sio_device               = &w837x7_device,
+        .sio_params               = (uintptr_t) ((W83787F | W837X7_KEY_89 | W83XX7_IDE_SEC)),
         .kbc_p1                   = 0x00000cf0,
         .gpio                     = 0xffffffff,
         .gpio_acpi                = 0xffffffff,
@@ -14090,6 +14990,15 @@ const machine_t machines[] = {
         .vid_device               = NULL,
         .snd_device               = NULL,
         .net_device               = NULL,
+        .pci_flags                = PCI_CONFIG_TYPE_1,
+        .slot_layout              = (const machine_slot_t[]) {
+            MSLOT_PCI(0x00, PCI_CARD_NORTHBRIDGE, 0, 0, 0, 0),
+            MSLOT_PCI(0x08, PCI_CARD_NORMAL, 1, 2, 3, 4),
+            MSLOT_PCI(0x09, PCI_CARD_NORMAL, 2, 3, 4, 1),
+            MSLOT_PCI(0x0A, PCI_CARD_NORMAL, 3, 4, 1, 2),
+            MSLOT_PCI(0x0B, PCI_CARD_NORMAL, 4, 1, 2, 3),
+            MSLOT_END
+        },
         .aliases                  = { "" }
     },
 
@@ -14118,7 +15027,7 @@ const machine_t machines[] = {
             .max_multi   = 1.0
         },
         .bus_flags = MACHINE_PS2_PCI,
-        .flags     = MACHINE_IDE_DUAL | MACHINE_APM, /* Machine has internal video: ST STPC Atlas (not yet implemented) */
+        .flags     = MACHINE_IDE_DUAL | MACHINE_APM | MACHINE_UART_PRI | MACHINE_UART_SEC | MACHINE_LPT_PRI, /* Machine has internal video: ST STPC Atlas (not yet implemented) */
         .ram       = {
             .min  = 8192,
             .max  = 131072,
@@ -14131,8 +15040,8 @@ const machine_t machines[] = {
         .kbc_params               = 0x00004800,
         .nvr_device               = NULL,
         .nvr_params               = 0x00000000,
-        .sio_device               = NULL,
-        .sio_params               = 0x00000000,
+        .sio_device               = &w83977_device,
+        .sio_params               = (uintptr_t) ((W83977F | W83977_AMI)),
         .kbc_p1                   = 0x00000cf0,
         .gpio                     = 0xffffffff,
         .gpio_acpi                = 0xffffffff,
@@ -14142,6 +15051,13 @@ const machine_t machines[] = {
         .vid_device               = NULL,
         .snd_device               = NULL,
         .net_device               = NULL,
+        .pci_flags                = PCI_CONFIG_TYPE_1,
+        .slot_layout              = (const machine_slot_t[]) {
+            MSLOT_PCI(0x0B, PCI_CARD_NORTHBRIDGE, 0, 0, 0, 0),
+            MSLOT_BRIDGE(0x0C, PCI_CARD_SOUTHBRIDGE, 0, 0, 0, 0, machine_bus_isa),
+            MSLOT_PCI(0x1F, PCI_CARD_NORMAL, 1, 2, 3, 4),
+            MSLOT_END
+        },
         .aliases                  = { "" }
     },
     /* Has a Winbond W83977F Super I/O chip with on-chip KBC with AMIKey-2 KBC
@@ -14167,7 +15083,7 @@ const machine_t machines[] = {
             .max_multi   = 2.0
         },
         .bus_flags = MACHINE_PS2_PCI,
-        .flags     = MACHINE_IDE_DUAL | MACHINE_APM | MACHINE_PCI_INTERNAL, /* Machine has internal video: ST STPC Atlas (not yet implemented) */
+        .flags     = MACHINE_IDE_DUAL | MACHINE_APM | MACHINE_PCI_INTERNAL | MACHINE_UART_PRI | MACHINE_UART_SEC | MACHINE_LPT_PRI, /* Machine has internal video: ST STPC Atlas (not yet implemented) */
         .ram       = {
             .min  = 8192,
             .max  = 131072,
@@ -14180,8 +15096,8 @@ const machine_t machines[] = {
         .kbc_params               = 0x00004800,
         .nvr_device               = NULL,
         .nvr_params               = 0x00000000,
-        .sio_device               = NULL,
-        .sio_params               = 0x00000000,
+        .sio_device               = &w83977_device,
+        .sio_params               = (uintptr_t) ((W83977F | W83977_AMI)),
         .kbc_p1                   = 0x00000cf0,
         .gpio                     = 0xffffffff,
         .gpio_acpi                = 0xffffffff,
@@ -14191,6 +15107,15 @@ const machine_t machines[] = {
         .vid_device               = NULL,
         .snd_device               = NULL,
         .net_device               = NULL,
+        .pci_flags                = PCI_CONFIG_TYPE_1,
+        .slot_layout              = (const machine_slot_t[]) {
+            MSLOT_PCI(0x0B, PCI_CARD_NORTHBRIDGE, 0, 0, 0, 0),
+            MSLOT_BRIDGE(0x0C, PCI_CARD_SOUTHBRIDGE, 0, 0, 0, 0, machine_bus_isa),
+            MSLOT_PCI(0x1F, PCI_CARD_NORMAL, 1, 0, 0, 0),
+            MSLOT_PCI(0x1E, PCI_CARD_NORMAL, 2, 3, 4, 1),
+            MSLOT_PCI(0x1D, PCI_CARD_NORMAL, 3, 4, 1, 2),
+            MSLOT_END
+        },
         .aliases                  = { "" }
     },
     /* Has a Winbond W83977F Super I/O chip with on-chip KBC with AMIKey-2 KBC
@@ -14216,7 +15141,7 @@ const machine_t machines[] = {
             .max_multi   = 2.0
         },
         .bus_flags = MACHINE_PS2_PCI | MACHINE_BUS_USB,
-        .flags     = MACHINE_IDE_DUAL | MACHINE_APM | MACHINE_PCI_INTERNAL | MACHINE_USB, /* Machine has internal video: ST STPC Atlas, NIC: Realtek RTL8100B (both not yet implemented) */
+        .flags     = MACHINE_IDE_DUAL | MACHINE_APM | MACHINE_PCI_INTERNAL | MACHINE_USB | MACHINE_UART_PRI | MACHINE_UART_SEC | MACHINE_LPT_PRI, /* Machine has internal video: ST STPC Atlas, NIC: Realtek RTL8100B (both not yet implemented) */
         .ram       = {
             /* 32 MB soldered SDRAM, neither upgradable nor other known configurations exist. */
             .min  = 32768,
@@ -14230,8 +15155,8 @@ const machine_t machines[] = {
         .kbc_params               = 0x00004800,
         .nvr_device               = NULL,
         .nvr_params               = 0x00000000,
-        .sio_device               = NULL,
-        .sio_params               = 0x00000000,
+        .sio_device               = &w83977_device,
+        .sio_params               = (uintptr_t) ((W83977F | W83977_AMI)),
         .kbc_p1                   = 0x00000cf0,
         .gpio                     = 0xffffffff,
         .gpio_acpi                = 0xffffffff,
@@ -14241,6 +15166,15 @@ const machine_t machines[] = {
         .vid_device               = NULL,
         .snd_device               = NULL,
         .net_device               = NULL,
+        .pci_flags                = PCI_CONFIG_TYPE_1,
+        .slot_layout              = (const machine_slot_t[]) {
+            MSLOT_PCI(0x0B, PCI_CARD_NORTHBRIDGE, 0, 0, 0, 0),
+            MSLOT_BRIDGE(0x0C, PCI_CARD_SOUTHBRIDGE, 0, 0, 0, 0, machine_bus_isa),
+            MSLOT_PCI(0x1F, PCI_CARD_NORMAL, 1, 0, 0, 0),
+            MSLOT_PCI(0x1E, PCI_CARD_NORMAL, 2, 3, 4, 1),
+            MSLOT_PCI(0x1D, PCI_CARD_NORMAL, 3, 4, 1, 2),
+            MSLOT_END
+        },
         .aliases                  = { "" }
     },
     /* Has a Winbond W83977F Super I/O chip with on-chip KBC with AMIKey-2 KBC
@@ -14266,7 +15200,7 @@ const machine_t machines[] = {
             .max_multi   = 2.0
         },
         .bus_flags = MACHINE_PS2,
-        .flags     = MACHINE_IDE | MACHINE_APM | MACHINE_PCI_INTERNAL, /* Machine has internal video: ST STPC Atlas (not yet implemented) and NIC: Realtek RTL8139C+ (onboard variant not yet emulated) */
+        .flags     = MACHINE_IDE | MACHINE_APM | MACHINE_PCI_INTERNAL | MACHINE_UART_PRI | MACHINE_UART_SEC | MACHINE_LPT_PRI, /* Machine has internal video: ST STPC Atlas (not yet implemented) and NIC: Realtek RTL8139C+ (onboard variant not yet emulated) */
         .ram       = {
             .min  = 8192,
             .max  = 131072,
@@ -14279,8 +15213,8 @@ const machine_t machines[] = {
         .kbc_params               = 0x00004800,
         .nvr_device               = NULL,
         .nvr_params               = 0x00000000,
-        .sio_device               = NULL,
-        .sio_params               = 0x00000000,
+        .sio_device               = &w83977_device,
+        .sio_params               = (uintptr_t) ((W83977F | W83977_AMI)),
         .kbc_p1                   = 0x00000cf0,
         .gpio                     = 0xffffffff,
         .gpio_acpi                = 0xffffffff,
@@ -14290,6 +15224,12 @@ const machine_t machines[] = {
         .vid_device               = NULL,
         .snd_device               = NULL,
         .net_device               = NULL,
+        .pci_flags                = PCI_CONFIG_TYPE_1,
+        .slot_layout              = (const machine_slot_t[]) {
+            MSLOT_PCI(0x0B, PCI_CARD_NORTHBRIDGE, 0, 0, 0, 0),
+            MSLOT_BRIDGE(0x0C, PCI_CARD_SOUTHBRIDGE, 0, 0, 0, 0, machine_bus_isa),
+            MSLOT_END
+        },
         .aliases                  = { "" }
     },
     /* Has a Winbond W83977F Super I/O chip with on-chip KBC with AMIKey-2 KBC
@@ -14315,7 +15255,7 @@ const machine_t machines[] = {
             .max_multi   = 2.0
         },
         .bus_flags = MACHINE_PS2_PCI,
-        .flags     = MACHINE_IDE_DUAL | MACHINE_APM | MACHINE_PCI_INTERNAL, /* Machine has internal video: SMI LynxEM+ 712 (not yet implemented) */
+        .flags     = MACHINE_IDE_DUAL | MACHINE_APM | MACHINE_PCI_INTERNAL | MACHINE_UART_PRI | MACHINE_UART_SEC | MACHINE_UART_TER | MACHINE_UART_QUA | MACHINE_LPT_PRI | MACHINE_LPT_SEC, /* Machine has internal video: SMI LynxEM+ 712 (not yet implemented) */
         .ram       = {
             .min  = 32768,
             .max  = 98304,
@@ -14328,8 +15268,8 @@ const machine_t machines[] = {
         .kbc_params               = 0x00004800,
         .nvr_device               = NULL,
         .nvr_params               = 0x00000000,
-        .sio_device               = NULL,
-        .sio_params               = 0x00000000,
+        .sio_device               = &w83977_device,
+        .sio_params               = (uintptr_t) ((W83977F | W83977_AMI)),
         .kbc_p1                   = 0x00000cf0,
         .gpio                     = 0xffffffff,
         .gpio_acpi                = 0xffffffff,
@@ -14339,6 +15279,15 @@ const machine_t machines[] = {
         .vid_device               = NULL,
         .snd_device               = NULL,
         .net_device               = NULL,
+        .pci_flags                = PCI_CONFIG_TYPE_1,
+        .slot_layout              = (const machine_slot_t[]) {
+            MSLOT_PCI(0x0B, PCI_CARD_NORTHBRIDGE, 0, 0, 0, 0),
+            MSLOT_BRIDGE(0x0C, PCI_CARD_SOUTHBRIDGE, 0, 0, 0, 0, machine_bus_isa),
+            MSLOT_PCI(0x1D, PCI_CARD_NORMAL, 4, 1, 2, 3),
+            MSLOT_PCI(0x1E, PCI_CARD_NORMAL, 3, 4, 1, 2),
+            MSLOT_PCI(0x1F, PCI_CARD_NORMAL, 2, 3, 4, 1),
+            MSLOT_END
+        },
         .aliases                  = { "" }
     },
     /* Has a Winbond W83977F Super I/O chip with on-chip KBC with AMIKey-2 KBC
@@ -14364,7 +15313,7 @@ const machine_t machines[] = {
             .max_multi   = 2.0
         },
         .bus_flags = MACHINE_PS2_PCI,
-        .flags     = MACHINE_IDE_DUAL | MACHINE_APM | MACHINE_PCI_INTERNAL, /* Machine has internal video: ST STPC Atlas (not yet implemented) */
+        .flags     = MACHINE_IDE_DUAL | MACHINE_APM | MACHINE_PCI_INTERNAL | MACHINE_UART_PRI | MACHINE_UART_SEC | MACHINE_UART_TER | MACHINE_UART_QUA | MACHINE_LPT_PRI, /* Machine has internal video: ST STPC Atlas (not yet implemented) */
         .ram       = {
             .min  = 32768,
             .max  = 131072,
@@ -14377,8 +15326,8 @@ const machine_t machines[] = {
         .kbc_params               = 0x00004800,
         .nvr_device               = NULL,
         .nvr_params               = 0x00000000,
-        .sio_device               = NULL,
-        .sio_params               = 0x00000000,
+        .sio_device               = &w83977_device,
+        .sio_params               = (uintptr_t) ((W83977F | W83977_370 | W83977_AMI | W83977_UART_FORCE_SEC)),
         .kbc_p1                   = 0x00000cf0,
         .gpio                     = 0xffffffff,
         .gpio_acpi                = 0xffffffff,
@@ -14388,6 +15337,15 @@ const machine_t machines[] = {
         .vid_device               = NULL,
         .snd_device               = NULL,
         .net_device               = NULL,
+        .pci_flags                = PCI_CONFIG_TYPE_1,
+        .slot_layout              = (const machine_slot_t[]) {
+            MSLOT_PCI(0x0B, PCI_CARD_NORTHBRIDGE, 0, 0, 0, 0),
+            MSLOT_BRIDGE(0x0C, PCI_CARD_SOUTHBRIDGE, 0, 0, 0, 0, machine_bus_isa),
+            MSLOT_PCI(0x0D, PCI_CARD_SOUTHBRIDGE_IDE, 0, 0, 0, 0),
+            MSLOT_PCI(0x0E, PCI_CARD_SOUTHBRIDGE_USB, 1, 2, 3, 4),
+            MSLOT_PCI(0x13, PCI_CARD_NORMAL, 1, 2, 3, 4),
+            MSLOT_END
+        },
         .aliases                  = { "" }
     },
 
@@ -14436,10 +15394,15 @@ const machine_t machines[] = {
         .gpio_acpi                = 0xffffffff,
         .device                   = NULL,
         .kbd_device               = NULL,
-        .fdc_device               = NULL,
+        .fdc_device               = &fdc_at_device,
         .vid_device               = NULL,
         .snd_device               = NULL,
         .net_device               = NULL,
+        .slot_layout              = (const machine_slot_t[]) {
+            MSLOT_BUS(SLOT_ISA16, 6),
+            MSLOT_BUS(SLOT_ISA_VLB, 2),
+            MSLOT_END
+        },
         .aliases                  = { "" }
     },
 
@@ -14467,7 +15430,7 @@ const machine_t machines[] = {
             .max_multi   = MACHINE_MULTIPLIER_FIXED
         },
         .bus_flags = MACHINE_PS2_PCI,
-        .flags     = MACHINE_IDE,
+        .flags     = MACHINE_IDE | MACHINE_UART_PRI | MACHINE_UART_SEC | MACHINE_LPT_PRI,
         .ram       = {
             .min  = 2048,
             .max  = 196608,
@@ -14480,8 +15443,8 @@ const machine_t machines[] = {
         .kbc_params               = KBC_VEN_ACER | 0x00000000,
         .nvr_device               = &nvr_at_device,
         .nvr_params               = NVR_AT,
-        .sio_device               = NULL,
-        .sio_params               = 0x00000000,
+        .sio_device               = &pc87310_device,
+        .sio_params               = (uintptr_t) ((PC87310_ALI)),
         .kbc_p1                   = 0x004008f0,
         .gpio                     = 0xffffffff,
         .gpio_acpi                = 0xffffffff,
@@ -14491,6 +15454,16 @@ const machine_t machines[] = {
         .vid_device               = NULL,
         .snd_device               = NULL,
         .net_device               = NULL,
+        .pci_flags                = PCI_CONFIG_TYPE_2 | PCI_NO_IRQ_STEERING,
+        .slot_layout              = (const machine_slot_t[]) {
+            MSLOT_PCI(0x00, PCI_CARD_NORTHBRIDGE, 0, 0, 0, 0),
+            MSLOT_PCI(0x01, PCI_CARD_SCSI, 1, 4, 3, 2),
+            MSLOT_BRIDGE(0x02, PCI_CARD_SOUTHBRIDGE, 2, 1, 4, 3, ((const machine_slot_t[]) { MSLOT_BUS(SLOT_ISA16, 5), MSLOT_END })),
+            MSLOT_PCI(0x03, PCI_CARD_NORMAL, 3, 2, 1, 4),
+            MSLOT_PCI(0x04, PCI_CARD_NORMAL, 4, 0, 0, 0),
+            MSLOT_PCI(0x05, PCI_CARD_NORMAL, 0, 0, 0, 0),
+            MSLOT_END
+        },
         .aliases                  = { "" }
     },
     /* Has AMIKey H KBC firmware (AMIKey-2), per POST screen with BIOS string
@@ -14519,7 +15492,7 @@ const machine_t machines[] = {
             .max_multi   = MACHINE_MULTIPLIER_FIXED
         },
         .bus_flags = MACHINE_PS2_PCI,
-        .flags     = MACHINE_IDE, /* Machine has unknown internal SCSI */
+        .flags     = MACHINE_IDE | MACHINE_UART_PRI | MACHINE_UART_SEC | MACHINE_LPT_PRI, /* Machine has unknown internal SCSI */
         .ram       = {
             .min  = 2048,
             .max  = 131072,
@@ -14532,8 +15505,8 @@ const machine_t machines[] = {
         .kbc_params               = KBC_VEN_AMI | 0x00004800,
         .nvr_device               = &nvr_at_device,
         .nvr_params               = NVR_AT,
-        .sio_device               = NULL,
-        .sio_params               = 0x00000000,
+        .sio_device               = &fdc37c6xx_device,
+        .sio_params               = (uintptr_t) (FDC37C665),
         .kbc_p1                   = 0x00000cf0,
         .gpio                     = 0xffffffff,
         .gpio_acpi                = 0xffffffff,
@@ -14544,6 +15517,16 @@ const machine_t machines[] = {
         .snd_device               = NULL,
         .net_device               = NULL,
         .ide_device               = &ide_cmd640_pci_legacy_only_device,
+        .pci_flags                = PCI_CONFIG_TYPE_2,
+        .slot_layout              = (const machine_slot_t[]) {
+            MSLOT_PCI(0x00, PCI_CARD_NORTHBRIDGE, 0, 0, 0, 0),
+            MSLOT_PCI(0x03, PCI_CARD_IDE, 0, 0, 0, 0),
+            MSLOT_PCI(0x0F, PCI_CARD_NORMAL, 1, 2, 3, 4),
+            MSLOT_PCI(0x0E, PCI_CARD_NORMAL, 2, 3, 4, 1),
+            MSLOT_PCI(0x0D, PCI_CARD_NORMAL, 3, 4, 1, 2),
+            MSLOT_BRIDGE(0x02, PCI_CARD_SOUTHBRIDGE, 0, 0, 0, 0, ((const machine_slot_t[]) { MSLOT_BUS(SLOT_ISA16, 4), MSLOT_END })),
+            MSLOT_END
+        },
         .aliases                  = { "AMI S701", "" }
     },
     /* Has AMIKey F KBC firmware (AMIKey). */
@@ -14588,10 +15571,19 @@ const machine_t machines[] = {
         .gpio_acpi                = 0xffffffff,
         .device                   = &p5mp3_device,
         .kbd_device               = NULL,
-        .fdc_device               = NULL,
+        .fdc_device               = &fdc_at_device,
         .vid_device               = NULL,
         .snd_device               = NULL,
         .net_device               = NULL,
+        .pci_flags                = PCI_CONFIG_TYPE_2 | PCI_NO_IRQ_STEERING,
+        .slot_layout              = (const machine_slot_t[]) {
+            MSLOT_PCI(0x00, PCI_CARD_NORTHBRIDGE, 0, 0, 0, 0),
+            MSLOT_PCI(0x05, PCI_CARD_NORMAL, 1, 2, 3, 4), /* 05 = Slot 1 */
+            MSLOT_PCI(0x04, PCI_CARD_NORMAL, 2, 3, 4, 1), /* 04 = Slot 2 */
+            MSLOT_PCI(0x03, PCI_CARD_NORMAL, 3, 4, 1, 2), /* 03 = Slot 3 */
+            MSLOT_BRIDGE(0x02, PCI_CARD_SOUTHBRIDGE, 0, 0, 0, 0, machine_bus_isa),
+            MSLOT_END
+        },
         .aliases                  = { "" }
     },
     /* Has IBM PS/2 Type 1 KBC firmware. */
@@ -14616,7 +15608,7 @@ const machine_t machines[] = {
             .max_multi   = MACHINE_MULTIPLIER_FIXED
         },
         .bus_flags = MACHINE_PS2_PCI,
-        .flags     = MACHINE_IDE | MACHINE_APM | MACHINE_VIDEO,
+        .flags     = MACHINE_IDE | MACHINE_APM | MACHINE_VIDEO | MACHINE_UART_PRI | MACHINE_UART_SEC | MACHINE_LPT_PRI,
         .ram       = {
             .min  = 2048,
             .max  = 131072,
@@ -14629,8 +15621,8 @@ const machine_t machines[] = {
         .kbc_params               = KBC_VEN_PHOENIX | 0x00012900,
         .nvr_device               = &nvr_at_device,
         .nvr_params               = NVR_AT_ZERO_DEFAULT,
-        .sio_device               = NULL,
-        .sio_params               = 0x00000000,
+        .sio_device               = &i82091aa_device,
+        .sio_params               = (uintptr_t) (I82091AA_022),
         .kbc_p1                   = 0x00000cf0,
         .gpio                     = 0xffffffff,
         .gpio_acpi                = 0xffffffff,
@@ -14640,6 +15632,14 @@ const machine_t machines[] = {
         .vid_device               = &gd5430_onboard_pci_device,
         .snd_device               = NULL,
         .net_device               = NULL,
+        .pci_flags                = PCI_CONFIG_TYPE_2,
+        .slot_layout              = (const machine_slot_t[]) {
+            MSLOT_PCI(0x00, PCI_CARD_NORTHBRIDGE, 0, 0, 0, 0),
+            MSLOT_PCI(0x03, PCI_CARD_VIDEO, 3, 3, 3, 3),
+            MSLOT_PCI(0x07, PCI_CARD_NORMAL, 1, 4, 3, 2),
+            MSLOT_BRIDGE(0x02, PCI_CARD_SOUTHBRIDGE, 0, 0, 0, 0, machine_bus_isa),
+            MSLOT_END
+        },
         .aliases                  = { "" }
     },
     /* Has AMI MegaKey 'H' KBC firmware. */
@@ -14684,10 +15684,21 @@ const machine_t machines[] = {
         .gpio_acpi                = 0xffffffff,
         .device                   = NULL,
         .kbd_device               = NULL,
-        .fdc_device               = NULL,
+        .fdc_device               = &fdc_at_device,
         .vid_device               = NULL,
         .snd_device               = NULL,
         .net_device               = NULL,
+        .pci_flags                = PCI_CONFIG_TYPE_2 | PCI_NO_IRQ_STEERING,
+        .slot_layout              = (const machine_slot_t[]) {
+            MSLOT_PCI(0x00, PCI_CARD_NORTHBRIDGE, 0, 0, 0, 0),
+            MSLOT_PCI(0x03, PCI_CARD_NORMAL, 1, 2, 3, 4), /* 03 = Slot 1 */
+            MSLOT_PCI(0x04, PCI_CARD_NORMAL, 2, 3, 4, 1), /* 04 = Slot 2 */
+            MSLOT_PCI(0x05, PCI_CARD_NORMAL, 3, 4, 1, 2), /* 05 = Slot 3 */
+            MSLOT_PCI(0x06, PCI_CARD_NORMAL, 4, 1, 2, 3), /* 06 = Slot 4 */
+            MSLOT_PCI(0x07, PCI_CARD_SCSI, 1, 2, 3, 4), /* 07 = SCSI   */
+            MSLOT_BRIDGE(0x02, PCI_CARD_SOUTHBRIDGE, 0, 0, 0, 0, ((const machine_slot_t[]) { MSLOT_BUS(SLOT_ISA16, 4), MSLOT_END })),
+            MSLOT_END
+        },
         .aliases                  = { "Gigabyte GA-5IS", "" }
     },
     /* Has IBM PS/2 Type 1 KBC firmware. */
@@ -14712,7 +15723,7 @@ const machine_t machines[] = {
             .max_multi   = MACHINE_MULTIPLIER_FIXED
         },
         .bus_flags = MACHINE_PS2_PCI,
-        .flags     = MACHINE_IDE | MACHINE_VIDEO,
+        .flags     = MACHINE_IDE | MACHINE_VIDEO | MACHINE_UART_PRI | MACHINE_UART_SEC | MACHINE_LPT_PRI,
         .ram       = {
             .min  = 2048,
             .max  = 131072,
@@ -14725,8 +15736,8 @@ const machine_t machines[] = {
         .kbc_params               = 0x00000000,
         .nvr_device               = &nvr_at_device,
         .nvr_params               = NVR_AT,
-        .sio_device               = NULL,
-        .sio_params               = 0x00000000,
+        .sio_device               = &fdc37c6xx_device,
+        .sio_params               = (uintptr_t) ((FDC37C665 | FDC37C6XX_IDE_PRI)),
         .kbc_p1                   = 0x000004f0,
         .gpio                     = 0xffffffff,
         .gpio_acpi                = 0xffffffff,
@@ -14736,6 +15747,16 @@ const machine_t machines[] = {
         .vid_device               = &mach32_onboard_pci_device,
         .snd_device               = NULL,
         .net_device               = NULL,
+        .pci_flags                = PCI_CONFIG_TYPE_2 | PCI_NO_IRQ_STEERING,
+        .slot_layout              = (const machine_slot_t[]) {
+            MSLOT_PCI(0x00, PCI_CARD_NORTHBRIDGE, 0, 0, 0, 0),
+            MSLOT_PCI(0x03, PCI_CARD_VIDEO, 3, 3, 3, 3),
+            MSLOT_PCI(0x06, PCI_CARD_NORMAL, 3, 2, 1, 4),
+            MSLOT_PCI(0x0E, PCI_CARD_NORMAL, 2, 1, 3, 4),
+            MSLOT_PCI(0x0C, PCI_CARD_NORMAL, 1, 3, 2, 4),
+            MSLOT_BRIDGE(0x02, PCI_CARD_SOUTHBRIDGE, 0, 0, 0, 0, machine_bus_isa),
+            MSLOT_END
+        },
         .aliases                  = { "Intel Robin ACE", "" }
     },
     /* This has the Phoenix MultiKey KBC firmware. */
@@ -14760,7 +15781,7 @@ const machine_t machines[] = {
             .max_multi   = MACHINE_MULTIPLIER_FIXED
         },
         .bus_flags = MACHINE_PS2_PCI,
-        .flags     = MACHINE_IDE,
+        .flags     = MACHINE_IDE | MACHINE_UART_PRI | MACHINE_UART_SEC | MACHINE_LPT_PRI,
         .ram       = {
             .min  = 2048,
             .max  = 131072,
@@ -14773,8 +15794,8 @@ const machine_t machines[] = {
         .kbc_params               = KBC_VEN_PHOENIX | 0x00012900,
         .nvr_device               = &nvr_at_device,
         .nvr_params               = NVR_AT_ZERO_DEFAULT,
-        .sio_device               = NULL,
-        .sio_params               = 0x00000000,
+        .sio_device               = &fdc37c6xx_device,
+        .sio_params               = (uintptr_t) ((FDC37C665 | FDC37C6XX_IDE_PRI)),
         .kbc_p1                   = 0x00001030,
         .gpio                     = 0xffffffff,
         .gpio_acpi                = 0xffffffff,
@@ -14784,6 +15805,18 @@ const machine_t machines[] = {
         .vid_device               = NULL,
         .snd_device               = NULL,
         .net_device               = NULL,
+        .pci_flags                = PCI_CONFIG_TYPE_2,
+        .slot_layout              = (const machine_slot_t[]) {
+            MSLOT_PCI(0x00, PCI_CARD_NORTHBRIDGE, 0, 0, 0, 0),
+            MSLOT_PCI_IF("dellxp60", 0x04, PCI_CARD_NORMAL, 4, 4, 3, 3),
+            MSLOT_PCI_IF("dellxp60", 0x05, PCI_CARD_NORMAL, 1, 4, 3, 2),
+            MSLOT_PCI_IF("dellxp60", 0x06, PCI_CARD_NORMAL, 2, 1, 3, 4),
+            MSLOT_PCI_IF("!dellxp60", 0x06, PCI_CARD_NORMAL, 3, 2, 1, 4),
+            MSLOT_PCI_IF("!dellxp60", 0x0E, PCI_CARD_NORMAL, 2, 1, 3, 4),
+            MSLOT_PCI_IF("!dellxp60", 0x0C, PCI_CARD_NORMAL, 1, 3, 2, 4),
+            MSLOT_BRIDGE(0x02, PCI_CARD_SOUTHBRIDGE, 0, 0, 0, 0, machine_bus_isa),
+            MSLOT_END
+        },
         .aliases                  = { "Intel Batman", "Dell Dimension XPS P60", "AMBRA DP60 PCI", "" }
     },
     /* This has the Phoenix MultiKey KBC firmware. */
@@ -14808,7 +15841,7 @@ const machine_t machines[] = {
             .max_multi   = MACHINE_MULTIPLIER_FIXED
         },
         .bus_flags = MACHINE_PS2_PCI,
-        .flags     = MACHINE_IDE_DUAL,
+        .flags     = MACHINE_IDE_DUAL | MACHINE_UART_PRI | MACHINE_UART_SEC | MACHINE_LPT_PRI,
         .ram       = {
             .min  = 2048,
             .max  = 131072,
@@ -14821,8 +15854,8 @@ const machine_t machines[] = {
         .kbc_params               = KBC_VEN_PHOENIX | 0x00012900,
         .nvr_device               = &nvr_at_device,
         .nvr_params               = NVR_AT_ZERO_DEFAULT,
-        .sio_device               = NULL,
-        .sio_params               = 0x00000000,
+        .sio_device               = &fdc37c6xx_device,
+        .sio_params               = (uintptr_t) ((FDC37C665 | FDC37C6XX_IDE_SEC)),
         .kbc_p1                   = 0x00000cf0,
         .gpio                     = 0xffffffff,
         .gpio_acpi                = 0xffffffff,
@@ -14833,6 +15866,16 @@ const machine_t machines[] = {
         .snd_device               = NULL,
         .net_device               = NULL,
         .ide_device               = &ide_rz1000_pci_single_channel_device,
+        .pci_flags                = PCI_CONFIG_TYPE_2,
+        .slot_layout              = (const machine_slot_t[]) {
+            MSLOT_PCI(0x00, PCI_CARD_NORTHBRIDGE, 0, 0, 0, 0),
+            MSLOT_PCI(0x01, PCI_CARD_IDE, 0, 0, 0, 0),
+            MSLOT_PCI(0x06, PCI_CARD_NORMAL, 3, 2, 1, 4),
+            MSLOT_PCI(0x0E, PCI_CARD_NORMAL, 2, 1, 3, 4),
+            MSLOT_PCI(0x0C, PCI_CARD_NORMAL, 1, 3, 2, 4),
+            MSLOT_BRIDGE(0x02, PCI_CARD_SOUTHBRIDGE, 0, 0, 0, 0, ((const machine_slot_t[]) { MSLOT_BUS(SLOT_ISA16, 5), MSLOT_END })),
+            MSLOT_END
+        },
         .aliases                  = { "Intel Batman's Revenge", "Intel Premiere/PCI Expandable Desktop", "" }
     },
     /* The M5Pi appears to have a Phoenix MultiKey KBC firmware according to photos. */
@@ -14857,7 +15900,7 @@ const machine_t machines[] = {
             .max_multi   = MACHINE_MULTIPLIER_FIXED
         },
         .bus_flags = MACHINE_PCI,
-        .flags     = MACHINE_IDE_DUAL,
+        .flags     = MACHINE_IDE_DUAL | MACHINE_UART_PRI | MACHINE_UART_SEC | MACHINE_LPT_PRI,
         .ram       = {
             .min  = 2048,
             .max  = 131072,
@@ -14870,8 +15913,8 @@ const machine_t machines[] = {
         .kbc_params               = KBC_VEN_PHOENIX | 0x00012900, /* Guess. */
         .nvr_device               = &nvr_at_device,
         .nvr_params               = NVR_AT,
-        .sio_device               = NULL,
-        .sio_params               = 0x00000000,
+        .sio_device               = &fdc37c6xx_device,
+        .sio_params               = (uintptr_t) ((FDC37C665 | FDC37C6XX_IDE_SEC)),
         .kbc_p1                   = 0x00000cf0,
         .gpio                     = 0xffffffff,
         .gpio_acpi                = 0xffffffff,
@@ -14882,6 +15925,16 @@ const machine_t machines[] = {
         .snd_device               = NULL,
         .net_device               = NULL,
         .ide_device               = &ide_w83769f_pci_single_channel_device,
+        .pci_flags                = PCI_CONFIG_TYPE_2 | PCI_NO_IRQ_STEERING,
+        .slot_layout              = (const machine_slot_t[]) {
+            MSLOT_PCI(0x00, PCI_CARD_NORTHBRIDGE, 0, 0, 0, 0),
+            MSLOT_PCI(0x01, PCI_CARD_IDE, 0, 0, 0, 0),
+            MSLOT_PCI(0x0f, PCI_CARD_NORMAL, 1, 2, 3, 4),
+            MSLOT_PCI(0x0c, PCI_CARD_NORMAL, 2, 3, 4, 1),
+            MSLOT_PCI(0x0b, PCI_CARD_NORMAL, 3, 4, 1, 2),
+            MSLOT_BRIDGE(0x02, PCI_CARD_SOUTHBRIDGE, 0, 0, 0, 0, ((const machine_slot_t[]) { MSLOT_BUS(SLOT_ISA16, 5), MSLOT_END })),
+            MSLOT_END
+        },
         .aliases                  = { "" }
     },
     /* This has the Phoenix MultiKey KBC firmware. */
@@ -14906,7 +15959,7 @@ const machine_t machines[] = {
             .max_multi   = MACHINE_MULTIPLIER_FIXED
         },
         .bus_flags = MACHINE_PS2_PCI,
-        .flags     = MACHINE_IDE_DUAL | MACHINE_VIDEO | MACHINE_APM,
+        .flags     = MACHINE_IDE_DUAL | MACHINE_VIDEO | MACHINE_APM | MACHINE_UART_PRI | MACHINE_UART_SEC | MACHINE_LPT_PRI,
         .ram       = {
             .min  = 8192,
             .max  = 139264,
@@ -14919,8 +15972,8 @@ const machine_t machines[] = {
         .kbc_params               = KBC_VEN_PHOENIX | 0x00012900,
         .nvr_device               = &nvr_at_device,
         .nvr_params               = NVR_AT,
-        .sio_device               = NULL,
-        .sio_params               = 0x00000000,
+        .sio_device               = &i82091aa_device,
+        .sio_params               = (uintptr_t) ((I82091AA_022 | I82091AA_IDE_SEC)),
         .kbc_p1                   = 0x00000cf0,
         .gpio                     = 0xffffffff,
         .gpio_acpi                = 0xffffffff,
@@ -14931,6 +15984,17 @@ const machine_t machines[] = {
         .snd_device               = NULL,
         .net_device               = NULL,
         .ide_device               = &ide_cmd640_pci_single_channel_legacy_only_device,
+        .pci_flags                = PCI_CONFIG_TYPE_2,
+        .slot_layout              = (const machine_slot_t[]) {
+            MSLOT_PCI(0x00, PCI_CARD_NORTHBRIDGE, 0, 0, 0, 0),
+            MSLOT_PCI(0x01, PCI_CARD_IDE, 0, 0, 0, 0),
+            MSLOT_PCI(0x03, PCI_CARD_VIDEO, 3, 3, 3, 3),
+            MSLOT_PCI(0x06, PCI_CARD_NORMAL, 3, 2, 1, 4),
+            MSLOT_PCI(0x0E, PCI_CARD_NORMAL, 2, 1, 3, 4),
+            MSLOT_PCI(0x0C, PCI_CARD_NORMAL, 1, 3, 2, 4),
+            MSLOT_BRIDGE(0x02, PCI_CARD_SOUTHBRIDGE, 0, 0, 0, 0, machine_bus_isa),
+            MSLOT_END
+        },
         .aliases                  = { "Packard Bell Robin LC", "Intel Robin LC", "" }
     },
 
@@ -14978,10 +16042,19 @@ const machine_t machines[] = {
         .gpio_acpi                = 0xffffffff,
         .device                   = &pci58pl_device,
         .kbd_device               = NULL,
-        .fdc_device               = NULL,
+        .fdc_device               = &fdc_at_device,
         .vid_device               = NULL,
         .snd_device               = NULL,
         .net_device               = NULL,
+        .pci_flags                = PCI_CONFIG_TYPE_1,
+        .slot_layout              = (const machine_slot_t[]) {
+            MSLOT_PCI(0x10, PCI_CARD_NORTHBRIDGE, 0, 0, 0, 0),
+            MSLOT_PCI(0x11, PCI_CARD_NORMAL, 1, 2, 3, 4),
+            MSLOT_PCI(0x12, PCI_CARD_NORMAL, 5, 6, 7, 8),
+            MSLOT_PCI(0x13, PCI_CARD_NORMAL, 9, 10, 11, 12),
+            MSLOT_PCI(0x14, PCI_CARD_NORMAL, 13, 14, 15, 16),
+            MSLOT_END
+        },
         .aliases                  = { "" }
     },
 
@@ -15010,7 +16083,7 @@ const machine_t machines[] = {
             .max_multi   = MACHINE_MULTIPLIER_FIXED
         },
         .bus_flags = MACHINE_PS2_VLB,
-        .flags     = MACHINE_IDE,
+        .flags     = MACHINE_IDE | MACHINE_UART_PRI | MACHINE_UART_SEC | MACHINE_LPT_PRI,
         .ram       = {
             .min  = 2048,
             .max  = 65536, /* neither DOS nor Windows recognizes more than this amount */
@@ -15023,8 +16096,8 @@ const machine_t machines[] = {
         .kbc_params               = KBC_VEN_AMI | 0x00005000, /* Guess. */
         .nvr_device               = &nvr_at_device,
         .nvr_params               = NVR_AT,
-        .sio_device               = NULL,
-        .sio_params               = 0x00000000,
+        .sio_device               = &fdc37c6xx_device,
+        .sio_params               = (uintptr_t) (FDC37C661),
         .kbc_p1                   = 0x000044f0,
         .gpio                     = 0xffffffff,
         .gpio_acpi                = 0xffffffff,
@@ -15035,6 +16108,11 @@ const machine_t machines[] = {
         .snd_device               = NULL,
         .net_device               = NULL,
         .ide_device               = &ide_opti611_vlb_device,
+        .slot_layout              = (const machine_slot_t[]) {
+            MSLOT_BUS(SLOT_ISA16, 5),
+            MSLOT_BUS(SLOT_ISA_VLB, 2),
+            MSLOT_END
+        },
         .aliases                  = { "AMI S75", "" }
     },
     /* Has a VIA VT82C42N KBC with AMI 'F' firmware */
@@ -15079,10 +16157,19 @@ const machine_t machines[] = {
         .gpio_acpi                = 0xffffffff,
         .device                   = NULL,
         .kbd_device               = NULL,
-        .fdc_device               = NULL,
+        .fdc_device               = &fdc_at_device,
         .vid_device               = NULL,
         .snd_device               = NULL,
         .net_device               = NULL,
+        .pci_flags                = PCI_CONFIG_TYPE_1,
+        .slot_layout              = (const machine_slot_t[]) {
+            MSLOT_PCI(0x10, PCI_CARD_NORTHBRIDGE, 0, 0, 0, 0),
+            MSLOT_PCI(0x11, PCI_CARD_NORMAL, 1, 2, 3, 4),
+            MSLOT_PCI(0x12, PCI_CARD_NORMAL, 5, 6, 7, 8),
+            MSLOT_PCI(0x13, PCI_CARD_NORMAL, 9, 10, 11, 12),
+            MSLOT_PCI(0x14, PCI_CARD_NORMAL, 13, 14, 15, 16),
+            MSLOT_END
+        },
         .aliases                  = { "" }
     },
     /* This has AMIKey 'F' KBC firmware. */
@@ -15127,10 +16214,19 @@ const machine_t machines[] = {
         .gpio_acpi                = 0xffffffff,
         .device                   = NULL,
         .kbd_device               = NULL,
-        .fdc_device               = NULL,
+        .fdc_device               = &fdc_at_device,
         .vid_device               = NULL,
         .snd_device               = NULL,
         .net_device               = NULL,
+        .pci_flags                = PCI_CONFIG_TYPE_1,
+        .slot_layout              = (const machine_slot_t[]) {
+            MSLOT_PCI(0x10, PCI_CARD_NORTHBRIDGE, 0, 0, 0, 0),
+            MSLOT_PCI(0x11, PCI_CARD_NORMAL, 1, 2, 3, 4),
+            MSLOT_PCI(0x12, PCI_CARD_NORMAL, 5, 6, 7, 8),
+            MSLOT_PCI(0x13, PCI_CARD_NORMAL, 9, 10, 11, 12),
+            MSLOT_PCI(0x14, PCI_CARD_NORMAL, 13, 14, 15, 16),
+            MSLOT_END
+        },
         .aliases                  = { "" }
     },
     /* This probably has AMIKEY 'F' KBC */
@@ -15175,10 +16271,15 @@ const machine_t machines[] = {
         .gpio_acpi                = 0xffffffff,
         .device                   = NULL,
         .kbd_device               = NULL,
-        .fdc_device               = NULL,
+        .fdc_device               = &fdc_at_device,
         .vid_device               = NULL,
         .snd_device               = NULL,
         .net_device               = NULL,
+        .slot_layout              = (const machine_slot_t[]) {
+            MSLOT_BUS(SLOT_ISA16, 5),
+            MSLOT_BUS(SLOT_ISA_VLB, 3),
+            MSLOT_END
+        },
         .aliases                  = { "" }
     },
 
@@ -15205,7 +16306,7 @@ const machine_t machines[] = {
             .max_multi   = MACHINE_MULTIPLIER_FIXED
         },
         .bus_flags = MACHINE_PS2_PCI,
-        .flags     = MACHINE_IDE_DUAL | MACHINE_APM,
+        .flags     = MACHINE_IDE_DUAL | MACHINE_APM | MACHINE_UART_PRI | MACHINE_UART_SEC | MACHINE_LPT_PRI,
         .ram       = {
             .min  = 2048,
             .max  = 131072,
@@ -15218,8 +16319,8 @@ const machine_t machines[] = {
         .kbc_params               = KBC_VEN_AMI | 0x00005200, /* Guess. */
         .nvr_device               = &nvr_at_device,
         .nvr_params               = NVR_AMI_1994,
-        .sio_device               = NULL,
-        .sio_params               = 0x00000000,
+        .sio_device               = &fdc37c6xx_device,
+        .sio_params               = (uintptr_t) (FDC37C665),
         .kbc_p1                   = 0x00000cf0,
         .gpio                     = 0xffffffff,
         .gpio_acpi                = 0xffffffff,
@@ -15230,6 +16331,17 @@ const machine_t machines[] = {
         .snd_device               = NULL,
         .net_device               = NULL,
         .ide_device               = &ide_cmd640_pci_legacy_only_device,
+        .pci_flags                = PCI_CONFIG_TYPE_1 | FLAG_TRC_CONTROLS_CPURST,
+        .slot_layout              = (const machine_slot_t[]) {
+            MSLOT_PCI(0x00, PCI_CARD_NORTHBRIDGE, 0, 0, 0, 0),
+            MSLOT_BRIDGE(0x01, PCI_CARD_SOUTHBRIDGE, 0, 0, 0, 0, ((const machine_slot_t[]) { MSLOT_BUS(SLOT_ISA16, 4), MSLOT_END })),
+            MSLOT_PCI(0x08, PCI_CARD_IDE, 0, 0, 0, 0),
+            MSLOT_PCI(0x0A, PCI_CARD_NORMAL, 1, 2, 3, 4),
+            MSLOT_PCI(0x0B, PCI_CARD_NORMAL, 2, 3, 4, 1),
+            MSLOT_PCI(0x0C, PCI_CARD_NORMAL, 3, 4, 1, 2),
+            MSLOT_PCI(0x0D, PCI_CARD_NORMAL, 4, 1, 2, 3),
+            MSLOT_END
+        },
         .aliases                  = { "AMI S722", "" }
     },
     /* This has an AMIKey-2, which is type 'H'. */
@@ -15254,7 +16366,7 @@ const machine_t machines[] = {
             .max_multi   = MACHINE_MULTIPLIER_FIXED
         },
         .bus_flags = MACHINE_PS2_PCI,
-        .flags     = MACHINE_IDE_DUAL | MACHINE_APM,
+        .flags     = MACHINE_IDE_DUAL | MACHINE_APM | MACHINE_UART_PRI | MACHINE_UART_SEC | MACHINE_LPT_PRI,
         .ram       = {
             .min  = 2048,
             .max  = 131072,
@@ -15267,8 +16379,8 @@ const machine_t machines[] = {
         .kbc_params               = KBC_VEN_AMI | 0x00004800,
         .nvr_device               = &nvr_at_device,
         .nvr_params               = NVR_AT,
-        .sio_device               = NULL,
-        .sio_params               = 0x00000000,
+        .sio_device               = &fdc37c6xx_device,
+        .sio_params               = (uintptr_t) (FDC37C665),
         .kbc_p1                   = 0x00000cf0,
         .gpio                     = 0xffffffff,
         .gpio_acpi                = 0xffffffff,
@@ -15279,6 +16391,20 @@ const machine_t machines[] = {
         .snd_device               = NULL,
         .net_device               = NULL,
         .ide_device               = &ide_cmd640_pci_device,
+        .pci_flags                = PCI_CONFIG_TYPE_1 | FLAG_TRC_CONTROLS_CPURST,
+        .slot_layout              = (const machine_slot_t[]) {
+            MSLOT_PCI(0x00, PCI_CARD_NORTHBRIDGE, 0, 0, 0, 0),
+            MSLOT_BRIDGE(0x01, PCI_CARD_SOUTHBRIDGE, 0, 0, 0, 0, ((const machine_slot_t[]) { MSLOT_BUS(SLOT_ISA16, 4), MSLOT_END })),
+            /* Excluded: 02, 03, 04, 05, 06, 07, 08, 09, 0A, 0B, 0C, 0D, 0E, 0F, 10, 11, 12, 13, 14 */
+            MSLOT_PCI(0x0D, PCI_CARD_IDE, 1, 2, 3, 4),
+            /* Excluded: 02, 03*, 04*, 05*, 06*, 07*, 08* */
+            /* Slots: 09 (04), 0A (03), 0B (02), 0C (07) */
+            MSLOT_PCI(0x0C, PCI_CARD_NORMAL, 1, 2, 3, 4),
+            MSLOT_PCI(0x0B, PCI_CARD_NORMAL, 2, 3, 4, 1),
+            MSLOT_PCI(0x0A, PCI_CARD_NORMAL, 3, 4, 1, 2),
+            MSLOT_PCI(0x09, PCI_CARD_NORMAL, 4, 1, 2, 3),
+            MSLOT_END
+        },
         .aliases                  = { "" }
     },
     /* This has an AMIKey-2, which is type 'H'. */
@@ -15303,7 +16429,7 @@ const machine_t machines[] = {
             .max_multi   = MACHINE_MULTIPLIER_FIXED
         },
         .bus_flags = MACHINE_PS2_PCI,
-        .flags     = MACHINE_IDE_DUAL,
+        .flags     = MACHINE_IDE_DUAL | MACHINE_UART_PRI | MACHINE_UART_SEC | MACHINE_LPT_PRI,
         .ram       = {
             .min  = 2048,
             .max  = 131072,
@@ -15316,8 +16442,8 @@ const machine_t machines[] = {
         .kbc_params               = KBC_VEN_AMI | 0x00004800,
         .nvr_device               = &nvr_at_device,
         .nvr_params               = NVR_AT,
-        .sio_device               = NULL,
-        .sio_params               = 0x00000000,
+        .sio_device               = &fdc37c6xx_device,
+        .sio_params               = (uintptr_t) (FDC37C665),
         .kbc_p1                   = 0x00000cf0,
         .gpio                     = 0xffffffff,
         .gpio_acpi                = 0xffffffff,
@@ -15328,6 +16454,17 @@ const machine_t machines[] = {
         .snd_device               = NULL,
         .net_device               = NULL,
         .ide_device               = &ide_cmd640_pci_device,
+        .pci_flags                = PCI_CONFIG_TYPE_1 | FLAG_TRC_CONTROLS_CPURST,
+        .slot_layout              = (const machine_slot_t[]) {
+            MSLOT_PCI(0x00, PCI_CARD_NORTHBRIDGE, 0, 0, 0, 0),
+            MSLOT_BRIDGE(0x01, PCI_CARD_SOUTHBRIDGE, 0, 0, 0, 0, ((const machine_slot_t[]) { MSLOT_BUS(SLOT_ISA16, 4), MSLOT_END })),
+            MSLOT_PCI(0x02, PCI_CARD_IDE, 1, 2, 3, 4),
+            MSLOT_PCI(0x11, PCI_CARD_NORMAL, 1, 2, 3, 4),
+            MSLOT_PCI(0x13, PCI_CARD_NORMAL, 2, 3, 4, 1),
+            MSLOT_PCI(0x0D, PCI_CARD_NORMAL, 3, 4, 1, 2),
+            MSLOT_PCI(0x0F, PCI_CARD_NORMAL, 4, 1, 2, 3),
+            MSLOT_END
+        },
         .aliases                  = { "" }
     },
 
@@ -15375,10 +16512,19 @@ const machine_t machines[] = {
         .gpio_acpi                = 0xffffffff,
         .device                   = NULL,
         .kbd_device               = NULL,
-        .fdc_device               = NULL,
+        .fdc_device               = &fdc_at_device,
         .vid_device               = NULL,
         .snd_device               = NULL,
         .net_device               = NULL,
+        .pci_flags                = PCI_CONFIG_TYPE_1,
+        .slot_layout              = (const machine_slot_t[]) {
+            MSLOT_PCI(0x10, PCI_CARD_NORTHBRIDGE, 0, 0, 0, 0),
+            MSLOT_PCI(0x11, PCI_CARD_NORMAL, 1, 2, 3, 4),
+            MSLOT_PCI(0x12, PCI_CARD_NORMAL, 5, 6, 7, 8),
+            MSLOT_PCI(0x13, PCI_CARD_NORMAL, 9, 10, 11, 12),
+            MSLOT_PCI(0x14, PCI_CARD_NORMAL, 13, 14, 15, 16),
+            MSLOT_END
+        },
         .aliases                  = { "" }
     },
     /* VLSI SuperCore */
@@ -15404,7 +16550,7 @@ const machine_t machines[] = {
             .max_multi   = 2.0
         },
         .bus_flags = MACHINE_PS2_PCI,
-        .flags     = MACHINE_IDE_DUAL | MACHINE_APM, /* Machine has internal video: S3 Vision864 PCI (onboard variant not yet emulated) */
+        .flags     = MACHINE_IDE_DUAL | MACHINE_APM | MACHINE_UART_PRI | MACHINE_UART_SEC | MACHINE_LPT_PRI, /* Machine has internal video: S3 Vision864 PCI (onboard variant not yet emulated) */
         .ram       = {
             .min  = 4096,
             .max  = 262144,
@@ -15418,8 +16564,8 @@ const machine_t machines[] = {
         /* NVR is on the chipset. */
         .nvr_device               = NULL,
         .nvr_params               = 0x00000000,
-        .sio_device               = NULL,
-        .sio_params               = 0x00000000,
+        .sio_device               = &fdc37c6xx_device,
+        .sio_params               = (uintptr_t) (FDC37C665),
         .kbc_p1                   = 0x00000cf0,
         .gpio                     = 0xffffffff,
         .gpio_acpi                = 0xffffffff,
@@ -15430,6 +16576,16 @@ const machine_t machines[] = {
         .snd_device               = NULL,
         .net_device               = NULL,
         .ide_device               = &ide_cmd640_pci_device,
+        .pci_flags                = PCI_CONFIG_TYPE_1,
+        .slot_layout              = (const machine_slot_t[]) {
+            MSLOT_PCI(0x00, PCI_CARD_NORTHBRIDGE, 0, 0, 0, 0),
+            MSLOT_BRIDGE(0x01, PCI_CARD_SOUTHBRIDGE, 0, 0, 0, 0, machine_bus_isa),
+            MSLOT_PCI(0x08, PCI_CARD_IDE, 4, 1, 2, 3), /* Onboard */
+            MSLOT_PCI(0x09, PCI_CARD_VIDEO, 4, 1, 2, 3), /* Onboard */
+            MSLOT_PCI(0x0B, PCI_CARD_NORMAL, 1, 3, 2, 1), /* Slot 01 */
+            MSLOT_PCI(0x0C, PCI_CARD_NORMAL, 2, 1, 3, 2), /* Slot 02 */
+            MSLOT_END
+        },
         .aliases                  = { "" }
     },
 
@@ -15457,7 +16613,7 @@ const machine_t machines[] = {
             .max_multi   = 1.5
         },
         .bus_flags = MACHINE_PS2_PCI,
-        .flags     = MACHINE_IDE | MACHINE_APM,
+        .flags     = MACHINE_IDE | MACHINE_APM | MACHINE_UART_PRI | MACHINE_UART_SEC | MACHINE_LPT_PRI,
         .ram       = {
             .min  = 2048,
             .max  = 524288,
@@ -15470,8 +16626,8 @@ const machine_t machines[] = {
         .kbc_params               = KBC_VEN_AMI | 0x00004800,
         .nvr_device               = &nvr_at_device,
         .nvr_params               = NVR_AT,
-        .sio_device               = NULL,
-        .sio_params               = 0x00000000,
+        .sio_device               = &fdc37c6xx_device,
+        .sio_params               = (uintptr_t) ((FDC37C665 | FDC37C6XX_IDE_PRI)),
         .kbc_p1                   = 0x00000cf0,
         .gpio                     = 0xffffffff,
         .gpio_acpi                = 0xffffffff,
@@ -15481,6 +16637,16 @@ const machine_t machines[] = {
         .vid_device               = NULL,
         .snd_device               = NULL,
         .net_device               = NULL,
+        .pci_flags                = PCI_CONFIG_TYPE_2 | PCI_CAN_SWITCH_TYPE,
+        .slot_layout              = (const machine_slot_t[]) {
+            MSLOT_PCI(0x00, PCI_CARD_NORTHBRIDGE, 0, 0, 0, 0),
+            MSLOT_PCI(0x07, PCI_CARD_NORMAL, 1, 2, 3, 4), /* 07 = Slot 1 */
+            MSLOT_PCI(0x06, PCI_CARD_NORMAL, 2, 3, 4, 1), /* 06 = Slot 2 */
+            MSLOT_PCI(0x05, PCI_CARD_NORMAL, 3, 4, 1, 2), /* 05 = Slot 3 */
+            MSLOT_PCI(0x04, PCI_CARD_NORMAL, 4, 1, 2, 3), /* 04 = Slot 4 */
+            MSLOT_BRIDGE(0x02, PCI_CARD_SOUTHBRIDGE, 0, 0, 0, 0, ((const machine_slot_t[]) { MSLOT_BUS(SLOT_ISA16, 4), MSLOT_END })),
+            MSLOT_END
+        },
         .aliases                  = { "" }
     },
     /* Has AMI 'H' KBC firmware. */
@@ -15528,10 +16694,21 @@ const machine_t machines[] = {
         .gpio_acpi                = 0xffffffff,
         .device                   = NULL,
         .kbd_device               = NULL,
-        .fdc_device               = NULL,
+        .fdc_device               = &fdc_at_device,
         .vid_device               = NULL,
         .snd_device               = NULL,
         .net_device               = NULL,
+        .pci_flags                = PCI_CONFIG_TYPE_2 | PCI_NO_IRQ_STEERING,
+        .slot_layout              = (const machine_slot_t[]) {
+            MSLOT_PCI(0x00, PCI_CARD_NORTHBRIDGE, 0, 0, 0, 0),
+            MSLOT_PCI(0x03, PCI_CARD_NORMAL, 1, 2, 3, 4), /* 03 = Slot 1 */
+            MSLOT_PCI(0x04, PCI_CARD_NORMAL, 2, 3, 4, 1), /* 04 = Slot 2 */
+            MSLOT_PCI(0x05, PCI_CARD_NORMAL, 3, 4, 1, 2), /* 05 = Slot 3 */
+            MSLOT_PCI(0x06, PCI_CARD_NORMAL, 4, 1, 2, 3), /* 06 = Slot 4 */
+            MSLOT_PCI(0x07, PCI_CARD_SCSI, 1, 2, 3, 4), /* 07 = SCSI   */
+            MSLOT_BRIDGE(0x02, PCI_CARD_SOUTHBRIDGE, 0, 0, 0, 0, ((const machine_slot_t[]) { MSLOT_BUS(SLOT_ISA16, 4), MSLOT_END })),
+            MSLOT_END
+        },
         .aliases                  = { "" }
     },
     /* This has the Phoenix MultiKey KBC firmware. */
@@ -15556,7 +16733,7 @@ const machine_t machines[] = {
             .max_multi   = 1.5
         },
         .bus_flags = MACHINE_PS2_PCI,
-        .flags     = MACHINE_IDE_DUAL | MACHINE_APM,
+        .flags     = MACHINE_IDE_DUAL | MACHINE_APM | MACHINE_UART_PRI | MACHINE_UART_SEC | MACHINE_LPT_PRI,
         .ram       = {
         /* BIOS setup cannot detect more than 128 MB and displays any higher amount as such.
            Although, this is just a visual quirk, as the POST memory counter and MS-DOS can
@@ -15572,8 +16749,8 @@ const machine_t machines[] = {
         .kbc_params               = KBC_VEN_PHOENIX | 0x00012900,
         .nvr_device               = &nvr_at_device,
         .nvr_params               = NVR_AT_ZERO_DEFAULT,
-        .sio_device               = NULL,
-        .sio_params               = 0x00000000,
+        .sio_device               = &fdc37c6xx_device,
+        .sio_params               = (uintptr_t) ((FDC37C665 | FDC37C6XX_IDE_SEC)),
         .kbc_p1                   = 0x00001030,
         .gpio                     = 0xffffffff,
         .gpio_acpi                = 0xffffffff,
@@ -15584,6 +16761,16 @@ const machine_t machines[] = {
         .snd_device               = NULL,
         .net_device               = NULL,
         .ide_device               = &ide_rz1000_pci_single_channel_device,
+        .pci_flags                = PCI_CONFIG_TYPE_2 | PCI_CAN_SWITCH_TYPE,
+        .slot_layout              = (const machine_slot_t[]) {
+            MSLOT_PCI(0x00, PCI_CARD_NORTHBRIDGE, 0, 0, 0, 0),
+            MSLOT_PCI(0x01, PCI_CARD_IDE, 0, 0, 0, 0),
+            MSLOT_PCI(0x06, PCI_CARD_NORMAL, 3, 2, 1, 4),
+            MSLOT_PCI(0x0E, PCI_CARD_NORMAL, 2, 1, 3, 4),
+            MSLOT_PCI(0x0C, PCI_CARD_NORMAL, 1, 3, 2, 4),
+            MSLOT_BRIDGE(0x02, PCI_CARD_SOUTHBRIDGE, 0, 0, 0, 0, ((const machine_slot_t[]) { MSLOT_BUS(SLOT_ISA16, 5), MSLOT_END })),
+            MSLOT_END
+        },
         .aliases                  = { "Intel Plato", "Dell Dimension XPS P___", "Ambra DP90 PCI", "" }
     },
     /* EISA and PCI, the PCEB and ESC; AMI 'H' KBC. */
@@ -15608,7 +16795,7 @@ const machine_t machines[] = {
             .max_multi   = 1.5
         },
         .bus_flags = MACHINE_PCIE | MACHINE_BUS_PS2,
-        .flags     = MACHINE_SCSI | MACHINE_NIC | MACHINE_APM,
+        .flags     = MACHINE_SCSI | MACHINE_NIC | MACHINE_APM | MACHINE_UART_PRI | MACHINE_UART_SEC | MACHINE_LPT_PRI,
         .ram       = {
             .min  = 2048,
             .max  = 524288,
@@ -15633,6 +16820,17 @@ const machine_t machines[] = {
         .snd_device               = NULL,
         .net_device               = &pcnet_am79c970a_onboard_device,
         .scsi_device              = &ncr53c810_onboard_pci_device,
+        .pci_flags                = PCI_CONFIG_TYPE_2,
+        .slot_layout              = (const machine_slot_t[]) {
+            MSLOT_PCI(0x00, PCI_CARD_NORTHBRIDGE, 0, 0, 0, 0),
+            MSLOT_BRIDGE(0x01, PCI_CARD_SOUTHBRIDGE, 0, 0, 0, 0, ((const machine_slot_t[]) { MSLOT_BUS(SLOT_EISA, 1), MSLOT_END })),
+            MSLOT_PCI(0x05, PCI_CARD_NORMAL, 1, 2, 3, 4),
+            MSLOT_PCI(0x08, PCI_CARD_NORMAL, 3, 4, 1, 2),
+            MSLOT_PCI(0x09, PCI_CARD_NORMAL, 2, 3, 4, 1),
+            MSLOT_PCI(0x06, PCI_CARD_SCSI, 4, 0, 0, 0),
+            MSLOT_PCI(0x07, PCI_CARD_NETWORK, 1, 0, 0, 0),
+            MSLOT_END
+        },
         .aliases                  = { "Intergraph MSMT282", "" }
     },
     /* EISA and PCI, the PCEB and ESC; unknown KBC firmware. */
@@ -15657,7 +16855,7 @@ const machine_t machines[] = {
             .max_multi   = 2.0
         },
         .bus_flags = MACHINE_PCIE | MACHINE_BUS_PS2,
-        .flags     = MACHINE_IDE_DUAL | MACHINE_APM,
+        .flags     = MACHINE_IDE_DUAL | MACHINE_APM | MACHINE_UART_PRI | MACHINE_UART_SEC | MACHINE_LPT_PRI,
         .ram       = {
             .min  = 8192,
             .max  = 262144,
@@ -15670,8 +16868,8 @@ const machine_t machines[] = {
         .kbc_params               = 0x00000000,
         .nvr_device               = &nvr_at_device,
         .nvr_params               = NVR_AT,
-        .sio_device               = NULL,
-        .sio_params               = 0x00000000,
+        .sio_device               = &fdc37c6xx_device,
+        .sio_params               = (uintptr_t) (FDC37C665),
         .kbc_p1                   = 0x00000cf0,
         .gpio                     = 0xffffffff,
         .gpio_acpi                = 0xffffffff,
@@ -15682,6 +16880,18 @@ const machine_t machines[] = {
         .snd_device               = NULL,
         .net_device               = NULL,
         .ide_device               = &ide_rz1000_pci_device,
+        .pci_flags                = PCI_CONFIG_TYPE_2,
+        .slot_layout              = (const machine_slot_t[]) {
+            MSLOT_PCI(0x00, PCI_CARD_NORTHBRIDGE, 0, 0, 0, 0),
+            MSLOT_BRIDGE(0x01, PCI_CARD_SOUTHBRIDGE, 0, 0, 0, 0, ((const machine_slot_t[]) { MSLOT_BUS(SLOT_EISA, 4), MSLOT_END })),
+            MSLOT_PCI(0x02, PCI_CARD_IDE, 0, 0, 0, 0), /* Onboard RZ1000 */
+            /* The BIOS's routing table (F000:346E) and the SNI configuration file's
+               slot list put PCI slot 1 at device 0Fh and slot 3 at device 0Dh. */
+            MSLOT_PCI(0x0f, PCI_CARD_NORMAL, 1, 2, 3, 4), /* Slot 1 */
+            MSLOT_PCI(0x0e, PCI_CARD_NORMAL, 2, 3, 4, 1), /* Slot 2 */
+            MSLOT_PCI(0x0d, PCI_CARD_NORMAL, 3, 4, 1, 2), /* Slot 3 */
+            MSLOT_END
+        },
         .aliases                  = { "Siemens-Nixdorf PCD-5T", "Siemens-Nixdorf Primergy 350", "" }
     },
     /* Has unknown KBC firmware. */
@@ -15706,7 +16916,7 @@ const machine_t machines[] = {
             .max_multi   = 2.0
         },
         .bus_flags = MACHINE_PS2_PCI,
-        .flags     = MACHINE_IDE_DUAL | MACHINE_APM, /* Machine has internal video: Tseng Labs ET4000/w32p (onboard variant not yet emulated) */
+        .flags     = MACHINE_IDE_DUAL | MACHINE_APM | MACHINE_UART_PRI | MACHINE_UART_SEC | MACHINE_LPT_PRI, /* Machine has internal video: Tseng Labs ET4000/w32p (onboard variant not yet emulated) */
         .ram       = {
             .min  = 2048,
             .max  = 524288,
@@ -15719,8 +16929,8 @@ const machine_t machines[] = {
         .kbc_params               = 0x00000000,
         .nvr_device               = &nvr_at_device,
         .nvr_params               = NVR_AT,
-        .sio_device               = NULL,
-        .sio_params               = 0x00000000,
+        .sio_device               = &fdc37c6xx_device,
+        .sio_params               = (uintptr_t) (FDC37C665),
         .kbc_p1                   = 0x00000cf0,
         .gpio                     = 0xffffffff,
         .gpio_acpi                = 0xffffffff,
@@ -15730,6 +16940,15 @@ const machine_t machines[] = {
         .vid_device               = NULL,
         .snd_device               = NULL,
         .net_device               = NULL,
+        .pci_flags                = PCI_CONFIG_TYPE_2 | PCI_NO_IRQ_STEERING,
+        .slot_layout              = (const machine_slot_t[]) {
+            MSLOT_PCI(0x00, PCI_CARD_NORTHBRIDGE, 0, 0, 0, 0),
+            MSLOT_BRIDGE(0x01, PCI_CARD_SOUTHBRIDGE, 0, 0, 0, 0, machine_bus_isa), /* Onboard */
+            MSLOT_PCI(0x03, PCI_CARD_VIDEO, 4, 0, 0, 0), /* Onboard */
+            MSLOT_PCI(0x0C, PCI_CARD_NORMAL, 1, 3, 2, 4), /* Slot 01 */
+            MSLOT_PCI(0x0E, PCI_CARD_NORMAL, 2, 1, 3, 4), /* Slot 02 */
+            MSLOT_END
+        },
         .aliases                  = { "" }
     },
     /* Has AMI MegaKey KBC firmware. */
@@ -15754,7 +16973,7 @@ const machine_t machines[] = {
             .max_multi   = 1.5
         },
         .bus_flags = MACHINE_PCI,
-        .flags     = MACHINE_PS2_KBC | MACHINE_IDE | MACHINE_APM,
+        .flags     = MACHINE_PS2_KBC | MACHINE_IDE | MACHINE_APM | MACHINE_UART_PRI | MACHINE_UART_SEC | MACHINE_LPT_PRI,
         .ram       = {
             .min  = 2048,
             .max  = 524288,
@@ -15767,8 +16986,8 @@ const machine_t machines[] = {
         .kbc_params               = KBC_VEN_AMI | 0x00005200, /* Guess. */
         .nvr_device               = &nvr_at_device,
         .nvr_params               = NVR_AT,
-        .sio_device               = NULL,
-        .sio_params               = 0x00000000,
+        .sio_device               = &fdc37c6xx_device,
+        .sio_params               = (uintptr_t) ((FDC37C665 | FDC37C6XX_IDE_PRI)),
         .kbc_p1                   = 0x000044f0,
         .gpio                     = 0xffffffff,
         .gpio_acpi                = 0xffffffff,
@@ -15778,6 +16997,16 @@ const machine_t machines[] = {
         .vid_device               = NULL,
         .snd_device               = NULL,
         .net_device               = NULL,
+        .pci_flags                = PCI_CONFIG_TYPE_2 | PCI_CAN_SWITCH_TYPE,
+        .slot_layout              = (const machine_slot_t[]) {
+            MSLOT_PCI(0x00, PCI_CARD_NORTHBRIDGE, 0, 0, 0, 0),
+            MSLOT_BRIDGE(0x02, PCI_CARD_SOUTHBRIDGE, 0, 0, 0, 0, machine_bus_isa),
+            MSLOT_PCI(0x0F, PCI_CARD_NORMAL, 2, 3, 4, 1),
+            MSLOT_PCI(0x0E, PCI_CARD_NORMAL, 3, 4, 1, 2),
+            MSLOT_PCI(0x0D, PCI_CARD_NORMAL, 4, 1, 2, 3),
+            MSLOT_PCI(0x0C, PCI_CARD_NORMAL, 1, 3, 2, 4),
+            MSLOT_END
+        },
         .aliases                  = { "" }
     },
 
@@ -15804,7 +17033,7 @@ const machine_t machines[] = {
             .max_multi   = 2.0
         },
         .bus_flags = MACHINE_PS2_PCI,
-        .flags     = MACHINE_IDE_DUAL | MACHINE_APM,
+        .flags     = MACHINE_IDE_DUAL | MACHINE_APM | MACHINE_UART_PRI | MACHINE_UART_SEC | MACHINE_LPT_PRI,
         .ram       = {
             .min  = 8192,
             .max  = 131072,
@@ -15817,8 +17046,8 @@ const machine_t machines[] = {
         .kbc_params               = KBC_VEN_ACER | 0x00000000,
         .nvr_device               = &nvr_at_device,
         .nvr_params               = NVR_AT,
-        .sio_device               = NULL,
-        .sio_params               = 0x00000000,
+        .sio_device               = &fdc37c6xx_device,
+        .sio_params               = (uintptr_t) (FDC37C665),
         .kbc_p1                   = 0x004008f0,
         .gpio                     = 0xffffffff,
         .gpio_acpi                = 0xffffffff,
@@ -15828,6 +17057,16 @@ const machine_t machines[] = {
         .vid_device               = NULL,
         .snd_device               = NULL,
         .net_device               = NULL,
+        .pci_flags                = PCI_CONFIG_TYPE_1,
+        .slot_layout              = (const machine_slot_t[]) {
+            MSLOT_PCI(0x00, PCI_CARD_NORTHBRIDGE, 0, 0, 0, 0),
+            MSLOT_BRIDGE(0x07, PCI_CARD_SOUTHBRIDGE, 0, 0, 0, 0, ((const machine_slot_t[]) { MSLOT_BUS(SLOT_ISA16, 4), MSLOT_END })),
+            MSLOT_PCI(0x12, PCI_CARD_NORMAL, 1, 2, 3, 4),
+            MSLOT_PCI(0x11, PCI_CARD_NORMAL, 2, 3, 4, 1),
+            MSLOT_PCI(0x14, PCI_CARD_NORMAL, 3, 4, 1, 2),
+            MSLOT_PCI(0x13, PCI_CARD_NORMAL, 4, 1, 2, 3),
+            MSLOT_END
+        },
         .aliases                  = { "" }
     },
     /* Has AMIKey F KBC firmware. */
@@ -15852,7 +17091,7 @@ const machine_t machines[] = {
             .max_multi   = 2.0
         },
         .bus_flags = MACHINE_PS2_PCI,
-        .flags     = MACHINE_IDE_DUAL | MACHINE_APM,
+        .flags     = MACHINE_IDE_DUAL | MACHINE_APM | MACHINE_UART_PRI | MACHINE_UART_SEC | MACHINE_LPT_PRI,
         .ram       = {
             .min  = 8192,
             .max  = 131072,
@@ -15865,8 +17104,8 @@ const machine_t machines[] = {
         .kbc_params               = KBC_VEN_AMI | 0x00004600,
         .nvr_device               = &nvr_at_device,
         .nvr_params               = NVR_AMI_1995,
-        .sio_device               = NULL,
-        .sio_params               = 0x00000000,
+        .sio_device               = &pc873xx_device,
+        .sio_params               = (uintptr_t) ((PC87332 | PCX730X_398)),
         .kbc_p1                   = 0x00000cf0,
         .gpio                     = 0xffffffff,
         .gpio_acpi                = 0xffffffff,
@@ -15876,6 +17115,16 @@ const machine_t machines[] = {
         .vid_device               = NULL,
         .snd_device               = NULL,
         .net_device               = NULL,
+        .pci_flags                = PCI_CONFIG_TYPE_1,
+        .slot_layout              = (const machine_slot_t[]) {
+            MSLOT_PCI(0x00, PCI_CARD_NORTHBRIDGE, 0, 0, 0, 0),
+            MSLOT_PCI(0x08, PCI_CARD_NORMAL, 1, 2, 3, 4),
+            MSLOT_PCI(0x09, PCI_CARD_NORMAL, 2, 3, 4, 1),
+            MSLOT_PCI(0x0A, PCI_CARD_NORMAL, 3, 4, 1, 2),
+            MSLOT_PCI(0x0B, PCI_CARD_NORMAL, 4, 1, 2, 3),
+            MSLOT_BRIDGE(0x07, PCI_CARD_SOUTHBRIDGE, 0, 0, 0, 0, ((const machine_slot_t[]) { MSLOT_BUS(SLOT_ISA16, 4), MSLOT_END })),
+            MSLOT_END
+        },
         .aliases                  = { "AMI S728", "" }
     },
     /* Has Dell KBC firmware. */
@@ -15900,7 +17149,7 @@ const machine_t machines[] = {
             .max_multi   = 3.0
         },
         .bus_flags = MACHINE_PS2_PCI,
-        .flags     = MACHINE_IDE_DUAL | MACHINE_VIDEO | MACHINE_SOUND | MACHINE_APM, /* Machine has internal NIC: 3Com ETHERLINK III (3C509B) (onboard variant not yet emulated) */
+        .flags     = MACHINE_IDE_DUAL | MACHINE_VIDEO | MACHINE_SOUND | MACHINE_APM | MACHINE_UART_PRI | MACHINE_UART_SEC | MACHINE_LPT_PRI, /* Machine has internal NIC: 3Com ETHERLINK III (3C509B) (onboard variant not yet emulated) */
         .ram       = {
             .min  = 8192,
             .max  = 131072,
@@ -15913,8 +17162,8 @@ const machine_t machines[] = {
         .kbc_params               = 0x00000000,
         .nvr_device               = &nvr_at_device,
         .nvr_params               = NVR_AT_ZERO_DEFAULT,
-        .sio_device               = NULL,
-        .sio_params               = 0x00000000,
+        .sio_device               = &pc873xx_device,
+        .sio_params               = (uintptr_t) ((PC87332 | PCX730X_02E)),
         .kbc_p1                   = 0x000004f0,
         .gpio                     = 0xffffffff,
         .gpio_acpi                = 0xffffffff,
@@ -15924,6 +17173,15 @@ const machine_t machines[] = {
         .vid_device               = &s3_trio64vplus_onboard_pci_device,
         .snd_device               = &sb_vibra16s_onboard_device,
         .net_device               = NULL,
+        .pci_flags                = PCI_CONFIG_TYPE_1,
+        .slot_layout              = (const machine_slot_t[]) {
+            MSLOT_PCI(0x00, PCI_CARD_NORTHBRIDGE, 1, 2, 3, 4),
+            MSLOT_PCI(0x0C, PCI_CARD_NORMAL, 1, 2, 3, 4),
+            MSLOT_PCI(0x0D, PCI_CARD_NORMAL, 3, 4, 2, 1),
+            MSLOT_PCI(0x10, PCI_CARD_VIDEO, 0, 0, 0, 0),
+            MSLOT_BRIDGE(0x07, PCI_CARD_SOUTHBRIDGE, 0, 0, 0, 0, machine_bus_isa),
+            MSLOT_END
+        },
         .aliases                  = { "" }
     },
     /* KBC On-Chip the VT82C406MV. */
@@ -15948,7 +17206,7 @@ const machine_t machines[] = {
             .max_multi   = 2.0
         },
         .bus_flags = MACHINE_PS2_PCI,
-        .flags     = MACHINE_IDE_DUAL | MACHINE_APM,
+        .flags     = MACHINE_IDE_DUAL | MACHINE_APM | MACHINE_UART_PRI | MACHINE_UART_SEC | MACHINE_LPT_PRI,
         .ram       = {
             .min  = 8192,
             .max  = 131072,
@@ -15961,8 +17219,8 @@ const machine_t machines[] = {
         .kbc_params               = KBC_VEN_VIA | 0x00424600,
         .nvr_device               = &nvr_at_device,
         .nvr_params               = NVR_AT,
-        .sio_device               = NULL,
-        .sio_params               = 0x00000000,
+        .sio_device               = &pc873xx_device,
+        .sio_params               = (uintptr_t) ((PC87332 | PCX730X_398)),
         .kbc_p1                   = 0x00000cf0,
         .gpio                     = 0xffffffff,
         .gpio_acpi                = 0xffffffff,
@@ -15972,6 +17230,16 @@ const machine_t machines[] = {
         .vid_device               = NULL,
         .snd_device               = NULL,
         .net_device               = NULL,
+        .pci_flags                = PCI_CONFIG_TYPE_1,
+        .slot_layout              = (const machine_slot_t[]) {
+            MSLOT_PCI(0x00, PCI_CARD_NORTHBRIDGE, 0, 0, 0, 0),
+            MSLOT_PCI(0x08, PCI_CARD_NORMAL, 1, 2, 3, 4),
+            MSLOT_PCI(0x09, PCI_CARD_NORMAL, 2, 3, 4, 1),
+            MSLOT_PCI(0x0A, PCI_CARD_NORMAL, 3, 4, 1, 2),
+            MSLOT_PCI(0x0B, PCI_CARD_NORMAL, 4, 1, 2, 3),
+            MSLOT_BRIDGE(0x07, PCI_CARD_SOUTHBRIDGE, 0, 0, 0, 0, ((const machine_slot_t[]) { MSLOT_BUS(SLOT_ISA16, 4), MSLOT_END })),
+            MSLOT_END
+        },
         .aliases                  = { "" }
     },
     /* According to tests from real hardware: This has AMI MegaKey KBC firmware on the
@@ -15998,7 +17266,7 @@ const machine_t machines[] = {
             .max_multi   = 2.0
         },
         .bus_flags = MACHINE_PS2_PCI,
-        .flags     = MACHINE_IDE_DUAL | MACHINE_VIDEO | MACHINE_SOUND | MACHINE_GAMEPORT | MACHINE_APM,
+        .flags     = MACHINE_IDE_DUAL | MACHINE_VIDEO | MACHINE_SOUND | MACHINE_GAMEPORT | MACHINE_APM | MACHINE_UART_PRI | MACHINE_UART_SEC | MACHINE_LPT_PRI,
         .ram       = {
             .min  = 8192,
             .max  = 131072,
@@ -16012,8 +17280,8 @@ const machine_t machines[] = {
         /* NVR is on the Super I/O chip. */
         .nvr_device               = NULL,
         .nvr_params               = 0x00000000,
-        .sio_device               = NULL,
-        .sio_params               = 0x00000000,
+        .sio_device               = &pc87306_device,
+        .sio_params               = (uintptr_t) (PCX730X_AMI),
         .kbc_p1                   = 0x000044f0,
         .gpio                     = 0xffffffff,
         .gpio_acpi                = 0xffffffff,
@@ -16023,6 +17291,15 @@ const machine_t machines[] = {
         .vid_device               = &s3_trio32_onboard_pci_device,
         .snd_device               = &cs4232_onboard_device,
         .net_device               = NULL,
+        .pci_flags                = PCI_CONFIG_TYPE_1,
+        .slot_layout              = (const machine_slot_t[]) {
+            MSLOT_PCI(0x00, PCI_CARD_NORTHBRIDGE, 0, 0, 0, 0),
+            MSLOT_PCI(0x08, PCI_CARD_VIDEO, 4, 0, 0, 0),
+            MSLOT_PCI(0x11, PCI_CARD_NORMAL, 1, 2, 3, 4),
+            MSLOT_PCI(0x13, PCI_CARD_NORMAL, 2, 3, 4, 1),
+            MSLOT_BRIDGE(0x07, PCI_CARD_SOUTHBRIDGE, 0, 0, 0, 0, machine_bus_isa),
+            MSLOT_END
+        },
         .aliases                  = { "Intel Morrison32", "" }
     },
     {
@@ -16046,7 +17323,7 @@ const machine_t machines[] = {
             .max_multi   = 2.0
         },
         .bus_flags = MACHINE_PS2_PCI,
-        .flags     = MACHINE_IDE_DUAL | MACHINE_VIDEO | MACHINE_APM,
+        .flags     = MACHINE_IDE_DUAL | MACHINE_VIDEO | MACHINE_APM | MACHINE_UART_PRI | MACHINE_UART_SEC | MACHINE_LPT_PRI,
         .ram       = {
             .min  = 8192,
             .max  = 131072,
@@ -16060,8 +17337,8 @@ const machine_t machines[] = {
         /* NVR is on the Super I/O chip. */
         .nvr_device               = NULL,
         .nvr_params               = 0x00000000,
-        .sio_device               = NULL,
-        .sio_params               = 0x00000000,
+        .sio_device               = &pc87306_device,
+        .sio_params               = (uintptr_t) (PCX730X_AMI),
         .kbc_p1                   = 0x000044f0,
         .gpio                     = 0xffffffff,
         .gpio_acpi                = 0xffffffff,
@@ -16071,6 +17348,16 @@ const machine_t machines[] = {
         .vid_device               = &s3_trio64_onboard_pci_device,
         .snd_device               = NULL,
         .net_device               = NULL,
+        .pci_flags                = PCI_CONFIG_TYPE_1,
+        .slot_layout              = (const machine_slot_t[]) {
+            MSLOT_PCI(0x00, PCI_CARD_NORTHBRIDGE, 0, 0, 0, 0),
+            MSLOT_BRIDGE(0x07, PCI_CARD_SOUTHBRIDGE, 0, 0, 0, 0, machine_bus_isa),
+            MSLOT_PCI(0x08, PCI_CARD_VIDEO, 4, 0, 0, 0),
+            MSLOT_PCI(0x0B, PCI_CARD_NORMAL, 1, 2, 3, 4),
+            MSLOT_PCI(0x11, PCI_CARD_NORMAL, 1, 3, 2, 4),
+            MSLOT_PCI(0x13, PCI_CARD_NORMAL, 2, 1, 3, 4),
+            MSLOT_END
+        },
         .aliases                  = { "Intel Morrison64", "" }
     },
     /* According to tests from real hardware: This has AMI MegaKey KBC firmware on the
@@ -16097,7 +17384,7 @@ const machine_t machines[] = {
             .max_multi   = 2.0
         },
         .bus_flags = MACHINE_PS2_PCI,
-        .flags     = MACHINE_IDE_DUAL | MACHINE_APM,
+        .flags     = MACHINE_IDE_DUAL | MACHINE_APM | MACHINE_UART_PRI | MACHINE_UART_SEC | MACHINE_LPT_PRI,
         .ram       = {
             .min  = 8192,
             .max  = 131072,
@@ -16111,8 +17398,8 @@ const machine_t machines[] = {
         /* NVR is on the Super I/O chip. */
         .nvr_device               = NULL,
         .nvr_params               = 0x00000000,
-        .sio_device               = NULL,
-        .sio_params               = 0x00000000,
+        .sio_device               = &pc87306_device,
+        .sio_params               = (uintptr_t) (PCX730X_AMI),
         .kbc_p1                   = 0x000044f0,
         .gpio                     = 0xffffffff,
         .gpio_acpi                = 0xffffffff,
@@ -16122,6 +17409,15 @@ const machine_t machines[] = {
         .vid_device               = NULL,
         .snd_device               = NULL,
         .net_device               = NULL,
+        .pci_flags                = PCI_CONFIG_TYPE_1,
+        .slot_layout              = (const machine_slot_t[]) {
+            MSLOT_PCI(0x00, PCI_CARD_NORTHBRIDGE, 0, 0, 0, 0),
+            MSLOT_PCI(0x0D, PCI_CARD_NORMAL, 1, 2, 3, 4),
+            MSLOT_PCI(0x0E, PCI_CARD_NORMAL, 3, 4, 1, 2),
+            MSLOT_PCI(0x0F, PCI_CARD_NORMAL, 2, 3, 4, 1),
+            MSLOT_BRIDGE(0x07, PCI_CARD_SOUTHBRIDGE, 0, 0, 0, 0, ((const machine_slot_t[]) { MSLOT_BUS(SLOT_ISA16, 4), MSLOT_END })),
+            MSLOT_END
+        },
         .aliases                  = { "Intel Zappa", "Gateway 2000 Zappa", "" }
     },
     /*
@@ -16149,7 +17445,7 @@ const machine_t machines[] = {
             .max_multi   = 2.0
         },
         .bus_flags = MACHINE_PS2_PCI,
-        .flags     = MACHINE_IDE_DUAL | MACHINE_APM | MACHINE_SOUND | MACHINE_GAMEPORT,
+        .flags     = MACHINE_IDE_DUAL | MACHINE_APM | MACHINE_SOUND | MACHINE_GAMEPORT | MACHINE_UART_PRI | MACHINE_UART_SEC | MACHINE_LPT_PRI,
         .ram       = {
             .min  = 8192,
             .max  = 131072,
@@ -16162,8 +17458,8 @@ const machine_t machines[] = {
         .kbc_params               = KBC_VEN_AMI | 0x00004800,
         .nvr_device               = &nvr_at_device,
         .nvr_params               = NVR_AT,
-        .sio_device               = NULL,
-        .sio_params               = 0x00000000,
+        .sio_device               = &fdc37c6xx_device,
+        .sio_params               = (uintptr_t) (FDC37C665),
         .kbc_p1                   = 0x00000cf0,
         .gpio                     = 0xffffffff,
         .gpio_acpi                = 0xffffffff,
@@ -16173,6 +17469,15 @@ const machine_t machines[] = {
         .vid_device               = NULL,
         .snd_device               = &opti_82c930_device,
         .net_device               = NULL,
+        .pci_flags                = PCI_CONFIG_TYPE_1,
+        .slot_layout              = (const machine_slot_t[]) {
+            MSLOT_PCI(0x00, PCI_CARD_NORTHBRIDGE, 0, 0, 0, 0),
+            MSLOT_BRIDGE(0x07, PCI_CARD_SOUTHBRIDGE, 0, 0, 0, 0, machine_bus_isa),
+            MSLOT_PCI(0x08, PCI_CARD_NORMAL, 0, 0, 0, 0),
+            MSLOT_PCI(0x11, PCI_CARD_NORMAL, 1, 2, 3, 4),
+            MSLOT_PCI(0x13, PCI_CARD_NORMAL, 2, 3, 4, 1),
+            MSLOT_END
+        },
         .aliases                  = { "BCM FM540", "" }
     },
     /* According to tests from real hardware: This has AMI MegaKey KBC firmware on the
@@ -16199,7 +17504,7 @@ const machine_t machines[] = {
             .max_multi   = 2.0
         },
         .bus_flags = MACHINE_PS2_PCI,
-        .flags     = MACHINE_IDE_DUAL | MACHINE_VIDEO | MACHINE_APM,
+        .flags     = MACHINE_IDE_DUAL | MACHINE_VIDEO | MACHINE_APM | MACHINE_UART_PRI | MACHINE_UART_SEC | MACHINE_LPT_PRI,
         .ram       = {
             .min  = 8192,
             .max  = 131072,
@@ -16213,8 +17518,8 @@ const machine_t machines[] = {
         /* NVR is on the super I/O chip. */
         .nvr_device               = NULL,
         .nvr_params               = 0x00000000,
-        .sio_device               = NULL,
-        .sio_params               = 0x00000000,
+        .sio_device               = &pc87306_device,
+        .sio_params               = (uintptr_t) (PCX730X_AMI),
         .kbc_p1                   = 0x000044f0,
         .gpio                     = 0xffffffff,
         .gpio_acpi                = 0xffffffff,
@@ -16224,6 +17529,16 @@ const machine_t machines[] = {
         .vid_device               = &gd5434_onboard_pci_device,
         .snd_device               = NULL,
         .net_device               = NULL,
+        .pci_flags                = PCI_CONFIG_TYPE_1,
+        .slot_layout              = (const machine_slot_t[]) {
+            MSLOT_PCI(0x00, PCI_CARD_NORTHBRIDGE, 0, 0, 0, 0),
+            MSLOT_PCI(0x08, PCI_CARD_VIDEO, 4, 0, 0, 0),
+            MSLOT_PCI(0x0B, PCI_CARD_NORMAL, 3, 2, 1, 4),
+            MSLOT_PCI(0x11, PCI_CARD_NORMAL, 1, 3, 2, 4),
+            MSLOT_PCI(0x13, PCI_CARD_NORMAL, 2, 1, 3, 4),
+            MSLOT_BRIDGE(0x07, PCI_CARD_SOUTHBRIDGE, 0, 0, 0, 0, machine_bus_isa),
+            MSLOT_END
+        },
         .aliases                  = { "Packard Bell PB580", "Packard Bell PB590", "Packard Bell PB620", "Packard Bell PB630", "Packard Bell PB650", "Packard Bell Hillary", "Intel Hillary", "" }
     },
     /* Has AMIKEY-2 KBC firmware. */
@@ -16248,7 +17563,7 @@ const machine_t machines[] = {
             .max_multi   = 2.0
         },
         .bus_flags = MACHINE_PS2_PCI,
-        .flags     = MACHINE_IDE_DUAL | MACHINE_APM,
+        .flags     = MACHINE_IDE_DUAL | MACHINE_APM | MACHINE_UART_PRI | MACHINE_UART_SEC | MACHINE_LPT_PRI,
         .ram       = {
             .min  = 8192,
             .max  = 131072,
@@ -16261,8 +17576,8 @@ const machine_t machines[] = {
         .kbc_params               = KBC_VEN_AMI | 0x00004800,
         .nvr_device               = &nvr_at_device,
         .nvr_params               = NVR_AT,
-        .sio_device               = NULL,
-        .sio_params               = 0x00000000,
+        .sio_device               = &um866x_device,
+        .sio_params               = (uintptr_t) (UM8663AF),
         .kbc_p1                   = 0x00000cf0,
         .gpio                     = 0xffffffff,
         .gpio_acpi                = 0xffffffff,
@@ -16272,6 +17587,15 @@ const machine_t machines[] = {
         .vid_device               = NULL,
         .snd_device               = NULL,
         .net_device               = NULL,
+        .pci_flags                = PCI_CONFIG_TYPE_1,
+        .slot_layout              = (const machine_slot_t[]) {
+            MSLOT_PCI(0x00, PCI_CARD_NORTHBRIDGE, 0, 0, 0, 0),
+            MSLOT_BRIDGE(0x07, PCI_CARD_SOUTHBRIDGE, 0, 0, 0, 0, machine_bus_isa),
+            MSLOT_PCI(0x08, PCI_CARD_NORMAL, 2, 3, 4, 1),
+            MSLOT_PCI(0x09, PCI_CARD_NORMAL, 3, 4, 1, 2),
+            MSLOT_PCI(0x0A, PCI_CARD_NORMAL, 4, 1, 2, 3),
+            MSLOT_END
+        },
         .aliases                  = { "" }
     },
     /* Has AMIKey Z(!) KBC firmware. */
@@ -16296,7 +17620,7 @@ const machine_t machines[] = {
             .max_multi   = 2.0
         },
         .bus_flags = MACHINE_PS2_PCI,
-        .flags     = MACHINE_IDE_DUAL | MACHINE_APM,
+        .flags     = MACHINE_IDE_DUAL | MACHINE_APM | MACHINE_UART_PRI | MACHINE_UART_SEC | MACHINE_LPT_PRI,
         .ram       = {
             .min  = 8192,
             .max  = 131072,
@@ -16309,8 +17633,8 @@ const machine_t machines[] = {
         .kbc_params               = KBC_VEN_AMI_TRIGEM | KBC_FLAG_IS_GREEN | 0x00005a00,
         .nvr_device               = &nvr_at_device,
         .nvr_params               = NVR_AMI_1994,
-        .sio_device               = NULL,
-        .sio_params               = 0x00000000,
+        .sio_device               = &fdc37c6xx_device,
+        .sio_params               = (uintptr_t) (FDC37C665),
         .kbc_p1                   = 0x00000cf0,
         .gpio                     = 0xffffffff,
         .gpio_acpi                = 0xffffffff,
@@ -16320,6 +17644,15 @@ const machine_t machines[] = {
         .vid_device               = NULL,
         .snd_device               = NULL,
         .net_device               = NULL,
+        .pci_flags                = PCI_CONFIG_TYPE_1,
+        .slot_layout              = (const machine_slot_t[]) {
+            MSLOT_PCI(0x00, PCI_CARD_NORTHBRIDGE, 0, 0, 0, 0),
+            MSLOT_PCI(0x14, PCI_CARD_NORMAL, 1, 2, 3, 4),
+            MSLOT_PCI(0x13, PCI_CARD_NORMAL, 2, 3, 4, 1),
+            MSLOT_PCI(0x12, PCI_CARD_NORMAL, 3, 4, 1, 2),
+            MSLOT_BRIDGE(0x07, PCI_CARD_SOUTHBRIDGE, 0, 0, 0, 0, ((const machine_slot_t[]) { MSLOT_BUS(SLOT_ISA16, 4), MSLOT_BUS(SLOT_ISA8, 1), MSLOT_END })),
+            MSLOT_END
+        },
         .aliases                  = { "TriGem GEM4570", "TriGem TG2304", "" }
     },
 
@@ -16359,8 +17692,8 @@ const machine_t machines[] = {
         .kbc_params               = KBC_VEN_AMI | 0x00004d00,    /* Guess */
         .nvr_device               = &nvr_at_device,
         .nvr_params               = NVR_AT,
-        .sio_device               = NULL,
-        .sio_params               = 0x00000000,
+        .sio_device               = &fdc37c6xx_device,
+        .sio_params               = (uintptr_t) ((FDC37C665 | FDC37C6XX_IDE_SEC)),
         .kbc_p1                   = 0x00000cf0,
         .gpio                     = 0xffffffff,
         .gpio_acpi                = 0xffffffff,
@@ -16371,6 +17704,14 @@ const machine_t machines[] = {
         .snd_device               = NULL,
         .net_device               = NULL,
         .ide_device               = &ide_opti611_vlb_device,
+        .pci_flags                = PCI_CONFIG_TYPE_1,
+        .slot_layout              = (const machine_slot_t[]) {
+            MSLOT_PCI(0x10, PCI_CARD_NORTHBRIDGE, 0, 0, 0, 0),
+            MSLOT_PCI(0x11, PCI_CARD_NORMAL, 1, 2, 3, 4),
+            MSLOT_PCI(0x12, PCI_CARD_NORMAL, 2, 3, 4, 1),
+            MSLOT_PCI(0x13, PCI_CARD_NORMAL, 3, 4, 1, 2),
+            MSLOT_END
+        },
         .aliases                  = { "Northgate Computer Systems Elegance Pentium 90", "" }
     },
 
@@ -16417,10 +17758,19 @@ const machine_t machines[] = {
         .gpio_acpi                = 0xffffffff,
         .device                   = NULL,
         .kbd_device               = NULL,
-        .fdc_device               = NULL,
+        .fdc_device               = &fdc_at_device,
         .vid_device               = NULL,
         .snd_device               = NULL,
         .net_device               = NULL,
+        .pci_flags                = PCI_CONFIG_TYPE_1,
+        .slot_layout              = (const machine_slot_t[]) {
+            MSLOT_PCI(0x10, PCI_CARD_NORTHBRIDGE, 0, 0, 0, 0),
+            MSLOT_PCI(0x11, PCI_CARD_NORMAL, 1, 2, 3, 4),
+            MSLOT_PCI(0x12, PCI_CARD_NORMAL, 5, 6, 7, 8),
+            MSLOT_PCI(0x13, PCI_CARD_NORMAL, 9, 10, 11, 12),
+            MSLOT_PCI(0x14, PCI_CARD_NORMAL, 13, 14, 15, 16),
+            MSLOT_END
+        },
         .aliases                  = { "" }
     },
 
@@ -16467,10 +17817,18 @@ const machine_t machines[] = {
         .gpio_acpi                = 0xffffffff,
         .device                   = NULL,
         .kbd_device               = NULL,
-        .fdc_device               = NULL,
+        .fdc_device               = &fdc_at_device,
         .vid_device               = NULL,
         .snd_device               = NULL,
         .net_device               = NULL,
+        .pci_flags                = PCI_CONFIG_TYPE_1,
+        .slot_layout              = (const machine_slot_t[]) {
+            MSLOT_PCI(0x10, PCI_CARD_NORTHBRIDGE, 0, 0, 0, 0),
+            MSLOT_PCI(0x11, PCI_CARD_NORMAL, 1, 2, 3, 4),
+            MSLOT_PCI(0x12, PCI_CARD_NORMAL, 2, 3, 4, 1),
+            MSLOT_PCI(0x13, PCI_CARD_NORMAL, 3, 4, 1, 2),
+            MSLOT_END
+        },
         .aliases                  = { "" }
     },
     /* This uses an AMI KBC firmware in PS/2 mode (it sends command A5 with the
@@ -16517,10 +17875,15 @@ const machine_t machines[] = {
         .gpio_acpi                = 0xffffffff,
         .device                   = NULL,
         .kbd_device               = NULL,
-        .fdc_device               = NULL,
+        .fdc_device               = &fdc_at_device,
         .vid_device               = NULL,
         .snd_device               = NULL,
         .net_device               = NULL,
+        .slot_layout              = (const machine_slot_t[]) {
+            MSLOT_BUS(SLOT_ISA16, 5),
+            MSLOT_BUS(SLOT_ISA_VLB, 3),
+            MSLOT_END
+        },
         .aliases                  = { "Canon PAT54PV", "Canon Computer Systems PAT54PV", "" }
     },
 
@@ -16547,7 +17910,7 @@ const machine_t machines[] = {
             .max_multi   = 2.0
         },
         .bus_flags = MACHINE_PS2_PCI,
-        .flags     = MACHINE_IDE_DUAL | MACHINE_SUPER_IO | MACHINE_APM, /* Machine has internal SCSI: Adaptec AIC-7850 (not yet implemented) */
+        .flags     = MACHINE_IDE_DUAL | MACHINE_SUPER_IO | MACHINE_APM | MACHINE_PS2_KBC, /* Machine has internal SCSI: Adaptec AIC-7850 (not yet implemented) */
         .ram       = {
             .min  = 4096,
             .max  = 524288,
@@ -16560,8 +17923,8 @@ const machine_t machines[] = {
         .kbc_params               = KBC_VEN_ACER,
         .nvr_device               = &nvr_at_device,
         .nvr_params               = NVR_AT_ZERO_DEFAULT,
-        .sio_device               = NULL,
-        .sio_params               = 0x00000000,
+        .sio_device               = &fdc37c6xx_device,
+        .sio_params               = (uintptr_t) (FDC37C665),
         .kbc_p1                   = 0x004008f0,
         .gpio                     = 0xffffffff,
         .gpio_acpi                = 0xffffffff,
@@ -16572,6 +17935,18 @@ const machine_t machines[] = {
         .snd_device               = NULL,
         .net_device               = NULL,
         .ide_device               = &ide_cmd646_device,
+        .pci_flags                = PCI_CONFIG_TYPE_1,
+        .slot_layout              = (const machine_slot_t[]) {
+            MSLOT_PCI(0x00, PCI_CARD_NORTHBRIDGE, 0, 0, 0, 0),
+            MSLOT_BRIDGE(0x01, PCI_CARD_SOUTHBRIDGE, 0, 0, 0, 0, machine_bus_isa),
+            MSLOT_PCI(0x02, PCI_CARD_NORMAL, 1, 2, 3, 4),
+            MSLOT_PCI(0x03, PCI_CARD_NORMAL, 2, 3, 4, 1),
+            MSLOT_PCI(0x04, PCI_CARD_NORMAL, 3, 4, 1, 2),
+            MSLOT_PCI(0x05, PCI_CARD_NORMAL, 4, 1, 2, 3),
+            MSLOT_PCI(0x06, PCI_CARD_IDE, 0, 0, 0, 0),
+            MSLOT_PCI(0x07, PCI_CARD_SCSI, 4, 0, 0, 0),
+            MSLOT_END
+        },
         .aliases                  = { "" }
     },
     /* This uses a VIA VT82C42N KBC, which is a clone of type 'F' with additional commands.
@@ -16610,8 +17985,8 @@ const machine_t machines[] = {
         .kbc_params               = KBC_VEN_VIA | 0x00424600,
         .nvr_device               = &nvr_at_device,
         .nvr_params               = NVR_AT,
-        .sio_device               = NULL,
-        .sio_params               = 0x00000000,
+        .sio_device               = &pc873xx_device,
+        .sio_params               = (uintptr_t) ((PC87332 | PCX730X_398)),
         .kbc_p1                   = 0x00000cf0,
         .gpio                     = 0xffffffff,
         .gpio_acpi                = 0xffffffff,
@@ -16622,6 +17997,17 @@ const machine_t machines[] = {
         .snd_device               = NULL,
         .net_device               = NULL,
         .ide_device               = &ide_pc87410_device,
+        .pci_flags                = PCI_CONFIG_TYPE_1,
+        .slot_layout              = (const machine_slot_t[]) {
+            MSLOT_PCI(0x00, PCI_CARD_NORTHBRIDGE, 0, 0, 0, 0),
+            MSLOT_BRIDGE(0x01, PCI_CARD_SOUTHBRIDGE, 0, 0, 0, 0, ((const machine_slot_t[]) { MSLOT_BUS(SLOT_ISA16, 4), MSLOT_END })),
+            MSLOT_PCI(0x02, PCI_CARD_NORMAL, 2, 3, 4, 1),
+            MSLOT_PCI(0x03, PCI_CARD_NORMAL, 3, 4, 1, 2),
+            MSLOT_PCI(0x04, PCI_CARD_NORMAL, 4, 1, 2, 3),
+            MSLOT_PCI(0x05, PCI_CARD_NORMAL, 1, 2, 3, 4),
+            MSLOT_PCI(0x0F, PCI_CARD_IDE, 4, 0, 0, 0),
+            MSLOT_END
+        },
         .aliases                  = { "" }
     },
     /* Has TriGem AMI KBC firmware */
@@ -16659,8 +18045,8 @@ const machine_t machines[] = {
         .kbc_params               = KBC_VEN_AMI_TRIGEM | 0x00005a00,
         .nvr_device               = &nvr_at_device,
         .nvr_params               = NVR_AT,
-        .sio_device               = NULL,
-        .sio_params               = 0x00000000,
+        .sio_device               = &fdc37c6xx_device,
+        .sio_params               = (uintptr_t) (FDC37C665),
         .kbc_p1                   = 0x00000cf0,
         .gpio                     = 0xffffffff,
         .gpio_acpi                = 0xffffffff,
@@ -16671,6 +18057,16 @@ const machine_t machines[] = {
         .snd_device               = NULL,
         .net_device               = NULL,
         .ide_device               = &ide_cmd640_pci_device,
+        .pci_flags                = PCI_CONFIG_TYPE_1,
+        .slot_layout              = (const machine_slot_t[]) {
+            MSLOT_PCI(0x00, PCI_CARD_NORTHBRIDGE, 0, 0, 0, 0),
+            MSLOT_BRIDGE(0x01, PCI_CARD_SOUTHBRIDGE, 0, 0, 0, 0, machine_bus_isa),
+            MSLOT_PCI(0x02, PCI_CARD_NORMAL, 2, 3, 4, 1),
+            MSLOT_PCI(0x03, PCI_CARD_NORMAL, 3, 4, 1, 2),
+            MSLOT_PCI(0x04, PCI_CARD_NORMAL, 4, 1, 2, 3),
+            MSLOT_PCI(0x08, PCI_CARD_IDE, 0, 0, 0, 0),
+            MSLOT_END
+        },
         .aliases                  = { "TriGem GEM4530", "" }
     },
 
@@ -16697,7 +18093,7 @@ const machine_t machines[] = {
             .max_multi   = 1.5
         },
         .bus_flags = MACHINE_PS2_PCI,
-        .flags     = MACHINE_IDE_DUAL | MACHINE_APM,
+        .flags     = MACHINE_IDE_DUAL | MACHINE_APM | MACHINE_UART_PRI | MACHINE_UART_SEC | MACHINE_LPT_PRI,
         .ram       = {
             .min  = 2048,
             .max  = 131072,
@@ -16710,8 +18106,8 @@ const machine_t machines[] = {
         .kbc_params               = KBC_VEN_AMI | 0x00004800,
         .nvr_device               = &nvr_at_device,
         .nvr_params               = NVR_AT,
-        .sio_device               = NULL,
-        .sio_params               = 0x00000000,
+        .sio_device               = &fdc37c6xx_device,
+        .sio_params               = (uintptr_t) (FDC37C665),
         .kbc_p1                   = 0x00000cf0,
         .gpio                     = 0xffffffff,
         .gpio_acpi                = 0xffffffff,
@@ -16722,6 +18118,20 @@ const machine_t machines[] = {
         .snd_device               = NULL,
         .net_device               = NULL,
         .ide_device               = &ide_cmd640_pci_device,
+        .pci_flags                = PCI_CONFIG_TYPE_1 | FLAG_TRC_CONTROLS_CPURST,
+        .slot_layout              = (const machine_slot_t[]) {
+            MSLOT_PCI(0x00, PCI_CARD_NORTHBRIDGE, 0, 0, 0, 0),
+            MSLOT_BRIDGE(0x01, PCI_CARD_SOUTHBRIDGE, 0, 0, 0, 0, ((const machine_slot_t[]) { MSLOT_BUS(SLOT_ISA16, 4), MSLOT_END })),
+            /* Excluded: 02, 03, 04, 05, 06, 07, 08, 09, 0A, 0B, 0C, 0D, 0E, 0F, 10, 11, 12, 13, 14 */
+            MSLOT_PCI(0x0D, PCI_CARD_IDE, 1, 2, 3, 4),
+            /* Excluded: 02, 03*, 04*, 05*, 06*, 07*, 08* */
+            /* Slots: 09 (04), 0A (03), 0B (02), 0C (07) */
+            MSLOT_PCI(0x0C, PCI_CARD_NORMAL, 1, 2, 3, 4),
+            MSLOT_PCI(0x0B, PCI_CARD_NORMAL, 2, 3, 4, 1),
+            MSLOT_PCI(0x0A, PCI_CARD_NORMAL, 3, 4, 1, 2),
+            MSLOT_PCI(0x09, PCI_CARD_NORMAL, 4, 1, 2, 3),
+            MSLOT_END
+        },
         .aliases                  = { "President Technology P54SP4", "" }
     },
     /* This has an AMIKey-2, which is type 'H'. */
@@ -16746,7 +18156,7 @@ const machine_t machines[] = {
             .max_multi   = 1.5
         },
         .bus_flags = MACHINE_PS2_PCI,
-        .flags     = MACHINE_IDE_DUAL | MACHINE_APM,
+        .flags     = MACHINE_IDE_DUAL | MACHINE_APM | MACHINE_UART_PRI | MACHINE_UART_SEC | MACHINE_LPT_PRI,
         .ram       = {
             .min  = 2048,
             .max  = 131072,
@@ -16759,8 +18169,8 @@ const machine_t machines[] = {
         .kbc_params               = KBC_VEN_AMI | 0x00004800,
         .nvr_device               = &nvr_at_device,
         .nvr_params               = NVR_AT,
-        .sio_device               = NULL,
-        .sio_params               = 0x00000000,
+        .sio_device               = &fdc37c6xx_device,
+        .sio_params               = (uintptr_t) ((FDC37C665 | FDC37C6XX_IDE_SEC)),
         .kbc_p1                   = 0x00000cf0,
         .gpio                     = 0xffffffff,
         .gpio_acpi                = 0xffffffff,
@@ -16771,6 +18181,18 @@ const machine_t machines[] = {
         .snd_device               = NULL,
         .net_device               = NULL,
         .ide_device               = &ide_cmd640_pci_single_channel_device,
+        .pci_flags                = PCI_CONFIG_TYPE_1 | FLAG_TRC_CONTROLS_CPURST,
+        .slot_layout              = (const machine_slot_t[]) {
+            MSLOT_PCI(0x00, PCI_CARD_NORTHBRIDGE, 0, 0, 0, 0),
+            MSLOT_BRIDGE(0x01, PCI_CARD_SOUTHBRIDGE, 0, 0, 0, 0, machine_bus_isa),
+            /* Correct: 0D (01), 0F (02), 11 (03), 13 (04) */
+            MSLOT_PCI(0x02, PCI_CARD_IDE, 1, 2, 3, 4),
+            MSLOT_PCI(0x0D, PCI_CARD_NORMAL, 1, 2, 3, 4),
+            MSLOT_PCI(0x0F, PCI_CARD_NORMAL, 2, 3, 4, 1),
+            MSLOT_PCI(0x11, PCI_CARD_NORMAL, 3, 4, 1, 2),
+            MSLOT_PCI(0x13, PCI_CARD_NORMAL, 4, 1, 2, 3),
+            MSLOT_END
+        },
         .aliases                  = { "" }
     },
     /* This machine has a Winbond W83C842 KBC */
@@ -16795,7 +18217,7 @@ const machine_t machines[] = {
             .max_multi   = 1.5
         },
         .bus_flags = MACHINE_PCI,
-        .flags     = MACHINE_IDE_DUAL | MACHINE_APM,
+        .flags     = MACHINE_IDE_DUAL | MACHINE_APM | MACHINE_UART_PRI | MACHINE_UART_SEC | MACHINE_LPT_PRI,
         .ram       = {
             .min  = 2048,
             .max  = 131072,
@@ -16808,8 +18230,8 @@ const machine_t machines[] = {
         .kbc_params               = KBC_VEN_PHOENIX | 0x00021400, /* Guess. */
         .nvr_device               = &nvr_at_device,
         .nvr_params               = NVR_AT,
-        .sio_device               = NULL,
-        .sio_params               = 0x00000000,
+        .sio_device               = &w837x7_device,
+        .sio_params               = (uintptr_t) ((W83787F | W837X7_KEY_89)),
         .kbc_p1                   = 0x000004f0,
         .gpio                     = 0xffffffff,
         .gpio_acpi                = 0xffffffff,
@@ -16819,6 +18241,16 @@ const machine_t machines[] = {
         .vid_device               = NULL,
         .snd_device               = NULL,
         .net_device               = NULL,
+        .pci_flags                = PCI_CONFIG_TYPE_1 | FLAG_TRC_CONTROLS_CPURST,
+        .slot_layout              = (const machine_slot_t[]) {
+            MSLOT_PCI(0x00, PCI_CARD_NORTHBRIDGE, 0, 0, 0, 0),
+            MSLOT_BRIDGE(0x01, PCI_CARD_SOUTHBRIDGE, 0, 0, 0, 0, ((const machine_slot_t[]) { MSLOT_BUS(SLOT_ISA16, 4), MSLOT_END })),
+            MSLOT_PCI(0x06, PCI_CARD_NORMAL, 1, 2, 3, 4),
+            MSLOT_PCI(0x07, PCI_CARD_NORMAL, 2, 3, 4, 1),
+            MSLOT_PCI(0x08, PCI_CARD_NORMAL, 3, 4, 1, 2),
+            MSLOT_PCI(0x09, PCI_CARD_NORMAL, 4, 1, 2, 3),
+            MSLOT_END
+        },
         .aliases                  = { "" }
     },
     /* This has an AMIKey-2, which is type 'H'. */
@@ -16843,7 +18275,7 @@ const machine_t machines[] = {
             .max_multi   = 1.5
         },
         .bus_flags = MACHINE_PS2_PCI,
-        .flags     = MACHINE_IDE_DUAL,
+        .flags     = MACHINE_IDE_DUAL | MACHINE_UART_PRI | MACHINE_UART_SEC | MACHINE_LPT_PRI,
         .ram       = {
             .min  = 2048,
             .max  = 131072,
@@ -16856,8 +18288,8 @@ const machine_t machines[] = {
         .kbc_params               = KBC_VEN_AMI | 0x00004800,
         .nvr_device               = &nvr_at_device,
         .nvr_params               = NVR_AMI_1994,
-        .sio_device               = NULL,
-        .sio_params               = 0x00000000,
+        .sio_device               = &w837x7_device,
+        .sio_params               = (uintptr_t) ((W83787F | W837X7_KEY_89)),
         .kbc_p1                   = 0x00000cf0,
         .gpio                     = 0xffffffff,
         .gpio_acpi                = 0xffffffff,
@@ -16868,6 +18300,17 @@ const machine_t machines[] = {
         .snd_device               = NULL,
         .net_device               = NULL,
         .ide_device               = &ide_w83769f_pci_device,
+        .pci_flags                = PCI_CONFIG_TYPE_1 | FLAG_TRC_CONTROLS_CPURST,
+        .slot_layout              = (const machine_slot_t[]) {
+            MSLOT_PCI(0x00, PCI_CARD_NORTHBRIDGE, 0, 0, 0, 0),
+            MSLOT_BRIDGE(0x01, PCI_CARD_SOUTHBRIDGE, 0, 0, 0, 0, machine_bus_isa),
+            MSLOT_PCI(0x07, PCI_CARD_IDE, 0, 0, 0, 0),
+            MSLOT_PCI(0x0D, PCI_CARD_NORMAL, 1, 3, 2, 4),
+            MSLOT_PCI(0x0F, PCI_CARD_NORMAL, 2, 1, 3, 4),
+            MSLOT_PCI(0x11, PCI_CARD_NORMAL, 3, 3, 2, 4),
+            MSLOT_PCI(0x13, PCI_CARD_NORMAL, 4, 1, 2, 3),
+            MSLOT_END
+        },
         .aliases                  = { "" }
     },
     /* Has AMIKey Z(!) KBC firmware. */
@@ -16892,7 +18335,7 @@ const machine_t machines[] = {
             .max_multi   = 1.5
         },
         .bus_flags = MACHINE_PS2_PCI,
-        .flags     = MACHINE_IDE_DUAL | MACHINE_VIDEO | MACHINE_APM,
+        .flags     = MACHINE_IDE_DUAL | MACHINE_VIDEO | MACHINE_APM | MACHINE_UART_PRI | MACHINE_UART_SEC | MACHINE_LPT_PRI,
         .ram       = {
             .min  = 8192,
             .max  = 131072,
@@ -16905,8 +18348,8 @@ const machine_t machines[] = {
         .kbc_params               = KBC_VEN_AMI_TRIGEM | KBC_FLAG_IS_GREEN | 0x00005a00,
         .nvr_device               = &nvr_at_device,
         .nvr_params               = NVR_AMI_1994,
-        .sio_device               = NULL,
-        .sio_params               = 0x00000000,
+        .sio_device               = &fdc37c6xx_device,
+        .sio_params               = (uintptr_t) (FDC37C665),
         .kbc_p1                   = 0x000004f0,
         .gpio                     = 0xffffffff,
         .gpio_acpi                = 0xffffffff,
@@ -16917,6 +18360,16 @@ const machine_t machines[] = {
         .snd_device               = NULL,
         .net_device               = NULL,
         .ide_device               = &ide_um8673f_device,
+        .pci_flags                = PCI_CONFIG_TYPE_1 | FLAG_TRC_CONTROLS_CPURST,
+        .slot_layout              = (const machine_slot_t[]) {
+            MSLOT_PCI(0x00, PCI_CARD_NORTHBRIDGE, 0, 0, 0, 0),
+            MSLOT_BRIDGE(0x01, PCI_CARD_SOUTHBRIDGE, 0, 0, 0, 0, machine_bus_isa),
+            MSLOT_PCI(0x08, PCI_CARD_VIDEO, 0, 0, 0, 0),
+            MSLOT_PCI(0x03, PCI_CARD_NORMAL, 1, 2, 3, 4),
+            MSLOT_PCI(0x0A, PCI_CARD_NORMAL, 4, 1, 2, 3),
+            MSLOT_PCI(0x0B, PCI_CARD_NORMAL, 3, 4, 1, 2),
+            MSLOT_END
+        },
         .aliases                  = { "TriGem Torino", "Olivetti BA2199", "Olivetti BA2259", "Olivetti M4-xxx", "" }
     },
 
@@ -16944,7 +18397,7 @@ const machine_t machines[] = {
             .max_multi   = 2.0
         },
         .bus_flags = MACHINE_PS2_PCI,
-        .flags     = MACHINE_IDE_DUAL | MACHINE_VIDEO | MACHINE_SOUND | MACHINE_APM,
+        .flags     = MACHINE_IDE_DUAL | MACHINE_VIDEO | MACHINE_SOUND | MACHINE_APM | MACHINE_UART_PRI | MACHINE_UART_SEC | MACHINE_LPT_PRI,
         .ram       = {
             .min  = 2048,
             .max  = 131072,
@@ -16957,8 +18410,8 @@ const machine_t machines[] = {
         .kbc_params               = KBC_VEN_VIA | 0x00424600,
         .nvr_device               = &nvr_at_device,
         .nvr_params               = NVR_AT,
-        .sio_device               = NULL,
-        .sio_params               = 0x00000000,
+        .sio_device               = &um866x_device,
+        .sio_params               = (uintptr_t) (UM8663AF),
         .kbc_p1                   = 0x00000cf0,
         .gpio                     = 0xffffffff,
         .gpio_acpi                = 0xffffffff,
@@ -16968,6 +18421,15 @@ const machine_t machines[] = {
         .vid_device               = &s3_trio64_onboard_pci_device,
         .snd_device               = &ess_1688_compaq_device,
         .net_device               = NULL,
+        .pci_flags                = PCI_CONFIG_TYPE_1,
+        .slot_layout              = (const machine_slot_t[]) {
+            MSLOT_PCI(0x00, PCI_CARD_NORTHBRIDGE, 0, 0, 0, 0),
+            MSLOT_BRIDGE(0x12, PCI_CARD_SOUTHBRIDGE, 0, 0, 0, 0, machine_bus_isa),
+            MSLOT_PCI(0x0C, PCI_CARD_NORMAL, 1, 2, 3, 4),
+            MSLOT_PCI(0x0D, PCI_CARD_NORMAL, 4, 1, 2, 3),
+            MSLOT_PCI(0x13, PCI_CARD_VIDEO, 0, 0, 0, 0),
+            MSLOT_END
+        },
         .aliases                  = { "MiTAC/Trigon PL5600D-I", "" }
     },
     /* This has an AMIKey-2, which is type 'H'. */
@@ -16992,7 +18454,7 @@ const machine_t machines[] = {
             .max_multi   = 2.0
         },
         .bus_flags = MACHINE_PS2_PCI,
-        .flags     = MACHINE_IDE_DUAL | MACHINE_APM,
+        .flags     = MACHINE_IDE_DUAL | MACHINE_APM | MACHINE_UART_PRI | MACHINE_UART_SEC | MACHINE_LPT_PRI,
         .ram       = {
             .min  = 2048,
             .max  = 262144,
@@ -17005,8 +18467,8 @@ const machine_t machines[] = {
         .kbc_params               = KBC_VEN_AMI | 0x00004800,
         .nvr_device               = &nvr_at_device,
         .nvr_params               = NVR_AT,
-        .sio_device               = NULL,
-        .sio_params               = 0x00000000,
+        .sio_device               = &um866x_device,
+        .sio_params               = (uintptr_t) (UM8663AF),
         .kbc_p1                   = 0x00000cf0,
         .gpio                     = 0xffffffff,
         .gpio_acpi                = 0xffffffff,
@@ -17016,6 +18478,18 @@ const machine_t machines[] = {
         .vid_device               = NULL,
         .snd_device               = NULL,
         .net_device               = NULL,
+        .pci_flags                = PCI_CONFIG_TYPE_1,
+        .slot_layout              = (const machine_slot_t[]) {
+            MSLOT_PCI(0x00, PCI_CARD_NORTHBRIDGE, 0, 0, 0, 0),
+            MSLOT_BRIDGE(0x12, PCI_CARD_SOUTHBRIDGE, 0, 0, 0, 0, machine_bus_isa),
+            MSLOT_PCI(0x0C, PCI_CARD_NORMAL, 1, 2, 3, 4),
+            MSLOT_PCI(0x15, PCI_CARD_NORMAL, 1, 2, 3, 4),
+            MSLOT_PCI(0x0D, PCI_CARD_NORMAL, 2, 3, 4, 1),
+            MSLOT_PCI(0x16, PCI_CARD_NORMAL, 2, 3, 4, 1),
+            MSLOT_PCI(0x0E, PCI_CARD_NORMAL, 3, 4, 1, 2),
+            MSLOT_PCI(0x0F, PCI_CARD_NORMAL, 4, 1, 2, 3),
+            MSLOT_END
+        },
         .aliases                  = { "" }
     },
 
@@ -17043,7 +18517,7 @@ const machine_t machines[] = {
             .max_multi   = 2.0
         },
         .bus_flags = MACHINE_PS2_PCI,
-        .flags     = MACHINE_IDE_DUAL | MACHINE_APM | MACHINE_VIDEO,
+        .flags     = MACHINE_IDE_DUAL | MACHINE_APM | MACHINE_VIDEO | MACHINE_UART_PRI | MACHINE_UART_SEC | MACHINE_LPT_PRI,
         .ram       = {
             .min  = 4096,
             .max  = 262144,
@@ -17057,8 +18531,8 @@ const machine_t machines[] = {
         /* NVR is on the chipset. */
         .nvr_device               = NULL,
         .nvr_params               = 0x00000000,
-        .sio_device               = NULL,
-        .sio_params               = 0x00000000,
+        .sio_device               = &fdc37c6xx_device,
+        .sio_params               = (uintptr_t) ((FDC37C665 | FDC37C6XX_IDE_SEC)),
         .kbc_p1                   = 0x00000cf0,
         .gpio                     = 0xffffffff,
         .gpio_acpi                = 0xffffffff,
@@ -17069,6 +18543,18 @@ const machine_t machines[] = {
         .snd_device               = NULL,
         .net_device               = NULL,
         .ide_device               = &ide_cmd640_pci_single_channel_device,
+        .pci_flags                = PCI_CONFIG_TYPE_1,
+        .slot_layout              = (const machine_slot_t[]) {
+            MSLOT_PCI(0x00, PCI_CARD_NORTHBRIDGE, 0, 0, 0, 0),
+            MSLOT_BRIDGE(0x01, PCI_CARD_SOUTHBRIDGE, 0, 0, 0, 0, machine_bus_isa),
+            MSLOT_PCI(0x06, PCI_CARD_IDE, 2, 0, 0, 0),
+            MSLOT_PCI(0x08, PCI_CARD_VIDEO, 4, 0, 0, 0),
+            MSLOT_PCI(0x09, PCI_CARD_NORMAL, 1, 2, 3, 4),
+            MSLOT_PCI(0x0A, PCI_CARD_NORMAL, 2, 3, 4, 1),
+            MSLOT_PCI(0x0B, PCI_CARD_NORMAL, 3, 4, 1, 2),
+            MSLOT_PCI(0x0C, PCI_CARD_NORMAL, 4, 1, 2, 3),
+            MSLOT_END
+        },
         .aliases                  = { "AST Bravo MS-T", "AST Bravo MS-L", "AST Rattler", "" }
     },
     /* KBC firmware is unknown. No commands outside of the base PS/2 */
@@ -17094,7 +18580,7 @@ const machine_t machines[] = {
             .max_multi   = 2.0
         },
         .bus_flags = MACHINE_PS2_PCI,
-        .flags     = MACHINE_IDE_DUAL | MACHINE_APM,
+        .flags     = MACHINE_IDE_DUAL | MACHINE_APM | MACHINE_UART_PRI | MACHINE_UART_SEC | MACHINE_LPT_PRI,
         .ram       = {
             .min  = 4096,
             .max  = 262144,
@@ -17108,8 +18594,8 @@ const machine_t machines[] = {
         /* NVR is on the chipset. */
         .nvr_device               = NULL,
         .nvr_params               = 0x00000000,
-        .sio_device               = NULL,
-        .sio_params               = 0x00000000,
+        .sio_device               = &fdc37c6xx_device,
+        .sio_params               = (uintptr_t) ((FDC37C665 | FDC37C6XX_IDE_SEC)),
         .kbc_p1                   = 0x00000cf0,
         .gpio                     = 0xffffffff,
         .gpio_acpi                = 0xffffffff,
@@ -17120,6 +18606,16 @@ const machine_t machines[] = {
         .snd_device               = NULL,
         .net_device               = NULL,
         .ide_device               = &ide_cmd640_pci_single_channel_device,
+        .pci_flags                = PCI_CONFIG_TYPE_1,
+        .slot_layout              = (const machine_slot_t[]) {
+            MSLOT_PCI(0x00, PCI_CARD_NORTHBRIDGE, 0, 0, 0, 0),
+            MSLOT_BRIDGE(0x01, PCI_CARD_SOUTHBRIDGE, 0, 0, 0, 0, ((const machine_slot_t[]) { MSLOT_BUS(SLOT_ISA16, 6), MSLOT_END })),
+            MSLOT_PCI(0x0D, PCI_CARD_IDE, 0, 0, 0, 0), /* Onboard device */
+            MSLOT_PCI(0x10, PCI_CARD_NORMAL, 1, 2, 3, 4),
+            MSLOT_PCI(0x11, PCI_CARD_NORMAL, 2, 3, 4, 1),
+            MSLOT_PCI(0x12, PCI_CARD_NORMAL, 3, 4, 1, 2),
+            MSLOT_END
+        },
         .aliases                  = { "Micron Diablo", "Micron MBD001013-xx", "" }
     },
     /* This has Phoenix KBC firmware. */
@@ -17144,7 +18640,7 @@ const machine_t machines[] = {
             .max_multi   = 2.0
         },
         .bus_flags = MACHINE_PS2_PCI,
-        .flags     = MACHINE_IDE_DUAL | MACHINE_APM | MACHINE_VIDEO,
+        .flags     = MACHINE_IDE_DUAL | MACHINE_APM | MACHINE_VIDEO | MACHINE_UART_PRI | MACHINE_UART_SEC | MACHINE_LPT_PRI,
         .ram       = {
             .min  = 8192,
             .max  = 270336,
@@ -17158,8 +18654,8 @@ const machine_t machines[] = {
         /* NVR is on the chipset. */
         .nvr_device               = NULL,
         .nvr_params               = 0x00000000,
-        .sio_device               = NULL,
-        .sio_params               = 0x00000000,
+        .sio_device               = &fdc37c6xx_device,
+        .sio_params               = (uintptr_t) (FDC37C665),
         .kbc_p1                   = 0x00000cf0,
         .gpio                     = 0xffffffff,
         .gpio_acpi                = 0xffffffff,
@@ -17170,6 +18666,17 @@ const machine_t machines[] = {
         .snd_device               = NULL,
         .net_device               = NULL,
         .ide_device               = &ide_cmd640_pci_device,
+        .pci_flags                = PCI_CONFIG_TYPE_1,
+        .slot_layout              = (const machine_slot_t[]) {
+            MSLOT_PCI(0x00, PCI_CARD_NORTHBRIDGE, 0, 0, 0, 0),
+            MSLOT_BRIDGE(0x06, PCI_CARD_SOUTHBRIDGE, 0, 0, 0, 0, machine_bus_isa),
+            MSLOT_PCI(0x0A, PCI_CARD_VIDEO, 4, 0, 0, 0),
+            MSLOT_PCI(0x0D, PCI_CARD_IDE, 4, 0, 0, 0),
+            MSLOT_PCI(0x0B, PCI_CARD_NORMAL, 3, 4, 1, 2),
+            MSLOT_PCI(0x11, PCI_CARD_NORMAL, 1, 2, 3, 4),
+            MSLOT_PCI(0x13, PCI_CARD_NORMAL, 2, 3, 4, 1),
+            MSLOT_END
+        },
         .aliases                  = { "Packard Bell Agoura", "Packard Bell Wildcat", "" }
     },
 
@@ -17196,7 +18703,7 @@ const machine_t machines[] = {
             .max_multi   = 2.0
         },
         .bus_flags = MACHINE_PS2_PCI,
-        .flags     = MACHINE_IDE_DUAL | MACHINE_APM | MACHINE_VIDEO,
+        .flags     = MACHINE_IDE_DUAL | MACHINE_APM | MACHINE_VIDEO | MACHINE_UART_PRI | MACHINE_UART_SEC | MACHINE_LPT_PRI,
         .ram       = {
             .min  = 4096,
             .max  = 393216,
@@ -17210,8 +18717,8 @@ const machine_t machines[] = {
         /* NVR is on the chipset. */
         .nvr_device               = NULL,
         .nvr_params               = 0x00000000,
-        .sio_device               = NULL,
-        .sio_params               = 0x00000000,
+        .sio_device               = &fdc37c6xx_device,
+        .sio_params               = (uintptr_t) ((FDC37C665 | FDC37C6XX_IDE_SEC)),
         .kbc_p1                   = 0x00000cf0,
         .gpio                     = 0xffffffff,
         .gpio_acpi                = 0xffffffff,
@@ -17222,6 +18729,17 @@ const machine_t machines[] = {
         .snd_device               = NULL,
         .net_device               = NULL,
         .ide_device               = &ide_cmd640_pci_single_channel_legacy_only_device,
+        .pci_flags                = PCI_CONFIG_TYPE_1,
+        .slot_layout              = (const machine_slot_t[]) {
+            MSLOT_PCI(0x00, PCI_CARD_NORTHBRIDGE, 0, 0, 0, 0),
+            MSLOT_BRIDGE(0x01, PCI_CARD_SOUTHBRIDGE, 0, 0, 0, 0, machine_bus_isa),
+            MSLOT_PCI(0x0F, PCI_CARD_VIDEO, 0, 0, 0, 0), /* Onboard device */
+            MSLOT_PCI(0x10, PCI_CARD_IDE, 0, 0, 0, 0), /* Onboard device */
+            MSLOT_PCI(0x11, PCI_CARD_NORMAL, 1, 2, 3, 4), /* Slot 04 */
+            MSLOT_PCI(0x12, PCI_CARD_NORMAL, 2, 3, 4, 1), /* Slot 05 */
+            MSLOT_PCI(0x13, PCI_CARD_NORMAL, 3, 4, 1, 2), /* Slot 06 */
+            MSLOT_END
+        },
         .aliases                  = { "AT&T Globalyst 630", "NCR 3248", "NCR 3348", "" }
     },
     /* Has a VIA KBC chip */
@@ -17246,7 +18764,7 @@ const machine_t machines[] = {
             .max_multi   = 2.0
         },
         .bus_flags = MACHINE_PS2_PCI,
-        .flags     = MACHINE_IDE_DUAL | MACHINE_APM,
+        .flags     = MACHINE_IDE_DUAL | MACHINE_APM | MACHINE_UART_PRI | MACHINE_UART_SEC | MACHINE_LPT_PRI,
         .ram       = {
         /* The user manual says up to 512 MB of RAM can be installed. However; in practice,
            this machine suffers from the same problem as the Gigabyte GA-586IP, where no
@@ -17263,8 +18781,8 @@ const machine_t machines[] = {
         /* NVR is on the chipset. */
         .nvr_device               = NULL,
         .nvr_params               = 0x00000000,
-        .sio_device               = NULL,
-        .sio_params               = 0x00000000,
+        .sio_device               = &pc873xx_device,
+        .sio_params               = (uintptr_t) ((PC87332 | PCX730X_398)),
         .kbc_p1                   = 0x00000cf0,
         .gpio                     = 0xffffffff,
         .gpio_acpi                = 0xffffffff,
@@ -17275,6 +18793,17 @@ const machine_t machines[] = {
         .snd_device               = NULL,
         .net_device               = NULL,
         .ide_device               = &ide_cmd646_device,
+        .pci_flags                = PCI_CONFIG_TYPE_1,
+        .slot_layout              = (const machine_slot_t[]) {
+            MSLOT_PCI(0x00, PCI_CARD_NORTHBRIDGE, 0, 0, 0, 0),
+            MSLOT_BRIDGE(0x01, PCI_CARD_SOUTHBRIDGE, 0, 0, 0, 0, machine_bus_isa),
+            MSLOT_PCI(0x02, PCI_CARD_NORMAL, 1, 2, 3, 4),
+            MSLOT_PCI(0x04, PCI_CARD_NORMAL, 2, 3, 4, 1),
+            MSLOT_PCI(0x06, PCI_CARD_NORMAL, 3, 4, 1, 2),
+            MSLOT_PCI(0x08, PCI_CARD_NORMAL, 4, 1, 2, 3),
+            MSLOT_PCI(0x0A, PCI_CARD_IDE, 0, 0, 0, 0),
+            MSLOT_END
+        },
         .aliases                  = { "" }
     },
 
@@ -17303,7 +18832,7 @@ const machine_t machines[] = {
             .max_multi   = 3.0
         },
         .bus_flags = MACHINE_PS2_PCI,
-        .flags     = MACHINE_IDE_DUAL | MACHINE_APM,
+        .flags     = MACHINE_IDE_DUAL | MACHINE_APM | MACHINE_UART_PRI | MACHINE_UART_SEC | MACHINE_LPT_PRI,
         .ram       = {
             .min  = 8192,
             .max  = 131072,
@@ -17316,8 +18845,8 @@ const machine_t machines[] = {
         .kbc_params               = KBC_VEN_AMI | 0x00004800,
         .nvr_device               = &nvr_at_device,
         .nvr_params               = NVR_AT,
-        .sio_device               = NULL,
-        .sio_params               = 0x00000000,
+        .sio_device               = &fdc37c6xx_device,
+        .sio_params               = (uintptr_t) (FDC37C665),
         .kbc_p1                   = 0x00000cf0,
         .gpio                     = 0xffffffff,
         .gpio_acpi                = 0xffffffff,
@@ -17327,6 +18856,16 @@ const machine_t machines[] = {
         .vid_device               = NULL,
         .snd_device               = NULL,
         .net_device               = NULL,
+        .pci_flags                = PCI_CONFIG_TYPE_1,
+        .slot_layout              = (const machine_slot_t[]) {
+            MSLOT_PCI(0x00, PCI_CARD_NORTHBRIDGE, 0, 0, 0, 0),
+            MSLOT_PCI(0x0C, PCI_CARD_NORMAL, 1, 2, 3, 4),
+            MSLOT_PCI(0x0B, PCI_CARD_NORMAL, 2, 3, 4, 1),
+            MSLOT_PCI(0x0A, PCI_CARD_NORMAL, 3, 4, 1, 2),
+            MSLOT_PCI(0x09, PCI_CARD_NORMAL, 4, 1, 2, 3),
+            MSLOT_BRIDGE(0x07, PCI_CARD_SOUTHBRIDGE, 0, 0, 0, 0, ((const machine_slot_t[]) { MSLOT_BUS(SLOT_ISA16, 3), MSLOT_END })),
+            MSLOT_END
+        },
         .aliases                  = { "" }
     },
     /* Has AMIKey H KBC firmware. The KBC itself seems to differ between an AMIKEY-2 and a Winbond W83C42. */
@@ -17351,7 +18890,7 @@ const machine_t machines[] = {
             .max_multi   = 3.0
         },
         .bus_flags = MACHINE_PS2_PCI,
-        .flags     = MACHINE_IDE_DUAL | MACHINE_APM,
+        .flags     = MACHINE_IDE_DUAL | MACHINE_APM | MACHINE_UART_PRI | MACHINE_UART_SEC | MACHINE_LPT_PRI,
         .ram       = {
             .min  = 8192,
             .max  = 131072,
@@ -17364,8 +18903,8 @@ const machine_t machines[] = {
         .kbc_params               = KBC_VEN_AMI | 0x00004800,
         .nvr_device               = &nvr_at_device,
         .nvr_params               = NVR_AT,
-        .sio_device               = NULL,
-        .sio_params               = 0x00000000,
+        .sio_device               = &w837x7_device,
+        .sio_params               = (uintptr_t) ((W83787F | W837X7_KEY_89)),
         .kbc_p1                   = 0x00000cf0,
         .gpio                     = 0xffffffff,
         .gpio_acpi                = 0xffffffff,
@@ -17375,6 +18914,16 @@ const machine_t machines[] = {
         .vid_device               = NULL,
         .snd_device               = NULL,
         .net_device               = NULL,
+        .pci_flags                = PCI_CONFIG_TYPE_1,
+        .slot_layout              = (const machine_slot_t[]) {
+            MSLOT_PCI(0x00, PCI_CARD_NORTHBRIDGE, 0, 0, 0, 0),
+            MSLOT_PCI(0x13, PCI_CARD_NORMAL, 2, 3, 4, 1),
+            MSLOT_PCI(0x14, PCI_CARD_NORMAL, 1, 2, 3, 4),
+            MSLOT_PCI(0x12, PCI_CARD_NORMAL, 3, 4, 1, 2),
+            MSLOT_PCI(0x11, PCI_CARD_NORMAL, 4, 1, 2, 3),
+            MSLOT_BRIDGE(0x07, PCI_CARD_SOUTHBRIDGE, 0, 0, 0, 0, ((const machine_slot_t[]) { MSLOT_BUS(SLOT_ISA16, 4), MSLOT_END })),
+            MSLOT_END
+        },
         .aliases                  = { "" }
     },
     /* According to tests from real hardware: This has AMI MegaKey KBC firmware on the
@@ -17401,7 +18950,7 @@ const machine_t machines[] = {
             .max_multi   = 2.5
         },
         .bus_flags = MACHINE_PS2_PCI,
-        .flags     = MACHINE_IDE_DUAL | MACHINE_VIDEO | MACHINE_SOUND | MACHINE_GAMEPORT | MACHINE_APM,
+        .flags     = MACHINE_IDE_DUAL | MACHINE_VIDEO | MACHINE_SOUND | MACHINE_GAMEPORT | MACHINE_APM | MACHINE_UART_PRI | MACHINE_UART_SEC | MACHINE_LPT_PRI,
         .ram       = {
             .min  = 8192,
             .max  = 131072,
@@ -17415,8 +18964,8 @@ const machine_t machines[] = {
         /* NVR is on the super I/O chip. */
         .nvr_device               = NULL,
         .nvr_params               = 0x00000000,
-        .sio_device               = NULL,
-        .sio_params               = 0x00000000,
+        .sio_device               = &pc87306_device,
+        .sio_params               = (uintptr_t) (PCX730X_AMI),
         .kbc_p1                   = 0x000044f0,
         .gpio                     = 0xffffffff,
         .gpio_acpi                = 0xffffffff,
@@ -17426,6 +18975,15 @@ const machine_t machines[] = {
         .vid_device               = &s3_trio64vplus_onboard_pci_device,
         .snd_device               = &cs4232_onboard_device,
         .net_device               = NULL,
+        .pci_flags                = PCI_CONFIG_TYPE_1,
+        .slot_layout              = (const machine_slot_t[]) {
+            MSLOT_PCI(0x00, PCI_CARD_NORTHBRIDGE, 0, 0, 0, 0),
+            MSLOT_PCI(0x08, PCI_CARD_VIDEO, 4, 0, 0, 0),
+            MSLOT_PCI(0x11, PCI_CARD_NORMAL, 1, 2, 3, 4),
+            MSLOT_PCI(0x13, PCI_CARD_NORMAL, 2, 3, 4, 1),
+            MSLOT_BRIDGE(0x07, PCI_CARD_SOUTHBRIDGE, 0, 0, 0, 0, machine_bus_isa),
+            MSLOT_END
+        },
         .aliases                  = { "HP Pavilion 7070", "HP Pavilion 7090", "HP Pavilion 71xx (Holly)", "HP Holly", "" }
     },
     {
@@ -17449,7 +19007,7 @@ const machine_t machines[] = {
             .max_multi   = 3.0
         },
         .bus_flags = MACHINE_PS2_PCI,
-        .flags     = MACHINE_IDE_DUAL | MACHINE_VIDEO | MACHINE_APM,
+        .flags     = MACHINE_IDE_DUAL | MACHINE_VIDEO | MACHINE_APM | MACHINE_UART_PRI | MACHINE_UART_SEC | MACHINE_LPT_PRI,
         .ram       = {
             .min  = 8192,
             .max  = 131072,
@@ -17463,8 +19021,8 @@ const machine_t machines[] = {
         /* NVR is on the super I/O chip. */
         .nvr_device               = NULL,
         .nvr_params               = 0x00000000,
-        .sio_device               = NULL,
-        .sio_params               = 0x00000000,
+        .sio_device               = &fdc37c93x_device,
+        .sio_params               = (uintptr_t) ((FDC37XXX2 | FDC37C93X_NORMAL)),
         .kbc_p1                   = 0x000044f0,
         .gpio                     = 0xffffffff,
         .gpio_acpi                = 0xffffffff,
@@ -17474,6 +19032,16 @@ const machine_t machines[] = {
         .vid_device               = &s3_trio64_onboard_pci_device,
         .snd_device               = NULL,
         .net_device               = NULL,
+        .pci_flags                = PCI_CONFIG_TYPE_1,
+        .slot_layout              = (const machine_slot_t[]) {
+            MSLOT_PCI(0x00, PCI_CARD_NORTHBRIDGE, 0, 0, 0, 0),
+            MSLOT_BRIDGE(0x0F, PCI_CARD_SOUTHBRIDGE, 0, 0, 0, 0, machine_bus_isa),
+            MSLOT_PCI(0x0D, PCI_CARD_VIDEO, 0, 0, 0, 0),
+            MSLOT_PCI(0x06, PCI_CARD_NORMAL, 1, 2, 3, 4),
+            MSLOT_PCI(0x07, PCI_CARD_NORMAL, 2, 3, 4, 1),
+            MSLOT_PCI(0x08, PCI_CARD_NORMAL, 3, 4, 1, 2),
+            MSLOT_END
+        },
         .aliases                  = { "" }
     },
     {
@@ -17497,7 +19065,7 @@ const machine_t machines[] = {
             .max_multi   = 3.0
         },
         .bus_flags = MACHINE_PS2_PCI,
-        .flags     = MACHINE_IDE_DUAL | MACHINE_VIDEO | MACHINE_APM,
+        .flags     = MACHINE_IDE_DUAL | MACHINE_VIDEO | MACHINE_APM | MACHINE_UART_PRI | MACHINE_UART_SEC | MACHINE_LPT_PRI,
         .ram       = {
             .min  = 8192,
             .max  = 131072,
@@ -17511,8 +19079,8 @@ const machine_t machines[] = {
         /* NVR is on the super I/O chip. */
         .nvr_device               = NULL,
         .nvr_params               = 0x00000000,
-        .sio_device               = NULL,
-        .sio_params               = 0x00000000,
+        .sio_device               = &pc87306_device,
+        .sio_params               = (uintptr_t) (PCX730X_PHOENIX_42),
         .kbc_p1                   = 0x00000cf0,
         .gpio                     = 0xffffffff,
         .gpio_acpi                = 0xffffffff,
@@ -17522,6 +19090,16 @@ const machine_t machines[] = {
         .vid_device               = &gd5436_onboard_pci_device,
         .snd_device               = NULL,
         .net_device               = NULL,
+        .pci_flags                = PCI_CONFIG_TYPE_1,
+        .slot_layout              = (const machine_slot_t[]) {
+            MSLOT_PCI(0x00, PCI_CARD_NORTHBRIDGE, 0, 0, 0, 0),
+            MSLOT_BRIDGE(0x0F, PCI_CARD_SOUTHBRIDGE, 0, 0, 0, 0, machine_bus_isa),
+            MSLOT_PCI(0x0D, PCI_CARD_VIDEO, 0, 0, 0, 0),
+            MSLOT_PCI(0x06, PCI_CARD_NORMAL, 1, 2, 3, 4),
+            MSLOT_PCI(0x07, PCI_CARD_NORMAL, 2, 3, 4, 1),
+            MSLOT_PCI(0x08, PCI_CARD_NORMAL, 3, 4, 1, 2),
+            MSLOT_END
+        },
         .aliases                  = { "" }
     },
     /* Has a SM(S)C FDC37C932 Super I/O chip with on-chip KBC with AMI
@@ -17547,7 +19125,7 @@ const machine_t machines[] = {
             .max_multi   = 2.0
         },
         .bus_flags = MACHINE_PS2_PCI | MACHINE_BUS_USB,
-        .flags     = MACHINE_IDE_DUAL | MACHINE_VIDEO | MACHINE_APM | MACHINE_USB,
+        .flags     = MACHINE_IDE_DUAL | MACHINE_VIDEO | MACHINE_APM | MACHINE_USB | MACHINE_UART_PRI | MACHINE_UART_SEC | MACHINE_LPT_PRI,
         .ram       = {
             .min  = 8192,
             .max  = 131072,
@@ -17561,8 +19139,8 @@ const machine_t machines[] = {
         /* NVR is on the super I/O chip. */
         .nvr_device               = NULL,
         .nvr_params               = 0x00000000,
-        .sio_device               = NULL,
-        .sio_params               = 0x00000000,
+        .sio_device               = &fdc37c93x_device,
+        .sio_params               = (uintptr_t) ((FDC37XXX2 | FDC37C93X_NORMAL)),
         .kbc_p1                   = 0x000044f0,
         .gpio                     = 0xffffffff,
         .gpio_acpi                = 0xffffffff,
@@ -17572,56 +19150,17 @@ const machine_t machines[] = {
         .vid_device               = &s3_trio64_onboard_pci_device,
         .snd_device               = NULL,
         .net_device               = NULL,
+        .pci_flags                = PCI_CONFIG_TYPE_1,
+        .slot_layout              = (const machine_slot_t[]) {
+            MSLOT_PCI(0x00, PCI_CARD_NORTHBRIDGE, 0, 0, 0, 0),
+            MSLOT_BRIDGE(0x0F, PCI_CARD_SOUTHBRIDGE, 0, 0, 0, 0, ((const machine_slot_t[]) { MSLOT_BUS(SLOT_ISA16, 3), MSLOT_END })),
+            MSLOT_PCI(0x0D, PCI_CARD_VIDEO, 0, 0, 0, 0),
+            MSLOT_PCI(0x06, PCI_CARD_NORMAL, 1, 2, 3, 4),
+            MSLOT_PCI(0x07, PCI_CARD_NORMAL, 2, 3, 4, 1),
+            MSLOT_PCI(0x08, PCI_CARD_NORMAL, 3, 4, 1, 2),
+            MSLOT_END
+        },
         .aliases                  = { "HP Chimay", "" }
-    },
-    /* IBM's 6877 and 6887 share the same planar and differ in chassis/riser capacity. It was also seen with a i430JX chipset. */
-    {
-        .name              = "[i430FX] IBM PC 7x0 (type 68x7)",
-        .internal_name     = "ibm_pc700_6877_6887",
-        .type              = MACHINE_TYPE_SOCKET7_3V,
-        .chipset           = MACHINE_CHIPSET_INTEL_430FX,
-        .init              = machine_at_ibm_pc700_init,
-        .p1_handler        = machine_generic_p1_handler,
-        .gpio_handler      = machine_at_ibm_pc700_gpio_handler,
-        .available_flag    = MACHINE_AVAILABLE,
-        .gpio_acpi_handler = NULL,
-        .cpu               = {
-            .package     = CPU_PKG_SOCKET5_7,
-            .block       = CPU_BLOCK(CPU_K5, CPU_5K86, CPU_Cx6x86, CPU_WINCHIP, CPU_WINCHIP2, CPU_PENTIUMMMX),
-            .min_bus     = 50000000,
-            .max_bus     = 66666667,
-            .min_voltage = 3380,
-            .max_voltage = 3520,
-            .min_multi   = 1.5,
-            .max_multi   = 2.5
-        },
-        .bus_flags = MACHINE_PS2_PCI,
-        .flags     = MACHINE_IDE_DUAL | MACHINE_VIDEO | MACHINE_APM,
-        .ram       = {
-            .min  = 16384, /* 16mb memory is onboard */
-            .max  = 131072,
-            .step = 8192
-        },
-        .nvrmask                  = 255,
-        .jumpered_ecp_dma         = MACHINE_DMA_DISABLED | MACHINE_DMA_1 | MACHINE_DMA_3,
-        .default_jumpered_ecp_dma = 3,
-        .kbc_device               = NULL,
-        .kbc_params               = 0x00000000,
-        /* RTC/NVR is on the PC87306 Super I/O. */
-        .nvr_device               = NULL,
-        .nvr_params               = 0x00000000,
-        .sio_device               = NULL,
-        .sio_params               = 0x00000000,
-        .kbc_p1                   = 0x000044f0,
-        .gpio                     = 0xffffffff,
-        .gpio_acpi                = 0xffffffff,
-        .device                   = NULL,
-        .kbd_device               = NULL,
-        .fdc_device               = NULL,
-        .vid_device               = &s3_trio64vplus_onboard_pci_device,
-        .snd_device               = NULL,
-        .net_device               = NULL,
-        .aliases                  = { "IBM PC 730 type 6877", "IBM PC 750 type 6887", "IBM PC 700", "" }
     },
     /* According to tests from real hardware: This has AMI MegaKey KBC firmware on the
        PC87306 Super I/O chip, command 0xA1 returns '5'.
@@ -17647,7 +19186,7 @@ const machine_t machines[] = {
             .max_multi   = 3.0
         },
         .bus_flags = MACHINE_PS2_PCI,
-        .flags     = MACHINE_IDE_DUAL | MACHINE_VIDEO | MACHINE_SOUND | MACHINE_GAMEPORT | MACHINE_APM,
+        .flags     = MACHINE_IDE_DUAL | MACHINE_VIDEO | MACHINE_SOUND | MACHINE_GAMEPORT | MACHINE_APM | MACHINE_UART_PRI | MACHINE_UART_SEC | MACHINE_LPT_PRI,
         .ram       = {
             .min  = 8192,
             .max  = 131072,
@@ -17661,8 +19200,8 @@ const machine_t machines[] = {
         /* NVR is on the super I/O chip. */
         .nvr_device               = NULL,
         .nvr_params               = 0x00000000,
-        .sio_device               = NULL,
-        .sio_params               = 0x00000000,
+        .sio_device               = &pc87306_device,
+        .sio_params               = (uintptr_t) (PCX730X_AMI),
         .kbc_p1                   = 0x000044f0,
         .gpio                     = 0xffffffff,
         .gpio_acpi                = 0xffffffff,
@@ -17672,6 +19211,17 @@ const machine_t machines[] = {
         .vid_device               = &mach64ct_onboard_device,
         .snd_device               = &cs4232_onboard_device,
         .net_device               = NULL,
+        .pci_flags                = PCI_CONFIG_TYPE_1,
+        .slot_layout              = (const machine_slot_t[]) {
+            MSLOT_PCI(0x00, PCI_CARD_NORTHBRIDGE, 0, 0, 0, 0),
+            MSLOT_BRIDGE(0x07, PCI_CARD_SOUTHBRIDGE, 0, 0, 0, 0, ((const machine_slot_t[]) { MSLOT_BUS(SLOT_ISA16, 3), MSLOT_END })),
+            MSLOT_PCI(0x08, PCI_CARD_VIDEO, 4, 0, 0, 0),
+            MSLOT_PCI(0x0D, PCI_CARD_NORMAL, 1, 2, 3, 4),
+            MSLOT_PCI(0x0E, PCI_CARD_NORMAL, 2, 3, 4, 1),
+            MSLOT_PCI(0x0F, PCI_CARD_NORMAL, 3, 4, 1, 2),
+            MSLOT_PCI(0x10, PCI_CARD_NORMAL, 4, 1, 2, 3),
+            MSLOT_END
+        },
         .aliases                  = { "Intel Atlantis", "" }
     },
     /* According to tests from real hardware: This has AMI MegaKey KBC firmware on the
@@ -17698,7 +19248,7 @@ const machine_t machines[] = {
             .max_multi   = 3.0
         },
         .bus_flags = MACHINE_PS2_PCI,
-        .flags     = MACHINE_IDE_DUAL | MACHINE_VIDEO | MACHINE_APM | MACHINE_SOUND | MACHINE_GAMEPORT, /* Machine has optional onboard sound: Crystal CS4232-KQ */
+        .flags     = MACHINE_IDE_DUAL | MACHINE_VIDEO | MACHINE_APM | MACHINE_SOUND | MACHINE_GAMEPORT | MACHINE_UART_PRI | MACHINE_UART_SEC | MACHINE_LPT_PRI, /* Machine has optional onboard sound: Crystal CS4232-KQ */
         .ram       = {
             .min  = 8192,
             .max  = 131072,
@@ -17712,8 +19262,8 @@ const machine_t machines[] = {
         /* NVR is on the super I/O chip. */
         .nvr_device               = NULL,
         .nvr_params               = 0x00000000,
-        .sio_device               = NULL,
-        .sio_params               = 0x00000000,
+        .sio_device               = &pc87306_device,
+        .sio_params               = (uintptr_t) (PCX730X_AMI),
         .kbc_p1                   = 0x000044f0,
         .gpio                     = 0xffffffff,
         .gpio_acpi                = 0xffffffff,
@@ -17723,6 +19273,17 @@ const machine_t machines[] = {
         .vid_device               = &s3_trio64vplus_onboard_pci_device,
         .snd_device               = &cs4232_onboard_device,
         .net_device               = NULL,
+        .pci_flags                = PCI_CONFIG_TYPE_1,
+        .slot_layout              = (const machine_slot_t[]) {
+            MSLOT_PCI(0x00, PCI_CARD_NORTHBRIDGE, 0, 0, 0, 0),
+            MSLOT_PCI(0x08, PCI_CARD_VIDEO, 4, 0, 0, 0),
+            MSLOT_PCI(0x0D, PCI_CARD_NORMAL, 1, 2, 3, 4),
+            MSLOT_PCI(0x0E, PCI_CARD_NORMAL, 2, 3, 4, 1),
+            MSLOT_PCI(0x0F, PCI_CARD_NORMAL, 3, 4, 2, 1),
+            MSLOT_PCI(0x10, PCI_CARD_NORMAL, 4, 3, 2, 1),
+            MSLOT_BRIDGE(0x07, PCI_CARD_SOUTHBRIDGE, 0, 0, 0, 0, ((const machine_slot_t[]) { MSLOT_BUS(SLOT_ISA16, 3), MSLOT_END })),
+            MSLOT_END
+        },
         .aliases                  = { "Intel Thor", "Gateway 2000 Thor", "" }
     },
     /* According to tests from real hardware: This has AMI MegaKey KBC firmware on the
@@ -17749,7 +19310,7 @@ const machine_t machines[] = {
             .max_multi   = 3.0
         },
         .bus_flags = MACHINE_PS2_PCI,
-        .flags     = MACHINE_IDE_DUAL | MACHINE_VIDEO | MACHINE_SOUND | MACHINE_APM,
+        .flags     = MACHINE_IDE_DUAL | MACHINE_VIDEO | MACHINE_SOUND | MACHINE_APM | MACHINE_UART_PRI | MACHINE_UART_SEC | MACHINE_LPT_PRI,
         .ram       = {
             .min  = 8192,
             .max  = 131072,
@@ -17763,8 +19324,8 @@ const machine_t machines[] = {
         /* NVR is on the super I/O chip. */
         .nvr_device               = NULL,
         .nvr_params               = 0x00000000,
-        .sio_device               = NULL,
-        .sio_params               = 0x00000000,
+        .sio_device               = &pc87306_device,
+        .sio_params               = (uintptr_t) (PCX730X_AMI),
         .kbc_p1                   = 0x000044f0,
         .gpio                     = 0xffffffff,
         .gpio_acpi                = 0xffffffff,
@@ -17774,6 +19335,17 @@ const machine_t machines[] = {
         .vid_device               = &s3_trio64_onboard_pci_device,
         .snd_device               = &sb_vibra16s_onboard_device,
         .net_device               = NULL,
+        .pci_flags                = PCI_CONFIG_TYPE_1,
+        .slot_layout              = (const machine_slot_t[]) {
+            MSLOT_PCI(0x00, PCI_CARD_NORTHBRIDGE, 0, 0, 0, 0),
+            MSLOT_PCI(0x08, PCI_CARD_VIDEO, 4, 0, 0, 0),
+            MSLOT_PCI(0x0D, PCI_CARD_NORMAL, 1, 2, 3, 4),
+            MSLOT_PCI(0x0E, PCI_CARD_NORMAL, 2, 3, 4, 1),
+            MSLOT_PCI(0x0F, PCI_CARD_NORMAL, 3, 4, 1, 2),
+            MSLOT_PCI(0x10, PCI_CARD_NORMAL, 4, 1, 2, 3),
+            MSLOT_BRIDGE(0x07, PCI_CARD_SOUTHBRIDGE, 0, 0, 0, 0, ((const machine_slot_t[]) { MSLOT_BUS(SLOT_ISA16, 3), MSLOT_END })),
+            MSLOT_END
+        },
         .aliases                  = { "Intel Endeavor", "" }
     },
     /* According to tests from real hardware: This has AMI MegaKey KBC firmware on the
@@ -17800,7 +19372,7 @@ const machine_t machines[] = {
             .max_multi   = 3.0
         },
         .bus_flags = MACHINE_PS2_PCI,
-        .flags     = MACHINE_IDE_DUAL | MACHINE_VIDEO | MACHINE_SOUND | MACHINE_GAMEPORT | MACHINE_APM,
+        .flags     = MACHINE_IDE_DUAL | MACHINE_VIDEO | MACHINE_SOUND | MACHINE_GAMEPORT | MACHINE_APM | MACHINE_UART_PRI | MACHINE_UART_SEC | MACHINE_LPT_PRI,
         .ram       = {
             .min  = 8192,
             .max  = 131072,
@@ -17814,8 +19386,8 @@ const machine_t machines[] = {
         /* NVR is on the super I/O chip. */
         .nvr_device               = NULL,
         .nvr_params               = 0x00000000,
-        .sio_device               = NULL,
-        .sio_params               = 0x00000000,
+        .sio_device               = &pc87306_device,
+        .sio_params               = (uintptr_t) (PCX730X_AMI),
         .kbc_p1                   = 0x000044f0,
         .gpio                     = 0xffffffff,
         .gpio_acpi                = 0xffffffff,
@@ -17825,6 +19397,15 @@ const machine_t machines[] = {
         .vid_device               = &mach64ct_onboard_device,
         .snd_device               = &cs4232_onboard_device,
         .net_device               = NULL,
+        .pci_flags                = PCI_CONFIG_TYPE_1,
+        .slot_layout              = (const machine_slot_t[]) {
+            MSLOT_PCI(0x00, PCI_CARD_NORTHBRIDGE, 0, 0, 0, 0),
+            MSLOT_BRIDGE(0x07, PCI_CARD_SOUTHBRIDGE, 0, 0, 0, 0, machine_bus_isa),
+            MSLOT_PCI(0x0B, PCI_CARD_VIDEO, 1, 2, 3, 4),
+            MSLOT_PCI(0x11, PCI_CARD_NORMAL, 1, 3, 2, 4),
+            MSLOT_PCI(0x13, PCI_CARD_NORMAL, 2, 1, 3, 4),
+            MSLOT_END
+        },
         .aliases                  = { "Intel Monaco", "AST Bravo MS-T", "" }
     },
     /* This has an AMIKey-2, which is type 'H'. */
@@ -17849,7 +19430,7 @@ const machine_t machines[] = {
             .max_multi   = 3.0
         },
         .bus_flags = MACHINE_PS2_PCI,
-        .flags     = MACHINE_IDE_DUAL | MACHINE_APM,
+        .flags     = MACHINE_IDE_DUAL | MACHINE_APM | MACHINE_UART_PRI | MACHINE_UART_SEC | MACHINE_LPT_PRI,
         .ram       = {
             .min  = 8192,
             .max  = 131072,
@@ -17862,8 +19443,8 @@ const machine_t machines[] = {
         .kbc_params               = KBC_VEN_AMI | 0x00004800,
         .nvr_device               = &nvr_at_device,
         .nvr_params               = NVR_AT,
-        .sio_device               = NULL,
-        .sio_params               = 0x00000000,
+        .sio_device               = &w837x7_device,
+        .sio_params               = (uintptr_t) ((W83787F | W837X7_KEY_89)),
         .kbc_p1                   = 0x00000cf0,
         .gpio                     = 0xffffffff,
         .gpio_acpi                = 0xffffffff,
@@ -17873,6 +19454,15 @@ const machine_t machines[] = {
         .vid_device               = NULL,
         .snd_device               = NULL,
         .net_device               = NULL,
+        .pci_flags                = PCI_CONFIG_TYPE_1,
+        .slot_layout              = (const machine_slot_t[]) {
+            MSLOT_PCI(0x00, PCI_CARD_NORTHBRIDGE, 0, 0, 0, 0),
+            MSLOT_BRIDGE(0x07, PCI_CARD_SOUTHBRIDGE, 0, 0, 0, 0, ((const machine_slot_t[]) { MSLOT_BUS(SLOT_ISA16, 4), MSLOT_END })),
+            MSLOT_PCI(0x0d, PCI_CARD_NORMAL, 1, 2, 3, 4),
+            MSLOT_PCI(0x0e, PCI_CARD_NORMAL, 2, 3, 4, 1),
+            MSLOT_PCI(0x0f, PCI_CARD_NORMAL, 3, 4, 1, 2),
+            MSLOT_END
+        },
         .aliases                  = { "" }
     },
     /* This most likely uses AMI MegaKey KBC firmware as well due to having the same
@@ -17898,7 +19488,7 @@ const machine_t machines[] = {
             .max_multi   = 3.0
         },
         .bus_flags = MACHINE_PS2_PCI,
-        .flags     = MACHINE_IDE_DUAL | MACHINE_VIDEO | MACHINE_APM,
+        .flags     = MACHINE_IDE_DUAL | MACHINE_VIDEO | MACHINE_APM | MACHINE_UART_PRI | MACHINE_UART_SEC | MACHINE_LPT_PRI,
         .ram       = {
             .min  = 8192,
             .max  = 131072,
@@ -17912,8 +19502,8 @@ const machine_t machines[] = {
         /* NVR is on the super I/O chip. */
         .nvr_device               = NULL,
         .nvr_params               = 0x00000000,
-        .sio_device               = NULL,
-        .sio_params               = 0x00000000,
+        .sio_device               = &pc87306_device,
+        .sio_params               = (uintptr_t) (PCX730X_AMI),
         .kbc_p1                   = 0x000044f0,
         .gpio                     = 0xffffffff,
         .gpio_acpi                = 0xffffffff,
@@ -17923,6 +19513,16 @@ const machine_t machines[] = {
         .vid_device               = &gd5440_onboard_pci_device,
         .snd_device               = NULL,
         .net_device               = NULL,
+        .pci_flags                = PCI_CONFIG_TYPE_1,
+        .slot_layout              = (const machine_slot_t[]) {
+            MSLOT_PCI(0x00, PCI_CARD_NORTHBRIDGE, 0, 0, 0, 0),
+            MSLOT_PCI(0x08, PCI_CARD_VIDEO, 4, 0, 0, 0),
+            MSLOT_PCI(0x11, PCI_CARD_NORMAL, 1, 2, 3, 4),
+            MSLOT_PCI(0x13, PCI_CARD_NORMAL, 2, 1, 3, 4),
+            MSLOT_PCI(0x0B, PCI_CARD_NORMAL, 3, 2, 1, 4),
+            MSLOT_BRIDGE(0x07, PCI_CARD_SOUTHBRIDGE, 0, 0, 0, 0, machine_bus_isa),
+            MSLOT_END
+        },
         .aliases                  = { "Packard Bell Thousand Oaks", "" }
     },
     /* Has a VIA VT82C42N KBC. */
@@ -17947,7 +19547,7 @@ const machine_t machines[] = {
             .max_multi   = 3.0
         },
         .bus_flags = MACHINE_PCI,
-        .flags     = MACHINE_IDE_DUAL | MACHINE_APM,
+        .flags     = MACHINE_IDE_DUAL | MACHINE_APM | MACHINE_UART_PRI | MACHINE_UART_SEC | MACHINE_LPT_PRI,
         .ram       = {
             .min  = 8192,
             .max  = 131072,
@@ -17960,8 +19560,8 @@ const machine_t machines[] = {
         .kbc_params               = KBC_VEN_VIA | 0x00424600,
         .nvr_device               = &nvr_at_device,
         .nvr_params               = NVR_AT,
-        .sio_device               = NULL,
-        .sio_params               = 0x00000000,
+        .sio_device               = &fdc37c6xx_device,
+        .sio_params               = (uintptr_t) (FDC37C665),
         .kbc_p1                   = 0x000004f0,
         .gpio                     = 0xffffffff,
         .gpio_acpi                = 0xffffffff,
@@ -17971,6 +19571,16 @@ const machine_t machines[] = {
         .vid_device               = NULL,
         .snd_device               = NULL,
         .net_device               = NULL,
+        .pci_flags                = PCI_CONFIG_TYPE_1,
+        .slot_layout              = (const machine_slot_t[]) {
+            MSLOT_PCI(0x00, PCI_CARD_NORTHBRIDGE, 0, 0, 0, 0),
+            MSLOT_PCI(0x14, PCI_CARD_NORMAL, 1, 2, 3, 4),
+            MSLOT_PCI(0x13, PCI_CARD_NORMAL, 2, 3, 4, 1),
+            MSLOT_PCI(0x12, PCI_CARD_NORMAL, 3, 4, 1, 2),
+            MSLOT_PCI(0x11, PCI_CARD_NORMAL, 4, 1, 2, 3),
+            MSLOT_BRIDGE(0x07, PCI_CARD_SOUTHBRIDGE, 0, 0, 0, 0, machine_bus_isa),
+            MSLOT_END
+        },
         .aliases                  = { "PC Partner P54CXD", "" }
     },
     /* Has an AMIKEY-2 'H' KBC firmware (1992). */
@@ -17995,7 +19605,7 @@ const machine_t machines[] = {
             .max_multi   = 3.0
         },
         .bus_flags = MACHINE_PCI,
-        .flags     = MACHINE_IDE_DUAL | MACHINE_APM | MACHINE_GAMEPORT,
+        .flags     = MACHINE_IDE_DUAL | MACHINE_APM | MACHINE_GAMEPORT | MACHINE_UART_PRI | MACHINE_UART_SEC | MACHINE_LPT_PRI,
         .ram       = {
             .min  = 8192,
             .max  = 131072,
@@ -18008,8 +19618,8 @@ const machine_t machines[] = {
         .kbc_params               = KBC_VEN_AMI | 0x00004800,
         .nvr_device               = &nvr_at_device,
         .nvr_params               = NVR_AT,
-        .sio_device               = NULL,
-        .sio_params               = 0x00000000,
+        .sio_device               = &w837x7_device,
+        .sio_params               = (uintptr_t) ((W83787F | W837X7_KEY_89)),
         .kbc_p1                   = 0x000004f0,
         .gpio                     = 0xffffffff,
         .gpio_acpi                = 0xffffffff,
@@ -18019,6 +19629,16 @@ const machine_t machines[] = {
         .vid_device               = NULL,
         .snd_device               = NULL,
         .net_device               = NULL,
+        .pci_flags                = PCI_CONFIG_TYPE_1,
+        .slot_layout              = (const machine_slot_t[]) {
+            MSLOT_PCI(0x00, PCI_CARD_NORTHBRIDGE, 0, 0, 0, 0),
+            MSLOT_BRIDGE(0x07, PCI_CARD_SOUTHBRIDGE, 0, 0, 0, 0, ((const machine_slot_t[]) { MSLOT_BUS(SLOT_ISA16, 4), MSLOT_END })),
+            MSLOT_PCI(0x14, PCI_CARD_NORMAL, 1, 2, 3, 4),
+            MSLOT_PCI(0x13, PCI_CARD_NORMAL, 2, 3, 4, 1),
+            MSLOT_PCI(0x12, PCI_CARD_NORMAL, 3, 4, 2, 1),
+            MSLOT_PCI(0x11, PCI_CARD_NORMAL, 4, 3, 2, 1),
+            MSLOT_END
+        },
         .aliases                  = { "" }
     },
     /* Has VIA VT82C42N KBC firmware. */
@@ -18043,7 +19663,7 @@ const machine_t machines[] = {
             .max_multi   = 3.0
         },
         .bus_flags = MACHINE_PS2_PCI | MACHINE_BUS_USB,
-        .flags     = MACHINE_IDE_DUAL | MACHINE_APM | MACHINE_USB,
+        .flags     = MACHINE_IDE_DUAL | MACHINE_APM | MACHINE_USB | MACHINE_UART_PRI | MACHINE_UART_SEC | MACHINE_LPT_PRI,
         .ram       = {
             .min  = 8192,
             .max  = 131072,
@@ -18056,8 +19676,8 @@ const machine_t machines[] = {
         .kbc_params               = KBC_VEN_VIA | 0x00424600,
         .nvr_device               = &nvr_at_device,
         .nvr_params               = NVR_AT,
-        .sio_device               = NULL,
-        .sio_params               = 0x00000000,
+        .sio_device               = &um866x_device,
+        .sio_params               = (uintptr_t) (UM8663AF),
         .kbc_p1                   = 0x00000cf0,
         .gpio                     = 0xffffffff,
         .gpio_acpi                = 0xffffffff,
@@ -18067,6 +19687,15 @@ const machine_t machines[] = {
         .vid_device               = NULL,
         .snd_device               = NULL,
         .net_device               = NULL,
+        .pci_flags                = PCI_CONFIG_TYPE_1,
+        .slot_layout              = (const machine_slot_t[]) {
+            MSLOT_PCI(0x00, PCI_CARD_NORTHBRIDGE, 0, 0, 0, 0),
+            MSLOT_BRIDGE(0x07, PCI_CARD_SOUTHBRIDGE, 0, 0, 0, 0, machine_bus_isa),
+            MSLOT_PCI(0x08, PCI_CARD_NORMAL, 2, 3, 4, 1),
+            MSLOT_PCI(0x09, PCI_CARD_NORMAL, 3, 4, 1, 2),
+            MSLOT_PCI(0x0A, PCI_CARD_NORMAL, 4, 1, 2, 3),
+            MSLOT_END
+        },
         .aliases                  = { "Suk Jung SJ-PENTIUM FX", "" }
     },
     /* 430HX */
@@ -18094,7 +19723,7 @@ const machine_t machines[] = {
             .max_multi   = 3.0
         },
         .bus_flags = MACHINE_PS2_PCI,
-        .flags     = MACHINE_IDE_DUAL | MACHINE_APM,
+        .flags     = MACHINE_IDE_DUAL | MACHINE_APM | MACHINE_UART_PRI | MACHINE_UART_SEC | MACHINE_LPT_PRI,
         .ram       = {
             .min  = 4096,
             .max  = 524288,
@@ -18108,8 +19737,8 @@ const machine_t machines[] = {
         /* NVR is on the super I/O chip. */
         .nvr_device               = NULL,
         .nvr_params               = 0x00000000,
-        .sio_device               = NULL,
-        .sio_params               = 0x00000000,
+        .sio_device               = &fdc37c93x_device,
+        .sio_params               = (uintptr_t) ((FDC37XXX5 | FDC37C93X_FR)),
         .kbc_p1                   = 0x00000cf0,
         .gpio                     = 0xffffffff,
         .gpio_acpi                = 0xffffffff,
@@ -18119,6 +19748,17 @@ const machine_t machines[] = {
         .vid_device               = NULL,
         .snd_device               = NULL,
         .net_device               = NULL,
+        .pci_flags                = PCI_CONFIG_TYPE_1,
+        .slot_layout              = (const machine_slot_t[]) {
+            MSLOT_PCI(0x00, PCI_CARD_NORTHBRIDGE, 0, 0, 0, 0),
+            MSLOT_BRIDGE(0x07, PCI_CARD_SOUTHBRIDGE, 0, 0, 0, 0, machine_bus_isa),
+            MSLOT_PCI(0x11, PCI_CARD_NORMAL, 1, 2, 3, 4),
+            MSLOT_PCI(0x12, PCI_CARD_NORMAL, 2, 3, 4, 1),
+            MSLOT_PCI(0x13, PCI_CARD_NORMAL, 3, 4, 1, 2),
+            MSLOT_PCI(0x14, PCI_CARD_NORMAL, 4, 1, 2, 3),
+            MSLOT_PCI(0x0D, PCI_CARD_NORMAL, 1, 2, 3, 4),
+            MSLOT_END
+        },
         .aliases                  = { "" }
     },
     /* Has AMIKey-2 or VIA VT82C42N KBC (depending on the revision) with AMIKEY 'F' KBC firmware. */
@@ -18143,7 +19783,7 @@ const machine_t machines[] = {
             .max_multi   = 2.5
         },
         .bus_flags = MACHINE_PS2_PCI,
-        .flags     = MACHINE_IDE_DUAL | MACHINE_APM,
+        .flags     = MACHINE_IDE_DUAL | MACHINE_APM | MACHINE_UART_PRI | MACHINE_UART_SEC | MACHINE_LPT_PRI,
         .ram       = {
             .min  = 4096,
             .max  = 524288,
@@ -18156,7 +19796,7 @@ const machine_t machines[] = {
         .kbc_params               = KBC_VEN_AMI | 0x00004800,
         .nvr_device               = &nvr_at_device,
         .nvr_params               = NVR_AT,
-        .sio_device               = NULL,
+        .sio_device               = &fdc37c669_device,
         .sio_params               = 0x00000000,
         .kbc_p1                   = 0x00000cf0,
         .gpio                     = 0xffffffff,
@@ -18167,6 +19807,17 @@ const machine_t machines[] = {
         .vid_device               = NULL,
         .snd_device               = NULL,
         .net_device               = NULL,
+        .pci_flags                = PCI_CONFIG_TYPE_1,
+        .slot_layout              = (const machine_slot_t[]) {
+            MSLOT_PCI(0x00, PCI_CARD_NORTHBRIDGE, 0, 0, 0, 0),
+            MSLOT_PCI(0x11, PCI_CARD_NORMAL, 1, 2, 3, 4),
+            MSLOT_PCI(0x12, PCI_CARD_NORMAL, 2, 3, 4, 1),
+            MSLOT_PCI(0x13, PCI_CARD_NORMAL, 3, 4, 1, 2),
+            MSLOT_PCI(0x14, PCI_CARD_NORMAL, 4, 1, 2, 3),
+            MSLOT_BRIDGE(0x07, PCI_CARD_SOUTHBRIDGE, 0, 0, 0, 0, ((const machine_slot_t[]) { MSLOT_BUS(SLOT_ISA16, 3), MSLOT_END })),
+            MSLOT_PCI(0x06, PCI_CARD_VIDEO, 1, 2, 3, 4),
+            MSLOT_END
+        },
         .aliases                  = { "" }
     },
     /* [TEST] Has a VIA 82C42N KBC that emulates the AMIKey F KBC firmware. */
@@ -18191,7 +19842,7 @@ const machine_t machines[] = {
             .max_multi   = 3.0
         },
         .bus_flags = MACHINE_PS2_PCI | MACHINE_BUS_USB,
-        .flags     = MACHINE_IDE_DUAL | MACHINE_APM | MACHINE_USB,
+        .flags     = MACHINE_IDE_DUAL | MACHINE_APM | MACHINE_USB | MACHINE_UART_PRI | MACHINE_UART_SEC | MACHINE_LPT_PRI,
         .ram       = {
             .min  = 4096,
             .max  = 524288,
@@ -18204,7 +19855,7 @@ const machine_t machines[] = {
         .kbc_params               = KBC_VEN_VIA | 0x00424600,
         .nvr_device               = &nvr_at_device,
         .nvr_params               = NVR_AT,
-        .sio_device               = NULL,
+        .sio_device               = &um8669f_device,
         .sio_params               = 0x00000000,
         .kbc_p1                   = 0x00000cf0,
         .gpio                     = 0xffffffff,
@@ -18215,6 +19866,16 @@ const machine_t machines[] = {
         .vid_device               = NULL,
         .snd_device               = NULL,
         .net_device               = NULL,
+        .pci_flags                = PCI_CONFIG_TYPE_1,
+        .slot_layout              = (const machine_slot_t[]) {
+            MSLOT_PCI(0x00, PCI_CARD_NORTHBRIDGE, 0, 0, 0, 0),
+            MSLOT_PCI(0x08, PCI_CARD_NORMAL, 1, 2, 3, 4),
+            MSLOT_PCI(0x09, PCI_CARD_NORMAL, 2, 3, 4, 1),
+            MSLOT_PCI(0x0A, PCI_CARD_NORMAL, 3, 4, 1, 2),
+            MSLOT_PCI(0x0B, PCI_CARD_NORMAL, 4, 1, 2, 3),
+            MSLOT_BRIDGE(0x07, PCI_CARD_SOUTHBRIDGE, 1, 2, 3, 4, machine_bus_isa),
+            MSLOT_END
+        },
         .aliases                  = { "" }
     },
     /* It possible has AMIKEY-2 'H' KBC firmware. */
@@ -18239,7 +19900,7 @@ const machine_t machines[] = {
             .max_multi   = 3.0
         },
         .bus_flags = MACHINE_PS2_PCI,
-        .flags     = MACHINE_IDE_DUAL | MACHINE_AV | MACHINE_GAMEPORT | MACHINE_APM,
+        .flags     = MACHINE_IDE_DUAL | MACHINE_AV | MACHINE_GAMEPORT | MACHINE_APM | MACHINE_UART_PRI | MACHINE_UART_SEC | MACHINE_LPT_PRI,
         .ram       = {
             .min  = 8192,
             .max  = 131072,
@@ -18252,8 +19913,8 @@ const machine_t machines[] = {
         .kbc_params               = KBC_VEN_AMI | 0x00004800,
         .nvr_device               = &nvr_at_device,
         .nvr_params               = NVR_AT_ZERO_DEFAULT,
-        .sio_device               = NULL,
-        .sio_params               = 0x00000000,
+        .sio_device               = &fdc37c6xx_device,
+        .sio_params               = (uintptr_t) (FDC37C665),
         .kbc_p1                   = 0x00000cf0,
         .gpio                     = 0xffffffff,
         .gpio_acpi                = 0xffffffff,
@@ -18263,6 +19924,16 @@ const machine_t machines[] = {
         .vid_device               = &gd5436_onboard_pci_device,
         .snd_device               = &sb_vibra16c_onboard_device,
         .net_device               = NULL,
+        .pci_flags                = PCI_CONFIG_TYPE_1,
+        .slot_layout              = (const machine_slot_t[]) {
+            MSLOT_PCI(0x00, PCI_CARD_NORTHBRIDGE, 0, 0, 0, 0),
+            MSLOT_BRIDGE(0x07, PCI_CARD_SOUTHBRIDGE, 0, 0, 0, 0, machine_bus_isa),
+            MSLOT_PCI(0x08, PCI_CARD_VIDEO, 4, 0, 0, 0),
+            MSLOT_PCI(0x11, PCI_CARD_NORMAL, 3, 2, 4, 1),
+            MSLOT_PCI(0x12, PCI_CARD_NORMAL, 2, 1, 3, 4),
+            MSLOT_PCI(0x13, PCI_CARD_NORMAL, 1, 3, 2, 4),
+            MSLOT_END
+        },
         .aliases                  = { "Siemens Scenic 5H/___", "" }
     },
     /* Has the SM(S)C FDC37C932QF Super I/O chip with the AMI '5' MEGAKEY KBC firmware. */
@@ -18287,7 +19958,7 @@ const machine_t machines[] = {
             .max_multi   = 3.0
         },
         .bus_flags = MACHINE_PS2_PCI,
-        .flags     = MACHINE_IDE_DUAL | MACHINE_APM, /* Machine has internal video: C&T F65548 (not yet implemented) */
+        .flags     = MACHINE_IDE_DUAL | MACHINE_APM | MACHINE_UART_PRI | MACHINE_UART_SEC | MACHINE_UART_TER | MACHINE_UART_QUA | MACHINE_LPT_PRI | MACHINE_LPT_SEC, /* Machine has internal video: C&T F65548 (not yet implemented) */
         .ram       = {
             .min  = 8192,
             .max  = 65536,
@@ -18300,8 +19971,8 @@ const machine_t machines[] = {
         .kbc_params               = 0x00000000,
         .nvr_device               = NULL,
         .nvr_params               = 0x00000000,
-        .sio_device               = NULL,
-        .sio_params               = 0x00000000,
+        .sio_device               = &fdc37c93x_device,
+        .sio_params               = (uintptr_t) ((FDC37XXX2 | FDC37C93X_NORMAL | FDC37XXXX_370)),
         .kbc_p1                   = 0x000044f0,
         .gpio                     = 0xffffffff,
         .gpio_acpi                = 0xffffffff,
@@ -18311,6 +19982,16 @@ const machine_t machines[] = {
         .vid_device               = NULL,
         .snd_device               = NULL,
         .net_device               = NULL,
+        .pci_flags                = PCI_CONFIG_TYPE_1,
+        .slot_layout              = (const machine_slot_t[]) {
+            MSLOT_PCI(0x00, PCI_CARD_NORTHBRIDGE, 0, 0, 0, 0),
+            MSLOT_PCI(0x11, PCI_CARD_NORMAL, 1, 2, 3, 4),
+            MSLOT_PCI(0x14, PCI_CARD_NORMAL, 2, 3, 4, 1),
+            MSLOT_PCI(0x13, PCI_CARD_NORMAL, 3, 4, 1, 2),
+            MSLOT_PCI(0x12, PCI_CARD_NORMAL, 4, 1, 2, 3),
+            MSLOT_BRIDGE(0x07, PCI_CARD_SOUTHBRIDGE, 0, 0, 0, 0, machine_bus_isa),
+            MSLOT_END
+        },
         .aliases                  = { "" }
     },
 
@@ -18338,7 +20019,7 @@ const machine_t machines[] = {
             .max_multi   = 3.0
         },
         .bus_flags = MACHINE_PS2_PCI | MACHINE_BUS_USB,
-        .flags     = MACHINE_IDE_DUAL | MACHINE_SOUND | MACHINE_APM | MACHINE_GAMEPORT | MACHINE_USB, /* Machine has internal video: ATI 3D Rage II (Mach64GT-B) (not yet implemented) */
+        .flags     = MACHINE_IDE_DUAL | MACHINE_SOUND | MACHINE_APM | MACHINE_GAMEPORT | MACHINE_USB | MACHINE_UART_PRI | MACHINE_UART_SEC | MACHINE_LPT_PRI, /* Machine has internal video: ATI 3D Rage II (Mach64GT-B) (not yet implemented) */
         .ram       = {
             .min  = 8192,
             .max  = 131072,
@@ -18352,8 +20033,8 @@ const machine_t machines[] = {
         /* NVR is on the super I/O chip. */
         .nvr_device               = NULL,
         .nvr_params               = 0x00000000,
-        .sio_device               = NULL,
-        .sio_params               = 0x00000000,
+        .sio_device               = &fdc37c93x_device,
+        .sio_params               = (uintptr_t) ((FDC37XXX2 | FDC37C93X_FR)),
         .kbc_p1                   = 0x000044f0,
         .gpio                     = 0xffffffff,
         .gpio_acpi                = 0xffffffff,
@@ -18363,6 +20044,16 @@ const machine_t machines[] = {
         .vid_device               = NULL,
         .snd_device               = &sb_vibra16c_onboard_device,
         .net_device               = NULL,
+        .pci_flags                = PCI_CONFIG_TYPE_1,
+        .slot_layout              = (const machine_slot_t[]) {
+            MSLOT_PCI(0x00, PCI_CARD_NORTHBRIDGE, 0, 0, 0, 0),
+            MSLOT_PCI(0x0D, PCI_CARD_NORMAL, 1, 2, 3, 4),
+            MSLOT_PCI(0x0E, PCI_CARD_NORMAL, 2, 3, 4, 1),
+            MSLOT_PCI(0x0F, PCI_CARD_NORMAL, 3, 4, 1, 2),
+            MSLOT_PCI(0x10, PCI_CARD_NORMAL, 4, 1, 2, 3),
+            MSLOT_BRIDGE(0x07, PCI_CARD_SOUTHBRIDGE, 0, 0, 0, 4, machine_bus_isa),
+            MSLOT_END
+        },
         .aliases                  = { "" }
     },
 
@@ -18389,7 +20080,7 @@ const machine_t machines[] = {
             .max_multi   = 3.0
         },
         .bus_flags = MACHINE_PS2_PCI,
-        .flags     = MACHINE_IDE_DUAL | MACHINE_SUPER_IO | MACHINE_APM,
+        .flags     = MACHINE_IDE_DUAL | MACHINE_SUPER_IO | MACHINE_APM | MACHINE_PS2_KBC,
         .ram       = {
             .min  = 4096,
             .max  = 131072,
@@ -18402,8 +20093,8 @@ const machine_t machines[] = {
         .kbc_params               = KBC_VEN_VIA | 0x00424600, /* Guess */
         .nvr_device               = &nvr_at_device,
         .nvr_params               = NVR_AT,
-        .sio_device               = NULL,
-        .sio_params               = 0x00000000,
+        .sio_device               = &fdc37c6xx_device,
+        .sio_params               = (uintptr_t) (FDC37C665),
         .kbc_p1                   = 0x00000cf0,
         .gpio                     = 0xffffffff,
         .gpio_acpi                = 0xffffffff,
@@ -18413,6 +20104,16 @@ const machine_t machines[] = {
         .vid_device               = NULL,
         .snd_device               = NULL,
         .net_device               = NULL,
+        .pci_flags                = PCI_CONFIG_TYPE_1,
+        .slot_layout              = (const machine_slot_t[]) {
+            MSLOT_PCI(0x00, PCI_CARD_NORTHBRIDGE, 0, 0, 0, 0),
+            MSLOT_BRIDGE(0x01, PCI_CARD_SOUTHBRIDGE, 0, 0, 0, 0, ((const machine_slot_t[]) { MSLOT_BUS(SLOT_ISA16, 4), MSLOT_END })),
+            MSLOT_PCI(0x10, PCI_CARD_NORMAL, 2, 3, 4, 1),
+            MSLOT_PCI(0x11, PCI_CARD_NORMAL, 3, 4, 1, 2),
+            MSLOT_PCI(0x12, PCI_CARD_NORMAL, 4, 1, 2, 3),
+            MSLOT_PCI(0x14, PCI_CARD_IDE, 4, 0, 0, 0),
+            MSLOT_END
+        },
         .aliases                  = { "" }
     },
 
@@ -18439,7 +20140,7 @@ const machine_t machines[] = {
             .max_multi   = 3.0
         },
         .bus_flags = MACHINE_PCI,
-        .flags     = MACHINE_IDE_DUAL | MACHINE_APM,
+        .flags     = MACHINE_IDE_DUAL | MACHINE_APM | MACHINE_UART_PRI | MACHINE_UART_SEC | MACHINE_LPT_PRI,
         .ram       = {
             .min  = 2048,
             .max  = 131072,
@@ -18453,8 +20154,8 @@ const machine_t machines[] = {
         /* NVR is on the chipset. */
         .nvr_device               = NULL,
         .nvr_params               = 0x00000000,
-        .sio_device               = NULL,
-        .sio_params               = 0x00000000,
+        .sio_device               = &um866x_device,
+        .sio_params               = (uintptr_t) (UM8663AF),
         .kbc_p1                   = 0x000004f0,
         .gpio                     = 0xffffffff,
         .gpio_acpi                = 0xffffffff,
@@ -18464,6 +20165,15 @@ const machine_t machines[] = {
         .vid_device               = NULL,
         .snd_device               = NULL,
         .net_device               = NULL,
+        .pci_flags                = PCI_CONFIG_TYPE_1 | FLAG_TRC_CONTROLS_CPURST,
+        .slot_layout              = (const machine_slot_t[]) {
+            MSLOT_PCI(0x00, PCI_CARD_NORTHBRIDGE, 0, 0, 0, 0),
+            MSLOT_BRIDGE(0x01, PCI_CARD_SOUTHBRIDGE, 0, 0, 0, 0, ((const machine_slot_t[]) { MSLOT_BUS(SLOT_ISA16, 4), MSLOT_END })),
+            MSLOT_PCI(0x0D, PCI_CARD_NORMAL, 1, 2, 3, 4),
+            MSLOT_PCI(0x0F, PCI_CARD_NORMAL, 2, 3, 4, 1),
+            MSLOT_PCI(0x11, PCI_CARD_NORMAL, 3, 4, 1, 2),
+            MSLOT_END
+        },
         .aliases                  = { "Chaintech 5SBM", "Chaintech M103", "" }
     },
 
@@ -18490,7 +20200,7 @@ const machine_t machines[] = {
             .max_multi   = 3.0
         },
         .bus_flags = MACHINE_PS2_PCI,
-        .flags     = MACHINE_IDE_DUAL | MACHINE_APM,
+        .flags     = MACHINE_IDE_DUAL | MACHINE_APM | MACHINE_UART_PRI | MACHINE_UART_SEC | MACHINE_LPT_PRI,
         .ram       = {
             .min  = 2048,
             .max  = 524288,
@@ -18504,8 +20214,8 @@ const machine_t machines[] = {
         /* NVR is on the chipset. */
         .nvr_device               = NULL,
         .nvr_params               = 0x00000000,
-        .sio_device               = NULL,
-        .sio_params               = 0x00000000,
+        .sio_device               = &fdc37c6xx_device,
+        .sio_params               = (uintptr_t) (FDC37C665),
         .kbc_p1                   = 0x000044f0,
         .gpio                     = 0xffffffff,
         .gpio_acpi                = 0xffffffff,
@@ -18515,6 +20225,16 @@ const machine_t machines[] = {
         .vid_device               = NULL,
         .snd_device               = NULL,
         .net_device               = NULL,
+        .pci_flags                = PCI_CONFIG_TYPE_1 | FLAG_TRC_CONTROLS_CPURST,
+        .slot_layout              = (const machine_slot_t[]) {
+            MSLOT_PCI(0x00, PCI_CARD_NORTHBRIDGE, 0, 0, 0, 0),
+            MSLOT_BRIDGE(0x01, PCI_CARD_SOUTHBRIDGE, 0xFE, 0xFF, 0, 0, ((const machine_slot_t[]) { MSLOT_BUS(SLOT_ISA16, 4), MSLOT_END })),
+            MSLOT_PCI(0x0A, PCI_CARD_NORMAL, 1, 2, 3, 4),
+            MSLOT_PCI(0x0B, PCI_CARD_NORMAL, 2, 3, 4, 1),
+            MSLOT_PCI(0x0C, PCI_CARD_NORMAL, 3, 4, 1, 2),
+            MSLOT_PCI(0x0D, PCI_CARD_NORMAL, 4, 1, 2, 3),
+            MSLOT_END
+        },
         .aliases                  = { "AMI S727", "" }
     },
     /* Has AMIKey H KBC firmware (AMIKey-2). */
@@ -18539,7 +20259,7 @@ const machine_t machines[] = {
             .max_multi   = 3.0
         },
         .bus_flags = MACHINE_PS2_PCI,
-        .flags     = MACHINE_IDE_DUAL | MACHINE_APM,
+        .flags     = MACHINE_IDE_DUAL | MACHINE_APM | MACHINE_UART_PRI | MACHINE_UART_SEC | MACHINE_LPT_PRI,
         .ram       = {
             .min  = 2048,
             .max  = 524288,
@@ -18553,8 +20273,8 @@ const machine_t machines[] = {
         /* NVR is on the chipset. */
         .nvr_device               = NULL,
         .nvr_params               = 0x00000000,
-        .sio_device               = NULL,
-        .sio_params               = 0x00000000,
+        .sio_device               = &fdc37c6xx_device,
+        .sio_params               = (uintptr_t) (FDC37C665),
         .kbc_p1                   = 0x00000cf0,
         .gpio                     = 0xffffffff,
         .gpio_acpi                = 0xffffffff,
@@ -18564,6 +20284,16 @@ const machine_t machines[] = {
         .vid_device               = NULL,
         .snd_device               = NULL,
         .net_device               = NULL,
+        .pci_flags                = PCI_CONFIG_TYPE_1 | FLAG_TRC_CONTROLS_CPURST,
+        .slot_layout              = (const machine_slot_t[]) {
+            MSLOT_PCI(0x00, PCI_CARD_NORTHBRIDGE, 0, 0, 0, 0),
+            MSLOT_BRIDGE(0x01, PCI_CARD_SOUTHBRIDGE, 0, 0, 0, 0, ((const machine_slot_t[]) { MSLOT_BUS(SLOT_ISA16, 3), MSLOT_END })),
+            MSLOT_PCI(0x0D, PCI_CARD_NORMAL, 1, 2, 3, 4),
+            MSLOT_PCI(0x0F, PCI_CARD_NORMAL, 2, 3, 4, 1),
+            MSLOT_PCI(0x11, PCI_CARD_NORMAL, 3, 4, 1, 2),
+            MSLOT_PCI(0x13, PCI_CARD_NORMAL, 4, 1, 2, 3),
+            MSLOT_END
+        },
         .aliases                  = { "" }
     },
     /* Has AMIKey H KBC firmware (AMIKey-2). */
@@ -18588,7 +20318,7 @@ const machine_t machines[] = {
             .max_multi   = 2.5
         },
         .bus_flags = MACHINE_PS2_PCI,
-        .flags     = MACHINE_IDE_DUAL | MACHINE_SOUND | MACHINE_GAMEPORT | MACHINE_APM, /* Machine has internal video: SiS 6205 (not yet implemented) */
+        .flags     = MACHINE_IDE_DUAL | MACHINE_SOUND | MACHINE_GAMEPORT | MACHINE_APM | MACHINE_UART_PRI | MACHINE_UART_SEC | MACHINE_LPT_PRI, /* Machine has internal video: SiS 6205 (not yet implemented) */
         .ram       = {
             .min  = 8192,
             .max  = 524288,
@@ -18602,7 +20332,7 @@ const machine_t machines[] = {
         /* NVR is on the chipset. */
         .nvr_device               = NULL,
         .nvr_params               = 0x00000000,
-        .sio_device               = NULL,
+        .sio_device               = &fdc37c669_device,
         .sio_params               = 0x00000000,
         .kbc_p1                   = 0x00000cf0,
         .gpio                     = 0xffffffff,
@@ -18613,6 +20343,15 @@ const machine_t machines[] = {
         .vid_device               = NULL,
         .snd_device               = &cs4232_onboard_device,
         .net_device               = NULL,
+        .pci_flags                = PCI_CONFIG_TYPE_1 | FLAG_TRC_CONTROLS_CPURST,
+        .slot_layout              = (const machine_slot_t[]) {
+            MSLOT_PCI(0x00, PCI_CARD_NORTHBRIDGE, 1, 2, 3, 4),
+            MSLOT_BRIDGE(0x01, PCI_CARD_SOUTHBRIDGE, 0, 0, 0, 0, machine_bus_isa),
+            MSLOT_PCI(0x11, PCI_CARD_NORMAL, 1, 3, 2, 4),
+            MSLOT_PCI(0x13, PCI_CARD_NORMAL, 2, 1, 3, 4),
+            MSLOT_PCI(0x0B, PCI_CARD_VIDEO, 0, 0, 0, 0), /* Onboard video */
+            MSLOT_END
+        },
         .aliases                  = { "HP Pavilion 53xx", "HP Pavilion 71xx (BCM FM562)", "HP Pavilion 72xx", "BCM FM562", "" }
     },
     /* Has an SMC FDC37C669QF Super I/O. */
@@ -18637,7 +20376,7 @@ const machine_t machines[] = {
             .max_multi   = 3.0
         },
         .bus_flags = MACHINE_PS2_PCI,
-        .flags     = MACHINE_IDE_DUAL | MACHINE_VIDEO | MACHINE_APM,
+        .flags     = MACHINE_IDE_DUAL | MACHINE_VIDEO | MACHINE_APM | MACHINE_UART_PRI | MACHINE_UART_SEC | MACHINE_LPT_PRI,
         .ram       = {
             .min  = 8192,
             .max  = 131072,
@@ -18651,7 +20390,7 @@ const machine_t machines[] = {
         /* NVR is on the chipset. */
         .nvr_device               = NULL,
         .nvr_params               = 0x00000000,
-        .sio_device               = NULL,
+        .sio_device               = &fdc37c669_device,
         .sio_params               = 0x00000000,
         .kbc_p1                   = 0x00000cf0,
         .gpio                     = 0xffffffff,
@@ -18662,6 +20401,15 @@ const machine_t machines[] = {
         .vid_device               = &gd5436_onboard_pci_device,
         .snd_device               = NULL,
         .net_device               = NULL,
+        .pci_flags                = PCI_CONFIG_TYPE_1 | FLAG_TRC_CONTROLS_CPURST,
+        .slot_layout              = (const machine_slot_t[]) {
+            MSLOT_PCI(0x00, PCI_CARD_NORTHBRIDGE, 1, 2, 3, 4),
+            MSLOT_BRIDGE(0x01, PCI_CARD_SOUTHBRIDGE, 0, 0, 0, 0, machine_bus_isa),
+            MSLOT_PCI(0x0E, PCI_CARD_NORMAL, 1, 2, 3, 4),
+            MSLOT_PCI(0x0F, PCI_CARD_NORMAL, 2, 3, 4, 1),
+            MSLOT_PCI(0x14, PCI_CARD_VIDEO, 0, 0, 0, 0), /* Onboard video */
+            MSLOT_END
+        },
         .aliases                  = { "" }
     },
     /* Has AMIKey H KBC firmware (AMIKey-2). */
@@ -18686,7 +20434,7 @@ const machine_t machines[] = {
             .max_multi   = 3.0
         },
         .bus_flags = MACHINE_PS2_PCI,
-        .flags     = MACHINE_IDE_DUAL | MACHINE_APM,
+        .flags     = MACHINE_IDE_DUAL | MACHINE_APM | MACHINE_UART_PRI | MACHINE_UART_SEC | MACHINE_LPT_PRI,
         .ram       = {
             .min  = 4096,
             .max  = 524288,
@@ -18700,8 +20448,8 @@ const machine_t machines[] = {
         /* NVR is on the chipset. */
         .nvr_device               = NULL,
         .nvr_params               = 0x00000000,
-        .sio_device               = NULL,
-        .sio_params               = 0x00000000,
+        .sio_device               = &w837x7_device,
+        .sio_params               = (uintptr_t) ((W83787F | W837X7_KEY_88)),
         .kbc_p1                   = 0x00000cf0,
         .gpio                     = 0xffffffff,
         .gpio_acpi                = 0xffffffff,
@@ -18711,6 +20459,16 @@ const machine_t machines[] = {
         .vid_device               = NULL,
         .snd_device               = NULL,
         .net_device               = NULL,
+        .pci_flags                = PCI_CONFIG_TYPE_1 | FLAG_TRC_CONTROLS_CPURST,
+        .slot_layout              = (const machine_slot_t[]) {
+            MSLOT_PCI(0x00, PCI_CARD_NORTHBRIDGE, 0, 0, 0, 0),
+            MSLOT_BRIDGE(0x01, PCI_CARD_SOUTHBRIDGE, 0xFE, 0xFF, 0, 0, ((const machine_slot_t[]) { MSLOT_BUS(SLOT_ISA16, 4), MSLOT_END })),
+            MSLOT_PCI(0x10, PCI_CARD_NORMAL, 1, 2, 3, 4),
+            MSLOT_PCI(0x11, PCI_CARD_NORMAL, 4, 1, 2, 3),
+            MSLOT_PCI(0x12, PCI_CARD_NORMAL, 3, 4, 1, 2),
+            MSLOT_PCI(0x0F, PCI_CARD_NORMAL, 2, 3, 4, 1),
+            MSLOT_END
+        },
         .aliases                  = { "Premio 219E", "Premio 219F", "" }
     },
 
@@ -18738,7 +20496,7 @@ const machine_t machines[] = {
             .max_multi   = 2.5
         },
         .bus_flags = MACHINE_PCI,
-        .flags     = MACHINE_IDE_DUAL | MACHINE_APM,
+        .flags     = MACHINE_IDE_DUAL | MACHINE_APM | MACHINE_UART_PRI | MACHINE_UART_SEC | MACHINE_LPT_PRI,
         .ram       = {
             .min  = 4096,
             .max  = 393216,
@@ -18752,8 +20510,8 @@ const machine_t machines[] = {
         /* NVR is on the chipset. */
         .nvr_device               = NULL,
         .nvr_params               = 0x00000000,
-        .sio_device               = NULL,
-        .sio_params               = 0x00000000,
+        .sio_device               = &fdc37c6xx_device,
+        .sio_params               = (uintptr_t) (FDC37C665),
         .kbc_p1                   = 0x000004f0,
         .gpio                     = 0xffffffff,
         .gpio_acpi                = 0xffffffff,
@@ -18764,6 +20522,18 @@ const machine_t machines[] = {
         .snd_device               = NULL,
         .net_device               = NULL,
         .ide_device               = &ide_rz1001_pci_device,
+        .pci_flags                = PCI_CONFIG_TYPE_1,
+        .slot_layout              = (const machine_slot_t[]) {
+            MSLOT_PCI(0x00, PCI_CARD_NORTHBRIDGE, 0, 0, 0, 0),
+            MSLOT_BRIDGE(0x01, PCI_CARD_SOUTHBRIDGE, 0, 0, 0, 0, ((const machine_slot_t[]) { MSLOT_BUS(SLOT_ISA16, 5), MSLOT_END })),
+            MSLOT_PCI(0x0D, PCI_CARD_IDE, 1, 2, 0, 0), /* Onboard device */
+            MSLOT_PCI(0x0E, PCI_CARD_SCSI, 1, 0, 0, 0), /* Onboard device */
+            MSLOT_PCI(0x0F, PCI_CARD_NETWORK, 1, 0, 0, 0), /* Onboard device */
+            MSLOT_PCI(0x11, PCI_CARD_NORMAL, 1, 2, 3, 4), /* Slot 03 */
+            MSLOT_PCI(0x12, PCI_CARD_NORMAL, 4, 2, 3, 1), /* Slot 04 */
+            MSLOT_PCI(0x13, PCI_CARD_NORMAL, 3, 4, 1, 2), /* Slot 05 */
+            MSLOT_END
+        },
         .aliases                  = { "Zeos Pantera", "Zeos Wildcat", "" }
     },
 
@@ -18791,7 +20561,7 @@ const machine_t machines[] = {
             .max_multi   = 4.5
         },
         .bus_flags = MACHINE_PS2_PCI | MACHINE_BUS_USB,
-        .flags     = MACHINE_IDE_DUAL | MACHINE_APM | MACHINE_USB,
+        .flags     = MACHINE_IDE_DUAL | MACHINE_APM | MACHINE_USB | MACHINE_UART_PRI | MACHINE_UART_SEC | MACHINE_UART_TER | MACHINE_LPT_PRI,
         .ram       = {
             .min  = 8192,
             .max  = 262144,
@@ -18804,7 +20574,7 @@ const machine_t machines[] = {
         .kbc_params               = 0x00000000,
         .nvr_device               = NULL,
         .nvr_params               = 0x00000000,
-        .sio_device               = NULL,
+        .sio_device               = &ali5123_device,
         .sio_params               = 0x00000000,
         .kbc_p1                   = 0x00000cf0,
         .gpio                     = 0xffffffff,
@@ -18815,6 +20585,17 @@ const machine_t machines[] = {
         .vid_device               = NULL,
         .snd_device               = NULL,
         .net_device               = NULL,
+        .pci_flags                = PCI_CONFIG_TYPE_1,
+        .slot_layout              = (const machine_slot_t[]) {
+            MSLOT_PCI(0x00, PCI_CARD_NORTHBRIDGE, 1, 2, 3, 4),
+            MSLOT_BRIDGE(0x02, PCI_CARD_SOUTHBRIDGE, 1, 2, 3, 4, ((const machine_slot_t[]) { MSLOT_BUS(SLOT_ISA16, 3), MSLOT_END })),
+            MSLOT_PCI(0x0B, PCI_CARD_SOUTHBRIDGE_IDE, 1, 2, 3, 4),
+            MSLOT_PCI(0x03, PCI_CARD_NORMAL, 1, 2, 3, 4),
+            MSLOT_PCI(0x04, PCI_CARD_NORMAL, 2, 3, 4, 1),
+            MSLOT_PCI(0x05, PCI_CARD_NORMAL, 3, 4, 1, 2),
+            MSLOT_PCI(0x06, PCI_CARD_NORMAL, 4, 1, 2, 3),
+            MSLOT_END
+        },
         .aliases                  = { "" }
     },
     /* Has the ALi M1543 southbridge with on-chip KBC. */
@@ -18839,7 +20620,7 @@ const machine_t machines[] = {
             .max_multi   = 3.0
         },
         .bus_flags = MACHINE_PS2_PCI | MACHINE_BUS_USB,
-        .flags     = MACHINE_IDE_DUAL | MACHINE_APM | MACHINE_ACPI | MACHINE_USB,
+        .flags     = MACHINE_IDE_DUAL | MACHINE_APM | MACHINE_ACPI | MACHINE_USB | MACHINE_UART_PRI | MACHINE_UART_SEC | MACHINE_UART_TER | MACHINE_LPT_PRI,
         .ram       = {
             .min  = 8192,
             .max  = 1048576,
@@ -18852,7 +20633,7 @@ const machine_t machines[] = {
         .kbc_params               = 0x00000000,
         .nvr_device               = NULL,
         .nvr_params               = 0x00000000,
-        .sio_device               = NULL,
+        .sio_device               = &ali5123_device,
         .sio_params               = 0x00000000,
         .kbc_p1                   = 0x00000cf0,
         .gpio                     = 0xffffffff,
@@ -18863,6 +20644,20 @@ const machine_t machines[] = {
         .vid_device               = NULL,
         .snd_device               = NULL,
         .net_device               = NULL,
+        .pci_flags                = PCI_CONFIG_TYPE_1,
+        .slot_layout              = (const machine_slot_t[]) {
+            MSLOT_PCI(0x00, PCI_CARD_NORTHBRIDGE, 0, 0, 0, 0),
+            MSLOT_BRIDGE(0x02, PCI_CARD_SOUTHBRIDGE, 1, 2, 3, 4, ((const machine_slot_t[]) { MSLOT_BUS(SLOT_ISA16, 3), MSLOT_END })),
+            MSLOT_PCI(0x0B, PCI_CARD_SOUTHBRIDGE_IDE, 5, 6, 0, 0),
+            MSLOT_PCI(0x0C, PCI_CARD_SOUTHBRIDGE_PMU, 1, 2, 3, 4),
+            MSLOT_PCI(0x0F, PCI_CARD_SOUTHBRIDGE_USB, 1, 2, 3, 4),
+            MSLOT_PCI(0x03, PCI_CARD_NORMAL, 1, 2, 3, 4),
+            MSLOT_PCI(0x04, PCI_CARD_NORMAL, 2, 3, 4, 1),
+            MSLOT_PCI(0x05, PCI_CARD_NORMAL, 3, 4, 1, 2),
+            MSLOT_PCI(0x06, PCI_CARD_NORMAL, 4, 1, 2, 3),
+            MSLOT_PCI(0x07, PCI_CARD_NORMAL, 1, 2, 3, 4),
+            MSLOT_END
+        },
         .aliases                  = { "" }
     },
     /* Has the ALi M1543 southbridge with on-chip KBC. */
@@ -18887,7 +20682,7 @@ const machine_t machines[] = {
             .max_multi   = 3.0
         },
         .bus_flags = MACHINE_PS2_PCI | MACHINE_BUS_USB,
-        .flags     = MACHINE_IDE_DUAL | MACHINE_APM | MACHINE_USB,
+        .flags     = MACHINE_IDE_DUAL | MACHINE_APM | MACHINE_USB | MACHINE_UART_PRI | MACHINE_UART_SEC | MACHINE_UART_TER | MACHINE_LPT_PRI,
         .ram       = {
             .min  = 8192,
             .max  = 786432,
@@ -18900,7 +20695,7 @@ const machine_t machines[] = {
         .kbc_params               = 0x00000000,
         .nvr_device               = NULL,
         .nvr_params               = 0x00000000,
-        .sio_device               = NULL,
+        .sio_device               = &ali5123_device,
         .sio_params               = 0x00000000,
         .kbc_p1                   = 0x00000cf0,
         .gpio                     = 0xffffffff,
@@ -18911,6 +20706,19 @@ const machine_t machines[] = {
         .vid_device               = NULL,
         .snd_device               = NULL,
         .net_device               = NULL,
+        .pci_flags                = PCI_CONFIG_TYPE_1,
+        .slot_layout              = (const machine_slot_t[]) {
+            MSLOT_PCI(0x00, PCI_CARD_NORTHBRIDGE, 0, 0, 0, 0),
+            MSLOT_BRIDGE(0x02, PCI_CARD_SOUTHBRIDGE, 1, 2, 3, 4, machine_bus_isa),
+            MSLOT_PCI(0x0B, PCI_CARD_SOUTHBRIDGE_IDE, 1, 2, 3, 4),
+            MSLOT_PCI(0x0C, PCI_CARD_SOUTHBRIDGE_PMU, 1, 2, 3, 4),
+            MSLOT_PCI(0x0F, PCI_CARD_SOUTHBRIDGE_USB, 1, 2, 3, 4),
+            MSLOT_PCI(0x03, PCI_CARD_NORMAL, 1, 2, 3, 4),
+            MSLOT_PCI(0x04, PCI_CARD_NORMAL, 2, 3, 4, 1),
+            MSLOT_PCI(0x05, PCI_CARD_NORMAL, 3, 4, 1, 2),
+            MSLOT_PCI(0x06, PCI_CARD_NORMAL, 4, 1, 2, 3),
+            MSLOT_END
+        },
         .aliases                  = { "" }
     },
     
@@ -18938,7 +20746,7 @@ const machine_t machines[] = {
             .max_multi   = 3.0
         },
         .bus_flags = MACHINE_PS2_PCI | MACHINE_BUS_USB,
-        .flags     = MACHINE_IDE_DUAL | MACHINE_APM | MACHINE_GAMEPORT | MACHINE_USB, /* Machine has optional SCSI/ASM */
+        .flags     = MACHINE_IDE_DUAL | MACHINE_APM | MACHINE_GAMEPORT | MACHINE_USB | MACHINE_UART_PRI | MACHINE_UART_SEC | MACHINE_LPT_PRI, /* Machine has optional SCSI/ASM */
         .ram       = {
             .min  = 4096,
             .max  = 524288,
@@ -18951,8 +20759,8 @@ const machine_t machines[] = {
         .kbc_params               = 0x00000000,
         .nvr_device               = NULL,
         .nvr_params               = 0x00000000,
-        .sio_device               = NULL,
-        .sio_params               = 0x00000000,
+        .sio_device               = &fdc37c93x_device,
+        .sio_params               = (uintptr_t) ((FDC37XXX5 | FDC37C93X_NORMAL)),
         .kbc_p1                   = 0x00000cf0,
         .gpio                     = 0xffffffff,
         .gpio_acpi                = 0xffffffff,
@@ -18962,6 +20770,17 @@ const machine_t machines[] = {
         .vid_device               = NULL,
         .snd_device               = NULL,
         .net_device               = NULL,
+        .pci_flags                = PCI_CONFIG_TYPE_1,
+        .slot_layout              = (const machine_slot_t[]) {
+            MSLOT_PCI(0x00, PCI_CARD_NORTHBRIDGE, 0, 0, 0, 0),
+            MSLOT_BRIDGE(0x07, PCI_CARD_SOUTHBRIDGE, 0, 0, 0, 0, machine_bus_isa),
+            MSLOT_PCI(0x0C, PCI_CARD_NORMAL, 1, 2, 3, 4),
+            MSLOT_PCI(0x0D, PCI_CARD_NORMAL, 2, 3, 4, 1),
+            MSLOT_PCI(0x0E, PCI_CARD_NORMAL, 3, 4, 1, 2),
+            MSLOT_PCI(0x0F, PCI_CARD_NORMAL, 4, 1, 2, 3),
+            MSLOT_PCI(0x10, PCI_CARD_VIDEO, 4, 0, 0, 0),
+            MSLOT_END
+        },
         .aliases                  = { "Acer M3A", "" }
     },
     /* The AIR 54TDP: a 430HX board with four EISA slots, four PCI slots,
@@ -19001,7 +20820,7 @@ const machine_t machines[] = {
             .max_multi   = 3.5
         },
         .bus_flags = MACHINE_PCIE | MACHINE_BUS_PS2,
-        .flags     = MACHINE_SCSI | MACHINE_APM,
+        .flags     = MACHINE_SCSI | MACHINE_APM | MACHINE_UART_PRI | MACHINE_UART_SEC | MACHINE_LPT_PRI,
         .ram       = {
             .min  = 2048,
             .max  = 786432,
@@ -19014,7 +20833,7 @@ const machine_t machines[] = {
         .kbc_params               = KBC_VEN_AMI | 0x00004800,
         .nvr_device               = &nvr_at_device,
         .nvr_params               = NVR_AT,
-        .sio_device               = NULL,
+        .sio_device               = &fdc37c669_device,
         .sio_params               = 0x00000000,
         .kbc_p1                   = 0x00000cf0,
         .gpio                     = 0xffffffff,
@@ -19026,6 +20845,17 @@ const machine_t machines[] = {
         .snd_device               = NULL,
         .net_device               = NULL,
         .scsi_device              = &aic7880_pci_device,
+        .pci_flags                = PCI_CONFIG_TYPE_1,
+        .slot_layout              = (const machine_slot_t[]) {
+            MSLOT_PCI(0x00, PCI_CARD_NORTHBRIDGE, 0, 0, 0, 0),
+            MSLOT_BRIDGE(0x07, PCI_CARD_SOUTHBRIDGE, 0, 0, 0, 0, ((const machine_slot_t[]) { MSLOT_BUS(SLOT_EISA, 4), MSLOT_END })),
+            MSLOT_PCI(0x08, PCI_CARD_SCSI, 4, 0, 0, 0),
+            MSLOT_PCI(0x09, PCI_CARD_NORMAL, 2, 3, 4, 1),
+            MSLOT_PCI(0x0a, PCI_CARD_NORMAL, 3, 4, 1, 2),
+            MSLOT_PCI(0x0b, PCI_CARD_NORMAL, 4, 1, 2, 3),
+            MSLOT_PCI(0x0c, PCI_CARD_NORMAL, 1, 2, 3, 4),
+            MSLOT_END
+        },
         .aliases                  = { "Advanced Integration Research 54TDP", "" }
     },*/
     /* Has AMIKey H KBC firmware (AMIKey-2). */
@@ -19050,7 +20880,7 @@ const machine_t machines[] = {
             .max_multi   = 4.0
         },
         .bus_flags = MACHINE_PS2_PCI,
-        .flags     = MACHINE_IDE_DUAL | MACHINE_APM,
+        .flags     = MACHINE_IDE_DUAL | MACHINE_APM | MACHINE_UART_PRI | MACHINE_UART_SEC | MACHINE_LPT_PRI,
         .ram       = {
             .min  = 4096,
             .max  = 524288,
@@ -19063,8 +20893,8 @@ const machine_t machines[] = {
         .kbc_params               = KBC_VEN_AMI | 0x00004800,
         .nvr_device               = &nvr_at_device,
         .nvr_params               = NVR_AT,
-        .sio_device               = NULL,
-        .sio_params               = 0x00000000,
+        .sio_device               = &w83877_device,
+        .sio_params               = (uintptr_t) ((W83877F | W83877_3F0)),
         .kbc_p1                   = 0x00000cf0,
         .gpio                     = 0xffffffff,
         .gpio_acpi                = 0xffffffff,
@@ -19074,6 +20904,16 @@ const machine_t machines[] = {
         .vid_device               = NULL,
         .snd_device               = NULL,
         .net_device               = NULL,
+        .pci_flags                = PCI_CONFIG_TYPE_1,
+        .slot_layout              = (const machine_slot_t[]) {
+            MSLOT_PCI(0x00, PCI_CARD_NORTHBRIDGE, 0, 0, 0, 0),
+            MSLOT_PCI(0x0C, PCI_CARD_NORMAL, 1, 2, 3, 4),
+            MSLOT_PCI(0x0B, PCI_CARD_NORMAL, 2, 3, 4, 1),
+            MSLOT_PCI(0x0A, PCI_CARD_NORMAL, 3, 4, 1, 2),
+            MSLOT_PCI(0x09, PCI_CARD_NORMAL, 4, 1, 2, 3),
+            MSLOT_BRIDGE(0x07, PCI_CARD_SOUTHBRIDGE, 0, 0, 0, 0, ((const machine_slot_t[]) { MSLOT_BUS(SLOT_ISA16, 3), MSLOT_END })),
+            MSLOT_END
+        },
         .aliases                  = { "" }
     },
     /* The base board has a Holtek HT6542B which emulates the AMIKey-2 ('H') KBC firmware. */
@@ -19097,8 +20937,8 @@ const machine_t machines[] = {
             .min_multi   = 1.5,
             .max_multi   = 3.5
         },
-        .bus_flags = MACHINE_PS2_PCI | MACHINE_BUS_USB, // Machine has AMB
-        .flags     = MACHINE_IDE_DUAL | MACHINE_APM | MACHINE_USB,
+        .bus_flags = MACHINE_PS2_PCI | MACHINE_BUS_USB,
+        .flags     = MACHINE_IDE_DUAL | MACHINE_APM | MACHINE_USB | MACHINE_UART_PRI | MACHINE_UART_SEC | MACHINE_LPT_PRI,
         .ram       = {
             .min  = 4096,
             .max  = 524288,
@@ -19111,17 +20951,28 @@ const machine_t machines[] = {
         .kbc_params               = KBC_VEN_HOLTEK | 0x00004800,
         .nvr_device               = &nvr_at_device,
         .nvr_params               = NVR_AT,
-        .sio_device               = NULL,
-        .sio_params               = 0x00000000,
+        .sio_device               = &w83877_device,
+        .sio_params               = (uintptr_t) ((W83877F | W83877_3F0)),
         .kbc_p1                   = 0x00000cf0,
         .gpio                     = 0xffffffff,
         .gpio_acpi                = 0xffffffff,
-        .device                   = NULL,
+        .device                   = &validated_up_apic_board_device,
         .kbd_device               = NULL,
         .fdc_device               = NULL,
         .vid_device               = NULL,
         .snd_device               = NULL,
         .net_device               = NULL,
+        .pci_flags                = PCI_CONFIG_TYPE_1,
+        .slot_layout              = (const machine_slot_t[]) {
+            MSLOT_PCI(0x00, PCI_CARD_NORTHBRIDGE, 0, 0, 0, 0),
+            MSLOT_BRIDGE(0x01, PCI_CARD_SOUTHBRIDGE, 0, 0, 0, 0, machine_bus_isa),
+            MSLOT_PCI(0x09, PCI_CARD_NORMAL, 4, 1, 2, 3),
+            MSLOT_PCI(0x0A, PCI_CARD_NORMAL, 3, 4, 1, 2),
+            MSLOT_PCI(0x0B, PCI_CARD_NORMAL, 2, 3, 4, 1),
+            MSLOT_PCI(0x0C, PCI_CARD_NORMAL, 1, 2, 3, 4),
+            MSLOT_PCI(0x0D, PCI_CARD_NORMAL, 4, 1, 2, 3),
+            MSLOT_END
+        },
         .aliases                  = { "" }
     },*/
     /* According to tests from real hardware: This has AMI MegaKey KBC firmware on the
@@ -19149,7 +21000,7 @@ const machine_t machines[] = {
             .max_multi   = 3.0
         },
         .bus_flags = MACHINE_PS2_PCI | MACHINE_BUS_USB,
-        .flags     = MACHINE_IDE_DUAL | MACHINE_VIDEO | MACHINE_SOUND | MACHINE_GAMEPORT | MACHINE_APM | MACHINE_USB,
+        .flags     = MACHINE_IDE_DUAL | MACHINE_VIDEO | MACHINE_SOUND | MACHINE_GAMEPORT | MACHINE_APM | MACHINE_USB | MACHINE_UART_PRI | MACHINE_UART_SEC | MACHINE_LPT_PRI,
         .ram       = {
             .min  = 8192,
             .max  = 524288,
@@ -19162,8 +21013,8 @@ const machine_t machines[] = {
         .kbc_params               = 0x00000000,
         .nvr_device               = NULL,
         .nvr_params               = 0x00000000,
-        .sio_device               = NULL,
-        .sio_params               = 0x00000000,
+        .sio_device               = &pc87306_device,
+        .sio_params               = (uintptr_t) (PCX730X_AMI),
         .kbc_p1                   = 0x000044f0,
         .gpio                     = 0xffffffff,
         .gpio_acpi                = 0xffffffff,
@@ -19173,6 +21024,15 @@ const machine_t machines[] = {
         .vid_device               = &s3_virge_325_onboard_pci_device,
         .snd_device               = &ymf701_device,
         .net_device               = NULL,
+        .pci_flags                = PCI_CONFIG_TYPE_1,
+        .slot_layout              = (const machine_slot_t[]) {
+            MSLOT_PCI(0x00, PCI_CARD_NORTHBRIDGE, 0, 0, 0, 0),
+            MSLOT_PCI(0x08, PCI_CARD_VIDEO, 4, 0, 0, 0),
+            MSLOT_PCI(0x11, PCI_CARD_NORMAL, 1, 2, 3, 4),
+            MSLOT_PCI(0x13, PCI_CARD_NORMAL, 2, 3, 4, 1),
+            MSLOT_BRIDGE(0x07, PCI_CARD_SOUTHBRIDGE, 0, 0, 0, 0, machine_bus_isa),
+            MSLOT_END
+        },
         .aliases                  = { "HP Pavilion 74xx", "HP Ruby USB", "" }
     },
     /* OEM-only Intel CU430HX, has AMI MegaKey KBC firmware on the PC87306 Super I/O chip. */
@@ -19198,7 +21058,7 @@ const machine_t machines[] = {
             .max_multi   = 3.5
         },
         .bus_flags = MACHINE_PS2_PCI | MACHINE_BUS_USB,
-        .flags     = MACHINE_IDE_DUAL | MACHINE_SOUND | MACHINE_APM | MACHINE_USB | MACHINE_NIC, /* Machine has internal video: either ATI 3D Rage (Mach64GT) (not yet implemented) or 3D Rage II+ DVD (Mach64GT-B) */
+        .flags     = MACHINE_IDE_DUAL | MACHINE_SOUND | MACHINE_APM | MACHINE_USB | MACHINE_NIC | MACHINE_UART_PRI | MACHINE_UART_SEC | MACHINE_LPT_PRI, /* Machine has internal video: either ATI 3D Rage (Mach64GT) (not yet implemented) or 3D Rage II+ DVD (Mach64GT-B) */
         .ram       = {
             .min  = 8192,
             .max  = 524288,
@@ -19211,8 +21071,8 @@ const machine_t machines[] = {
         .kbc_params               = 0x00000000,
         .nvr_device               = NULL,
         .nvr_params               = 0x00000000,
-        .sio_device               = NULL,
-        .sio_params               = 0x00000000,
+        .sio_device               = &pc87306_device,
+        .sio_params               = (uintptr_t) (PCX730X_AMI),
         .kbc_p1                   = 0x000044f0,
         .gpio                     = 0xffffffff,
         .gpio_acpi                = 0xffffffff,
@@ -19222,6 +21082,18 @@ const machine_t machines[] = {
         .vid_device               = NULL,
         .snd_device               = &sb_vibra16c_onboard_device,
         .net_device               = &i82557b_onboard_device,
+        .pci_flags                = PCI_CONFIG_TYPE_1,
+        .slot_layout              = (const machine_slot_t[]) {
+            MSLOT_PCI(0x00, PCI_CARD_NORTHBRIDGE, 0, 0, 0, 0),
+            MSLOT_PCI(0x08, PCI_CARD_VIDEO, 4, 0, 0, 0), // ATI VGA Graphics
+            MSLOT_PCI(0x0C, PCI_CARD_NETWORK, 4, 0, 0, 0), // Intel 82557 Ethernet Network
+            MSLOT_PCI(0x11, PCI_CARD_NORMAL, 1, 2, 3, 4),
+            MSLOT_PCI(0x13, PCI_CARD_NORMAL, 2, 3, 4, 1),
+            MSLOT_PCI(0x0B, PCI_CARD_NORMAL, 3, 4, 1, 2),
+            MSLOT_BRIDGE(0x07, PCI_CARD_SOUTHBRIDGE, 0, 0, 0, 0, machine_bus_isa),
+            MSLOT_PCI(0x0A, PCI_CARD_NORMAL, 3, 0, 0, 0), // riser
+            MSLOT_END
+        },
         .aliases                  = { "Intel Cumberland", "Toshiba Equium 5xx0D", "NEC PowerMate V2xxx", "NEC PowerMate P2xxx", "" }
     },
     /* According to tests from real hardware: This has AMI MegaKey KBC firmware on the
@@ -19249,7 +21121,7 @@ const machine_t machines[] = {
             .max_multi   = 3.5
         },
         .bus_flags = MACHINE_PS2_PCI | MACHINE_BUS_USB,
-        .flags     = MACHINE_VIDEO | MACHINE_IDE_DUAL | MACHINE_APM | MACHINE_SOUND | MACHINE_GAMEPORT | MACHINE_USB,
+        .flags     = MACHINE_VIDEO | MACHINE_IDE_DUAL | MACHINE_APM | MACHINE_SOUND | MACHINE_GAMEPORT | MACHINE_USB | MACHINE_UART_PRI | MACHINE_UART_SEC | MACHINE_LPT_PRI,
         .ram       = {
             .min  = 8192,
             .max  = 524288,
@@ -19262,8 +21134,8 @@ const machine_t machines[] = {
         .kbc_params               = 0x00000000,
         .nvr_device               = NULL,
         .nvr_params               = 0x00000000,
-        .sio_device               = NULL,
-        .sio_params               = 0x00000000,
+        .sio_device               = &pc87306_device,
+        .sio_params               = (uintptr_t) (PCX730X_AMI),
         .kbc_p1                   = 0x000044f0,
         .gpio                     = 0xffffffff,
         .gpio_acpi                = 0xffffffff,
@@ -19273,6 +21145,17 @@ const machine_t machines[] = {
         .vid_device               = &s3_virge_375_onboard_pci_device,
         .snd_device               = &ymf701_device,
         .net_device               = NULL,
+        .pci_flags                = PCI_CONFIG_TYPE_1,
+        .slot_layout              = (const machine_slot_t[]) {
+            MSLOT_PCI(0x00, PCI_CARD_NORTHBRIDGE, 0, 0, 0, 0),
+            MSLOT_PCI(0x08, PCI_CARD_VIDEO, 4, 0, 0, 0),
+            MSLOT_PCI(0x0D, PCI_CARD_NORMAL, 1, 2, 3, 4),
+            MSLOT_PCI(0x0E, PCI_CARD_NORMAL, 2, 3, 4, 1),
+            MSLOT_PCI(0x0F, PCI_CARD_NORMAL, 3, 4, 1, 2),
+            MSLOT_PCI(0x10, PCI_CARD_NORMAL, 4, 1, 2, 3),
+            MSLOT_BRIDGE(0x07, PCI_CARD_SOUTHBRIDGE, 0, 0, 0, 0, ((const machine_slot_t[]) { MSLOT_BUS(SLOT_ISA16, 3), MSLOT_END })),
+            MSLOT_END
+        },
         .aliases                  = { "Intel Tucson", "Micron ClientPro MTA", "Micron Millennia LXA", "Toshiba Infinia 7xx1", "" }
     },
     /* Has a SM(S)C FDC37C935 Super I/O chip with on-chip KBC with Phoenix
@@ -19298,7 +21181,7 @@ const machine_t machines[] = {
             .max_multi   = 3.0
         },
         .bus_flags = MACHINE_PS2_PCI | MACHINE_BUS_USB,
-        .flags     = MACHINE_IDE_DUAL | MACHINE_APM | MACHINE_GAMEPORT | MACHINE_USB,
+        .flags     = MACHINE_IDE_DUAL | MACHINE_APM | MACHINE_GAMEPORT | MACHINE_USB | MACHINE_UART_PRI | MACHINE_UART_SEC | MACHINE_LPT_PRI,
         .ram       = {
             .min  = 4096,
             .max  = 524288,
@@ -19311,8 +21194,8 @@ const machine_t machines[] = {
         .kbc_params               = 0x00000000,
         .nvr_device               = NULL,
         .nvr_params               = 0x00000000,
-        .sio_device               = NULL,
-        .sio_params               = 0x00000000,
+        .sio_device               = &fdc37c93x_device,
+        .sio_params               = (uintptr_t) ((FDC37XXX5 | FDC37C93X_NORMAL)),
         .kbc_p1                   = 0x00000cf0,
         .gpio                     = 0xffffffff,
         .gpio_acpi                = 0xffffffff,
@@ -19322,6 +21205,16 @@ const machine_t machines[] = {
         .vid_device               = NULL,
         .snd_device               = NULL,
         .net_device               = NULL,
+        .pci_flags                = PCI_CONFIG_TYPE_1,
+        .slot_layout              = (const machine_slot_t[]) {
+            MSLOT_BRIDGE(0x07, PCI_CARD_SOUTHBRIDGE, 0, 0, 0, 0, ((const machine_slot_t[]) { MSLOT_BUS(SLOT_ISA16, 4), MSLOT_END })),
+            MSLOT_PCI(0x12, PCI_CARD_NORMAL, 4, 1, 2, 3),
+            MSLOT_PCI(0x11, PCI_CARD_NORMAL, 3, 4, 1, 2),
+            MSLOT_PCI(0x10, PCI_CARD_NORMAL, 2, 3, 4, 1),
+            MSLOT_PCI(0x0F, PCI_CARD_NORMAL, 1, 2, 3, 4),
+            MSLOT_PCI(0x00, PCI_CARD_NORTHBRIDGE, 0, 0, 0, 0),
+            MSLOT_END
+        },
         .aliases                  = { "" }
     },
     /* Unknown PS/2 KBC. */
@@ -19346,7 +21239,7 @@ const machine_t machines[] = {
             .max_multi   = 3.5
         },
         .bus_flags = MACHINE_PS2_PCI,
-        .flags     = MACHINE_IDE_DUAL,
+        .flags     = MACHINE_IDE_DUAL | MACHINE_UART_PRI | MACHINE_UART_SEC | MACHINE_LPT_PRI,
         .ram       = {
             .min  = 4096,
             .max  = 524288,
@@ -19359,8 +21252,8 @@ const machine_t machines[] = {
         .kbc_params               = KBC_VEN_AMI | 0x00005200, /* Guess. */
         .nvr_device               = &nvr_at_device,
         .nvr_params               = NVR_AT_ZERO_DEFAULT,
-        .sio_device               = NULL,
-        .sio_params               = 0x00000000,
+        .sio_device               = &i82091aa_device,
+        .sio_params               = (uintptr_t) (I82091AA_022),
         .kbc_p1                   = 0x000044f0,
         .gpio                     = 0xffffffff,
         .gpio_acpi                = 0xffffffff,
@@ -19370,6 +21263,16 @@ const machine_t machines[] = {
         .vid_device               = NULL,
         .snd_device               = NULL,
         .net_device               = NULL,
+        .pci_flags                = PCI_CONFIG_TYPE_1,
+        .slot_layout              = (const machine_slot_t[]) {
+            MSLOT_PCI(0x00, PCI_CARD_NORTHBRIDGE, 0, 0, 0, 0),
+            MSLOT_PCI(0x0D, PCI_CARD_NORMAL, 1, 2, 3, 4),
+            MSLOT_PCI(0x0E, PCI_CARD_NORMAL, 4, 1, 2, 3),
+            MSLOT_PCI(0x0F, PCI_CARD_NORMAL, 3, 4, 1, 2),
+            MSLOT_PCI(0x10, PCI_CARD_NORMAL, 2, 3, 4, 1),
+            MSLOT_BRIDGE(0x07, PCI_CARD_SOUTHBRIDGE, 0, 0, 0, 0, machine_bus_isa),
+            MSLOT_END
+        },
         .aliases                  = { "" }
     },
     /* According to tests from real hardware: This has AMI MegaKey KBC firmware on the
@@ -19398,7 +21301,7 @@ const machine_t machines[] = {
             .max_multi   = 3.0
         },
         .bus_flags = MACHINE_PS2_PCI,
-        .flags     = MACHINE_IDE_DUAL | MACHINE_APM | MACHINE_SOUND | MACHINE_GAMEPORT, /* Machine has internal video: ATI 3D Rage II (Mach64GT-B) (not yet implemented) */
+        .flags     = MACHINE_IDE_DUAL | MACHINE_APM | MACHINE_SOUND | MACHINE_GAMEPORT | MACHINE_UART_PRI | MACHINE_UART_SEC | MACHINE_LPT_PRI, /* Machine has internal video: ATI 3D Rage II (Mach64GT-B) (not yet implemented) */
         .ram       = {
             .min  = 8192,
             .max  = 524288,
@@ -19411,8 +21314,8 @@ const machine_t machines[] = {
         .kbc_params               = 0x00000000,
         .nvr_device               = NULL,
         .nvr_params               = 0x00000000,
-        .sio_device               = NULL,
-        .sio_params               = 0x00000000,
+        .sio_device               = &pc87306_device,
+        .sio_params               = (uintptr_t) (PCX730X_AMI),
         .kbc_p1                   = 0x000044f0,
         .gpio                     = 0xffffffff,
         .gpio_acpi                = 0xffffffff,
@@ -19422,6 +21325,17 @@ const machine_t machines[] = {
         .vid_device               = NULL,
         .snd_device               = &ymf701_device,
         .net_device               = NULL,
+        .pci_flags                = PCI_CONFIG_TYPE_1,
+        .slot_layout              = (const machine_slot_t[]) {
+            MSLOT_PCI(0x00, PCI_CARD_NORTHBRIDGE, 0, 0, 0, 0),
+            MSLOT_PCI(0x08, PCI_CARD_VIDEO, 4, 0, 0, 0),
+            MSLOT_PCI(0x0D, PCI_CARD_NORMAL, 1, 2, 3, 4),
+            MSLOT_PCI(0x0E, PCI_CARD_NORMAL, 2, 3, 4, 1),
+            MSLOT_PCI(0x0F, PCI_CARD_NORMAL, 3, 4, 1, 2),
+            MSLOT_PCI(0x10, PCI_CARD_NORMAL, 4, 1, 2, 3),
+            MSLOT_BRIDGE(0x07, PCI_CARD_SOUTHBRIDGE, 0, 0, 0, 0, machine_bus_isa),
+            MSLOT_END
+        },
         .aliases                  = { "Sony Vaio PCV-70", "Sony Vaio PCV-100", "Sony Vaio PCV-120", "Intel Agate", "Intel AG430HX", "" }
     },
     /* [TEST] The board doesn't seem to have a KBC at all, which probably means it's an on-chip one on the PC87306 SIO.
@@ -19447,7 +21361,7 @@ const machine_t machines[] = {
             .max_multi   = 3.0
         },
         .bus_flags = MACHINE_PS2_PCI | MACHINE_BUS_USB,
-        .flags     = MACHINE_IDE_DUAL | MACHINE_APM | MACHINE_USB,
+        .flags     = MACHINE_IDE_DUAL | MACHINE_APM | MACHINE_USB | MACHINE_UART_PRI | MACHINE_UART_SEC | MACHINE_LPT_PRI,
         .ram       = {
             .min  = 4096,
             .max  = 524288,
@@ -19460,8 +21374,8 @@ const machine_t machines[] = {
         .kbc_params               = 0x00000000,
         .nvr_device               = NULL,
         .nvr_params               = 0x00000000,
-        .sio_device               = NULL,
-        .sio_params               = 0x00000000,
+        .sio_device               = &pc87306_device,
+        .sio_params               = (uintptr_t) (PCX730X_AMI),
         .kbc_p1                   = 0x000044f0,
         .gpio                     = 0xffffffff,
         .gpio_acpi                = 0xffffffff,
@@ -19471,6 +21385,16 @@ const machine_t machines[] = {
         .vid_device               = NULL,
         .snd_device               = NULL,
         .net_device               = NULL,
+        .pci_flags                = PCI_CONFIG_TYPE_1,
+        .slot_layout              = (const machine_slot_t[]) {
+            MSLOT_PCI(0x00, PCI_CARD_NORTHBRIDGE, 0, 0, 0, 0),
+            MSLOT_PCI(0x12, PCI_CARD_NORMAL, 1, 2, 3, 4),
+            MSLOT_PCI(0x13, PCI_CARD_NORMAL, 4, 1, 2, 3),
+            MSLOT_PCI(0x14, PCI_CARD_NORMAL, 3, 4, 1, 2),
+            MSLOT_PCI(0x11, PCI_CARD_NORMAL, 2, 3, 4, 1),
+            MSLOT_BRIDGE(0x07, PCI_CARD_SOUTHBRIDGE, 0, 0, 0, 0, machine_bus_isa),
+            MSLOT_END
+        },
         .aliases                  = { "" }
     },
 
@@ -19497,7 +21421,7 @@ const machine_t machines[] = {
             .max_multi   = 3.0
         },
         .bus_flags = MACHINE_PS2_PCI | MACHINE_BUS_USB,
-        .flags     = MACHINE_IDE_DUAL | MACHINE_SCSI | MACHINE_APM | MACHINE_USB,
+        .flags     = MACHINE_IDE_DUAL | MACHINE_SCSI | MACHINE_APM | MACHINE_USB | MACHINE_UART_PRI | MACHINE_UART_SEC | MACHINE_LPT_PRI,
         .ram       = {
             .min  = 4096,
             .max  = 131072,
@@ -19510,8 +21434,8 @@ const machine_t machines[] = {
         .kbc_params               = KBC_VEN_VIA | 0x00424600,
         .nvr_device               = &nvr_at_device,
         .nvr_params               = NVR_AT,
-        .sio_device               = NULL,
-        .sio_params               = 0x00000000,
+        .sio_device               = &fdc37c6xx_device,
+        .sio_params               = (uintptr_t) (FDC37C665),
         .kbc_p1                   = 0x00000cf0,
         .gpio                     = 0xffffffff,
         .gpio_acpi                = 0xffffffff,
@@ -19522,6 +21446,20 @@ const machine_t machines[] = {
         .snd_device               = NULL,
         .net_device               = NULL,
         .scsi_device              = &ncr53c810_onboard_pci_device,
+        .pci_flags                = PCI_CONFIG_TYPE_1,
+        .slot_layout              = (const machine_slot_t[]) {
+            MSLOT_PCI(0x00, PCI_CARD_NORTHBRIDGE, 0, 0, 0, 0),
+            /* It seems there were plans for an on-board NCR 53C810 according to some clues
+               left in the manual, but were latter scrapped. The BIOS still support that
+               PCI device, though, so why not. */
+            MSLOT_PCI(0x06, PCI_CARD_SCSI, 1, 2, 3, 4),
+            MSLOT_PCI(0x09, PCI_CARD_NORMAL, 1, 2, 3, 4),
+            MSLOT_PCI(0x0A, PCI_CARD_NORMAL, 2, 3, 4, 1),
+            MSLOT_PCI(0x0B, PCI_CARD_NORMAL, 3, 4, 1, 2),
+            MSLOT_PCI(0x0C, PCI_CARD_NORMAL, 4, 1, 2, 3),
+            MSLOT_BRIDGE(0x07, PCI_CARD_SOUTHBRIDGE, 0, 0, 0, 0, machine_bus_isa),
+            MSLOT_END
+        },
         .aliases                  = { "" }
     },
     /* Has AMIKey H KBC firmware (AMIKey-2) on a BestKey KBC. */
@@ -19546,7 +21484,7 @@ const machine_t machines[] = {
             .max_multi   = 3.5
         },
         .bus_flags = MACHINE_PS2_PCI | MACHINE_BUS_USB, /* Machine has AMB */
-        .flags     = MACHINE_IDE_DUAL | MACHINE_APM | MACHINE_USB,
+        .flags     = MACHINE_IDE_DUAL | MACHINE_APM | MACHINE_USB | MACHINE_UART_PRI | MACHINE_UART_SEC | MACHINE_LPT_PRI,
         .ram       = {
             .min  = 4096,
             .max  = 131072,
@@ -19559,8 +21497,8 @@ const machine_t machines[] = {
         .kbc_params               = KBC_VEN_AMI | 0x00004800,
         .nvr_device               = &nvr_at_device,
         .nvr_params               = NVR_AT,
-        .sio_device               = NULL,
-        .sio_params               = 0x00000000,
+        .sio_device               = &w83877_device,
+        .sio_params               = (uintptr_t) ((W83877F | W83877_3F0)),
         .kbc_p1                   = 0x00000cf0,
         .gpio                     = 0xffffffff,
         .gpio_acpi                = 0xffffffff,
@@ -19570,6 +21508,16 @@ const machine_t machines[] = {
         .vid_device               = NULL,
         .snd_device               = NULL,
         .net_device               = NULL,
+        .pci_flags                = PCI_CONFIG_TYPE_1,
+        .slot_layout              = (const machine_slot_t[]) {
+            MSLOT_PCI(0x00, PCI_CARD_NORTHBRIDGE, 0, 0, 0, 0),
+            MSLOT_PCI(0x09, PCI_CARD_NORMAL, 4, 1, 2, 3),
+            MSLOT_PCI(0x0A, PCI_CARD_NORMAL, 3, 4, 1, 2),
+            MSLOT_PCI(0x0B, PCI_CARD_NORMAL, 2, 3, 4, 1),
+            MSLOT_PCI(0x0C, PCI_CARD_NORMAL, 1, 2, 3, 4),
+            MSLOT_BRIDGE(0x07, PCI_CARD_SOUTHBRIDGE, 0, 0, 0, 0, ((const machine_slot_t[]) { MSLOT_BUS(SLOT_ISA16, 3), MSLOT_END })),
+            MSLOT_END
+        },
         .aliases                  = { "" }
     },
     /* The BIOS does not send a single non-standard KBC command, so it must have a standard IBM
@@ -19595,7 +21543,7 @@ const machine_t machines[] = {
             .max_multi   = 3.5
         },
         .bus_flags = MACHINE_PS2_PCI | MACHINE_BUS_USB,
-        .flags     = MACHINE_IDE_DUAL | MACHINE_APM | MACHINE_USB,
+        .flags     = MACHINE_IDE_DUAL | MACHINE_APM | MACHINE_USB | MACHINE_UART_PRI | MACHINE_UART_SEC | MACHINE_LPT_PRI,
         .ram       = {
             .min  = 4096,
             .max  = 131072,
@@ -19608,7 +21556,7 @@ const machine_t machines[] = {
         .kbc_params               = KBC_VEN_AMI | 0x00004800, /* Guess. */
         .nvr_device               = &nvr_at_device,
         .nvr_params               = NVR_AT,
-        .sio_device               = NULL,
+        .sio_device               = &gm82c803c_device,
         .sio_params               = 0x00000000,
         .kbc_p1                   = 0x00000cf0,
         .gpio                     = 0xffffffff,
@@ -19619,6 +21567,15 @@ const machine_t machines[] = {
         .vid_device               = NULL,
         .snd_device               = NULL,
         .net_device               = NULL,
+        .pci_flags                = PCI_CONFIG_TYPE_1,
+        .slot_layout              = (const machine_slot_t[]) {
+            MSLOT_PCI(0x00, PCI_CARD_NORTHBRIDGE, 0, 0, 0, 0),
+            MSLOT_PCI(0x11, PCI_CARD_NORMAL, 1, 2, 3, 4),
+            MSLOT_PCI(0x12, PCI_CARD_NORMAL, 2, 3, 4, 1),
+            MSLOT_PCI(0x13, PCI_CARD_NORMAL, 3, 4, 1, 2),
+            MSLOT_BRIDGE(0x07, PCI_CARD_SOUTHBRIDGE, 0, 0, 0, 0, machine_bus_isa),
+            MSLOT_END
+        },
         .aliases                  = { "" }
     },
     /* Has a SM(S)C FDC37C935 Super I/O chip with on-chip KBC with Phoenix
@@ -19644,7 +21601,7 @@ const machine_t machines[] = {
             .max_multi   = 4.0
         },
         .bus_flags = MACHINE_PS2_PCI,
-        .flags     = MACHINE_VIDEO | MACHINE_IDE_DUAL | MACHINE_SOUND | MACHINE_APM,
+        .flags     = MACHINE_VIDEO | MACHINE_IDE_DUAL | MACHINE_SOUND | MACHINE_APM | MACHINE_UART_PRI | MACHINE_UART_SEC | MACHINE_LPT_PRI,
         .ram       = {
             .min  = 4096,
             .max  = 131072,
@@ -19657,8 +21614,8 @@ const machine_t machines[] = {
         .kbc_params               = 0x00000000,
         .nvr_device               = NULL,
         .nvr_params               = 0x00000000,
-        .sio_device               = NULL,
-        .sio_params               = 0x00000000,
+        .sio_device               = &fdc37c93x_device,
+        .sio_params               = (uintptr_t) ((FDC37XXX5 | FDC37C93X_NORMAL | FDC37XXXX_370)),
         .kbc_p1                   = 0x00000cf0,
         .gpio                     = 0xffffffff,
         .gpio_acpi                = 0xffffffff,
@@ -19668,6 +21625,15 @@ const machine_t machines[] = {
         .vid_device               = &s3_trio64v2dx_onboard_pci_device, /* Machine has also internal videos: either S3 Trio32/64/64V+ or S3 ViRGE DX/GX */
         .snd_device               = &cs4237b_device,
         .net_device               = NULL,
+        .pci_flags                = PCI_CONFIG_TYPE_1,
+        .slot_layout              = (const machine_slot_t[]) {
+            MSLOT_PCI(0x00, PCI_CARD_NORTHBRIDGE, 0, 0, 0, 0),
+            MSLOT_PCI(0x13, PCI_CARD_NORMAL, 2, 1, 3, 4),
+            MSLOT_PCI(0x11, PCI_CARD_NORMAL, 1, 3, 2, 4),
+            MSLOT_PCI(0x0b, PCI_CARD_VIDEO, 1, 2, 3, 4),
+            MSLOT_BRIDGE(0x07, PCI_CARD_SOUTHBRIDGE, 0, 0, 0, 0, machine_bus_isa),
+            MSLOT_END
+        },
         .aliases                  = { "AST 221630-xxx", "AST Bravo EL", "Packard Bell PB810", "Packard Bell PB820", "" }
     },
     /* [TEST] Has a VIA VT82C42N KBC. */
@@ -19692,7 +21658,7 @@ const machine_t machines[] = {
             .max_multi   = 3.0
         },
         .bus_flags = MACHINE_PS2_PCI | MACHINE_BUS_USB,
-        .flags     = MACHINE_IDE_DUAL | MACHINE_APM | MACHINE_USB,
+        .flags     = MACHINE_IDE_DUAL | MACHINE_APM | MACHINE_USB | MACHINE_UART_PRI | MACHINE_UART_SEC | MACHINE_LPT_PRI,
         .ram       = {
             .min  = 4096,
             .max  = 131072,
@@ -19705,7 +21671,7 @@ const machine_t machines[] = {
         .kbc_params               = KBC_VEN_VIA | 0x00424600,
         .nvr_device               = &nvr_at_device,
         .nvr_params               = NVR_AT,
-        .sio_device               = NULL,
+        .sio_device               = &um8669f_device,
         .sio_params               = 0x00000000,
         .kbc_p1                   = 0x00000cf0,
         .gpio                     = 0xffffffff,
@@ -19716,6 +21682,16 @@ const machine_t machines[] = {
         .vid_device               = NULL,
         .snd_device               = NULL,
         .net_device               = NULL,
+        .pci_flags                = PCI_CONFIG_TYPE_1,
+        .slot_layout              = (const machine_slot_t[]) {
+            MSLOT_PCI(0x00, PCI_CARD_NORTHBRIDGE, 0, 0, 0, 0),
+            MSLOT_BRIDGE(0x07, PCI_CARD_SOUTHBRIDGE, 0, 0, 0, 0, machine_bus_isa),
+            MSLOT_PCI(0x08, PCI_CARD_NORMAL, 1, 2, 3, 4),
+            MSLOT_PCI(0x09, PCI_CARD_NORMAL, 2, 3, 4, 1),
+            MSLOT_PCI(0x0A, PCI_CARD_NORMAL, 3, 4, 2, 1),
+            MSLOT_PCI(0x0B, PCI_CARD_NORMAL, 4, 3, 2, 1),
+            MSLOT_END
+        },
         .aliases                  = { "" }
     },
     /* Has a SM(S)C FDC37C932QF Super I/O chip with on-chip KBC with AMI
@@ -19741,7 +21717,7 @@ const machine_t machines[] = {
             .max_multi   = 3.5
         },
         .bus_flags = MACHINE_PS2_PCI,
-        .flags     = MACHINE_IDE_DUAL | MACHINE_VIDEO | MACHINE_SOUND | MACHINE_GAMEPORT | MACHINE_APM,
+        .flags     = MACHINE_IDE_DUAL | MACHINE_VIDEO | MACHINE_SOUND | MACHINE_GAMEPORT | MACHINE_APM | MACHINE_UART_PRI | MACHINE_UART_SEC | MACHINE_LPT_PRI,
         .ram       = {
             .min  = 16384,
             .max  = 65536,
@@ -19754,8 +21730,8 @@ const machine_t machines[] = {
         .kbc_params               = 0x00000000,
         .nvr_device               = NULL,
         .nvr_params               = 0x00000000,
-        .sio_device               = NULL,
-        .sio_params               = 0x00000000,
+        .sio_device               = &fdc37c93x_device,
+        .sio_params               = (uintptr_t) ((FDC37XXX2 | FDC37C93X_NORMAL)),
         .kbc_p1                   = 0x000044f0,
         .gpio                     = 0xffffffff,
         .gpio_acpi                = 0xffffffff,
@@ -19765,6 +21741,14 @@ const machine_t machines[] = {
         .vid_device               = &s3_trio64v2dx_onboard_pci_device,
         .snd_device               = &ess_1888_compaq_device,
         .net_device               = NULL,
+        .pci_flags                = PCI_CONFIG_TYPE_1 | FLAG_NO_BRIDGES,
+        .slot_layout              = (const machine_slot_t[]) {
+            MSLOT_PCI(0x00, PCI_CARD_NORTHBRIDGE, 0, 0, 0, 0),
+            MSLOT_BRIDGE(0x07, PCI_CARD_SOUTHBRIDGE, 1, 2, 3, 4, machine_bus_isa),
+            MSLOT_PCI(0x14, PCI_CARD_VIDEO, 3, 0, 0, 0),
+            MSLOT_PCI(0x13, PCI_CARD_NORMAL, 1, 2, 3, 4),
+            MSLOT_END
+        },
         .aliases                  = { "MiTAC/Trigon TITAN-M", "" }
     },
     /* Has a SM(S)C FDC37C931APM Super I/O chip with on-chip KBC with Compaq
@@ -19790,7 +21774,7 @@ const machine_t machines[] = {
             .max_multi   = 3.5
         },
         .bus_flags = MACHINE_PS2_PCI,
-        .flags     = MACHINE_IDE_DUAL | MACHINE_VIDEO | MACHINE_SOUND | MACHINE_GAMEPORT | MACHINE_APM,
+        .flags     = MACHINE_IDE_DUAL | MACHINE_VIDEO | MACHINE_SOUND | MACHINE_GAMEPORT | MACHINE_APM | MACHINE_UART_PRI | MACHINE_UART_SEC | MACHINE_LPT_PRI,
         .ram       = {
             .min  = 16384,
             .max  = 65536,
@@ -19803,8 +21787,8 @@ const machine_t machines[] = {
         .kbc_params               = 0x00000000,
         .nvr_device               = NULL,
         .nvr_params               = 0x00000000,
-        .sio_device               = NULL,
-        .sio_params               = 0x00000000,
+        .sio_device               = &fdc37c93x_device,
+        .sio_params               = (uintptr_t) ((FDC37XXX1 | FDC37C93X_APM)),
         .kbc_p1                   = 0x00000cf0,
         .gpio                     = 0xffffffff,
         .gpio_acpi                = 0xffffffff,
@@ -19814,6 +21798,14 @@ const machine_t machines[] = {
         .vid_device               = &s3_trio64v2dx_onboard_pci_device,
         .snd_device               = &ess_1887_device,
         .net_device               = NULL,
+        .pci_flags                = PCI_CONFIG_TYPE_1 | FLAG_NO_BRIDGES,
+        .slot_layout              = (const machine_slot_t[]) {
+            MSLOT_PCI(0x00, PCI_CARD_NORTHBRIDGE, 0, 0, 0, 0),
+            MSLOT_BRIDGE(0x07, PCI_CARD_SOUTHBRIDGE, 1, 2, 3, 4, machine_bus_isa),
+            MSLOT_PCI(0x14, PCI_CARD_VIDEO, 3, 0, 0, 0),
+            MSLOT_PCI(0x13, PCI_CARD_NORMAL, 1, 2, 3, 4),
+            MSLOT_END
+        },
         .aliases                  = { "MiTAC/Trigon SNIPER", "MiTAC/Trigon TITAN-R", "" }
     },
     /* Has a SM(S)C FDC37C932FR Super I/O chip with on-chip KBC with AMI
@@ -19840,7 +21832,7 @@ const machine_t machines[] = {
             .max_multi   = 3.5
         },
         .bus_flags = MACHINE_PS2_PCI | MACHINE_BUS_USB,
-        .flags     = MACHINE_IDE_DUAL | MACHINE_APM | MACHINE_USB, /* Machine has internal video: S3 Trio64V+ */
+        .flags     = MACHINE_IDE_DUAL | MACHINE_APM | MACHINE_USB | MACHINE_UART_PRI | MACHINE_UART_SEC | MACHINE_LPT_PRI, /* Machine has internal video: S3 Trio64V+ */
         .ram       = {
             .min  = 8192,
             .max  = 131072,
@@ -19853,8 +21845,8 @@ const machine_t machines[] = {
         .kbc_params               = 0x00000000,
         .nvr_device               = NULL,
         .nvr_params               = 0x00000000,
-        .sio_device               = NULL,
-        .sio_params               = 0x00000000,
+        .sio_device               = &fdc37c93x_device,
+        .sio_params               = (uintptr_t) ((FDC37XXX2 | FDC37C93X_FR)),
         .kbc_p1                   = 0x000044f0,
         .gpio                     = 0xffffffff,
         .gpio_acpi                = 0xffffffff,
@@ -19864,6 +21856,17 @@ const machine_t machines[] = {
         .vid_device               = NULL,
         .snd_device               = NULL,
         .net_device               = NULL,
+        .pci_flags                = PCI_CONFIG_TYPE_1,
+        .slot_layout              = (const machine_slot_t[]) {
+            MSLOT_PCI(0x00, PCI_CARD_NORTHBRIDGE, 0, 0, 0, 0),
+            MSLOT_PCI(0x08, PCI_CARD_VIDEO, 4, 0, 0, 0),
+            MSLOT_PCI(0x0D, PCI_CARD_NORMAL, 1, 2, 3, 4),
+            MSLOT_PCI(0x0E, PCI_CARD_NORMAL, 2, 3, 4, 1),
+            MSLOT_PCI(0x0F, PCI_CARD_NORMAL, 3, 4, 1, 2),
+            MSLOT_PCI(0x10, PCI_CARD_NORMAL, 4, 1, 2, 3),
+            MSLOT_BRIDGE(0x07, PCI_CARD_SOUTHBRIDGE, 0, 0, 0, 4, machine_bus_isa),
+            MSLOT_END
+        },
         .aliases                  = { "Intel Hannibal+", "" }
     },
     /* Has AMIKey H KBC firmware (AMIKey-2). */
@@ -19888,7 +21891,7 @@ const machine_t machines[] = {
             .max_multi   = 3.0
         },
         .bus_flags = MACHINE_PS2_PCI | MACHINE_BUS_USB,
-        .flags     = MACHINE_IDE_DUAL | MACHINE_APM | MACHINE_USB,
+        .flags     = MACHINE_IDE_DUAL | MACHINE_APM | MACHINE_USB | MACHINE_UART_PRI | MACHINE_UART_SEC | MACHINE_LPT_PRI,
         .ram       = {
             .min  = 4096,
             .max  = 131072,
@@ -19901,8 +21904,8 @@ const machine_t machines[] = {
         .kbc_params               = KBC_VEN_AMI | 0x00004800,
         .nvr_device               = &nvr_at_device,
         .nvr_params               = NVR_AT,
-        .sio_device               = NULL,
-        .sio_params               = 0x00000000,
+        .sio_device               = &w83877_device,
+        .sio_params               = (uintptr_t) ((W83877F | W83877_3F0)),
         .kbc_p1                   = 0x00000cf0,
         .gpio                     = 0xffffffff,
         .gpio_acpi                = 0xffffffff,
@@ -19912,6 +21915,16 @@ const machine_t machines[] = {
         .vid_device               = NULL,
         .snd_device               = NULL,
         .net_device               = NULL,
+        .pci_flags                = PCI_CONFIG_TYPE_1,
+        .slot_layout              = (const machine_slot_t[]) {
+            MSLOT_PCI(0x00, PCI_CARD_NORTHBRIDGE, 0, 0, 0, 0),
+            MSLOT_PCI(0x05, PCI_CARD_NORMAL, 1, 2, 3, 4),
+            MSLOT_PCI(0x06, PCI_CARD_NORMAL, 2, 3, 4, 1),
+            MSLOT_PCI(0x08, PCI_CARD_NORMAL, 3, 4, 1, 2),
+            MSLOT_PCI(0x09, PCI_CARD_NORMAL, 4, 1, 2, 3),
+            MSLOT_BRIDGE(0x07, PCI_CARD_SOUTHBRIDGE, 0, 0, 0, 4, ((const machine_slot_t[]) { MSLOT_BUS(SLOT_ISA16, 4), MSLOT_END })),
+            MSLOT_END
+        },
         .aliases                  = { "" }
     },
     /* Has a SM(S)C FDC37C932FR Super I/O chip with on-chip KBC with AMI
@@ -19937,7 +21950,7 @@ const machine_t machines[] = {
             .max_multi   = 3.0
         },
         .bus_flags = MACHINE_PS2_PCI | MACHINE_BUS_USB,
-        .flags     = MACHINE_IDE_DUAL | MACHINE_APM | MACHINE_USB,
+        .flags     = MACHINE_IDE_DUAL | MACHINE_APM | MACHINE_USB | MACHINE_UART_PRI | MACHINE_UART_SEC | MACHINE_LPT_PRI,
         .ram       = {
             .min  = 4096,
             .max  = 131072,
@@ -19950,8 +21963,8 @@ const machine_t machines[] = {
         .kbc_params               = 0x00000000,
         .nvr_device               = NULL,
         .nvr_params               = 0x00000000,
-        .sio_device               = NULL,
-        .sio_params               = 0x00000000,
+        .sio_device               = &fdc37c93x_device,
+        .sio_params               = (uintptr_t) ((FDC37XXX2 | FDC37C93X_FR)),
         .kbc_p1                   = 0x000044f0,
         .gpio                     = 0xffffffff,
         .gpio_acpi                = 0xffffffff,
@@ -19961,6 +21974,16 @@ const machine_t machines[] = {
         .vid_device               = NULL,
         .snd_device               = NULL,
         .net_device               = NULL,
+        .pci_flags                = PCI_CONFIG_TYPE_1,
+        .slot_layout              = (const machine_slot_t[]) {
+            MSLOT_PCI(0x00, PCI_CARD_NORTHBRIDGE, 0, 0, 0, 0),
+            MSLOT_PCI(0x08, PCI_CARD_NORMAL, 1, 2, 3, 4),
+            MSLOT_PCI(0x09, PCI_CARD_NORMAL, 2, 3, 4, 1),
+            MSLOT_PCI(0x0A, PCI_CARD_NORMAL, 3, 4, 1, 2),
+            MSLOT_PCI(0x0B, PCI_CARD_NORMAL, 4, 1, 2, 3),
+            MSLOT_BRIDGE(0x07, PCI_CARD_SOUTHBRIDGE, 0, 0, 0, 0, ((const machine_slot_t[]) { MSLOT_BUS(SLOT_ISA16, 4), MSLOT_END })),
+            MSLOT_END
+        },
         .aliases                  = { "" }
     },
     /* Has a SM(S)C FDC37C932FR Super I/O chip with on-chip KBC with AMI
@@ -19987,7 +22010,7 @@ const machine_t machines[] = {
             .max_multi   = 3.0
         },
         .bus_flags = MACHINE_PS2_PCI | MACHINE_BUS_USB,
-        .flags     = MACHINE_IDE_DUAL | MACHINE_SOUND | MACHINE_APM | MACHINE_GAMEPORT | MACHINE_USB, /* Machine has internal video: S3 Trio64V+ */
+        .flags     = MACHINE_IDE_DUAL | MACHINE_SOUND | MACHINE_APM | MACHINE_GAMEPORT | MACHINE_USB | MACHINE_UART_PRI | MACHINE_UART_SEC | MACHINE_LPT_PRI, /* Machine has internal video: S3 Trio64V+ */
         .ram       = {
             .min  = 8192,
             .max  = 131072,
@@ -20000,8 +22023,8 @@ const machine_t machines[] = {
         .kbc_params               = 0x00000000,
         .nvr_device               = NULL,
         .nvr_params               = 0x00000000,
-        .sio_device               = NULL,
-        .sio_params               = 0x00000000,
+        .sio_device               = &fdc37c93x_device,
+        .sio_params               = (uintptr_t) ((FDC37XXX2 | FDC37C93X_FR)),
         .kbc_p1                   = 0x000044f0,
         .gpio                     = 0xffffffff,
         .gpio_acpi                = 0xffffffff,
@@ -20011,6 +22034,17 @@ const machine_t machines[] = {
         .vid_device               = NULL,
         .snd_device               = &sb_vibra16c_onboard_device,
         .net_device               = NULL,
+        .pci_flags                = PCI_CONFIG_TYPE_1,
+        .slot_layout              = (const machine_slot_t[]) {
+            MSLOT_PCI(0x00, PCI_CARD_NORTHBRIDGE, 0, 0, 0, 0),
+            MSLOT_PCI(0x08, PCI_CARD_VIDEO, 4, 0, 0, 0),
+            MSLOT_PCI(0x0D, PCI_CARD_NORMAL, 1, 2, 3, 4),
+            MSLOT_PCI(0x0E, PCI_CARD_NORMAL, 2, 3, 4, 1),
+            MSLOT_PCI(0x0F, PCI_CARD_NORMAL, 3, 4, 1, 2),
+            MSLOT_PCI(0x10, PCI_CARD_NORMAL, 4, 1, 2, 3),
+            MSLOT_BRIDGE(0x07, PCI_CARD_SOUTHBRIDGE, 0, 0, 0, 4, machine_bus_isa),
+            MSLOT_END
+        },
         .aliases                  = { "Intel Tiger Eye", "Intel TE430VX", "" }
     },
     /* Has a SM(S)C FDC37C935 Super I/O chip with on-chip KBC with Phoenix
@@ -20036,7 +22070,7 @@ const machine_t machines[] = {
             .max_multi   = 3.5
         },
         .bus_flags = MACHINE_PS2_PCI,
-        .flags     = MACHINE_VIDEO | MACHINE_IDE_DUAL | MACHINE_APM,
+        .flags     = MACHINE_VIDEO | MACHINE_IDE_DUAL | MACHINE_APM | MACHINE_UART_PRI | MACHINE_UART_SEC | MACHINE_LPT_PRI,
         .ram       = {
             .min  = 8192,
             .max  = 131072,
@@ -20049,8 +22083,8 @@ const machine_t machines[] = {
         .kbc_params               = 0x00000000,
         .nvr_device               = NULL,
         .nvr_params               = 0x00000000,
-        .sio_device               = NULL,
-        .sio_params               = 0x00000000,
+        .sio_device               = &fdc37c93x_device,
+        .sio_params               = (uintptr_t) ((FDC37XXX5 | FDC37C93X_NORMAL | FDC37XXXX_370)),
         .kbc_p1                   = 0x00000cf0,
         .gpio                     = 0xffffffff,
         .gpio_acpi                = 0xffffffff,
@@ -20060,6 +22094,16 @@ const machine_t machines[] = {
         .vid_device               = &s3_trio64v2dx_onboard_pci_device,
         .snd_device               = NULL,
         .net_device               = NULL,
+        .pci_flags                = PCI_CONFIG_TYPE_1,
+        .slot_layout              = (const machine_slot_t[]) {
+            MSLOT_BRIDGE(0x07, PCI_CARD_SOUTHBRIDGE, 0, 0, 0, 0, machine_bus_isa),
+            MSLOT_PCI(0x14, PCI_CARD_VIDEO, 4, 0, 0, 0),
+            MSLOT_PCI(0x13, PCI_CARD_NORMAL, 1, 2, 3, 4),
+            MSLOT_PCI(0x12, PCI_CARD_NORMAL, 2, 3, 4, 1),
+            MSLOT_PCI(0x11, PCI_CARD_NORMAL, 3, 4, 1, 2),
+            MSLOT_PCI(0x00, PCI_CARD_NORTHBRIDGE, 0, 0, 0, 0),
+            MSLOT_END
+        },
         .aliases                  = { "" }
     },
     /* Has the AMIKey-2 ('H') KBC firmware. */
@@ -20084,7 +22128,7 @@ const machine_t machines[] = {
             .max_multi   = 4.0
         },
         .bus_flags = MACHINE_PS2_PCI,
-        .flags     = MACHINE_IDE_DUAL | MACHINE_APM,
+        .flags     = MACHINE_IDE_DUAL | MACHINE_APM | MACHINE_UART_PRI | MACHINE_UART_SEC | MACHINE_LPT_PRI,
         .ram       = {
             .min  = 8192,
             .max  = 131072,
@@ -20097,8 +22141,8 @@ const machine_t machines[] = {
         .kbc_params               = KBC_VEN_AMI | 0x00004800,
         .nvr_device               = &nvr_at_device,
         .nvr_params               = NVR_AT,
-        .sio_device               = NULL,
-        .sio_params               = 0x00000000,
+        .sio_device               = &w83877_device,
+        .sio_params               = (uintptr_t) ((W83877F | W83877_3F0)),
         .kbc_p1                   = 0x00000cf0,
         .gpio                     = 0xffffffff,
         .gpio_acpi                = 0xffffffff,
@@ -20108,6 +22152,16 @@ const machine_t machines[] = {
         .vid_device               = NULL,
         .snd_device               = NULL,
         .net_device               = NULL,
+        .pci_flags                = PCI_CONFIG_TYPE_1,
+        .slot_layout              = (const machine_slot_t[]) {
+            MSLOT_PCI(0x00, PCI_CARD_NORTHBRIDGE, 0, 0, 0, 0),
+            MSLOT_PCI(0x0D, PCI_CARD_NORMAL, 1, 2, 3, 4),
+            MSLOT_PCI(0x0E, PCI_CARD_NORMAL, 2, 3, 4, 1),
+            MSLOT_PCI(0x0F, PCI_CARD_NORMAL, 3, 4, 1, 2),
+            MSLOT_PCI(0x10, PCI_CARD_NORMAL, 4, 1, 2, 3),
+            MSLOT_BRIDGE(0x07, PCI_CARD_SOUTHBRIDGE, 0, 0, 0, 0, machine_bus_isa),
+            MSLOT_END
+        },
         .aliases                  = { "MSI MS-5136", "" }
     },
     /* According to tests from real hardware: This has AMI MegaKey KBC firmware on the
@@ -20135,7 +22189,7 @@ const machine_t machines[] = {
             .max_multi   = 3.0
         },
         .bus_flags = MACHINE_PS2_PCI | MACHINE_BUS_USB,
-        .flags     = MACHINE_VIDEO | MACHINE_IDE_DUAL | MACHINE_APM | MACHINE_USB,
+        .flags     = MACHINE_VIDEO | MACHINE_IDE_DUAL | MACHINE_APM | MACHINE_USB | MACHINE_UART_PRI | MACHINE_UART_SEC | MACHINE_LPT_PRI,
         .ram       = {
             .min  = 8192,
             .max  = 131072,
@@ -20148,8 +22202,8 @@ const machine_t machines[] = {
         .kbc_params               = 0x00000000,
         .nvr_device               = NULL,
         .nvr_params               = 0x00000000,
-        .sio_device               = NULL,
-        .sio_params               = 0x00000000,
+        .sio_device               = &pc87306_device,
+        .sio_params               = (uintptr_t) (PCX730X_AMI),
         .kbc_p1                   = 0x000044f0,
         .gpio                     = 0xffffffff,
         .gpio_acpi                = 0xffffffff,
@@ -20159,6 +22213,16 @@ const machine_t machines[] = {
         .vid_device               = &s3_trio64vplus_onboard_pci_device, /* Machine has also internal video: S3 ViRGE */
         .snd_device               = NULL, /* Machine has internal sound but it's unpopulated: Crystal CS4236-KQ */
         .net_device               = NULL,
+        .pci_flags                = PCI_CONFIG_TYPE_1,
+        .slot_layout              = (const machine_slot_t[]) {
+            MSLOT_PCI(0x00, PCI_CARD_NORTHBRIDGE, 0, 0, 0, 0),
+            MSLOT_PCI(0x08, PCI_CARD_VIDEO, 4, 0, 0, 0),
+            MSLOT_PCI(0x11, PCI_CARD_NORMAL, 1, 2, 3, 4),
+            MSLOT_PCI(0x13, PCI_CARD_NORMAL, 2, 3, 4, 1),
+            MSLOT_PCI(0x0B, PCI_CARD_NORMAL, 3, 4, 1, 2),
+            MSLOT_BRIDGE(0x07, PCI_CARD_SOUTHBRIDGE, 0, 0, 0, 0, machine_bus_isa),
+            MSLOT_END
+        },
         .aliases                  = { "Packard Bell Orlando", "Packard Bell 2D", "Packard Bell 3D", "Packard Bell MMX", "Packard Bell R501", "Intel NV430VX", "Intel Orlando", "Intel Tampa", "" }
     },
     /* This has the AMIKey 'H' firmware, possibly AMIKey-2. Photos show it with a BestKey, so it
@@ -20184,7 +22248,7 @@ const machine_t machines[] = {
             .max_multi   = 3.5
         },
         .bus_flags = MACHINE_PS2_PCI | MACHINE_BUS_USB,
-        .flags     = MACHINE_IDE_DUAL | MACHINE_APM | MACHINE_USB,
+        .flags     = MACHINE_IDE_DUAL | MACHINE_APM | MACHINE_USB | MACHINE_UART_PRI | MACHINE_UART_SEC | MACHINE_LPT_PRI,
         .ram       = {
             .min  = 4096,
             .max  = 131072,
@@ -20197,7 +22261,7 @@ const machine_t machines[] = {
         .kbc_params               = KBC_VEN_AMI | 0x00004800,
         .nvr_device               = &nvr_at_device,
         .nvr_params               = NVR_AT,
-        .sio_device               = NULL,
+        .sio_device               = &fdc37c669_device,
         .sio_params               = 0x00000000,
         .kbc_p1                   = 0x00000cf0,
         .gpio                     = 0xffffffff,
@@ -20208,6 +22272,16 @@ const machine_t machines[] = {
         .vid_device               = NULL,
         .snd_device               = NULL,
         .net_device               = NULL,
+        .pci_flags                = PCI_CONFIG_TYPE_1,
+        .slot_layout              = (const machine_slot_t[]) {
+            MSLOT_PCI(0x00, PCI_CARD_NORTHBRIDGE, 0, 0, 0, 0),
+            MSLOT_PCI(0x14, PCI_CARD_NORMAL, 1, 2, 3, 4),
+            MSLOT_PCI(0x13, PCI_CARD_NORMAL, 2, 3, 4, 1),
+            MSLOT_PCI(0x12, PCI_CARD_NORMAL, 3, 4, 1, 2),
+            MSLOT_PCI(0x11, PCI_CARD_NORMAL, 4, 1, 2, 3),
+            MSLOT_BRIDGE(0x07, PCI_CARD_SOUTHBRIDGE, 0, 0, 0, 0, machine_bus_isa),
+            MSLOT_END
+        },
         .aliases                  = { "Aristo AM-43xVX", "Shi-Tec Royal II", "" }
     },
     /* This has a Holtek KBC and the BIOS does not send a single non-standard KBC command, so it
@@ -20233,7 +22307,7 @@ const machine_t machines[] = {
             .max_multi   = 3.0
         },
         .bus_flags = MACHINE_PS2_PCI | MACHINE_BUS_USB,
-        .flags     = MACHINE_IDE_DUAL | MACHINE_GAMEPORT | MACHINE_APM | MACHINE_USB,
+        .flags     = MACHINE_IDE_DUAL | MACHINE_GAMEPORT | MACHINE_APM | MACHINE_USB | MACHINE_UART_PRI | MACHINE_UART_SEC | MACHINE_LPT_PRI,
         .ram       = {
             .min  = 4096,
             .max  = 131072,
@@ -20246,7 +22320,7 @@ const machine_t machines[] = {
         .kbc_params               = KBC_VEN_AMI | 0x00004800,
         .nvr_device               = &nvr_at_device,
         .nvr_params               = NVR_AT,
-        .sio_device               = NULL,
+        .sio_device               = &um8669f_device,
         .sio_params               = 0x00000000,
         .kbc_p1                   = 0x00000cf0,
         .gpio                     = 0xffffffff,
@@ -20257,6 +22331,16 @@ const machine_t machines[] = {
         .vid_device               = NULL,
         .snd_device               = NULL,
         .net_device               = NULL,
+        .pci_flags                = PCI_CONFIG_TYPE_1,
+        .slot_layout              = (const machine_slot_t[]) {
+            MSLOT_PCI(0x00, PCI_CARD_NORTHBRIDGE, 0, 0, 0, 0),
+            MSLOT_PCI(0x11, PCI_CARD_NORMAL, 2, 3, 4, 1),
+            MSLOT_PCI(0x12, PCI_CARD_NORMAL, 1, 2, 3, 4),
+            MSLOT_PCI(0x14, PCI_CARD_NORMAL, 3, 4, 1, 2),
+            MSLOT_PCI(0x13, PCI_CARD_NORMAL, 4, 1, 2, 3),
+            MSLOT_BRIDGE(0x07, PCI_CARD_SOUTHBRIDGE, 0, 0, 0, 0, ((const machine_slot_t[]) { MSLOT_BUS(SLOT_ISA16, 3), MSLOT_END })),
+            MSLOT_END
+        },
         .aliases                  = { "Award 430VX PCI", "" }
     },
 
@@ -20283,7 +22367,7 @@ const machine_t machines[] = {
             .max_multi   = 5.5
         },
         .bus_flags = MACHINE_PS2_PCI,
-        .flags     = MACHINE_IDE_DUAL | MACHINE_APM | MACHINE_ACPI | MACHINE_VIDEO | MACHINE_NIC,
+        .flags     = MACHINE_IDE_DUAL | MACHINE_APM | MACHINE_ACPI | MACHINE_VIDEO | MACHINE_NIC | MACHINE_UART_PRI | MACHINE_UART_SEC | MACHINE_LPT_PRI,
         .ram       = {
             .min  = 8192,
             .max  = 262144,
@@ -20296,8 +22380,8 @@ const machine_t machines[] = {
         .kbc_params               = 0x00000000,
         .nvr_device               = NULL,
         .nvr_params               = 0x00000000,
-        .sio_device               = NULL,
-        .sio_params               = 0x00000000,
+        .sio_device               = &w83977_device,
+        .sio_params               = (uintptr_t) ((W83977EF | W83977_AMI | W83977_NO_NVR)),
         .kbc_p1                   = 0x00000cf0,
         .gpio                     = 0xffffffff,
         .gpio_acpi                = 0xffffffff,
@@ -20307,6 +22391,18 @@ const machine_t machines[] = {
         .vid_device               = &chips_69000_onboard_device,
         .snd_device               = NULL,
         .net_device               = &i82559c_onboard_device,
+        .pci_flags                = PCI_CONFIG_TYPE_1,
+        .slot_layout              = (const machine_slot_t[]) {
+            MSLOT_PCI(0x00, PCI_CARD_NORTHBRIDGE, 0, 0, 0, 0),
+            MSLOT_PCI(0x0B, PCI_CARD_VIDEO, 3, 4, 1, 2), /* C&T B69000 */
+            MSLOT_PCI(0x0C, PCI_CARD_NETWORK, 4, 1, 2, 3), /* Intel 82559 */
+            MSLOT_PCI(0x11, PCI_CARD_NORMAL, 1, 2, 3, 4),
+            MSLOT_PCI(0x12, PCI_CARD_NORMAL, 4, 1, 2, 3),
+            MSLOT_PCI(0x13, PCI_CARD_NORMAL, 3, 4, 1, 2),
+            MSLOT_PCI(0x14, PCI_CARD_NORMAL, 2, 3, 4, 1),
+            MSLOT_BRIDGE(0x07, PCI_CARD_SOUTHBRIDGE, 0, 0, 0, 4, machine_bus_isa), /* PIIX4 */
+            MSLOT_END
+        },
         .aliases                  = { "ADLink NuPRO-590", "ADLink NuPRO-591", "ADLink NuPRO-592", "" }
     },
     /* This has a Holtek HT6542B with AMIKey-2 ('H') KBC firmware. */
@@ -20331,7 +22427,7 @@ const machine_t machines[] = {
             .max_multi   = 3.5
         },
         .bus_flags = MACHINE_PS2_PCI | MACHINE_BUS_USB,
-        .flags     = MACHINE_IDE_DUAL | MACHINE_APM | MACHINE_USB,
+        .flags     = MACHINE_IDE_DUAL | MACHINE_APM | MACHINE_USB | MACHINE_UART_PRI | MACHINE_UART_SEC | MACHINE_LPT_PRI,
         .ram       = {
             .min  = 8192,
             .max  = 262144,
@@ -20344,8 +22440,8 @@ const machine_t machines[] = {
         .kbc_params               = KBC_VEN_AMI | 0x00004600,
         .nvr_device               = NULL,
         .nvr_params               = 0x00000000,
-        .sio_device               = NULL,
-        .sio_params               = 0x00000000,
+        .sio_device               = &w83877_device,
+        .sio_params               = (uintptr_t) ((W83877TF | W83877_3F0)),
         .kbc_p1                   = 0x00000cf0,
         .gpio                     = 0xffffffff,
         .gpio_acpi                = 0xffffffff,
@@ -20355,6 +22451,18 @@ const machine_t machines[] = {
         .vid_device               = NULL,
         .snd_device               = NULL,
         .net_device               = NULL,
+        .pci_flags                = PCI_CONFIG_TYPE_1,
+        .slot_layout              = (const machine_slot_t[]) {
+            MSLOT_PCI(0x00, PCI_CARD_NORTHBRIDGE, 0, 0, 0, 0),
+            MSLOT_PCI(0x0C, PCI_CARD_NORMAL, 1, 2, 3, 4),
+            MSLOT_PCI(0x0B, PCI_CARD_NORMAL, 2, 3, 4, 1),
+            MSLOT_PCI(0x0A, PCI_CARD_NORMAL, 3, 4, 1, 2),
+            MSLOT_PCI(0x09, PCI_CARD_NORMAL, 4, 1, 2, 3),
+            MSLOT_BRIDGE(0x01, PCI_CARD_SOUTHBRIDGE, 1, 2, 3, 4, machine_bus_isa), /* PIIX4 */
+            MSLOT_PCI(0x0D, PCI_CARD_NORMAL, 1, 2, 3, 4),
+            MSLOT_PCI(0x08, PCI_CARD_NORMAL, 1, 2, 3, 4),
+            MSLOT_END
+        },
         .aliases                  = { "" }
     },
     /* The has a Holtek HT6542B with AMIKey-2 ('H') KBC firmware. */
@@ -20379,7 +22487,7 @@ const machine_t machines[] = {
             .max_multi   = 3.5
         },
         .bus_flags = MACHINE_PS2_PCI | MACHINE_BUS_USB,
-        .flags     = MACHINE_IDE_DUAL | MACHINE_APM | MACHINE_SOUND | MACHINE_USB,
+        .flags     = MACHINE_IDE_DUAL | MACHINE_APM | MACHINE_SOUND | MACHINE_USB | MACHINE_UART_PRI | MACHINE_UART_SEC | MACHINE_LPT_PRI,
         .ram       = {
             .min  = 4096,
             .max  = 262144,
@@ -20392,8 +22500,8 @@ const machine_t machines[] = {
         .kbc_params               = KBC_VEN_AMI | 0x00004600,
         .nvr_device               = NULL,
         .nvr_params               = 0x00000000,
-        .sio_device               = NULL,
-        .sio_params               = 0x00000000,
+        .sio_device               = &w83877_device,
+        .sio_params               = (uintptr_t) ((W83877F | W83877_3F0)),
         .kbc_p1                   = 0x00000cf0,
         .gpio                     = 0xffffffff,
         .gpio_acpi                = 0xffffffff,
@@ -20403,6 +22511,18 @@ const machine_t machines[] = {
         .vid_device               = NULL,
         .snd_device               = &sb_vibra16cl_onboard_device,
         .net_device               = NULL,
+        .pci_flags                = PCI_CONFIG_TYPE_1,
+        .slot_layout              = (const machine_slot_t[]) {
+            /* Four slots, as in the BIOS's $PIR table: slot 1 is device 0Ch, slot 4 is 09h.
+               Devices 08h and 0Dh are not slots -- the 0112 BIOS gives them no IRQ. */
+            MSLOT_PCI(0x00, PCI_CARD_NORTHBRIDGE, 0, 0, 0, 0),
+            MSLOT_PCI(0x0C, PCI_CARD_NORMAL, 1, 2, 3, 4),
+            MSLOT_PCI(0x0B, PCI_CARD_NORMAL, 2, 3, 4, 1),
+            MSLOT_PCI(0x0A, PCI_CARD_NORMAL, 3, 4, 1, 2),
+            MSLOT_PCI(0x09, PCI_CARD_NORMAL, 4, 1, 2, 3),
+            MSLOT_BRIDGE(0x01, PCI_CARD_SOUTHBRIDGE, 1, 2, 3, 4, machine_bus_isa),
+            MSLOT_END
+        },
         .aliases                  = { "" }
     },
     /* This has an unknown KBC. Based on EFA 430TX boards with the same or similar BIOS
@@ -20428,7 +22548,7 @@ const machine_t machines[] = {
             .max_multi   = 3.0
         },
         .bus_flags = MACHINE_PS2_PCI | MACHINE_BUS_USB,
-        .flags     = MACHINE_IDE_DUAL | MACHINE_APM | MACHINE_ACPI | MACHINE_USB,
+        .flags     = MACHINE_IDE_DUAL | MACHINE_APM | MACHINE_ACPI | MACHINE_USB | MACHINE_UART_PRI | MACHINE_UART_SEC | MACHINE_LPT_PRI,
         .ram       = {
             .min  = 4096,
             .max  = 262144,
@@ -20441,8 +22561,8 @@ const machine_t machines[] = {
         .kbc_params               = KBC_VEN_VIA | 0x00424600,
         .nvr_device               = NULL,
         .nvr_params               = 0x00000000,
-        .sio_device               = NULL,
-        .sio_params               = 0x00000000,
+        .sio_device               = &w83877_device,
+        .sio_params               = (uintptr_t) ((W83877F | W83877_3F0)),
         .kbc_p1                   = 0x00000cf0,
         .gpio                     = 0xffffffff,
         .gpio_acpi                = 0xffffffff,
@@ -20452,6 +22572,16 @@ const machine_t machines[] = {
         .vid_device               = NULL,
         .snd_device               = NULL,
         .net_device               = NULL,
+        .pci_flags                = PCI_CONFIG_TYPE_1,
+        .slot_layout              = (const machine_slot_t[]) {
+            MSLOT_PCI(0x00, PCI_CARD_NORTHBRIDGE, 0, 0, 0, 0),
+            MSLOT_PCI(0x11, PCI_CARD_NORMAL, 1, 2, 3, 4),
+            MSLOT_PCI(0x12, PCI_CARD_NORMAL, 2, 3, 4, 1),
+            MSLOT_PCI(0x13, PCI_CARD_NORMAL, 3, 4, 1, 2),
+            MSLOT_PCI(0x14, PCI_CARD_NORMAL, 4, 1, 2, 3),
+            MSLOT_BRIDGE(0x01, PCI_CARD_SOUTHBRIDGE, 1, 2, 3, 4, machine_bus_isa),
+            MSLOT_END
+        },
         .aliases                  = { "" }
     },
     /*
@@ -20484,7 +22614,7 @@ const machine_t machines[] = {
             .max_multi   = 3.5
         },
         .bus_flags = MACHINE_PS2_PCI,
-        .flags     = MACHINE_IDE_DUAL | MACHINE_APM | MACHINE_ACPI | MACHINE_VIDEO | MACHINE_SOUND, /* Machine has internal NIC: 3Com 3C905 (not yet implemented) */
+        .flags     = MACHINE_IDE_DUAL | MACHINE_APM | MACHINE_ACPI | MACHINE_VIDEO | MACHINE_SOUND | MACHINE_UART_PRI | MACHINE_UART_SEC | MACHINE_LPT_PRI, /* Machine has internal NIC: 3Com 3C905 (not yet implemented) */
         .ram       = {
             .min  = 8192,
             .max  = 262144,
@@ -20497,8 +22627,8 @@ const machine_t machines[] = {
         .kbc_params               = 0x00000000,
         .nvr_device               = NULL,
         .nvr_params               = 0x00000000,
-        .sio_device               = NULL,
-        .sio_params               = 0x00000000,
+        .sio_device               = &pc87307_device,
+        .sio_params               = (uintptr_t) ((PCX730X_PHOENIX_42 | PCX7307_PC87307)),
         .kbc_p1                   = 0x00000cf0,
         .gpio                     = 0xffffffff,
         .gpio_acpi                = 0xffffffff,
@@ -20509,6 +22639,17 @@ const machine_t machines[] = {
         .vid_device               = &s3_trio64v2dx_onboard_pci_device,
         .snd_device               = &sb_vibra16xv_onboard_device,
         .net_device               = NULL,
+        .pci_flags                = PCI_CONFIG_TYPE_1,
+        .slot_layout              = (const machine_slot_t[]) {
+            MSLOT_PCI(0x00, PCI_CARD_NORTHBRIDGE, 1, 2, 3, 4),
+            MSLOT_PCI(0x0E, PCI_CARD_NORMAL, 3, 4, 2, 1),
+            MSLOT_PCI(0x0D, PCI_CARD_NORMAL, 2, 1, 3, 4),
+            MSLOT_PCI(0x10, PCI_CARD_VIDEO, 4, 0, 0, 0), /* Trio64V2/GX, temporarily Trio64V2/DX is given */
+            MSLOT_PCI(0x11, PCI_CARD_NETWORK, 4, 0, 0, 0), /* 3C905, not yet emulated */
+            MSLOT_BRIDGE(0x07, PCI_CARD_SOUTHBRIDGE, 0, 0, 0, 4, machine_bus_isa),
+            MSLOT_BRIDGE(0x0F, PCI_CARD_BRIDGE, 0, 0, 0, 0, machine_bus_optiplex_riser),
+            MSLOT_END
+        },
         .aliases                  = { "Dell System Thredbo", "" }
     },
     /* [TEST] Has AMI Megakey '5' KBC firmware on the SM(S)C FDC37C67x Super I/O chip. */
@@ -20533,7 +22674,7 @@ const machine_t machines[] = {
             .max_multi   = 5.5
         },
         .bus_flags = MACHINE_PS2_PCI | MACHINE_BUS_USB,
-        .flags     = MACHINE_IDE_DUAL | MACHINE_APM | MACHINE_ACPI | MACHINE_VIDEO | MACHINE_SOUND | MACHINE_NIC | MACHINE_USB,
+        .flags     = MACHINE_IDE_DUAL | MACHINE_APM | MACHINE_ACPI | MACHINE_VIDEO | MACHINE_SOUND | MACHINE_NIC | MACHINE_USB | MACHINE_UART_PRI | MACHINE_UART_SEC | MACHINE_LPT_PRI,
         .ram       = {
             .min  = 8192,
             .max  = 262144,
@@ -20546,8 +22687,8 @@ const machine_t machines[] = {
         .kbc_params               = 0x00000000,
         .nvr_device               = NULL,
         .nvr_params               = 0x00000000,
-        .sio_device               = NULL,
-        .sio_params               = 0x00000000,
+        .sio_device               = &fdc37c67x_device,
+        .sio_params               = (uintptr_t) ((FDC37XXX2 | FDC37XXXX_370)),
         .kbc_p1                   = 0x000044f0,
         .gpio                     = 0xffffffff,
         .gpio_acpi                = 0xffffffff,
@@ -20557,6 +22698,17 @@ const machine_t machines[] = {
         .vid_device               = &s3_trio64v2dx_onboard_pci_device,
         .snd_device               = &cs4236b_onboard_device,
         .net_device               = &pcnet_am79c973_onboard_device,
+        .pci_flags                = PCI_CONFIG_TYPE_1,
+        .slot_layout              = (const machine_slot_t[]) {
+            MSLOT_PCI(0x00, PCI_CARD_NORTHBRIDGE, 0, 0, 0, 0),
+            MSLOT_BRIDGE(0x0F, PCI_CARD_SOUTHBRIDGE, 1, 2, 3, 4, machine_bus_isa), /* PIIX4 */
+            MSLOT_PCI(0x0D, PCI_CARD_VIDEO, 3, 0, 0, 0),
+            MSLOT_PCI(0x0E, PCI_CARD_NETWORK, 4, 0, 0, 0),
+            MSLOT_PCI(0x06, PCI_CARD_NORMAL, 1, 2, 3, 4),
+            MSLOT_PCI(0x07, PCI_CARD_NORMAL, 2, 3, 4, 1),
+            MSLOT_PCI(0x08, PCI_CARD_NORMAL, 3, 4, 1, 2),
+            MSLOT_END
+        },
         .aliases                  = { "Gateway Tomahawk", "Anigma SCI Pentium LPX", "" }
     },
     /* Has a National Semiconductor PC87307 Super I/O with on-chip KBC, which has one of these
@@ -20582,7 +22734,7 @@ const machine_t machines[] = {
             .max_multi   = 3.5
         },
         .bus_flags = MACHINE_PS2_PCI | MACHINE_BUS_USB,
-        .flags     = MACHINE_IDE_DUAL | MACHINE_APM | MACHINE_USB | MACHINE_VIDEO,
+        .flags     = MACHINE_IDE_DUAL | MACHINE_APM | MACHINE_USB | MACHINE_VIDEO | MACHINE_UART_PRI | MACHINE_UART_SEC | MACHINE_LPT_PRI,
         .ram       = {
             .min  = 8192,
             .max  = 262144,
@@ -20595,8 +22747,8 @@ const machine_t machines[] = {
         .kbc_params               = KBC_VEN_AMI | 0x00004600,
         .nvr_device               = NULL,
         .nvr_params               = 0x00000000,
-        .sio_device               = NULL,
-        .sio_params               = 0x00000000,
+        .sio_device               = &pc87307_device,
+        .sio_params               = (uintptr_t) ((PCX730X_AMI | PCX7307_PC87307 | PCX730X_02E)),
         .kbc_p1                   = 0x00000cf0,
         .gpio                     = 0xffffffff,
         .gpio_acpi                = 0xffffffff,
@@ -20606,6 +22758,17 @@ const machine_t machines[] = {
         .vid_device               = &mach64vt3_onboard_device, /* Machine has also internal video: ATI 3D Rage II+ DVD (Mach64GT-B) */
         .snd_device               = NULL,
         .net_device               = NULL,
+        .pci_flags                = PCI_CONFIG_TYPE_1,
+        .slot_layout              = (const machine_slot_t[]) {
+            MSLOT_PCI(0x00, PCI_CARD_NORTHBRIDGE, 1, 2, 3, 4),
+            MSLOT_BRIDGE(0x01, PCI_CARD_SOUTHBRIDGE, 1, 2, 3, 4, machine_bus_isa), /* PIIX4 */
+            MSLOT_PCI(0x09, PCI_CARD_NORMAL, 4, 1, 2, 3),
+            MSLOT_PCI(0x0A, PCI_CARD_NORMAL, 3, 4, 1, 2),
+            MSLOT_PCI(0x0B, PCI_CARD_NORMAL, 2, 3, 4, 1),
+            MSLOT_PCI(0x0C, PCI_CARD_NORMAL, 1, 2, 3, 4),
+            MSLOT_PCI(0x0D, PCI_CARD_VIDEO, 1, 0, 0, 0),
+            MSLOT_END
+        },
         .aliases                  = { "ASUS TX97-XV", "HP Arnold3", "" }
     },
     /* This has the Phoenix MultiKey KBC firmware on the NSC Super I/O chip. */
@@ -20631,7 +22794,7 @@ const machine_t machines[] = {
             .max_multi   = 3.5
         },
         .bus_flags = MACHINE_PS2_PCI,
-        .flags     = MACHINE_IDE_DUAL | MACHINE_VIDEO | MACHINE_APM | MACHINE_SOUND | MACHINE_GAMEPORT,
+        .flags     = MACHINE_IDE_DUAL | MACHINE_VIDEO | MACHINE_APM | MACHINE_SOUND | MACHINE_GAMEPORT | MACHINE_UART_PRI | MACHINE_UART_SEC | MACHINE_LPT_PRI,
         .ram       = {
             .min  = 8192,
             .max  = 262144,
@@ -20644,8 +22807,8 @@ const machine_t machines[] = {
         .kbc_params               = 0x00000000,
         .nvr_device               = NULL,
         .nvr_params               = 0x00000000,
-        .sio_device               = NULL,
-        .sio_params               = 0x00000000,
+        .sio_device               = &pc87307_device,
+        .sio_params               = (uintptr_t) ((PCX730X_PHOENIX_42I | PCX7307_PC97307)),
         .kbc_p1                   = 0x000044f0,
         .gpio                     = 0xffffffff,
         .gpio_acpi                = 0xffffffff,
@@ -20655,6 +22818,17 @@ const machine_t machines[] = {
         .vid_device               = &mach64gtb_onboard_device,
         .snd_device               = &ymf715_onboard_device,
         .net_device               = NULL,
+        .pci_flags                = PCI_CONFIG_TYPE_1,
+        .slot_layout              = (const machine_slot_t[]) {
+            MSLOT_PCI(0x00, PCI_CARD_NORTHBRIDGE, 0, 0, 0, 0),
+            MSLOT_BRIDGE(0x07, PCI_CARD_SOUTHBRIDGE, 0, 0, 0, 4, ((const machine_slot_t[]) { MSLOT_BUS(SLOT_ISA16, 3), MSLOT_END })), /* PIIX4 */
+            MSLOT_PCI(0x0D, PCI_CARD_NORMAL, 1, 2, 3, 4),
+            MSLOT_PCI(0x0E, PCI_CARD_NORMAL, 2, 3, 4, 1),
+            MSLOT_PCI(0x0F, PCI_CARD_NORMAL, 3, 4, 1, 2),
+            MSLOT_PCI(0x10, PCI_CARD_NORMAL, 4, 1, 2, 3),
+            MSLOT_PCI(0x08, PCI_CARD_VIDEO, 4, 0, 0, 0),
+            MSLOT_END
+        },
         .aliases                  = { "Intel Anchorage", "Micron Millennia MME", "Packard Bell PB79x", "Sony Vaio PCV-130", "Sony Vaio PCV-150", "" }
     },
     /* This has the Winbond W83977 Super I/O Chip with AMIKey-2 KBC firmware, which is type 'H'. */
@@ -20680,7 +22854,7 @@ const machine_t machines[] = {
             .max_multi   = 3.5
         },
         .bus_flags = MACHINE_PS2_PCI | MACHINE_BUS_USB,
-        .flags     = MACHINE_IDE_DUAL | MACHINE_APM | MACHINE_USB,
+        .flags     = MACHINE_IDE_DUAL | MACHINE_APM | MACHINE_USB | MACHINE_UART_PRI | MACHINE_UART_SEC | MACHINE_LPT_PRI,
         .ram       = {
             .min  = 4096,
             .max  = 262144,
@@ -20693,8 +22867,8 @@ const machine_t machines[] = {
         .kbc_params               = 0x00000000,
         .nvr_device               = NULL,
         .nvr_params               = 0x00000000,
-        .sio_device               = NULL,
-        .sio_params               = 0x00000000,
+        .sio_device               = &w83977_device,
+        .sio_params               = (uintptr_t) ((W83977TF | W83977_AMI | W83977_NO_NVR)),
         .kbc_p1                   = 0x00000cf0,
         .gpio                     = 0xffffffff,
         .gpio_acpi                = 0xffffffff,
@@ -20704,6 +22878,18 @@ const machine_t machines[] = {
         .vid_device               = NULL,
         .snd_device               = NULL,
         .net_device               = NULL,
+        .pci_flags                = PCI_CONFIG_TYPE_1,
+        .slot_layout              = (const machine_slot_t[]) {
+            MSLOT_PCI(0x00, PCI_CARD_NORTHBRIDGE, 0, 0, 0, 0),
+            MSLOT_PCI(0x0C, PCI_CARD_NORMAL, 1, 2, 3, 4),
+            MSLOT_PCI(0x0B, PCI_CARD_NORMAL, 2, 3, 4, 1),
+            MSLOT_PCI(0x0A, PCI_CARD_NORMAL, 3, 4, 1, 2),
+            MSLOT_PCI(0x09, PCI_CARD_NORMAL, 4, 1, 2, 3),
+            MSLOT_BRIDGE(0x01, PCI_CARD_SOUTHBRIDGE, 1, 2, 3, 4, machine_bus_isa), /* PIIX4 */
+            MSLOT_PCI(0x0D, PCI_CARD_NORMAL, 1, 2, 3, 4),
+            MSLOT_PCI(0x08, PCI_CARD_NORMAL, 1, 2, 3, 4),
+            MSLOT_END
+        },
         .aliases                  = { "Intel Yamamoto", "Intel TXP4", "" }
     },
     /*
@@ -20733,7 +22919,7 @@ const machine_t machines[] = {
             .max_multi   = 3.5
         },
         .bus_flags = MACHINE_PS2_PCI | MACHINE_BUS_USB,
-        .flags     = MACHINE_IDE_DUAL | MACHINE_APM | MACHINE_SOUND | MACHINE_GAMEPORT | MACHINE_USB,
+        .flags     = MACHINE_IDE_DUAL | MACHINE_APM | MACHINE_SOUND | MACHINE_GAMEPORT | MACHINE_USB | MACHINE_UART_PRI | MACHINE_UART_SEC | MACHINE_LPT_PRI,
         .ram       = {
             .min  = 8192,
             .max  = 262144,
@@ -20746,8 +22932,8 @@ const machine_t machines[] = {
         .kbc_params               = 0x00000000,
         .nvr_device               = NULL,
         .nvr_params               = 0x00000000,
-        .sio_device               = NULL,
-        .sio_params               = 0x00000000,
+        .sio_device               = &fdc37c93x_device,
+        .sio_params               = (uintptr_t) ((FDC37XXX5 | FDC37C93X_NORMAL | FDC37C93X_NO_NVR)),
         .kbc_p1                   = 0x00000cf0,
         .gpio                     = 0xffffffff,
         .gpio_acpi                = 0xffffffff,
@@ -20757,6 +22943,16 @@ const machine_t machines[] = {
         .vid_device               = NULL,
         .snd_device               = &ymf701_device,
         .net_device               = NULL,
+        .pci_flags                = PCI_CONFIG_TYPE_1,
+        .slot_layout              = (const machine_slot_t[]) {
+            MSLOT_PCI(0x00, PCI_CARD_NORTHBRIDGE, 0, 0, 0, 0),
+            MSLOT_BRIDGE(0x07, PCI_CARD_SOUTHBRIDGE, 0, 1, 2, 3, ((const machine_slot_t[]) { MSLOT_BUS(SLOT_ISA16, 4), MSLOT_END })), /* PIIX4 */
+            MSLOT_PCI(0x11, PCI_CARD_NORMAL, 0, 1, 2, 3),
+            MSLOT_PCI(0x12, PCI_CARD_NORMAL, 1, 2, 3, 0),
+            MSLOT_PCI(0x13, PCI_CARD_NORMAL, 2, 3, 0, 1),
+            MSLOT_PCI(0x14, PCI_CARD_NORMAL, 3, 0, 1, 2),
+            MSLOT_END
+        },
         .aliases                  = { "" }
     },
     /* Has a Winbond W83977TF Super I/O chip with on-chip KBC with AMIKey-2 KBC
@@ -20782,7 +22978,7 @@ const machine_t machines[] = {
             .max_multi   = 3.5
         },
         .bus_flags = MACHINE_PS2_PCI | MACHINE_BUS_USB,
-        .flags     = MACHINE_IDE_DUAL | MACHINE_APM | MACHINE_ACPI | MACHINE_USB,
+        .flags     = MACHINE_IDE_DUAL | MACHINE_APM | MACHINE_ACPI | MACHINE_USB | MACHINE_UART_PRI | MACHINE_UART_SEC | MACHINE_LPT_PRI,
         .ram       = {
             .min  = 4096,
             .max  = 262144,
@@ -20795,8 +22991,8 @@ const machine_t machines[] = {
         .kbc_params               = 0x00000000,
         .nvr_device               = NULL,
         .nvr_params               = 0x00000000,
-        .sio_device               = NULL,
-        .sio_params               = 0x00000000,
+        .sio_device               = &w83977_device,
+        .sio_params               = (uintptr_t) ((W83977TF | W83977_AMI | W83977_NO_NVR)),
         .kbc_p1                   = 0x00000cf0,
         .gpio                     = 0xffffffff,
         .gpio_acpi                = 0xffffffff,
@@ -20806,6 +23002,17 @@ const machine_t machines[] = {
         .vid_device               = NULL,
         .snd_device               = NULL,
         .net_device               = NULL,
+        .pci_flags                = PCI_CONFIG_TYPE_1,
+        .slot_layout              = (const machine_slot_t[]) {
+            MSLOT_PCI(0x00, PCI_CARD_NORTHBRIDGE, 0, 0, 0, 0),
+            MSLOT_PCI(0x0D, PCI_CARD_NORMAL, 1, 2, 3, 4),
+            MSLOT_PCI(0x0E, PCI_CARD_NORMAL, 2, 3, 4, 1),
+            MSLOT_PCI(0x0F, PCI_CARD_NORMAL, 3, 4, 1, 2),
+            MSLOT_PCI(0x10, PCI_CARD_NORMAL, 4, 1, 2, 3),
+            MSLOT_PCI(0x11, PCI_CARD_NORMAL, 1, 2, 3, 4),
+            MSLOT_BRIDGE(0x07, PCI_CARD_SOUTHBRIDGE, 0, 0, 0, 4, ((const machine_slot_t[]) { MSLOT_BUS(SLOT_ISA16, 3), MSLOT_END })), /* PIIX4 */
+            MSLOT_END
+        },
         .aliases                  = { "" }
     },
     /* Has a SM(S)C FDC37C67x Super I/O chip with on-chip KBC with Phoenix or
@@ -20832,7 +23039,7 @@ const machine_t machines[] = {
             .max_multi   = 3.5
         },
         .bus_flags = MACHINE_PS2_PCIONLY | MACHINE_BUS_USB,
-        .flags     = MACHINE_IDE_DUAL | MACHINE_APM | MACHINE_ACPI | MACHINE_SOUND | MACHINE_USB, /* Machine has internal video: Cirrus Logic CL-GD5465 (not yet implemented) */
+        .flags     = MACHINE_IDE_DUAL | MACHINE_APM | MACHINE_ACPI | MACHINE_SOUND | MACHINE_USB | MACHINE_UART_PRI | MACHINE_UART_SEC | MACHINE_LPT_PRI, /* Machine has internal video: Cirrus Logic CL-GD5465 (not yet implemented) */
         .ram       = {
             .min  = 8192,
             .max  = 262144,
@@ -20845,8 +23052,8 @@ const machine_t machines[] = {
         .kbc_params               = 0x00000000,
         .nvr_device               = NULL,
         .nvr_params               = 0x00000000,
-        .sio_device               = NULL,
-        .sio_params               = 0x00000000,
+        .sio_device               = &fdc37c67x_device,
+        .sio_params               = (uintptr_t) ((FDC37XXX5 | FDC37XXXX_370)),
         .kbc_p1                   = 0x000044f0,
         .gpio                     = 0xffffffff,
         .gpio_acpi                = 0xffffffff,
@@ -20856,6 +23063,16 @@ const machine_t machines[] = {
         .vid_device               = NULL,
         .snd_device               = &ymf715_onboard_device,
         .net_device               = NULL,  /* Machine is shipped with an optional standalone NIC: NEC PK-UG-X006 (Intel 82558B chip) */
+        .pci_flags                = PCI_CONFIG_TYPE_1,
+        .slot_layout              = (const machine_slot_t[]) {
+            MSLOT_PCI(0x00, PCI_CARD_NORTHBRIDGE, 0, 0, 0, 0),
+            MSLOT_PCI(0x14, PCI_CARD_NORMAL, 1, 2, 3, 4),
+            MSLOT_PCI(0x12, PCI_CARD_NORMAL, 2, 3, 4, 1),
+            MSLOT_PCI(0x0C, PCI_CARD_NORMAL, 1, 2, 3, 4),
+            MSLOT_BRIDGE(0x07, PCI_CARD_SOUTHBRIDGE, 1, 2, 3, 4, machine_bus_isa),
+            MSLOT_PCI(0x0B, PCI_CARD_VIDEO, 3, 4, 1, 2),
+            MSLOT_END
+        },
         .aliases                  = { "" }
     },
     /* The BIOS sends KBC command BB and expects it to output a byte, which is AMI KBC behavior.
@@ -20881,7 +23098,7 @@ const machine_t machines[] = {
             .max_multi   = 3.5
         },
         .bus_flags = MACHINE_PS2_PCI | MACHINE_BUS_USB,
-        .flags     = MACHINE_IDE_DUAL | MACHINE_APM | MACHINE_ACPI | MACHINE_USB,
+        .flags     = MACHINE_IDE_DUAL | MACHINE_APM | MACHINE_ACPI | MACHINE_USB | MACHINE_UART_PRI | MACHINE_UART_SEC | MACHINE_LPT_PRI,
         .ram       = {
             .min  = 4096,
             .max  = 262144,
@@ -20894,7 +23111,7 @@ const machine_t machines[] = {
         .kbc_params               = KBC_VEN_VIA | 0x00424600,
         .nvr_device               = NULL,
         .nvr_params               = 0x00000000,
-        .sio_device               = NULL,
+        .sio_device               = &um8669f_device,
         .sio_params               = 0x00000000,
         .kbc_p1                   = 0x00000cf0,
         .gpio                     = 0xffffffff,
@@ -20905,6 +23122,16 @@ const machine_t machines[] = {
         .vid_device               = NULL,
         .snd_device               = NULL,
         .net_device               = NULL,
+        .pci_flags                = PCI_CONFIG_TYPE_1,
+        .slot_layout              = (const machine_slot_t[]) {
+            MSLOT_PCI(0x00, PCI_CARD_NORTHBRIDGE, 0, 0, 0, 0),
+            MSLOT_PCI(0x14, PCI_CARD_NORMAL, 1, 2, 3, 4),
+            MSLOT_PCI(0x13, PCI_CARD_NORMAL, 2, 3, 4, 1),
+            MSLOT_PCI(0x12, PCI_CARD_NORMAL, 3, 4, 1, 2),
+            MSLOT_PCI(0x11, PCI_CARD_NORMAL, 4, 1, 2, 3),
+            MSLOT_BRIDGE(0x07, PCI_CARD_SOUTHBRIDGE, 1, 2, 3, 4, machine_bus_isa), /* PIIX4 */
+            MSLOT_END
+        },
         .aliases                  = { "Aristo AM-430TX", "" }
     },
     /* Award BIOS, PS2, EDO, SDRAM, 4 PCI, 4 ISA, VIA VT82C42N KBC */
@@ -20929,7 +23156,7 @@ const machine_t machines[] = {
             .max_multi   = 5.5
         },
         .bus_flags = MACHINE_PS2_PCI | MACHINE_BUS_USB,
-        .flags     = MACHINE_IDE_DUAL | MACHINE_APM | MACHINE_USB,
+        .flags     = MACHINE_IDE_DUAL | MACHINE_APM | MACHINE_USB | MACHINE_UART_PRI | MACHINE_UART_SEC | MACHINE_LPT_PRI,
         .ram       = {
             .min  = 4096,
             .max  = 262144,
@@ -20942,8 +23169,8 @@ const machine_t machines[] = {
         .kbc_params               = KBC_VEN_VIA | 0x00424600,
         .nvr_device               = NULL,
         .nvr_params               = 0x00000000,
-        .sio_device               = NULL,
-        .sio_params               = 0x00000000,
+        .sio_device               = &w83877_device,
+        .sio_params               = (uintptr_t) ((W83877F | W83877_3F0)),
         .kbc_p1                   = 0x00000cf0,
         .gpio                     = 0xffffffff,
         .gpio_acpi                = 0xffffffff,
@@ -20953,6 +23180,17 @@ const machine_t machines[] = {
         .vid_device               = NULL,
         .snd_device               = NULL,
         .net_device               = NULL,
+        .pci_flags                = PCI_CONFIG_TYPE_1,
+        .slot_layout              = (const machine_slot_t[]) {
+            MSLOT_PCI(0x00, PCI_CARD_NORTHBRIDGE, 0, 0, 0, 0),
+            MSLOT_PCI(0x11, PCI_CARD_NORMAL, 1, 2, 3, 4),
+            MSLOT_PCI(0x12, PCI_CARD_NORMAL, 2, 3, 4, 1),
+            MSLOT_PCI(0x13, PCI_CARD_NORMAL, 3, 4, 1, 2),
+            MSLOT_PCI(0x14, PCI_CARD_NORMAL, 4, 1, 2, 3),
+            MSLOT_BRIDGE(0x07, PCI_CARD_SOUTHBRIDGE, 1, 2, 3, 4, machine_bus_isa), /* PIIX4 */
+            MSLOT_PCI(0x10, PCI_CARD_NORMAL, 1, 2, 3, 4),
+            MSLOT_END
+        },
         .aliases                  = { "Soltek SL-56A2", "" }
     },
     /* [TEST] Has AMIKey 'H' KBC firmware on the Winbond W83967 Super I/O chip. */
@@ -20977,7 +23215,7 @@ const machine_t machines[] = {
             .max_multi   = 3.5
         },
         .bus_flags = MACHINE_PS2_PCI | MACHINE_BUS_USB,
-        .flags     = MACHINE_IDE_DUAL | MACHINE_APM | MACHINE_ACPI | MACHINE_USB,
+        .flags     = MACHINE_IDE_DUAL | MACHINE_APM | MACHINE_ACPI | MACHINE_USB | MACHINE_UART_PRI | MACHINE_UART_SEC | MACHINE_LPT_PRI,
         .ram       = {
             .min  = 4096,
             .max  = 262144,
@@ -20990,8 +23228,8 @@ const machine_t machines[] = {
         .kbc_params               = 0x00000000,
         .nvr_device               = NULL,
         .nvr_params               = 0x00000000,
-        .sio_device               = NULL,
-        .sio_params               = 0x00000000,
+        .sio_device               = &w83977_device,
+        .sio_params               = (uintptr_t) ((W83977F | W83977_AMI | W83977_NO_NVR)),
         .kbc_p1                   = 0x00000cf0,
         .gpio                     = 0xffffffff,
         .gpio_acpi                = 0xffffffff,
@@ -21001,6 +23239,16 @@ const machine_t machines[] = {
         .vid_device               = NULL,
         .snd_device               = NULL,
         .net_device               = NULL,
+        .pci_flags                = PCI_CONFIG_TYPE_1,
+        .slot_layout              = (const machine_slot_t[]) {
+            MSLOT_PCI(0x00, PCI_CARD_NORTHBRIDGE, 0, 0, 0, 0),
+            MSLOT_BRIDGE(0x07, PCI_CARD_SOUTHBRIDGE, 1, 2, 3, 4, ((const machine_slot_t[]) { MSLOT_BUS(SLOT_ISA16, 4), MSLOT_END })), /* PIIX4 */
+            MSLOT_PCI(0x11, PCI_CARD_NORMAL, 1, 2, 3, 4),
+            MSLOT_PCI(0x12, PCI_CARD_NORMAL, 2, 3, 4, 1),
+            MSLOT_PCI(0x13, PCI_CARD_NORMAL, 3, 4, 1, 2),
+            MSLOT_PCI(0x14, PCI_CARD_NORMAL, 4, 1, 2, 3),
+            MSLOT_END
+        },
         .aliases                  = { "" }
     },
     /* [TEST] Has AMIKey 'H' KBC firmware. */
@@ -21025,7 +23273,7 @@ const machine_t machines[] = {
             .max_multi   = 3.5
         },
         .bus_flags = MACHINE_PS2_PCI | MACHINE_BUS_USB,
-        .flags     = MACHINE_IDE_DUAL | MACHINE_APM | MACHINE_ACPI | MACHINE_USB,
+        .flags     = MACHINE_IDE_DUAL | MACHINE_APM | MACHINE_ACPI | MACHINE_USB | MACHINE_UART_PRI | MACHINE_UART_SEC | MACHINE_LPT_PRI,
         .ram       = {
             .min  = 8192,
             .max  = 262144,
@@ -21038,7 +23286,7 @@ const machine_t machines[] = {
         .kbc_params               = 0x00000000,
         .nvr_device               = NULL,
         .nvr_params               = 0x00000000,
-        .sio_device               = NULL,
+        .sio_device               = &it8671f_device,
         .sio_params               = 0x00000000,
         .kbc_p1                   = 0x00000cf0,
         .gpio                     = 0xffffffff,
@@ -21049,6 +23297,16 @@ const machine_t machines[] = {
         .vid_device               = NULL,
         .snd_device               = NULL,
         .net_device               = NULL,
+        .pci_flags                = PCI_CONFIG_TYPE_1,
+        .slot_layout              = (const machine_slot_t[]) {
+            MSLOT_PCI(0x00, PCI_CARD_NORTHBRIDGE, 0, 0, 0, 0),
+            MSLOT_BRIDGE(0x07, PCI_CARD_SOUTHBRIDGE, 1, 2, 3, 4, machine_bus_isa), /* PIIX4 */
+            MSLOT_PCI(0x11, PCI_CARD_NORMAL, 1, 2, 3, 4),
+            MSLOT_PCI(0x12, PCI_CARD_NORMAL, 2, 3, 4, 1),
+            MSLOT_PCI(0x13, PCI_CARD_NORMAL, 3, 4, 1, 2),
+            MSLOT_PCI(0x14, PCI_CARD_NORMAL, 4, 1, 2, 3),
+            MSLOT_END
+        },
         .aliases                  = { "TriGem Richmond", "" }
     },
 
@@ -21075,7 +23333,7 @@ const machine_t machines[] = {
             .max_multi   = 3.0
         },
         .bus_flags = MACHINE_PS2_PCI | MACHINE_BUS_USB,
-        .flags     = MACHINE_IDE_DUAL | MACHINE_APM | MACHINE_USB,
+        .flags     = MACHINE_IDE_DUAL | MACHINE_APM | MACHINE_USB | MACHINE_UART_PRI | MACHINE_UART_SEC | MACHINE_LPT_PRI,
         .ram       = {
             .min  = 8192,
             .max  = 262144,
@@ -21088,8 +23346,8 @@ const machine_t machines[] = {
         .kbc_params               = 0x00000000,
         .nvr_device               = NULL,
         .nvr_params               = 0x00000000,
-        .sio_device               = NULL,
-        .sio_params               = 0x00000000,
+        .sio_device               = &fdc37c669_device,
+        .sio_params               = (uintptr_t) (FDC37C6XX_370),
         .kbc_p1                   = 0x00000cf0,
         .gpio                     = 0xffffffff,
         .gpio_acpi                = 0xffffffff,
@@ -21099,6 +23357,16 @@ const machine_t machines[] = {
         .vid_device               = NULL,
         .snd_device               = NULL,
         .net_device               = NULL,
+        .pci_flags                = PCI_CONFIG_TYPE_1 | FLAG_TRC_CONTROLS_CPURST,
+        .slot_layout              = (const machine_slot_t[]) {
+            MSLOT_PCI(0x00, PCI_CARD_NORTHBRIDGE, 0, 0, 0, 0),
+            MSLOT_BRIDGE(0x01, PCI_CARD_SOUTHBRIDGE, 1, 2, 3, 4, machine_bus_isa),
+            MSLOT_PCI(0x0D, PCI_CARD_NORMAL, 1, 2, 3, 4),
+            MSLOT_PCI(0x0B, PCI_CARD_NORMAL, 2, 3, 4, 1),
+            MSLOT_PCI(0x0F, PCI_CARD_NORMAL, 3, 4, 1, 2),
+            MSLOT_PCI(0x07, PCI_CARD_NORMAL, 4, 1, 2, 3),
+            MSLOT_END
+        },
         .aliases                  = { "Daewoo CB52X-SI", "Daewoo CD525", "Daewoo CT501", "Daewoo CT520", "" }
     },
     /* Has the SiS 5571 chipset with on-chip KBC. */
@@ -21123,7 +23391,7 @@ const machine_t machines[] = {
             .max_multi   = 3.0
         },
         .bus_flags = MACHINE_PS2_PCI | MACHINE_BUS_USB,
-        .flags     = MACHINE_IDE_DUAL | MACHINE_APM | MACHINE_GAMEPORT | MACHINE_USB,
+        .flags     = MACHINE_IDE_DUAL | MACHINE_APM | MACHINE_GAMEPORT | MACHINE_USB | MACHINE_UART_PRI | MACHINE_UART_SEC | MACHINE_LPT_PRI,
         .ram       = {
             .min  = 8192,
             .max  = 262144,
@@ -21136,8 +23404,8 @@ const machine_t machines[] = {
         .kbc_params               = 0x00000000,
         .nvr_device               = NULL,
         .nvr_params               = 0x00000000,
-        .sio_device               = NULL,
-        .sio_params               = 0x00000000,
+        .sio_device               = &w83877_device,
+        .sio_params               = (uintptr_t) ((W83877F | W83877_3F0)),
         .kbc_p1                   = 0x00000cf0,
         .gpio                     = 0xffffffff,
         .gpio_acpi                = 0xffffffff,
@@ -21147,6 +23415,16 @@ const machine_t machines[] = {
         .vid_device               = NULL,
         .snd_device               = NULL,
         .net_device               = NULL,
+        .pci_flags                = PCI_CONFIG_TYPE_1 | FLAG_TRC_CONTROLS_CPURST,
+        .slot_layout              = (const machine_slot_t[]) {
+            MSLOT_PCI(0x00, PCI_CARD_NORTHBRIDGE, 0, 0, 0, 0),
+            MSLOT_BRIDGE(0x01, PCI_CARD_SOUTHBRIDGE, 1, 2, 3, 4, ((const machine_slot_t[]) { MSLOT_BUS(SLOT_ISA16, 4), MSLOT_END })),
+            MSLOT_PCI(0x0D, PCI_CARD_NORMAL, 1, 2, 3, 4),
+            MSLOT_PCI(0x0E, PCI_CARD_NORMAL, 2, 3, 4, 1),
+            MSLOT_PCI(0x0F, PCI_CARD_NORMAL, 3, 4, 1, 2),
+            MSLOT_PCI(0x10, PCI_CARD_NORMAL, 4, 1, 2, 3),
+            MSLOT_END
+        },
         .aliases                  = { "" }
     },
     /* Has the SiS 5571 chipset with on-chip KBC. */
@@ -21171,7 +23449,7 @@ const machine_t machines[] = {
             .max_multi   = 3.0
         },
         .bus_flags = MACHINE_PS2_PCI | MACHINE_BUS_USB,
-        .flags     = MACHINE_IDE_DUAL | MACHINE_APM | MACHINE_USB,
+        .flags     = MACHINE_IDE_DUAL | MACHINE_APM | MACHINE_USB | MACHINE_UART_PRI | MACHINE_UART_SEC | MACHINE_LPT_PRI,
         .ram       = {
             .min  = 8192,
             .max  = 393216,
@@ -21184,8 +23462,8 @@ const machine_t machines[] = {
         .kbc_params               = 0x00000000,
         .nvr_device               = NULL,
         .nvr_params               = 0x00000000,
-        .sio_device               = NULL,
-        .sio_params               = 0x00000000,
+        .sio_device               = &w83877_device,
+        .sio_params               = (uintptr_t) ((W83877F | W83877_3F0)),
         .kbc_p1                   = 0x00000cf0,
         .gpio                     = 0xffffffff,
         .gpio_acpi                = 0xffffffff,
@@ -21195,6 +23473,16 @@ const machine_t machines[] = {
         .vid_device               = NULL,
         .snd_device               = NULL,
         .net_device               = NULL,
+        .pci_flags                = PCI_CONFIG_TYPE_1 | FLAG_TRC_CONTROLS_CPURST,
+        .slot_layout              = (const machine_slot_t[]) {
+            MSLOT_PCI(0x00, PCI_CARD_NORTHBRIDGE, 0, 0, 0, 0),
+            MSLOT_BRIDGE(0x01, PCI_CARD_SOUTHBRIDGE, 1, 2, 3, 4, ((const machine_slot_t[]) { MSLOT_BUS(SLOT_ISA16, 4), MSLOT_END })),
+            MSLOT_PCI(0x0B, PCI_CARD_NORMAL, 1, 2, 3, 4),
+            MSLOT_PCI(0x0D, PCI_CARD_NORMAL, 2, 3, 4, 1),
+            MSLOT_PCI(0x0F, PCI_CARD_NORMAL, 3, 4, 1, 2),
+            MSLOT_PCI(0x11, PCI_CARD_NORMAL, 4, 1, 2, 3),
+            MSLOT_END
+        },
         .aliases                  = { "" }
     },
 
@@ -21221,7 +23509,7 @@ const machine_t machines[] = {
             .max_multi   = 3.0
         },
         .bus_flags = MACHINE_PS2_PCI | MACHINE_BUS_USB,
-        .flags     = MACHINE_IDE_DUAL | MACHINE_APM | MACHINE_USB,
+        .flags     = MACHINE_IDE_DUAL | MACHINE_APM | MACHINE_USB | MACHINE_UART_PRI | MACHINE_UART_SEC | MACHINE_LPT_PRI,
         .ram       = {
             .min  = 8192,
             .max  = 1572864,
@@ -21234,8 +23522,8 @@ const machine_t machines[] = {
         .kbc_params               = 0x00000000,
         .nvr_device               = NULL,
         .nvr_params               = 0x00000000,
-        .sio_device               = NULL,
-        .sio_params               = 0x00000000,
+        .sio_device               = &w83877_device,
+        .sio_params               = (uintptr_t) ((W83877F | W83877_3F0)),
         .kbc_p1                   = 0x00000cf0,
         .gpio                     = 0xffffffff,
         .gpio_acpi                = 0xffffffff,
@@ -21245,6 +23533,17 @@ const machine_t machines[] = {
         .vid_device               = NULL,
         .snd_device               = NULL,
         .net_device               = NULL,
+        .pci_flags                = PCI_CONFIG_TYPE_1 | FLAG_TRC_CONTROLS_CPURST,
+        .slot_layout              = (const machine_slot_t[]) {
+            MSLOT_PCI(0x00, PCI_CARD_NORTHBRIDGE, 0, 0, 0, 0),
+            MSLOT_BRIDGE(0x01, PCI_CARD_SOUTHBRIDGE, 0, 0, 0, 0, ((const machine_slot_t[]) { MSLOT_BUS(SLOT_ISA16, 4), MSLOT_END })),
+            MSLOT_PCI(0x0C, PCI_CARD_NORMAL, 1, 2, 3, 4),
+            MSLOT_PCI(0x0B, PCI_CARD_NORMAL, 2, 3, 4, 1),
+            MSLOT_PCI(0x0A, PCI_CARD_NORMAL, 3, 4, 1, 2),
+            MSLOT_PCI(0x09, PCI_CARD_NORMAL, 4, 1, 2, 3),
+            MSLOT_PCI(0x13, PCI_CARD_VIDEO, 1, 2, 3, 4), /* On-chip SiS graphics, absent here. */
+            MSLOT_END
+        },
         .aliases                  = { "" }
     },
     /* Has the SiS 5581 chipset with on-chip KBC. */
@@ -21269,7 +23568,7 @@ const machine_t machines[] = {
             .max_multi   = 3.0
         },
         .bus_flags = MACHINE_PS2_PCI | MACHINE_BUS_USB,
-        .flags     = MACHINE_IDE_DUAL | MACHINE_APM | MACHINE_USB,
+        .flags     = MACHINE_IDE_DUAL | MACHINE_APM | MACHINE_USB | MACHINE_UART_PRI | MACHINE_UART_SEC | MACHINE_LPT_PRI,
         .ram       = {
             .min  = 8192,
             .max  = 1572864,
@@ -21282,8 +23581,8 @@ const machine_t machines[] = {
         .kbc_params               = 0x00000000,
         .nvr_device               = NULL,
         .nvr_params               = 0x00000000,
-        .sio_device               = NULL,
-        .sio_params               = 0x00000000,
+        .sio_device               = &w83877_device,
+        .sio_params               = (uintptr_t) ((W83877TF | W83877_3F0)),
         .kbc_p1                   = 0x00000cf0,
         .gpio                     = 0xffffffff,
         .gpio_acpi                = 0xffffffff,
@@ -21293,6 +23592,15 @@ const machine_t machines[] = {
         .vid_device               = NULL,
         .snd_device               = NULL,
         .net_device               = NULL,
+        .pci_flags                = PCI_CONFIG_TYPE_1 | FLAG_TRC_CONTROLS_CPURST,
+        .slot_layout              = (const machine_slot_t[]) {
+            MSLOT_PCI(0x00, PCI_CARD_NORTHBRIDGE, 0, 0, 0, 0),
+            MSLOT_BRIDGE(0x01, PCI_CARD_SOUTHBRIDGE, 0, 0, 0, 0, machine_bus_isa),
+            MSLOT_PCI(0x0D, PCI_CARD_NORMAL, 3, 4, 1, 2),
+            MSLOT_PCI(0x0B, PCI_CARD_NORMAL, 2, 3, 4, 1),
+            MSLOT_PCI(0x09, PCI_CARD_NORMAL, 1, 2, 3, 4),
+            MSLOT_END
+        },
         .aliases                  = { "" }
     },
 
@@ -21319,7 +23627,7 @@ const machine_t machines[] = {
             .max_multi   = 3.0
         },
         .bus_flags = MACHINE_PS2_AGP | MACHINE_BUS_USB,
-        .flags     = MACHINE_IDE_DUAL | MACHINE_APM | MACHINE_USB,
+        .flags     = MACHINE_IDE_DUAL | MACHINE_APM | MACHINE_USB | MACHINE_UART_PRI | MACHINE_UART_SEC | MACHINE_LPT_PRI,
         .ram       = {
             .min  = 8192,
             .max  = 786432,
@@ -21332,8 +23640,8 @@ const machine_t machines[] = {
         .kbc_params               = 0x00000000,
         .nvr_device               = NULL,
         .nvr_params               = 0x00000000,
-        .sio_device               = NULL,
-        .sio_params               = 0x00000000,
+        .sio_device               = &w83877_device,
+        .sio_params               = (uintptr_t) ((W83877TF | W83877_3F0)),
         .kbc_p1                   = 0x00000cf0,
         .gpio                     = 0xffffffff,
         .gpio_acpi                = 0xffffffff,
@@ -21343,6 +23651,16 @@ const machine_t machines[] = {
         .vid_device               = NULL,
         .snd_device               = NULL,
         .net_device               = NULL,
+        .pci_flags                = PCI_CONFIG_TYPE_1 | FLAG_TRC_CONTROLS_CPURST,
+        .slot_layout              = (const machine_slot_t[]) {
+            MSLOT_PCI(0x00, PCI_CARD_NORTHBRIDGE, 0, 0, 0, 0),
+            MSLOT_BRIDGE(0x01, PCI_CARD_SOUTHBRIDGE, 0, 0, 0, 0, ((const machine_slot_t[]) { MSLOT_BUS(SLOT_ISA16, 3), MSLOT_END })),
+            MSLOT_BRIDGE(0x02, PCI_CARD_AGPBRIDGE, 0, 0, 0, 0, machine_bus_agp),
+            MSLOT_PCI(0x09, PCI_CARD_NORMAL, 1, 2, 3, 4),
+            MSLOT_PCI(0x0A, PCI_CARD_NORMAL, 2, 3, 4, 1),
+            MSLOT_PCI(0x0B, PCI_CARD_NORMAL, 3, 4, 1, 2),
+            MSLOT_END
+        },
         .aliases                  = { "" }
     },
 
@@ -21369,7 +23687,7 @@ const machine_t machines[] = {
             .max_multi   = 3.0
         },
         .bus_flags = MACHINE_PS2_PCI,
-        .flags     = MACHINE_IDE_DUAL | MACHINE_APM,
+        .flags     = MACHINE_IDE_DUAL | MACHINE_APM | MACHINE_UART_PRI | MACHINE_UART_SEC | MACHINE_LPT_PRI,
         .ram       = {
             .min  = 8192,
             .max  = 262144,
@@ -21382,8 +23700,8 @@ const machine_t machines[] = {
         .kbc_params               = 0x00000000,
         .nvr_device               = &nvr_at_device,
         .nvr_params               = NVR_AT,
-        .sio_device               = NULL,
-        .sio_params               = 0x00000000,
+        .sio_device               = &um866x_device,
+        .sio_params               = (uintptr_t) (UM8663BF),
         .kbc_p1                   = 0x00000cf0,
         .gpio                     = 0xffffffff,
         .gpio_acpi                = 0xffffffff,
@@ -21393,6 +23711,15 @@ const machine_t machines[] = {
         .vid_device               = NULL,
         .snd_device               = NULL,
         .net_device               = NULL,
+        .pci_flags                = PCI_CONFIG_TYPE_1,
+        .slot_layout              = (const machine_slot_t[]) {
+            MSLOT_PCI(0x05, PCI_CARD_NORTHBRIDGE, 0, 0, 0, 0),
+            MSLOT_PCI(0x08, PCI_CARD_NORMAL, 2, 3, 4, 1),
+            MSLOT_PCI(0x09, PCI_CARD_NORMAL, 3, 4, 1, 2),
+            MSLOT_PCI(0x0A, PCI_CARD_NORMAL, 4, 1, 2, 3),
+            MSLOT_PCI(0x0B, PCI_CARD_NORMAL, 1, 2, 3, 4),
+            MSLOT_END
+        },
         .aliases                  = { "" }
     },
 
@@ -21420,7 +23747,7 @@ const machine_t machines[] = {
             .max_multi   = 3.0
         },
         .bus_flags = MACHINE_PS2_PCI | MACHINE_BUS_USB,
-        .flags     = MACHINE_IDE_DUAL | MACHINE_APM | MACHINE_USB,
+        .flags     = MACHINE_IDE_DUAL | MACHINE_APM | MACHINE_USB | MACHINE_UART_PRI | MACHINE_UART_SEC | MACHINE_LPT_PRI,
         .ram       = {
             .min  = 8192,
             .max  = 524288,
@@ -21433,8 +23760,8 @@ const machine_t machines[] = {
         .kbc_params               = 0x00000000,
         .nvr_device               = NULL,
         .nvr_params               = 0x00000000,
-        .sio_device               = NULL,
-        .sio_params               = 0x00000000,
+        .sio_device               = &fdc37c669_device,
+        .sio_params               = (uintptr_t) (FDC37C6XX_370),
         .kbc_p1                   = 0x00000cf0,
         .gpio                     = 0xffffffff,
         .gpio_acpi                = 0xffffffff,
@@ -21444,6 +23771,16 @@ const machine_t machines[] = {
         .vid_device               = NULL,
         .snd_device               = NULL,
         .net_device               = NULL,
+        .pci_flags                = PCI_CONFIG_TYPE_1,
+        .slot_layout              = (const machine_slot_t[]) {
+            MSLOT_PCI(0x00, PCI_CARD_NORTHBRIDGE, 0, 0, 0, 0),
+            MSLOT_PCI(0x08, PCI_CARD_NORMAL, 1, 2, 3, 4),
+            MSLOT_PCI(0x09, PCI_CARD_NORMAL, 2, 3, 4, 1),
+            MSLOT_PCI(0x0A, PCI_CARD_NORMAL, 3, 4, 1, 2),
+            MSLOT_PCI(0x0B, PCI_CARD_NORMAL, 4, 1, 2, 3),
+            MSLOT_BRIDGE(0x07, PCI_CARD_SOUTHBRIDGE, 1, 2, 3, 4, ((const machine_slot_t[]) { MSLOT_BUS(SLOT_ISA16, 3), MSLOT_END })),
+            MSLOT_END
+        },
         .aliases                  = { "" }
     },
 
@@ -21471,7 +23808,7 @@ const machine_t machines[] = {
             .max_multi   = 5.5
         },
         .bus_flags = MACHINE_PS2_AGP | MACHINE_BUS_USB,
-        .flags     = MACHINE_IDE_DUAL | MACHINE_APM | MACHINE_USB,
+        .flags     = MACHINE_IDE_DUAL | MACHINE_APM | MACHINE_USB | MACHINE_UART_PRI | MACHINE_UART_SEC | MACHINE_LPT_PRI,
         .ram       = {
             .min  = 8192,
             .max  = 1048576,
@@ -21484,8 +23821,8 @@ const machine_t machines[] = {
         .kbc_params               = 0x00000000,
         .nvr_device               = NULL,
         .nvr_params               = 0x00000000,
-        .sio_device               = NULL,
-        .sio_params               = 0x00000000,
+        .sio_device               = &w83877_device,
+        .sio_params               = (uintptr_t) ((W83877F | W83877_3F0)),
         .kbc_p1                   = 0x00000cf0,
         .gpio                     = 0xffffffff,
         .gpio_acpi                = 0xffffffff,
@@ -21495,6 +23832,17 @@ const machine_t machines[] = {
         .vid_device               = NULL,
         .snd_device               = NULL,
         .net_device               = NULL,
+        .pci_flags                = PCI_CONFIG_TYPE_1,
+        .slot_layout              = (const machine_slot_t[]) {
+            MSLOT_PCI(0x00, PCI_CARD_NORTHBRIDGE, 0, 0, 0, 0),
+            MSLOT_BRIDGE(0x07, PCI_CARD_SOUTHBRIDGE, 1, 2, 3, 4, ((const machine_slot_t[]) { MSLOT_BUS(SLOT_ISA16, 2), MSLOT_END })),
+            MSLOT_PCI(0x08, PCI_CARD_NORMAL, 1, 2, 3, 4),
+            MSLOT_PCI(0x09, PCI_CARD_NORMAL, 2, 3, 4, 1),
+            MSLOT_PCI(0x0A, PCI_CARD_NORMAL, 3, 4, 1, 2),
+            MSLOT_PCI(0x0B, PCI_CARD_NORMAL, 4, 1, 2, 3),
+            MSLOT_BRIDGE(0x01, PCI_CARD_AGPBRIDGE, 1, 2, 3, 4, machine_bus_agp),
+            MSLOT_END
+        },
         .aliases                  = { "" }
     },
     /* Has the VIA VT82C586B southbridge with on-chip KBC identical to the VIA
@@ -21520,7 +23868,7 @@ const machine_t machines[] = {
             .max_multi   = 5.5
         },
         .bus_flags = MACHINE_PS2_AGP | MACHINE_BUS_USB,
-        .flags     = MACHINE_IDE_DUAL | MACHINE_APM | MACHINE_USB,
+        .flags     = MACHINE_IDE_DUAL | MACHINE_APM | MACHINE_USB | MACHINE_UART_PRI | MACHINE_UART_SEC | MACHINE_LPT_PRI,
         .ram       = {
             .min  = 8192,
             .max  = 1048576,
@@ -21533,7 +23881,7 @@ const machine_t machines[] = {
         .kbc_params               = 0x00000000,
         .nvr_device               = NULL,
         .nvr_params               = 0x00000000,
-        .sio_device               = NULL,
+        .sio_device               = &it8661f_device,
         .sio_params               = 0x00000000,
         .kbc_p1                   = 0x00000cf0,
         .gpio                     = 0xffffffff,
@@ -21544,6 +23892,17 @@ const machine_t machines[] = {
         .vid_device               = NULL,
         .snd_device               = NULL,
         .net_device               = NULL,
+        .pci_flags                = PCI_CONFIG_TYPE_1,
+        .slot_layout              = (const machine_slot_t[]) {
+            MSLOT_PCI(0x00, PCI_CARD_NORTHBRIDGE, 0, 0, 0, 0),
+            MSLOT_BRIDGE(0x07, PCI_CARD_SOUTHBRIDGE, 1, 2, 3, 4, machine_bus_isa),
+            MSLOT_PCI(0x08, PCI_CARD_NORMAL, 1, 2, 3, 4),
+            MSLOT_PCI(0x09, PCI_CARD_NORMAL, 2, 3, 4, 1),
+            MSLOT_PCI(0x0A, PCI_CARD_NORMAL, 3, 4, 1, 2),
+            MSLOT_PCI(0x0B, PCI_CARD_NORMAL, 4, 1, 2, 3),
+            MSLOT_BRIDGE(0x01, PCI_CARD_AGPBRIDGE, 1, 2, 3, 4, machine_bus_agp),
+            MSLOT_END
+        },
         .aliases                  = { "" }
     },
     /* Has the VIA VT82C586B southbridge with on-chip KBC identical to the VIA
@@ -21569,7 +23928,7 @@ const machine_t machines[] = {
             .max_multi   = 5.5
         },
         .bus_flags = MACHINE_PS2_AGP | MACHINE_BUS_USB,
-        .flags     = MACHINE_IDE_DUAL | MACHINE_APM | MACHINE_USB,
+        .flags     = MACHINE_IDE_DUAL | MACHINE_APM | MACHINE_USB | MACHINE_UART_PRI | MACHINE_UART_SEC | MACHINE_LPT_PRI,
         .ram       = {
             .min  = 8192,
             .max  = 1048576,
@@ -21582,7 +23941,7 @@ const machine_t machines[] = {
         .kbc_params               = 0x00000000,
         .nvr_device               = NULL,
         .nvr_params               = 0x00000000,
-        .sio_device               = NULL,
+        .sio_device               = &fdc37c669_device,
         .sio_params               = 0x00000000,
         .kbc_p1                   = 0x00000cf0,
         .gpio                     = 0xffffffff,
@@ -21593,6 +23952,17 @@ const machine_t machines[] = {
         .vid_device               = NULL,
         .snd_device               = NULL,
         .net_device               = NULL,
+        .pci_flags                = PCI_CONFIG_TYPE_1,
+        .slot_layout              = (const machine_slot_t[]) {
+            MSLOT_PCI(0x00, PCI_CARD_NORTHBRIDGE, 0, 0, 0, 0),
+            MSLOT_BRIDGE(0x07, PCI_CARD_SOUTHBRIDGE, 1, 2, 3, 4, machine_bus_isa),
+            MSLOT_PCI(0x08, PCI_CARD_NORMAL, 1, 2, 3, 4),
+            MSLOT_PCI(0x09, PCI_CARD_NORMAL, 2, 3, 4, 1),
+            MSLOT_PCI(0x0A, PCI_CARD_NORMAL, 3, 4, 1, 2),
+            MSLOT_PCI(0x0B, PCI_CARD_NORMAL, 4, 1, 2, 3), /* assumed */
+            MSLOT_BRIDGE(0x01, PCI_CARD_AGPBRIDGE, 1, 2, 3, 4, machine_bus_agp),
+            MSLOT_END
+        },
         .aliases                  = { "" }
     },
 
@@ -21620,7 +23990,7 @@ const machine_t machines[] = {
             .max_multi   = 5.5
         },
         .bus_flags = MACHINE_PS2_AGP | MACHINE_BUS_USB,
-        .flags     = MACHINE_IDE_DUAL | MACHINE_APM | MACHINE_ACPI | MACHINE_GAMEPORT | MACHINE_USB | MACHINE_SOUND,
+        .flags     = MACHINE_IDE_DUAL | MACHINE_APM | MACHINE_ACPI | MACHINE_GAMEPORT | MACHINE_USB | MACHINE_SOUND | MACHINE_UART_PRI | MACHINE_UART_SEC | MACHINE_UART_TER | MACHINE_LPT_PRI,
         .ram       = {
             .min  = 8192,
             .max  = 1572864,
@@ -21633,7 +24003,7 @@ const machine_t machines[] = {
         .kbc_params               = 0x00000000,
         .nvr_device               = NULL,
         .nvr_params               = 0x00000000,
-        .sio_device               = NULL,
+        .sio_device               = &ali5123_device,
         .sio_params               = 0x00000000,
         .kbc_p1                   = 0x00000cf0,
         .gpio                     = 0xffffffff,
@@ -21644,6 +24014,22 @@ const machine_t machines[] = {
         .vid_device               = NULL,
         .snd_device               = &ess_solo1_onboard_device,
         .net_device               = NULL,
+        .pci_flags                = PCI_CONFIG_TYPE_1,
+        .slot_layout              = (const machine_slot_t[]) {
+            MSLOT_PCI(0x00, PCI_CARD_NORTHBRIDGE, 0, 0, 0, 0),
+            MSLOT_BRIDGE(0x01, PCI_CARD_AGPBRIDGE, 1, 2, 0, 0, machine_bus_agp),
+            MSLOT_BRIDGE(0x07, PCI_CARD_SOUTHBRIDGE, 1, 2, 3, 4, ((const machine_slot_t[]) { MSLOT_BUS(SLOT_ISA16, 2), MSLOT_END })),
+            MSLOT_PCI(0x0F, PCI_CARD_SOUTHBRIDGE_IDE, 1, 2, 3, 4),
+            MSLOT_PCI(0x03, PCI_CARD_SOUTHBRIDGE_PMU, 1, 2, 3, 4),
+            MSLOT_PCI(0x02, PCI_CARD_SOUTHBRIDGE_USB, 1, 2, 3, 4),
+            MSLOT_PCI(0x09, PCI_CARD_NORMAL, 4, 1, 2, 3),
+            MSLOT_PCI(0x0A, PCI_CARD_NORMAL, 3, 4, 1, 2),
+            MSLOT_PCI(0x0B, PCI_CARD_NORMAL, 2, 3, 4, 1),
+            MSLOT_PCI(0x0C, PCI_CARD_NORMAL, 1, 2, 3, 4),
+            MSLOT_PCI(0x0D, PCI_CARD_NORMAL, 4, 1, 2, 3),
+            MSLOT_PCI(0x06, PCI_CARD_SOUND, 3, 4, 1, 2),
+            MSLOT_END
+        },
         .aliases                  = { "" }
     },
     /* ALi M1543C southbridge with unused KBC. */
@@ -21668,7 +24054,7 @@ const machine_t machines[] = {
             .max_multi   = 4.5
         },
         .bus_flags = (MACHINE_PS2_NOISA & ~(MACHINE_BUS_XT_KBD | MACHINE_BUS_AT_KBD | MACHINE_BUS_PS2_PORTS)) | MACHINE_BUS_USB,
-        .flags     = MACHINE_AGP_INTERNAL | MACHINE_IDE_DUAL | MACHINE_SCSI | MACHINE_VIDEO_FIXED | MACHINE_KEYBOARD | MACHINE_NIC_PRI | MACHINE_NIC_SEC | MACHINE_USB,
+        .flags     = MACHINE_AGP_INTERNAL | MACHINE_IDE_DUAL | MACHINE_SCSI | MACHINE_VIDEO_FIXED | MACHINE_KEYBOARD | MACHINE_NIC_PRI | MACHINE_NIC_SEC | MACHINE_USB | MACHINE_UART_PRI | MACHINE_UART_SEC | MACHINE_UART_TER | MACHINE_LPT_PRI,
         .ram       = {
             .min  = 32768,
             .max  = 524288,
@@ -21681,7 +24067,7 @@ const machine_t machines[] = {
         .kbc_params               = 0x00000000,
         .nvr_device               = NULL,
         .nvr_params               = 0x00000000,
-        .sio_device               = NULL,
+        .sio_device               = &ali5123_device,
         .sio_params               = 0x00000000,
         .kbc_p1                   = 0x00000000,
         .gpio                     = 0xffffffff,
@@ -21693,6 +24079,20 @@ const machine_t machines[] = {
         .snd_device               = NULL,
         .net_device               = &dp83815_onboard_device,
         .scsi_device              = &ncr53c875_onboard_pci_device, /* Machine has also internal SCSI: NCR 53c825 (as seen in one unit) */
+        .pci_flags                = PCI_CONFIG_TYPE_1,
+        .slot_layout              = (const machine_slot_t[]) {
+            MSLOT_PCI(0x00, PCI_CARD_NORTHBRIDGE, 0, 0, 0, 0),
+            MSLOT_BRIDGE(0x01, PCI_CARD_AGPBRIDGE, 1, 2, 0, 0, machine_bus_agp), /* AGP enabled according to logs, but physically inaccessible */
+            MSLOT_BRIDGE(0x07, PCI_CARD_SOUTHBRIDGE, 1, 2, 3, 4, machine_bus_isa),
+            MSLOT_PCI(0x0F, PCI_CARD_SOUTHBRIDGE_IDE, 1, 2, 3, 4),
+            MSLOT_PCI(0x03, PCI_CARD_SOUTHBRIDGE_PMU, 1, 2, 3, 4),
+            MSLOT_PCI(0x02, PCI_CARD_SOUTHBRIDGE_USB, 1, 2, 3, 4),
+            MSLOT_PCI(0x0E, PCI_CARD_SCSI, 4, 1, 2, 3), /* IRQs for this and following slots taken from BIOS steering code */
+            MSLOT_PCI(0x10, PCI_CARD_NETWORK, 3, 4, 1, 2),
+            MSLOT_PCI(0x12, PCI_CARD_NETWORK, 2, 3, 4, 1),
+            MSLOT_PCI(0x14, PCI_CARD_NORMAL, 1, 2, 3, 4),
+            MSLOT_END
+        },
         .aliases                  = { "Cobalt 4xxxWG", "Cobalt Carmel", "" }
     },
     /* ALi M1543C southbridge with unused KBC. */
@@ -21717,7 +24117,7 @@ const machine_t machines[] = {
             .max_multi   = 4.5
         },
         .bus_flags = (MACHINE_PS2_NOISA & ~(MACHINE_BUS_XT_KBD | MACHINE_BUS_AT_KBD | MACHINE_BUS_PS2_PORTS)) | MACHINE_BUS_USB,
-        .flags     = MACHINE_AGP_INTERNAL | MACHINE_IDE_DUAL | MACHINE_SCSI | MACHINE_VIDEO_FIXED | MACHINE_KEYBOARD | MACHINE_NIC_PRI | MACHINE_NIC_SEC | MACHINE_USB,
+        .flags     = MACHINE_AGP_INTERNAL | MACHINE_IDE_DUAL | MACHINE_SCSI | MACHINE_VIDEO_FIXED | MACHINE_KEYBOARD | MACHINE_NIC_PRI | MACHINE_NIC_SEC | MACHINE_USB | MACHINE_UART_PRI | MACHINE_UART_SEC | MACHINE_UART_TER | MACHINE_LPT_PRI,
         .ram       = {
             .min  = 32768,
             .max  = 524288,
@@ -21730,7 +24130,7 @@ const machine_t machines[] = {
         .kbc_params               = 0x00000000,
         .nvr_device               = NULL,
         .nvr_params               = 0x00000000,
-        .sio_device               = NULL,
+        .sio_device               = &ali5123_device,
         .sio_params               = 0x00000000,
         .kbc_p1                   = 0x00000000,
         .gpio                     = 0xffffffff,
@@ -21742,6 +24142,20 @@ const machine_t machines[] = {
         .snd_device               = NULL,
         .net_device               = &i82559er_onboard_device,
         .scsi_device              = &ncr53c875_onboard_pci_device,
+        .pci_flags                = PCI_CONFIG_TYPE_1,
+        .slot_layout              = (const machine_slot_t[]) {
+            MSLOT_PCI(0x00, PCI_CARD_NORTHBRIDGE, 0, 0, 0, 0),
+            MSLOT_BRIDGE(0x01, PCI_CARD_AGPBRIDGE, 1, 2, 0, 0, machine_bus_agp), /* AGP enabled according to logs, but physically inaccessible */
+            MSLOT_BRIDGE(0x07, PCI_CARD_SOUTHBRIDGE, 1, 2, 3, 4, machine_bus_isa),
+            MSLOT_PCI(0x0F, PCI_CARD_SOUTHBRIDGE_IDE, 1, 2, 3, 4),
+            MSLOT_PCI(0x03, PCI_CARD_SOUTHBRIDGE_PMU, 1, 2, 3, 4),
+            MSLOT_PCI(0x02, PCI_CARD_SOUTHBRIDGE_USB, 1, 2, 3, 4),
+            MSLOT_PCI(0x0E, PCI_CARD_SCSI, 4, 1, 2, 3), /* IRQs for this and following slots taken from BIOS steering code */
+            MSLOT_PCI(0x10, PCI_CARD_NETWORK, 3, 4, 1, 2),
+            MSLOT_PCI(0x12, PCI_CARD_NETWORK, 2, 3, 4, 1),
+            MSLOT_PCI(0x14, PCI_CARD_NORMAL, 1, 2, 3, 4),
+            MSLOT_END
+        },
         .aliases                  = { "Cobalt 3xxxR", "Cobalt Pacifica", "" }
     },
     /* M1534c kbc */
@@ -21766,7 +24180,7 @@ const machine_t machines[] = {
             .max_multi   = 5.5
         },
         .bus_flags = MACHINE_PS2_AGP | MACHINE_BUS_USB,
-        .flags     = MACHINE_AGP_INTERNAL | MACHINE_IDE_DUAL | MACHINE_SOUND | MACHINE_APM | MACHINE_ACPI | MACHINE_GAMEPORT | MACHINE_USB, /* Machine has internal video: ATI Rage Pro Turbo AGP (not yet implemented) */
+        .flags     = MACHINE_AGP_INTERNAL | MACHINE_IDE_DUAL | MACHINE_SOUND | MACHINE_APM | MACHINE_ACPI | MACHINE_GAMEPORT | MACHINE_USB | MACHINE_UART_PRI | MACHINE_UART_SEC | MACHINE_UART_TER | MACHINE_LPT_PRI, /* Machine has internal video: ATI Rage Pro Turbo AGP (not yet implemented) */
         .ram       = {
             .min  = 8192,
             .max  = 262144,
@@ -21779,7 +24193,7 @@ const machine_t machines[] = {
         .kbc_params               = 0x00000000,
         .nvr_device               = NULL,
         .nvr_params               = 0x00000000,
-        .sio_device               = NULL,
+        .sio_device               = &ali5123_device,
         .sio_params               = 0x00000000,
         .kbc_p1                   = 0x00000cf0,
         .gpio                     = 0xffffffff,
@@ -21790,6 +24204,20 @@ const machine_t machines[] = {
         .vid_device               = NULL,
         .snd_device               = &es1373_onboard_device,
         .net_device               = NULL,
+        .pci_flags                = PCI_CONFIG_TYPE_1,
+        .slot_layout              = (const machine_slot_t[]) {
+            MSLOT_PCI(0x00, PCI_CARD_NORTHBRIDGE, 0, 0, 0, 0),
+            MSLOT_BRIDGE(0x01, PCI_CARD_AGPBRIDGE, 1, 2, 0, 0, machine_bus_agp),
+            MSLOT_BRIDGE(0x07, PCI_CARD_SOUTHBRIDGE, 1, 2, 3, 4, machine_bus_isa),
+            MSLOT_PCI(0x0E, PCI_CARD_SOUTHBRIDGE_IDE, 1, 2, 3, 4),
+            MSLOT_PCI(0x03, PCI_CARD_SOUTHBRIDGE_PMU, 1, 2, 3, 4),
+            MSLOT_PCI(0x02, PCI_CARD_SOUTHBRIDGE_USB, 1, 2, 3, 4),
+            MSLOT_PCI(0x0F, PCI_CARD_SOUND, 1, 2, 3, 4), // ES1373
+            MSLOT_PCI(0x14, PCI_CARD_NORMAL, 2, 3, 4, 1),
+            MSLOT_PCI(0x12, PCI_CARD_NORMAL, 3, 4, 1, 2),
+            MSLOT_PCI(0x10, PCI_CARD_NORMAL, 4, 1, 2, 3),
+            MSLOT_END
+        },
         .aliases                  = { "MSI MS-5185", "Gateway ATX Select 366", "Gateway ATX Select 400", "" }
     },
     /* Has the ALi M1543C southbridge with on-chip KBC. */
@@ -21814,7 +24242,7 @@ const machine_t machines[] = {
             .max_multi   = 5.5
         },
         .bus_flags = MACHINE_PS2_AGP | MACHINE_BUS_USB,
-        .flags     = MACHINE_IDE_DUAL | MACHINE_APM | MACHINE_ACPI | MACHINE_USB,
+        .flags     = MACHINE_IDE_DUAL | MACHINE_APM | MACHINE_ACPI | MACHINE_USB | MACHINE_UART_PRI | MACHINE_UART_SEC | MACHINE_UART_TER | MACHINE_LPT_PRI,
         .ram       = {
             .min  = 8192,
             .max  = 1572864,
@@ -21827,7 +24255,7 @@ const machine_t machines[] = {
         .kbc_params               = 0x00000000,
         .nvr_device               = NULL,
         .nvr_params               = 0x00000000,
-        .sio_device               = NULL,
+        .sio_device               = &ali5123_device,
         .sio_params               = 0x00000000,
         .kbc_p1                   = 0x00000cf0,
         .gpio                     = 0xffffffff,
@@ -21838,6 +24266,19 @@ const machine_t machines[] = {
         .vid_device               = NULL,
         .snd_device               = NULL,
         .net_device               = NULL,
+        .pci_flags                = PCI_CONFIG_TYPE_1,
+        .slot_layout              = (const machine_slot_t[]) {
+            MSLOT_PCI(0x00, PCI_CARD_NORTHBRIDGE, 0, 0, 0, 0),
+            MSLOT_BRIDGE(0x01, PCI_CARD_AGPBRIDGE, 1, 2, 0, 0, machine_bus_agp),
+            MSLOT_BRIDGE(0x07, PCI_CARD_SOUTHBRIDGE, 1, 2, 3, 4, ((const machine_slot_t[]) { MSLOT_BUS(SLOT_ISA16, 2), MSLOT_END })),
+            MSLOT_PCI(0x0F, PCI_CARD_SOUTHBRIDGE_IDE, 1, 2, 3, 4),
+            MSLOT_PCI(0x03, PCI_CARD_SOUTHBRIDGE_PMU, 1, 2, 3, 4),
+            MSLOT_PCI(0x02, PCI_CARD_SOUTHBRIDGE_USB, 1, 2, 3, 4),
+            MSLOT_PCI(0x08, PCI_CARD_NORMAL, 1, 2, 3, 4),
+            MSLOT_PCI(0x09, PCI_CARD_NORMAL, 2, 3, 4, 1),
+            MSLOT_PCI(0x0A, PCI_CARD_NORMAL, 3, 4, 1, 2),
+            MSLOT_END
+        },
         .aliases                  = { "" }
     },
     /* Has the ALi M1543C southbridge with on-chip KBC. */
@@ -21862,7 +24303,7 @@ const machine_t machines[] = {
             .max_multi   = 5.5
         },
         .bus_flags = MACHINE_PS2_AGP | MACHINE_BUS_USB,
-        .flags     = MACHINE_IDE_DUAL | MACHINE_APM | MACHINE_ACPI | MACHINE_USB,
+        .flags     = MACHINE_IDE_DUAL | MACHINE_APM | MACHINE_ACPI | MACHINE_USB | MACHINE_UART_PRI | MACHINE_UART_SEC | MACHINE_UART_TER | MACHINE_LPT_PRI,
         .ram       = {
             .min  = 8192,
             .max  = 1572864,
@@ -21875,7 +24316,7 @@ const machine_t machines[] = {
         .kbc_params               = 0x00000000,
         .nvr_device               = NULL,
         .nvr_params               = 0x00000000,
-        .sio_device               = NULL,
+        .sio_device               = &ali5123_device,
         .sio_params               = 0x00000000,
         .kbc_p1                   = 0x00000cf0,
         .gpio                     = 0xffffffff,
@@ -21886,6 +24327,21 @@ const machine_t machines[] = {
         .vid_device               = NULL,
         .snd_device               = NULL,
         .net_device               = NULL,
+        .pci_flags                = PCI_CONFIG_TYPE_1,
+        .slot_layout              = (const machine_slot_t[]) {
+            MSLOT_PCI(0x00, PCI_CARD_NORTHBRIDGE, 0, 0, 0, 0),
+            MSLOT_BRIDGE(0x01, PCI_CARD_AGPBRIDGE, 1, 2, 0, 0, machine_bus_agp),
+            MSLOT_BRIDGE(0x07, PCI_CARD_SOUTHBRIDGE, 1, 2, 3, 4, ((const machine_slot_t[]) { MSLOT_BUS(SLOT_ISA16, 2), MSLOT_END })),
+            MSLOT_PCI(0x0F, PCI_CARD_SOUTHBRIDGE_IDE, 1, 2, 3, 4),
+            MSLOT_PCI(0x03, PCI_CARD_SOUTHBRIDGE_PMU, 1, 2, 3, 4),
+            MSLOT_PCI(0x02, PCI_CARD_SOUTHBRIDGE_USB, 1, 2, 3, 4),
+            MSLOT_PCI(0x08, PCI_CARD_NORMAL, 1, 2, 3, 4),
+            MSLOT_PCI(0x09, PCI_CARD_NORMAL, 2, 3, 4, 1),
+            MSLOT_PCI(0x0A, PCI_CARD_NORMAL, 3, 4, 1, 2),
+            MSLOT_PCI(0x0B, PCI_CARD_NORMAL, 4, 1, 2, 3),
+            MSLOT_PCI(0x0C, PCI_CARD_NORMAL, 1, 2, 3, 4),
+            MSLOT_END
+        },
         .aliases                  = { "" }
     },
     /* Has the ALi M1543C southbridge with on-chip KBC. */
@@ -21910,7 +24366,7 @@ const machine_t machines[] = {
             .max_multi   = 5.5
         },
         .bus_flags = MACHINE_PS2_AGP | MACHINE_BUS_USB,
-        .flags     = MACHINE_IDE_DUAL | MACHINE_APM | MACHINE_ACPI | MACHINE_USB,
+        .flags     = MACHINE_IDE_DUAL | MACHINE_APM | MACHINE_ACPI | MACHINE_USB | MACHINE_UART_PRI | MACHINE_UART_SEC | MACHINE_UART_TER | MACHINE_LPT_PRI,
         .ram       = {
             .min  = 8192,
             .max  = 1572864,
@@ -21923,7 +24379,7 @@ const machine_t machines[] = {
         .kbc_params               = 0x00000000,
         .nvr_device               = NULL,
         .nvr_params               = 0x00000000,
-        .sio_device               = NULL,
+        .sio_device               = &ali5123_device,
         .sio_params               = 0x00000000,
         .kbc_p1                   = 0x00000cf0,
         .gpio                     = 0xffffffff,
@@ -21934,6 +24390,20 @@ const machine_t machines[] = {
         .vid_device               = NULL,
         .snd_device               = NULL,
         .net_device               = NULL,
+        .pci_flags                = PCI_CONFIG_TYPE_1,
+        .slot_layout              = (const machine_slot_t[]) {
+            MSLOT_PCI(0x00, PCI_CARD_NORTHBRIDGE, 0, 0, 0, 0),
+            MSLOT_BRIDGE(0x01, PCI_CARD_AGPBRIDGE, 1, 2, 0, 0, machine_bus_agp),
+            MSLOT_BRIDGE(0x07, PCI_CARD_SOUTHBRIDGE, 1, 2, 3, 4, ((const machine_slot_t[]) { MSLOT_BUS(SLOT_ISA16, 3), MSLOT_END })),
+            MSLOT_PCI(0x0F, PCI_CARD_SOUTHBRIDGE_IDE, 1, 2, 3, 4),
+            MSLOT_PCI(0x03, PCI_CARD_SOUTHBRIDGE_PMU, 1, 2, 3, 4),
+            MSLOT_PCI(0x02, PCI_CARD_SOUTHBRIDGE_USB, 1, 2, 3, 4),
+            MSLOT_PCI(0x0E, PCI_CARD_NORMAL, 4, 1, 2, 3),
+            MSLOT_PCI(0x10, PCI_CARD_NORMAL, 3, 4, 1, 2),
+            MSLOT_PCI(0x12, PCI_CARD_NORMAL, 2, 3, 4, 1),
+            MSLOT_PCI(0x14, PCI_CARD_NORMAL, 1, 2, 3, 4),
+            MSLOT_END
+        },
         .aliases                  = { "" }
     },
    /* Is the exact same as the Matsonic MS6260S. Has the ALi M1543C southbridge 
@@ -21959,7 +24429,7 @@ const machine_t machines[] = {
             .max_multi   = 5.5
         },
         .bus_flags = MACHINE_PS2_AGP | MACHINE_BUS_USB,
-        .flags     = MACHINE_IDE_DUAL | MACHINE_APM | MACHINE_USB, /* Machine has internal sound: C-Media CMI8330 (not yet implemented) */
+        .flags     = MACHINE_IDE_DUAL | MACHINE_APM | MACHINE_USB | MACHINE_UART_PRI | MACHINE_UART_SEC | MACHINE_UART_TER | MACHINE_LPT_PRI, /* Machine has internal sound: C-Media CMI8330 (not yet implemented) */
         .ram       = {
             .min  = 8192,
             .max  = 1572864,
@@ -21972,7 +24442,7 @@ const machine_t machines[] = {
         .kbc_params               = 0x00000000,
         .nvr_device               = NULL,
         .nvr_params               = 0x00000000,
-        .sio_device               = NULL,
+        .sio_device               = &ali5123_device,
         .sio_params               = 0x00000000,
         .kbc_p1                   = 0x00000cf0,
         .gpio                     = 0xffffffff,
@@ -21983,6 +24453,19 @@ const machine_t machines[] = {
         .vid_device               = NULL,
         .snd_device               = NULL,
         .net_device               = NULL,
+        .pci_flags                = PCI_CONFIG_TYPE_1,
+        .slot_layout              = (const machine_slot_t[]) {
+            MSLOT_PCI(0x00, PCI_CARD_NORTHBRIDGE, 0, 0, 0, 0),
+            MSLOT_BRIDGE(0x01, PCI_CARD_AGPBRIDGE, 1, 2, 0, 0, machine_bus_agp),
+            MSLOT_BRIDGE(0x07, PCI_CARD_SOUTHBRIDGE, 1, 2, 3, 4, machine_bus_isa),
+            MSLOT_PCI(0x0F, PCI_CARD_SOUTHBRIDGE_IDE, 1, 2, 3, 4),
+            MSLOT_PCI(0x03, PCI_CARD_SOUTHBRIDGE_PMU, 1, 2, 3, 4),
+            MSLOT_PCI(0x02, PCI_CARD_SOUTHBRIDGE_USB, 1, 2, 3, 4),
+            MSLOT_PCI(0x10, PCI_CARD_NORMAL, 3, 4, 1, 2),
+            MSLOT_PCI(0x12, PCI_CARD_NORMAL, 2, 3, 4, 1),
+            MSLOT_PCI(0x14, PCI_CARD_NORMAL, 1, 2, 3, 4),
+            MSLOT_END
+        },
         .aliases                  = { "Matsonic MS-6260S", "" }
     },
 
@@ -22022,8 +24505,8 @@ const machine_t machines[] = {
         .kbc_params               = 0x00000000,
         .nvr_device               = NULL,
         .nvr_params               = 0x00000000,
-        .sio_device               = NULL,
-        .sio_params               = 0x00000000,
+        .sio_device               = &w83877_device,
+        .sio_params               = (uintptr_t) ((W83877TF | (W83877_3F0 & ~0x04))),
         .kbc_p1                   = 0x00000cf0,
         .gpio                     = 0xffffffff,
         .gpio_acpi                = 0xffffffff,
@@ -22033,6 +24516,22 @@ const machine_t machines[] = {
         .vid_device               = &sis6306_onboard_device,
         .snd_device               = &ess_solo1_onboard_device,
         .net_device               = NULL,
+        .pci_flags                = PCI_CONFIG_TYPE_1,
+        .slot_layout              = (const machine_slot_t[]) {
+            MSLOT_PCI(0x00, PCI_CARD_NORTHBRIDGE, 0, 0, 0, 0),
+            MSLOT_BRIDGE(0x01, PCI_CARD_SOUTHBRIDGE, 0, 0, 0, 0, ((const machine_slot_t[]) { MSLOT_BUS(SLOT_ISA16, 1), MSLOT_END })),
+            MSLOT_BRIDGE(0x02, PCI_CARD_AGPBRIDGE, 0, 0, 0, 0, machine_bus_agp),
+            /* Physical FR520 / IN530 PCI topology verified with PCITool:
+                 device 09h - PCI slot 1
+                 device 0Ah - PCI slot 2
+                 device 0Bh - PCI slot 3
+                 device 0Ch - on-board ESS ES1938S Solo-1                 */
+            MSLOT_PCI(0x09, PCI_CARD_NORMAL, 1, 2, 3, 4),
+            MSLOT_PCI(0x0A, PCI_CARD_NORMAL, 2, 3, 4, 1),
+            MSLOT_PCI(0x0B, PCI_CARD_NORMAL, 3, 4, 1, 2),
+            MSLOT_PCI(0x0C, PCI_CARD_SOUND, 4, 1, 2, 3),
+            MSLOT_END
+        },
         .aliases                  = { "GVC FR520", "Packard Bell Miami", "NEC Valuestar U VU47L", "Packard Bell PB980", "" }
     },
     /* Has the SiS 5595 southbridge with on-chip KBC. */
@@ -22057,7 +24556,7 @@ const machine_t machines[] = {
             .max_multi   = 5.5
         },
         .bus_flags = MACHINE_PS2_AGP | MACHINE_BUS_USB,
-        .flags     = MACHINE_AGP_INTERNAL | MACHINE_SUPER_IO | MACHINE_IDE_DUAL | MACHINE_SOUND | MACHINE_APM | MACHINE_ACPI | MACHINE_USB, /* Machine has internal video: SiS 6306 (not yet implemented) */
+        .flags     = MACHINE_AGP_INTERNAL | MACHINE_SUPER_IO | MACHINE_IDE_DUAL | MACHINE_VIDEO | MACHINE_SOUND | MACHINE_APM | MACHINE_ACPI | MACHINE_USB | MACHINE_GAMEPORT,
         .ram       = {
             .min  = 8192,
             .max  = 1572864,
@@ -22070,7 +24569,7 @@ const machine_t machines[] = {
         .kbc_params               = 0x00000000,
         .nvr_device               = NULL,
         .nvr_params               = 0x00000000,
-        .sio_device               = NULL,
+        .sio_device               = &it8661f_device,
         .sio_params               = 0x00000000,
         .kbc_p1                   = 0x00000cf0,
         .gpio                     = 0xffffffff,
@@ -22078,9 +24577,20 @@ const machine_t machines[] = {
         .device                   = &ga5smm_device,
         .kbd_device               = NULL,
         .fdc_device               = NULL,
-        .vid_device               = NULL,
+        .vid_device               = &sis6306_onboard_device,
         .snd_device               = &ess_solo1_onboard_device,
         .net_device               = NULL,
+        .pci_flags                = PCI_CONFIG_TYPE_1,
+        .slot_layout              = (const machine_slot_t[]) {
+            MSLOT_PCI(0x00, PCI_CARD_NORTHBRIDGE, 1, 2, 3, 4),
+            MSLOT_BRIDGE(0x01, PCI_CARD_SOUTHBRIDGE, 0, 0, 0, 0, ((const machine_slot_t[]) { MSLOT_BUS(SLOT_ISA16, 2), MSLOT_END })),
+            MSLOT_BRIDGE(0x02, PCI_CARD_AGPBRIDGE, 0, 0, 0, 0, machine_bus_agp),
+            MSLOT_PCI(0x09, PCI_CARD_NORMAL, 1, 2, 3, 4),
+            MSLOT_PCI(0x0B, PCI_CARD_NORMAL, 2, 3, 4, 1),
+            MSLOT_PCI(0x0F, PCI_CARD_NORMAL, 3, 4, 1, 2),
+            MSLOT_PCI(0x0C, PCI_CARD_SOUND, 4, 1, 2, 3), /* guess */
+            MSLOT_END
+        },
         .aliases                  = { "Compaq Presario 5301", "Compaq Presario 5304", "Compaq Presario 54xx", "" }
     },
     /* Has the SiS 5595 southbridge with on-chip KBC. */
@@ -22105,7 +24615,7 @@ const machine_t machines[] = {
             .max_multi   = 6.0
         },
         .bus_flags = MACHINE_PS2_AGP | MACHINE_BUS_USB,
-        .flags     = MACHINE_AGP_INTERNAL | MACHINE_SUPER_IO | MACHINE_IDE_DUAL | MACHINE_SOUND | MACHINE_APM | MACHINE_ACPI | MACHINE_USB, /* Machine has internal video: SiS 6306 (not yet implemented) */
+        .flags     = MACHINE_AGP_INTERNAL | MACHINE_SUPER_IO | MACHINE_IDE_DUAL | MACHINE_VIDEO | MACHINE_SOUND | MACHINE_APM | MACHINE_ACPI | MACHINE_USB | MACHINE_GAMEPORT,
         .ram       = {
             .min  = 8192,
             .max  = 1048576,
@@ -22118,7 +24628,7 @@ const machine_t machines[] = {
         .kbc_params               = 0x00000000,
         .nvr_device               = NULL,
         .nvr_params               = 0x00000000,
-        .sio_device               = NULL,
+        .sio_device               = &it8661f_device,
         .sio_params               = 0x00000000,
         .kbc_p1                   = 0x00000cf0,
         .gpio                     = 0xffffffff,
@@ -22126,9 +24636,21 @@ const machine_t machines[] = {
         .device                   = NULL,
         .kbd_device               = NULL,
         .fdc_device               = NULL,
-        .vid_device               = NULL,
+        .vid_device               = &sis6306_onboard_device,
         .snd_device               = &ess_solo1_onboard_device,
         .net_device               = NULL,
+        .pci_flags                = PCI_CONFIG_TYPE_1,
+        .slot_layout              = (const machine_slot_t[]) {
+            MSLOT_PCI(0x00, PCI_CARD_NORTHBRIDGE, 1, 2, 3, 5),
+            MSLOT_BRIDGE(0x01, PCI_CARD_SOUTHBRIDGE, 0, 0, 0, 0, machine_bus_isa),
+            MSLOT_BRIDGE(0x02, PCI_CARD_AGPBRIDGE, 0, 0, 0, 0, machine_bus_agp),
+            MSLOT_PCI(0x09, PCI_CARD_NORMAL, 1, 2, 3, 4),
+            MSLOT_PCI(0x0A, PCI_CARD_NORMAL, 2, 3, 4, 1),
+            MSLOT_PCI(0x0B, PCI_CARD_NORMAL, 3, 4, 1, 2),
+            MSLOT_PCI(0x0C, PCI_CARD_NORMAL, 4, 1, 2, 3),
+            MSLOT_PCI(0x0F, PCI_CARD_SOUND, 1, 2, 3, 4),
+            MSLOT_END
+        },
         .aliases                  = { "IBM Tupelo", "USI Pro-263", "" }
     },
 
@@ -22155,7 +24677,7 @@ const machine_t machines[] = {
             .max_multi   = 5.5
         },
         .bus_flags = MACHINE_PS2_AGP | MACHINE_BUS_USB,
-        .flags     = MACHINE_IDE_DUAL | MACHINE_APM | MACHINE_ACPI | MACHINE_USB,
+        .flags     = MACHINE_IDE_DUAL | MACHINE_APM | MACHINE_ACPI | MACHINE_USB | MACHINE_UART_PRI | MACHINE_UART_SEC | MACHINE_LPT_PRI,
         .ram       = {
             .min  = 8192,
             .max  = 786432,
@@ -22168,8 +24690,8 @@ const machine_t machines[] = {
         .kbc_params               = 0x00000000,
         .nvr_device               = NULL,
         .nvr_params               = 0x00000000,
-        .sio_device               = NULL,
-        .sio_params               = 0x00000000,
+        .sio_device               = &w83877_device,
+        .sio_params               = (uintptr_t) ((W83877TF | W83877_3F0)),
         .kbc_p1                   = 0x00000cf0,
         .gpio                     = 0xffffffff,
         .gpio_acpi                = 0xffffffff,
@@ -22179,6 +24701,17 @@ const machine_t machines[] = {
         .vid_device               = NULL,
         .snd_device               = NULL,
         .net_device               = NULL,
+        .pci_flags                = PCI_CONFIG_TYPE_1,
+        .slot_layout              = (const machine_slot_t[]) {
+            MSLOT_PCI(0x00, PCI_CARD_NORTHBRIDGE, 0, 0, 0, 0),
+            MSLOT_BRIDGE(0x01, PCI_CARD_SOUTHBRIDGE, 0, 0, 0, 0, ((const machine_slot_t[]) { MSLOT_BUS(SLOT_ISA16, 2), MSLOT_END })),
+            MSLOT_PCI(0x09, PCI_CARD_NORMAL, 1, 2, 3, 4),
+            MSLOT_PCI(0x0B, PCI_CARD_NORMAL, 2, 3, 4, 1),
+            MSLOT_PCI(0x0D, PCI_CARD_NORMAL, 3, 4, 1, 2),
+            MSLOT_PCI(0x0F, PCI_CARD_NORMAL, 4, 1, 2, 3),
+            MSLOT_BRIDGE(0x02, PCI_CARD_AGPBRIDGE, 0, 0, 0, 0, machine_bus_agp),
+            MSLOT_END
+        },
         .aliases                  = { "" }
     },
 
@@ -22206,7 +24739,7 @@ const machine_t machines[] = {
             .max_multi   = 5.5
         },
         .bus_flags = MACHINE_PS2_AGP | MACHINE_BUS_USB,
-        .flags     = MACHINE_IDE_DUAL | MACHINE_APM | MACHINE_ACPI | MACHINE_USB,
+        .flags     = MACHINE_IDE_DUAL | MACHINE_APM | MACHINE_ACPI | MACHINE_USB | MACHINE_UART_PRI | MACHINE_UART_SEC | MACHINE_LPT_PRI,
         .ram       = {
             .min  = 8192,
             .max  = 1048576,
@@ -22219,8 +24752,8 @@ const machine_t machines[] = {
         .kbc_params               = 0x00000000,
         .nvr_device               = NULL,
         .nvr_params               = 0x00000000,
-        .sio_device               = NULL,
-        .sio_params               = 0x00000000,
+        .sio_device               = &w83877_device,
+        .sio_params               = (uintptr_t) ((W83877TF | W83877_250)),
         .kbc_p1                   = 0x00000cf0,
         .gpio                     = 0xffffffff,
         .gpio_acpi                = 0xffffffff,
@@ -22230,6 +24763,17 @@ const machine_t machines[] = {
         .vid_device               = NULL,
         .snd_device               = NULL,
         .net_device               = NULL,
+        .pci_flags                = PCI_CONFIG_TYPE_1,
+        .slot_layout              = (const machine_slot_t[]) {
+            MSLOT_PCI(0x00, PCI_CARD_NORTHBRIDGE, 0, 0, 0, 0),
+            MSLOT_BRIDGE(0x07, PCI_CARD_SOUTHBRIDGE, 1, 2, 0, 0, ((const machine_slot_t[]) { MSLOT_BUS(SLOT_ISA16, 2), MSLOT_END })),
+            MSLOT_PCI(0x09, PCI_CARD_NORMAL, 4, 1, 2, 3),
+            MSLOT_PCI(0x0A, PCI_CARD_NORMAL, 3, 4, 1, 2),
+            MSLOT_PCI(0x0B, PCI_CARD_NORMAL, 2, 3, 4, 1),
+            MSLOT_PCI(0x0C, PCI_CARD_NORMAL, 1, 2, 3, 4),
+            MSLOT_BRIDGE(0x01, PCI_CARD_AGPBRIDGE, 1, 2, 3, 4, machine_bus_agp),
+            MSLOT_END
+        },
         .aliases                  = { "" }
     },
     /* Has the VIA VT82C586B southbridge with on-chip KBC identical to the VIA
@@ -22255,7 +24799,7 @@ const machine_t machines[] = {
             .max_multi   = 5.5
         },
         .bus_flags = MACHINE_PS2_AGP | MACHINE_BUS_USB,
-        .flags     = MACHINE_IDE_DUAL | MACHINE_APM | MACHINE_USB,
+        .flags     = MACHINE_IDE_DUAL | MACHINE_APM | MACHINE_USB | MACHINE_UART_PRI | MACHINE_UART_SEC | MACHINE_LPT_PRI,
         .ram       = {
             .min  = 16384,
             .max  = 786432,
@@ -22268,7 +24812,7 @@ const machine_t machines[] = {
         .kbc_params               = 0x00000000,
         .nvr_device               = NULL,
         .nvr_params               = 0x00000000,
-        .sio_device               = NULL,
+        .sio_device               = &fdc37c669_device,
         .sio_params               = 0x00000000,
         .kbc_p1                   = 0x00000cf0,
         .gpio                     = 0xffffffff,
@@ -22279,6 +24823,17 @@ const machine_t machines[] = {
         .vid_device               = NULL,
         .snd_device               = NULL,
         .net_device               = NULL,
+        .pci_flags                = PCI_CONFIG_TYPE_1,
+        .slot_layout              = (const machine_slot_t[]) {
+            MSLOT_PCI(0x00, PCI_CARD_NORTHBRIDGE, 1, 2, 3, 5),
+            MSLOT_BRIDGE(0x07, PCI_CARD_SOUTHBRIDGE, 0, 0, 0, 5, machine_bus_isa),
+            MSLOT_PCI(0x08, PCI_CARD_NORMAL, 1, 2, 3, 5),
+            MSLOT_PCI(0x09, PCI_CARD_NORMAL, 2, 3, 5, 1),
+            MSLOT_PCI(0x0A, PCI_CARD_NORMAL, 3, 5, 1, 2),
+            MSLOT_PCI(0x0B, PCI_CARD_NORMAL, 5, 1, 2, 3),
+            MSLOT_BRIDGE(0x01, PCI_CARD_AGPBRIDGE, 1, 2, 3, 5, machine_bus_agp),
+            MSLOT_END
+        },
         .aliases                  = { "" }
     },
     /* Has the VIA VT82C586B southbridge with on-chip KBC identical to the VIA
@@ -22304,7 +24859,7 @@ const machine_t machines[] = {
             .max_multi   = 5.5
         },
         .bus_flags = MACHINE_PS2_AGP | MACHINE_BUS_USB,
-        .flags     = MACHINE_IDE_DUAL | MACHINE_APM | MACHINE_ACPI | MACHINE_USB,
+        .flags     = MACHINE_IDE_DUAL | MACHINE_APM | MACHINE_ACPI | MACHINE_USB | MACHINE_UART_PRI | MACHINE_UART_SEC | MACHINE_LPT_PRI,
         .ram       = {
             .min  = 8192,
             .max  = 1048576,
@@ -22317,8 +24872,8 @@ const machine_t machines[] = {
         .kbc_params               = 0x00000000,
         .nvr_device               = NULL,
         .nvr_params               = 0x00000000,
-        .sio_device               = NULL,
-        .sio_params               = 0x00000000,
+        .sio_device               = &w83877_device,
+        .sio_params               = (uintptr_t) ((W83877TF | W83877_3F0)),
         .kbc_p1                   = 0x00000cf0,
         .gpio                     = 0xffffffff,
         .gpio_acpi                = 0xffffffff,
@@ -22328,6 +24883,16 @@ const machine_t machines[] = {
         .vid_device               = NULL,
         .snd_device               = NULL,
         .net_device               = NULL,
+        .pci_flags                = PCI_CONFIG_TYPE_1,
+        .slot_layout              = (const machine_slot_t[]) {
+            MSLOT_PCI(0x00, PCI_CARD_NORTHBRIDGE, 0, 0, 0, 0),
+            MSLOT_BRIDGE(0x07, PCI_CARD_SOUTHBRIDGE, 1, 2, 3, 4, ((const machine_slot_t[]) { MSLOT_BUS(SLOT_ISA16, 3), MSLOT_END })),
+            MSLOT_PCI(0x08, PCI_CARD_NORMAL, 1, 2, 3, 4),
+            MSLOT_PCI(0x09, PCI_CARD_NORMAL, 2, 3, 4, 1),
+            MSLOT_PCI(0x0A, PCI_CARD_NORMAL, 3, 4, 1, 2),
+            MSLOT_BRIDGE(0x01, PCI_CARD_AGPBRIDGE, 1, 2, 3, 4, machine_bus_agp),
+            MSLOT_END
+        },
         .aliases                  = { "" }
     },
     /* Has the VIA VT82C686A southbridge with on-chip KBC identical to the VIA
@@ -22353,7 +24918,7 @@ const machine_t machines[] = {
             .max_multi   = 5.5
         },
         .bus_flags = MACHINE_PS2_A97 | MACHINE_BUS_USB,
-        .flags     = MACHINE_IDE_DUAL | MACHINE_SOUND | MACHINE_APM | MACHINE_ACPI | MACHINE_GAMEPORT | MACHINE_USB,
+        .flags     = MACHINE_IDE_DUAL | MACHINE_SOUND | MACHINE_APM | MACHINE_ACPI | MACHINE_GAMEPORT | MACHINE_USB | MACHINE_UART_PRI | MACHINE_UART_SEC | MACHINE_LPT_PRI,
         .ram       = {
             .min  = 8192,
             .max  = 786432,
@@ -22366,7 +24931,7 @@ const machine_t machines[] = {
         .kbc_params               = 0x00000000,
         .nvr_device               = NULL,
         .nvr_params               = 0x00000000,
-        .sio_device               = NULL,
+        .sio_device               = &via_vt82c686_sio_device,
         .sio_params               = 0x00000000,
         .kbc_p1                   = 0x00000cf0,
         .gpio                     = 0xffffffff,
@@ -22377,6 +24942,17 @@ const machine_t machines[] = {
         .vid_device               = NULL,
         .snd_device               = &wm9701a_device, /* on daughtercard */
         .net_device               = NULL,
+        .pci_flags                = PCI_CONFIG_TYPE_1,
+        .slot_layout              = (const machine_slot_t[]) {
+            MSLOT_PCI(0x00, PCI_CARD_NORTHBRIDGE, 0, 0, 0, 0),
+            MSLOT_BRIDGE(0x07, PCI_CARD_SOUTHBRIDGE, 1, 2, 3, 4, ((const machine_slot_t[]) { MSLOT_BUS(SLOT_ISA16, 1), MSLOT_END })),
+            MSLOT_PCI(0x08, PCI_CARD_NORMAL, 1, 2, 3, 4),
+            MSLOT_PCI(0x09, PCI_CARD_NORMAL, 2, 3, 4, 1),
+            MSLOT_PCI(0x0A, PCI_CARD_NORMAL, 3, 4, 1, 2),
+            MSLOT_PCI(0x0B, PCI_CARD_NORMAL, 4, 1, 2, 3),
+            MSLOT_BRIDGE(0x01, PCI_CARD_AGPBRIDGE, 1, 2, 3, 4, machine_bus_agp),
+            MSLOT_END
+        },
         .aliases                  = { "" }
     },
     /* Has the VIA VT82C686A southbridge with on-chip KBC identical to the VIA
@@ -22402,7 +24978,7 @@ const machine_t machines[] = {
             .max_multi   = 5.5
         },
         .bus_flags = MACHINE_PS2_AGP | MACHINE_BUS_USB,
-        .flags     = MACHINE_IDE_DUAL | MACHINE_APM | MACHINE_ACPI | MACHINE_USB,
+        .flags     = MACHINE_IDE_DUAL | MACHINE_APM | MACHINE_ACPI | MACHINE_USB | MACHINE_UART_PRI | MACHINE_UART_SEC | MACHINE_LPT_PRI,
         .ram       = {
             .min  = 8192,
             .max  = 786432,
@@ -22415,7 +24991,7 @@ const machine_t machines[] = {
         .kbc_params               = 0x00000000,
         .nvr_device               = NULL,
         .nvr_params               = 0x00000000,
-        .sio_device               = NULL,
+        .sio_device               = &via_vt82c686_sio_device,
         .sio_params               = 0x00000000,
         .kbc_p1                   = 0x00000cf0,
         .gpio                     = 0xffffffff,
@@ -22426,6 +25002,18 @@ const machine_t machines[] = {
         .vid_device               = NULL,
         .snd_device               = NULL,
         .net_device               = NULL,
+        .pci_flags                = PCI_CONFIG_TYPE_1,
+        .slot_layout              = (const machine_slot_t[]) {
+            MSLOT_PCI(0x00, PCI_CARD_NORTHBRIDGE, 0, 0, 0, 0),
+            MSLOT_BRIDGE(0x07, PCI_CARD_SOUTHBRIDGE, 0, 0, 3, 4, ((const machine_slot_t[]) { MSLOT_BUS(SLOT_ISA16, 2), MSLOT_END })),
+            MSLOT_PCI(0x08, PCI_CARD_NORMAL, 1, 2, 3, 4),
+            MSLOT_PCI(0x09, PCI_CARD_NORMAL, 2, 3, 4, 1),
+            MSLOT_PCI(0x0A, PCI_CARD_NORMAL, 3, 4, 1, 2),
+            MSLOT_PCI(0x0B, PCI_CARD_NORMAL, 4, 1, 2, 3),
+            MSLOT_PCI(0x0C, PCI_CARD_NORMAL, 4, 1, 2, 3),
+            MSLOT_BRIDGE(0x01, PCI_CARD_AGPBRIDGE, 1, 2, 3, 4, machine_bus_agp),
+            MSLOT_END
+        },
         .aliases                  = { "" }
     },
     /* Has the VIA VT82C596A southbridge with on-chip KBC identical to the VIA VT82C42N. */
@@ -22450,7 +25038,7 @@ const machine_t machines[] = {
             .max_multi   = 5.5
         },
         .bus_flags = MACHINE_PS2_AGP | MACHINE_BUS_USB,
-        .flags     = MACHINE_AGP_INTERNAL | MACHINE_IDE_DUAL | MACHINE_APM | MACHINE_ACPI | MACHINE_SOUND | MACHINE_USB, /* Machine has internal video: ATI Rage IIc AGP (not yet implemented) */
+        .flags     = MACHINE_AGP_INTERNAL | MACHINE_IDE_DUAL | MACHINE_APM | MACHINE_ACPI | MACHINE_SOUND | MACHINE_USB | MACHINE_UART_PRI | MACHINE_UART_SEC | MACHINE_LPT_PRI, /* Machine has internal video: ATI Rage IIc AGP (not yet implemented) */
         .ram       = {
             .min  = 8192,
             .max  = 524288,
@@ -22463,8 +25051,8 @@ const machine_t machines[] = {
         .kbc_params               = 0x00000000,
         .nvr_device               = NULL,
         .nvr_params               = 0x00000000,
-        .sio_device               = NULL,
-        .sio_params               = 0x00000000,
+        .sio_device               = &w83877_device,
+        .sio_params               = (uintptr_t) ((W83877TF | W83877_250)),
         .kbc_p1                   = 0x00000cf0,
         .gpio                     = 0xffffffff,
         .gpio_acpi                = 0xffffffff,
@@ -22474,6 +25062,14 @@ const machine_t machines[] = {
         .vid_device               = NULL,
         .snd_device               = &cs4235_onboard_device,
         .net_device               = NULL,
+        .pci_flags                = PCI_CONFIG_TYPE_1,
+        .slot_layout              = (const machine_slot_t[]) {
+            MSLOT_PCI(0x00, PCI_CARD_NORTHBRIDGE, 0, 0, 0, 0),
+            MSLOT_BRIDGE(0x07, PCI_CARD_SOUTHBRIDGE, 1, 2, 3, 4, ((const machine_slot_t[]) { MSLOT_BUS(SLOT_ISA16, 2), MSLOT_END })),
+            MSLOT_PCI(0x13, PCI_CARD_NORMAL, 1, 2, 3, 4),
+            MSLOT_PCI(0x12, PCI_CARD_NORMAL, 2, 3, 4, 1),
+            MSLOT_END
+        },
         .aliases                  = { "eMachines eTower 3__k", "" }
     },
 
@@ -22501,7 +25097,7 @@ const machine_t machines[] = {
             .max_multi   = 8.0
         },
         .bus_flags = MACHINE_PS2_PCI,
-        .flags     = MACHINE_IDE_DUAL | MACHINE_APM,
+        .flags     = MACHINE_IDE_DUAL | MACHINE_APM | MACHINE_UART_PRI | MACHINE_UART_SEC | MACHINE_LPT_PRI,
         .ram       = {
         /* Like with the Gigabyte GA-586IP and DFI G586VPM, this machine also can't detect
            more than 256 MB RAM likely due to an early AwardBIOS v4.5x bug. */
@@ -22516,8 +25112,8 @@ const machine_t machines[] = {
         .kbc_params               = KBC_VEN_AMI | 0x00004800,
         .nvr_device               = &nvr_at_device,
         .nvr_params               = NVR_AT,
-        .sio_device               = NULL,
-        .sio_params               = 0x00000000,
+        .sio_device               = &fdc37c6xx_device,
+        .sio_params               = (uintptr_t) (FDC37C665),
         .kbc_p1                   = 0x000008f0,
         .gpio                     = 0xffffffff,
         .gpio_acpi                = 0xffffffff,
@@ -22528,6 +25124,18 @@ const machine_t machines[] = {
         .snd_device               = NULL,
         .net_device               = NULL,
         .ide_device               = &ide_cmd646_device,
+        .pci_flags                = PCI_CONFIG_TYPE_1,
+        .slot_layout              = (const machine_slot_t[]) {
+            MSLOT_PCI(0x19, PCI_CARD_NORTHBRIDGE, 0, 0, 0, 0),
+            MSLOT_PCI(0x14, PCI_CARD_NORTHBRIDGE_SEC, 0, 0, 0, 0),
+            MSLOT_BRIDGE(0x02, PCI_CARD_SOUTHBRIDGE, 0, 0, 0, 0, ((const machine_slot_t[]) { MSLOT_BUS(SLOT_ISA16, 3), MSLOT_END })),
+            MSLOT_PCI(0x07, PCI_CARD_IDE, 0xFE, 0xFF, 0, 0),
+            MSLOT_PCI(0x03, PCI_CARD_NORMAL, 1, 2, 3, 4),
+            MSLOT_PCI(0x04, PCI_CARD_NORMAL, 2, 3, 4, 1),
+            MSLOT_PCI(0x05, PCI_CARD_NORMAL, 3, 4, 1, 2),
+            MSLOT_PCI(0x06, PCI_CARD_NORMAL, 4, 1, 2, 3),
+            MSLOT_END
+        },
         .aliases                  = { "" }
     },
     /* According to tests from real hardware: This has AMI MegaKey KBC firmware on the
@@ -22554,7 +25162,7 @@ const machine_t machines[] = {
             .max_multi   = 8.0
         },
         .bus_flags = MACHINE_PS2_PCI,
-        .flags     = MACHINE_IDE_DUAL | MACHINE_APM,
+        .flags     = MACHINE_IDE_DUAL | MACHINE_APM | MACHINE_UART_PRI | MACHINE_UART_SEC | MACHINE_LPT_PRI,
         .ram       = {
             .min  = 8192,
             .max  = 524288,
@@ -22568,8 +25176,8 @@ const machine_t machines[] = {
         .kbc_params               = 0x00000000,
         .nvr_device               = NULL,
         .nvr_params               = 0x00000000,
-        .sio_device               = NULL,
-        .sio_params               = 0x00000000,
+        .sio_device               = &pc87306_device,
+        .sio_params               = (uintptr_t) (PCX730X_AMI),
         .kbc_p1                   = 0x000044f0,
         .gpio                     = 0xffffffff,
         .gpio_acpi                = 0xffffffff,
@@ -22579,6 +25187,17 @@ const machine_t machines[] = {
         .vid_device               = NULL,
         .snd_device               = NULL,
         .net_device               = NULL,
+        .pci_flags                = PCI_CONFIG_TYPE_1,
+        .slot_layout              = (const machine_slot_t[]) {
+            MSLOT_PCI(0x19, PCI_CARD_NORTHBRIDGE, 0, 0, 0, 0),
+            MSLOT_PCI(0x14, PCI_CARD_NORTHBRIDGE_SEC, 0, 0, 0, 0),
+            MSLOT_BRIDGE(0x02, PCI_CARD_SOUTHBRIDGE, 0, 0, 0, 0, ((const machine_slot_t[]) { MSLOT_BUS(SLOT_ISA16, 3), MSLOT_END })),
+            MSLOT_PCI(0x06, PCI_CARD_NORMAL, 1, 2, 3, 4),
+            MSLOT_PCI(0x0A, PCI_CARD_NORMAL, 4, 1, 2, 3),
+            MSLOT_PCI(0x0C, PCI_CARD_NORMAL, 3, 4, 1, 2),
+            MSLOT_PCI(0x0E, PCI_CARD_NORMAL, 2, 3, 4, 1),
+            MSLOT_END
+        },
         .aliases                  = { "Intel Aurora", "AST Bravo MS-T 6150", "Compaq ProLinea 6___e", "Dell Dimension XPS Pro___", "Gateway MBDSAC02_A_WW", "IBM PC 360 S___ (Type 6598)", "" }
     },
     /* 450GX */
@@ -22604,7 +25223,7 @@ const machine_t machines[] = {
             .max_multi   = 8.0
         },
         .bus_flags = MACHINE_PS2_PCI, /* Machine has AMB */
-        .flags     = MACHINE_IDE_DUAL,
+        .flags     = MACHINE_IDE_DUAL | MACHINE_UART_PRI | MACHINE_UART_SEC | MACHINE_LPT_PRI,
         .ram       = {
             .min  = 8192,
             .max  = 524288,
@@ -22617,8 +25236,8 @@ const machine_t machines[] = {
         .kbc_params               = KBC_VEN_AMI | 0x00004800,
         .nvr_device               = &nvr_at_device,
         .nvr_params               = NVR_P6RP4,
-        .sio_device               = NULL,
-        .sio_params               = 0x00000000,
+        .sio_device               = &fdc37c6xx_device,
+        .sio_params               = (uintptr_t) (FDC37C665),
         .kbc_p1                   = 0x00000cf0,
         .gpio                     = 0xffffffff,
         .gpio_acpi                = 0xffffffff,
@@ -22629,6 +25248,18 @@ const machine_t machines[] = {
         .snd_device               = NULL,
         .net_device               = NULL,
         .ide_device               = &ide_cmd646_device,
+        .pci_flags                = PCI_CONFIG_TYPE_1,
+        .slot_layout              = (const machine_slot_t[]) {
+            MSLOT_PCI(0x19, PCI_CARD_NORTHBRIDGE, 0, 0, 0, 0),
+            MSLOT_PCI(0x14, PCI_CARD_NORTHBRIDGE_SEC, 0, 0, 0, 0),
+            MSLOT_BRIDGE(0x02, PCI_CARD_SOUTHBRIDGE, 0, 0, 0, 0, ((const machine_slot_t[]) { MSLOT_BUS(SLOT_ISA16, 3), MSLOT_END })),
+            MSLOT_PCI(0x08, PCI_CARD_IDE, 0, 0, 0, 0),
+            MSLOT_PCI(0x07, PCI_CARD_NORMAL, 1, 2, 3, 4),
+            MSLOT_PCI(0x06, PCI_CARD_NORMAL, 2, 3, 4, 1),
+            MSLOT_PCI(0x05, PCI_CARD_NORMAL, 3, 4, 1, 2),
+            MSLOT_PCI(0x04, PCI_CARD_NORMAL, 4, 1, 2, 3),
+            MSLOT_END
+        },
         .aliases                  = { "" }
     },
     /* This has a PC87306 with unknown keyboard controller firmware (Phoenix?). */
@@ -22653,7 +25284,7 @@ const machine_t machines[] = {
             .max_multi   = 8.0
         },
         .bus_flags = MACHINE_PS2_PCI, /* Machine has AMB */
-        .flags     = MACHINE_IDE_DUAL,
+        .flags     = MACHINE_IDE_DUAL | MACHINE_UART_PRI | MACHINE_UART_SEC | MACHINE_LPT_PRI,
         .ram       = {
             .min  = 8192,
             .max  = 524288,
@@ -22666,8 +25297,8 @@ const machine_t machines[] = {
         .kbc_params               = 0x00000000,
         .nvr_device               = NULL,
         .nvr_params               = 0x00000000,
-        .sio_device               = NULL,
-        .sio_params               = 0x00000000,
+        .sio_device               = &pc87306_device,
+        .sio_params               = (uintptr_t) (PCX730X_PHOENIX_42),
         .kbc_p1                   = 0x00000cf0,
         .gpio                     = 0xffffffff,
         .gpio_acpi                = 0xffffffff,
@@ -22678,6 +25309,18 @@ const machine_t machines[] = {
         .snd_device               = NULL,
         .net_device               = NULL,
         .ide_device               = &ide_cmd646_device,
+        .pci_flags                = PCI_CONFIG_TYPE_1,
+        .slot_layout              = (const machine_slot_t[]) {
+            MSLOT_PCI(0x19, PCI_CARD_NORTHBRIDGE, 0, 0, 0, 0),
+            MSLOT_PCI(0x14, PCI_CARD_NORTHBRIDGE_SEC, 0, 0, 0, 0),
+            MSLOT_BRIDGE(0x02, PCI_CARD_SOUTHBRIDGE, 0, 0, 0, 0, ((const machine_slot_t[]) { MSLOT_BUS(SLOT_ISA16, 3), MSLOT_END })),
+            MSLOT_PCI(0x03, PCI_CARD_NORMAL, 1, 2, 3, 4),
+            MSLOT_PCI(0x04, PCI_CARD_NORMAL, 2, 3, 4, 1),
+            MSLOT_PCI(0x05, PCI_CARD_NORMAL, 3, 4, 1, 2),
+            MSLOT_PCI(0x06, PCI_CARD_NORMAL, 4, 1, 2, 3),
+            MSLOT_PCI(0x0c, PCI_CARD_IDE, 0, 0, 0, 0),
+            MSLOT_END
+        },
         .aliases                  = { "" }
     },
 
@@ -22705,7 +25348,7 @@ const machine_t machines[] = {
             .max_multi   = 8.0
         },
         .bus_flags = MACHINE_PS2_PCI | MACHINE_BUS_USB,
-        .flags     = MACHINE_IDE_DUAL | MACHINE_APM | MACHINE_USB,
+        .flags     = MACHINE_IDE_DUAL | MACHINE_APM | MACHINE_USB | MACHINE_UART_PRI | MACHINE_UART_SEC | MACHINE_LPT_PRI,
         .ram       = {
             .min  = 8192,
             .max  = 393216,
@@ -22718,8 +25361,8 @@ const machine_t machines[] = {
         .kbc_params               = 0x00000000,
         .nvr_device               = NULL,
         .nvr_params               = 0x00000000,
-        .sio_device               = NULL,
-        .sio_params               = 0x00000000,
+        .sio_device               = &fdc37c93x_device,
+        .sio_params               = (uintptr_t) ((FDC37XXX5 | FDC37C93X_NORMAL)),
         .kbc_p1                   = 0x00000cf0,
         .gpio                     = 0xffffffff,
         .gpio_acpi                = 0xffffffff,
@@ -22729,6 +25372,17 @@ const machine_t machines[] = {
         .vid_device               = NULL,
         .snd_device               = NULL,
         .net_device               = NULL,
+        .pci_flags                = PCI_CONFIG_TYPE_1,
+        .slot_layout              = (const machine_slot_t[]) {
+            MSLOT_PCI(0x00, PCI_CARD_NORTHBRIDGE, 0, 0, 0, 0),
+            MSLOT_BRIDGE(0x07, PCI_CARD_SOUTHBRIDGE, 0, 0, 0, 0, machine_bus_isa),
+            MSLOT_PCI(0x0D, PCI_CARD_NORMAL, 1, 2, 3, 4),
+            MSLOT_PCI(0x0F, PCI_CARD_NORMAL, 2, 3, 4, 1),
+            MSLOT_PCI(0x10, PCI_CARD_NORMAL, 3, 4, 1, 2),
+            MSLOT_PCI(0x12, PCI_CARD_NORMAL, 4, 1, 2, 3),
+            MSLOT_PCI(0x0C, PCI_CARD_NORMAL, 2, 3, 4, 1),
+            MSLOT_END
+        },
         .aliases                  = { "" }
     },
     /* The base board has a Holtek HT6542B with AMIKey-2 ('H') KBC firmware. */
@@ -22752,8 +25406,8 @@ const machine_t machines[] = {
             .min_multi   = 1.5,
             .max_multi   = 8.0
         },
-        .bus_flags = MACHINE_PS2_PCI | MACHINE_BUS_USB, // Machine has AMB
-        .flags     = MACHINE_IDE_DUAL | MACHINE_APM | MACHINE_USB,
+        .bus_flags = MACHINE_PS2_PCI | MACHINE_BUS_USB,
+        .flags     = MACHINE_IDE_DUAL | MACHINE_APM | MACHINE_USB | MACHINE_UART_PRI | MACHINE_UART_SEC | MACHINE_LPT_PRI,
         .ram       = {
             .min  = 8192,
             .max  = 1048576,
@@ -22766,17 +25420,28 @@ const machine_t machines[] = {
         .kbc_params               = KBC_VEN_HOLTEK | 0x00004800,
         .nvr_device               = &nvr_at_device,
         .nvr_params               = NVR_AT,
-        .sio_device               = NULL,
-        .sio_params               = 0x00000000,
+        .sio_device               = &w83877_device,
+        .sio_params               = (uintptr_t) ((W83877F | W83877_3F0)),
         .kbc_p1                   = 0x00000cf0,
         .gpio                     = 0xffffffff,
         .gpio_acpi                = 0xffffffff,
-        .device                   = NULL,
+        .device                   = &validated_up_apic_board_device,
         .kbd_device               = NULL,
         .fdc_device               = NULL,
         .vid_device               = NULL,
         .snd_device               = NULL,
         .net_device               = NULL,
+        .pci_flags                = PCI_CONFIG_TYPE_1,
+        .slot_layout              = (const machine_slot_t[]) {
+            MSLOT_PCI(0x00, PCI_CARD_NORTHBRIDGE, 0, 0, 0, 0),
+            MSLOT_BRIDGE(0x01, PCI_CARD_SOUTHBRIDGE, 0, 0, 0, 0, machine_bus_isa),
+            MSLOT_PCI(0x09, PCI_CARD_NORMAL, 4, 1, 2, 3),
+            MSLOT_PCI(0x0A, PCI_CARD_NORMAL, 3, 4, 1, 2),
+            MSLOT_PCI(0x0B, PCI_CARD_NORMAL, 2, 3, 4, 1),
+            MSLOT_PCI(0x0C, PCI_CARD_NORMAL, 1, 2, 3, 4),
+            MSLOT_PCI(0x0D, PCI_CARD_NORMAL, 4, 1, 2, 3),
+            MSLOT_END
+        },
         .aliases                  = { "" }
     },*/
     /* Has a VIA VT82C42N KBC. */
@@ -22801,7 +25466,7 @@ const machine_t machines[] = {
             .max_multi   = 5.5
         },
         .bus_flags = MACHINE_PS2_PCI | MACHINE_BUS_USB,
-        .flags     = MACHINE_IDE_DUAL | MACHINE_APM | MACHINE_USB,
+        .flags     = MACHINE_IDE_DUAL | MACHINE_APM | MACHINE_USB | MACHINE_UART_PRI | MACHINE_UART_SEC | MACHINE_LPT_PRI,
         .ram       = {
             .min  = 8192,
             .max  = 524288,
@@ -22814,7 +25479,7 @@ const machine_t machines[] = {
         .kbc_params               = KBC_VEN_VIA | 0x00424600,
         .nvr_device               = &nvr_at_device,
         .nvr_params               = NVR_AT,
-        .sio_device               = NULL,
+        .sio_device               = &fdc37c669_device,
         .sio_params               = 0x00000000,
         .kbc_p1                   = 0x00000cf0,
         .gpio                     = 0xffffffff,
@@ -22825,6 +25490,16 @@ const machine_t machines[] = {
         .vid_device               = NULL,
         .snd_device               = NULL,
         .net_device               = NULL,
+        .pci_flags                = PCI_CONFIG_TYPE_1,
+        .slot_layout              = (const machine_slot_t[]) {
+            MSLOT_PCI(0x00, PCI_CARD_NORTHBRIDGE, 0, 0, 0, 0),
+            MSLOT_BRIDGE(0x07, PCI_CARD_SOUTHBRIDGE, 0, 0, 0, 0, ((const machine_slot_t[]) { MSLOT_BUS(SLOT_ISA16, 3), MSLOT_END })),
+            MSLOT_PCI(0x08, PCI_CARD_NORMAL, 1, 2, 3, 4),
+            MSLOT_PCI(0x09, PCI_CARD_NORMAL, 2, 3, 4, 1),
+            MSLOT_PCI(0x0A, PCI_CARD_NORMAL, 3, 4, 1, 2),
+            MSLOT_PCI(0x0B, PCI_CARD_NORMAL, 4, 1, 2, 3),
+            MSLOT_END
+        },
         .aliases                  = { "" }
     },
     /* Has the AMIKey-2 ('H') KBC firmware. */
@@ -22849,7 +25524,7 @@ const machine_t machines[] = {
             .max_multi   = 5.5
         },
         .bus_flags = MACHINE_PS2_PCI | MACHINE_BUS_USB,
-        .flags     = MACHINE_IDE_DUAL | MACHINE_APM | MACHINE_USB,
+        .flags     = MACHINE_IDE_DUAL | MACHINE_APM | MACHINE_USB | MACHINE_UART_PRI | MACHINE_UART_SEC | MACHINE_LPT_PRI,
         .ram       = {
             .min  = 8192,
             .max  = 524288,
@@ -22862,7 +25537,7 @@ const machine_t machines[] = {
         .kbc_params               = KBC_VEN_AMI | 0x00004800,
         .nvr_device               = &nvr_at_device,
         .nvr_params               = NVR_AT,
-        .sio_device               = NULL,
+        .sio_device               = &um8669f_device,
         .sio_params               = 0x00000000,
         .kbc_p1                   = 0x00000cf0,
         .gpio                     = 0xffffffff,
@@ -22873,6 +25548,16 @@ const machine_t machines[] = {
         .vid_device               = NULL,
         .snd_device               = NULL,
         .net_device               = NULL,
+        .pci_flags                = PCI_CONFIG_TYPE_1,
+        .slot_layout              = (const machine_slot_t[]) {
+            MSLOT_PCI(0x00, PCI_CARD_NORTHBRIDGE, 0, 0, 0, 0),
+            MSLOT_BRIDGE(0x07, PCI_CARD_SOUTHBRIDGE, 0, 0, 0, 0, ((const machine_slot_t[]) { MSLOT_BUS(SLOT_ISA16, 4), MSLOT_END })),
+            MSLOT_PCI(0x08, PCI_CARD_NORMAL, 1, 2, 3, 4),
+            MSLOT_PCI(0x09, PCI_CARD_NORMAL, 2, 3, 4, 1),
+            MSLOT_PCI(0x0A, PCI_CARD_NORMAL, 3, 4, 1, 2),
+            MSLOT_PCI(0x0B, PCI_CARD_NORMAL, 4, 1, 2, 3),
+            MSLOT_END
+        },
         .aliases                  = { "" }
     },
     /* According to tests from real hardware: This has AMI MegaKey KBC firmware on the
@@ -22899,7 +25584,7 @@ const machine_t machines[] = {
             .max_multi   = 3.5
         },
         .bus_flags = MACHINE_PS2_PCI | MACHINE_BUS_USB,
-        .flags     = MACHINE_IDE_DUAL | MACHINE_APM | MACHINE_SOUND | MACHINE_VIDEO | MACHINE_USB,
+        .flags     = MACHINE_IDE_DUAL | MACHINE_APM | MACHINE_SOUND | MACHINE_VIDEO | MACHINE_USB | MACHINE_UART_PRI | MACHINE_UART_SEC | MACHINE_LPT_PRI,
         .ram       = {
             .min  = 8192,
             .max  = 524288,
@@ -22913,8 +25598,8 @@ const machine_t machines[] = {
         /* TODO: Implement the PC87307 NVR. */
         .nvr_device               = &nvr_at_device,
         .nvr_params               = NVR_AT,
-        .sio_device               = NULL,
-        .sio_params               = 0x00000000,
+        .sio_device               = &pc87307_device,
+        .sio_params               = (uintptr_t) ((PCX730X_AMI | PCX7307_PC87307)),
         .kbc_p1                   = 0x000044f0,
         .gpio                     = 0xffffffff,
         .gpio_acpi                = 0xffffffff,
@@ -22924,6 +25609,16 @@ const machine_t machines[] = {
         .vid_device               = &s3_virge_325_onboard_pci_device,
         .snd_device               = &cs4236b_onboard_device,
         .net_device               = NULL,
+        .pci_flags                = PCI_CONFIG_TYPE_1,
+        .slot_layout              = (const machine_slot_t[]) {
+            MSLOT_PCI(0x00, PCI_CARD_NORTHBRIDGE, 0, 0, 0, 0),
+            MSLOT_PCI(0x08, PCI_CARD_VIDEO, 3, 0, 0, 0),
+            MSLOT_PCI(0x11, PCI_CARD_NORMAL, 1, 3, 2, 4),
+            MSLOT_PCI(0x13, PCI_CARD_NORMAL, 2, 1, 3, 4),
+            MSLOT_PCI(0x0B, PCI_CARD_NORMAL, 3, 2, 1, 4),
+            MSLOT_BRIDGE(0x07, PCI_CARD_SOUTHBRIDGE, 0, 0, 0, 4, machine_bus_isa),
+            MSLOT_END
+        },
         .aliases                  = { "Intel Apollo", "" }
     },
     /* According to tests from real hardware: This has AMI MegaKey KBC firmware on the
@@ -22950,7 +25645,7 @@ const machine_t machines[] = {
             .max_multi   = 3.5
         },
         .bus_flags = MACHINE_PS2_PCI | MACHINE_BUS_USB,
-        .flags     = MACHINE_IDE_DUAL | MACHINE_SOUND | MACHINE_APM | MACHINE_GAMEPORT | MACHINE_USB,
+        .flags     = MACHINE_IDE_DUAL | MACHINE_SOUND | MACHINE_APM | MACHINE_GAMEPORT | MACHINE_USB | MACHINE_UART_PRI | MACHINE_UART_SEC | MACHINE_LPT_PRI,
         .ram       = {
             .min  = 8192,
             .max  = 524288,
@@ -22964,8 +25659,8 @@ const machine_t machines[] = {
         /* TODO: Implement the PC87307 NVR. */
         .nvr_device               = &nvr_at_device,
         .nvr_params               = NVR_AT,
-        .sio_device               = NULL,
-        .sio_params               = 0x00000000,
+        .sio_device               = &pc87307_device,
+        .sio_params               = (uintptr_t) ((PCX730X_AMI | PCX7307_PC87307)),
         .kbc_p1                   = 0x000044f0,
         .gpio                     = 0xffffffff,
         .gpio_acpi                = 0xffffffff,
@@ -22975,6 +25670,16 @@ const machine_t machines[] = {
         .vid_device               = NULL,
         .snd_device               = &cs4236_onboard_device,
         .net_device               = NULL,
+        .pci_flags                = PCI_CONFIG_TYPE_1,
+        .slot_layout              = (const machine_slot_t[]) {
+            MSLOT_PCI(0x00, PCI_CARD_NORTHBRIDGE, 0, 0, 0, 0),
+            MSLOT_PCI(0x0B, PCI_CARD_NORMAL, 1, 2, 3, 4),
+            MSLOT_PCI(0x0F, PCI_CARD_NORMAL, 4, 1, 2, 3),
+            MSLOT_PCI(0x11, PCI_CARD_NORMAL, 3, 4, 1, 2),
+            MSLOT_PCI(0x13, PCI_CARD_NORMAL, 2, 3, 4, 1),
+            MSLOT_BRIDGE(0x07, PCI_CARD_SOUTHBRIDGE, 0, 0, 0, 0, ((const machine_slot_t[]) { MSLOT_BUS(SLOT_ISA16, 4), MSLOT_END })),
+            MSLOT_END
+        },
         .aliases                  = { "Intel Venus", "AST Bravo MS-T 6180", "AST Bravo MS-T 6200", "Dell Dimension XPS Pro___n", "Gateway 2000 G6 FPC", "Micron ClientPro XVI", "Micron Millennia Pro 1", "NEC PowerMate MT 17_0", "NEC PowerMate PM 17_0", "NEC PowerMate Pro2___", "" }
     },
     /* Has the AMIKey-2 ('H') KBC firmware. */
@@ -22999,7 +25704,7 @@ const machine_t machines[] = {
             .max_multi   = 8.0
         },
         .bus_flags = MACHINE_PS2_PCI | MACHINE_BUS_USB,
-        .flags     = MACHINE_IDE_DUAL | MACHINE_APM | MACHINE_USB, /* Machine has internal(?) SCSI: Adaptec AIC-7880U (onboard variant not yet emulated) */
+        .flags     = MACHINE_IDE_DUAL | MACHINE_APM | MACHINE_USB | MACHINE_UART_PRI | MACHINE_UART_SEC | MACHINE_LPT_PRI, /* Machine has internal(?) SCSI: Adaptec AIC-7880U (onboard variant not yet emulated) */
         .ram       = {
             .min  = 40960,  /* temporary higher limit set due to a DRB(?) issue that prevents POST with less than this amount
                                on PhoenixBIOS */
@@ -23013,8 +25718,8 @@ const machine_t machines[] = {
         .kbc_params               = KBC_VEN_AMI | 0x00004800,
         .nvr_device               = &nvr_at_device,
         .nvr_params               = NVR_AT,
-        .sio_device               = NULL,
-        .sio_params               = 0x00000000,
+        .sio_device               = &w83877_device,
+        .sio_params               = (uintptr_t) ((W83877F | W83877_250)),
         .kbc_p1                   = 0x00000cf0,
         .gpio                     = 0xffffffff,
         .gpio_acpi                = 0xffffffff,
@@ -23024,6 +25729,16 @@ const machine_t machines[] = {
         .vid_device               = NULL,
         .snd_device               = NULL,
         .net_device               = NULL,
+        .pci_flags                = PCI_CONFIG_TYPE_1,
+        .slot_layout              = (const machine_slot_t[]) {
+            MSLOT_PCI(0x00, PCI_CARD_NORTHBRIDGE, 0, 0, 0, 0),
+            MSLOT_BRIDGE(0x07, PCI_CARD_SOUTHBRIDGE, 0, 0, 0, 0, machine_bus_isa),
+            MSLOT_PCI(0x0C, PCI_CARD_NORMAL, 1, 2, 3, 4),
+            MSLOT_PCI(0x0D, PCI_CARD_NORMAL, 2, 3, 4, 1),
+            MSLOT_PCI(0x0E, PCI_CARD_NORMAL, 3, 4, 1, 2),
+            MSLOT_PCI(0x0F, PCI_CARD_NORMAL, 4, 1, 2, 3),
+            MSLOT_END
+        },
         .aliases                  = { "MSI MS-6106", "" }
     },
     /* Has a SM(S)C FDC37C935 Super I/O chip with on-chip KBC with Phoenix
@@ -23049,7 +25764,7 @@ const machine_t machines[] = {
             .max_multi   = 8.0
         },
         .bus_flags = MACHINE_PS2_PCI | MACHINE_BUS_USB,
-        .flags     = MACHINE_IDE_DUAL | MACHINE_APM | MACHINE_GAMEPORT | MACHINE_USB, /* Machine has internal sound: Sound Blaster ViBRA 16C */
+        .flags     = MACHINE_IDE_DUAL | MACHINE_APM | MACHINE_GAMEPORT | MACHINE_USB | MACHINE_UART_PRI | MACHINE_UART_SEC | MACHINE_LPT_PRI, /* Machine has internal sound: Sound Blaster ViBRA 16C */
         .ram       = {
             .min  = 8192,
             .max  = 786432,
@@ -23062,8 +25777,8 @@ const machine_t machines[] = {
         .kbc_params               = 0x00000000,
         .nvr_device               = NULL,
         .nvr_params               = 0x00000000,
-        .sio_device               = NULL,
-        .sio_params               = 0x00000000,
+        .sio_device               = &fdc37c93x_device,
+        .sio_params               = (uintptr_t) ((FDC37XXX5 | FDC37C93X_NORMAL)),
         .kbc_p1                   = 0x00000cf0,
         .gpio                     = 0xffffffff,
         .gpio_acpi                = 0xffffffff,
@@ -23073,6 +25788,16 @@ const machine_t machines[] = {
         .vid_device               = NULL,
         .snd_device               = NULL,
         .net_device               = NULL,
+        .pci_flags                = PCI_CONFIG_TYPE_1,
+        .slot_layout              = (const machine_slot_t[]) {
+            MSLOT_PCI(0x00, PCI_CARD_NORTHBRIDGE, 0, 0, 0, 0),
+            MSLOT_BRIDGE(0x07, PCI_CARD_SOUTHBRIDGE, 0, 0, 0, 0, ((const machine_slot_t[]) { MSLOT_BUS(SLOT_ISA16, 3), MSLOT_END })),
+            MSLOT_PCI(0x12, PCI_CARD_NORMAL, 1, 2, 3, 4),
+            MSLOT_PCI(0x11, PCI_CARD_NORMAL, 2, 3, 4, 1),
+            MSLOT_PCI(0x10, PCI_CARD_NORMAL, 3, 4, 1, 2),
+            MSLOT_PCI(0x0F, PCI_CARD_NORMAL, 4, 1, 2, 3),
+            MSLOT_END
+        },
         .aliases                  = { "" }
     },
     /* Has a VIA VT82C42N KBC. */
@@ -23097,7 +25822,7 @@ const machine_t machines[] = {
             .max_multi   = 8.0
         },
         .bus_flags = MACHINE_PS2_PCI | MACHINE_BUS_USB,
-        .flags     = MACHINE_IDE_DUAL | MACHINE_APM | MACHINE_USB,
+        .flags     = MACHINE_IDE_DUAL | MACHINE_APM | MACHINE_USB | MACHINE_UART_PRI | MACHINE_UART_SEC | MACHINE_LPT_PRI,
         .ram       = {
             .min  = 8192,
             .max  = 524288,
@@ -23110,7 +25835,7 @@ const machine_t machines[] = {
         .kbc_params               = KBC_VEN_VIA | 0x00424600,
         .nvr_device               = &nvr_at_device,
         .nvr_params               = NVR_AT,
-        .sio_device               = NULL,
+        .sio_device               = &fdc37c669_device,
         .sio_params               = 0x00000000,
         .kbc_p1                   = 0x00000cf0,
         .gpio                     = 0xffffffff,
@@ -23121,6 +25846,16 @@ const machine_t machines[] = {
         .vid_device               = NULL,
         .snd_device               = NULL,
         .net_device               = NULL,
+        .pci_flags                = PCI_CONFIG_TYPE_1,
+        .slot_layout              = (const machine_slot_t[]) {
+            MSLOT_PCI(0x00, PCI_CARD_NORTHBRIDGE, 0, 0, 0, 0),
+            MSLOT_BRIDGE(0x07, PCI_CARD_SOUTHBRIDGE, 0, 0, 0, 0, machine_bus_isa),
+            MSLOT_PCI(0x11, PCI_CARD_NORMAL, 1, 2, 3, 4),
+            MSLOT_PCI(0x12, PCI_CARD_NORMAL, 2, 3, 4, 1),
+            MSLOT_PCI(0x13, PCI_CARD_NORMAL, 3, 4, 1, 2),
+            MSLOT_PCI(0x14, PCI_CARD_NORMAL, 4, 1, 2, 3),
+            MSLOT_END
+        },
         .aliases                  = { "Aristo AM-600FX", "" }
     },
     /* Has a Holtek HT6542B which emulates the AMIKey-2 ('H') KBC firmware. */
@@ -23145,7 +25880,7 @@ const machine_t machines[] = {
             .max_multi   = 3.0
         },
         .bus_flags = MACHINE_PS2_PCI | MACHINE_BUS_USB,
-        .flags     = MACHINE_IDE_DUAL | MACHINE_APM | MACHINE_USB,
+        .flags     = MACHINE_IDE_DUAL | MACHINE_APM | MACHINE_USB | MACHINE_UART_PRI | MACHINE_UART_SEC | MACHINE_LPT_PRI,
         .ram       = {
             .min  = 8192,
             .max  = 1048576, /* Memory test counter glitches out with >999MB but otherwise
@@ -23159,7 +25894,7 @@ const machine_t machines[] = {
         .kbc_params               = KBC_VEN_HOLTEK | 0x00004800,
         .nvr_device               = &nvr_at_device,
         .nvr_params               = NVR_AT,
-        .sio_device               = NULL,
+        .sio_device               = &um8669f_device,
         .sio_params               = 0x00000000,
         .kbc_p1                   = 0x00000cf0,
         .gpio                     = 0xffffffff,
@@ -23170,6 +25905,17 @@ const machine_t machines[] = {
         .vid_device               = NULL,
         .snd_device               = NULL,
         .net_device               = NULL,
+        .pci_flags                = PCI_CONFIG_TYPE_1,
+        .slot_layout              = (const machine_slot_t[]) {
+            MSLOT_PCI(0x00, PCI_CARD_NORTHBRIDGE, 0, 0, 0, 0),
+            MSLOT_BRIDGE(0x07, PCI_CARD_SOUTHBRIDGE, 0, 0, 0, 0, machine_bus_isa),
+            MSLOT_PCI(0x10, PCI_CARD_NORMAL, 1, 2, 3, 4),
+            MSLOT_PCI(0x11, PCI_CARD_NORMAL, 1, 2, 3, 4),
+            MSLOT_PCI(0x12, PCI_CARD_NORMAL, 2, 3, 4, 1),
+            MSLOT_PCI(0x13, PCI_CARD_NORMAL, 3, 4, 1, 2),
+            MSLOT_PCI(0x14, PCI_CARD_NORMAL, 4, 1, 2, 3),
+            MSLOT_END
+        },
         .aliases                  = { "" }
     },
 
@@ -23197,7 +25943,7 @@ const machine_t machines[] = {
             .max_multi   = 8.0
         },
         .bus_flags = MACHINE_PS2_AGP | MACHINE_BUS_USB,
-        .flags     = MACHINE_IDE_DUAL | MACHINE_APM | MACHINE_ACPI | MACHINE_GAMEPORT | MACHINE_USB, /* Machine has internal sound: C-Media CMI8330 (not yet implemented) */
+        .flags     = MACHINE_IDE_DUAL | MACHINE_APM | MACHINE_ACPI | MACHINE_GAMEPORT | MACHINE_USB | MACHINE_UART_PRI | MACHINE_UART_SEC | MACHINE_UART_TER | MACHINE_LPT_PRI, /* Machine has internal sound: C-Media CMI8330 (not yet implemented) */
         .ram       = {
             .min  = 8192,
             .max  = 1572864,
@@ -23210,7 +25956,7 @@ const machine_t machines[] = {
         .kbc_params               = 0x00000000,
         .nvr_device               = NULL,
         .nvr_params               = 0x00000000,
-        .sio_device               = NULL,
+        .sio_device               = &ali5123_device,
         .sio_params               = 0x00000000,
         .kbc_p1                   = 0x00000cf0,
         .gpio                     = 0xffffffff,
@@ -23221,6 +25967,19 @@ const machine_t machines[] = {
         .vid_device               = NULL,
         .snd_device               = NULL,
         .net_device               = NULL,
+        .pci_flags                = PCI_CONFIG_TYPE_1,
+        .slot_layout              = (const machine_slot_t[]) {
+            MSLOT_PCI(0x00, PCI_CARD_NORTHBRIDGE, 0, 0, 0, 0),
+            MSLOT_BRIDGE(0x01, PCI_CARD_AGPBRIDGE, 1, 2, 0, 0, machine_bus_agp),
+            MSLOT_BRIDGE(0x07, PCI_CARD_SOUTHBRIDGE, 1, 2, 3, 4, machine_bus_isa),
+            MSLOT_PCI(0x0F, PCI_CARD_SOUTHBRIDGE_IDE, 1, 2, 3, 4),
+            MSLOT_PCI(0x03, PCI_CARD_SOUTHBRIDGE_PMU, 1, 2, 3, 4),
+            MSLOT_PCI(0x02, PCI_CARD_SOUTHBRIDGE_USB, 1, 2, 3, 4),
+            MSLOT_PCI(0x14, PCI_CARD_NORMAL, 1, 2, 3, 4),
+            MSLOT_PCI(0x12, PCI_CARD_NORMAL, 2, 3, 4, 1),
+            MSLOT_PCI(0x10, PCI_CARD_NORMAL, 3, 4, 1, 2),
+            MSLOT_END
+        },
         .aliases                  = { "" }
     },
 
@@ -23248,7 +26007,7 @@ const machine_t machines[] = {
             .max_multi   = 8.0
         },
         .bus_flags = MACHINE_PS2_PCI | MACHINE_BUS_USB,
-        .flags     = MACHINE_IDE_DUAL | MACHINE_APM | MACHINE_USB,
+        .flags     = MACHINE_IDE_DUAL | MACHINE_APM | MACHINE_USB | MACHINE_UART_PRI | MACHINE_UART_SEC | MACHINE_LPT_PRI,
         .ram       = {
             .min  = 8192,
             .max  = 786432,
@@ -23261,8 +26020,8 @@ const machine_t machines[] = {
         .kbc_params               = 0x00000000,
         .nvr_device               = NULL,
         .nvr_params               = 0x00000000,
-        .sio_device               = NULL,
-        .sio_params               = 0x00000000,
+        .sio_device               = &fdc37c93x_device,
+        .sio_params               = (uintptr_t) ((FDC37XXX5 | FDC37C93X_APM)),
         .kbc_p1                   = 0x00000cf0,
         .gpio                     = 0xffffffff,
         .gpio_acpi                = 0xffffffff,
@@ -23272,6 +26031,17 @@ const machine_t machines[] = {
         .vid_device               = NULL,
         .snd_device               = NULL,
         .net_device               = NULL,
+        .pci_flags                = PCI_CONFIG_TYPE_1,
+        .slot_layout              = (const machine_slot_t[]) {
+            MSLOT_PCI(0x00, PCI_CARD_NORTHBRIDGE, 0, 0, 0, 0),
+            MSLOT_BRIDGE(0x07, PCI_CARD_SOUTHBRIDGE, 5, 0, 0, 4, machine_bus_isa),
+            MSLOT_PCI(0x10, PCI_CARD_NORMAL, 3, 4, 1, 2),
+            MSLOT_PCI(0x12, PCI_CARD_NORMAL, 4, 1, 2, 3),
+            MSLOT_PCI(0x0D, PCI_CARD_NORMAL, 2, 3, 4, 1),
+            MSLOT_PCI(0x0E, PCI_CARD_NORMAL, 1, 2, 3, 4),
+            MSLOT_PCI(0x0F, PCI_CARD_NORMAL, 2, 3, 4, 1),
+            MSLOT_END
+        },
         .aliases                  = { "Acer AcerPower 9606WC", "Acer AcerPower 9606NC", "" }
     },
     /* Has an SM(S)C FDC37C932 Super I/O chip with on-chip KBC with AMI
@@ -23297,7 +26067,7 @@ const machine_t machines[] = {
             .max_multi   = 4.5
         },
         .bus_flags = MACHINE_PS2_PCI | MACHINE_BUS_USB,
-        .flags     = MACHINE_IDE_DUAL | MACHINE_APM | MACHINE_USB, /* Machine has internal SCSI: unknown Adaptec chip (possibly AIC-7880?) */
+        .flags     = MACHINE_IDE_DUAL | MACHINE_APM | MACHINE_USB | MACHINE_UART_PRI | MACHINE_UART_SEC | MACHINE_LPT_PRI, /* Machine has internal SCSI: unknown Adaptec chip (possibly AIC-7880?) */
         .ram       = {
             .min  = 8192,
             .max  = 1048576,
@@ -23310,8 +26080,8 @@ const machine_t machines[] = {
         .kbc_params               = 0x00000000,
         .nvr_device               = NULL,
         .nvr_params               = 0x00000000,
-        .sio_device               = NULL,
-        .sio_params               = 0x00000000,
+        .sio_device               = &fdc37c93x_device,
+        .sio_params               = (uintptr_t) ((FDC37XXX2 | FDC37C93X_NORMAL)),
         .kbc_p1                   = 0x00000cf0,
         .gpio                     = 0xffffffff,
         .gpio_acpi                = 0xffffffff,
@@ -23321,6 +26091,18 @@ const machine_t machines[] = {
         .vid_device               = NULL,
         .snd_device               = NULL,
         .net_device               = NULL,
+        .pci_flags                = PCI_CONFIG_TYPE_1,
+        .slot_layout              = (const machine_slot_t[]) {
+            MSLOT_PCI(0x00, PCI_CARD_NORTHBRIDGE, 0, 0, 0, 0),
+            MSLOT_BRIDGE(0x07, PCI_CARD_SOUTHBRIDGE, 0, 0, 0, 4, machine_bus_isa),
+            MSLOT_PCI(0x08, PCI_CARD_SCSI, 4, 0, 0, 0), /* assumed */
+            MSLOT_PCI(0x09, PCI_CARD_NORMAL, 1, 2, 3, 4),
+            MSLOT_PCI(0x0A, PCI_CARD_NORMAL, 4, 1, 2, 3),
+            MSLOT_PCI(0x0B, PCI_CARD_NORMAL, 3, 4, 1, 2),
+            MSLOT_PCI(0x0C, PCI_CARD_NORMAL, 2, 3, 4, 1),
+            MSLOT_PCI(0x0D, PCI_CARD_NORMAL, 1, 2, 3, 4),
+            MSLOT_END
+        },
         .aliases                  = { "Advanced Integration Research P6KDI", "" }
     },
     /* The base board has a Holtek HT6542B KBC which emulates the AMIKEY-2 'H' KBC firmware. */
@@ -23345,7 +26127,7 @@ const machine_t machines[] = {
             .max_multi   = 8.0
         },
         .bus_flags = MACHINE_PS2_PCI | MACHINE_BUS_USB,
-        .flags     = MACHINE_IDE_DUAL | MACHINE_APM | MACHINE_USB,
+        .flags     = MACHINE_IDE_DUAL | MACHINE_APM | MACHINE_USB | MACHINE_UART_PRI | MACHINE_UART_SEC | MACHINE_LPT_PRI,
         .ram       = {
             .min  = 8192,
             .max  = 1048576,
@@ -23358,17 +26140,28 @@ const machine_t machines[] = {
         .kbc_params               = KBC_VEN_HOLTEK | 0x00004800,
         .nvr_device               = &nvr_at_device,
         .nvr_params               = NVR_AT,
-        .sio_device               = NULL,
-        .sio_params               = 0x00000000,
+        .sio_device               = &w83877_device,
+        .sio_params               = (uintptr_t) ((W83877F | W83877_3F0)),
         .kbc_p1                   = 0x00000cf0,
         .gpio                     = 0xffffffff,
         .gpio_acpi                = 0xffffffff,
-        .device                   = NULL,
+        .device                   = &validated_up_apic_board_device,
         .kbd_device               = NULL,
         .fdc_device               = NULL,
         .vid_device               = NULL,
         .snd_device               = NULL,
         .net_device               = NULL,
+        .pci_flags                = PCI_CONFIG_TYPE_1,
+        .slot_layout              = (const machine_slot_t[]) {
+            MSLOT_PCI(0x00, PCI_CARD_NORTHBRIDGE, 0, 0, 0, 0),
+            MSLOT_BRIDGE(0x01, PCI_CARD_SOUTHBRIDGE, 0, 0, 0, 0, machine_bus_isa),
+            MSLOT_PCI(0x09, PCI_CARD_NORMAL, 4, 1, 2, 3),
+            MSLOT_PCI(0x0A, PCI_CARD_NORMAL, 3, 4, 1, 2),
+            MSLOT_PCI(0x0B, PCI_CARD_NORMAL, 2, 3, 4, 1),
+            MSLOT_PCI(0x0C, PCI_CARD_NORMAL, 1, 2, 3, 4),
+            MSLOT_PCI(0x0D, PCI_CARD_NORMAL, 4, 1, 2, 3),
+            MSLOT_END
+        },
         .aliases                  = { "" }
     },*/
     /* This has a Holtek KBC. */
@@ -23393,7 +26186,7 @@ const machine_t machines[] = {
             .max_multi   = 8.0
         },
         .bus_flags = MACHINE_PS2_PCI | MACHINE_BUS_USB,
-        .flags     = MACHINE_IDE_DUAL | MACHINE_APM | MACHINE_USB,
+        .flags     = MACHINE_IDE_DUAL | MACHINE_APM | MACHINE_USB | MACHINE_UART_PRI | MACHINE_UART_SEC | MACHINE_LPT_PRI,
         .ram       = {
             .min  = 8192,
             .max  = 786432,
@@ -23406,8 +26199,8 @@ const machine_t machines[] = {
         .kbc_params               = KBC_VEN_HOLTEK | 0x00004800,
         .nvr_device               = &nvr_at_device,
         .nvr_params               = NVR_AT,
-        .sio_device               = NULL,
-        .sio_params               = 0x00000000,
+        .sio_device               = &w83877_device,
+        .sio_params               = (uintptr_t) ((W83877F | W83877_3F0)),
         .kbc_p1                   = 0x00000cf0,
         .gpio                     = 0xffffffff,
         .gpio_acpi                = 0xffffffff,
@@ -23417,6 +26210,17 @@ const machine_t machines[] = {
         .vid_device               = NULL,
         .snd_device               = NULL,
         .net_device               = NULL,
+        .pci_flags                = PCI_CONFIG_TYPE_1,
+        .slot_layout              = (const machine_slot_t[]) {
+            MSLOT_PCI(0x00, PCI_CARD_NORTHBRIDGE, 0, 0, 0, 0),
+            MSLOT_BRIDGE(0x01, PCI_CARD_SOUTHBRIDGE, 0, 0, 0, 0, ((const machine_slot_t[]) { MSLOT_BUS(SLOT_ISA16, 3), MSLOT_END })),
+            MSLOT_PCI(0x09, PCI_CARD_NORMAL, 4, 1, 2, 3),
+            MSLOT_PCI(0x0A, PCI_CARD_NORMAL, 3, 4, 1, 2),
+            MSLOT_PCI(0x0B, PCI_CARD_NORMAL, 2, 3, 4, 1),
+            MSLOT_PCI(0x0C, PCI_CARD_NORMAL, 1, 2, 3, 4),
+            MSLOT_PCI(0x0D, PCI_CARD_NORMAL, 4, 1, 2, 3),
+            MSLOT_END
+        },
         .aliases                  = { "" }
     },
     /* Has a VIA VT82C416 alongside the Winbond W83877F Super I/O chip, former of which
@@ -23442,7 +26246,7 @@ const machine_t machines[] = {
             .max_multi   = 5.0
         },
         .bus_flags = MACHINE_PS2_PCI | MACHINE_BUS_USB,
-        .flags     = MACHINE_IDE_DUAL | MACHINE_APM | MACHINE_USB,
+        .flags     = MACHINE_IDE_DUAL | MACHINE_APM | MACHINE_USB | MACHINE_UART_PRI | MACHINE_UART_SEC | MACHINE_LPT_PRI,
         .ram       = {
             .min  = 8192,
             .max  = 786432,
@@ -23455,8 +26259,8 @@ const machine_t machines[] = {
         .kbc_params               = KBC_VEN_VIA | 0x00424600,
         .nvr_device               = &nvr_at_device,
         .nvr_params               = NVR_AT,
-        .sio_device               = NULL,
-        .sio_params               = 0x00000000,
+        .sio_device               = &w83877_device,
+        .sio_params               = (uintptr_t) ((W83877F | W83877_250)),
         .kbc_p1                   = 0x00000cf0,
         .gpio                     = 0xffffffff,
         .gpio_acpi                = 0xffffffff,
@@ -23466,6 +26270,17 @@ const machine_t machines[] = {
         .vid_device               = NULL,
         .snd_device               = NULL,
         .net_device               = NULL,
+        .pci_flags                = PCI_CONFIG_TYPE_1,
+        .slot_layout              = (const machine_slot_t[]) {
+            MSLOT_PCI(0x00, PCI_CARD_NORTHBRIDGE, 0, 0, 0, 0),
+            MSLOT_BRIDGE(0x07, PCI_CARD_SOUTHBRIDGE, 1, 2, 3, 4, ((const machine_slot_t[]) { MSLOT_BUS(SLOT_ISA16, 3), MSLOT_END })),
+            MSLOT_PCI(0x08, PCI_CARD_NORMAL, 1, 2, 3, 4),
+            MSLOT_PCI(0x09, PCI_CARD_NORMAL, 2, 3, 4, 1),
+            MSLOT_PCI(0x0A, PCI_CARD_NORMAL, 3, 4, 1, 2),
+            MSLOT_PCI(0x0B, PCI_CARD_NORMAL, 4, 1, 2, 3),
+            MSLOT_PCI(0x0C, PCI_CARD_NORMAL, 1, 2, 3, 4),
+            MSLOT_END
+        },
         .aliases                  = { "" }
     },
     /* Has an SM(S)C FDC37C935 Super I/O chip with on-chip KBC with Phoenix
@@ -23491,7 +26306,7 @@ const machine_t machines[] = {
             .max_multi   = 5.0
         },
         .bus_flags = MACHINE_PS2_PCI | MACHINE_BUS_USB,
-        .flags     = MACHINE_IDE_DUAL | MACHINE_APM | MACHINE_USB, /* Machine has internal sound: Yamaha YMF711-S/YMF704C-S (not yet implemented) */
+        .flags     = MACHINE_IDE_DUAL | MACHINE_APM | MACHINE_USB | MACHINE_UART_PRI | MACHINE_UART_SEC | MACHINE_LPT_PRI, /* Machine has internal sound: Yamaha YMF711-S/YMF704C-S (not yet implemented) */
         .ram       = {
             .min  = 40960, /* temporary higher limit set due to a DRB(?) issue that prevents POST with less than this amount */
             .max  = 1048576,
@@ -23504,8 +26319,8 @@ const machine_t machines[] = {
         .kbc_params               = 0x00000000,
         .nvr_device               = NULL,
         .nvr_params               = 0x00000000,
-        .sio_device               = NULL,
-        .sio_params               = 0x00000000,
+        .sio_device               = &fdc37c93x_device,
+        .sio_params               = (uintptr_t) ((FDC37XXX5 | FDC37C93X_NORMAL)),
         .kbc_p1                   = 0x00000cf0,
         .gpio                     = 0xffffffff,
         .gpio_acpi                = 0xffffffff,
@@ -23515,6 +26330,16 @@ const machine_t machines[] = {
         .vid_device               = NULL,
         .snd_device               = NULL,
         .net_device               = NULL,
+        .pci_flags                = PCI_CONFIG_TYPE_1,
+        .slot_layout              = (const machine_slot_t[]) {
+            MSLOT_PCI(0x00, PCI_CARD_NORTHBRIDGE, 0, 0, 0, 0),
+            MSLOT_BRIDGE(0x07, PCI_CARD_SOUTHBRIDGE, 1, 2, 3, 4, ((const machine_slot_t[]) { MSLOT_BUS(SLOT_ISA16, 2), MSLOT_END })),
+            MSLOT_PCI(0x11, PCI_CARD_NORMAL, 4, 1, 2, 3),
+            MSLOT_PCI(0x12, PCI_CARD_NORMAL, 3, 4, 1, 2),
+            MSLOT_PCI(0x13, PCI_CARD_NORMAL, 2, 3, 4, 1),
+            MSLOT_PCI(0x14, PCI_CARD_NORMAL, 1, 2, 3, 4),
+            MSLOT_END
+        },
         .aliases                  = { "Micronics 09-00301-xx", "" }
     },
 
@@ -23542,7 +26367,7 @@ const machine_t machines[] = {
             .max_multi   = 5.5
         },
         .bus_flags = MACHINE_PS2_AGP | MACHINE_BUS_USB,
-        .flags     = MACHINE_IDE_DUAL | MACHINE_APM | MACHINE_USB,
+        .flags     = MACHINE_IDE_DUAL | MACHINE_APM | MACHINE_USB | MACHINE_UART_PRI | MACHINE_UART_SEC | MACHINE_LPT_PRI,
         .ram       = {
             .min  = 8192,
             .max  = 1048576,
@@ -23555,8 +26380,8 @@ const machine_t machines[] = {
         .kbc_params               = 0x00000000,
         .nvr_device               = NULL,
         .nvr_params               = 0x00000000,
-        .sio_device               = NULL,
-        .sio_params               = 0x00000000,
+        .sio_device               = &w83977_device,
+        .sio_params               = (uintptr_t) ((W83977TF | W83977_AMI | W83977_NO_NVR)),
         .kbc_p1                   = 0x00000cf0,
         .gpio                     = 0xffffffff,
         .gpio_acpi                = 0xffffffff,
@@ -23566,6 +26391,17 @@ const machine_t machines[] = {
         .vid_device               = NULL,
         .snd_device               = NULL,
         .net_device               = NULL,
+        .pci_flags                = PCI_CONFIG_TYPE_1,
+        .slot_layout              = (const machine_slot_t[]) {
+            MSLOT_PCI(0x00, PCI_CARD_NORTHBRIDGE, 0, 0, 0, 0),
+            MSLOT_BRIDGE(0x07, PCI_CARD_SOUTHBRIDGE, 1, 2, 3, 4, ((const machine_slot_t[]) { MSLOT_BUS(SLOT_ISA16, 3), MSLOT_END })),
+            MSLOT_PCI(0x09, PCI_CARD_NORMAL, 4, 1, 2, 3),
+            MSLOT_PCI(0x0B, PCI_CARD_NORMAL, 3, 4, 1, 2),
+            MSLOT_PCI(0x0D, PCI_CARD_NORMAL, 2, 3, 4, 1),
+            MSLOT_PCI(0x0F, PCI_CARD_NORMAL, 1, 2, 3, 4),
+            MSLOT_BRIDGE(0x01, PCI_CARD_AGPBRIDGE, 1, 2, 3, 4, machine_bus_agp),
+            MSLOT_END
+        },
         .aliases                  = { "" }
     },
     /* Has a National Semiconductor PC87307 Super I/O with on-chip KBC, which has one of these
@@ -23591,7 +26427,7 @@ const machine_t machines[] = {
             .max_multi   = 5.0
         },
         .bus_flags = MACHINE_PS2_AGP | MACHINE_BUS_USB,
-        .flags     = MACHINE_IDE_DUAL | MACHINE_VIDEO | MACHINE_SOUND | MACHINE_APM | MACHINE_NIC | MACHINE_USB,
+        .flags     = MACHINE_IDE_DUAL | MACHINE_VIDEO | MACHINE_SOUND | MACHINE_APM | MACHINE_NIC | MACHINE_USB | MACHINE_UART_PRI | MACHINE_UART_SEC | MACHINE_LPT_PRI,
         .ram       = {
             .min  = 8192,
             .max  = 786432,
@@ -23604,8 +26440,8 @@ const machine_t machines[] = {
         .kbc_params               = 0x00000000,
         .nvr_device               = NULL,
         .nvr_params               = 0x00000000,
-        .sio_device               = NULL,
-        .sio_params               = 0x00000000,
+        .sio_device               = &pc87307_device,
+        .sio_params               = (uintptr_t) ((PCX730X_15C | PCX730X_PHOENIX_42 | PCX7307_PC87307)),
         .kbc_p1                   = 0x00000cf0,
         .gpio                     = 0xffffffff,
         .gpio_acpi                = 0xffffffff,
@@ -23615,6 +26451,18 @@ const machine_t machines[] = {
         .vid_device               = &mach64gtb_onboard_device,
         .snd_device               = &ess_1869_onboard_device,
         .net_device               = &i82557b_onboard_device,
+        .pci_flags                = PCI_CONFIG_TYPE_1,
+        .slot_layout              = (const machine_slot_t[]) {
+            MSLOT_PCI(0x00, PCI_CARD_NORTHBRIDGE, 0, 0, 0, 0),
+            MSLOT_PCI(0x02, PCI_CARD_VIDEO, 3, 0, 0, 0),
+            MSLOT_PCI(0x03, PCI_CARD_NETWORK, 4, 0, 0, 0),
+            MSLOT_PCI(0x09, PCI_CARD_NORMAL, 1, 2, 3, 4),
+            MSLOT_PCI(0x0A, PCI_CARD_NORMAL, 2, 3, 4, 1),
+            MSLOT_PCI(0x0B, PCI_CARD_NORMAL, 3, 4, 1, 2),
+            MSLOT_BRIDGE(0x07, PCI_CARD_SOUTHBRIDGE, 0, 0, 0, 0, ((const machine_slot_t[]) { MSLOT_BUS(SLOT_ISA16, 4), MSLOT_END })),
+            MSLOT_BRIDGE(0x01, PCI_CARD_AGPBRIDGE, 1, 2, 3, 4, machine_bus_agp),
+            MSLOT_END
+        },
         .aliases                  = { "AST Bravo MS-T 6300", "AST 440LX", "" }
     },
     /* Has a National Semiconductor PC87307 Super I/O with on-chip KBC, which has one of these
@@ -23640,7 +26488,7 @@ const machine_t machines[] = {
             .max_multi   = 5.0
         },
         .bus_flags = MACHINE_PS2_AGP | MACHINE_BUS_USB,
-        .flags     = MACHINE_AGP_INTERNAL | MACHINE_IDE_DUAL | MACHINE_SOUND | MACHINE_APM | MACHINE_USB, /* Machine has internal video: ATI 3D Rage Pro AGP 2X and NIC: 3Com 3C905 (both not yet implemented) */
+        .flags     = MACHINE_AGP_INTERNAL | MACHINE_IDE_DUAL | MACHINE_SOUND | MACHINE_APM | MACHINE_USB | MACHINE_UART_PRI | MACHINE_UART_SEC | MACHINE_LPT_PRI, /* Machine has internal video: ATI 3D Rage Pro AGP 2X and NIC: 3Com 3C905 (both not yet implemented) */
         .ram       = {
             .min  = 8192,
             .max  = 786432,
@@ -23653,8 +26501,8 @@ const machine_t machines[] = {
         .kbc_params               = 0x00000000,
         .nvr_device               = NULL,
         .nvr_params               = 0x00000000,
-        .sio_device               = NULL,
-        .sio_params               = 0x00000000,
+        .sio_device               = &pc87307_device,
+        .sio_params               = (uintptr_t) ((PCX730X_PHOENIX_42 | PCX7307_PC87307)),
         .kbc_p1                   = 0x00000cf0,
         .gpio                     = 0xffffffff,
         .gpio_acpi                = 0xffffffff,
@@ -23664,6 +26512,17 @@ const machine_t machines[] = {
         .vid_device               = NULL,
         .snd_device               = &cs4236b_onboard_device,
         .net_device               = NULL,
+        .pci_flags                = PCI_CONFIG_TYPE_1,
+        .slot_layout              = (const machine_slot_t[]) {
+            MSLOT_BRIDGE(0x07, PCI_CARD_SOUTHBRIDGE, 0, 0, 0, 4, machine_bus_isa),
+            MSLOT_PCI(0x00, PCI_CARD_NORTHBRIDGE, 1, 2, 3, 4),
+            MSLOT_BRIDGE(0x01, PCI_CARD_AGPBRIDGE, 1, 2, 3, 4, machine_bus_agp),
+            MSLOT_PCI(0x11, PCI_CARD_NETWORK, 4, 0, 0, 0),
+            MSLOT_PCI(0x0E, PCI_CARD_NORMAL, 3, 4, 2, 1),
+            MSLOT_PCI(0x0D, PCI_CARD_NORMAL, 2, 1, 3, 4),
+            MSLOT_BRIDGE(0x0F, PCI_CARD_BRIDGE, 0, 0, 0, 0, machine_bus_optiplex_riser),
+            MSLOT_END
+        },
         .aliases                  = { "Dell System Tabasco", "Dell OptiPlex NX", "" }
     },
     /* This has the AMI MegaKey '5' firmware on the NSC Super I/O chip. */
@@ -23688,7 +26547,7 @@ const machine_t machines[] = {
             .max_multi   = 5.0
         },
         .bus_flags = MACHINE_PS2_AGP,
-        .flags     = MACHINE_IDE_DUAL | MACHINE_APM | MACHINE_SOUND | MACHINE_GAMEPORT,
+        .flags     = MACHINE_IDE_DUAL | MACHINE_APM | MACHINE_SOUND | MACHINE_GAMEPORT | MACHINE_UART_PRI | MACHINE_UART_SEC | MACHINE_LPT_PRI,
         .ram       = {
             .min  = 8192,
             .max  = 786432,
@@ -23701,8 +26560,8 @@ const machine_t machines[] = {
         .kbc_params               = 0x00000000,
         .nvr_device               = NULL,
         .nvr_params               = 0x00000000,
-        .sio_device               = NULL,
-        .sio_params               = 0x00000000,
+        .sio_device               = &pc87307_device,
+        .sio_params               = (uintptr_t) ((PCX730X_AMI | PCX7307_PC97307)),
         .kbc_p1                   = 0x000044f0,
         .gpio                     = 0xffffffff,
         .gpio_acpi                = 0xffffffff,
@@ -23712,6 +26571,17 @@ const machine_t machines[] = {
         .vid_device               = NULL,
         .snd_device               = &ymf715_onboard_device,
         .net_device               = NULL,
+        .pci_flags                = PCI_CONFIG_TYPE_1,
+        .slot_layout              = (const machine_slot_t[]) {
+            MSLOT_PCI(0x00, PCI_CARD_NORTHBRIDGE, 0, 0, 0, 0),
+            MSLOT_PCI(0x0D, PCI_CARD_NORMAL, 1, 2, 3, 4),
+            MSLOT_PCI(0x0E, PCI_CARD_NORMAL, 4, 1, 2, 3),
+            MSLOT_PCI(0x0F, PCI_CARD_NORMAL, 3, 4, 1, 2),
+            MSLOT_PCI(0x10, PCI_CARD_NORMAL, 2, 3, 4, 1),
+            MSLOT_BRIDGE(0x07, PCI_CARD_SOUTHBRIDGE, 0, 0, 0, 0, ((const machine_slot_t[]) { MSLOT_BUS(SLOT_ISA16, 2), MSLOT_END })),
+            MSLOT_BRIDGE(0x01, PCI_CARD_AGPBRIDGE, 1, 2, 3, 4, machine_bus_agp),
+            MSLOT_END
+        },
         .aliases                  = { "Intel Atlanta", "Gateway Astoria", "HP Pavilion 8190US", "Micron ClientPro 766XI", "Packard Bell PB80x", "Sony Vaio PCV-2xx", "" }
     },
     /* Has a SM(S)C FDC37C935 Super I/O chip with on-chip KBC with Phoenix
@@ -23737,7 +26607,7 @@ const machine_t machines[] = {
             .max_multi   = 8.0
         },
         .bus_flags = MACHINE_PS2_AGP | MACHINE_BUS_USB,
-        .flags     = MACHINE_IDE_DUAL | MACHINE_APM | MACHINE_USB, /* Machine has internal sound: Yamaha YMF701 */
+        .flags     = MACHINE_IDE_DUAL | MACHINE_APM | MACHINE_USB | MACHINE_UART_PRI | MACHINE_UART_SEC | MACHINE_LPT_PRI, /* Machine has internal sound: Yamaha YMF701 */
         .ram       = {
             .min  = 8192,
             .max  = 1048576,
@@ -23750,8 +26620,8 @@ const machine_t machines[] = {
         .kbc_params               = 0x00000000,
         .nvr_device               = NULL,
         .nvr_params               = 0x00000000,
-        .sio_device               = NULL,
-        .sio_params               = 0x00000000,
+        .sio_device               = &fdc37c93x_device,
+        .sio_params               = (uintptr_t) ((FDC37XXX5 | FDC37C93X_NORMAL | FDC37C93X_NO_NVR)),
         .kbc_p1                   = 0x00000cf0,
         .gpio                     = 0xffffffff,
         .gpio_acpi                = 0xffffffff,
@@ -23761,6 +26631,17 @@ const machine_t machines[] = {
         .vid_device               = NULL,
         .snd_device               = NULL,
         .net_device               = NULL,
+        .pci_flags                = PCI_CONFIG_TYPE_1,
+        .slot_layout              = (const machine_slot_t[]) {
+            MSLOT_PCI(0x00, PCI_CARD_NORTHBRIDGE, 0, 0, 0, 0),
+            MSLOT_PCI(0x08, PCI_CARD_VIDEO, 1, 2, 0, 0),
+            MSLOT_PCI(0x12, PCI_CARD_NORMAL, 1, 2, 3, 4),
+            MSLOT_PCI(0x11, PCI_CARD_NORMAL, 2, 3, 4, 1),
+            MSLOT_PCI(0x10, PCI_CARD_NORMAL, 3, 4, 1, 2),
+            MSLOT_BRIDGE(0x07, PCI_CARD_SOUTHBRIDGE, 0, 0, 0, 0, machine_bus_isa),
+            MSLOT_BRIDGE(0x01, PCI_CARD_AGPBRIDGE, 1, 2, 3, 4, machine_bus_agp),
+            MSLOT_END
+        },
         .aliases                  = { "" }
     },
     /* Has a Winbond W83977TF Super I/O chip with on-chip KBC with AMIKey-2 KBC
@@ -23786,7 +26667,7 @@ const machine_t machines[] = {
             .max_multi   = 8.0
         },
         .bus_flags = MACHINE_PS2_AGP | MACHINE_BUS_USB,
-        .flags     = MACHINE_IDE_DUAL | MACHINE_APM | MACHINE_USB,
+        .flags     = MACHINE_IDE_DUAL | MACHINE_APM | MACHINE_USB | MACHINE_UART_PRI | MACHINE_UART_SEC | MACHINE_LPT_PRI,
         .ram       = {
             .min  = 8192,
             .max  = 786432, /* Manual mistakenly says 1 GB with 256 MB in each slot, even though it only has three slots */
@@ -23799,8 +26680,8 @@ const machine_t machines[] = {
         .kbc_params               = 0x00000000,
         .nvr_device               = NULL,
         .nvr_params               = 0x00000000,
-        .sio_device               = NULL,
-        .sio_params               = 0x00000000,
+        .sio_device               = &w83977_device,
+        .sio_params               = (uintptr_t) ((W83977TF | W83977_AMI | W83977_NO_NVR)),
         .kbc_p1                   = 0x00000cf0,
         .gpio                     = 0xffffffff,
         .gpio_acpi                = 0xffffffff,
@@ -23810,6 +26691,18 @@ const machine_t machines[] = {
         .vid_device               = NULL,
         .snd_device               = NULL,
         .net_device               = NULL,
+        .pci_flags                = PCI_CONFIG_TYPE_1,
+        .slot_layout              = (const machine_slot_t[]) {
+            MSLOT_PCI(0x00, PCI_CARD_NORTHBRIDGE, 0, 0, 0, 0),
+            MSLOT_PCI(0x0E, PCI_CARD_NORMAL, 1, 2, 3, 4),
+            MSLOT_PCI(0x0F, PCI_CARD_NORMAL, 2, 3, 4, 1),
+            MSLOT_PCI(0x10, PCI_CARD_NORMAL, 3, 4, 1, 2),
+            MSLOT_PCI(0x11, PCI_CARD_NORMAL, 4, 1, 2, 3),
+            MSLOT_PCI(0x12, PCI_CARD_NORMAL, 1, 2, 3, 4),
+            MSLOT_BRIDGE(0x07, PCI_CARD_SOUTHBRIDGE, 1, 2, 3, 4, ((const machine_slot_t[]) { MSLOT_BUS(SLOT_ISA16, 2), MSLOT_END })),
+            MSLOT_BRIDGE(0x01, PCI_CARD_AGPBRIDGE, 1, 2, 3, 4, machine_bus_agp),
+            MSLOT_END
+        },
         .aliases                  = { "LG IBM Multinet x7E", "Viglen Vig67M", "" }
     },
     /* Has a SM(S)C FDC37C67x Super I/O chip with on-chip KBC with Phoenix or
@@ -23835,7 +26728,7 @@ const machine_t machines[] = {
             .max_multi   = 8.0
         },
         .bus_flags = MACHINE_PS2_NOISA | MACHINE_BUS_USB,
-        .flags     = MACHINE_AGP_INTERNAL | MACHINE_IDE_DUAL | MACHINE_APM | MACHINE_ACPI | MACHINE_USB, /* Machine has internal video: nVidia RIVA 128 and sound: either YAMAHA YMF724 for MA30D or OAK Audia 3D (OTI-610) for some MA23D submodels (both not yet implemented) */
+        .flags     = MACHINE_AGP_INTERNAL | MACHINE_IDE_DUAL | MACHINE_APM | MACHINE_ACPI | MACHINE_USB | MACHINE_UART_PRI | MACHINE_UART_SEC | MACHINE_LPT_PRI, /* Machine has internal video: nVidia RIVA 128 and sound: either YAMAHA YMF724 for MA30D or OAK Audia 3D (OTI-610) for some MA23D submodels (both not yet implemented) */
         .ram       = {
             .min  = 8192,
             .max  = 786432,
@@ -23848,8 +26741,8 @@ const machine_t machines[] = {
         .kbc_params               = 0x00000000,
         .nvr_device               = NULL,
         .nvr_params               = 0x00000000,
-        .sio_device               = NULL,
-        .sio_params               = 0x00000000,
+        .sio_device               = &fdc37c67x_device,
+        .sio_params               = (uintptr_t) ((FDC37XXX2 | FDC37XXXX_370)),
         .kbc_p1                   = 0x0000044f0,
         .gpio                     = 0xffffffff,
         .gpio_acpi                = 0xffffffff,
@@ -23859,6 +26752,19 @@ const machine_t machines[] = {
         .vid_device               = NULL,
         .snd_device               = NULL,
         .net_device               = NULL, /* Machine is shipped with an optional standalone NIC: NEC PK-UG-X006 (Intel 82558B chip) */
+        .pci_flags                = PCI_CONFIG_TYPE_1,
+        .slot_layout              = (const machine_slot_t[]) {
+            MSLOT_PCI(0x00, PCI_CARD_NORTHBRIDGE, 0, 0, 0, 0),
+            MSLOT_PCI(0x0A, PCI_CARD_SOUND, 2, 3, 4, 1), /* Sound - The NIC is an add-on card! */
+            MSLOT_PCI(0x14, PCI_CARD_NORMAL, 1, 2, 3, 4),
+            MSLOT_PCI(0x12, PCI_CARD_NORMAL, 2, 3, 4, 1),
+            MSLOT_PCI(0x10, PCI_CARD_NORMAL, 3, 4, 1, 2),
+            MSLOT_PCI(0x0E, PCI_CARD_NORMAL, 4, 1, 2, 3),
+            MSLOT_PCI(0x0C, PCI_CARD_NORMAL, 1, 2, 3, 4),
+            MSLOT_BRIDGE(0x07, PCI_CARD_SOUTHBRIDGE, 1, 2, 3, 4, machine_bus_isa),
+            MSLOT_BRIDGE(0x01, PCI_CARD_AGPBRIDGE, 3, 0, 0, 0, machine_bus_agp),
+            MSLOT_END
+        },
         .aliases                  = { "NEC Mate NX MA23D", "" }
     },
 
@@ -23886,7 +26792,7 @@ const machine_t machines[] = {
             .max_multi   = 8.0
         },
         .bus_flags = MACHINE_PS2_AGP | MACHINE_BUS_USB,
-        .flags     = MACHINE_AGP_INTERNAL | MACHINE_IDE_DUAL | MACHINE_APM | MACHINE_ACPI | MACHINE_USB | MACHINE_SOUND, /* Machine has internal video: ATI Rage Pro Turbo AGP (not yet implemented) */
+        .flags     = MACHINE_AGP_INTERNAL | MACHINE_IDE_DUAL | MACHINE_APM | MACHINE_ACPI | MACHINE_USB | MACHINE_SOUND | MACHINE_UART_PRI | MACHINE_UART_SEC | MACHINE_LPT_PRI, /* Machine has internal video: ATI Rage Pro Turbo AGP (not yet implemented) */
         .ram       = {
             .min  = 8192,
             .max  = 524288,
@@ -23899,8 +26805,8 @@ const machine_t machines[] = {
         .kbc_params               = 0x00000000,
         .nvr_device               = NULL,
         .nvr_params               = 0x00000000,
-        .sio_device               = NULL,
-        .sio_params               = 0x00000000,
+        .sio_device               = &w83977_device,
+        .sio_params               = (uintptr_t) ((W83977TF | W83977_AMI | W83977_NO_NVR)),
         .kbc_p1                   = 0x00000cf0,
         .gpio                     = 0xffffffff,
         .gpio_acpi                = 0xffffffff,
@@ -23910,6 +26816,16 @@ const machine_t machines[] = {
         .vid_device               = NULL,
         .snd_device               = &ess_solo1_onboard_device,
         .net_device               = NULL,
+        .pci_flags                = PCI_CONFIG_TYPE_1,
+        .slot_layout              = (const machine_slot_t[]) {
+            MSLOT_PCI(0x00, PCI_CARD_NORTHBRIDGE, 1, 2, 3, 4),
+            MSLOT_BRIDGE(0x01, PCI_CARD_AGPBRIDGE, 1, 2, 3, 4, machine_bus_agp),
+            MSLOT_BRIDGE(0x07, PCI_CARD_SOUTHBRIDGE, 1, 2, 3, 4, machine_bus_isa),
+            MSLOT_PCI(0x0D, PCI_CARD_VIDEO, 3, 4, 1, 2),
+            MSLOT_PCI(0x11, PCI_CARD_SOUND, 2, 3, 4, 1),
+            MSLOT_PCI(0x13, PCI_CARD_NORMAL, 1, 2, 3, 4),
+            MSLOT_END
+        },
         .aliases                  = { "Gobi Internet PC", "Toshiba Equium 3000M", "Sony Kokomo", "Sony Vaio PCV-E2xx", "" }
     },
     /* Has a Winbond W83977TF Super I/O chip with on-chip KBC with AMIKey-2 KBC
@@ -23935,7 +26851,7 @@ const machine_t machines[] = {
             .max_multi   = 8.0
         },
         .bus_flags = MACHINE_PS2_AGP | MACHINE_BUS_USB,
-        .flags     = MACHINE_AGP_INTERNAL | MACHINE_IDE_DUAL | MACHINE_APM | MACHINE_ACPI | MACHINE_USB | MACHINE_SOUND, /* Machine has internal video: ATI Rage Pro Turbo AGP (not yet implemented) */
+        .flags     = MACHINE_AGP_INTERNAL | MACHINE_IDE_DUAL | MACHINE_APM | MACHINE_ACPI | MACHINE_USB | MACHINE_SOUND | MACHINE_UART_PRI | MACHINE_UART_SEC | MACHINE_LPT_PRI, /* Machine has internal video: ATI Rage Pro Turbo AGP (not yet implemented) */
         .ram       = {
             .min  = 8192,
             .max  = 524288,
@@ -23948,8 +26864,8 @@ const machine_t machines[] = {
         .kbc_params               = 0x00000000,
         .nvr_device               = NULL,
         .nvr_params               = 0x00000000,
-        .sio_device               = NULL,
-        .sio_params               = 0x00000000,
+        .sio_device               = &w83977_device,
+        .sio_params               = (uintptr_t) ((W83977TF | W83977_AMI | W83977_NO_NVR)),
         .kbc_p1                   = 0x00000cf0,
         .gpio                     = 0xffffffff,
         .gpio_acpi                = 0xffffffff,
@@ -23959,6 +26875,16 @@ const machine_t machines[] = {
         .vid_device               = NULL,
         .snd_device               = &ess_solo1_onboard_device,
         .net_device               = NULL,
+        .pci_flags                = PCI_CONFIG_TYPE_1,
+        .slot_layout              = (const machine_slot_t[]) {
+            MSLOT_PCI(0x00, PCI_CARD_NORTHBRIDGE, 1, 2, 3, 4),
+            MSLOT_BRIDGE(0x01, PCI_CARD_AGPBRIDGE, 1, 2, 3, 4, machine_bus_agp),
+            MSLOT_BRIDGE(0x07, PCI_CARD_SOUTHBRIDGE, 1, 2, 3, 4, machine_bus_isa),
+            MSLOT_PCI(0x0D, PCI_CARD_VIDEO, 3, 4, 1, 2),
+            MSLOT_PCI(0x11, PCI_CARD_SOUND, 2, 3, 4, 1),
+            MSLOT_PCI(0x13, PCI_CARD_NORMAL, 1, 2, 3, 4),
+            MSLOT_END
+        },
         .aliases                  = { "CompUSA PC American Pro", "" }
     },
     /* Has a National Semiconductor PC87309 Super I/O with on-chip KBC, which has one of these
@@ -23984,7 +26910,7 @@ const machine_t machines[] = {
             .max_multi   = 5.0
         },
         .bus_flags = MACHINE_PS2_AGP | MACHINE_BUS_USB,
-        .flags     = MACHINE_AGP_INTERNAL | MACHINE_IDE_DUAL | MACHINE_SOUND | MACHINE_APM | MACHINE_ACPI | MACHINE_USB, /* Machine has internal video: ATI Rage IIc AGP and NIC: 3Com 3C905B-TX (both not yet implemented) */
+        .flags     = MACHINE_AGP_INTERNAL | MACHINE_IDE_DUAL | MACHINE_SOUND | MACHINE_APM | MACHINE_ACPI | MACHINE_USB | MACHINE_UART_PRI | MACHINE_UART_SEC | MACHINE_LPT_PRI, /* Machine has internal video: ATI Rage IIc AGP and NIC: 3Com 3C905B-TX (both not yet implemented) */
         .ram       = {
             .min  = 8192,
             .max  = 524288,
@@ -23997,8 +26923,8 @@ const machine_t machines[] = {
         .kbc_params               = 0x00000000,
         .nvr_device               = NULL,
         .nvr_params               = 0x00000000,
-        .sio_device               = NULL,
-        .sio_params               = 0x00000000,
+        .sio_device               = &pc87309_device,
+        .sio_params               = (uintptr_t) ((PCX730X_PHOENIX_42 | PC87309_PC87309)),
         .kbc_p1                   = 0x00000cf0,
         .gpio                     = 0xffffffff,
         .gpio_acpi                = 0xffffffff,
@@ -24008,6 +26934,17 @@ const machine_t machines[] = {
         .vid_device               = NULL,
         .snd_device               = &cs4236b_onboard_device,
         .net_device               = NULL,
+        .pci_flags                = PCI_CONFIG_TYPE_1,
+        .slot_layout              = (const machine_slot_t[]) {
+            MSLOT_BRIDGE(0x07, PCI_CARD_SOUTHBRIDGE, 0, 0, 0, 4, machine_bus_isa),
+            MSLOT_PCI(0x00, PCI_CARD_NORTHBRIDGE, 1, 2, 3, 4),
+            MSLOT_BRIDGE(0x01, PCI_CARD_AGPBRIDGE, 1, 2, 3, 4, machine_bus_agp),
+            MSLOT_PCI(0x11, PCI_CARD_NETWORK, 4, 0, 0, 0), /* not yet emulated */
+            MSLOT_PCI(0x0E, PCI_CARD_NORMAL, 3, 4, 2, 1),
+            MSLOT_PCI(0x0D, PCI_CARD_NORMAL, 2, 1, 3, 4),
+            MSLOT_BRIDGE(0x0F, PCI_CARD_BRIDGE, 0, 0, 0, 0, machine_bus_optiplex_riser),
+            MSLOT_END
+        },
         .aliases                  = { "Dell System Apex", "" }
     },
     /* Has a SM(S)C FDC37C675 Super I/O chip with on-chip KBC with Phoenix
@@ -24034,7 +26971,7 @@ const machine_t machines[] = {
             .max_multi   = 8.0
         },
         .bus_flags = MACHINE_PS2_AGP | MACHINE_BUS_USB,
-        .flags     = MACHINE_IDE_DUAL | MACHINE_VIDEO | MACHINE_APM | MACHINE_ACPI | MACHINE_USB,
+        .flags     = MACHINE_IDE_DUAL | MACHINE_VIDEO | MACHINE_APM | MACHINE_ACPI | MACHINE_USB | MACHINE_UART_PRI | MACHINE_UART_SEC | MACHINE_LPT_PRI,
         .ram       = {
             /* PC manual says 128 MB max, but 256 MB confirmed working
                and 512 MB confirmed not working. */
@@ -24049,8 +26986,8 @@ const machine_t machines[] = {
         .kbc_params               = 0x00000000,
         .nvr_device               = NULL,
         .nvr_params               = 0x00000000,
-        .sio_device               = NULL,
-        .sio_params               = 0x00000000,
+        .sio_device               = &fdc37c67x_device,
+        .sio_params               = (uintptr_t) ((FDC37XXX5)),
         .kbc_p1                   = 0x00000cf0,
         .gpio                     = 0xffffffff,
         .gpio_acpi                = 0xffffffff,
@@ -24060,6 +26997,17 @@ const machine_t machines[] = {
         .vid_device               = &s3_trio64v2dx_onboard_pci_device,
         .snd_device               = NULL,
         .net_device               = NULL,
+        .pci_flags                = PCI_CONFIG_TYPE_1,
+        .slot_layout              = (const machine_slot_t[]) {
+            MSLOT_PCI(0x00, PCI_CARD_NORTHBRIDGE, 1, 2, 3, 4), /* Onboard */
+            MSLOT_BRIDGE(0x01, PCI_CARD_AGPBRIDGE, 1, 2, 3, 4, machine_bus_agp), /* Onboard */
+            MSLOT_BRIDGE(0x07, PCI_CARD_SOUTHBRIDGE, 1, 2, 3, 4, machine_bus_isa), /* Onboard */
+            MSLOT_PCI(0x0F, PCI_CARD_NORMAL, 1, 2, 3, 4), /* Slot 01 */
+            MSLOT_PCI(0x10, PCI_CARD_NORMAL, 2, 3, 4, 1), /* Slot 02 */
+            MSLOT_PCI(0x12, PCI_CARD_NORMAL, 3, 4, 1, 2), /* Slot 03 */
+            MSLOT_PCI(0x14, PCI_CARD_VIDEO, 1, 2, 3, 4), /* Onboard */
+            MSLOT_END
+        },
         .aliases                  = { "MiTAC/Trigon PX6400LX", "HP Taroko Lite", "" }
     },
 
@@ -24086,7 +27034,7 @@ const machine_t machines[] = {
             .max_multi   = 8.0
         },
         .bus_flags = MACHINE_PS2_AGP | MACHINE_BUS_USB,
-        .flags     = MACHINE_IDE_DUAL | MACHINE_APM | MACHINE_ACPI | MACHINE_USB,
+        .flags     = MACHINE_IDE_DUAL | MACHINE_APM | MACHINE_ACPI | MACHINE_USB | MACHINE_UART_PRI | MACHINE_UART_SEC | MACHINE_LPT_PRI,
         .ram       = {
             .min  = 8192,
             .max  = 524288,
@@ -24099,8 +27047,8 @@ const machine_t machines[] = {
         .kbc_params               = 0x00000000,
         .nvr_device               = NULL,
         .nvr_params               = 0x00000000,
-        .sio_device               = NULL,
-        .sio_params               = 0x00000000,
+        .sio_device               = &w83977_device,
+        .sio_params               = (uintptr_t) ((W83977TF | W83977_AMI | W83977_NO_NVR)),
         .kbc_p1                   = 0x00000cf0,
         .gpio                     = 0xffffffff,
         .gpio_acpi                = 0xffffffff,
@@ -24110,6 +27058,15 @@ const machine_t machines[] = {
         .vid_device               = NULL,
         .snd_device               = NULL,
         .net_device               = NULL,
+        .pci_flags                = PCI_CONFIG_TYPE_1,
+        .slot_layout              = (const machine_slot_t[]) {
+            MSLOT_PCI(0x00, PCI_CARD_NORTHBRIDGE, 0, 0, 0, 0),
+            MSLOT_BRIDGE(0x07, PCI_CARD_SOUTHBRIDGE, 1, 2, 3, 4, ((const machine_slot_t[]) { MSLOT_BUS(SLOT_ISA16, 2), MSLOT_END })),
+            MSLOT_PCI(0x09, PCI_CARD_NORMAL, 1, 2, 3, 4),
+            MSLOT_PCI(0x0A, PCI_CARD_NORMAL, 2, 3, 4, 1),
+            MSLOT_BRIDGE(0x01, PCI_CARD_AGPBRIDGE, 1, 2, 3, 4, machine_bus_agp),
+            MSLOT_END
+        },
         .aliases                  = { "QDI P6I440EX/MATX", "" }
     },
 
@@ -24136,7 +27093,7 @@ const machine_t machines[] = {
             .max_multi   = 5.0
         },
         .bus_flags = MACHINE_PS2_AGP | MACHINE_BUS_USB,
-        .flags     = MACHINE_AGP_INTERNAL | MACHINE_IDE_DUAL | MACHINE_SOUND | MACHINE_APM | MACHINE_ACPI | MACHINE_USB, /* Machine has internal video: ATI Rage IIc AGP (not yet implemented) */
+        .flags     = MACHINE_AGP_INTERNAL | MACHINE_IDE_DUAL | MACHINE_SOUND | MACHINE_APM | MACHINE_ACPI | MACHINE_USB | MACHINE_UART_PRI | MACHINE_UART_SEC | MACHINE_LPT_PRI, /* Machine has internal video: ATI Rage IIc AGP (not yet implemented) */
         .ram       = {
             .min  = 8192,
             .max  = 262144,
@@ -24149,8 +27106,8 @@ const machine_t machines[] = {
         .kbc_params               = 0x00000000,
         .nvr_device               = NULL,
         .nvr_params               = 0x00000000,
-        .sio_device               = NULL,
-        .sio_params               = 0x00000000,
+        .sio_device               = &fdc37mx0x_device,
+        .sio_params               = (uintptr_t) ((FDC37M60X | FDC37XXX2 | FDC37C93X_NO_NVR | FDC37XXXX_370)),
         .kbc_p1                   = 0x00000cf0,
         .gpio                     = 0xffffffff,
         .gpio_acpi                = 0xffffffff,
@@ -24160,12 +27117,22 @@ const machine_t machines[] = {
         .vid_device               = NULL,
         .snd_device               = &cs4235_onboard_device,
         .net_device               = NULL,
+        .pci_flags                = PCI_CONFIG_TYPE_1,
+        .slot_layout              = (const machine_slot_t[]) {
+            MSLOT_PCI(0x00, PCI_CARD_NORTHBRIDGE, 0, 0, 0, 0),
+            MSLOT_BRIDGE(0x01, PCI_CARD_AGPBRIDGE, 1, 2, 3, 4, machine_bus_agp),
+            MSLOT_BRIDGE(0x07, PCI_CARD_SOUTHBRIDGE, 0, 0, 0, 4, machine_bus_isa),
+            MSLOT_PCI(0x0B, PCI_CARD_NORMAL, 3, 4, 1, 2),
+            MSLOT_PCI(0x12, PCI_CARD_NORMAL, 2, 3, 4, 1),
+            MSLOT_PCI(0x13, PCI_CARD_NORMAL, 1, 2, 3, 4),
+            MSLOT_END
+        },
         .aliases                  = { "TriGem Como-3", "Olivetti M24KD", "Olivetti M3000 MT/DT", "eMachines eTower 333i", "Sotec Micro PC Station 3__", "" }
     },
 
     /* 440BX */
-    /* Has a Winbond W83977EF Super I/O chip with on-chip KBC with AMIKey-2 KBC
-       firmware and an on-board HighPoint HPT366 IDE controller. */
+       /* Has a Winbond W83977EF Super I/O chip with on-chip KBC with AMIKey-2 KBC
+          firmware and an on-board HighPoint HPT366 IDE controller. */
     {
         .name              = "[i440BX] ABIT AB-BE6-II",
         .internal_name     = "be6ii",
@@ -24187,7 +27154,7 @@ const machine_t machines[] = {
             .max_multi   = 8.0
         },
         .bus_flags = MACHINE_PS2_AGP | MACHINE_BUS_USB,
-        .flags     = MACHINE_IDE_QUAD | MACHINE_APM | MACHINE_ACPI | MACHINE_USB,
+        .flags     = MACHINE_IDE_QUAD | MACHINE_APM | MACHINE_ACPI | MACHINE_USB | MACHINE_UART_PRI | MACHINE_UART_SEC | MACHINE_LPT_PRI,
         .ram       = {
             .min  = 8192,
             .max  = 786432,
@@ -24200,8 +27167,8 @@ const machine_t machines[] = {
         .kbc_params               = 0x00000000,
         .nvr_device               = NULL,
         .nvr_params               = 0x00000000,
-        .sio_device               = NULL,
-        .sio_params               = 0x00000000,
+        .sio_device               = &w83977_device,
+        .sio_params               = (uintptr_t) ((W83977EF | W83977_AMI | W83977_NO_NVR)),
         .kbc_p1                   = 0x00000cf0,
         .gpio                     = 0xffffffff,
         .gpio_acpi                = 0xffffffff,
@@ -24212,6 +27179,20 @@ const machine_t machines[] = {
         .snd_device               = NULL,
         .net_device               = NULL,
         .ide_device               = &ide_hpt366_ter_qua_onboard_device,
+        .pci_flags                = PCI_CONFIG_TYPE_1,
+        .slot_layout              = (const machine_slot_t[]) {
+            MSLOT_PCI(0x00, PCI_CARD_NORTHBRIDGE, 0, 0, 0, 0),
+            MSLOT_PCI(0x13, PCI_CARD_IDE, 3, 4, 1, 2), /* Not IDE */
+            MSLOT_PCI(0x11, PCI_CARD_NORMAL, 2, 3, 4, 1),
+            MSLOT_PCI(0x0F, PCI_CARD_NORMAL, 4, 1, 2, 3),
+            MSLOT_PCI(0x0D, PCI_CARD_NORMAL, 3, 4, 1, 2),
+            MSLOT_PCI(0x0B, PCI_CARD_NORMAL, 2, 3, 4, 1), /* Not IDE */
+            MSLOT_PCI(0x09, PCI_CARD_NORMAL, 1, 2, 3, 4), /* Not IDE */
+            MSLOT_PCI(0x08, PCI_CARD_NORMAL, 3, 4, 1, 2), /* Not IDE */
+            MSLOT_BRIDGE(0x07, PCI_CARD_SOUTHBRIDGE, 1, 2, 3, 4, machine_bus_isa),
+            MSLOT_BRIDGE(0x01, PCI_CARD_AGPBRIDGE, 1, 2, 3, 4, machine_bus_agp),
+            MSLOT_END
+        },
         .aliases                  = { "" }
     },
     /* Has a Winbond W83977EF Super I/O chip with on-chip KBC with AMIKey-2 KBC
@@ -24237,7 +27218,7 @@ const machine_t machines[] = {
             .max_multi   = 8.0
         },
         .bus_flags = MACHINE_PS2_AGP | MACHINE_BUS_USB,
-        .flags     = MACHINE_IDE_DUAL | MACHINE_APM | MACHINE_ACPI | MACHINE_USB,
+        .flags     = MACHINE_IDE_DUAL | MACHINE_APM | MACHINE_ACPI | MACHINE_USB | MACHINE_UART_PRI | MACHINE_UART_SEC | MACHINE_LPT_PRI,
         .ram       = {
             .min  = 8192,
             .max  = 786432,
@@ -24250,8 +27231,8 @@ const machine_t machines[] = {
         .kbc_params               = 0x00000000,
         .nvr_device               = NULL,
         .nvr_params               = 0x00000000,
-        .sio_device               = NULL,
-        .sio_params               = 0x00000000,
+        .sio_device               = &w83977_device,
+        .sio_params               = (uintptr_t) ((W83977EF | W83977_AMI | W83977_NO_NVR)),
         .kbc_p1                   = 0x00000cf0,
         .gpio                     = 0xffffffff,
         .gpio_acpi                = 0xffffffff,
@@ -24261,6 +27242,20 @@ const machine_t machines[] = {
         .vid_device               = NULL,
         .snd_device               = NULL,
         .net_device               = NULL,
+        .pci_flags                = PCI_CONFIG_TYPE_1,
+        .slot_layout              = (const machine_slot_t[]) {
+            MSLOT_PCI(0x00, PCI_CARD_NORTHBRIDGE, 0, 0, 0, 0),
+            MSLOT_BRIDGE(0x07, PCI_CARD_SOUTHBRIDGE, 1, 2, 3, 4, machine_bus_isa),
+            MSLOT_PCI(0x08, PCI_CARD_NORMAL, 3, 4, 1, 2),
+            MSLOT_PCI(0x09, PCI_CARD_NORMAL, 2, 1, 4, 3),
+            MSLOT_PCI(0x0B, PCI_CARD_NORMAL, 4, 1, 2, 3),
+            MSLOT_PCI(0x11, PCI_CARD_NORMAL, 1, 2, 3, 4),
+            MSLOT_PCI(0x0D, PCI_CARD_NORMAL, 3, 4, 1, 2),
+            MSLOT_PCI(0x0F, PCI_CARD_NORMAL, 2, 3, 4, 1),
+            MSLOT_PCI(0x13, PCI_CARD_NORMAL, 3, 3, 1, 2),
+            MSLOT_BRIDGE(0x01, PCI_CARD_AGPBRIDGE, 1, 2, 3, 4, machine_bus_agp),
+            MSLOT_END
+        },
         .aliases                  = { "" }
     },
     /* Has a Winbond W83977TF Super I/O chip with on-chip KBC with AMIKey-2 KBC
@@ -24286,7 +27281,7 @@ const machine_t machines[] = {
             .max_multi   = 5.5
         },
         .bus_flags = MACHINE_PS2_AGP | MACHINE_BUS_USB,
-        .flags     = MACHINE_IDE_DUAL | MACHINE_APM | MACHINE_ACPI | MACHINE_USB,
+        .flags     = MACHINE_IDE_DUAL | MACHINE_APM | MACHINE_ACPI | MACHINE_USB | MACHINE_UART_PRI | MACHINE_UART_SEC | MACHINE_LPT_PRI,
         .ram       = {
             .min  = 8192,
             .max  = 524288,
@@ -24299,8 +27294,8 @@ const machine_t machines[] = {
         .kbc_params               = 0x00000000,
         .nvr_device               = NULL,
         .nvr_params               = 0x00000000,
-        .sio_device               = NULL,
-        .sio_params               = 0x00000000,
+        .sio_device               = &w83977_device,
+        .sio_params               = (uintptr_t) ((W83977TF | W83977_AMI | W83977_NO_NVR)),
         .kbc_p1                   = 0x00000cf0,
         .gpio                     = 0xffffffff,
         .gpio_acpi                = 0xffffffff,
@@ -24310,6 +27305,17 @@ const machine_t machines[] = {
         .vid_device               = NULL,
         .snd_device               = NULL,
         .net_device               = NULL,
+        .pci_flags                = PCI_CONFIG_TYPE_1,
+        .slot_layout              = (const machine_slot_t[]) {
+            MSLOT_PCI(0x00, PCI_CARD_NORTHBRIDGE, 0, 0, 0, 0),
+            MSLOT_BRIDGE(0x07, PCI_CARD_SOUTHBRIDGE, 1, 2, 3, 4, ((const machine_slot_t[]) { MSLOT_BUS(SLOT_ISA16, 3), MSLOT_END })),
+            MSLOT_PCI(0x09, PCI_CARD_NORMAL, 4, 1, 2, 3),
+            MSLOT_PCI(0x0B, PCI_CARD_NORMAL, 3, 4, 1, 2),
+            MSLOT_PCI(0x0D, PCI_CARD_NORMAL, 2, 3, 4, 1),
+            MSLOT_PCI(0x0F, PCI_CARD_NORMAL, 1, 2, 3, 4),
+            MSLOT_BRIDGE(0x01, PCI_CARD_AGPBRIDGE, 1, 2, 3, 4, machine_bus_agp),
+            MSLOT_END
+        },
         .aliases                  = { "" }
     },
     /* Has a Winbond W83977TF Super I/O chip with on-chip KBC with AMIKey-2 KBC
@@ -24335,7 +27341,7 @@ const machine_t machines[] = {
             .max_multi   = 8.0
         },
         .bus_flags = MACHINE_PS2_AGP | MACHINE_BUS_USB,
-        .flags     = MACHINE_IDE_DUAL | MACHINE_APM | MACHINE_ACPI | MACHINE_USB,
+        .flags     = MACHINE_IDE_DUAL | MACHINE_APM | MACHINE_ACPI | MACHINE_USB | MACHINE_UART_PRI | MACHINE_UART_SEC | MACHINE_LPT_PRI,
         .ram       = {
             .min  = 8192,
             .max  = 786432,
@@ -24348,8 +27354,8 @@ const machine_t machines[] = {
         .kbc_params               = 0x00000000,
         .nvr_device               = NULL,
         .nvr_params               = 0x00000000,
-        .sio_device               = NULL,
-        .sio_params               = 0x00000000,
+        .sio_device               = &w83977_device,
+        .sio_params               = (uintptr_t) ((W83977TF | W83977_AMI | W83977_NO_NVR)),
         .kbc_p1                   = 0x00000cf0,
         .gpio                     = 0xffffffff,
         .gpio_acpi                = 0xffffffff,
@@ -24359,6 +27365,18 @@ const machine_t machines[] = {
         .vid_device               = NULL,
         .snd_device               = NULL,
         .net_device               = NULL,
+        .pci_flags                = PCI_CONFIG_TYPE_1,
+        .slot_layout              = (const machine_slot_t[]) {
+            MSLOT_PCI(0x00, PCI_CARD_NORTHBRIDGE, 0, 0, 0, 0),
+            MSLOT_BRIDGE(0x07, PCI_CARD_SOUTHBRIDGE, 1, 2, 3, 4, ((const machine_slot_t[]) { MSLOT_BUS(SLOT_ISA16, 2), MSLOT_END })),
+            MSLOT_PCI(0x09, PCI_CARD_NORMAL, 4, 1, 2, 3),
+            MSLOT_PCI(0x0A, PCI_CARD_NORMAL, 3, 4, 1, 2),
+            MSLOT_PCI(0x0B, PCI_CARD_NORMAL, 2, 3, 4, 1),
+            MSLOT_PCI(0x0C, PCI_CARD_NORMAL, 1, 2, 3, 4),
+            MSLOT_PCI(0x0D, PCI_CARD_NORMAL, 4, 1, 2, 3),
+            MSLOT_BRIDGE(0x01, PCI_CARD_AGPBRIDGE, 1, 2, 3, 4, machine_bus_agp),
+            MSLOT_END
+        },
         .aliases                  = { "RM Accelerator 350P2XB", "RM Accelerator 450P3XB", "" }
     },
     /* Has a Winbond W83977EF Super I/O chip with on-chip KBC with AMIKey-2 KBC
@@ -24384,7 +27402,7 @@ const machine_t machines[] = {
             .max_multi   = 8.0
         },
         .bus_flags = MACHINE_PS2_AGP | MACHINE_BUS_USB,
-        .flags     = MACHINE_IDE_DUAL | MACHINE_APM | MACHINE_ACPI | MACHINE_NIC | MACHINE_USB, /* Machine has internal SCSI: Adaptec AIC-7890AB (not yet implemented) */
+        .flags     = MACHINE_IDE_DUAL | MACHINE_APM | MACHINE_ACPI | MACHINE_NIC | MACHINE_USB | MACHINE_UART_PRI | MACHINE_UART_SEC | MACHINE_LPT_PRI, /* Machine has internal SCSI: Adaptec AIC-7890AB (not yet implemented) */
         .ram       = {
             .min  = 8192,
             .max  = 1048576,
@@ -24397,65 +27415,32 @@ const machine_t machines[] = {
         .kbc_params               = 0x00000000,
         .nvr_device               = NULL,
         .nvr_params               = 0x00000000,
-        .sio_device               = NULL,
-        .sio_params               = 0x00000000,
+        .sio_device               = &w83977_device,
+        .sio_params               = (uintptr_t) ((W83977EF | W83977_AMI | W83977_NO_NVR)),
         .kbc_p1                   = 0x00000cf0,
         .gpio                     = 0xffffffff,
         .gpio_acpi                = 0xffffffff,
-        .device                   = NULL,
+        .device                   = &p2bls_device,
         .kbd_device               = NULL,
         .fdc_device               = NULL,
         .vid_device               = NULL,
         .snd_device               = NULL,
         .net_device               = &i82558b_onboard_device,
+        .pci_flags                = PCI_CONFIG_TYPE_1,
+        .slot_layout              = (const machine_slot_t[]) {
+            MSLOT_PCI(0x00, PCI_CARD_NORTHBRIDGE, 0, 0, 0, 0),
+            MSLOT_BRIDGE(0x04, PCI_CARD_SOUTHBRIDGE, 1, 2, 3, 4, ((const machine_slot_t[]) { MSLOT_BUS(SLOT_ISA16, 2), MSLOT_END })),
+            MSLOT_PCI(0x06, PCI_CARD_SCSI, 4, 1, 2, 3),
+            MSLOT_PCI(0x07, PCI_CARD_NETWORK, 3, 4, 1, 2),
+            MSLOT_PCI(0x0B, PCI_CARD_NORMAL, 2, 3, 4, 1),
+            MSLOT_PCI(0x0C, PCI_CARD_NORMAL, 1, 2, 3, 4),
+            MSLOT_PCI(0x09, PCI_CARD_NORMAL, 4, 1, 2, 3),
+            MSLOT_PCI(0x0A, PCI_CARD_NORMAL, 3, 4, 1, 2),
+            MSLOT_BRIDGE(0x01, PCI_CARD_AGPBRIDGE, 1, 2, 3, 4, machine_bus_agp),
+            MSLOT_END
+        },
         .aliases                  = { "" }
     },
-    /* 440BX */ 
-    /* Has a Winbond W83977EF Super I/O chip with on-chip KBC with AMIKey-2 KBC 
-       firmware. */ 
-    { 
-        .name = "[i440BX] ASUS P2B-LS (coreboot)", 
-        .internal_name = "p2bls_coreboot", 
-        .type = MACHINE_TYPE_SLOT1, 
-        .chipset = MACHINE_CHIPSET_INTEL_440BX, 
-        .init = machine_at_p2bls_coreboot_init, 
-        .p1_handler = NULL, 
-        .gpio_handler = NULL, 
-        .available_flag = MACHINE_AVAILABLE, 
-        .gpio_acpi_handler = NULL, 
-        .cpu = { 
-            .package = CPU_PKG_SLOT1, 
-            .block = CPU_BLOCK_NONE, 
-            .min_bus = 50000000, 
-            .max_bus = 112121212, 
-            .min_voltage = 1300, 
-            .max_voltage = 3500, 
-            .min_multi = 1.5, 
-            .max_multi = 8.0 
-        }, 
-        .bus_flags = MACHINE_PS2_AGP | MACHINE_BUS_USB, 
-        .flags = MACHINE_IDE_DUAL | MACHINE_APM | MACHINE_ACPI | MACHINE_USB, /* Machine has internal SCSI: Adaptec AIC-7890AB */ 
-        .ram = { 
-            .min = 8192, 
-            .max = 1048576, 
-            .step = 8192 
-        }, 
-        .nvrmask = 255,
-        .jumpered_ecp_dma = 0,
-        .default_jumpered_ecp_dma = -1,
-        .kbc_device = NULL, 
-        .kbc_p1 = 0xff, 
-        .gpio = 0xffffffff, 
-        .gpio_acpi = 0xffffffff, 
-        .device = NULL, 
-        .kbd_device = NULL, 
-        .fdc_device = NULL, 
-        .sio_device = NULL, 
-        .vid_device = NULL, 
-        .snd_device = NULL, 
-        .net_device = NULL,
-        .aliases                  = { "" },
-    }, 
     /* Has a Winbond W83977EF Super I/O chip with on-chip KBC with AMIKey-2 KBC
        firmware. */
     {
@@ -24479,7 +27464,7 @@ const machine_t machines[] = {
             .max_multi   = 8.0
         },
         .bus_flags = MACHINE_PS2_AGP | MACHINE_BUS_USB,
-        .flags     = MACHINE_IDE_DUAL | MACHINE_APM | MACHINE_ACPI | MACHINE_USB,
+        .flags     = MACHINE_IDE_DUAL | MACHINE_APM | MACHINE_ACPI | MACHINE_USB | MACHINE_UART_PRI | MACHINE_UART_SEC | MACHINE_LPT_PRI,
         .ram       = {
             .min  = 8192,
             .max  = 1048576,
@@ -24492,8 +27477,8 @@ const machine_t machines[] = {
         .kbc_params               = 0x00000000,
         .nvr_device               = NULL,
         .nvr_params               = 0x00000000,
-        .sio_device               = NULL,
-        .sio_params               = 0x00000000,
+        .sio_device               = &w83977_device,
+        .sio_params               = (uintptr_t) ((W83977EF | W83977_AMI | W83977_NO_NVR)),
         .kbc_p1                   = 0x00000cf0,
         .gpio                     = 0xffffffff,
         .gpio_acpi                = 0xffffffff,
@@ -24503,51 +27488,19 @@ const machine_t machines[] = {
         .vid_device               = NULL,
         .snd_device               = NULL,
         .net_device               = NULL,
-        .aliases                  = { "" }
-    },
-    /* Has a Winbond W83977EF Super I/O chip with on-chip KBC with AMIKey-2 KBC 
-       firmware. */ 
-    { 
-        .name = "[i440BX] ASUS P3B-F (coreboot)", 
-        .internal_name = "p3bf_coreboot", 
-        .type = MACHINE_TYPE_SLOT1, 
-        .chipset = MACHINE_CHIPSET_INTEL_440BX, 
-        .init = machine_at_p3bf_coreboot_init, 
-        .p1_handler = NULL, 
-        .gpio_handler = NULL, 
-        .available_flag = MACHINE_AVAILABLE, 
-        .gpio_acpi_handler = NULL, 
-        .cpu = { 
-            .package = CPU_PKG_SLOT1, 
-            .block = CPU_BLOCK_NONE, 
-            .min_bus = 66666667, 
-            .max_bus = 150000000, 
-            .min_voltage = 1300, 
-            .max_voltage = 3500, 
-            .min_multi = 1.5, 
-            .max_multi = 8.0 
-        }, 
-        .bus_flags = MACHINE_PS2_AGP | MACHINE_BUS_USB, 
-        .flags = MACHINE_IDE_DUAL | MACHINE_APM | MACHINE_ACPI | MACHINE_USB, 
-        .ram = { 
-            .min = 8192, 
-            .max = 1048576, 
-            .step = 8192 
-        }, 
-        .nvrmask = 255,
-        .jumpered_ecp_dma = 0,
-        .default_jumpered_ecp_dma = -1,
-        .kbc_device = NULL, 
-        .kbc_p1 = 0xff, 
-        .gpio = 0xffffffff, 
-        .gpio_acpi = 0xffffffff, 
-        .device = NULL, 
-        .kbd_device = NULL, 
-        .fdc_device = NULL, 
-        .sio_device = NULL, 
-        .vid_device = NULL, 
-        .snd_device = NULL, 
-        .net_device = NULL,
+        .pci_flags                = PCI_CONFIG_TYPE_1,
+        .slot_layout              = (const machine_slot_t[]) {
+            MSLOT_PCI(0x00, PCI_CARD_NORTHBRIDGE, 0, 0, 0, 0),
+            MSLOT_BRIDGE(0x04, PCI_CARD_SOUTHBRIDGE, 1, 2, 3, 4, ((const machine_slot_t[]) { MSLOT_BUS(SLOT_ISA16, 1), MSLOT_END })),
+            MSLOT_PCI(0x09, PCI_CARD_NORMAL, 4, 1, 2, 3),
+            MSLOT_PCI(0x0A, PCI_CARD_NORMAL, 3, 4, 1, 2),
+            MSLOT_PCI(0x0B, PCI_CARD_NORMAL, 2, 3, 4, 1),
+            MSLOT_PCI(0x0C, PCI_CARD_NORMAL, 1, 2, 3, 4),
+            MSLOT_PCI(0x0D, PCI_CARD_NORMAL, 4, 1, 2, 3),
+            MSLOT_PCI(0x0E, PCI_CARD_NORMAL, 3, 4, 1, 2),
+            MSLOT_BRIDGE(0x01, PCI_CARD_AGPBRIDGE, 1, 2, 3, 4, machine_bus_agp),
+            MSLOT_END
+        },
         .aliases                  = { "" }
     },
     /* Has a National Semiconductor PC87309 Super I/O with on-chip KBC, which has one of these
@@ -24574,7 +27527,7 @@ const machine_t machines[] = {
             .max_multi   = 5.0
         },
         .bus_flags = MACHINE_PS2_AGP | MACHINE_BUS_USB,
-        .flags     = MACHINE_AGP_INTERNAL | MACHINE_IDE_DUAL | MACHINE_SOUND | MACHINE_APM | MACHINE_ACPI | MACHINE_USB, /* Machine has internal video: ATI Rage Pro Turbo AGP and NIC: 3Com 3C905B-TX (both not yet implemented) */
+        .flags     = MACHINE_AGP_INTERNAL | MACHINE_IDE_DUAL | MACHINE_SOUND | MACHINE_APM | MACHINE_ACPI | MACHINE_USB | MACHINE_UART_PRI | MACHINE_UART_SEC | MACHINE_LPT_PRI, /* Machine has internal video: ATI Rage Pro Turbo AGP and NIC: 3Com 3C905B-TX (both not yet implemented) */
         .ram       = {
             .min  = 8192,
             .max  = 786432,
@@ -24587,8 +27540,8 @@ const machine_t machines[] = {
         .kbc_params               = 0x00000000,
         .nvr_device               = NULL,
         .nvr_params               = 0x00000000,
-        .sio_device               = NULL,
-        .sio_params               = 0x00000000,
+        .sio_device               = &pc87309_device,
+        .sio_params               = (uintptr_t) ((PCX730X_PHOENIX_42 | PC87309_PC87309)),
         .kbc_p1                   = 0x00000cf0,
         .gpio                     = 0xffffffff,
         .gpio_acpi                = 0xffffffff,
@@ -24598,6 +27551,17 @@ const machine_t machines[] = {
         .vid_device               = NULL,
         .snd_device               = &cs4236b_onboard_device,
         .net_device               = NULL,
+        .pci_flags                = PCI_CONFIG_TYPE_1,
+        .slot_layout              = (const machine_slot_t[]) {
+            MSLOT_BRIDGE(0x07, PCI_CARD_SOUTHBRIDGE, 0, 0, 0, 4, machine_bus_isa),
+            MSLOT_PCI(0x00, PCI_CARD_NORTHBRIDGE, 1, 2, 3, 4),
+            MSLOT_BRIDGE(0x01, PCI_CARD_AGPBRIDGE, 1, 2, 3, 4, machine_bus_agp),
+            MSLOT_PCI(0x11, PCI_CARD_NETWORK, 4, 0, 0, 0), /* not yet emulated */
+            MSLOT_PCI(0x0E, PCI_CARD_NORMAL, 3, 4, 2, 1),
+            MSLOT_PCI(0x0D, PCI_CARD_NORMAL, 2, 1, 3, 4),
+            MSLOT_BRIDGE(0x0F, PCI_CARD_BRIDGE, 0, 0, 0, 0, machine_bus_optiplex_riser),
+            MSLOT_END
+        },
         .aliases                  = { "Dell System Banff", "" }
     },
     /* Has a SM(S)C FDC37C67x Super I/O chip with on-chip KBC with Phoenix or
@@ -24623,7 +27587,7 @@ const machine_t machines[] = {
             .max_multi   = 8.0
         },
         .bus_flags = MACHINE_PS2_AGP | MACHINE_BUS_USB, /* Machine has (optional) internal video: ATI 3D Rage Pro PCI (not yet implemented) */
-        .flags     = MACHINE_IDE_DUAL | MACHINE_SOUND | MACHINE_APM | MACHINE_ACPI | MACHINE_NIC | MACHINE_USB,
+        .flags     = MACHINE_IDE_DUAL | MACHINE_SOUND | MACHINE_APM | MACHINE_ACPI | MACHINE_NIC | MACHINE_USB | MACHINE_UART_PRI | MACHINE_UART_SEC | MACHINE_LPT_PRI,
         .ram       = {
             .min  = 8192,
             .max  = 786432,
@@ -24636,8 +27600,8 @@ const machine_t machines[] = {
         .kbc_params               = 0x00000000,
         .nvr_device               = NULL,
         .nvr_params               = 0x00000000,
-        .sio_device               = NULL,
-        .sio_params               = 0x00000000,
+        .sio_device               = &fdc37c67x_device,
+        .sio_params               = (uintptr_t) ((FDC37XXX5 | FDC37XXXX_370)),
         .kbc_p1                   = 0x0000044f0,
         .gpio                     = 0xffffffff,
         .gpio_acpi                = 0xffffffff,
@@ -24647,6 +27611,17 @@ const machine_t machines[] = {
         .vid_device               = NULL,
         .snd_device               = &cs4235_onboard_device,
         .net_device               = &i82558b_onboard_device,
+        .pci_flags                = PCI_CONFIG_TYPE_1,
+        .slot_layout              = (const machine_slot_t[]) {
+            MSLOT_PCI(0x14, PCI_CARD_NORMAL, 1, 2, 3, 4),
+            MSLOT_PCI(0x12, PCI_CARD_NORMAL, 2, 3, 4, 1),
+            MSLOT_PCI(0x10, PCI_CARD_NORMAL, 3, 4, 1, 2),
+            MSLOT_BRIDGE(0x01, PCI_CARD_AGPBRIDGE, 1, 2, 3, 4, machine_bus_agp),
+            MSLOT_BRIDGE(0x07, PCI_CARD_SOUTHBRIDGE, 1, 2, 3, 4, machine_bus_isa),
+            MSLOT_PCI(0x00, PCI_CARD_NORTHBRIDGE, 0, 0, 0, 0),
+            MSLOT_PCI(0x08, PCI_CARD_NETWORK, 3, 0, 0, 0),
+            MSLOT_END
+        },
         .aliases                  = { "Fujitsu ErgoPro x564", "Fujitsu ErgoPro x565", "" }
     },
     /* Has a Winbond W83977TF Super I/O chip with on-chip KBC with AMIKey-2 KBC
@@ -24672,7 +27647,7 @@ const machine_t machines[] = {
             .max_multi   = 8.0
         },
         .bus_flags = MACHINE_PS2_AGP | MACHINE_BUS_USB,
-        .flags     = MACHINE_IDE_DUAL | MACHINE_APM | MACHINE_ACPI | MACHINE_USB,
+        .flags     = MACHINE_IDE_DUAL | MACHINE_APM | MACHINE_ACPI | MACHINE_USB | MACHINE_UART_PRI | MACHINE_UART_SEC | MACHINE_LPT_PRI,
         .ram       = {
             .min  = 8192,
             .max  = 1048576,
@@ -24685,8 +27660,8 @@ const machine_t machines[] = {
         .kbc_params               = 0x00000000,
         .nvr_device               = NULL,
         .nvr_params               = 0x00000000,
-        .sio_device               = NULL,
-        .sio_params               = 0x00000000,
+        .sio_device               = &w83977_device,
+        .sio_params               = (uintptr_t) ((W83977TF | W83977_AMI | W83977_NO_NVR)),
         .kbc_p1                   = 0x00000cf0,
         .gpio                     = 0xffffffff,
         .gpio_acpi                = 0xffffffff,
@@ -24696,6 +27671,17 @@ const machine_t machines[] = {
         .vid_device               = NULL,
         .snd_device               = NULL,
         .net_device               = NULL,
+        .pci_flags                = PCI_CONFIG_TYPE_1,
+        .slot_layout              = (const machine_slot_t[]) {
+            MSLOT_PCI(0x00, PCI_CARD_NORTHBRIDGE, 0, 0, 0, 0),
+            MSLOT_BRIDGE(0x07, PCI_CARD_SOUTHBRIDGE, 1, 2, 3, 4, ((const machine_slot_t[]) { MSLOT_BUS(SLOT_ISA16, 3), MSLOT_END })),
+            MSLOT_PCI(0x08, PCI_CARD_NORMAL, 1, 2, 3, 4),
+            MSLOT_PCI(0x09, PCI_CARD_NORMAL, 2, 3, 4, 1),
+            MSLOT_PCI(0x0A, PCI_CARD_NORMAL, 3, 4, 1, 2),
+            MSLOT_PCI(0x0B, PCI_CARD_NORMAL, 4, 1, 2, 3),
+            MSLOT_BRIDGE(0x01, PCI_CARD_AGPBRIDGE, 1, 2, 3, 4, machine_bus_agp),
+            MSLOT_END
+        },
         .aliases                  = { "Amptron PII-3100", "" }
     },
     /* Has a SM(S)C FDC37B802 Super I/O chip with on-chip KBC with most likely
@@ -24721,7 +27707,7 @@ const machine_t machines[] = {
             .max_multi   = 8.0
         },
         .bus_flags = MACHINE_PS2_AGP | MACHINE_BUS_USB,
-        .flags     = MACHINE_IDE_DUAL | MACHINE_APM | MACHINE_ACPI | MACHINE_USB, /* Machine has internal video: nVidia RIVA TNT PCI (not yet implemented) */
+        .flags     = MACHINE_IDE_DUAL | MACHINE_APM | MACHINE_ACPI | MACHINE_USB | MACHINE_UART_PRI | MACHINE_UART_SEC | MACHINE_LPT_PRI, /* Machine has internal video: nVidia RIVA TNT PCI (not yet implemented) */
         .ram       = {
             .min  = 49152, /* Temporary higher limit set due to the PhoenixBIOS DRB bug, which prevents POST with less than this amount. */
             .max  = 786432,
@@ -24734,8 +27720,8 @@ const machine_t machines[] = {
         .kbc_params               = 0x00000000,
         .nvr_device               = NULL,
         .nvr_params               = 0x00000000,
-        .sio_device               = NULL,
-        .sio_params               = 0x00000000,
+        .sio_device               = &fdc37mx0x_device,
+        .sio_params               = (uintptr_t) ((FDC37B80X | FDC37XXX2 | FDC37C93X_NO_NVR)),
         .kbc_p1                   = 0x00000cf0,
         .gpio                     = 0xffffffff,
         .gpio_acpi                = 0xffffffff,
@@ -24745,6 +27731,18 @@ const machine_t machines[] = {
         .vid_device               = NULL,
         .snd_device               = NULL,
         .net_device               = NULL,
+        .pci_flags                = PCI_CONFIG_TYPE_1,
+        .slot_layout              = (const machine_slot_t[]) {
+            MSLOT_PCI(0x00, PCI_CARD_NORTHBRIDGE, 0, 0, 0, 0),
+            MSLOT_PCI(0x06, PCI_CARD_VIDEO, 3, 0, 0, 0), /* RIVA TNT, not yet implemented */
+            MSLOT_PCI(0x09, PCI_CARD_NORMAL, 4, 1, 2, 3),
+            MSLOT_PCI(0x0A, PCI_CARD_NORMAL, 3, 4, 1, 2),
+            MSLOT_PCI(0x0B, PCI_CARD_NORMAL, 2, 3, 4, 1),
+            MSLOT_PCI(0x0C, PCI_CARD_NORMAL, 1, 2, 3, 4),
+            MSLOT_BRIDGE(0x07, PCI_CARD_SOUTHBRIDGE, 1, 2, 3, 4, ((const machine_slot_t[]) { MSLOT_BUS(SLOT_ISA16, 1), MSLOT_END })),
+            MSLOT_BRIDGE(0x01, PCI_CARD_AGPBRIDGE, 1, 2, 3, 4, machine_bus_agp),
+            MSLOT_END
+        },
         .aliases                  = { "ASUS P2B-VT", "HP 5183-9028", "HP 5184-3913", "HP Harrier", "" }
     },
     /* Has a SM(S)C FDC37M707 Super I/O chip with on-chip Phoenix MultiKey/42i
@@ -24770,7 +27768,7 @@ const machine_t machines[] = {
             .max_multi   = 8.0
         },
         .bus_flags = MACHINE_PS2_AGP | MACHINE_BUS_USB,
-        .flags     = MACHINE_AGP_INTERNAL | MACHINE_IDE_DUAL | MACHINE_SOUND | MACHINE_APM | MACHINE_ACPI | MACHINE_USB, /* Machine has internal video: nVidia RIVA 128ZX (not yet implemented) */
+        .flags     = MACHINE_AGP_INTERNAL | MACHINE_IDE_DUAL | MACHINE_SOUND | MACHINE_APM | MACHINE_ACPI | MACHINE_USB | MACHINE_UART_PRI | MACHINE_UART_SEC | MACHINE_LPT_PRI, /* Machine has internal video: nVidia RIVA 128ZX (not yet implemented) */
         .ram       = {
             .min  = 8192,
             .max  = 524288,
@@ -24794,6 +27792,18 @@ const machine_t machines[] = {
         .vid_device               = NULL,
         .snd_device               = &es1373_onboard_device,
         .net_device               = NULL,
+        .pci_flags                = PCI_CONFIG_TYPE_1,
+        .slot_layout              = (const machine_slot_t[]) {
+            MSLOT_PCI(0x00, PCI_CARD_NORTHBRIDGE, 0, 0, 0, 0),
+            MSLOT_PCI(0x0D, PCI_CARD_NORMAL, 1, 2, 3, 4),
+            MSLOT_PCI(0x0E, PCI_CARD_NORMAL, 2, 3, 4, 1),
+            MSLOT_PCI(0x0F, PCI_CARD_NORMAL, 3, 4, 1, 2),
+            MSLOT_PCI(0x10, PCI_CARD_NORMAL, 4, 1, 2, 3),
+            MSLOT_PCI(0x0C, PCI_CARD_SOUND, 2, 0, 0, 0),
+            MSLOT_BRIDGE(0x07, PCI_CARD_SOUTHBRIDGE, 1, 2, 3, 4, ((const machine_slot_t[]) { MSLOT_BUS(SLOT_ISA16, 2), MSLOT_END })),
+            MSLOT_BRIDGE(0x01, PCI_CARD_AGPBRIDGE, 1, 2, 3, 4, machine_bus_agp),
+            MSLOT_END
+        },
         .aliases                  = { "Intel Rochester", "Gateway Tolstoy", "" }
     },
     /* Has a SM(S)C FDC37M707 Super I/O chip with on-chip Phoenix MultiKey/42i
@@ -24819,7 +27829,7 @@ const machine_t machines[] = {
             .max_multi   = 8.0
         },
         .bus_flags = MACHINE_PS2_AGP | MACHINE_BUS_USB,
-        .flags     = MACHINE_IDE_DUAL | MACHINE_APM | MACHINE_ACPI | MACHINE_USB, /* Machine has internal audio: Analog Devices AD1819A standard, Yamaha DS-1L optional (both not yet implemented) */
+        .flags     = MACHINE_IDE_DUAL | MACHINE_APM | MACHINE_ACPI | MACHINE_USB | MACHINE_UART_PRI | MACHINE_UART_SEC | MACHINE_LPT_PRI, /* Machine has internal audio: Analog Devices AD1819A standard, Yamaha DS-1L optional (both not yet implemented) */
         .ram       = {
             .min  = 8192,
             .max  = 786432,
@@ -24832,8 +27842,8 @@ const machine_t machines[] = {
         .kbc_params               = 0x00000000,
         .nvr_device               = NULL,
         .nvr_params               = 0x00000000,
-        .sio_device               = NULL,
-        .sio_params               = 0x00000000,
+        .sio_device               = &fdc37mx0x_device,
+        .sio_params               = (uintptr_t) ((FDC37M70X | FDC37XXX7 | FDC37C93X_NO_NVR | FDC37XXXX_370)),
         .kbc_p1                   = 0x00000cf0,
         .gpio                     = 0xffffffff,
         .gpio_acpi                = 0xffffffff,
@@ -24843,6 +27853,18 @@ const machine_t machines[] = {
         .vid_device               = NULL,
         .snd_device               = NULL,
         .net_device               = NULL,
+        .pci_flags                = PCI_CONFIG_TYPE_1,
+        .slot_layout              = (const machine_slot_t[]) {
+            MSLOT_PCI(0x00, PCI_CARD_NORTHBRIDGE, 0, 0, 0, 0),
+            MSLOT_PCI(0x0D, PCI_CARD_NORMAL, 1, 2, 3, 4),
+            MSLOT_PCI(0x0E, PCI_CARD_NORMAL, 2, 3, 4, 1),
+            MSLOT_PCI(0x0F, PCI_CARD_NORMAL, 3, 4, 1, 2),
+            MSLOT_PCI(0x10, PCI_CARD_NORMAL, 4, 1, 2, 3),
+            MSLOT_PCI(0x0C, PCI_CARD_SOUND, 3, 0, 0, 0),
+            MSLOT_BRIDGE(0x07, PCI_CARD_SOUTHBRIDGE, 1, 2, 3, 4, ((const machine_slot_t[]) { MSLOT_BUS(SLOT_ISA16, 2), MSLOT_END })),
+            MSLOT_BRIDGE(0x01, PCI_CARD_AGPBRIDGE, 1, 2, 3, 4, machine_bus_agp),
+            MSLOT_END
+        },
         .aliases                  = { "Intel Seattle 2", "Micron MBD001109-xx", "Packard Bell PB872", "Packard Bell Seattle", "NEC Direction SPB (late)", "NEC Washington", "Quantum3D Quicksilver II", "" }
     },
     /* Has a Winbond W83977TF Super I/O chip with on-chip KBC with AMIKey-2 (updated 'H') KBC firmware. */
@@ -24867,7 +27889,7 @@ const machine_t machines[] = {
             .max_multi   = 8.0
         },
         .bus_flags = MACHINE_PS2_AGP | MACHINE_BUS_USB,
-        .flags     = MACHINE_IDE_DUAL | MACHINE_APM | MACHINE_ACPI | MACHINE_USB,
+        .flags     = MACHINE_IDE_DUAL | MACHINE_APM | MACHINE_ACPI | MACHINE_USB | MACHINE_UART_PRI | MACHINE_UART_SEC | MACHINE_LPT_PRI,
         .ram       = {
             .min  = 8192,
             .max  = 786432,
@@ -24880,8 +27902,8 @@ const machine_t machines[] = {
         .kbc_params               = 0x00000000,
         .nvr_device               = NULL,
         .nvr_params               = 0x00000000,
-        .sio_device               = NULL,
-        .sio_params               = 0x00000000,
+        .sio_device               = &w83977_device,
+        .sio_params               = (uintptr_t) ((W83977TF | W83977_AMI | W83977_NO_NVR)),
         .kbc_p1                   = 0x00000cf0,
         .gpio                     = 0xffffffff,
         .gpio_acpi                = 0xffffffff,
@@ -24891,6 +27913,17 @@ const machine_t machines[] = {
         .vid_device               = NULL,
         .snd_device               = NULL,
         .net_device               = NULL,
+        .pci_flags                = PCI_CONFIG_TYPE_1,
+        .slot_layout              = (const machine_slot_t[]) {
+            MSLOT_PCI(0x00, PCI_CARD_NORTHBRIDGE, 0, 0, 0, 0),
+            MSLOT_BRIDGE(0x07, PCI_CARD_SOUTHBRIDGE, 1, 2, 3, 4, ((const machine_slot_t[]) { MSLOT_BUS(SLOT_ISA16, 3), MSLOT_END })),
+            MSLOT_PCI(0x0E, PCI_CARD_NORMAL, 1, 2, 3, 4),
+            MSLOT_PCI(0x10, PCI_CARD_NORMAL, 2, 3, 4, 1),
+            MSLOT_PCI(0x12, PCI_CARD_NORMAL, 3, 4, 1, 2),
+            MSLOT_PCI(0x14, PCI_CARD_NORMAL, 4, 1, 2, 3),
+            MSLOT_BRIDGE(0x01, PCI_CARD_AGPBRIDGE, 1, 2, 3, 4, machine_bus_agp),
+            MSLOT_END
+        },
         .aliases                  = { "Packard Bell Tacoma", "Viglen Vig69M", "LG IBM Multinet x7G", "" }
     },
     /* Has a Winbond W83977TF Super I/O chip with on-chip KBC with AMIKey-2 KBC firmware. */
@@ -24915,7 +27948,7 @@ const machine_t machines[] = {
             .max_multi   = 8.0
         },
         .bus_flags = MACHINE_PS2_AGP | MACHINE_BUS_USB,
-        .flags     = MACHINE_AGP_INTERNAL | MACHINE_IDE_DUAL | MACHINE_SOUND | MACHINE_APM | MACHINE_ACPI | MACHINE_GAMEPORT | MACHINE_USB, /* Machine has internal video: ATI 3D Rage Pro PCI (not yet implemented) */
+        .flags     = MACHINE_AGP_INTERNAL | MACHINE_IDE_DUAL | MACHINE_SOUND | MACHINE_APM | MACHINE_ACPI | MACHINE_GAMEPORT | MACHINE_USB | MACHINE_UART_PRI | MACHINE_UART_SEC | MACHINE_LPT_PRI, /* Machine has internal video: ATI 3D Rage Pro PCI (not yet implemented) */
         .ram       = {
             .min  = 8192,
             .max  = 524288,
@@ -24928,8 +27961,8 @@ const machine_t machines[] = {
         .kbc_params               = 0x00000000,
         .nvr_device               = NULL,
         .nvr_params               = 0x00000000,
-        .sio_device               = NULL,
-        .sio_params               = 0x00000000,
+        .sio_device               = &w83977_device,
+        .sio_params               = (uintptr_t) ((W83977TF | W83977_AMI | W83977_NO_NVR)),
         .kbc_p1                   = 0x00000cf0,
         .gpio                     = 0xffffffff,
         .gpio_acpi                = 0xffffffff,
@@ -24939,6 +27972,17 @@ const machine_t machines[] = {
         .vid_device               = NULL,
         .snd_device               = &es1371_onboard_device,
         .net_device               = NULL,
+        .pci_flags                = PCI_CONFIG_TYPE_1,
+        .slot_layout              = (const machine_slot_t[]) {
+            MSLOT_PCI(0x00, PCI_CARD_NORTHBRIDGE, 0, 0, 0, 0),
+            MSLOT_PCI(0x14, PCI_CARD_SOUND, 3, 4, 1, 2),
+            MSLOT_PCI(0x0E, PCI_CARD_NORMAL, 1, 2, 3, 4),
+            MSLOT_PCI(0x10, PCI_CARD_NORMAL, 2, 3, 4, 1),
+            MSLOT_PCI(0x12, PCI_CARD_NORMAL, 3, 4, 1, 2),
+            MSLOT_BRIDGE(0x07, PCI_CARD_SOUTHBRIDGE, 1, 2, 3, 4, ((const machine_slot_t[]) { MSLOT_BUS(SLOT_ISA16, 1), MSLOT_END })),
+            MSLOT_BRIDGE(0x01, PCI_CARD_AGPBRIDGE, 1, 2, 3, 4, machine_bus_agp),
+            MSLOT_END
+        },
         .aliases                  = { "Packard Bell Tempest", "Fujitsu ErgoPro e368", "" }
     },
     /* Has a Winbond W83977TF Super I/O chip with on-chip KBC with AMIKey-2 KBC
@@ -24964,7 +28008,7 @@ const machine_t machines[] = {
             .max_multi   = 8.0
         },
         .bus_flags = MACHINE_PS2_AGP | MACHINE_BUS_USB,
-        .flags     = MACHINE_IDE_DUAL | MACHINE_APM | MACHINE_USB,
+        .flags     = MACHINE_IDE_DUAL | MACHINE_APM | MACHINE_USB | MACHINE_UART_PRI | MACHINE_UART_SEC | MACHINE_LPT_PRI,
         .ram       = {
             .min  = 8192,
             .max  = 786432,
@@ -24977,8 +28021,8 @@ const machine_t machines[] = {
         .kbc_params               = 0x00000000,
         .nvr_device               = NULL,
         .nvr_params               = 0x00000000,
-        .sio_device               = NULL,
-        .sio_params               = 0x00000000,
+        .sio_device               = &w83977_device,
+        .sio_params               = (uintptr_t) ((W83977TF | W83977_AMI | W83977_NO_NVR)),
         .kbc_p1                   = 0x00000cf0,
         .gpio                     = 0xffffffff,
         .gpio_acpi                = 0xffffffff,
@@ -24988,6 +28032,19 @@ const machine_t machines[] = {
         .vid_device               = NULL,
         .snd_device               = NULL,
         .net_device               = NULL,
+        .pci_flags                = PCI_CONFIG_TYPE_1,
+        .slot_layout              = (const machine_slot_t[]) {
+            MSLOT_PCI(0x00, PCI_CARD_NORTHBRIDGE, 0, 0, 0, 0),
+            MSLOT_BRIDGE(0x07, PCI_CARD_SOUTHBRIDGE, 1, 2, 3, 4, machine_bus_isa),
+            MSLOT_PCI(0x0F, PCI_CARD_NORMAL, 1, 2, 3, 4),
+            MSLOT_PCI(0x10, PCI_CARD_NORMAL, 2, 3, 4, 1),
+            MSLOT_PCI(0x12, PCI_CARD_NORMAL, 3, 4, 1, 2),
+            MSLOT_PCI(0x14, PCI_CARD_NORMAL, 4, 1, 2, 3),
+            MSLOT_PCI(0x0E, PCI_CARD_NORMAL, 3, 4, 0, 0),
+            MSLOT_PCI(0x0D, PCI_CARD_NORMAL, 3, 0, 0, 0),
+            MSLOT_BRIDGE(0x01, PCI_CARD_AGPBRIDGE, 1, 2, 3, 4, machine_bus_agp),
+            MSLOT_END
+        },
         .aliases                  = { "Leadtek WinFast 8000BX", "" }
     },
     /* Has a National Semiconductors PC87309 Super I/O chip with on-chip KBC
@@ -25013,7 +28070,7 @@ const machine_t machines[] = {
             .max_multi   = 8.0
         },
         .bus_flags = MACHINE_PS2_AGP | MACHINE_BUS_USB,
-        .flags     = MACHINE_IDE_DUAL | MACHINE_SOUND | MACHINE_APM | MACHINE_ACPI | MACHINE_USB,
+        .flags     = MACHINE_IDE_DUAL | MACHINE_SOUND | MACHINE_APM | MACHINE_ACPI | MACHINE_USB | MACHINE_UART_PRI | MACHINE_UART_SEC | MACHINE_LPT_PRI,
         .ram       = {
             .min  = 8192,
             .max  = 786432,
@@ -25026,8 +28083,8 @@ const machine_t machines[] = {
         .kbc_params               = 0x00000000,
         .nvr_device               = NULL,
         .nvr_params               = 0x00000000,
-        .sio_device               = NULL,
-        .sio_params               = 0x00000000,
+        .sio_device               = &pc87309_device,
+        .sio_params               = (uintptr_t) ((PCX730X_AMI | PC87309_PC87309)),
         .kbc_p1                   = 0x000044f0,
         .gpio                     = 0xffffffff,
         .gpio_acpi                = 0xffffffff,
@@ -25037,6 +28094,19 @@ const machine_t machines[] = {
         .vid_device               = NULL,
         .snd_device               = &es1371_onboard_device,
         .net_device               = NULL,
+        .pci_flags                = PCI_CONFIG_TYPE_1,
+        .slot_layout              = (const machine_slot_t[]) {
+            MSLOT_PCI(0x00, PCI_CARD_NORTHBRIDGE, 0, 0, 0, 0),
+            MSLOT_BRIDGE(0x07, PCI_CARD_SOUTHBRIDGE, 1, 2, 3, 4, machine_bus_isa),
+            MSLOT_PCI(0x0F, PCI_CARD_SOUND, 1, 0, 0, 0),
+            MSLOT_PCI(0x10, PCI_CARD_NORMAL, 1, 2, 3, 4),
+            MSLOT_PCI(0x11, PCI_CARD_NORMAL, 2, 3, 4, 1),
+            MSLOT_PCI(0x12, PCI_CARD_NORMAL, 3, 4, 1, 2),
+            MSLOT_PCI(0x13, PCI_CARD_NORMAL, 4, 1, 2, 3),
+            MSLOT_PCI(0x14, PCI_CARD_NORMAL, 1, 2, 3, 4),
+            MSLOT_BRIDGE(0x01, PCI_CARD_AGPBRIDGE, 1, 2, 3, 4, machine_bus_agp),
+            MSLOT_END
+        },
         .aliases                  = { "Tulip Vision Line TP90", "Tyan S1846", "" }
     },
 
@@ -25064,7 +28134,7 @@ const machine_t machines[] = {
             .max_multi   = 8.0
         },
         .bus_flags = MACHINE_PS2_AGP | MACHINE_BUS_USB,
-        .flags     = MACHINE_AGP_INTERNAL | MACHINE_IDE_DUAL | MACHINE_APM | MACHINE_ACPI | MACHINE_GAMEPORT | MACHINE_USB, /* Machine has internal video: Matrox MGA-G200 and sound: Crystal CS4820 (both not yet implemented) */
+        .flags     = MACHINE_AGP_INTERNAL | MACHINE_IDE_DUAL | MACHINE_APM | MACHINE_ACPI | MACHINE_GAMEPORT | MACHINE_USB | MACHINE_UART_PRI | MACHINE_UART_SEC | MACHINE_LPT_PRI, /* Machine has internal video: Matrox MGA-G200 and sound: Crystal CS4820 (both not yet implemented) */
         .ram       = {
             .min  = 8192,
             .max  = 524288,
@@ -25077,8 +28147,8 @@ const machine_t machines[] = {
         .kbc_params               = 0x00000000,
         .nvr_device               = NULL,
         .nvr_params               = 0x00000000,
-        .sio_device               = NULL,
-        .sio_params               = 0x00000000,
+        .sio_device               = &fdc37mx0x_device,
+        .sio_params               = (uintptr_t) ((FDC37M60X | FDC37XXX2 | FDC37XXXX_370)),
         .kbc_p1                   = 0x000044f0,
         .gpio                     = 0xffffffff,
         .gpio_acpi                = 0xffffffff,
@@ -25088,6 +28158,16 @@ const machine_t machines[] = {
         .vid_device               = NULL,
         .snd_device               = NULL,
         .net_device               = NULL,
+        .pci_flags                = PCI_CONFIG_TYPE_1,
+        .slot_layout              = (const machine_slot_t[]) {
+            MSLOT_PCI(0x00, PCI_CARD_NORTHBRIDGE, 0, 0, 0, 0),
+            MSLOT_BRIDGE(0x07, PCI_CARD_SOUTHBRIDGE, 1, 2, 3, 4, ((const machine_slot_t[]) { MSLOT_BUS(SLOT_ISA16, 1), MSLOT_END })),
+            MSLOT_PCI(0x0F, PCI_CARD_NORMAL, 1, 2, 3, 4),
+            MSLOT_PCI(0x10, PCI_CARD_NORMAL, 2, 3, 4, 1),
+            MSLOT_PCI(0x12, PCI_CARD_NORMAL, 3, 4, 1, 2),
+            MSLOT_BRIDGE(0x01, PCI_CARD_AGPBRIDGE, 1, 2, 3, 4, machine_bus_agp),
+            MSLOT_END
+        },
         .aliases                  = { "HP Sherwood-B", "HP Vectra VEi8", "HP Brio BA600", "HP Brio BAX", "" }
     },
     /* Has a Winbond W83977EF Super I/O chip with on-chip KBC with AMIKey-2 KBC
@@ -25113,7 +28193,7 @@ const machine_t machines[] = {
             .max_multi   = 8.0
         },
         .bus_flags = MACHINE_PS2_AGP | MACHINE_BUS_USB, /* AGP is reserved for the internal video */
-        .flags     = MACHINE_IDE_DUAL | MACHINE_AV | MACHINE_AGP_INTERNAL | MACHINE_APM | MACHINE_ACPI | MACHINE_USB,
+        .flags     = MACHINE_IDE_DUAL | MACHINE_AV | MACHINE_AGP_INTERNAL | MACHINE_APM | MACHINE_ACPI | MACHINE_USB | MACHINE_UART_PRI | MACHINE_UART_SEC | MACHINE_LPT_PRI,
         .ram       = {
             .min  = 8192,
             .max  = 524288,
@@ -25126,8 +28206,8 @@ const machine_t machines[] = {
         .kbc_params               = 0x00000000,
         .nvr_device               = NULL,
         .nvr_params               = 0x00000000,
-        .sio_device               = NULL,
-        .sio_params               = 0x00000000,
+        .sio_device               = &w83977_device,
+        .sio_params               = (uintptr_t) ((W83977EF | W83977_AMI | W83977_NO_NVR)),
         .kbc_p1                   = 0x00000cf0,
         .gpio                     = 0xffffffff,
         .gpio_acpi                = 0xffffffff,
@@ -25137,6 +28217,17 @@ const machine_t machines[] = {
         .vid_device               = &voodoo_3_2000_agp_onboard_8m_device,
         .snd_device               = &es1373_onboard_device,
         .net_device               = NULL,
+        .pci_flags                = PCI_CONFIG_TYPE_1,
+        .slot_layout              = (const machine_slot_t[]) {
+            MSLOT_PCI(0x00, PCI_CARD_NORTHBRIDGE, 0, 0, 0, 0),
+            MSLOT_PCI(0x14, PCI_CARD_SOUND, 3, 4, 1, 2),
+            MSLOT_PCI(0x0E, PCI_CARD_NORMAL, 1, 2, 3, 4),
+            MSLOT_PCI(0x10, PCI_CARD_NORMAL, 2, 3, 4, 1),
+            MSLOT_PCI(0x12, PCI_CARD_NORMAL, 3, 4, 1, 2),
+            MSLOT_BRIDGE(0x07, PCI_CARD_SOUTHBRIDGE, 1, 2, 3, 4, ((const machine_slot_t[]) { MSLOT_BUS(SLOT_ISA16, 1), MSLOT_END })),
+            MSLOT_BRIDGE(0x01, PCI_CARD_AGPBRIDGE, 1, 2, 3, 4, machine_bus_agp),
+            MSLOT_END
+        },
         .aliases                  = { "Packard Bell Bora", "" }
     },
     /* Has a Winbond W83977EF Super I/O chip with on-chip KBC with AMIKey-2 KBC
@@ -25162,7 +28253,7 @@ const machine_t machines[] = {
             .max_multi   = 8.0
         },
         .bus_flags = MACHINE_PS2_AGP | MACHINE_BUS_USB, /* AGP is reserved for the internal video */
-        .flags     = MACHINE_IDE_DUAL | MACHINE_AV | MACHINE_AGP_INTERNAL | MACHINE_APM | MACHINE_ACPI | MACHINE_USB,
+        .flags     = MACHINE_IDE_DUAL | MACHINE_AV | MACHINE_AGP_INTERNAL | MACHINE_APM | MACHINE_ACPI | MACHINE_USB | MACHINE_UART_PRI | MACHINE_UART_SEC | MACHINE_LPT_PRI,
         .ram       = {
             .min  = 8192,
             .max  = 524288,
@@ -25175,8 +28266,8 @@ const machine_t machines[] = {
         .kbc_params               = 0x00000000,
         .nvr_device               = NULL,
         .nvr_params               = 0x00000000,
-        .sio_device               = NULL,
-        .sio_params               = 0x00000000,
+        .sio_device               = &w83977_device,
+        .sio_params               = (uintptr_t) ((W83977EF | W83977_AMI | W83977_NO_NVR)),
         .kbc_p1                   = 0x00000cf0,
         .gpio                     = 0xffffffff,
         .gpio_acpi                = 0xffffffff,
@@ -25186,6 +28277,17 @@ const machine_t machines[] = {
         .vid_device               = &voodoo_3_2000_agp_onboard_8m_device,
         .snd_device               = &es1373_onboard_device,
         .net_device               = NULL,
+        .pci_flags                = PCI_CONFIG_TYPE_1,
+        .slot_layout              = (const machine_slot_t[]) {
+            MSLOT_PCI(0x00, PCI_CARD_NORTHBRIDGE, 0, 0, 0, 0),
+            MSLOT_PCI(0x14, PCI_CARD_SOUND, 3, 4, 1, 2),
+            MSLOT_PCI(0x0E, PCI_CARD_NORMAL, 1, 2, 3, 4),
+            MSLOT_PCI(0x10, PCI_CARD_NORMAL, 2, 3, 4, 1),
+            MSLOT_PCI(0x12, PCI_CARD_NORMAL, 3, 4, 1, 2),
+            MSLOT_BRIDGE(0x07, PCI_CARD_SOUTHBRIDGE, 1, 2, 3, 4, machine_bus_isa),
+            MSLOT_BRIDGE(0x01, PCI_CARD_AGPBRIDGE, 1, 2, 3, 4, machine_bus_agp),
+            MSLOT_END
+        },
         .aliases                  = { "Packard Bell Bora", "" }
     },
 
@@ -25212,7 +28314,7 @@ const machine_t machines[] = {
             .max_multi   = 8.0
         },
         .bus_flags = MACHINE_PS2_AGP | MACHINE_BUS_USB,
-        .flags     = MACHINE_IDE_DUAL | MACHINE_SOUND | MACHINE_APM | MACHINE_ACPI | MACHINE_GAMEPORT | MACHINE_USB,
+        .flags     = MACHINE_IDE_DUAL | MACHINE_SOUND | MACHINE_APM | MACHINE_ACPI | MACHINE_GAMEPORT | MACHINE_USB | MACHINE_UART_PRI | MACHINE_UART_SEC | MACHINE_LPT_PRI,
         .ram       = {
             .min  = 8192,
             .max  = 1572864,
@@ -25225,7 +28327,7 @@ const machine_t machines[] = {
         .kbc_params               = 0x00000000,
         .nvr_device               = NULL,
         .nvr_params               = 0x00000000,
-        .sio_device               = NULL,
+        .sio_device               = &it8661f_device,
         .sio_params               = 0x00000000,
         .kbc_p1                   = 0x00000cf0,
         .gpio                     = 0xffffffff,
@@ -25236,6 +28338,18 @@ const machine_t machines[] = {
         .vid_device               = NULL,
         .snd_device               = &es1373_onboard_device,
         .net_device               = NULL,
+        .pci_flags                = PCI_CONFIG_TYPE_1 | FLAG_TRC_CONTROLS_CPURST,
+        .slot_layout              = (const machine_slot_t[]) {
+            MSLOT_PCI(0x00, PCI_CARD_NORTHBRIDGE, 0, 0, 0, 0),
+            MSLOT_BRIDGE(0x01, PCI_CARD_SOUTHBRIDGE, 0, 0, 0, 0, ((const machine_slot_t[]) { MSLOT_BUS(SLOT_ISA16, 3), MSLOT_END })),
+            MSLOT_PCI(0x0C, PCI_CARD_SOUND, 2, 3, 4, 1),
+            MSLOT_PCI(0x09, PCI_CARD_NORMAL, 1, 2, 3, 4),
+            MSLOT_PCI(0x0B, PCI_CARD_NORMAL, 4, 1, 2, 3),
+            MSLOT_PCI(0x0D, PCI_CARD_NORMAL, 3, 4, 1, 2),
+            MSLOT_PCI(0x0F, PCI_CARD_NORMAL, 2, 3, 4, 1),
+            MSLOT_BRIDGE(0x02, PCI_CARD_AGPBRIDGE, 0, 0, 0, 0, machine_bus_agp),
+            MSLOT_END
+        },
         .aliases                  = { "" }
     },
     /* Has the SiS (5)600 chipset with on-chip KBC. */
@@ -25260,7 +28374,67 @@ const machine_t machines[] = {
             .max_multi   = 8.0
         },
         .bus_flags = MACHINE_PS2_AGP | MACHINE_BUS_USB,
-        .flags     = MACHINE_AGP_INTERNAL | MACHINE_IDE_DUAL | MACHINE_APM | MACHINE_ACPI | MACHINE_GAMEPORT | MACHINE_USB, /* Machine has internal video: SiS 6326 and internal sound: C-Media CMI8330 (both not yet implemented) */
+        .flags     = MACHINE_AGP_INTERNAL | MACHINE_IDE_DUAL | MACHINE_APM | MACHINE_ACPI | MACHINE_GAMEPORT | MACHINE_USB | MACHINE_UART_PRI | MACHINE_UART_SEC | MACHINE_LPT_PRI, /* Machine has internal video: SiS 6326 and internal sound: C-Media CMI8330 (both not yet implemented) */
+        .ram       = {
+            .min  = 8192,
+            .max  = 1572864,
+            .step = 8192
+        },
+        .nvrmask                  = 255,
+        .jumpered_ecp_dma         = 0,
+        .default_jumpered_ecp_dma = -1,
+        .kbc_device               = NULL,
+        .kbc_params               = 0x00000000,
+        .nvr_device               = NULL,
+        .nvr_params               = 0x00000000,
+        .sio_device               = &it8661f_device,
+        .sio_params               = 0x00000000,
+        .kbc_p1                   = 0x00000cf0,
+        .gpio                     = 0xffffffff,
+        .gpio_acpi                = 0xffffffff,
+        .device                   = NULL,
+        .kbd_device               = NULL,
+        .fdc_device               = NULL,
+        .vid_device               = NULL,
+        .snd_device               = NULL,
+        .net_device               = NULL,
+        .pci_flags                = PCI_CONFIG_TYPE_1 | FLAG_TRC_CONTROLS_CPURST,
+        .slot_layout              = (const machine_slot_t[]) {
+            MSLOT_PCI(0x00, PCI_CARD_NORTHBRIDGE, 0, 0, 0, 0),
+            MSLOT_BRIDGE(0x01, PCI_CARD_SOUTHBRIDGE, 0, 0, 0, 0, machine_bus_isa),
+            MSLOT_PCI(0x09, PCI_CARD_NORMAL, 1, 2, 3, 4),
+            MSLOT_PCI(0x0B, PCI_CARD_NORMAL, 4, 1, 2, 3),
+            MSLOT_PCI(0x0D, PCI_CARD_NORMAL, 3, 4, 1, 2),
+            MSLOT_BRIDGE(0x02, PCI_CARD_AGPBRIDGE, 0, 0, 0, 0, machine_bus_agp),
+            MSLOT_END
+        },
+        .aliases                  = { "" }
+    },
+
+    /* SiS 620 */
+    /* Has the SiS 620 chipset with on-chip KBC. */
+    {
+        .name              = "[SiS 620] PC Chips M748MR",
+        .internal_name     = "m748mr",
+        .type              = MACHINE_TYPE_SLOT1,
+        .chipset           = MACHINE_CHIPSET_SIS_620,
+        .init              = machine_at_m748mr_init,
+        .p1_handler        = machine_generic_p1_handler,
+        .gpio_handler      = NULL,
+        .available_flag    = MACHINE_AVAILABLE,
+        .gpio_acpi_handler = NULL,
+        .cpu               = {
+            .package     = CPU_PKG_SLOT1,
+            .block       = CPU_BLOCK_NONE,
+            .min_bus     = 66666667,
+            .max_bus     = 100000000,
+            .min_voltage = 1300,
+            .max_voltage = 3500,
+            .min_multi   = 1.5,
+            .max_multi   = 8.0
+        },
+        .bus_flags = MACHINE_PS2_AGP | MACHINE_BUS_USB,
+        .flags     = MACHINE_AGP_INTERNAL | MACHINE_IDE_DUAL | MACHINE_APM | MACHINE_ACPI | MACHINE_GAMEPORT | MACHINE_SOUND | MACHINE_USB | MACHINE_VIDEO, /* Machine has internal modem: PCTel PCT789T */
         .ram       = {
             .min  = 8192,
             .max  = 1572864,
@@ -25278,11 +28452,11 @@ const machine_t machines[] = {
         .kbc_p1                   = 0x00000cf0,
         .gpio                     = 0xffffffff,
         .gpio_acpi                = 0xffffffff,
-        .device                   = NULL,
+        .device                   = &m748mr_device,
         .kbd_device               = NULL,
         .fdc_device               = NULL,
-        .vid_device               = NULL,
-        .snd_device               = NULL,
+        .vid_device               = &sis6306_onboard_device,
+        .snd_device               = &cmi8338_onboard_device,
         .net_device               = NULL,
         .aliases                  = { "" }
     },
@@ -25311,7 +28485,7 @@ const machine_t machines[] = {
             .max_multi   = 8.0
         },
         .bus_flags = MACHINE_PS2_AGP | MACHINE_BUS_USB,
-        .flags     = MACHINE_IDE_DUAL | MACHINE_APM | MACHINE_ACPI | MACHINE_USB,
+        .flags     = MACHINE_IDE_DUAL | MACHINE_APM | MACHINE_ACPI | MACHINE_USB | MACHINE_UART_PRI | MACHINE_UART_SEC | MACHINE_LPT_PRI,
         .ram       = {
             .min  = 8192,
             .max  = 786432,
@@ -25324,8 +28498,8 @@ const machine_t machines[] = {
         .kbc_params               = 0x00000000,
         .nvr_device               = NULL,
         .nvr_params               = 0x00000000,
-        .sio_device               = NULL,
-        .sio_params               = 0x00000000,
+        .sio_device               = &w83977_device,
+        .sio_params               = (uintptr_t) ((W83977EF | W83977_AMI | W83977_NO_NVR)),
         .kbc_p1                   = 0x00000cf0,
         .gpio                     = 0xffffffff,
         .gpio_acpi                = 0xffffffff,
@@ -25335,6 +28509,17 @@ const machine_t machines[] = {
         .vid_device               = NULL,
         .snd_device               = NULL,
         .net_device               = NULL,
+        .pci_flags                = PCI_CONFIG_TYPE_1,
+        .slot_layout              = (const machine_slot_t[]) {
+            MSLOT_PCI(0x00, PCI_CARD_NORTHBRIDGE, 0, 0, 0, 0),
+            MSLOT_BRIDGE(0x07, PCI_CARD_SOUTHBRIDGE, 1, 2, 3, 4, machine_bus_isa),
+            MSLOT_PCI(0x08, PCI_CARD_NORMAL, 1, 2, 3, 4),
+            MSLOT_PCI(0x09, PCI_CARD_NORMAL, 2, 3, 4, 1),
+            MSLOT_PCI(0x0A, PCI_CARD_NORMAL, 3, 4, 1, 2),
+            MSLOT_PCI(0x0B, PCI_CARD_NORMAL, 4, 1, 2, 3),
+            MSLOT_BRIDGE(0x01, PCI_CARD_AGPBRIDGE, 1, 2, 3, 4, machine_bus_agp),
+            MSLOT_END
+        },
         .aliases                  = { "" }
     },
 
@@ -25362,7 +28547,7 @@ const machine_t machines[] = {
             .max_multi   = 8.0
         },
         .bus_flags = MACHINE_PS2_AGP | MACHINE_BUS_USB,
-        .flags     = MACHINE_IDE_DUAL | MACHINE_APM | MACHINE_ACPI | MACHINE_GAMEPORT | MACHINE_USB | MACHINE_SOUND,
+        .flags     = MACHINE_IDE_DUAL | MACHINE_APM | MACHINE_ACPI | MACHINE_GAMEPORT | MACHINE_USB | MACHINE_SOUND | MACHINE_UART_PRI | MACHINE_UART_SEC | MACHINE_LPT_PRI,
         .ram       = {
             .min  = 8192,
             .max  = 524288,
@@ -25375,8 +28560,8 @@ const machine_t machines[] = {
         .kbc_params               = 0x00000000,
         .nvr_device               = NULL,
         .nvr_params               = 0x00000000,
-        .sio_device               = NULL,
-        .sio_params               = 0x00000000,
+        .sio_device               = &w83877_device,
+        .sio_params               = (uintptr_t) ((W83877TF | W83877_3F0)),
         .kbc_p1                   = 0x00000cf0,
         .gpio                     = 0xffffffff,
         .gpio_acpi                = 0xffffffff,
@@ -25386,6 +28571,17 @@ const machine_t machines[] = {
         .vid_device               = NULL,
         .snd_device               = &ess_solo1_onboard_device,
         .net_device               = NULL,
+        .pci_flags                = PCI_CONFIG_TYPE_1,
+        .slot_layout              = (const machine_slot_t[]) {
+            MSLOT_PCI(0x00, PCI_CARD_NORTHBRIDGE, 0, 0, 0, 0),
+            MSLOT_BRIDGE(0x07, PCI_CARD_SOUTHBRIDGE, 0, 0, 0, 4, machine_bus_isa),
+            MSLOT_PCI(0x08, PCI_CARD_NORMAL, 1, 2, 3, 4),
+            MSLOT_PCI(0x09, PCI_CARD_NORMAL, 2, 3, 4, 1),
+            MSLOT_PCI(0x0A, PCI_CARD_NORMAL, 3, 4, 1, 2),
+            MSLOT_PCI(0x0B, PCI_CARD_NORMAL, 4, 1, 2, 3),
+            MSLOT_BRIDGE(0x01, PCI_CARD_AGPBRIDGE, 1, 2, 3, 4, machine_bus_agp),
+            MSLOT_END
+        },
         .aliases                  = { "" }
     },
 
@@ -25413,7 +28609,7 @@ const machine_t machines[] = {
             .max_multi   = 8.0
         },
         .bus_flags = MACHINE_PS2_AGP | MACHINE_BUS_USB,
-        .flags     = MACHINE_IDE_DUAL | MACHINE_APM | MACHINE_ACPI | MACHINE_USB,
+        .flags     = MACHINE_IDE_DUAL | MACHINE_APM | MACHINE_ACPI | MACHINE_USB | MACHINE_UART_PRI | MACHINE_UART_SEC | MACHINE_LPT_PRI,
         .ram       = {
             .min  = 8192,
             .max  = 1572864,
@@ -25426,8 +28622,8 @@ const machine_t machines[] = {
         .kbc_params               = 0x00000000,
         .nvr_device               = NULL,
         .nvr_params               = 0x00000000,
-        .sio_device               = NULL,
-        .sio_params               = 0x00000000,
+        .sio_device               = &w83977_device,
+        .sio_params               = (uintptr_t) ((W83977EF | W83977_AMI | W83977_NO_NVR)),
         .kbc_p1                   = 0x00000cf0,
         .gpio                     = 0xffffffff,
         .gpio_acpi                = 0xffffffff,
@@ -25437,6 +28633,19 @@ const machine_t machines[] = {
         .vid_device               = NULL,
         .snd_device               = NULL,
         .net_device               = NULL,
+        .pci_flags                = PCI_CONFIG_TYPE_1,
+        .slot_layout              = (const machine_slot_t[]) {
+            MSLOT_PCI(0x00, PCI_CARD_NORTHBRIDGE, 0, 0, 0, 0),
+            MSLOT_BRIDGE(0x04, PCI_CARD_SOUTHBRIDGE, 1, 2, 3, 4, machine_bus_isa),
+            MSLOT_PCI(0x09, PCI_CARD_NORMAL, 4, 1, 2, 3),
+            MSLOT_PCI(0x0A, PCI_CARD_NORMAL, 3, 4, 1, 2),
+            MSLOT_PCI(0x0B, PCI_CARD_NORMAL, 2, 3, 4, 1),
+            MSLOT_PCI(0x0C, PCI_CARD_NORMAL, 1, 2, 3, 4),
+            MSLOT_PCI(0x0D, PCI_CARD_NORMAL, 4, 1, 2, 3),
+            MSLOT_PCI(0x0E, PCI_CARD_NORMAL, 3, 4, 1, 2),
+            MSLOT_BRIDGE(0x01, PCI_CARD_AGPBRIDGE, 1, 2, 3, 4, machine_bus_agp),
+            MSLOT_END
+        },
         .aliases                  = { "HP NetServer E200", "HP Eagle 2", "" }
     },
     /* Has a Winbond W83977EF Super I/O chip with on-chip KBC with AMIKey-2 KBC
@@ -25462,7 +28671,7 @@ const machine_t machines[] = {
             .max_multi   = 8.0
         },
         .bus_flags = MACHINE_PS2_AGP | MACHINE_BUS_USB,
-        .flags     = MACHINE_IDE_DUAL | MACHINE_SOUND | MACHINE_APM | MACHINE_ACPI | MACHINE_USB,
+        .flags     = MACHINE_IDE_DUAL | MACHINE_SOUND | MACHINE_APM | MACHINE_ACPI | MACHINE_USB | MACHINE_UART_PRI | MACHINE_UART_SEC | MACHINE_LPT_PRI,
         .ram       = {
             .min  = 8192,
             .max  = 1572864,
@@ -25475,8 +28684,8 @@ const machine_t machines[] = {
         .kbc_params               = 0x00000000,
         .nvr_device               = NULL,
         .nvr_params               = 0x00000000,
-        .sio_device               = NULL,
-        .sio_params               = 0x00000000,
+        .sio_device               = &w83977_device,
+        .sio_params               = (uintptr_t) ((W83977EF | W83977_AMI | W83977_NO_NVR)),
         .kbc_p1                   = 0x00000cf0,
         .gpio                     = 0xffffffff,
         .gpio_acpi                = 0xffffffff,
@@ -25486,6 +28695,19 @@ const machine_t machines[] = {
         .vid_device               = NULL,
         .snd_device               = &es1373_onboard_device,
         .net_device               = NULL,
+        .pci_flags                = PCI_CONFIG_TYPE_1,
+        .slot_layout              = (const machine_slot_t[]) {
+            MSLOT_PCI(0x00, PCI_CARD_NORTHBRIDGE, 0, 0, 0, 0),
+            MSLOT_BRIDGE(0x07, PCI_CARD_SOUTHBRIDGE, 0, 0, 3, 4, ((const machine_slot_t[]) { MSLOT_BUS(SLOT_ISA16, 2), MSLOT_END })),
+            MSLOT_PCI(0x0C, PCI_CARD_SOUND, 3, 4, 1, 2),
+            MSLOT_PCI(0x0E, PCI_CARD_NORMAL, 1, 2, 3, 4),
+            MSLOT_PCI(0x10, PCI_CARD_NORMAL, 2, 3, 4, 1),
+            MSLOT_PCI(0x12, PCI_CARD_NORMAL, 3, 4, 1, 2),
+            MSLOT_PCI(0x13, PCI_CARD_NORMAL, 2, 1, 4, 3),
+            MSLOT_PCI(0x14, PCI_CARD_NORMAL, 2, 1, 4, 3),
+            MSLOT_BRIDGE(0x01, PCI_CARD_AGPBRIDGE, 1, 2, 3, 4, machine_bus_agp),
+            MSLOT_END
+        },
         .aliases                  = { "Packard Bell Phoenix", "Compaq ProSignia 693A", "Compaq Deskpro 693A", "" }
     },
 
@@ -25513,7 +28735,7 @@ const machine_t machines[] = {
             .max_multi   = 8.0
         },
         .bus_flags = MACHINE_PS2_AGP | MACHINE_BUS_USB,
-        .flags     = MACHINE_IDE_DUAL | MACHINE_APM | MACHINE_ACPI | MACHINE_USB,
+        .flags     = MACHINE_IDE_DUAL | MACHINE_APM | MACHINE_ACPI | MACHINE_USB | MACHINE_UART_PRI | MACHINE_UART_SEC | MACHINE_LPT_PRI,
         .ram       = {
             .min  = 8192,
             .max  = 3145728,
@@ -25526,8 +28748,8 @@ const machine_t machines[] = {
         .kbc_params               = 0x00000000,
         .nvr_device               = NULL,
         .nvr_params               = 0x00000000,
-        .sio_device               = NULL,
-        .sio_params               = 0x00000000,
+        .sio_device               = &w83977_device,
+        .sio_params               = (uintptr_t) ((W83977EF | W83977_AMI | W83977_NO_NVR)),
         .kbc_p1                   = 0x00000cf0,
         .gpio                     = 0xffffffff,
         .gpio_acpi                = 0xffffffff,
@@ -25537,6 +28759,19 @@ const machine_t machines[] = {
         .vid_device               = NULL,
         .snd_device               = NULL,
         .net_device               = NULL,
+        .pci_flags                = PCI_CONFIG_TYPE_1,
+        .slot_layout              = (const machine_slot_t[]) {
+            MSLOT_PCI(0x00, PCI_CARD_NORTHBRIDGE, 0, 0, 0, 0),
+            MSLOT_BRIDGE(0x04, PCI_CARD_SOUTHBRIDGE, 1, 2, 3, 4, ((const machine_slot_t[]) { MSLOT_BUS(SLOT_ISA16, 1), MSLOT_END })),
+            MSLOT_PCI(0x09, PCI_CARD_NORMAL, 4, 1, 2, 3),
+            MSLOT_PCI(0x0A, PCI_CARD_NORMAL, 3, 4, 1, 2),
+            MSLOT_PCI(0x0B, PCI_CARD_NORMAL, 2, 3, 4, 1),
+            MSLOT_PCI(0x0C, PCI_CARD_NORMAL, 1, 2, 3, 4),
+            MSLOT_PCI(0x0D, PCI_CARD_NORMAL, 4, 1, 2, 3),
+            MSLOT_PCI(0x0E, PCI_CARD_NORMAL, 3, 4, 1, 2),
+            MSLOT_BRIDGE(0x01, PCI_CARD_AGPBRIDGE, 1, 2, 3, 4, machine_bus_agp),
+            MSLOT_END
+        },
         .aliases                  = { "" }
     },
     /* Has a Winbond W83977EF Super I/O chip with on-chip KBC with AMIKey-2 KBC
@@ -25562,7 +28797,7 @@ const machine_t machines[] = {
             .max_multi   = 8.0
         },
         .bus_flags = MACHINE_PS2_AGP | MACHINE_BUS_USB,
-        .flags     = MACHINE_IDE_DUAL | MACHINE_SOUND | MACHINE_APM | MACHINE_ACPI | MACHINE_GAMEPORT | MACHINE_USB,
+        .flags     = MACHINE_IDE_DUAL | MACHINE_SOUND | MACHINE_APM | MACHINE_ACPI | MACHINE_GAMEPORT | MACHINE_USB | MACHINE_UART_PRI | MACHINE_UART_SEC | MACHINE_LPT_PRI,
         .ram       = {
             .min  = 8192,
             .max  = 3145728,
@@ -25575,8 +28810,8 @@ const machine_t machines[] = {
         .kbc_params               = KBC_VEN_AMI | 0x00004800,
         .nvr_device               = NULL,
         .nvr_params               = 0x00000000,
-        .sio_device               = NULL,
-        .sio_params               = 0x00000000,
+        .sio_device               = &w83977_device,
+        .sio_params               = (uintptr_t) ((W83977EF | W83977_AMI | W83977_NO_NVR)),
         .kbc_p1                   = 0x00000cf0,
         .gpio                     = 0xffffffff,
         .gpio_acpi                = 0xffffffff,
@@ -25586,6 +28821,17 @@ const machine_t machines[] = {
         .vid_device               = NULL,
         .snd_device               = &es1373_onboard_device,
         .net_device               = NULL,
+        .pci_flags                = PCI_CONFIG_TYPE_1,
+        .slot_layout              = (const machine_slot_t[]) {
+            MSLOT_PCI(0x00, PCI_CARD_NORTHBRIDGE, 0, 0, 0, 0),
+            MSLOT_BRIDGE(0x07, PCI_CARD_SOUTHBRIDGE, 0, 0, 3, 4, ((const machine_slot_t[]) { MSLOT_BUS(SLOT_ISA16, 1), MSLOT_END })),
+            MSLOT_PCI(0x0D, PCI_CARD_SOUND, 4, 1, 2, 3), /* assumed */
+            MSLOT_PCI(0x0F, PCI_CARD_NORMAL, 3, 4, 1, 2),
+            MSLOT_PCI(0x11, PCI_CARD_NORMAL, 2, 3, 4, 1),
+            MSLOT_PCI(0x13, PCI_CARD_NORMAL, 1, 2, 3, 4),
+            MSLOT_BRIDGE(0x01, PCI_CARD_AGPBRIDGE, 1, 2, 3, 4, machine_bus_agp),
+            MSLOT_END
+        },
         .aliases                  = { "" }
     },
 
@@ -25614,7 +28860,7 @@ const machine_t machines[] = {
             .max_multi   = 8.0
         },
         .bus_flags = MACHINE_PS2_NOISA | MACHINE_BUS_USB,
-        .flags     = MACHINE_IDE_DUAL | MACHINE_APM | MACHINE_ACPI | MACHINE_USB,
+        .flags     = MACHINE_IDE_DUAL | MACHINE_APM | MACHINE_ACPI | MACHINE_USB | MACHINE_UART_PRI | MACHINE_UART_SEC | MACHINE_LPT_PRI,
         .ram       = {
         /* In theory, this machine should support up to 2 GB RAM. However, due to a BIOS bug, 
            the machine counts exactly 2048 MB RAM as 0 MB in the POST screen, while MS-DOS 
@@ -25631,8 +28877,8 @@ const machine_t machines[] = {
         .kbc_params               = 0x00000000,
         .nvr_device               = NULL,
         .nvr_params               = 0x00000000,
-        .sio_device               = NULL,
-        .sio_params               = 0x00000000,
+        .sio_device               = &pc87309_device,
+        .sio_params               = (uintptr_t) ((PCX730X_15C | PCX730X_AMI | PC87309_PC87309)),
         .kbc_p1                   = 0x000044f0,
         .gpio                     = 0xffffffff,
         .gpio_acpi                = 0xffffffff,
@@ -25642,6 +28888,19 @@ const machine_t machines[] = {
         .vid_device               = NULL,
         .snd_device               = NULL,
         .net_device               = NULL,
+        .pci_flags                = PCI_CONFIG_TYPE_1,
+        .slot_layout              = (const machine_slot_t[]) {
+            MSLOT_PCI(0x00, PCI_CARD_NORTHBRIDGE, 0, 0, 0, 0),
+            MSLOT_BRIDGE(0x07, PCI_CARD_SOUTHBRIDGE, 0, 0, 0, 4, machine_bus_isa),
+            MSLOT_PCI(0x0A, PCI_CARD_NORMAL, 1, 2, 3, 4),
+            MSLOT_PCI(0x0B, PCI_CARD_NORMAL, 2, 3, 4, 1),
+            MSLOT_PCI(0x0C, PCI_CARD_NORMAL, 3, 4, 1, 2),
+            MSLOT_PCI(0x0D, PCI_CARD_NORMAL, 4, 1, 2, 3),
+            MSLOT_PCI(0x0E, PCI_CARD_NORMAL, 4, 1, 2, 3),
+            MSLOT_PCI(0x0F, PCI_CARD_NORMAL, 4, 1, 2, 3),
+            MSLOT_BRIDGE(0x01, PCI_CARD_AGPBRIDGE, 1, 2, 0, 0, machine_bus_agp),
+            MSLOT_END
+        },
         .aliases                  = { "A-Trend ATC-6400", "" }
     },
 
@@ -25669,7 +28928,7 @@ const machine_t machines[] = {
             .max_multi   = 8.0
         },
         .bus_flags = MACHINE_PS2_AGP | MACHINE_BUS_USB,
-        .flags     = MACHINE_IDE_DUAL | MACHINE_SOUND | MACHINE_APM | MACHINE_ACPI | MACHINE_USB,
+        .flags     = MACHINE_IDE_DUAL | MACHINE_SOUND | MACHINE_APM | MACHINE_ACPI | MACHINE_USB | MACHINE_UART_PRI | MACHINE_UART_SEC | MACHINE_UART_TER | MACHINE_LPT_PRI,
         .ram       = {
             .min  = 8192,
             .max  = 1572864,
@@ -25682,7 +28941,7 @@ const machine_t machines[] = {
         .kbc_params               = 0x00000000,
         .nvr_device               = NULL,
         .nvr_params               = 0x00000000,
-        .sio_device               = NULL,
+        .sio_device               = &ali5123_device,
         .sio_params               = 0x00000000,
         .kbc_p1                   = 0x00000cf0,
         .gpio                     = 0xffffffff,
@@ -25693,8 +28952,23 @@ const machine_t machines[] = {
         .vid_device               = NULL,
         .snd_device               = &cmi8738_onboard_device,
         .net_device               = NULL,
+        .pci_flags                = PCI_CONFIG_TYPE_1,
+        .slot_layout              = (const machine_slot_t[]) {
+            MSLOT_PCI(0x00, PCI_CARD_NORTHBRIDGE, 0, 0, 0, 0),
+            MSLOT_BRIDGE(0x01, PCI_CARD_AGPBRIDGE, 1, 2, 0, 0, machine_bus_agp),
+            MSLOT_BRIDGE(0x07, PCI_CARD_SOUTHBRIDGE, 1, 2, 3, 4, machine_bus_isa),
+            MSLOT_PCI(0x0F, PCI_CARD_SOUTHBRIDGE_IDE, 1, 2, 3, 4),
+            MSLOT_PCI(0x03, PCI_CARD_SOUTHBRIDGE_PMU, 1, 2, 3, 4),
+            MSLOT_PCI(0x02, PCI_CARD_SOUTHBRIDGE_USB, 1, 2, 3, 4),
+            MSLOT_PCI(0x0C, PCI_CARD_SOUND, 2, 3, 0, 0),
+            MSLOT_PCI(0x0E, PCI_CARD_NORMAL, 4, 1, 2, 3),
+            MSLOT_PCI(0x10, PCI_CARD_NORMAL, 3, 4, 1, 2),
+            MSLOT_PCI(0x12, PCI_CARD_NORMAL, 2, 3, 4, 1),
+            MSLOT_END
+        },
         .aliases                  = { "" }
     },
+
     /* 440BX */
     /* Has a Winbond W83977EF Super I/O chip with on-chip KBC with AMIKey-2 KBC firmware.*/
     {
@@ -25718,7 +28992,7 @@ const machine_t machines[] = {
             .max_multi   = 8.0
         },
         .bus_flags = MACHINE_PS2_AGP | MACHINE_BUS_USB,
-        .flags     = MACHINE_IDE_DUAL | MACHINE_SOUND | MACHINE_APM | MACHINE_ACPI | MACHINE_USB,
+        .flags     = MACHINE_IDE_DUAL | MACHINE_SOUND | MACHINE_APM | MACHINE_ACPI | MACHINE_USB | MACHINE_UART_PRI | MACHINE_UART_SEC | MACHINE_LPT_PRI,
         .ram       = {
             .min  = 8192,
             .max  = 786432,
@@ -25731,8 +29005,8 @@ const machine_t machines[] = {
         .kbc_params               = 0x00000000,
         .nvr_device               = NULL,
         .nvr_params               = 0x00000000,
-        .sio_device               = NULL,
-        .sio_params               = 0x00000000,
+        .sio_device               = &w83977_device,
+        .sio_params               = (uintptr_t) ((W83977EF | W83977_AMI | W83977_NO_NVR)),
         .kbc_p1                   = 0x00000cf0,
         .gpio                     = 0xffffffff,
         .gpio_acpi                = 0xffffffff,
@@ -25742,6 +29016,18 @@ const machine_t machines[] = {
         .vid_device               = NULL,
         .snd_device               = &cmi8738_onboard_device,
         .net_device               = NULL,
+        .pci_flags                = PCI_CONFIG_TYPE_1,
+        .slot_layout              = (const machine_slot_t[]) {
+            MSLOT_PCI(0x00, PCI_CARD_NORTHBRIDGE, 0, 0, 0, 0),
+            MSLOT_BRIDGE(0x07, PCI_CARD_SOUTHBRIDGE, 1, 2, 3, 4, ((const machine_slot_t[]) { MSLOT_BUS(SLOT_ISA16, 2), MSLOT_END })),
+            MSLOT_PCI(0x09, PCI_CARD_NORMAL, 1, 2, 3, 4),
+            MSLOT_PCI(0x0a, PCI_CARD_NORMAL, 2, 3, 4, 1),
+            MSLOT_PCI(0x0b, PCI_CARD_NORMAL, 3, 4, 1, 2),
+            MSLOT_PCI(0x0c, PCI_CARD_NORMAL, 4, 1, 2, 3),
+            MSLOT_PCI(0x0d, PCI_CARD_SOUND, 4, 3, 2, 1), /* assumed */
+            MSLOT_BRIDGE(0x01, PCI_CARD_AGPBRIDGE, 1, 2, 3, 4, machine_bus_agp),
+            MSLOT_END
+        },
         .aliases                  = { "Compaq ProSignia 440BX", "Compaq Deskpro 440BX", "" }
     },
     /* Has a Winbond W83977EF Super I/O chip with on-chip KBC with AMIKey-2 KBC
@@ -25767,7 +29053,7 @@ const machine_t machines[] = {
             .max_multi   = 8.0
         },
         .bus_flags = MACHINE_PS2_AGP | MACHINE_BUS_USB,
-        .flags     = MACHINE_IDE_DUAL | MACHINE_SOUND | MACHINE_APM | MACHINE_ACPI | MACHINE_USB,
+        .flags     = MACHINE_IDE_DUAL | MACHINE_SOUND | MACHINE_APM | MACHINE_ACPI | MACHINE_USB | MACHINE_UART_PRI | MACHINE_UART_SEC | MACHINE_LPT_PRI,
         .ram       = {
             .min  = 8192,
             .max  = 786432,
@@ -25780,8 +29066,8 @@ const machine_t machines[] = {
         .kbc_params               = 0x00000000,
         .nvr_device               = NULL,
         .nvr_params               = 0x00000000,
-        .sio_device               = NULL,
-        .sio_params               = 0x00000000,
+        .sio_device               = &w83977_device,
+        .sio_params               = (uintptr_t) ((W83977EF | W83977_AMI | W83977_NO_NVR)),
         .kbc_p1                   = 0x00000cf0,
         .gpio                     = 0xffffffff,
         .gpio_acpi                = 0xffffffff,
@@ -25791,8 +29077,22 @@ const machine_t machines[] = {
         .vid_device               = NULL,
         .snd_device               = &es1373_onboard_device,
         .net_device               = NULL,
+        .pci_flags                = PCI_CONFIG_TYPE_1,
+        .slot_layout              = (const machine_slot_t[]) {
+            MSLOT_PCI(0x00, PCI_CARD_NORTHBRIDGE, 0, 0, 0, 0),
+            MSLOT_BRIDGE(0x07, PCI_CARD_SOUTHBRIDGE, 1, 2, 3, 4, machine_bus_isa),
+            MSLOT_PCI(0x0F, PCI_CARD_SOUND, 1, 0, 0, 0),
+            MSLOT_PCI(0x10, PCI_CARD_NORMAL, 1, 2, 3, 4),
+            MSLOT_PCI(0x11, PCI_CARD_NORMAL, 2, 3, 4, 1),
+            MSLOT_PCI(0x12, PCI_CARD_NORMAL, 3, 4, 1, 2),
+            MSLOT_PCI(0x13, PCI_CARD_NORMAL, 4, 1, 2, 3),
+            MSLOT_PCI(0x14, PCI_CARD_NORMAL, 1, 2, 3, 4),
+            MSLOT_BRIDGE(0x01, PCI_CARD_AGPBRIDGE, 1, 2, 3, 4, machine_bus_agp),
+            MSLOT_END
+        },
         .aliases                  = { "Tyan S1857", "" }
     },
+
     /* VIA Apollo Pro */
     /* Has a Winbond W83977EF Super I/O chip with on-chip KBC with AMIKey-2 KBC
        firmware. */
@@ -25817,7 +29117,7 @@ const machine_t machines[] = {
             .max_multi   = 8.0
         },
         .bus_flags = MACHINE_PS2_AGP | MACHINE_BUS_USB,
-        .flags     = MACHINE_IDE_DUAL | MACHINE_SOUND | MACHINE_APM | MACHINE_ACPI | MACHINE_USB,
+        .flags     = MACHINE_IDE_DUAL | MACHINE_SOUND | MACHINE_APM | MACHINE_ACPI | MACHINE_USB | MACHINE_UART_PRI | MACHINE_UART_SEC | MACHINE_LPT_PRI,
         .ram       = {
             .min  = 8192,
             .max  = 1572864,
@@ -25830,8 +29130,8 @@ const machine_t machines[] = {
         .kbc_params               = 0x00000000,
         .nvr_device               = NULL,
         .nvr_params               = 0x00000000,
-        .sio_device               = NULL,
-        .sio_params               = 0x00000000,
+        .sio_device               = &w83977_device,
+        .sio_params               = (uintptr_t) ((W83977EF | W83977_AMI | W83977_NO_NVR)),
         .kbc_p1                   = 0x00000cf0,
         .gpio                     = 0xffffffff,
         .gpio_acpi                = 0xffffffff,
@@ -25841,6 +29141,18 @@ const machine_t machines[] = {
         .vid_device               = NULL,
         .snd_device               = &cmi8738_onboard_device,
         .net_device               = NULL,
+        .pci_flags                = PCI_CONFIG_TYPE_1,
+        .slot_layout              = (const machine_slot_t[]) {
+            MSLOT_PCI(0x00, PCI_CARD_NORTHBRIDGE, 0, 0, 0, 0),
+            MSLOT_BRIDGE(0x07, PCI_CARD_SOUTHBRIDGE, 1, 2, 3, 4, ((const machine_slot_t[]) { MSLOT_BUS(SLOT_ISA16, 2), MSLOT_END })),
+            MSLOT_PCI(0x09, PCI_CARD_NORMAL, 1, 2, 3, 4),
+            MSLOT_PCI(0x0a, PCI_CARD_NORMAL, 2, 3, 4, 1),
+            MSLOT_PCI(0x0b, PCI_CARD_NORMAL, 3, 4, 1, 2),
+            MSLOT_PCI(0x0c, PCI_CARD_NORMAL, 4, 1, 2, 3),
+            MSLOT_PCI(0x0d, PCI_CARD_SOUND, 4, 3, 2, 1), /* assumed */
+            MSLOT_BRIDGE(0x01, PCI_CARD_AGPBRIDGE, 1, 2, 3, 4, machine_bus_agp),
+            MSLOT_END
+        },
         .aliases                  = { "Matsonic MS-7112C", "" }
     },
 
@@ -25869,7 +29181,7 @@ const machine_t machines[] = {
             .max_multi   = 8.0
         },
         .bus_flags = MACHINE_PS2_AGP | MACHINE_BUS_USB,
-        .flags     = MACHINE_IDE_DUAL | MACHINE_APM | MACHINE_ACPI | MACHINE_USB, /* Machine has internal Adaptec SCSI */
+        .flags     = MACHINE_IDE_DUAL | MACHINE_APM | MACHINE_ACPI | MACHINE_USB | MACHINE_UART_PRI | MACHINE_UART_SEC | MACHINE_LPT_PRI, /* Machine has internal Adaptec SCSI */
         .ram       = {
             .min  = 16384,
             .max  = 2097152,
@@ -25882,8 +29194,8 @@ const machine_t machines[] = {
         .kbc_params               = 0x00000000,
         .nvr_device               = NULL,
         .nvr_params               = 0x00000000,
-        .sio_device               = NULL,
-        .sio_params               = 0x00000000,
+        .sio_device               = &w83977_device,
+        .sio_params               = (uintptr_t) ((W83977EF | W83977_AMI | W83977_NO_NVR)),
         .kbc_p1                   = 0x00000cf0,
         .gpio                     = 0xffffffff,
         .gpio_acpi                = 0xffffffff,
@@ -25893,6 +29205,18 @@ const machine_t machines[] = {
         .vid_device               = NULL,
         .snd_device               = NULL,
         .net_device               = NULL,
+        .pci_flags                = PCI_CONFIG_TYPE_1,
+        .slot_layout              = (const machine_slot_t[]) {
+            MSLOT_PCI(0x00, PCI_CARD_NORTHBRIDGE, 0, 0, 0, 0),
+            MSLOT_BRIDGE(0x07, PCI_CARD_SOUTHBRIDGE, 1, 2, 3, 4, machine_bus_isa),
+            MSLOT_PCI(0x08, PCI_CARD_NORMAL, 1, 2, 3, 4),
+            MSLOT_PCI(0x09, PCI_CARD_NORMAL, 2, 3, 4, 1),
+            MSLOT_PCI(0x0A, PCI_CARD_NORMAL, 3, 4, 1, 2),
+            MSLOT_PCI(0x0B, PCI_CARD_NORMAL, 4, 1, 2, 3),
+            MSLOT_PCI(0x0C, PCI_CARD_NORMAL, 1, 2, 3, 4), /* On-Board SCSI. Not emulated at the moment */
+            MSLOT_BRIDGE(0x01, PCI_CARD_AGPBRIDGE, 1, 2, 3, 4, machine_bus_agp),
+            MSLOT_END
+        },
         .aliases                  = { "" }
     },
     /* Has a Winbond W83977TF Super I/O chip with on-chip KBC with AMIKey-2 KBC
@@ -25918,7 +29242,7 @@ const machine_t machines[] = {
             .max_multi   = 8.0
         },
         .bus_flags = MACHINE_PS2_AGP | MACHINE_BUS_USB,
-        .flags     = MACHINE_IDE_DUAL | MACHINE_APM | MACHINE_ACPI | MACHINE_USB,
+        .flags     = MACHINE_IDE_DUAL | MACHINE_APM | MACHINE_ACPI | MACHINE_USB | MACHINE_UART_PRI | MACHINE_UART_SEC | MACHINE_LPT_PRI,
         .ram       = {
             .min  = 16384,
             .max  = 2097152,
@@ -25931,8 +29255,8 @@ const machine_t machines[] = {
         .kbc_params               = 0x00000000,
         .nvr_device               = NULL,
         .nvr_params               = 0x00000000,
-        .sio_device               = NULL,
-        .sio_params               = 0x00000000,
+        .sio_device               = &w83977_device,
+        .sio_params               = (uintptr_t) ((W83977TF | W83977_AMI | W83977_NO_NVR)),
         .kbc_p1                   = 0x00000cf0,
         .gpio                     = 0xffffffff,
         .gpio_acpi                = 0xffffffff,
@@ -25942,6 +29266,19 @@ const machine_t machines[] = {
         .vid_device               = NULL,
         .snd_device               = NULL,
         .net_device               = NULL,
+        .pci_flags                = PCI_CONFIG_TYPE_1,
+        .slot_layout              = (const machine_slot_t[]) {
+            MSLOT_PCI(0x00, PCI_CARD_NORTHBRIDGE, 0, 0, 0, 0),
+            MSLOT_BRIDGE(0x07, PCI_CARD_SOUTHBRIDGE, 1, 2, 0, 0, machine_bus_isa),
+            MSLOT_PCI(0x0F, PCI_CARD_NORMAL, 1, 2, 3, 4),
+            MSLOT_PCI(0x10, PCI_CARD_NORMAL, 2, 3, 4, 1),
+            MSLOT_PCI(0x12, PCI_CARD_NORMAL, 3, 4, 1, 2),
+            MSLOT_PCI(0x14, PCI_CARD_NORMAL, 4, 1, 2, 3),
+            MSLOT_PCI(0x0D, PCI_CARD_NORMAL, 2, 3, 4, 1),
+            MSLOT_PCI(0x0E, PCI_CARD_NORMAL, 1, 2, 3, 4),
+            MSLOT_BRIDGE(0x01, PCI_CARD_AGPBRIDGE, 1, 2, 0, 0, machine_bus_agp),
+            MSLOT_END
+        },
         .aliases                  = { "" }
     },
 
@@ -25970,7 +29307,7 @@ const machine_t machines[] = {
             .max_multi   = MACHINE_MULTIPLIER_FIXED,
         },
         .bus_flags = MACHINE_PS2_AGP | MACHINE_BUS_USB,
-        .flags     = MACHINE_IDE_DUAL | MACHINE_APM | MACHINE_ACPI | MACHINE_USB,
+        .flags     = MACHINE_IDE_DUAL | MACHINE_APM | MACHINE_ACPI | MACHINE_USB | MACHINE_UART_PRI | MACHINE_UART_SEC | MACHINE_LPT_PRI,
         .ram       = {
             .min  = 8192,
             .max  = 786432,
@@ -25983,8 +29320,8 @@ const machine_t machines[] = {
         .kbc_params               = 0x00000000,
         .nvr_device               = NULL,
         .nvr_params               = 0x00000000,
-        .sio_device               = NULL,
-        .sio_params               = 0x00000000,
+        .sio_device               = &w83977_device,
+        .sio_params               = (uintptr_t) ((W83977TF | W83977_AMI | W83977_NO_NVR)),
         .kbc_p1                   = 0x00000cf0,
         .gpio                     = 0xffffffff,
         .gpio_acpi                = 0xffffffff,
@@ -25994,6 +29331,17 @@ const machine_t machines[] = {
         .vid_device               = NULL,
         .snd_device               = NULL,
         .net_device               = NULL,
+        .pci_flags                = PCI_CONFIG_TYPE_1,
+        .slot_layout              = (const machine_slot_t[]) {
+            MSLOT_PCI(0x00, PCI_CARD_NORTHBRIDGE, 0, 0, 0, 0),
+            MSLOT_BRIDGE(0x07, PCI_CARD_SOUTHBRIDGE, 1, 2, 3, 4, machine_bus_isa),
+            MSLOT_PCI(0x0F, PCI_CARD_NORMAL, 1, 2, 3, 4),
+            MSLOT_PCI(0x10, PCI_CARD_NORMAL, 2, 3, 4, 1),
+            MSLOT_PCI(0x12, PCI_CARD_NORMAL, 3, 4, 1, 2),
+            MSLOT_PCI(0x14, PCI_CARD_NORMAL, 4, 1, 2, 3),
+            MSLOT_BRIDGE(0x01, PCI_CARD_AGPBRIDGE, 1, 2, 3, 4, machine_bus_agp),
+            MSLOT_END
+        },
         .aliases                  = { "" }
     },
 
@@ -26022,7 +29370,7 @@ const machine_t machines[] = {
         },
         .bus_flags = MACHINE_PS2_AGP | MACHINE_BUS_USB, /* Machine has EISA, possibly for a riser? */
                                                         /* Yes, that's a riser slot, not EISA. */
-        .flags     = MACHINE_IDE_DUAL | MACHINE_APM | MACHINE_ACPI | MACHINE_USB | MACHINE_AGP_INTERNAL | MACHINE_VIDEO | MACHINE_SOUND, /* Machine has internal NIC: either Intel 82559ER or Realtek RTL8139C+ (the latter's onboard variant not yet emulated) */
+        .flags     = MACHINE_IDE_DUAL | MACHINE_APM | MACHINE_ACPI | MACHINE_USB | MACHINE_AGP_INTERNAL | MACHINE_VIDEO | MACHINE_SOUND | MACHINE_UART_PRI | MACHINE_UART_SEC | MACHINE_UART_TER | MACHINE_UART_QUA | MACHINE_LPT_PRI | MACHINE_LPT_SEC, /* Machine has internal NIC: either Intel 82559ER or Realtek RTL8139C+ (the latter's onboard variant not yet emulated) */
         .ram       = {
             .min  = 8192,
             .max  = 524288,
@@ -26035,8 +29383,8 @@ const machine_t machines[] = {
         .kbc_params               = 0x00000000,
         .nvr_device               = NULL,
         .nvr_params               = 0x00000000,
-        .sio_device               = NULL,
-        .sio_params               = 0x00000000,
+        .sio_device               = &w83977_device,
+        .sio_params               = (uintptr_t) ((W83977EF | W83977_AMI | W83977_NO_NVR)),
         .kbc_p1                   = 0x00000cf0,
         .gpio                     = 0xffffffff,
         .gpio_acpi                = 0xffffffff,
@@ -26046,6 +29394,18 @@ const machine_t machines[] = {
         .vid_device               = &chips_69000_onboard_device,
         .snd_device               = &ess_solo1_onboard_device,
         .net_device               = NULL,
+        .pci_flags                = PCI_CONFIG_TYPE_1,
+        .slot_layout              = (const machine_slot_t[]) {
+            MSLOT_PCI(0x00, PCI_CARD_NORTHBRIDGE, 0, 0, 0, 0),
+            MSLOT_BRIDGE(0x07, PCI_CARD_SOUTHBRIDGE, 1, 2, 3, 4, machine_bus_isa),
+            MSLOT_PCI(0x09, PCI_CARD_NORMAL, 1, 2, 3, 4),
+            MSLOT_PCI(0x0A, PCI_CARD_NORMAL, 2, 3, 4, 1),
+            MSLOT_PCI(0x0B, PCI_CARD_NORMAL, 3, 4, 1, 2),
+            MSLOT_PCI(0x0C, PCI_CARD_SOUND, 4, 1, 2, 3),
+            MSLOT_PCI(0x0D, PCI_CARD_VIDEO, 2, 3, 4, 1),
+            MSLOT_BRIDGE(0x01, PCI_CARD_AGPBRIDGE, 1, 2, 3, 4, machine_bus_agp),
+            MSLOT_END
+        },
         .aliases                  = { "AEWIN AW-O671I", "" }
     },
     /* Has a Winbond W83977EF Super I/O chip with on-chip KBC with AMIKey-2 KBC
@@ -26071,7 +29431,7 @@ const machine_t machines[] = {
             .max_multi   = 8.0 /* limits assumed */
         },
         .bus_flags = MACHINE_PS2_AGP | MACHINE_BUS_USB,
-        .flags     = MACHINE_IDE_DUAL | MACHINE_APM | MACHINE_ACPI | MACHINE_USB,
+        .flags     = MACHINE_IDE_DUAL | MACHINE_APM | MACHINE_ACPI | MACHINE_USB | MACHINE_UART_PRI | MACHINE_UART_SEC | MACHINE_LPT_PRI,
         .ram       = {
             .min  = 8192,
             .max  = 786432,
@@ -26084,8 +29444,8 @@ const machine_t machines[] = {
         .kbc_params               = 0x00000000,
         .nvr_device               = NULL,
         .nvr_params               = 0x00000000,
-        .sio_device               = NULL,
-        .sio_params               = 0x00000000,
+        .sio_device               = &w83977_device,
+        .sio_params               = (uintptr_t) ((W83977EF | W83977_AMI | W83977_NO_NVR)),
         .kbc_p1                   = 0x00000cf0,
         .gpio                     = 0xffffffff,
         .gpio_acpi                = 0xffffffff,
@@ -26095,6 +29455,18 @@ const machine_t machines[] = {
         .vid_device               = NULL,
         .snd_device               = NULL,
         .net_device               = NULL,
+        .pci_flags                = PCI_CONFIG_TYPE_1,
+        .slot_layout              = (const machine_slot_t[]) {
+            MSLOT_PCI(0x00, PCI_CARD_NORTHBRIDGE, 0, 0, 0, 0),
+            MSLOT_BRIDGE(0x07, PCI_CARD_SOUTHBRIDGE, 1, 2, 3, 4, ((const machine_slot_t[]) { MSLOT_BUS(SLOT_ISA16, 2), MSLOT_END })),
+            MSLOT_PCI(0x09, PCI_CARD_NORMAL, 1, 2, 3, 4),
+            MSLOT_PCI(0x0A, PCI_CARD_NORMAL, 2, 3, 4, 1),
+            MSLOT_PCI(0x0B, PCI_CARD_NORMAL, 3, 4, 1, 2),
+            MSLOT_PCI(0x0C, PCI_CARD_NORMAL, 4, 1, 2, 3),
+            MSLOT_PCI(0x0D, PCI_CARD_NORMAL, 4, 1, 2, 3),
+            MSLOT_BRIDGE(0x01, PCI_CARD_AGPBRIDGE, 1, 2, 3, 4, machine_bus_agp),
+            MSLOT_END
+        },
         .aliases                  = { "" }
     },
     /* Has a Winbond W83977EF Super I/O chip with on-chip KBC with AMIKey-2 KBC
@@ -26120,7 +29492,7 @@ const machine_t machines[] = {
             .max_multi   = 8.0
         },
         .bus_flags = MACHINE_PS2_AGP | MACHINE_BUS_USB,
-        .flags     = MACHINE_IDE_QUAD | MACHINE_APM | MACHINE_ACPI | MACHINE_USB,
+        .flags     = MACHINE_IDE_QUAD | MACHINE_APM | MACHINE_ACPI | MACHINE_USB | MACHINE_UART_PRI | MACHINE_UART_SEC | MACHINE_LPT_PRI,
         .ram       = {
             .min  = 8192,
             .max  = 1048576,
@@ -26133,8 +29505,8 @@ const machine_t machines[] = {
         .kbc_params               = 0x00000000,
         .nvr_device               = NULL,
         .nvr_params               = 0x00000000,
-        .sio_device               = NULL,
-        .sio_params               = 0x00000000,
+        .sio_device               = &w83977_device,
+        .sio_params               = (uintptr_t) ((W83977EF | W83977_AMI | W83977_NO_NVR)),
         .kbc_p1                   = 0x00000cf0,
         .gpio                     = 0xffffffff,
         .gpio_acpi                = 0xffffffff,
@@ -26145,6 +29517,20 @@ const machine_t machines[] = {
         .snd_device               = NULL,
         .net_device               = NULL,
         .ide_device               = &ide_cmd648_ter_qua_onboard_device,
+        .pci_flags                = PCI_CONFIG_TYPE_1,
+        .slot_layout              = (const machine_slot_t[]) {
+            MSLOT_PCI(0x00, PCI_CARD_NORTHBRIDGE, 0, 0, 0, 0),
+            MSLOT_BRIDGE(0x04, PCI_CARD_SOUTHBRIDGE, 1, 2, 3, 4, ((const machine_slot_t[]) { MSLOT_BUS(SLOT_ISA16, 1), MSLOT_END })),
+            MSLOT_PCI(0x07, PCI_CARD_IDE, 2, 3, 4, 1),
+            MSLOT_PCI(0x09, PCI_CARD_NORMAL, 4, 1, 2, 3),
+            MSLOT_PCI(0x0A, PCI_CARD_NORMAL, 3, 4, 1, 2),
+            MSLOT_PCI(0x0B, PCI_CARD_NORMAL, 2, 3, 4, 1),
+            MSLOT_PCI(0x0C, PCI_CARD_NORMAL, 1, 2, 3, 4),
+            MSLOT_PCI(0x0D, PCI_CARD_NORMAL, 4, 1, 2, 3),
+            MSLOT_PCI(0x0E, PCI_CARD_NORMAL, 3, 4, 1, 2),
+            MSLOT_BRIDGE(0x01, PCI_CARD_AGPBRIDGE, 1, 2, 3, 4, machine_bus_agp),
+            MSLOT_END
+        },
         .aliases                  = { "" }
     },
     /* Has a National Semiconductor PC87309 Super I/O with on-chip KBC, which has one of these
@@ -26170,7 +29556,7 @@ const machine_t machines[] = {
             .max_multi   = 8.0
         },
         .bus_flags = MACHINE_PS2_AGP | MACHINE_BUS_USB,
-        .flags     = MACHINE_IDE_DUAL | MACHINE_APM | MACHINE_ACPI | MACHINE_USB, 
+        .flags     = MACHINE_IDE_DUAL | MACHINE_APM | MACHINE_ACPI | MACHINE_USB | MACHINE_UART_PRI | MACHINE_UART_SEC | MACHINE_LPT_PRI, 
         .ram       = {
             .min  = 32768, /* temporary higher limit set due to a DRB(?) issue that prevents POST with less than this amount */
             .max  = 524288,
@@ -26183,8 +29569,8 @@ const machine_t machines[] = {
         .kbc_params               = 0x00000000,
         .nvr_device               = NULL,
         .nvr_params               = 0x00000000,
-        .sio_device               = NULL,
-        .sio_params               = 0x00000000,
+        .sio_device               = &pc87309_device,
+        .sio_params               = (uintptr_t) ((PCX730X_15C | PCX730X_AMI | PC87309_PC87309)),
         .kbc_p1                   = 0x000044f0,
         .gpio                     = 0xffffffff,
         .gpio_acpi                = 0xffffffff,
@@ -26194,10 +29580,73 @@ const machine_t machines[] = {
         .vid_device               = NULL,
         .snd_device               = NULL,
         .net_device               = NULL, 
+        .pci_flags                = PCI_CONFIG_TYPE_1,
+        .slot_layout              = (const machine_slot_t[]) {
+            MSLOT_PCI(0x00, PCI_CARD_NORTHBRIDGE, 0, 0, 0, 0),
+            MSLOT_BRIDGE(0x07, PCI_CARD_SOUTHBRIDGE, 1, 2, 3, 4, machine_bus_isa),
+            MSLOT_PCI(0x08, PCI_CARD_VIDEO, 1, 2, 3, 4), /* not yet implemented */
+            MSLOT_PCI(0x09, PCI_CARD_NORMAL, 4, 1, 2, 3),
+            MSLOT_PCI(0x0A, PCI_CARD_NORMAL, 3, 4, 1, 2),
+            MSLOT_PCI(0x0B, PCI_CARD_NORMAL, 2, 3, 4, 1),
+            MSLOT_PCI(0x10, PCI_CARD_NORMAL, 4, 1, 2, 3),
+            MSLOT_PCI(0x12, PCI_CARD_NORMAL, 3, 4, 1, 2),
+            MSLOT_PCI(0x14, PCI_CARD_NORMAL, 2, 3, 4, 1),
+            MSLOT_BRIDGE(0x01, PCI_CARD_AGPBRIDGE, 1, 2, 3, 4, machine_bus_agp),
+            MSLOT_END
+        },
         .aliases                  = { "" }
     },
 
     /* 440ZX */
+    /* Has a SM(S)C FDC37M707 Super I/O chip with on-chip Phoenix MultiKey/42i
+       KBC firmware. */
+    {
+        .name              = "[i440ZX] Acer AcerPower 6200",
+        .internal_name     = "acerv66ma",
+        .type              = MACHINE_TYPE_SOCKET370,
+        .chipset           = MACHINE_CHIPSET_INTEL_440ZX,
+        .init              = machine_at_acerv66ma_init,
+        .p1_handler        = machine_generic_p1_handler,
+        .gpio_handler      = NULL,
+        .available_flag    = MACHINE_AVAILABLE,
+        .gpio_acpi_handler = NULL,
+        .cpu               = {
+            .package     = CPU_PKG_SOCKET370,
+            .block       = CPU_BLOCK_NONE,
+            .min_bus     = 66666667,
+            .max_bus     = 100000000,
+            .min_voltage = 1800,
+            .max_voltage = 3500,
+            .min_multi   = 1.5,
+            .max_multi   = 8.0
+        },
+        .bus_flags = MACHINE_PS2_PCI | MACHINE_BUS_USB,
+        .flags     = MACHINE_AGP_INTERNAL | MACHINE_IDE_DUAL | MACHINE_APM | MACHINE_ACPI | MACHINE_USB | MACHINE_SOUND,
+        .ram       = {
+            .min  = 8192,
+            .max  = 262144,
+            .step = 8192
+        },
+        .nvrmask                  = 255,
+        .jumpered_ecp_dma         = 0,
+        .default_jumpered_ecp_dma = -1,
+        .kbc_device               = NULL,
+        .kbc_params               = 0x00000000,
+        .nvr_device               = NULL,
+        .nvr_params               = 0x00000000,
+        .sio_device               = NULL,
+        .sio_params               = 0x00000000,
+        .kbc_p1                   = 0x00000cf0,
+        .gpio                     = 0xffffffff,
+        .gpio_acpi                = 0xffffffff,
+        .device                   = NULL,
+        .kbd_device               = NULL,
+        .fdc_device               = NULL,
+        .vid_device               = NULL,
+        .snd_device               = &ess_solo1_onboard_device,
+        .net_device               = NULL,
+        .aliases                  = { "Acer V66MA", "" }
+    },
     /* Has a SM(S)C FDC37B807 Super I/O chip with on-chip Phoenix MultiKey/42i
        KBC firmware. */
     {
@@ -26221,7 +29670,7 @@ const machine_t machines[] = {
             .max_multi   = 8.0
         },
         .bus_flags = MACHINE_PS2_NOISA | MACHINE_BUS_USB,
-        .flags     = MACHINE_AGP_INTERNAL | MACHINE_IDE_DUAL | MACHINE_APM | MACHINE_ACPI | MACHINE_USB | MACHINE_NIC | MACHINE_SOUND, /* Machine has internal video: ATI Rage Pro Turbo AGP (not yet implemented) */
+        .flags     = MACHINE_AGP_INTERNAL | MACHINE_IDE_DUAL | MACHINE_APM | MACHINE_ACPI | MACHINE_USB | MACHINE_NIC | MACHINE_SOUND | MACHINE_UART_PRI | MACHINE_UART_SEC | MACHINE_LPT_PRI, /* Machine has internal video: ATI Rage Pro Turbo AGP (not yet implemented) */
         .ram       = {
             .min  = 16384, /* 8 MB RAM is detected as 16 MB by DOS. 16 MB is detected incorrectly by BIOS Setup but is otherwise fully functional */
             .max  = 524288,
@@ -26234,8 +29683,8 @@ const machine_t machines[] = {
         .kbc_params               = 0x00000000,
         .nvr_device               = NULL,
         .nvr_params               = 0x00000000,
-        .sio_device               = NULL,
-        .sio_params               = 0x00000000,
+        .sio_device               = &fdc37mx0x_device,
+        .sio_params               = (uintptr_t) ((FDC37B80X | FDC37XXX7 | FDC37C93X_NO_NVR | FDC37XXXX_370)),
         .kbc_p1                   = 0x00000cf0,
         .gpio                     = 0xffffffff,
         .gpio_acpi                = 0xffffffff,
@@ -26245,6 +29694,22 @@ const machine_t machines[] = {
         .vid_device               = NULL,
         .snd_device               = &es1373_onboard_device,
         .net_device               = &i82559c_onboard_device,
+        .pci_flags                = PCI_CONFIG_TYPE_1,
+        .slot_layout              = (const machine_slot_t[]) {
+            MSLOT_PCI(0x00, PCI_CARD_NORTHBRIDGE, 0, 0, 0, 0),
+            /* The official Intel riser only has a single PCI slot, although the PCI IRQ table still defines
+               three more slots, possibly intended for allowing the use of risers with more slots if Intel
+               would have ever decided to make them. */
+            MSLOT_PCI(0x0E, PCI_CARD_NORMAL, 4, 1, 2, 3),
+            MSLOT_PCI(0x10, PCI_CARD_NORMAL, 3, 4, 1, 2),
+            MSLOT_PCI(0x12, PCI_CARD_NORMAL, 2, 3, 4, 1),
+            MSLOT_PCI(0x14, PCI_CARD_NORMAL, 1, 2, 3, 4),
+            MSLOT_PCI(0x06, PCI_CARD_NETWORK, 4, 0, 0, 0),
+            MSLOT_PCI(0x0C, PCI_CARD_SOUND, 2, 0, 0, 0),
+            MSLOT_BRIDGE(0x07, PCI_CARD_SOUTHBRIDGE, 1, 2, 3, 4, machine_bus_isa),
+            MSLOT_BRIDGE(0x01, PCI_CARD_AGPBRIDGE, 1, 2, 3, 4, machine_bus_agp),
+            MSLOT_END
+        },
         .aliases                  = { "Intel Bali", "" }
     },
     /* Has a Winbond W83977TF Super I/O chip with on-chip KBC with AMIKey-2 KBC
@@ -26270,7 +29735,7 @@ const machine_t machines[] = {
             .max_multi   = 8.0
         },
         .bus_flags = MACHINE_PS2_AGP | MACHINE_BUS_USB,
-        .flags     = MACHINE_IDE_DUAL | MACHINE_APM | MACHINE_ACPI | MACHINE_USB,
+        .flags     = MACHINE_IDE_DUAL | MACHINE_APM | MACHINE_ACPI | MACHINE_USB | MACHINE_UART_PRI | MACHINE_UART_SEC | MACHINE_LPT_PRI,
         .ram       = {
             .min  = 8192,
             .max  = 524288,
@@ -26283,8 +29748,8 @@ const machine_t machines[] = {
         .kbc_params               = 0x00000000,
         .nvr_device               = NULL,
         .nvr_params               = 0x00000000,
-        .sio_device               = NULL,
-        .sio_params               = 0x00000000,
+        .sio_device               = &w83977_device,
+        .sio_params               = (uintptr_t) ((W83977EF | W83977_AMI | W83977_NO_NVR)),
         .kbc_p1                   = 0x00000cf0,
         .gpio                     = 0xffffffff,
         .gpio_acpi                = 0xffffffff,
@@ -26294,6 +29759,18 @@ const machine_t machines[] = {
         .vid_device               = NULL,
         .snd_device               = NULL,
         .net_device               = NULL,
+        .pci_flags                = PCI_CONFIG_TYPE_1,
+        .slot_layout              = (const machine_slot_t[]) {
+            MSLOT_PCI(0x00, PCI_CARD_NORTHBRIDGE, 0, 0, 0, 0),
+            MSLOT_BRIDGE(0x07, PCI_CARD_SOUTHBRIDGE, 1, 2, 3, 4, machine_bus_isa),
+            MSLOT_PCI(0x08, PCI_CARD_NORMAL, 1, 2, 3, 4),
+            MSLOT_PCI(0x09, PCI_CARD_NORMAL, 2, 3, 4, 1),
+            MSLOT_PCI(0x0A, PCI_CARD_NORMAL, 3, 4, 1, 2),
+            MSLOT_PCI(0x0B, PCI_CARD_NORMAL, 4, 1, 2, 3),
+            MSLOT_PCI(0x0C, PCI_CARD_NORMAL, 1, 2, 3, 4), /* Integrated Sound? */
+            MSLOT_BRIDGE(0x01, PCI_CARD_AGPBRIDGE, 1, 2, 3, 4, machine_bus_agp),
+            MSLOT_END
+        },
         .aliases                  = { "Soltek SL-63A", "Magic-Pro MP-6ZX", "" }
     },
 
@@ -26370,10 +29847,70 @@ const machine_t machines[] = {
             .max_multi   = 8.0
         },
         .bus_flags = MACHINE_PS2_AGP | MACHINE_BUS_USB,
-        .flags     = MACHINE_IDE_DUAL | MACHINE_APM | MACHINE_ACPI | MACHINE_USB,
+        .flags     = MACHINE_IDE_DUAL | MACHINE_APM | MACHINE_ACPI | MACHINE_USB | MACHINE_UART_PRI | MACHINE_UART_SEC | MACHINE_LPT_PRI,
         .ram       = {
             .min  = 8192,
             .max  = 1572864,
+            .step = 8192
+        },
+        .nvrmask                  = 255,
+        .jumpered_ecp_dma         = 0,
+        .default_jumpered_ecp_dma = -1,
+        .kbc_device               = NULL,
+        .kbc_params               = 0x00000000,
+        .nvr_device               = NULL,
+        .nvr_params               = 0x00000000,
+        .sio_device               = &it8661f_device,
+        .sio_params               = 0x00000000,
+        .kbc_p1                   = 0x00000cf0,
+        .gpio                     = 0xffffffff,
+        .gpio_acpi                = 0xffffffff,
+        .device                   = NULL,
+        .kbd_device               = NULL,
+        .fdc_device               = NULL,
+        .vid_device               = NULL,
+        .snd_device               = NULL,
+        .net_device               = NULL,
+        .pci_flags                = PCI_CONFIG_TYPE_1 | FLAG_TRC_CONTROLS_CPURST,
+        .slot_layout              = (const machine_slot_t[]) {
+            MSLOT_PCI(0x00, PCI_CARD_NORTHBRIDGE, 0, 0, 0, 0),
+            MSLOT_BRIDGE(0x01, PCI_CARD_SOUTHBRIDGE, 0, 0, 0, 0, ((const machine_slot_t[]) { MSLOT_BUS(SLOT_ISA16, 2), MSLOT_END })),
+            MSLOT_PCI(0x0F, PCI_CARD_NORMAL, 1, 2, 3, 4),
+            MSLOT_PCI(0x10, PCI_CARD_NORMAL, 2, 3, 4, 1),
+            MSLOT_PCI(0x11, PCI_CARD_NORMAL, 3, 4, 1, 2),
+            MSLOT_BRIDGE(0x02, PCI_CARD_AGPBRIDGE, 1, 2, 3, 4, machine_bus_agp),
+            MSLOT_END
+        },
+        .aliases                  = { "" }
+    },
+
+    /* SiS 620 */
+    /* Has the SiS 620 chipset on-chip KBC. */
+    {
+        .name              = "[SiS 620] ASUS ME-99",
+        .internal_name     = "me99",
+        .type              = MACHINE_TYPE_SOCKET370,
+        .chipset           = MACHINE_CHIPSET_SIS_620,
+        .init              = machine_at_me99_init,
+        .p1_handler        = machine_generic_p1_handler,
+        .gpio_handler      = NULL,
+        .available_flag    = MACHINE_AVAILABLE,
+        .gpio_acpi_handler = NULL,
+        .cpu               = {
+            .package     = CPU_PKG_SOCKET370,
+            .block       = CPU_BLOCK_NONE,
+            .min_bus     = 66666667,
+            .max_bus     = 100000000,
+            .min_voltage = 1800,
+            .max_voltage = 3500,
+            .min_multi   = 1.5,
+            .max_multi   = 8.0
+        },
+        .bus_flags = MACHINE_PS2_AGP | MACHINE_BUS_USB,
+        .flags     = MACHINE_AGP_INTERNAL | MACHINE_IDE_DUAL | MACHINE_APM | MACHINE_ACPI | MACHINE_SOUND | MACHINE_VIDEO | MACHINE_USB,
+        .ram       = {
+            .min  = 8192,
+            .max  = 1048576, /* BIOS does not recognize more than this amount */
             .step = 8192
         },
         .nvrmask                  = 255,
@@ -26388,12 +29925,25 @@ const machine_t machines[] = {
         .kbc_p1                   = 0x00000cf0,
         .gpio                     = 0xffffffff,
         .gpio_acpi                = 0xffffffff,
-        .device                   = NULL,
+        .device                   = &me99_device,
         .kbd_device               = NULL,
         .fdc_device               = NULL,
-        .vid_device               = NULL,
-        .snd_device               = NULL,
+        .vid_device               = &sis6306_onboard_device,
+        .snd_device               = &ess_solo1_onboard_device,
         .net_device               = NULL,
+        .pci_flags                = PCI_CONFIG_TYPE_1 | FLAG_TRC_CONTROLS_CPURST,
+        .slot_layout              = (const machine_slot_t[]) {
+            MSLOT_PCI(0x00, PCI_CARD_NORTHBRIDGE, 0, 0, 0, 0),
+            MSLOT_BRIDGE(0x01, PCI_CARD_SOUTHBRIDGE, 0, 0, 0, 0, machine_bus_isa),
+            MSLOT_PCI(0x06, PCI_CARD_SOUND, 4, 1, 2, 3),
+            MSLOT_PCI(0x08, PCI_CARD_NORMAL, 1, 2, 3, 4),
+            MSLOT_PCI(0x09, PCI_CARD_NORMAL, 4, 1, 2, 3),
+            MSLOT_PCI(0x0A, PCI_CARD_NORMAL, 3, 4, 1, 2),
+            MSLOT_PCI(0x0B, PCI_CARD_NORMAL, 2, 3, 4, 1),
+            MSLOT_PCI(0x0C, PCI_CARD_NORMAL, 1, 2, 3, 4),
+            MSLOT_BRIDGE(0x02, PCI_CARD_AGPBRIDGE, 1, 2, 3, 4, machine_bus_agp),
+            MSLOT_END
+        },
         .aliases                  = { "" }
     },
 
@@ -26421,7 +29971,7 @@ const machine_t machines[] = {
             .max_multi   = 8.0
         },
         .bus_flags = MACHINE_PS2_AGP | MACHINE_BUS_USB,
-        .flags     = MACHINE_IDE_DUAL | MACHINE_APM | MACHINE_ACPI | MACHINE_USB,
+        .flags     = MACHINE_IDE_DUAL | MACHINE_APM | MACHINE_ACPI | MACHINE_USB | MACHINE_UART_PRI | MACHINE_UART_SEC | MACHINE_LPT_PRI,
         .ram       = {
             .min  = 8192,
             .max  = 1048576,
@@ -26434,8 +29984,8 @@ const machine_t machines[] = {
         .kbc_params               = 0x00000000,
         .nvr_device               = NULL,
         .nvr_params               = 0x00000000,
-        .sio_device               = NULL,
-        .sio_params               = 0x00000000,
+        .sio_device               = &w83977_device,
+        .sio_params               = (uintptr_t) ((W83977EF | W83977_AMI | W83977_NO_NVR)),
         .kbc_p1                   = 0x00000cf0,
         .gpio                     = 0xffffffff,
         .gpio_acpi                = 0xffffffff,
@@ -26445,6 +29995,18 @@ const machine_t machines[] = {
         .vid_device               = NULL,
         .snd_device               = NULL,
         .net_device               = NULL,
+        .pci_flags                = PCI_CONFIG_TYPE_1,
+        .slot_layout              = (const machine_slot_t[]) {
+            MSLOT_PCI(0x00, PCI_CARD_NORTHBRIDGE, 0, 0, 0, 0),
+            MSLOT_BRIDGE(0x07, PCI_CARD_SOUTHBRIDGE, 1, 2, 3, 4, ((const machine_slot_t[]) { MSLOT_BUS(SLOT_ISA16, 2), MSLOT_END })),
+            MSLOT_PCI(0x0A, PCI_CARD_NORMAL, 1, 2, 3, 4),
+            MSLOT_PCI(0x0B, PCI_CARD_NORMAL, 2, 3, 4, 1),
+            MSLOT_PCI(0x0C, PCI_CARD_NORMAL, 3, 4, 1, 2),
+            MSLOT_PCI(0x0D, PCI_CARD_NORMAL, 4, 1, 2, 3),
+            MSLOT_PCI(0x0E, PCI_CARD_NORMAL, 4, 1, 2, 3),
+            MSLOT_BRIDGE(0x01, PCI_CARD_AGPBRIDGE, 1, 2, 3, 4, machine_bus_agp),
+            MSLOT_END
+        },
         .aliases                  = { "" }
     },
     /* Has an ITE IT8671F Super I/O chip with on-chip KBC with AMIKey-2 KBC
@@ -26470,7 +30032,7 @@ const machine_t machines[] = {
             .max_multi   = 8.0
         },
         .bus_flags = MACHINE_PS2_AGP | MACHINE_BUS_USB,
-        .flags     = MACHINE_IDE_DUAL | MACHINE_SOUND | MACHINE_APM | MACHINE_ACPI | MACHINE_GAMEPORT | MACHINE_USB,
+        .flags     = MACHINE_IDE_DUAL | MACHINE_SOUND | MACHINE_APM | MACHINE_ACPI | MACHINE_GAMEPORT | MACHINE_USB | MACHINE_UART_PRI | MACHINE_UART_SEC | MACHINE_LPT_PRI,
         .ram       = {
             .min  = 8192,
             .max  = 524288,
@@ -26483,7 +30045,7 @@ const machine_t machines[] = {
         .kbc_params               = 0x00000000,
         .nvr_device               = NULL,
         .nvr_params               = 0x00000000,
-        .sio_device               = NULL,
+        .sio_device               = &it8671f_device,
         .sio_params               = 0x00000000,
         .kbc_p1                   = 0x00000cf0,
         .gpio                     = 0xffffffff,
@@ -26494,6 +30056,18 @@ const machine_t machines[] = {
         .vid_device               = NULL,
         .snd_device               = &cmi8738_onboard_device,
         .net_device               = NULL,
+        .pci_flags                = PCI_CONFIG_TYPE_1,
+        .slot_layout              = (const machine_slot_t[]) {
+            MSLOT_PCI(0x00, PCI_CARD_NORTHBRIDGE, 0, 0, 0, 0),
+            MSLOT_BRIDGE(0x07, PCI_CARD_SOUTHBRIDGE, 1, 2, 3, 4, machine_bus_isa),
+            MSLOT_PCI(0x0C, PCI_CARD_SOUND, 4, 3, 0, 0),
+            MSLOT_PCI(0x09, PCI_CARD_NORMAL, 1, 2, 3, 4),
+            MSLOT_PCI(0x0A, PCI_CARD_NORMAL, 2, 3, 4, 1),
+            MSLOT_PCI(0x0B, PCI_CARD_NORMAL, 3, 4, 1, 2),
+            MSLOT_PCI(0x0D, PCI_CARD_NORMAL, 4, 1, 2, 3),
+            MSLOT_BRIDGE(0x01, PCI_CARD_AGPBRIDGE, 1, 2, 3, 4, machine_bus_agp),
+            MSLOT_END
+        },
         .aliases                  = { "PC Chips M773MR", "" }
     },
 
@@ -26521,7 +30095,7 @@ const machine_t machines[] = {
             .max_multi   = 8.0
         },
         .bus_flags = MACHINE_PS2_AGP | MACHINE_BUS_USB,
-        .flags     = MACHINE_IDE_DUAL | MACHINE_APM | MACHINE_ACPI | MACHINE_USB | MACHINE_SOUND,
+        .flags     = MACHINE_IDE_DUAL | MACHINE_APM | MACHINE_ACPI | MACHINE_USB | MACHINE_SOUND | MACHINE_UART_PRI | MACHINE_UART_SEC | MACHINE_LPT_PRI,
         .ram       = {
             .min  = 8192,
             .max  = 786432,
@@ -26534,7 +30108,7 @@ const machine_t machines[] = {
         .kbc_params               = 0x00000000,
         .nvr_device               = NULL,
         .nvr_params               = 0x00000000,
-        .sio_device               = NULL,
+        .sio_device               = &fdc37c669_device,
         .sio_params               = 0x00000000,
         .kbc_p1                   = 0x00000cf0,
         .gpio                     = 0xffffffff,
@@ -26545,6 +30119,17 @@ const machine_t machines[] = {
         .vid_device               = NULL,
         .snd_device               = &sb_vibra16xv_onboard_device,
         .net_device               = NULL,
+        .pci_flags                = PCI_CONFIG_TYPE_1,
+        .slot_layout              = (const machine_slot_t[]) {
+            MSLOT_PCI(0x00, PCI_CARD_NORTHBRIDGE, 0, 0, 0, 0),
+            MSLOT_BRIDGE(0x07, PCI_CARD_SOUTHBRIDGE, 1, 2, 0, 0, machine_bus_isa),
+            MSLOT_PCI(0x0F, PCI_CARD_NORMAL, 1, 2, 3, 4),
+            MSLOT_PCI(0x10, PCI_CARD_NORMAL, 2, 3, 4, 1),
+            MSLOT_PCI(0x13, PCI_CARD_NORMAL, 3, 4, 1, 2),
+            MSLOT_PCI(0x14, PCI_CARD_NORMAL, 4, 1, 2, 3),
+            MSLOT_BRIDGE(0x01, PCI_CARD_AGPBRIDGE, 1, 2, 3, 4, machine_bus_agp),
+            MSLOT_END
+        },
         .aliases                  = { "" }
     },
     /* Has a Winbond W83977EF Super I/O chip with on-chip KBC with AMIKey-2 KBC
@@ -26570,7 +30155,7 @@ const machine_t machines[] = {
             .max_multi   = 8.0
         },
         .bus_flags = MACHINE_PS2_AGP | MACHINE_BUS_USB,
-        .flags     = MACHINE_IDE_DUAL | MACHINE_APM | MACHINE_ACPI | MACHINE_GAMEPORT | MACHINE_USB | MACHINE_SOUND,
+        .flags     = MACHINE_IDE_DUAL | MACHINE_APM | MACHINE_ACPI | MACHINE_GAMEPORT | MACHINE_USB | MACHINE_SOUND | MACHINE_UART_PRI | MACHINE_UART_SEC | MACHINE_LPT_PRI,
         .ram       = {
             .min  = 8192,
             .max  = 1572864,
@@ -26583,8 +30168,8 @@ const machine_t machines[] = {
         .kbc_params               = 0x00000000,
         .nvr_device               = NULL,
         .nvr_params               = 0x00000000,
-        .sio_device               = NULL,
-        .sio_params               = 0x00000000,
+        .sio_device               = &w83977_device,
+        .sio_params               = (uintptr_t) ((W83977EF | W83977_AMI | W83977_NO_NVR)),
         .kbc_p1                   = 0x00000cf0,
         .gpio                     = 0xffffffff,
         .gpio_acpi                = 0xffffffff,
@@ -26594,6 +30179,18 @@ const machine_t machines[] = {
         .vid_device               = NULL,
         .snd_device               = &cmi8738_onboard_device,
         .net_device               = NULL,
+        .pci_flags                = PCI_CONFIG_TYPE_1,
+        .slot_layout              = (const machine_slot_t[]) {
+            MSLOT_PCI(0x00, PCI_CARD_NORTHBRIDGE, 0, 0, 0, 0),
+            MSLOT_BRIDGE(0x07, PCI_CARD_SOUTHBRIDGE, 1, 2, 3, 4, ((const machine_slot_t[]) { MSLOT_BUS(SLOT_ISA16, 2), MSLOT_END })),
+            MSLOT_PCI(0x09, PCI_CARD_NORMAL, 1, 2, 3, 4),
+            MSLOT_PCI(0x0a, PCI_CARD_NORMAL, 2, 3, 4, 1),
+            MSLOT_PCI(0x0b, PCI_CARD_NORMAL, 3, 4, 1, 2),
+            MSLOT_PCI(0x0c, PCI_CARD_NORMAL, 4, 1, 2, 3),
+            MSLOT_PCI(0x0d, PCI_CARD_SOUND, 4, 3, 2, 1), /* assumed */
+            MSLOT_BRIDGE(0x01, PCI_CARD_AGPBRIDGE, 1, 2, 3, 4, machine_bus_agp),
+            MSLOT_END
+        },
         .aliases                  = { "Matsonic MS-7117C", "" }
     },
     /* Has the VIA VT82C686B southbridge with on-chip KBC identical to the VIA
@@ -26619,7 +30216,7 @@ const machine_t machines[] = {
             .max_multi   = MACHINE_MULTIPLIER_FIXED
         },
         .bus_flags = MACHINE_PS2_A97 | MACHINE_BUS_USB,
-        .flags     = MACHINE_IDE_DUAL | MACHINE_AG | MACHINE_APM | MACHINE_ACPI | MACHINE_GAMEPORT | MACHINE_USB,
+        .flags     = MACHINE_IDE_DUAL | MACHINE_AG | MACHINE_APM | MACHINE_ACPI | MACHINE_GAMEPORT | MACHINE_USB | MACHINE_UART_PRI | MACHINE_UART_SEC | MACHINE_LPT_PRI,
         .ram       = {
             .min  = 16384,
             .max  = 3145728,
@@ -26632,7 +30229,7 @@ const machine_t machines[] = {
         .kbc_params               = 0x00000000,
         .nvr_device               = NULL,
         .nvr_params               = 0x00000000,
-        .sio_device               = NULL,
+        .sio_device               = &via_vt82c686_sio_device,
         .sio_params               = 0x00000000,
         .kbc_p1                   = 0x00000cf0,
         .gpio                     = 0xffffffff,
@@ -26643,6 +30240,18 @@ const machine_t machines[] = {
         .vid_device               = NULL,
         .snd_device               = &alc100_device,
         .net_device               = NULL,
+        .pci_flags                = PCI_CONFIG_TYPE_1,
+        .slot_layout              = (const machine_slot_t[]) {
+            MSLOT_PCI(0x00, PCI_CARD_NORTHBRIDGE, 0, 0, 0, 0),
+            MSLOT_BRIDGE(0x07, PCI_CARD_SOUTHBRIDGE, 1, 2, 3, 4, ((const machine_slot_t[]) { MSLOT_BUS(SLOT_ISA16, 1), MSLOT_END })),
+            MSLOT_PCI(0x09, PCI_CARD_NORMAL, 1, 2, 3, 4),
+            MSLOT_PCI(0x0A, PCI_CARD_NORMAL, 2, 3, 4, 1),
+            MSLOT_PCI(0x0B, PCI_CARD_NORMAL, 3, 4, 1, 2),
+            MSLOT_PCI(0x0C, PCI_CARD_NORMAL, 4, 1, 2, 3),
+            MSLOT_PCI(0x0D, PCI_CARD_NORMAL, 1, 2, 3, 4),
+            MSLOT_BRIDGE(0x01, PCI_CARD_AGPBRIDGE, 1, 2, 3, 4, machine_bus_agp),
+            MSLOT_END
+        },
         .aliases                  = { "" }
     },
     /* Has the VIA VT82C686B southbridge with on-chip KBC identical to the VIA
@@ -26668,7 +30277,7 @@ const machine_t machines[] = {
             .max_multi = 25.0
         },
         .bus_flags = MACHINE_PS2_NOI97 | MACHINE_BUS_USB, /* Has Asus-proprietary LAN/SCSI slot */
-        .flags     = MACHINE_IDE_DUAL | MACHINE_SOUND | MACHINE_APM | MACHINE_ACPI | MACHINE_GAMEPORT | MACHINE_USB,
+        .flags     = MACHINE_IDE_DUAL | MACHINE_SOUND | MACHINE_APM | MACHINE_ACPI | MACHINE_GAMEPORT | MACHINE_USB | MACHINE_UART_PRI | MACHINE_UART_SEC | MACHINE_LPT_PRI,
         .ram       = {
             .min  = 16384,
             .max  = 3145728,
@@ -26681,7 +30290,7 @@ const machine_t machines[] = {
         .kbc_params               = 0x00000000,
         .nvr_device               = NULL,
         .nvr_params               = 0x00000000,
-        .sio_device               = NULL,
+        .sio_device               = &via_vt82c686_sio_device,
         .sio_params               = 0x00000000,
         .kbc_p1                   = 0x00000cf0,
         .gpio                     = 0xffffffff,
@@ -26692,6 +30301,21 @@ const machine_t machines[] = {
         .vid_device               = NULL,
         .snd_device               = &cmi8738_onboard_device,
         .net_device               = NULL,
+        .pci_flags                = PCI_CONFIG_TYPE_1,
+        .slot_layout              = (const machine_slot_t[]) {
+            MSLOT_PCI(0x00, PCI_CARD_NORTHBRIDGE, 0, 0, 0, 0),
+            MSLOT_BRIDGE(0x04, PCI_CARD_SOUTHBRIDGE, 4, 1, 2, 3, machine_bus_isa),
+            MSLOT_PCI(0x05, PCI_CARD_SOUND, 3, 0, 0, 0),
+            MSLOT_PCI(0x06, PCI_CARD_NORMAL, 3, 4, 1, 2),
+            MSLOT_PCI(0x07, PCI_CARD_NORMAL, 2, 3, 0, 0),
+            MSLOT_PCI(0x08, PCI_CARD_NORMAL, 1, 2, 3, 4),
+            MSLOT_PCI(0x09, PCI_CARD_NORMAL, 4, 1, 2, 3),
+            MSLOT_PCI(0x0A, PCI_CARD_NORMAL, 3, 4, 1, 2),
+            MSLOT_PCI(0x0B, PCI_CARD_NORMAL, 2, 3, 4, 1),
+            MSLOT_PCI(0x14, PCI_CARD_NORMAL, 4, 0, 0, 0),
+            MSLOT_BRIDGE(0x01, PCI_CARD_AGPBRIDGE, 1, 2, 3, 4, machine_bus_agp),
+            MSLOT_END
+        },
         .aliases                  = { "" }
     },
     /* Has the VIA VT82C686B southbridge with on-chip KBC identical to the VIA
@@ -26717,7 +30341,7 @@ const machine_t machines[] = {
             .max_multi   = MACHINE_MULTIPLIER_FIXED
         },
         .bus_flags = MACHINE_PS2_A97 | MACHINE_BUS_USB,
-        .flags     = MACHINE_IDE_DUAL | MACHINE_AG | MACHINE_APM | MACHINE_ACPI | MACHINE_GAMEPORT | MACHINE_USB,
+        .flags     = MACHINE_IDE_DUAL | MACHINE_AG | MACHINE_APM | MACHINE_ACPI | MACHINE_GAMEPORT | MACHINE_USB | MACHINE_UART_PRI | MACHINE_UART_SEC | MACHINE_LPT_PRI,
         .ram       = {
             .min  = 16384,
             .max  = 2097152,
@@ -26730,7 +30354,7 @@ const machine_t machines[] = {
         .kbc_params               = 0x00000000,
         .nvr_device               = NULL,
         .nvr_params               = 0x00000000,
-        .sio_device               = NULL,
+        .sio_device               = &via_vt82c686_sio_device,
         .sio_params               = 0x00000000,
         .kbc_p1                   = 0x00000cf0,
         .gpio                     = 0xffffffff,
@@ -26741,6 +30365,17 @@ const machine_t machines[] = {
         .vid_device               = NULL,
         .snd_device               = &ct5880_onboard_device,
         .net_device               = NULL,
+        .pci_flags                = PCI_CONFIG_TYPE_1,
+        .slot_layout              = (const machine_slot_t[]) {
+            MSLOT_PCI(0x00, PCI_CARD_NORTHBRIDGE, 0, 0, 0, 0),
+            MSLOT_BRIDGE(0x07, PCI_CARD_SOUTHBRIDGE, 1, 2, 3, 4, ((const machine_slot_t[]) { MSLOT_BUS(SLOT_ISA16, 1), MSLOT_END })),
+            MSLOT_PCI(0x0C, PCI_CARD_SOUND, 3, 4, 1, 2),
+            MSLOT_PCI(0x0E, PCI_CARD_NORMAL, 1, 2, 3, 4),
+            MSLOT_PCI(0x0F, PCI_CARD_NORMAL, 2, 3, 4, 1),
+            MSLOT_PCI(0x10, PCI_CARD_NORMAL, 3, 4, 1, 2),
+            MSLOT_BRIDGE(0x01, PCI_CARD_AGPBRIDGE, 1, 2, 3, 4, machine_bus_agp),
+            MSLOT_END
+        },
         .aliases                  = { "HP Pavilion A7xx", "HP Pavilion A8xx", "HP Medion 2000A", "Medion MED 2000", "" }
     },
     /* Has the VIA VT82C686B southbridge with on-chip KBC identical to the VIA
@@ -26766,7 +30401,7 @@ const machine_t machines[] = {
             .max_multi   = MACHINE_MULTIPLIER_FIXED
         },
         .bus_flags = MACHINE_PS2_A97 | MACHINE_BUS_USB,
-        .flags     = MACHINE_IDE_DUAL | MACHINE_APM | MACHINE_ACPI | MACHINE_USB,
+        .flags     = MACHINE_IDE_DUAL | MACHINE_APM | MACHINE_ACPI | MACHINE_USB | MACHINE_UART_PRI | MACHINE_UART_SEC | MACHINE_LPT_PRI,
         .ram       = {
             .min  = 16384,
             .max  = 3145728,
@@ -26779,7 +30414,7 @@ const machine_t machines[] = {
         .kbc_params               = 0x00000000,
         .nvr_device               = NULL,
         .nvr_params               = 0x00000000,
-        .sio_device               = NULL,
+        .sio_device               = &via_vt82c686_sio_device,
         .sio_params               = 0x00000000,
         .kbc_p1                   = 0x00000cf0,
         .gpio                     = 0xffffffff,
@@ -26790,6 +30425,18 @@ const machine_t machines[] = {
         .vid_device               = NULL,
         .snd_device               = NULL,
         .net_device               = NULL,
+        .pci_flags                = PCI_CONFIG_TYPE_1,
+        .slot_layout              = (const machine_slot_t[]) {
+            MSLOT_PCI(0x00, PCI_CARD_NORTHBRIDGE, 0, 0, 0, 0),
+            MSLOT_BRIDGE(0x07, PCI_CARD_SOUTHBRIDGE, 1, 2, 3, 4, machine_bus_isa),
+            MSLOT_PCI(0x0E, PCI_CARD_NORMAL, 1, 2, 3, 0),
+            MSLOT_PCI(0x0F, PCI_CARD_NORMAL, 2, 3, 0, 1),
+            MSLOT_PCI(0x10, PCI_CARD_NORMAL, 3, 0, 1, 2),
+            MSLOT_PCI(0x11, PCI_CARD_NORMAL, 0, 1, 2, 3),
+            MSLOT_PCI(0x12, PCI_CARD_NORMAL, 2, 3, 4, 1),
+            MSLOT_BRIDGE(0x01, PCI_CARD_AGPBRIDGE, 1, 2, 3, 4, machine_bus_agp),
+            MSLOT_END
+        },
         .aliases                  = { "MSI MS-6309", "" }
     },
 
@@ -27107,7 +30754,7 @@ const machine_t machines[] = {
             .max_multi   = 0
         },
         .bus_flags = MACHINE_PS2_PCI,
-        .flags     = MACHINE_IDE_DUAL | MACHINE_APM | MACHINE_ACPI,
+        .flags     = MACHINE_IDE_DUAL | MACHINE_APM | MACHINE_ACPI | MACHINE_UART_PRI | MACHINE_UART_SEC | MACHINE_LPT_PRI,
         .ram       = {
             .min  = 8192,
             .max  = 1048576,
@@ -27120,8 +30767,8 @@ const machine_t machines[] = {
         .kbc_params               = 0x00000000,
         .nvr_device               = NULL,
         .nvr_params               = 0x00000000,
-        .sio_device               = NULL,
-        .sio_params               = 0x00000000,
+        .sio_device               = &w83977_device,
+        .sio_params               = (uintptr_t) ((W83977F | W83977_370 | W83977_AMI | W83977_NO_NVR)),
         .kbc_p1                   = 0x00000cf0,
         .gpio                     = 0xffffffff,
         .gpio_acpi                = 0xffffffff,
@@ -27131,6 +30778,20 @@ const machine_t machines[] = {
         .vid_device               = NULL,
         .snd_device               = NULL,
         .net_device               = NULL,
+        .pci_flags                = PCI_CONFIG_TYPE_1,
+        .slot_layout              = (const machine_slot_t[]) {
+            MSLOT_PCI(0x00, PCI_CARD_NORTHBRIDGE, 0, 0, 0, 0),
+            MSLOT_BRIDGE(0x07, PCI_CARD_SOUTHBRIDGE, 0, 0, 0, 4, machine_bus_isa),
+            MSLOT_PCI(0x08, PCI_CARD_NORMAL, 1, 2, 3, 4),
+            MSLOT_PCI(0x09, PCI_CARD_NORMAL, 1, 2, 3, 4),
+            MSLOT_PCI(0x0A, PCI_CARD_NORMAL, 1, 2, 3, 4),
+            MSLOT_PCI(0x0B, PCI_CARD_NORMAL, 1, 2, 3, 4),
+            MSLOT_PCI(0x0C, PCI_CARD_NORMAL, 1, 2, 3, 4),
+            MSLOT_PCI(0x0D, PCI_CARD_NORMAL, 1, 2, 3, 4),
+            MSLOT_PCI(0x0E, PCI_CARD_NORMAL, 1, 2, 3, 4),
+            MSLOT_PCI(0x0F, PCI_CARD_NORMAL, 1, 2, 3, 4),
+            MSLOT_END
+        },
         .aliases                  = { "" }
     },
 
@@ -27422,6 +31083,57 @@ machine_get_fdc_device(int m)
         return (machines[m].fdc_device);
 
     return (NULL);
+}
+
+/* The drives the board's own floppy controller has connectors for: IBM's
+   PC and XT came with IBM's adapter and its external connector; the
+   clones dropped it, and a Super I/O chip drives two. */
+int
+machine_get_fdc_drives(int m)
+{
+    if ((machines[m].init == machine_ibmpc_init) || (machines[m].init == machine_ibmpc82_init) || (machines[m].init == machine_ibmxt_init) ||
+        (machines[m].init == machine_ibmxt86_init) || (machines[m].init == machine_xt_ibm3270pc_init) ||
+        (machines[m].init == machine_ibmxt_inboard386_init))
+        return 4;
+
+    return 2;
+}
+
+/* The serial and parallel ports a board has of its own: COM1 to COMn and
+   LPT1 to LPTn. The others are ports on cards. */
+int
+machine_get_serial_ports(int m)
+{
+    static const uint64_t uarts[] = { MACHINE_UART_PRI, MACHINE_UART_SEC, MACHINE_UART_TER, MACHINE_UART_QUA };
+    int                   n       = 0;
+
+    while ((n < 4) && machine_has_flags_64(m, uarts[n]))
+        n++;
+
+    return n;
+}
+
+int
+machine_get_parallel_ports(int m)
+{
+    static const uint64_t lpts[] = { MACHINE_LPT_PRI, MACHINE_LPT_SEC, MACHINE_LPT_TER, MACHINE_LPT_QUA };
+    int                   n      = 0;
+
+    while ((n < 4) && machine_has_flags_64(m, lpts[n]))
+        n++;
+
+    return n;
+}
+
+void
+machine_get_fdc_chip_name(int m, char *name, size_t len)
+{
+    name[0] = '\0';
+
+    if (machines[m].sio_device != NULL)
+        sio_get_chip_name(machines[m].sio_device, machines[m].sio_params, name, len);
+    else if (machines[m].fdc_device != NULL)
+        snprintf(name, len, "%s", machines[m].fdc_device->name);
 }
 
 const device_t *

@@ -108,6 +108,7 @@ typedef struct lpt_port_s {
     int           device;
 
     lpt_t        *lpt;
+    lpt_t        *lpt_init;
 } lpt_port_t;
 
 extern lpt_port_t lpt_ports[PARALLEL_MAX];
@@ -118,6 +119,8 @@ typedef enum {
     LPT_STATE_WRITE_FIFO
 } lpt_state_t;
 
+extern const device_t      lpt_card_device;
+extern const device_t      lpt_card_mca_device;
 extern const device_t      lpt_dac_device;
 extern const device_t      lpt_dac_stereo_device;
 extern const device_t      lpt_dac_ftl_device;

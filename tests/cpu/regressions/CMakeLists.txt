@@ -1,0 +1,95 @@
+cmake_minimum_required(VERSION 3.20)
+project(pcbox_cpu_regressions LANGUAGES C CXX)
+include(CTest)
+get_filename_component(CPU_SOURCE_ROOT "${CMAKE_CURRENT_SOURCE_DIR}/../../.." ABSOLUTE)
+if(NOT CMAKE_SIZEOF_VOID_P EQUAL 8 OR NOT CMAKE_SYSTEM_PROCESSOR MATCHES "AMD64|amd64|x86_64")
+    message(FATAL_ERROR "These execution fixtures require an x86-64 host")
+endif()
+add_subdirectory("${CPU_SOURCE_ROOT}/src/cpu/softfloat3e" softfloat3e EXCLUDE_FROM_ALL)
+target_include_directories(softfloat3e PRIVATE "${CPU_SOURCE_ROOT}/src/include")
+include(../full_core.cmake)
+
+# Run the same host-address cases with and without link-time optimization.
+# Explicit negative addresses keep coverage independent of linker placement.
+include(CheckIPOSupported)
+check_ipo_supported(RESULT address_ipo OUTPUT address_ipo_error LANGUAGES C)
+set(address_targets absolute_address_test)
+if(address_ipo)
+    list(APPEND address_targets absolute_address_lto_test)
+else()
+    message(STATUS "LTO address regression unavailable: ${address_ipo_error}")
+endif()
+foreach(target IN LISTS address_targets)
+    add_executable(${target} absolute_address_test.c
+        "${CPU_SOURCE_ROOT}/src/codegen/codegen_backend_x86-64_ops.c"
+        "${CPU_SOURCE_ROOT}/src/codegen/codegen_backend_x86-64_ops_sse.c")
+    target_compile_definitions(${target} PRIVATE USE_DYNAREC USE_NEW_DYNAREC)
+    target_include_directories(${target} PRIVATE
+        "${CPU_SOURCE_ROOT}/src/include" "${CPU_SOURCE_ROOT}/src/cpu"
+        "${CPU_SOURCE_ROOT}/src/codegen")
+    target_compile_options(${target} PRIVATE -O3 -fno-strict-aliasing
+        -ffunction-sections -fdata-sections
+        $<$<PLATFORM_ID:Windows>:-fno-asynchronous-unwind-tables>)
+    target_link_options(${target} PRIVATE
+        $<$<PLATFORM_ID:Darwin>:-Wl,-dead_strip>
+        $<$<NOT:$<PLATFORM_ID:Darwin>>:-Wl,--gc-sections>)
+    add_test(NAME ${target} COMMAND ${target})
+endforeach()
+set_property(TARGET absolute_address_test PROPERTY INTERPROCEDURAL_OPTIMIZATION FALSE)
+if(address_ipo)
+    set_property(TARGET absolute_address_lto_test PROPERTY INTERPROCEDURAL_OPTIMIZATION TRUE)
+endif()
+
+add_executable(simd_exception_test simd_exception_test.c)
+pcbox_full_cpu_target(simd_exception_test)
+if(NOT APPLE)
+    target_compile_definitions(simd_exception_test PRIVATE PCBOX_SSE_NATIVE_CHECK)
+    target_link_options(simd_exception_test PRIVATE -Wl,--wrap=codegen_backend_sse_mxcsr_begin)
+endif()
+foreach(cpu p3 p4)
+    foreach(softfloat 0 1)
+        add_test(NAME simd_exceptions_${cpu}_sf${softfloat}
+            COMMAND simd_exception_test ${cpu} 0 ${softfloat})
+        add_test(NAME simd_exceptions_jit_${cpu}_sf${softfloat}
+            COMMAND simd_exception_test ${cpu} 1 ${softfloat})
+        set_tests_properties(simd_exceptions_jit_${cpu}_sf${softfloat} PROPERTIES TIMEOUT 60)
+    endforeach()
+endforeach()
+set_tests_properties(simd_exceptions_p3_sf0 simd_exceptions_p3_sf1
+    simd_exceptions_p4_sf0 simd_exceptions_p4_sf1 PROPERTIES TIMEOUT 60)
+add_executable(address_dependencies_test address_dependencies_test.c)
+target_compile_definitions(address_dependencies_test PRIVATE USE_DYNAREC USE_NEW_DYNAREC)
+target_include_directories(address_dependencies_test PRIVATE
+    "${CPU_SOURCE_ROOT}/src/cpu" "${CPU_SOURCE_ROOT}/src/codegen" "${CPU_SOURCE_ROOT}/src/include")
+add_test(NAME address_dependencies COMMAND address_dependencies_test)
+add_executable(p6_dependencies_test p6_dependencies_test.c "${CPU_SOURCE_ROOT}/src/cpu/codegen_timing_common.c")
+target_compile_definitions(p6_dependencies_test PRIVATE USE_DYNAREC USE_NEW_DYNAREC)
+target_include_directories(p6_dependencies_test PRIVATE
+    "${CPU_SOURCE_ROOT}/src/cpu" "${CPU_SOURCE_ROOT}/src/include" "${CPU_SOURCE_ROOT}/src/codegen")
+add_test(NAME p6_dependencies COMMAND p6_dependencies_test)
+add_executable(simd_timing_test simd_timing_test.c "${CPU_SOURCE_ROOT}/src/cpu/codegen_timing_common.c")
+target_compile_definitions(simd_timing_test PRIVATE USE_DYNAREC USE_NEW_DYNAREC)
+target_include_directories(simd_timing_test PRIVATE
+    "${CPU_SOURCE_ROOT}/src/cpu" "${CPU_SOURCE_ROOT}/src/include" "${CPU_SOURCE_ROOT}/src/codegen")
+add_test(NAME simd_timing COMMAND simd_timing_test)
+add_executable(sse_fastpath_test ../sse_entry_test.c)
+target_compile_definitions(sse_fastpath_test PRIVATE USE_NEW_DYNAREC)
+target_include_directories(sse_fastpath_test PRIVATE "${CPU_SOURCE_ROOT}/src/cpu" "${CPU_SOURCE_ROOT}/src/include")
+add_test(NAME sse_fastpath COMMAND sse_fastpath_test)
+find_package(Python3 QUIET COMPONENTS Interpreter)
+if(Python3_Interpreter_FOUND)
+    add_test(NAME performance_gate COMMAND "${Python3_EXECUTABLE}"
+        "${CMAKE_CURRENT_SOURCE_DIR}/performance_gate_test.py")
+endif()
+
+add_executable(opcode_test opcode_test.c)
+pcbox_full_cpu_target(opcode_test)
+foreach(cpu p3 p4)
+    foreach(softfloat 0 1)
+        foreach(engine 0 1)
+            add_test(NAME opcodes_${cpu}_sf${softfloat}_engine${engine}
+                COMMAND opcode_test ${cpu} ${engine} ${softfloat})
+            set_tests_properties(opcodes_${cpu}_sf${softfloat}_engine${engine} PROPERTIES TIMEOUT 120)
+        endforeach()
+    endforeach()
+endforeach()

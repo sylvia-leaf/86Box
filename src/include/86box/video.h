@@ -48,7 +48,9 @@ enum {
     FULLSCR_SCALE_43,
     FULLSCR_SCALE_KEEPRATIO,
     FULLSCR_SCALE_INT,
-    FULLSCR_SCALE_INT43
+    FULLSCR_SCALE_INT43,
+    FULLSCR_SCALE_CENTER,
+    FULLSCR_SCALE_CENTER43
 };
 
 enum {
@@ -558,7 +560,6 @@ extern void           paradise_wd90c20_vga_enable(void *priv, uint16_t port);
 extern const device_t paradise_wd90c30_device;
 extern const device_t paradise_wd90c31_device;
 extern const device_t paradise_wd90c31_onboard_device;
-extern const device_t paradise_speedstar24x_device;
 
 /* Quadram Quadcolor I / I + II */
 extern const device_t quadcolor_device;
@@ -676,6 +677,14 @@ enum {
     HD44780_COLOR_NONE,
     HD44780_COLOR_MAX
 };
+
+/* Nvidia */
+extern const device_t nv3_device_pci;
+extern const device_t nv3_device_agp;
+extern const device_t nv3t_device_pci;
+extern const device_t nv3t_device_agp;
+extern const device_t nv4_tnt_pci_device;
+extern const device_t nv4_tnt_agp_device;
 
 #endif
 

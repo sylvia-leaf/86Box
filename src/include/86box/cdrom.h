@@ -110,7 +110,8 @@ enum {
     CDROM_BUS_USB      = 10,
     CDROM_BUS_HITACHI  = 12, /* Shared settings bus IDs: 3 is ESDI, 11 is FDC. */
     CDROM_BUS_CM100    = 14,
-    CDROM_BUS_SONY     = 15
+    CDROM_BUS_SONY     = 15,
+    CDROM_BUS_DISCONNECTED = 255 /* Kept in the configuration, attached to nothing. */
 };
 
 #define BUS_TYPE_HITACHI            CDROM_BUS_HITACHI
@@ -466,6 +467,7 @@ typedef struct cdrom {
     };
 
     uint8_t            bus_type;     /* 0 = ATAPI, 1 = SCSI */
+    uint8_t            disconnected_bus; /* The interface it keeps while disconnected. */
     uint8_t            bus_mode;     /* Bit 0 = PIO suported;
                                         Bit 1 = DMA supportd. */
     uint8_t            cd_status;    /* Struct variable reserved for
@@ -543,6 +545,8 @@ typedef struct cdrom {
 
     int               audio_read;
     int               formed_mode2;
+    /* The cached sector is a Mode 1 sector built by us, EDC/ECC not filled in yet. */
+    int               edc_missing;
 } cdrom_t;
 
 extern cdrom_t cdrom[CDROM_NUM];

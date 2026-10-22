@@ -43,7 +43,7 @@ fetch_ea_32_long(UNUSED(uint32_t rmdat))
 {
     eal_r = eal_w = NULL;
     easeg         = cpu_state.ea_seg->base;
-    if (easeg != 0xFFFFFFFF && EA_FASTPATH_OK() && ((easeg + cpu_state.eaaddr) & 0xFFF) <= 0xFFC) {
+    if (easeg != 0xFFFFFFFF && ((easeg + cpu_state.eaaddr) & 0xFFF) <= 0xFFC) {
         uint32_t addr = easeg + cpu_state.eaaddr;
         if (readlookup2[addr >> 12] != (uintptr_t) LOOKUP_INV)
             eal_r = (uint32_t *) (readlookup2[addr >> 12] + addr);
@@ -57,7 +57,7 @@ fetch_ea_16_long(UNUSED(uint32_t rmdat))
 {
     eal_r = eal_w = NULL;
     easeg         = cpu_state.ea_seg->base;
-    if (easeg != 0xFFFFFFFF && EA_FASTPATH_OK() && ((easeg + cpu_state.eaaddr) & 0xFFF) <= 0xFFC) {
+    if (easeg != 0xFFFFFFFF && ((easeg + cpu_state.eaaddr) & 0xFFF) <= 0xFFC) {
         uint32_t addr = easeg + cpu_state.eaaddr;
         if (readlookup2[addr >> 12] != (uintptr_t) LOOKUP_INV)
             eal_r = (uint32_t *) (readlookup2[addr >> 12] + addr);
@@ -92,3 +92,25 @@ fetch_ea_16_long(UNUSED(uint32_t rmdat))
 #define CLOCK_CYCLES_ALWAYS(c) cycles -= (c)
 
 #include "386_ops.h"
+
+/* Non-x86 backends use these around the faultable part of an MMX instruction. */
+int
+codegen_mmx_check(void)
+{
+    MMX_CHECK();
+    return 0;
+}
+
+void
+codegen_mmx_commit(void)
+{
+    x87_set_mmx();
+}
+/*The handler every dynarec table uses for an opcode this CPU doesn't have,
+  so the recompiler can leave those to it instead of compiling them*/
+const OpFn dynarec_op_illegal = ILLEGAL;
+/*The handlers the FPU tables use for an escape this FPU doesn't have (FUCOM
+  and FUCOMPP before the 387, FNSTSW AX on the 8087): #UD on the 486 and
+  later, nothing before (x87_ops.h)*/
+const OpFn dynarec_fpu_illegal_a16 = FPU_ILLEGAL_a16;
+const OpFn dynarec_fpu_illegal_a32 = FPU_ILLEGAL_a32;

@@ -84,6 +84,8 @@ VMManagerPreferences::
     ui->deleteToTrashCheckBox->setVisible(false);
 #endif
 
+    ui->settingsLayoutCheckBox->setChecked(settings_layout == 1);
+
     ui->radioButtonSystem->setChecked(color_scheme == 0);
     ui->radioButtonLight->setChecked(color_scheme == 1);
     ui->radioButtonDark->setChecked(color_scheme == 2);
@@ -131,6 +133,7 @@ VMManagerPreferences::accept()
     strncpy(vmm_path_cfg, QDir::cleanPath(ui->systemDirectory->text()).toUtf8().constData(), sizeof(vmm_path_cfg) - 1);
     lang_id      = ui->comboBoxLanguage->currentData().toInt();
     color_scheme = (ui->radioButtonSystem->isChecked()) ? 0 : (ui->radioButtonLight->isChecked() ? 1 : 2);
+    settings_layout = ui->settingsLayoutCheckBox->isChecked() ? 1 : 0;
     config_save_global();
 
 #if EMU_BUILD_NUM != 0

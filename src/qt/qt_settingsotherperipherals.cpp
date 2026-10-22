@@ -37,6 +37,7 @@ extern "C" {
 #include <86box/isamem.h>
 #include <86box/isarom.h>
 #include <86box/isartc.h>
+#include <86box/ibm_5161.h>
 #include <86box/unittester.h>
 #include <86box/softpower.h>
 #include <86box/novell_cardkey.h>
@@ -365,6 +366,21 @@ SettingsOtherPeripherals::onCurrentMachineChanged(int machineId)
     ui->comboBoxRTC->setCurrentIndex(selectedRow);
     ui->pushButtonConfigureRTC->setEnabled((isartc_type != 0) && isartc_has_config(isartc_type) && machineHasIsaOrSidecar);
 
+    // ISA expansion units: those the machine takes
+    ui->comboBoxIsaExpansion->clear();
+    selectedRow = 0;
+    for (int i = 0; isa_expansion_get_device(i) != nullptr; i++) {
+        if (!isa_expansion_available(i, machineId))
+            continue;
+        ui->comboBoxIsaExpansion->addItem(DeviceConfig::DeviceName(isa_expansion_get_device(i), isa_expansion_get_internal_name(i), 1), i);
+        if (i == isa_expansion_type)
+            selectedRow = ui->comboBoxIsaExpansion->count() - 1;
+    }
+    ui->comboBoxIsaExpansion->setCurrentIndex(selectedRow);
+    ui->comboBoxIsaExpansion->setEnabled(ui->comboBoxIsaExpansion->count() > 1);
+    ui->pushButtonConfigureIsaExpansion->setEnabled((ui->comboBoxIsaExpansion->currentData().toInt() != 0) &&
+                                                    isa_expansion_has_config(ui->comboBoxIsaExpansion->currentData().toInt()));
+
     // Memory Expansion Cards (shared UI: ISA or MCA boards depending on
     // the machine bus).  The isamem/mcamem databases and their config
     // globals remain separate; only the four dropdown slots are shared.
@@ -457,6 +473,8 @@ SettingsOtherPeripherals::changed()
 
     has_changed |= (isartc_type            != ui->comboBoxRTC->currentData().toInt());
     has_changed |= isartc_cfg_changed;
+    has_changed |= (isa_expansion_type     != ui->comboBoxIsaExpansion->currentData().toInt());
+    has_changed |= isa_expansion_cfg_changed;
     has_changed |= (bugger_enabled         != (ui->checkBoxISABugger->isChecked() ? 1 : 0));
     has_changed |= (postcard_enabled       != (ui->checkBoxPOSTCard->isChecked() ? 1 : 0));
     has_changed |= (unittester_enabled     != (ui->checkBoxUnitTester->isChecked() ? 1 : 0));
@@ -507,6 +525,7 @@ SettingsOtherPeripherals::save(int soft)
 
     /* Other peripherals category */
     isartc_type            = ui->comboBoxRTC->currentData().toInt();
+    isa_expansion_type     = ui->comboBoxIsaExpansion->currentData().toInt();
     bugger_enabled         = ui->checkBoxISABugger->isChecked() ? 1 : 0;
     postcard_enabled       = ui->checkBoxPOSTCard->isChecked() ? 1 : 0;
     unittester_enabled     = ui->checkBoxUnitTester->isChecked() ? 1 : 0;
@@ -556,6 +575,22 @@ void
 SettingsOtherPeripherals::on_pushButtonConfigureRTC_clicked()
 {
     isartc_cfg_changed |= DeviceConfig::ConfigureDevice(isartc_get_device(ui->comboBoxRTC->currentData().toInt()));
+}
+
+void
+SettingsOtherPeripherals::on_comboBoxIsaExpansion_currentIndexChanged(int index)
+{
+    if (index < 0)
+        return;
+
+    const int unit = ui->comboBoxIsaExpansion->currentData().toInt();
+    ui->pushButtonConfigureIsaExpansion->setEnabled((unit != 0) && isa_expansion_has_config(unit));
+}
+
+void
+SettingsOtherPeripherals::on_pushButtonConfigureIsaExpansion_clicked()
+{
+    isa_expansion_cfg_changed |= DeviceConfig::ConfigureDevice(isa_expansion_get_device(ui->comboBoxIsaExpansion->currentData().toInt()));
 }
 
 /* Shared memory-expansion slot helpers: resolve the board device and its

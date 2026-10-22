@@ -13,6 +13,21 @@
  * Authors: Miran Grca, <mgrca8@gmail.com>
  *          Copyright 2016-2020 Miran Grca.
  */
+/* Keep the block key in step with both LDMXCSR and FXRSTOR. Changing this
+ * specialization must also leave an already-running compiled block. */
+static int
+sse_set_mxcsr(uint32_t value)
+{
+    int status = (value & 0x1f80) == 0x1f80 ? 0 : CPU_STATUS_SSE_UNMASKED;
+    int changed = (cpu_cur_status ^ status) & CPU_STATUS_SSE_UNMASKED;
+
+    cpu_state.mxcsr = value;
+    cpu_cur_status = (cpu_cur_status & ~CPU_STATUS_SSE_UNMASKED) | status;
+    if (changed)
+        CPU_BLOCK_END();
+    return !!changed;
+}
+
 static int
 opSYSENTER(uint32_t fetchdat)
 {
@@ -54,6 +69,9 @@ sf_fx_save_stor_common(uint32_t fetchdat, int bits)
     }
 
     fxinst = (rmdat >> 3) & 7;
+    ILLEGAL_ON(fxinst <= 1 && cpu_mod == 3);
+    ILLEGAL_ON((fxinst == 5 || fxinst == 6) && cpu_mod != 3);
+    ILLEGAL_ON(fxinst == 7 && cpu_mod != 3 && !(cpu_features & CPU_FEATURE_CLFLUSH));
 
     if ((fxinst > 1) && !(cpu_features & CPU_FEATURE_SSE)) {
         x86illegal();
@@ -74,7 +92,7 @@ sf_fx_save_stor_common(uint32_t fetchdat, int bits)
 
         FP_ENTER();
 
-        if (cpu_state.eaaddr & 0xf) {
+        if ((easeg + cpu_state.eaaddr) & 0xf) {
             x386_dynarec_log("Effective address %08X not on 16-byte boundary\n", cpu_state.eaaddr);
             x86gpf(NULL, 0);
             return cpu_state.abrt;
@@ -84,7 +102,9 @@ sf_fx_save_stor_common(uint32_t fetchdat, int bits)
             return cpu_state.abrt;
         }
         SEG_CHECK_READ(cpu_state.ea_seg);
-        CHECK_READ(cpu_state.ea_seg, cpu_state.eaaddr, cpu_state.eaaddr + 511UL);
+        CHECK_READ_EA(512);
+        PROBE_READ_EA(512);
+        const int sf_was_es = fpu_state.swd & FPU_SW_Summary;
         uint32_t restored_mxcsr = cpu_state.mxcsr;
         if ((cpu_features & CPU_FEATURE_SSE) && (cr4 & CR4_OSFXSR)) {
             uint32_t mxcsr_mask = (cpu_features & CPU_FEATURE_SSE2) ? 0xffff : 0xffbf;
@@ -107,19 +127,20 @@ sf_fx_save_stor_common(uint32_t fetchdat, int bits)
         /* The lower 11 bits contain the FPU opcode, upper 5 bits are reserved */
         fpu_state.foo = readmemw(easeg, cpu_state.eaaddr + 6) & 0x7FF;
 
-        if (bits == 32)
-            fpu_state.fip = readmeml(easeg, cpu_state.eaaddr + 8);
-        else
-            fpu_state.fip = readmemw(easeg, cpu_state.eaaddr + 8);
+        fpu_state.fip = readmeml(easeg, cpu_state.eaaddr + 8);
         fpu_state.fcs = readmemw(easeg, cpu_state.eaaddr + 12);
 
         tag_byte = readmemb(easeg, cpu_state.eaaddr + 4);
 
-        if (bits == 32)
-            fpu_state.fdp = readmeml(easeg, cpu_state.eaaddr + 16);
-        else
-            fpu_state.fdp = readmemw(easeg, cpu_state.eaaddr + 16);
+        fpu_state.fdp = readmeml(easeg, cpu_state.eaaddr + 16);
         fpu_state.fds = readmemw(easeg, cpu_state.eaaddr + 20);
+        /* FXSAVE and the x87 environment stores share these pointer fields. */
+        cpu_state.fpu_pc = fpu_state.fip;
+        cpu_state.fpu_ea = fpu_state.fdp;
+        cpu_state.fpu_CS = fpu_state.fcs;
+        cpu_state.fpu_DS = fpu_state.fds;
+        cpu_state.fpu_cs = cpu_state.fpu_ds = 0;
+        cpu_state.fpu_op = fpu_state.foo;
 
         /* load i387 register file */
         for (index = 0; index < 8; index++) {
@@ -132,17 +153,20 @@ sf_fx_save_stor_common(uint32_t fetchdat, int bits)
 
         fpu_state.tag = unpack_FPU_TW(tag_byte);
 
-        /* check for unmasked exceptions */
-        if (fpu_state.swd & ~fpu_state.cwd & FPU_CW_Exceptions_Mask) {
-            /* set the B and ES bits in the status-word */
-            fpu_state.swd |= (FPU_SW_Summary | FPU_SW_Backward);
-        } else {
-            /* clear the B and ES bits in the status-word */
-            fpu_state.swd &= ~(FPU_SW_Summary | FPU_SW_Backward);
+        /* ES and B from the unmasked flags, as FRSTOR makes them; FERR#
+           waits for the next waiting instruction (x87_ferr_loaded) */
+        {
+            const uint16_t unmasked = fpu_state.swd & ~fpu_state.cwd & FPU_CW_Exceptions_Mask;
+
+            if (unmasked)
+                fpu_state.swd |= (FPU_SW_Summary | FPU_SW_Backward);
+            else
+                fpu_state.swd &= ~(FPU_SW_Summary | FPU_SW_Backward);
+            x87_ferr_loaded(sf_was_es, !!unmasked);
         }
 
         if ((cpu_features & CPU_FEATURE_SSE) && (cr4 & CR4_OSFXSR)) {
-            cpu_state.mxcsr = restored_mxcsr;
+            sse_set_mxcsr(restored_mxcsr);
 
             for(int i = 0; i < 8; i++)
             {
@@ -155,13 +179,13 @@ sf_fx_save_stor_common(uint32_t fetchdat, int bits)
     } else if (fxinst == 0) {
         /* FXSAVE */
         FP_ENTER();
-        if (cpu_state.eaaddr & 0xf) {
+        if ((easeg + cpu_state.eaaddr) & 0xf) {
             x386_dynarec_log("Effective address %08X not on 16-byte boundary\n", cpu_state.eaaddr);
             x86gpf(NULL, 0);
             return cpu_state.abrt;
         }
         SEG_CHECK_WRITE(cpu_state.ea_seg);
-        CHECK_WRITE(cpu_state.ea_seg, cpu_state.eaaddr, cpu_state.eaaddr + 511UL);
+        CHECK_WRITE_EA(512);
         writememw(easeg, cpu_state.eaaddr, i387_get_control_word());
         writememw(easeg, cpu_state.eaaddr + 2, i387_get_status_word());
         writememw(easeg, cpu_state.eaaddr + 4, pack_FPU_TW(fpu_state.tag));
@@ -170,45 +194,10 @@ sf_fx_save_stor_common(uint32_t fetchdat, int bits)
         /* The lower 11 bits contain the FPU opcode, upper 5 bits are reserved */
         writememw(easeg, cpu_state.eaaddr + 6, cpu_state.fpu_op);
 
-        /*
-         * x87 FPU IP Offset (32/64 bits)
-         * The contents of this field differ depending on the current
-         * addressing mode (16/32/64 bit) when the FXSAVE instruction was executed:
-         *   + 64-bit mode - 64-bit IP offset
-         *   + 32-bit mode - 32-bit IP offset
-         *   + 16-bit mode - low 16 bits are IP offset; high 16 bits are reserved.
-         * x87 CS FPU IP Selector
-         *   + 16 bit, in 16/32 bit mode only
-         *
-         * x87 FPU Instruction Operand (Data) Pointer Offset (32/64 bits)
-         * The contents of this field differ depending on the current
-         * addressing mode (16/32 bit) when the FXSAVE instruction was executed:
-         *   + 64-bit mode - 64-bit offset
-         *   + 32-bit mode - 32-bit offset
-         *   + 16-bit mode - low 16 bits are offset; high 16 bits are reserved.
-         * x87 DS FPU Instruction Operand (Data) Pointer Selector
-         *   + 16 bit, in 16/32 bit mode only
-         */
-        switch ((cr0 & 1) | (cpu_state.op32 & 0x100)) {
-            case 0x000: {
-                /*16-bit real mode*/
-                writememl(easeg, cpu_state.eaaddr + 8, cpu_state.fpu_pc & 0xffff);
-                writememl(easeg, cpu_state.eaaddr + 16, cpu_state.fpu_ea & 0xffff);
-                break;
-            } case 0x001: /*16-bit protected mode*/
-                writememl(easeg, cpu_state.eaaddr + 8, cpu_state.fpu_pc & 0xffff);
-                writememl(easeg, cpu_state.eaaddr + 16, cpu_state.fpu_ea & 0xffff);
-                break;
-            case 0x100: {
-                /*32-bit real mode*/
-                writememl(easeg, cpu_state.eaaddr + 8, cpu_state.fpu_pc);
-                writememl(easeg, cpu_state.eaaddr + 16, cpu_state.fpu_ea);
-                break;
-            } case 0x101: /*32-bit protected mode*/
-                writememl(easeg, cpu_state.eaaddr + 8, cpu_state.fpu_pc);
-                writememl(easeg, cpu_state.eaaddr + 16, cpu_state.fpu_ea);
-                break;
-        }
+        /* The legacy FXSAVE image always contains 32-bit offsets, regardless
+           of operand/address size or protected/real mode (Intel SDM Vol. 2A). */
+        writememl(easeg, cpu_state.eaaddr + 8, cpu_state.fpu_pc);
+        writememl(easeg, cpu_state.eaaddr + 16, cpu_state.fpu_ea);
 
         writememl(easeg, cpu_state.eaaddr + 12, cpu_state.fpu_CS);
         writememl(easeg, cpu_state.eaaddr + 20, cpu_state.fpu_DS);
@@ -239,6 +228,7 @@ sf_fx_save_stor_common(uint32_t fetchdat, int bits)
 
         CLOCK_CYCLES((cr0 & 1) ? 56 : 67);
     } else if (fxinst == 2) {
+        SSE_ENTER();
         if (cpu_mod == 3) {
             x86illegal();
             return cpu_state.abrt;
@@ -259,8 +249,9 @@ sf_fx_save_stor_common(uint32_t fetchdat, int bits)
             x86gpf(NULL, 0);
             return 1;
         }
-        cpu_state.mxcsr = src;// & mxcsr_mask;
+        return sse_set_mxcsr(src);
     } else if (fxinst == 3) {
+        SSE_ENTER();
         if (cpu_mod == 3) {
             x86illegal();
             return cpu_state.abrt;
@@ -282,7 +273,38 @@ sf_fx_save_stor_common(uint32_t fetchdat, int bits)
         }
     }
 
+    if (fxinst == 1) {
+        CPU_BLOCK_END();
+        return 1;
+    }
     return cpu_state.abrt;
+}
+
+/* What FXSAVE's image can't carry without touching its reserved bytes (464
+   to 511 are the software's, and Linux keeps its signal frame's own there):
+   which registers hold MMX values, and their exact tags, which the image
+   can't give back through the 64-bit register model. Kept here instead, by
+   the image's linear address, for an FXRSTOR of that same image -- the same
+   header and register bytes -- to take back; any other image is rebuilt
+   from what it holds. */
+#define FX_EXACT_SLOTS 16
+static struct {
+    uint32_t addr;
+    uint32_t sum;
+    uint8_t  tag[8];
+    uint8_t  ismmx;
+    uint8_t  valid;
+} fx_exact[FX_EXACT_SLOTS];
+
+/* The image's header and registers (bytes 0 to 159), hashed */
+static uint32_t
+fx_image_sum(uint32_t base)
+{
+    uint32_t sum = 0x811c9dc5;
+
+    for (int i = 0; i < 40; i++)
+        sum = (sum ^ readmeml(easeg, base + (i << 2))) * 0x01000193;
+    return sum;
 }
 
 static int
@@ -302,7 +324,7 @@ fx_save_stor_common(uint32_t fetchdat, int bits)
     uint8_t  jm;
     uint8_t  valid;
     uint8_t  phys_reg;
-    /* Reserved-area hijack: preserve exact ismmx/tag across the round trip (see below). */
+    /* The exact ismmx and tags, when FXSAVE kept them for this image (fx_exact) */
     int      have_exact  = 0;
     uint8_t  exact_tag[8];
     uint8_t  exact_ismmx = 0;
@@ -370,6 +392,9 @@ fx_save_stor_common(uint32_t fetchdat, int bits)
     }
 
     fxinst = (rmdat >> 3) & 7;
+    ILLEGAL_ON(fxinst <= 1 && cpu_mod == 3);
+    ILLEGAL_ON((fxinst == 5 || fxinst == 6) && cpu_mod != 3);
+    ILLEGAL_ON(fxinst == 7 && cpu_mod != 3 && !(cpu_features & CPU_FEATURE_CLFLUSH));
 
     if ((fxinst > 1) && !(cpu_features & CPU_FEATURE_SSE)) {
         x86illegal();
@@ -388,7 +413,7 @@ fx_save_stor_common(uint32_t fetchdat, int bits)
     if (fxinst == 1) {
         /* FXRSTOR */
         FP_ENTER();
-        if (cpu_state.eaaddr & 0xf) {
+        if ((easeg + cpu_state.eaaddr) & 0xf) {
             x386_dynarec_log("Effective address %08X not on 16-byte boundary\n", cpu_state.eaaddr);
             x86gpf(NULL, 0);
             return cpu_state.abrt;
@@ -398,7 +423,8 @@ fx_save_stor_common(uint32_t fetchdat, int bits)
             return cpu_state.abrt;
         }
         SEG_CHECK_READ(cpu_state.ea_seg);
-        CHECK_READ(cpu_state.ea_seg, cpu_state.eaaddr, cpu_state.eaaddr + 511UL);
+        CHECK_READ_EA(512);
+        PROBE_READ_EA(512);
         uint32_t restored_mxcsr = cpu_state.mxcsr;
         if ((cpu_features & CPU_FEATURE_SSE) && (cr4 & CR4_OSFXSR)) {
             uint32_t mxcsr_mask = (cpu_features & CPU_FEATURE_SSE2) ? 0xffff : 0xffbf;
@@ -417,25 +443,35 @@ fx_save_stor_common(uint32_t fetchdat, int bits)
         CPU_BLOCK_END();
         /* Restore the full status word, like FRSTOR does (the previous AND-in
            dropped status bits the guest had set). */
-        cpu_state.npxs = fpus;
+        {
+            const int was_es = cpu_state.npxs & FPU_SW_Summary;
 
-        if (bits == 32)
-            x87_pc_off = readmeml(easeg, cpu_state.eaaddr + 8);
-        else
-            x87_pc_off = readmemw(easeg, cpu_state.eaaddr + 8);
+            const uint16_t unmasked = fpus & ~cpu_state.npxc & 0x3f;
+
+            /* ES and B as FRSTOR makes them; FERR# waits for the next
+               waiting instruction (x87_ferr_loaded) */
+            cpu_state.npxs = unmasked ? (fpus | 0x8080) : (fpus & ~0x8080);
+            x87_ferr_loaded(was_es, !!unmasked);
+        }
+
+        x87_pc_off = readmeml(easeg, cpu_state.eaaddr + 8);
         x87_pc_seg = readmemw(easeg, cpu_state.eaaddr + 12);
 
         ftwb = readmemb(easeg, cpu_state.eaaddr + 4);
-        x87_op = readmemw(easeg, cpu_state.eaaddr + 6) & 0x07ff;
+        /* FOP, as FXSAVE stores it (cpu_state.fpu_op) */
+        cpu_state.fpu_op = readmemw(easeg, cpu_state.eaaddr + 6) & 0x07ff;
 
-        if (bits == 32)
-            x87_op_off = readmeml(easeg, cpu_state.eaaddr + 16);
-        else
-            x87_op_off = readmemw(easeg, cpu_state.eaaddr +16);
+        x87_op_off = readmeml(easeg, cpu_state.eaaddr + 16);
         x87_op_seg = readmemw(easeg, cpu_state.eaaddr + 20);
+        /* FXSAVE and the x87 environment stores share these pointer fields. */
+        cpu_state.fpu_pc = x87_pc_off;
+        cpu_state.fpu_ea = x87_op_off;
+        cpu_state.fpu_CS = x87_pc_seg;
+        cpu_state.fpu_DS = x87_op_seg;
+        cpu_state.fpu_cs = cpu_state.fpu_ds = 0;
 
         if ((cpu_features & CPU_FEATURE_SSE) && (cr4 & CR4_OSFXSR)) {
-            cpu_state.mxcsr = restored_mxcsr;
+            sse_set_mxcsr(restored_mxcsr);
 
             for(int i = 0; i < 8; i++)
             {
@@ -473,17 +509,18 @@ fx_save_stor_common(uint32_t fetchdat, int bits)
                 mmx_tags++;
         }
 
-        /* Reserved-area hijack: if our FXSAVE stashed the exact ismmx/tag state in the
-           PII-unused reserved bytes, use them verbatim instead of the guessy
-           mmx_tags heuristic. This is a hack, not a fix (it writes emulator state
-           into a hardware-defined image), but it dramatically cuts the residual
-           MMX-mode misclassification until the proper register-model refactor is
-           implemented. */
-        if (readmeml(easeg, old_eaaddr + 400) == 0x54474553UL) {
-            have_exact = 1;
-            for (i = 0; i <= 7; i++)
-                exact_tag[i] = readmemb(easeg, old_eaaddr + 404 + i);
-            exact_ismmx = readmemb(easeg, old_eaaddr + 412);
+        /* The image FXSAVE kept the exact ismmx and tags for (fx_exact): those,
+           rather than the mmx_tags guess below */
+        {
+            const uint32_t lin  = easeg + old_eaaddr;
+            const int      slot = (lin >> 9) & (FX_EXACT_SLOTS - 1);
+
+            if (fx_exact[slot].valid && (fx_exact[slot].addr == lin) && (fx_exact[slot].sum == fx_image_sum(old_eaaddr))) {
+                have_exact = 1;
+                for (i = 0; i <= 7; i++)
+                    exact_tag[i] = fx_exact[slot].tag[i];
+                exact_ismmx = fx_exact[slot].ismmx;
+            }
         }
 
         cpu_state.ismmx = 0;
@@ -491,9 +528,7 @@ fx_save_stor_common(uint32_t fetchdat, int bits)
            because we do not keep the internal state in 64-bit precision.
 
            TODO: Is there no way to unify the whole lot? */
-        if (have_exact)
-            cpu_state.ismmx = exact_ismmx;
-        else if ((mmx_tags == 8) && !cpu_state.TOP)
+        if ((mmx_tags == 8) && !cpu_state.TOP)
             cpu_state.ismmx = 1;
 
         x87_settag(rec_ftw);
@@ -510,7 +545,7 @@ fx_save_stor_common(uint32_t fetchdat, int bits)
             }
         }
 
-        /* Reserved-area hijack: apply the exact tag array after the loaders. */
+        /* The exact tags, after the loaders */
         if (have_exact) {
             for (i = 0; i <= 7; i++)
                 cpu_state.tag[i] = exact_tag[i];
@@ -520,7 +555,7 @@ fx_save_stor_common(uint32_t fetchdat, int bits)
     } else if (fxinst == 0) {
         /* FXSAVE */
         FP_ENTER();
-        if (cpu_state.eaaddr & 0xf) {
+        if ((easeg + cpu_state.eaaddr) & 0xf) {
             x386_dynarec_log("Effective address %08X not on 16-byte boundary\n", cpu_state.eaaddr);
             x86gpf(NULL, 0);
             return cpu_state.abrt;
@@ -530,7 +565,7 @@ fx_save_stor_common(uint32_t fetchdat, int bits)
             return cpu_state.abrt;
         }
         SEG_CHECK_WRITE(cpu_state.ea_seg);
-        CHECK_WRITE(cpu_state.ea_seg, cpu_state.eaaddr, cpu_state.eaaddr + 511UL);
+        CHECK_WRITE_EA(512);
         if ((twd & 0x0003) != 0x0003)
             ftwb |= 0x01;
         if ((twd & 0x000c) != 0x000c)
@@ -558,45 +593,10 @@ fx_save_stor_common(uint32_t fetchdat, int bits)
         /* The lower 11 bits contain the FPU opcode, upper 5 bits are reserved */
         writememw(easeg, cpu_state.eaaddr + 6, cpu_state.fpu_op);
 
-        /*
-         * x87 FPU IP Offset (32/64 bits)
-         * The contents of this field differ depending on the current
-         * addressing mode (16/32/64 bit) when the FXSAVE instruction was executed:
-         *   + 64-bit mode - 64-bit IP offset
-         *   + 32-bit mode - 32-bit IP offset
-         *   + 16-bit mode - low 16 bits are IP offset; high 16 bits are reserved.
-         * x87 CS FPU IP Selector
-         *   + 16 bit, in 16/32 bit mode only
-         *
-         * x87 FPU Instruction Operand (Data) Pointer Offset (32/64 bits)
-         * The contents of this field differ depending on the current
-         * addressing mode (16/32 bit) when the FXSAVE instruction was executed:
-         *   + 64-bit mode - 64-bit offset
-         *   + 32-bit mode - 32-bit offset
-         *   + 16-bit mode - low 16 bits are offset; high 16 bits are reserved.
-         * x87 DS FPU Instruction Operand (Data) Pointer Selector
-         *   + 16 bit, in 16/32 bit mode only
-         */
-        switch ((cr0 & 1) | (cpu_state.op32 & 0x100)) {
-            case 0x000: {
-                /*16-bit real mode*/
-                writememl(easeg, cpu_state.eaaddr + 8, cpu_state.fpu_pc & 0xffff);
-                writememl(easeg, cpu_state.eaaddr + 16, cpu_state.fpu_ea & 0xffff);
-                break;
-            } case 0x001: /*16-bit protected mode*/
-                writememl(easeg, cpu_state.eaaddr + 8, cpu_state.fpu_pc & 0xffff);
-                writememl(easeg, cpu_state.eaaddr + 16, cpu_state.fpu_ea & 0xffff);
-                break;
-            case 0x100: {
-                /*32-bit real mode*/
-                writememl(easeg, cpu_state.eaaddr + 8, cpu_state.fpu_pc);
-                writememl(easeg, cpu_state.eaaddr + 16, cpu_state.fpu_ea);
-                break;
-            } case 0x101: /*32-bit protected mode*/
-                writememl(easeg, cpu_state.eaaddr + 8, cpu_state.fpu_pc);
-                writememl(easeg, cpu_state.eaaddr + 16, cpu_state.fpu_ea);
-                break;
-        }
+        /* The legacy FXSAVE image always contains 32-bit offsets, regardless
+           of operand/address size or protected/real mode (Intel SDM Vol. 2A). */
+        writememl(easeg, cpu_state.eaaddr + 8, cpu_state.fpu_pc);
+        writememl(easeg, cpu_state.eaaddr + 16, cpu_state.fpu_ea);
 
         writememl(easeg, cpu_state.eaaddr + 12, cpu_state.fpu_CS);
         writememl(easeg, cpu_state.eaaddr + 20, cpu_state.fpu_DS);
@@ -629,16 +629,24 @@ fx_save_stor_common(uint32_t fetchdat, int bits)
             }
         }
 
-        /* Reserved-area hijack: stash exact ismmx/tag in the PII-unused reserved tail. */
-        writememl(easeg, old_eaaddr + 400, 0x54474553UL);
-        for (i = 0; i <= 7; i++)
-            writememb(easeg, old_eaaddr + 404 + i, cpu_state.tag[i]);
-        writememb(easeg, old_eaaddr + 412, cpu_state.ismmx);
+        /* The exact tags and MMX state, beside the image (fx_exact) */
+        if (!cpu_state.abrt) {
+            const uint32_t lin  = easeg + old_eaaddr;
+            const int      slot = (lin >> 9) & (FX_EXACT_SLOTS - 1);
+
+            fx_exact[slot].addr = lin;
+            fx_exact[slot].sum  = fx_image_sum(old_eaaddr);
+            for (i = 0; i <= 7; i++)
+                fx_exact[slot].tag[i] = cpu_state.tag[i];
+            fx_exact[slot].ismmx = cpu_state.ismmx;
+            fx_exact[slot].valid = !cpu_state.abrt;
+        }
 
         cpu_state.eaaddr = old_eaaddr;
 
         CLOCK_CYCLES(1);
     } else if (fxinst == 2) {
+        SSE_ENTER();
         //LDMXCSR
         if (cpu_mod == 3) {
             x86illegal();
@@ -660,8 +668,9 @@ fx_save_stor_common(uint32_t fetchdat, int bits)
             x86gpf(NULL, 0);
             return 1;
         }
-        cpu_state.mxcsr = src;// & mxcsr_mask;
+        return sse_set_mxcsr(src);
     } else if (fxinst == 3) {
+        SSE_ENTER();
         //STMXCSR
         if (cpu_mod == 3) {
             x86illegal();
@@ -689,6 +698,10 @@ fx_save_stor_common(uint32_t fetchdat, int bits)
         }
     }
 
+    if (fxinst == 1) {
+        CPU_BLOCK_END();
+        return 1;
+    }
     return cpu_state.abrt;
 }
 

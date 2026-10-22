@@ -470,9 +470,10 @@ MachineStatus::iterateCDROM(const std::function<void(int)> &cb)
             (scsi_card_current[0] == 0) && (scsi_card_current[1] == 0) &&
             (scsi_card_current[2] == 0) && (scsi_card_current[3] == 0))
             continue;
-        if ((cdrom[i].bus_type == CDROM_BUS_SONY || cdrom[i].bus_type == CDROM_BUS_CM100 || cdrom[i].bus_type == CDROM_BUS_PHILIPS || cdrom[i].bus_type == CDROM_BUS_HITACHI || cdrom[i].bus_type == CDROM_BUS_MITSUMI || cdrom[i].bus_type == CDROM_BUS_MKE) && (cdrom_interface_current == 0))
+        if ((cdrom[i].bus_type == CDROM_BUS_SONY || cdrom[i].bus_type == CDROM_BUS_CM100 || cdrom[i].bus_type == CDROM_BUS_PHILIPS || cdrom[i].bus_type == CDROM_BUS_HITACHI || cdrom[i].bus_type == CDROM_BUS_MITSUMI || cdrom[i].bus_type == CDROM_BUS_MKE) && (cdrom_interface_current == 0) &&
+            !((cdrom[i].bus_type == CDROM_BUS_MITSUMI) && (machines[machine].init == machine_at_tandy_vis_init)))
             continue;
-        if (cdrom[i].bus_type != 0) {
+        if (cdrom[i].bus_type != 0 && cdrom[i].bus_type != CDROM_BUS_DISCONNECTED) {
             cb(i);
         }
     }
@@ -494,7 +495,7 @@ MachineStatus::iterateRDisk(const std::function<void(int)> &cb)
             (scsi_card_current[0] == 0) && (scsi_card_current[1] == 0) &&
             (scsi_card_current[2] == 0) && (scsi_card_current[3] == 0))
             continue;
-        if (rdisk_drives[i].bus_type != 0) {
+        if (rdisk_drives[i].bus_type != 0 && rdisk_drives[i].bus_type != HDD_BUS_DISCONNECTED) {
             cb(i);
         }
     }
@@ -516,7 +517,7 @@ MachineStatus::iterateMO(const std::function<void(int)> &cb)
             (scsi_card_current[0] == 0) && (scsi_card_current[1] == 0) &&
             (scsi_card_current[2] == 0) && (scsi_card_current[3] == 0))
             continue;
-        if (mo_drives[i].bus_type != 0) {
+        if (mo_drives[i].bus_type != 0 && mo_drives[i].bus_type != HDD_BUS_DISCONNECTED) {
             cb(i);
         }
     }
@@ -542,7 +543,7 @@ MachineStatus::iterateTape(const std::function<void(int)> &cb)
         if ((tape_drives[i].bus_type == TAPE_BUS_LPT) &&
             !lpt_ports[tape_drives[i].lpt_port].enabled)
             continue;
-        if (tape_drives[i].bus_type != 0) {
+        if (tape_drives[i].bus_type != 0 && tape_drives[i].bus_type != HDD_BUS_DISCONNECTED) {
             cb(i);
         }
     }

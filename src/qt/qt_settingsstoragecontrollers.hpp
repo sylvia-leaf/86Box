@@ -2,6 +2,10 @@
 #define QT_SETTINGSSTORAGECONTROLLERS_HPP
 
 #include <QWidget>
+extern "C" {
+#include <86box/device.h>
+#include <86box/hdc.h>
+}
 
 namespace Ui {
 class SettingsStorageControllers;
@@ -55,17 +59,17 @@ private:
     Ui::SettingsStorageControllers *ui;
     int                             machineId = 0;
 
-    int                             hdc_cfg_changed[4]          = { 0, 0, 0, 0 };
+    int                             hdc_cfg_changed[HDC_MAX]     = { 0 };
     int                             scsi_card_cfg_changed[4]    = { 0, 0, 0, 0 };
     int                             fdc_cfg_changed             = 0;
     int                             cdrom_interface_cfg_changed = 0;
 
     SettingsCompleter *scFD;
-    SettingsCompleter *scHD[4];
+    SettingsCompleter *scHD[HDC_MAX];
     SettingsCompleter *scCDInterface;
     SettingsCompleter *scSCSI[4];
 
-    int hdcCurrent[4];
+    int hdcCurrent[HDC_MAX];
     int scsiCardCurrent[4];
     int fdcCurrent[2];
     int cdromInterfaceCurrent;

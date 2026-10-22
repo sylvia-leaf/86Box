@@ -21,6 +21,7 @@ public:
     QString selectedFilter() const { return selectedFilter_; }
     void    setselectedFilter(const QString &selectedFilter) { selectedFilter_ = selectedFilter; }
 
+    void setDefaultDirectory(const QString &directory) { defaultDirectory_ = directory; }
     void setCreateFile(bool createFile) { createFile_ = createFile; }
     bool createFile() { return createFile_; }
 
@@ -34,6 +35,7 @@ private slots:
 private:
     Ui::FileField *ui;
     QString        fileName_;
+    QString        defaultDirectory_;
     QString        selectedFilter_;
     QString        filter_;
     bool           createFile_ = false;
